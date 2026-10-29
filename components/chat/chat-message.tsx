@@ -1,50 +1,50 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import type { Message } from "./chat-page"
-import { Check, CheckCheck, Clock } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useState } from "react";
+import Image from "next/image";
+import type { Message } from "./chat-page";
+import { Check, CheckCheck, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatMessageProps {
-  message: Message
-  isOwn: boolean
-  contactName: string
-  contactAvatar: string
+  message: Message;
+  isOwn: boolean;
+  contactName: string;
+  contactAvatar: string;
 }
 
 export function ChatMessage({ message, isOwn, contactName, contactAvatar }: ChatMessageProps) {
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
+    return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   const formatFullTime = (timestamp: string) => {
-    const date = new Date(timestamp)
+    const date = new Date(timestamp);
     return date.toLocaleString([], {
       weekday: "long",
       month: "long",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    })
-  }
+    });
+  };
 
   const renderStatus = (status: string) => {
     switch (status) {
       case "sent":
-        return <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+        return <Clock className="h-3.5 w-3.5 text-muted-foreground" />;
       case "delivered":
-        return <Check className="h-3.5 w-3.5 text-muted-foreground" />
+        return <Check className="h-3.5 w-3.5 text-muted-foreground" />;
       case "read":
-        return <CheckCheck className="h-3.5 w-3.5 text-primary" />
+        return <CheckCheck className="h-3.5 w-3.5 text-primary" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className={cn("flex items-end gap-2 group", isOwn ? "flex-row-reverse" : "flex-row")}>
@@ -74,7 +74,9 @@ export function ChatMessage({ message, isOwn, contactName, contactAvatar }: Chat
                     : "bg-muted text-foreground rounded-tl-none",
                 )}
               >
-                {message.text && <p className="whitespace-pre-wrap break-words text-sm">{message.text}</p>}
+                {message.text && (
+                  <p className="whitespace-pre-wrap break-words text-sm">{message.text}</p>
+                )}
                 {message.image && (
                   <div className="relative mt-1 overflow-hidden rounded-lg">
                     <div
@@ -114,5 +116,5 @@ export function ChatMessage({ message, isOwn, contactName, contactAvatar }: Chat
         </div>
       </div>
     </div>
-  )
+  );
 }

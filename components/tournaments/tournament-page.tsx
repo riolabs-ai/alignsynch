@@ -18,7 +18,9 @@ export function TournamentPage() {
     <>
       <div className="container mx-auto">
         <h1 className="text-3xl font-bold mb-2">Quiz Tournaments</h1>
-        <p className="text-muted-foreground mb-8">Compete against other quiz enthusiasts and win amazing prizes</p>
+        <p className="text-muted-foreground mb-8">
+          Compete against other quiz enthusiasts and win amazing prizes
+        </p>
 
         <FeaturedTournament />
 
@@ -28,7 +30,10 @@ export function TournamentPage() {
             <TournamentFilters activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
           </div>
 
-          <TournamentCategories activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
+          <TournamentCategories
+            activeCategory={activeCategory}
+            setActiveCategory={setActiveCategory}
+          />
 
           <TournamentList activeCategory={activeCategory} activeFilter={activeFilter} />
         </div>

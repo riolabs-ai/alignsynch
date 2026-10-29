@@ -1,31 +1,36 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect, type ReactNode } from "react"
-import { cn } from "@/lib/utils"
+import { useState, useRef, useEffect, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface SimpleDropdownProps {
-  trigger: ReactNode
-  children: ReactNode
-  align?: "left" | "right"
-  className?: string
+  trigger: ReactNode;
+  children: ReactNode;
+  align?: "left" | "right";
+  className?: string;
 }
 
-export function SimpleDropdown({ trigger, children, align = "left", className }: SimpleDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+export function SimpleDropdown({
+  trigger,
+  children,
+  align = "left",
+  className,
+}: SimpleDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -45,15 +50,15 @@ export function SimpleDropdown({ trigger, children, align = "left", className }:
         </div>
       )}
     </div>
-  )
+  );
 }
 
 interface SimpleDropdownItemProps {
-  children: ReactNode
-  onClick?: () => void
-  destructive?: boolean
-  disabled?: boolean
-  className?: string
+  children: ReactNode;
+  onClick?: () => void;
+  destructive?: boolean;
+  disabled?: boolean;
+  className?: string;
 }
 
 export function SimpleDropdownItem({
@@ -66,8 +71,8 @@ export function SimpleDropdownItem({
   return (
     <div
       onClick={(e) => {
-        e.stopPropagation()
-        if (!disabled && onClick) onClick()
+        e.stopPropagation();
+        if (!disabled && onClick) onClick();
       }}
       className={cn(
         "flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
@@ -79,13 +84,19 @@ export function SimpleDropdownItem({
     >
       {children}
     </div>
-  )
+  );
 }
 
-export function SimpleDropdownLabel({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("px-2 py-1.5 text-sm font-semibold", className)}>{children}</div>
+export function SimpleDropdownLabel({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("px-2 py-1.5 text-sm font-semibold", className)}>{children}</div>;
 }
 
 export function SimpleDropdownSeparator({ className }: { className?: string }) {
-  return <div className={cn("my-1 h-px bg-muted", className)} />
+  return <div className={cn("my-1 h-px bg-muted", className)} />;
 }

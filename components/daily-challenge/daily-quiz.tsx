@@ -1,7 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -22,7 +29,12 @@ export const dailyQuizData = {
     {
       id: 2,
       question: "What does CPU stand for?",
-      options: ["Central Processing Unit", "Computer Personal Unit", "Central Processor Utility", "Core Processing Unit"],
+      options: [
+        "Central Processing Unit",
+        "Computer Personal Unit",
+        "Central Processor Utility",
+        "Core Processing Unit",
+      ],
       correctAnswer: "Central Processing Unit",
     },
     {
@@ -47,7 +59,13 @@ export const dailyQuizData = {
 };
 
 interface DailyQuizProps {
-  onComplete: (result: { score: number; totalQuestions: number; timeTaken: number; rank: number; correctAnswers: number }) => void;
+  onComplete: (result: {
+    score: number;
+    totalQuestions: number;
+    timeTaken: number;
+    rank: number;
+    correctAnswers: number;
+  }) => void;
 }
 
 export function DailyQuiz({ onComplete }: DailyQuizProps) {
@@ -148,10 +166,16 @@ export function DailyQuiz({ onComplete }: DailyQuizProps) {
         <div className="space-y-6">
           <div className="text-lg font-medium">{question.question}</div>
 
-          <RadioGroup value={selectedAnswers[currentQuestion] || ""} onValueChange={handleAnswerSelect}>
+          <RadioGroup
+            value={selectedAnswers[currentQuestion] || ""}
+            onValueChange={handleAnswerSelect}
+          >
             <div className="space-y-3">
               {question.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-muted/50 transition-colors">
+                <div
+                  key={index}
+                  className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+                >
                   <RadioGroupItem value={option} id={`option-${index}`} />
                   <Label htmlFor={`option-${index}`} className="flex-grow cursor-pointer">
                     {option}
@@ -170,7 +194,11 @@ export function DailyQuiz({ onComplete }: DailyQuizProps) {
 
         <div className="flex space-x-2">
           {isLastQuestion ? (
-            <Button onClick={handleSubmit} disabled={!canSubmit || isSubmitting} className="bg-green-600 hover:bg-green-700">
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit || isSubmitting}
+              className="bg-green-600 hover:bg-green-700"
+            >
               {isSubmitting ? "Submitting..." : "Submit Challenge"}
             </Button>
           ) : (

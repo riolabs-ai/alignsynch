@@ -75,7 +75,8 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
     {
       id: "sports-spectacular",
       title: "Sports Spectacular",
-      description: "From football to Olympics, test your knowledge of sporting events and athletes.",
+      description:
+        "From football to Olympics, test your knowledge of sporting events and athletes.",
       image: "/sports-trivia-quiz.png", // Using existing sports quiz image
       category: "sports",
       status: "registration",
@@ -88,7 +89,8 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
     {
       id: "tech-titans",
       title: "Tech Titans",
-      description: "Challenge yourself with questions about technology, coding, and digital innovation.",
+      description:
+        "Challenge yourself with questions about technology, coding, and digital innovation.",
       image: "/technology-quiz.png", // Using existing technology quiz image
       category: "technology",
       status: "completed",
@@ -136,9 +138,19 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
           {filteredTournaments.map((tournament) => (
             <Card key={tournament.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="relative h-48">
-                <Image src={tournament.image || "/placeholder.svg?height=200&width=400&text=Tournament+Image"} alt={tournament.title} fill className="object-cover" />
+                <Image
+                  src={
+                    tournament.image ||
+                    "/placeholder.svg?height=200&width=400&text=Tournament+Image"
+                  }
+                  alt={tournament.title}
+                  fill
+                  className="object-cover"
+                />
                 <div className="absolute top-2 right-2">
-                  <Badge className={`${statusColors[tournament.status]} text-white`}>{statusText[tournament.status]}</Badge>
+                  <Badge className={`${statusColors[tournament.status]} text-white`}>
+                    {statusText[tournament.status]}
+                  </Badge>
                 </div>
                 <div className="absolute bottom-2 left-2">
                   <Badge variant="outline" className="bg-black/50 text-white border-0">
@@ -148,7 +160,9 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
               </div>
               <CardContent className="p-4 xl:pt-6">
                 <h3 className="text-xl font-bold mb-2">{tournament.title}</h3>
-                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{tournament.description}</p>
+                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                  {tournament.description}
+                </p>
 
                 <div className="flex flex-wrap gap-y-2 gap-x-4 mb-4 text-sm">
                   <div className="flex items-center gap-1">
@@ -173,14 +187,23 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
                         <span>Closes in {tournament.registrationEnds}</span>
                       </div>
                     )}
-                    <Button onClick={() => router.push(`/tournaments/${tournament.id}`)} className="ml-auto" size="sm">
+                    <Button
+                      onClick={() => router.push(`/tournaments/${tournament.id}`)}
+                      className="ml-auto"
+                      size="sm"
+                    >
                       View Details <ArrowRight className="ml-1 h-4 w-4" />
                     </Button>
                   </div>
                 )}
 
                 {tournament.status === "completed" && (
-                  <Button onClick={() => router.push(`/tournaments/${tournament.id}`)} variant="outline" className="w-full" size="sm">
+                  <Button
+                    onClick={() => router.push(`/tournaments/${tournament.id}`)}
+                    variant="outline"
+                    className="w-full"
+                    size="sm"
+                  >
                     View Results <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 )}

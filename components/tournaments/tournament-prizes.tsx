@@ -100,7 +100,9 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                 <div className="flex items-center gap-3">
                   <div>
                     <div className="font-medium">${runnerUpPrize} each</div>
-                    <div className="text-sm text-muted-foreground">Plus 1 month Premium subscription</div>
+                    <div className="text-sm text-muted-foreground">
+                      Plus 1 month Premium subscription
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -117,7 +119,9 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                 <div className="flex items-center gap-3">
                   <div>
                     <div className="font-medium">Tournament Badge</div>
-                    <div className="text-sm text-muted-foreground">For all participants who complete the tournament</div>
+                    <div className="text-sm text-muted-foreground">
+                      For all participants who complete the tournament
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -140,7 +144,9 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                     </div>
                     <div>
                       <div className="font-medium">Perfect Round</div>
-                      <div className="text-xs text-muted-foreground">100% accuracy in any round</div>
+                      <div className="text-xs text-muted-foreground">
+                        100% accuracy in any round
+                      </div>
                     </div>
                   </div>
 
@@ -160,7 +166,9 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                     </div>
                     <div>
                       <div className="font-medium">Consistency King</div>
-                      <div className="text-xs text-muted-foreground">Least score variance across rounds</div>
+                      <div className="text-xs text-muted-foreground">
+                        Least score variance across rounds
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -178,10 +186,14 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold">Total Prize Pool</h3>
-                      <p className="text-sm text-muted-foreground">Distributed among winners and special achievements</p>
+                      <p className="text-sm text-muted-foreground">
+                        Distributed among winners and special achievements
+                      </p>
                     </div>
                   </div>
-                  <div className="text-3xl font-bold text-amber-700 dark:text-amber-300">${prizePool}</div>
+                  <div className="text-3xl font-bold text-amber-700 dark:text-amber-300">
+                    ${prizePool}
+                  </div>
                 </div>
               </CardContent>
             </Card>

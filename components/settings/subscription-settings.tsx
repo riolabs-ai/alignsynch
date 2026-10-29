@@ -2,7 +2,14 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Check, CreditCard, Loader2 } from "lucide-react";
@@ -43,37 +50,70 @@ export function SubscriptionSettings() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Subscription Settings</h3>
-        <p className="text-sm text-muted-foreground">Manage your subscription plan and billing information.</p>
+        <p className="text-sm text-muted-foreground">
+          Manage your subscription plan and billing information.
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Current Plan</CardTitle>
-          <CardDescription>You are currently on the {currentPlan === "free" ? "Free" : currentPlan === "pro" ? "Pro" : "Premium"} plan.</CardDescription>
+          <CardDescription>
+            You are currently on the{" "}
+            {currentPlan === "free" ? "Free" : currentPlan === "pro" ? "Pro" : "Premium"} plan.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-lg font-semibold">
-                {currentPlan === "free" ? "Free Plan" : currentPlan === "pro" ? "Pro Plan" : "Premium Plan"}
+                {currentPlan === "free"
+                  ? "Free Plan"
+                  : currentPlan === "pro"
+                    ? "Pro Plan"
+                    : "Premium Plan"}
                 {currentPlan !== "free" && (
                   <Badge variant="outline" className="ml-2">
                     {billingCycle === "monthly" ? "Monthly" : "Annual"}
                   </Badge>
                 )}
               </h4>
-              <p className="text-sm text-muted-foreground mt-1">{currentPlan === "free" ? "Basic features with limited access" : currentPlan === "pro" ? "Advanced features for quiz creators" : "All features with priority support"}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {currentPlan === "free"
+                  ? "Basic features with limited access"
+                  : currentPlan === "pro"
+                    ? "Advanced features for quiz creators"
+                    : "All features with priority support"}
+              </p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">{currentPlan === "free" ? "Free" : currentPlan === "pro" ? (billingCycle === "monthly" ? "$9.99" : "$99.99") : billingCycle === "monthly" ? "$19.99" : "$199.99"}</p>
-              {currentPlan !== "free" && <p className="text-sm text-muted-foreground">{billingCycle === "monthly" ? "per month" : "per year"}</p>}
+              <p className="text-2xl font-bold">
+                {currentPlan === "free"
+                  ? "Free"
+                  : currentPlan === "pro"
+                    ? billingCycle === "monthly"
+                      ? "$9.99"
+                      : "$99.99"
+                    : billingCycle === "monthly"
+                      ? "$19.99"
+                      : "$199.99"}
+              </p>
+              {currentPlan !== "free" && (
+                <p className="text-sm text-muted-foreground">
+                  {billingCycle === "monthly" ? "per month" : "per year"}
+                </p>
+              )}
             </div>
           </div>
 
           {currentPlan !== "free" && (
             <div className="mt-6">
               <p className="text-sm font-medium mb-2">Billing Cycle</p>
-              <RadioGroup value={billingCycle} onValueChange={handleBillingCycleChange} className="flex space-x-4">
+              <RadioGroup
+                value={billingCycle}
+                onValueChange={handleBillingCycleChange}
+                className="flex space-x-4"
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="monthly" id="monthly" />
                   <Label htmlFor="monthly">Monthly</Label>
@@ -158,17 +198,31 @@ export function SubscriptionSettings() {
             </Button>
           ) : currentPlan === "pro" ? (
             <div className="w-full space-y-2">
-              <Button onClick={() => handleUpgrade("premium")} disabled={isLoading} className="w-full">
+              <Button
+                onClick={() => handleUpgrade("premium")}
+                disabled={isLoading}
+                className="w-full"
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Upgrade to Premium
               </Button>
-              <Button variant="outline" onClick={handleCancel} disabled={isLoading} className="w-full">
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isLoading}
+                className="w-full"
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Cancel Subscription
               </Button>
             </div>
           ) : (
-            <Button variant="outline" onClick={handleCancel} disabled={isLoading} className="w-full">
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="w-full"
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Cancel Subscription
             </Button>

@@ -13,7 +13,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <div className="z-50 relative">
         <AppSidebar />
       </div>
-      <div className={cn(collapsed ? "xl:w-[calc(100%-70px)]" : "xl:w-[calc(100%-250px)]", "w-full")}>
+      <div
+        className={cn(collapsed ? "xl:w-[calc(100%-70px)]" : "xl:w-[calc(100%-250px)]", "w-full")}
+      >
         <Header />
         <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">{children}</main>
       </div>

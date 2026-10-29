@@ -8,7 +8,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ChatConversation } from "./chat-conversation";
 import { ChatSidebar } from "./chat-sidebar";
-import { SimpleDropdown, SimpleDropdownItem, SimpleDropdownLabel, SimpleDropdownSeparator } from "./simple-dropdown";
+import {
+  SimpleDropdown,
+  SimpleDropdownItem,
+  SimpleDropdownLabel,
+  SimpleDropdownSeparator,
+} from "./simple-dropdown";
 
 export type Contact = {
   id: string;
@@ -41,13 +46,19 @@ export type Conversation = {
 export function ChatPage() {
   const [contacts, setContacts] = useState(mockContacts);
   const [conversations, setConversations] = useState(mockConversations);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(conversations.length > 0 ? conversations[0].id : null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(
+    conversations.length > 0 ? conversations[0].id : null,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [showChat, setShowChat] = useState(false);
   const activeConversation = conversations.find((conv) => conv.id === activeConversationId) || null;
-  const activeContact = activeConversation ? contacts.find((contact) => contact.id === activeConversation.contactId) : null;
+  const activeContact = activeConversation
+    ? contacts.find((contact) => contact.id === activeConversation.contactId)
+    : null;
 
-  const filteredContacts = contacts.filter((contact) => contact.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredContacts = contacts.filter((contact) =>
+    contact.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const handleSendMessage = (text: string) => {
     if (!activeConversationId) return;
@@ -73,35 +84,38 @@ export function ChatPage() {
           };
         }
         return conv;
-      })
+      }),
     );
 
     // Simulate reply after 1-3 seconds
-    setTimeout(() => {
-      const replyMessage: Message = {
-        id: `msg-${Date.now() + 1}`,
-        senderId: activeConversation?.contactId || "",
-        text: `This is an automated reply to: "${text}"`,
-        timestamp: new Date().toISOString(),
-        status: "read",
-      };
+    setTimeout(
+      () => {
+        const replyMessage: Message = {
+          id: `msg-${Date.now() + 1}`,
+          senderId: activeConversation?.contactId || "",
+          text: `This is an automated reply to: "${text}"`,
+          timestamp: new Date().toISOString(),
+          status: "read",
+        };
 
-      setConversations((prev) =>
-        prev.map((conv) => {
-          if (conv.id === activeConversationId) {
-            return {
-              ...conv,
-              messages: [...conv.messages, replyMessage],
-              lastMessage: {
-                text: replyMessage.text || "",
-                timestamp: replyMessage.timestamp,
-              },
-            };
-          }
-          return conv;
-        })
-      );
-    }, Math.random() * 2000 + 1000);
+        setConversations((prev) =>
+          prev.map((conv) => {
+            if (conv.id === activeConversationId) {
+              return {
+                ...conv,
+                messages: [...conv.messages, replyMessage],
+                lastMessage: {
+                  text: replyMessage.text || "",
+                  timestamp: replyMessage.timestamp,
+                },
+              };
+            }
+            return conv;
+          }),
+        );
+      },
+      Math.random() * 2000 + 1000,
+    );
   };
 
   const handleSendImage = (imageUrl: string) => {
@@ -128,7 +142,7 @@ export function ChatPage() {
           };
         }
         return conv;
-      })
+      }),
     );
   };
 
@@ -149,7 +163,7 @@ export function ChatPage() {
           };
         }
         return conv;
-      })
+      }),
     );
   };
 
@@ -172,14 +186,25 @@ export function ChatPage() {
 
   return (
     <div className="md:flex h-[calc(100vh-4rem)] overflow-y-auto bg-background">
-      <button onClick={() => setShowChat(!showChat)} className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-md md:hidden">
+      <button
+        onClick={() => setShowChat(!showChat)}
+        className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-md md:hidden"
+      >
         Open Chat
       </button>
-      <div className={`w-72 duration-300 xl:w-80 border-r flex flex-col max-md:absolute max-md:top-32 max-md:border-t max-md: left-0 max-md:h-full max-md:z-10 max-md:bg-background ${showChat ? "max-md:translate-x-0" : "max-md:-translate-x-full"}`}>
+      <div
+        className={`w-72 duration-300 xl:w-80 border-r flex flex-col max-md:absolute max-md:top-32 max-md:border-t max-md: left-0 max-md:h-full max-md:z-10 max-md:bg-background ${showChat ? "max-md:translate-x-0" : "max-md:-translate-x-full"}`}
+      >
         <div className="p-4 border-b flex items-center justify-between ">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search contacts..." className="pl-8 rounded-full" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Input
+              type="search"
+              placeholder="Search contacts..."
+              className="pl-8 rounded-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <div className="ml-2">
             <SimpleDropdown
@@ -212,12 +237,23 @@ export function ChatPage() {
             </SimpleDropdown>
           </div>
         </div>
-        <ChatSidebar contacts={filteredContacts} conversations={conversations} activeConversationId={activeConversationId} onConversationSelect={handleConversationSelect} onNewConversation={handleNewConversation} />
+        <ChatSidebar
+          contacts={filteredContacts}
+          conversations={conversations}
+          activeConversationId={activeConversationId}
+          onConversationSelect={handleConversationSelect}
+          onNewConversation={handleNewConversation}
+        />
       </div>
 
       <div className="flex-1 flex flex-col">
         {activeConversation && activeContact ? (
-          <ChatConversation conversation={activeConversation} contact={activeContact} onSendMessage={handleSendMessage} onSendImage={handleSendImage} />
+          <ChatConversation
+            conversation={activeConversation}
+            contact={activeContact}
+            onSendMessage={handleSendMessage}
+            onSendImage={handleSendImage}
+          />
         ) : (
           <div className="flex h-full items-center justify-center bg-muted/20">
             <div className="text-center max-w-md p-6 rounded-lg bg-background shadow-sm border">
@@ -225,10 +261,14 @@ export function ChatPage() {
                 <Plus className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-xl font-medium mb-2">Start a conversation</h3>
-              <p className="text-muted-foreground mb-4">Select a contact from the sidebar or start a new chat to begin messaging</p>
+              <p className="text-muted-foreground mb-4">
+                Select a contact from the sidebar or start a new chat to begin messaging
+              </p>
               <Button
                 onClick={() => {
-                  const availableContact = contacts.find((contact) => !conversations.some((conv) => conv.contactId === contact.id));
+                  const availableContact = contacts.find(
+                    (contact) => !conversations.some((conv) => conv.contactId === contact.id),
+                  );
                   if (availableContact) {
                     handleNewConversation(availableContact.id);
                   } else {

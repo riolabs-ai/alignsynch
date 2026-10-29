@@ -1,49 +1,49 @@
-import Link from "next/link"
-import type { QuizHistoryItem } from "@/lib/data/users"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Clock, FileQuestion } from "lucide-react"
+import Link from "next/link";
+import type { QuizHistoryItem } from "@/lib/data/users";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Clock, FileQuestion } from "lucide-react";
 
 interface ProfileQuizHistoryProps {
-  quizHistory: QuizHistoryItem[]
+  quizHistory: QuizHistoryItem[];
 }
 
 export function ProfileQuizHistory({ quizHistory }: ProfileQuizHistoryProps) {
   const formatTimeSpent = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}m ${remainingSeconds}s`
-  }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "easy":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       case "medium":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
       case "hard":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
-  }
+  };
 
   const getScoreColor = (score: number, maxScore: number) => {
-    const percentage = (score / maxScore) * 100
-    if (percentage >= 90) return "bg-green-500"
-    if (percentage >= 70) return "bg-amber-500"
-    return "bg-red-500"
-  }
+    const percentage = (score / maxScore) * 100;
+    if (percentage >= 90) return "bg-green-500";
+    if (percentage >= 70) return "bg-amber-500";
+    return "bg-red-500";
+  };
 
   return (
     <Card>
@@ -75,7 +75,8 @@ export function ProfileQuizHistory({ quizHistory }: ProfileQuizHistoryProps) {
                 <div className="mb-1 flex items-center justify-between text-sm">
                   <span>Score</span>
                   <span>
-                    {quiz.score} / {quiz.maxScore} ({Math.round((quiz.score / quiz.maxScore) * 100)}%)
+                    {quiz.score} / {quiz.maxScore} ({Math.round((quiz.score / quiz.maxScore) * 100)}
+                    %)
                   </span>
                 </div>
                 <Progress
@@ -95,5 +96,5 @@ export function ProfileQuizHistory({ quizHistory }: ProfileQuizHistoryProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

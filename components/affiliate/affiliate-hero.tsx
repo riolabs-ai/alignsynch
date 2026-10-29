@@ -15,13 +15,22 @@ export function AffiliateHero() {
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-slate-900 dark:text-white">
-              Turn Your Audience Into <span className="text-purple-600 dark:text-purple-400">Revenue</span>
+              Turn Your Audience Into{" "}
+              <span className="text-purple-600 dark:text-purple-400">Revenue</span>
             </h1>
 
-            <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">Join our affiliate program and earn up to 30% commission on every referral. Share quality quiz content and get rewarded for every new user you bring.</p>
+            <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
+              Join our affiliate program and earn up to 30% commission on every referral. Share
+              quality quiz content and get rewarded for every new user you bring.
+            </p>
 
             <div className="space-y-4 mb-8">
-              {["Earn 30% commission on all referral purchases", "Get paid monthly with no minimum threshold", "Access detailed analytics and performance tracking", "Receive marketing materials and dedicated support"].map((benefit, index) => (
+              {[
+                "Earn 30% commission on all referral purchases",
+                "Get paid monthly with no minimum threshold",
+                "Access detailed analytics and performance tracking",
+                "Receive marketing materials and dedicated support",
+              ].map((benefit, index) => (
                 <div key={index} className="flex items-start">
                   <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 mr-3 flex-shrink-0" />
                   <p className="text-slate-700 dark:text-slate-300">{benefit}</p>
@@ -34,7 +43,10 @@ export function AffiliateHero() {
                 Become an Affiliate
                 <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button variant="outline" className="border-slate-300 dark:border-slate-700 flex items-center gap-2 px-6 text-base">
+              <Button
+                variant="outline"
+                className="border-slate-300 dark:border-slate-700 flex items-center gap-2 px-6 text-base"
+              >
                 Learn More
               </Button>
             </div>
@@ -59,8 +71,12 @@ export function AffiliateHero() {
           <div className="relative">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-3 sm:p-6 md:p-8 border border-slate-200 dark:border-slate-700">
               <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">Affiliate Dashboard</h3>
-                <p className="text-slate-600 dark:text-slate-300 text-sm">Track your performance and earnings in real-time</p>
+                <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">
+                  Affiliate Dashboard
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300 text-sm">
+                  Track your performance and earnings in real-time
+                </p>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mb-6">
@@ -69,7 +85,9 @@ export function AffiliateHero() {
                     <p className="text-sm text-slate-500 dark:text-slate-400">This Month</p>
                     <p className="text-2xl font-bold text-slate-900 dark:text-white">$1,240.50</p>
                   </div>
-                  <div className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm px-2 py-1 rounded">+12.5%</div>
+                  <div className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm px-2 py-1 rounded">
+                    +12.5%
+                  </div>
                 </div>
 
                 <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full mb-1">
@@ -82,7 +100,9 @@ export function AffiliateHero() {
                 <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
                   <div className="flex items-center">
                     <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
-                      <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">1</span>
+                      <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+                        1
+                      </span>
                     </div>
                     <span className="text-slate-700 dark:text-slate-300">New Signups</span>
                   </div>
@@ -92,7 +112,9 @@ export function AffiliateHero() {
                 <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
                   <div className="flex items-center">
                     <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-3">
-                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium">2</span>
+                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium">
+                        2
+                      </span>
                     </div>
                     <span className="text-slate-700 dark:text-slate-300">Conversions</span>
                   </div>
@@ -102,7 +124,9 @@ export function AffiliateHero() {
                 <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
                   <div className="flex items-center">
                     <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mr-3">
-                      <span className="text-green-600 dark:text-green-400 text-sm font-medium">3</span>
+                      <span className="text-green-600 dark:text-green-400 text-sm font-medium">
+                        3
+                      </span>
                     </div>
                     <span className="text-slate-700 dark:text-slate-300">Commission Rate</span>
                   </div>

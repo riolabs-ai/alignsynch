@@ -15,13 +15,18 @@ export function TournamentCta() {
 
         <div className="relative grid md:grid-cols-2 gap-8 p-8 md:p-12 items-center">
           <div className="space-y-6">
-            <div className="inline-block rounded-lg bg-white/10 backdrop-blur-sm px-4 py-2 text-white font-medium text-sm">Ready for the challenge?</div>
+            <div className="inline-block rounded-lg bg-white/10 backdrop-blur-sm px-4 py-2 text-white font-medium text-sm">
+              Ready for the challenge?
+            </div>
 
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
               Join the ultimate <span className="text-yellow-200">quiz competition!</span>
             </h2>
 
-            <p className="text-indigo-100 text-lg max-w-md">Compete with players from around the world, showcase your knowledge, and win amazing prizes in our tournaments.</p>
+            <p className="text-indigo-100 text-lg max-w-md">
+              Compete with players from around the world, showcase your knowledge, and win amazing
+              prizes in our tournaments.
+            </p>
 
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
@@ -30,7 +35,9 @@ export function TournamentCta() {
                     <Trophy className="h-4 w-4 text-yellow-200" />
                   </div>
                 </div>
-                <p className="text-indigo-100">Win exclusive prizes and climb the global leaderboard</p>
+                <p className="text-indigo-100">
+                  Win exclusive prizes and climb the global leaderboard
+                </p>
               </div>
 
               <div className="flex items-start space-x-3">
@@ -105,9 +112,15 @@ export function TournamentCta() {
 
               {/* Podium */}
               <div className="relative mx-auto mt-8 flex items-end justify-center space-x-2">
-                <div className="w-16 h-16 bg-indigo-300 rounded-t-md flex items-center justify-center text-indigo-800 font-bold text-lg">2</div>
-                <div className="w-16 h-24 bg-yellow-300 rounded-t-md flex items-center justify-center text-yellow-800 font-bold text-lg">1</div>
-                <div className="w-16 h-12 bg-purple-300 rounded-t-md flex items-center justify-center text-purple-800 font-bold text-lg">3</div>
+                <div className="w-16 h-16 bg-indigo-300 rounded-t-md flex items-center justify-center text-indigo-800 font-bold text-lg">
+                  2
+                </div>
+                <div className="w-16 h-24 bg-yellow-300 rounded-t-md flex items-center justify-center text-yellow-800 font-bold text-lg">
+                  1
+                </div>
+                <div className="w-16 h-12 bg-purple-300 rounded-t-md flex items-center justify-center text-purple-800 font-bold text-lg">
+                  3
+                </div>
               </div>
             </div>
           </div>

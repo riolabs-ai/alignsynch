@@ -1,7 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Bell, DollarSign, Loader2, MessageSquare, Trophy, Users } from "lucide-react";
@@ -54,7 +61,9 @@ export function NotificationSettings() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Notification Preferences</h3>
-        <p className="text-sm text-muted-foreground">Manage how and when you receive notifications from QuizHub .</p>
+        <p className="text-sm text-muted-foreground">
+          Manage how and when you receive notifications from QuizHub .
+        </p>
       </div>
 
       <Card>
@@ -68,10 +77,15 @@ export function NotificationSettings() {
               <MessageSquare className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Quiz Comments</p>
-                <p className="text-sm text-muted-foreground">Receive emails when someone comments on your quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive emails when someone comments on your quizzes.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.email.quizComments} onCheckedChange={(value) => handleToggle("email", "quizComments", value)} />
+            <Switch
+              checked={notifications.email.quizComments}
+              onCheckedChange={(value) => handleToggle("email", "quizComments", value)}
+            />
           </div>
 
           <Separator />
@@ -81,10 +95,15 @@ export function NotificationSettings() {
               <Bell className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Quiz Likes</p>
-                <p className="text-sm text-muted-foreground">Receive emails when someone likes your quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive emails when someone likes your quizzes.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.email.quizLikes} onCheckedChange={(value) => handleToggle("email", "quizLikes", value)} />
+            <Switch
+              checked={notifications.email.quizLikes}
+              onCheckedChange={(value) => handleToggle("email", "quizLikes", value)}
+            />
           </div>
 
           <Separator />
@@ -94,10 +113,15 @@ export function NotificationSettings() {
               <Users className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">New Followers</p>
-                <p className="text-sm text-muted-foreground">Receive emails when someone follows you.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive emails when someone follows you.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.email.newFollowers} onCheckedChange={(value) => handleToggle("email", "newFollowers", value)} />
+            <Switch
+              checked={notifications.email.newFollowers}
+              onCheckedChange={(value) => handleToggle("email", "newFollowers", value)}
+            />
           </div>
 
           <Separator />
@@ -107,10 +131,15 @@ export function NotificationSettings() {
               <Trophy className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Tournament Updates</p>
-                <p className="text-sm text-muted-foreground">Receive emails about tournaments you've joined.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive emails about tournaments you've joined.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.email.tournamentUpdates} onCheckedChange={(value) => handleToggle("email", "tournamentUpdates", value)} />
+            <Switch
+              checked={notifications.email.tournamentUpdates}
+              onCheckedChange={(value) => handleToggle("email", "tournamentUpdates", value)}
+            />
           </div>
 
           <Separator />
@@ -120,10 +149,15 @@ export function NotificationSettings() {
               <DollarSign className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Earnings Updates</p>
-                <p className="text-sm text-muted-foreground">Receive emails about your earnings and payouts.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive emails about your earnings and payouts.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.email.earnings} onCheckedChange={(value) => handleToggle("email", "earnings", value)} />
+            <Switch
+              checked={notifications.email.earnings}
+              onCheckedChange={(value) => handleToggle("email", "earnings", value)}
+            />
           </div>
 
           <Separator />
@@ -133,10 +167,15 @@ export function NotificationSettings() {
               <Bell className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Newsletter</p>
-                <p className="text-sm text-muted-foreground">Receive our monthly newsletter with tips and updates.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive our monthly newsletter with tips and updates.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.email.newsletter} onCheckedChange={(value) => handleToggle("email", "newsletter", value)} />
+            <Switch
+              checked={notifications.email.newsletter}
+              onCheckedChange={(value) => handleToggle("email", "newsletter", value)}
+            />
           </div>
 
           <Separator />
@@ -146,10 +185,15 @@ export function NotificationSettings() {
               <Bell className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Product Updates</p>
-                <p className="text-sm text-muted-foreground">Receive emails about new features and improvements.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive emails about new features and improvements.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.email.productUpdates} onCheckedChange={(value) => handleToggle("email", "productUpdates", value)} />
+            <Switch
+              checked={notifications.email.productUpdates}
+              onCheckedChange={(value) => handleToggle("email", "productUpdates", value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -165,10 +209,15 @@ export function NotificationSettings() {
               <MessageSquare className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Quiz Comments</p>
-                <p className="text-sm text-muted-foreground">Receive push notifications when someone comments on your quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive push notifications when someone comments on your quizzes.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.push.quizComments} onCheckedChange={(value) => handleToggle("push", "quizComments", value)} />
+            <Switch
+              checked={notifications.push.quizComments}
+              onCheckedChange={(value) => handleToggle("push", "quizComments", value)}
+            />
           </div>
 
           <Separator />
@@ -178,10 +227,15 @@ export function NotificationSettings() {
               <Bell className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Quiz Likes</p>
-                <p className="text-sm text-muted-foreground">Receive push notifications when someone likes your quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive push notifications when someone likes your quizzes.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.push.quizLikes} onCheckedChange={(value) => handleToggle("push", "quizLikes", value)} />
+            <Switch
+              checked={notifications.push.quizLikes}
+              onCheckedChange={(value) => handleToggle("push", "quizLikes", value)}
+            />
           </div>
 
           <Separator />
@@ -191,10 +245,15 @@ export function NotificationSettings() {
               <Users className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">New Followers</p>
-                <p className="text-sm text-muted-foreground">Receive push notifications when someone follows you.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive push notifications when someone follows you.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.push.newFollowers} onCheckedChange={(value) => handleToggle("push", "newFollowers", value)} />
+            <Switch
+              checked={notifications.push.newFollowers}
+              onCheckedChange={(value) => handleToggle("push", "newFollowers", value)}
+            />
           </div>
 
           <Separator />
@@ -204,10 +263,15 @@ export function NotificationSettings() {
               <Trophy className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Tournament Updates</p>
-                <p className="text-sm text-muted-foreground">Receive push notifications about tournaments you've joined.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive push notifications about tournaments you've joined.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.push.tournamentUpdates} onCheckedChange={(value) => handleToggle("push", "tournamentUpdates", value)} />
+            <Switch
+              checked={notifications.push.tournamentUpdates}
+              onCheckedChange={(value) => handleToggle("push", "tournamentUpdates", value)}
+            />
           </div>
 
           <Separator />
@@ -217,10 +281,15 @@ export function NotificationSettings() {
               <DollarSign className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Earnings Updates</p>
-                <p className="text-sm text-muted-foreground">Receive push notifications about your earnings and payouts.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive push notifications about your earnings and payouts.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.push.earnings} onCheckedChange={(value) => handleToggle("push", "earnings", value)} />
+            <Switch
+              checked={notifications.push.earnings}
+              onCheckedChange={(value) => handleToggle("push", "earnings", value)}
+            />
           </div>
 
           <Separator />
@@ -230,10 +299,15 @@ export function NotificationSettings() {
               <Bell className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Product Updates</p>
-                <p className="text-sm text-muted-foreground">Receive push notifications about new features and improvements.</p>
+                <p className="text-sm text-muted-foreground">
+                  Receive push notifications about new features and improvements.
+                </p>
               </div>
             </div>
-            <Switch checked={notifications.push.productUpdates} onCheckedChange={(value) => handleToggle("push", "productUpdates", value)} />
+            <Switch
+              checked={notifications.push.productUpdates}
+              onCheckedChange={(value) => handleToggle("push", "productUpdates", value)}
+            />
           </div>
         </CardContent>
         <CardFooter>

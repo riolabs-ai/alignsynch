@@ -5,7 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { articlesData, KnowledgeBaseArticle } from "@/data/knowledge-base-data";
-import { ArrowRight, Bookmark, BookOpen, ChevronLeft, Clock, Printer, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
+import {
+  ArrowRight,
+  Bookmark,
+  BookOpen,
+  ChevronLeft,
+  Clock,
+  Printer,
+  Share2,
+  ThumbsDown,
+  ThumbsUp,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -31,7 +41,9 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
         setArticle(foundArticle);
 
         // Get related articles from the same category
-        const related = articlesData.filter((a) => a.category === foundArticle.category && a.id !== articleId).slice(0, 3);
+        const related = articlesData
+          .filter((a) => a.category === foundArticle.category && a.id !== articleId)
+          .slice(0, 3);
 
         setRelatedArticles(related);
       }
@@ -92,11 +104,17 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
     <div className="container max-w-4xl mx-auto py-4 ">
       {/* Breadcrumb */}
       <div className="flex items-center text-sm mb-6">
-        <Link href="/support" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link
+          href="/support"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           Support Center
         </Link>
         <ChevronLeft className="h-4 w-4 mx-2 text-muted-foreground rotate-180" />
-        <Link href="/support" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link
+          href="/support"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           Knowledge Base
         </Link>
         <ChevronLeft className="h-4 w-4 mx-2 text-muted-foreground rotate-180" />
@@ -156,11 +174,21 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
         <div className="mt-8">
           <h3 className="text-lg font-medium mb-4">Was this article helpful?</h3>
           <div className="flex space-x-4">
-            <Button variant={helpful === true ? "default" : "outline"} size="sm" onClick={() => setHelpful(true)} className="flex items-center">
+            <Button
+              variant={helpful === true ? "default" : "outline"}
+              size="sm"
+              onClick={() => setHelpful(true)}
+              className="flex items-center"
+            >
               <ThumbsUp className="h-4 w-4 mr-2" />
               Yes, it helped
             </Button>
-            <Button variant={helpful === false ? "default" : "outline"} size="sm" onClick={() => setHelpful(false)} className="flex items-center">
+            <Button
+              variant={helpful === false ? "default" : "outline"}
+              size="sm"
+              onClick={() => setHelpful(false)}
+              className="flex items-center"
+            >
               <ThumbsDown className="h-4 w-4 mr-2" />
               No, I need more help
             </Button>
@@ -204,7 +232,10 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
           <h2 className="text-xl font-bold mb-4">Related Articles</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedArticles.map((relatedArticle) => (
-              <Card key={relatedArticle.id} className="overflow-hidden border hover:border-primary/50 transition-colors">
+              <Card
+                key={relatedArticle.id}
+                className="overflow-hidden border hover:border-primary/50 transition-colors"
+              >
                 <Link href={`/support/articles/${relatedArticle.id}`} className="block p-4">
                   <div className="flex items-center mb-2">
                     <BookOpen className="h-4 w-4 mr-2 text-primary" />
@@ -213,7 +244,9 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
                     </Badge>
                   </div>
                   <h3 className="font-medium mb-2">{relatedArticle.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{relatedArticle.description}</p>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {relatedArticle.description}
+                  </p>
                   <div className="flex items-center text-primary text-sm">
                     <span>Read article</span>
                     <ArrowRight className="ml-1 h-3 w-3" />

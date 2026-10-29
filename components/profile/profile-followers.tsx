@@ -1,51 +1,51 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { type User, getUserFollowers } from "@/lib/data/users"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { UserCheck, UserPlus, Users } from "lucide-react"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { type User, getUserFollowers } from "@/lib/data/users";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { UserCheck, UserPlus, Users } from "lucide-react";
 
 interface ProfileFollowersProps {
-  userId: string
+  userId: string;
 }
 
 export function ProfileFollowers({ userId }: ProfileFollowersProps) {
-  const [followers, setFollowers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
-  const [followingStatus, setFollowingStatus] = useState<Record<string, boolean>>({})
+  const [followers, setFollowers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [followingStatus, setFollowingStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchFollowers = async () => {
       try {
-        const data = await getUserFollowers(userId)
-        setFollowers(data)
+        const data = await getUserFollowers(userId);
+        setFollowers(data);
 
         // Initialize following status
-        const initialStatus: Record<string, boolean> = {}
+        const initialStatus: Record<string, boolean> = {};
         data.forEach((follower) => {
-          initialStatus[follower.id] = Math.random() > 0.5 // Random for demo
-        })
-        setFollowingStatus(initialStatus)
+          initialStatus[follower.id] = Math.random() > 0.5; // Random for demo
+        });
+        setFollowingStatus(initialStatus);
       } catch (error) {
-        console.error("Failed to fetch followers:", error)
+        console.error("Failed to fetch followers:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchFollowers()
-  }, [userId])
+    fetchFollowers();
+  }, [userId]);
 
   const handleFollowToggle = (followerId: string) => {
     setFollowingStatus((prev) => ({
       ...prev,
       [followerId]: !prev[followerId],
-    }))
-  }
+    }));
+  };
 
   if (loading) {
     return (
@@ -54,7 +54,7 @@ export function ProfileFollowers({ userId }: ProfileFollowersProps) {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -69,7 +69,10 @@ export function ProfileFollowers({ userId }: ProfileFollowersProps) {
                   <AvatarFallback>{follower.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <Link href={`/profile/${follower.username}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/profile/${follower.username}`}
+                    className="font-medium hover:underline"
+                  >
                     {follower.name}
                   </Link>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -123,5 +126,5 @@ export function ProfileFollowers({ userId }: ProfileFollowersProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

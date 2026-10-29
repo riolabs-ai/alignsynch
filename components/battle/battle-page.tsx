@@ -161,11 +161,25 @@ export function BattlePage() {
     <div className="container mx-auto ">
       {stage === "selection" && <BattleModeSelection onModeSelect={handleModeSelect} />}
 
-      {stage === "lobby" && <BattleLobby battleState={battleState} onStartBattle={handleStartBattle} onCancel={handleReturnHome} />}
+      {stage === "lobby" && (
+        <BattleLobby
+          battleState={battleState}
+          onStartBattle={handleStartBattle}
+          onCancel={handleReturnHome}
+        />
+      )}
 
-      {stage === "active" && <ActiveBattle battleState={battleState} onBattleComplete={handleBattleComplete} />}
+      {stage === "active" && (
+        <ActiveBattle battleState={battleState} onBattleComplete={handleBattleComplete} />
+      )}
 
-      {stage === "results" && <BattleResults battleState={battleState} onRematch={handleRematch} onReturnHome={handleReturnHome} />}
+      {stage === "results" && (
+        <BattleResults
+          battleState={battleState}
+          onRematch={handleRematch}
+          onReturnHome={handleReturnHome}
+        />
+      )}
     </div>
   );
 }

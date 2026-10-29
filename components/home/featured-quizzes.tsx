@@ -160,7 +160,10 @@ export function FeaturedQuizzes() {
   };
 
   // Filter quizzes based on selected filter
-  const filteredQuizzes = filter === "all" ? featuredQuizzes : featuredQuizzes.filter((quiz) => quiz.badge.type === filter);
+  const filteredQuizzes =
+    filter === "all"
+      ? featuredQuizzes
+      : featuredQuizzes.filter((quiz) => quiz.badge.type === filter);
 
   return (
     <section className="space-y-4">
@@ -170,7 +173,12 @@ export function FeaturedQuizzes() {
           <p className="text-muted-foreground">Specially selected quizzes you don't want to miss</p>
         </div>
 
-        <Tabs defaultValue="all" value={filter} onValueChange={setFilter} className="w-full sm:w-auto">
+        <Tabs
+          defaultValue="all"
+          value={filter}
+          onValueChange={setFilter}
+          className="w-full sm:w-auto"
+        >
           <TabsList className="grid grid-cols-4 w-full sm:w-auto">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="hot">Hot</TabsTrigger>
@@ -184,14 +192,23 @@ export function FeaturedQuizzes() {
         {filteredQuizzes.map((quiz) => (
           <Card key={quiz.id} className="overflow-hidden group">
             <div className="relative overflow-hidden">
-              <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <Image
+                width={600}
+                height={350}
+                src={quiz.image || "/placeholder.svg"}
+                alt={quiz.title}
+                className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
                 <h3 className="text-white font-semibold line-clamp-1">{quiz.title}</h3>
                 <p className="text-white/80 text-sm">{quiz.category}</p>
               </div>
 
-              <Badge variant={getBadgeVariant(quiz.badge.type)} className="absolute top-2 right-2 flex items-center">
+              <Badge
+                variant={getBadgeVariant(quiz.badge.type)}
+                className="absolute top-2 right-2 flex items-center"
+              >
                 {getBadgeIcon(quiz.badge.type)}
                 {quiz.badge.label}
               </Badge>
@@ -207,7 +224,13 @@ export function FeaturedQuizzes() {
             <CardContent className="p-4 xl:p-6 space-y-4 xl:space-y-6">
               <div className="flex justify-between items-center gap-2">
                 <div className="flex items-center gap-3">
-                  <Image src={"/avatars/alex.png"} width={36} height={36} className="size-9 object-cover object-center rounded-full" alt="creator" />
+                  <Image
+                    src={"/avatars/alex.png"}
+                    width={36}
+                    height={36}
+                    className="size-9 object-cover object-center rounded-full"
+                    alt="creator"
+                  />
                   <div className="flex items-centere gap-2">
                     <span className="font-medium">Alex Smith</span>
                     <div className="flex items-center">
@@ -226,20 +249,47 @@ export function FeaturedQuizzes() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center gap-3">
-                  <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} showValue color={quiz.spotsLeft < 20 ? "hsl(var(--destructive))" : quiz.spotsLeft < 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                  <CircularProgress
+                    value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                    size={36}
+                    strokeWidth={3}
+                    showValue
+                    color={
+                      quiz.spotsLeft < 20
+                        ? "hsl(var(--destructive))"
+                        : quiz.spotsLeft < 50
+                          ? "hsl(var(--warning))"
+                          : "hsl(var(--primary))"
+                    }
+                  />
                   <div>
                     <div className="flex items-center gap-1.5">
                       <div className="flex -space-x-2">
                         {quiz.recentPlayers.slice(0, 3).map((player, index) => (
                           <Avatar key={index} className="border-2 border-background h-6 w-6">
-                            <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
+                            <AvatarImage
+                              src={player.avatar || "/placeholder.svg"}
+                              alt={player.name}
+                            />
                             <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
                           </Avatar>
                         ))}
                       </div>
-                      <span className="text-sm font-medium">{formatPlayerCount(quiz.players)} players joined</span>
+                      <span className="text-sm font-medium">
+                        {formatPlayerCount(quiz.players)} players joined
+                      </span>
                     </div>
-                    <div className="flex items-center justify-between">{quiz.spotsLeft < 50 ? <p className="text-xs font-medium text-amber-600">Only {quiz.spotsLeft} spots left</p> : <p className="text-xs text-muted-foreground">{quiz.spotsLeft} spots available</p>}</div>
+                    <div className="flex items-center justify-between">
+                      {quiz.spotsLeft < 50 ? (
+                        <p className="text-xs font-medium text-amber-600">
+                          Only {quiz.spotsLeft} spots left
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {quiz.spotsLeft} spots available
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

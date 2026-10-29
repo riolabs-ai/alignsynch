@@ -43,7 +43,16 @@ interface GameState {
 }
 
 // Action types
-type GameAction = { type: "SELECT_ANSWER"; payload: number } | { type: "SUBMIT_ANSWER"; payload: { answerIndex: number | null; correctAnswer: number; timeLeft: number } } | { type: "NEXT_QUESTION"; payload: { timePerQuestion: number } } | { type: "TICK_TIMER" } | { type: "UPDATE_PLAYER_RANKINGS"; payload: Player[] } | { type: "RESET_FEEDBACK" };
+type GameAction =
+  | { type: "SELECT_ANSWER"; payload: number }
+  | {
+      type: "SUBMIT_ANSWER";
+      payload: { answerIndex: number | null; correctAnswer: number; timeLeft: number };
+    }
+  | { type: "NEXT_QUESTION"; payload: { timePerQuestion: number } }
+  | { type: "TICK_TIMER" }
+  | { type: "UPDATE_PLAYER_RANKINGS"; payload: Player[] }
+  | { type: "RESET_FEEDBACK" };
 
 // Initial state
 const createInitialState = (battleState: BattleState): GameState => ({
@@ -297,15 +306,22 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
           <h3 className="text-sm font-medium mb-2">Live Rankings</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
             {state.playerRankings.slice(0, 5).map((player, index) => (
-              <div key={player.id} className={`flex flex-col items-center p-2 rounded-lg border ${player.isCurrentUser ? "border-primary bg-primary/5" : "border-border"}`}>
+              <div
+                key={player.id}
+                className={`flex flex-col items-center p-2 rounded-lg border ${player.isCurrentUser ? "border-primary bg-primary/5" : "border-border"}`}
+              >
                 <div className="relative">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
                     <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-bold">{index + 1}</div>
+                  <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-bold">
+                    {index + 1}
+                  </div>
                 </div>
-                <div className="mt-1 text-xs font-medium truncate w-full text-center">{player.name}</div>
+                <div className="mt-1 text-xs font-medium truncate w-full text-center">
+                  {player.name}
+                </div>
                 <div className="text-xs text-muted-foreground">{player.score} pts</div>
               </div>
             ))}
@@ -318,12 +334,25 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
           <div className="text-xl font-bold mb-6">{currentQ.text}</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {currentQ.options.map((option, index) => (
-              <Button key={index} variant={state.selectedAnswer === index ? "default" : "outline"} className={`h-auto py-4 px-4 justify-start text-left ${state.showFeedback && index === currentQ.correctAnswer ? "bg-green-500 hover:bg-green-500 text-white" : state.showFeedback && state.selectedAnswer === index && index !== currentQ.correctAnswer ? "bg-red-500 hover:bg-red-500 text-white" : ""}`} onClick={() => handleAnswerSelect(index)}>
+              <Button
+                key={index}
+                variant={state.selectedAnswer === index ? "default" : "outline"}
+                className={`h-auto py-4 px-4 justify-start text-left ${state.showFeedback && index === currentQ.correctAnswer ? "bg-green-500 hover:bg-green-500 text-white" : state.showFeedback && state.selectedAnswer === index && index !== currentQ.correctAnswer ? "bg-red-500 hover:bg-red-500 text-white" : ""}`}
+                onClick={() => handleAnswerSelect(index)}
+              >
                 <div className="flex items-center w-full">
-                  <div className="mr-3 h-6 w-6 rounded-full border flex items-center justify-center">{String.fromCharCode(65 + index)}</div>
+                  <div className="mr-3 h-6 w-6 rounded-full border flex items-center justify-center">
+                    {String.fromCharCode(65 + index)}
+                  </div>
                   <span>{option}</span>
-                  {state.showFeedback && index === currentQ.correctAnswer && <CheckCircle className="ml-auto h-5 w-5 text-white" />}
-                  {state.showFeedback && state.selectedAnswer === index && index !== currentQ.correctAnswer && <XCircle className="ml-auto h-5 w-5 text-white" />}
+                  {state.showFeedback && index === currentQ.correctAnswer && (
+                    <CheckCircle className="ml-auto h-5 w-5 text-white" />
+                  )}
+                  {state.showFeedback &&
+                    state.selectedAnswer === index &&
+                    index !== currentQ.correctAnswer && (
+                      <XCircle className="ml-auto h-5 w-5 text-white" />
+                    )}
                 </div>
               </Button>
             ))}
@@ -338,19 +367,27 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
             <div className="font-bold text-xl">{state.score}</div>
           </div>
           {state.streak > 1 && (
-            <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20">
+            <Badge
+              variant="outline"
+              className="bg-orange-500/10 text-orange-500 border-orange-500/20"
+            >
               {state.streak}x Streak!
             </Badge>
           )}
         </div>
 
-        <Button onClick={() => handleAnswerSubmit(state.selectedAnswer)} disabled={state.selectedAnswer === null || state.showFeedback}>
+        <Button
+          onClick={() => handleAnswerSubmit(state.selectedAnswer)}
+          disabled={state.selectedAnswer === null || state.showFeedback}
+        >
           Submit Answer
         </Button>
       </div>
 
       {state.showFeedback && (
-        <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${state.isCorrect ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
+        <div
+          className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${state.isCorrect ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}
+        >
           {state.isCorrect ? (
             <>
               <CheckCircle className="h-5 w-5" />
@@ -359,7 +396,9 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
           ) : (
             <>
               <AlertCircle className="h-5 w-5" />
-              <span>Incorrect! The correct answer was {currentQ.options[currentQ.correctAnswer]}</span>
+              <span>
+                Incorrect! The correct answer was {currentQ.options[currentQ.correctAnswer]}
+              </span>
             </>
           )}
         </div>

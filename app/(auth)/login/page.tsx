@@ -23,7 +23,9 @@ export default function AuthPage() {
               <BookOpen className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-4xl font-bold mb-4">Welcome to QuizHub</h2>
-            <p className="text-xl text-white/90 leading-relaxed">Challenge your mind with thousands of engaging quizzes across multiple categories</p>
+            <p className="text-xl text-white/90 leading-relaxed">
+              Challenge your mind with thousands of engaging quizzes across multiple categories
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-4 w-full max-w-md">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
@@ -58,13 +60,23 @@ export default function AuthPage() {
               <Label htmlFor="email" className="text-sm font-medium ">
                 Email
               </Label>
-              <Input id="email" type="email" placeholder="Enter your email" className="h-12 border-gray-300 " />
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                className="h-12 border-gray-300 "
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium ">
                 Password
               </Label>
-              <Input id="password" type="password" placeholder="Enter your password" className="h-12 border-gray-300 " />
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                className="h-12 border-gray-300 "
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">

@@ -8,11 +8,21 @@ export function PricingCta() {
         <div className="max-w-4xl mx-auto bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl overflow-hidden shadow-xl">
           <div className="grid md:grid-cols-2">
             <div className="p-8 md:p-12">
-              <h2 className="text-3xl font-bold text-white mb-4">Ready to create amazing quizzes?</h2>
-              <p className="text-purple-100 mb-6">Join thousands of educators, content creators, and businesses who are engaging their audience with interactive quizzes.</p>
+              <h2 className="text-3xl font-bold text-white mb-4">
+                Ready to create amazing quizzes?
+              </h2>
+              <p className="text-purple-100 mb-6">
+                Join thousands of educators, content creators, and businesses who are engaging their
+                audience with interactive quizzes.
+              </p>
 
               <ul className="space-y-3 mb-8">
-                {["No credit card required to start", "14-day free trial on all paid plans", "Cancel anytime, no questions asked", "Dedicated support to help you succeed"].map((item, i) => (
+                {[
+                  "No credit card required to start",
+                  "14-day free trial on all paid plans",
+                  "Cancel anytime, no questions asked",
+                  "Dedicated support to help you succeed",
+                ].map((item, i) => (
                   <li key={i} className="flex items-center text-white">
                     <Check className="h-5 w-5 mr-2 text-purple-200" />
                     <span>{item}</span>

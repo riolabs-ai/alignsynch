@@ -4,12 +4,40 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { BarChart3, Clock, DollarSign, Edit, Eye, Grid3X3, List, MoreHorizontal, Plus, Search, Share2, Trash2, Users } from "lucide-react";
+import {
+  BarChart3,
+  Clock,
+  DollarSign,
+  Edit,
+  Eye,
+  Grid3X3,
+  List,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Share2,
+  Trash2,
+  Users,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -194,7 +222,10 @@ export function MyQuizzes() {
     })
     .filter((quiz) => {
       if (!searchQuery) return true;
-      return quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) || quiz.category.toLowerCase().includes(searchQuery.toLowerCase());
+      return (
+        quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quiz.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     });
 
   return (
@@ -216,7 +247,12 @@ export function MyQuizzes() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search your quizzes..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <Input
+            placeholder="Search your quizzes..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <div className="flex items-center gap-2">
@@ -251,11 +287,21 @@ export function MyQuizzes() {
           </Select>
 
           <div className="flex items-center rounded-md border bg-muted/40">
-            <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("grid")}>
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode("grid")}
+            >
               <Grid3X3 className="h-4 w-4" />
               <span className="sr-only">Grid view</span>
             </Button>
-            <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode("list")}
+            >
               <List className="h-4 w-4" />
               <span className="sr-only">List view</span>
             </Button>
@@ -279,7 +325,11 @@ export function MyQuizzes() {
             <Search className="h-10 w-10 text-muted-foreground" />
           </div>
           <h3 className="text-xl font-semibold mb-2">No quizzes found</h3>
-          <p className="text-muted-foreground max-w-md mb-6">{searchQuery ? `No quizzes match your search "${searchQuery}". Try a different search term.` : "You don't have any quizzes with the selected filter. Try a different filter or create a new quiz."}</p>
+          <p className="text-muted-foreground max-w-md mb-6">
+            {searchQuery
+              ? `No quizzes match your search "${searchQuery}". Try a different search term.`
+              : "You don't have any quizzes with the selected filter. Try a different filter or create a new quiz."}
+          </p>
           <Button asChild>
             <Link href="/create/editor" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -293,14 +343,29 @@ export function MyQuizzes() {
           {viewMode === "grid" && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredQuizzes.map((quiz) => (
-                <Card key={quiz.id} className={cn("overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600", quiz.status === "draft" && "border-dashed")}>
+                <Card
+                  key={quiz.id}
+                  className={cn(
+                    "overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600",
+                    quiz.status === "draft" && "border-dashed",
+                  )}
+                >
                   {/* Image with overlay */}
                   <div className="relative h-48">
-                    <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-full w-full object-cover" />
+                    <Image
+                      width={600}
+                      height={350}
+                      src={quiz.image || "/placeholder.svg"}
+                      alt={quiz.title}
+                      className="h-full w-full object-cover"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                       <div className="w-full">
                         <div className="flex justify-between items-center mb-2">
-                          <Badge variant={getDifficultyVariant(quiz.difficulty)} className="font-medium">
+                          <Badge
+                            variant={getDifficultyVariant(quiz.difficulty)}
+                            className="font-medium"
+                          >
                             {quiz.difficulty}
                           </Badge>
                           <Badge variant={getStatusVariant(quiz.status)} className="capitalize">
@@ -318,7 +383,9 @@ export function MyQuizzes() {
                       <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
                         {quiz.category}
                       </Badge>
-                      <div className="text-xs text-muted-foreground">Created {formatDate(quiz.createdAt)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Created {formatDate(quiz.createdAt)}
+                      </div>
                     </div>
 
                     {/* Stats */}
@@ -333,7 +400,9 @@ export function MyQuizzes() {
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-800 rounded-md p-2">
                         <p className="text-xs text-muted-foreground mb-1">Revenue</p>
-                        <p className="font-medium text-green-600">${quiz.stats.revenue.toFixed(0)}</p>
+                        <p className="font-medium text-green-600">
+                          ${quiz.stats.revenue.toFixed(0)}
+                        </p>
                       </div>
                     </div>
 
@@ -346,7 +415,20 @@ export function MyQuizzes() {
                             {quiz.players} / {quiz.maxPlayers}
                           </span>
                         </div>
-                        <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} showValue={true} valueSize={10} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                        <CircularProgress
+                          value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                          size={36}
+                          strokeWidth={3}
+                          showValue={true}
+                          valueSize={10}
+                          color={
+                            quiz.spotsLeft <= 20
+                              ? "hsl(var(--destructive))"
+                              : quiz.spotsLeft <= 50
+                                ? "hsl(var(--warning))"
+                                : "hsl(var(--primary))"
+                          }
+                        />
                       </div>
                     )}
                   </CardContent>
@@ -395,15 +477,33 @@ export function MyQuizzes() {
           {viewMode === "list" && (
             <div className="space-y-4">
               {filteredQuizzes.map((quiz) => (
-                <Card key={quiz.id} className={cn("overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600", quiz.status === "draft" && "border-dashed")}>
+                <Card
+                  key={quiz.id}
+                  className={cn(
+                    "overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600",
+                    quiz.status === "draft" && "border-dashed",
+                  )}
+                >
                   <div className="flex flex-col sm:flex-row">
                     {/* Image */}
                     <div className="relative h-48 sm:h-auto sm:w-48 md:w-64">
-                      <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-full w-full object-cover" />
-                      <Badge variant={getDifficultyVariant(quiz.difficulty)} className="absolute top-2 left-2 font-medium">
+                      <Image
+                        width={600}
+                        height={350}
+                        src={quiz.image || "/placeholder.svg"}
+                        alt={quiz.title}
+                        className="h-full w-full object-cover"
+                      />
+                      <Badge
+                        variant={getDifficultyVariant(quiz.difficulty)}
+                        className="absolute top-2 left-2 font-medium"
+                      >
                         {quiz.difficulty}
                       </Badge>
-                      <Badge variant={getStatusVariant(quiz.status)} className="absolute top-2 right-2 capitalize">
+                      <Badge
+                        variant={getStatusVariant(quiz.status)}
+                        className="absolute top-2 right-2 capitalize"
+                      >
                         {quiz.status}
                       </Badge>
                     </div>
@@ -456,15 +556,32 @@ export function MyQuizzes() {
                             <DollarSign className="h-3.5 w-3.5" />
                             <span>Revenue</span>
                           </div>
-                          <p className="font-medium text-green-600">${quiz.stats.revenue.toFixed(0)}</p>
+                          <p className="font-medium text-green-600">
+                            ${quiz.stats.revenue.toFixed(0)}
+                          </p>
                         </div>
                       </div>
 
                       {quiz.status !== "draft" && (
                         <div className="mt-auto flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-600 dark:text-slate-400">{quiz.spotsLeft} spots left</span>
-                            <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} showValue={true} valueSize={10} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                              {quiz.spotsLeft} spots left
+                            </span>
+                            <CircularProgress
+                              value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                              size={36}
+                              strokeWidth={3}
+                              showValue={true}
+                              valueSize={10}
+                              color={
+                                quiz.spotsLeft <= 20
+                                  ? "hsl(var(--destructive))"
+                                  : quiz.spotsLeft <= 50
+                                    ? "hsl(var(--warning))"
+                                    : "hsl(var(--primary))"
+                              }
+                            />
                           </div>
 
                           <div className="flex items-center gap-2">

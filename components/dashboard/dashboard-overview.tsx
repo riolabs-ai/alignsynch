@@ -172,7 +172,9 @@ export function DashboardOverview() {
               </div>
               <div className="border-l-2 border-blue-500 pl-3">
                 <p className="text-sm font-medium">New Referral</p>
-                <p className="text-xs text-muted-foreground">User "JohnDoe" signed up using your link</p>
+                <p className="text-xs text-muted-foreground">
+                  User "JohnDoe" signed up using your link
+                </p>
                 <p className="text-xs text-muted-foreground">2 days ago</p>
               </div>
               <div className="border-l-2 border-orange-500 pl-3">

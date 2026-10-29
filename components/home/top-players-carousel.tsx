@@ -175,23 +175,40 @@ export function TopPlayersCarousel() {
       </div>
 
       <div className="w-full">
-        <Swiper slidesPerView={"auto"} spaceBetween={16} navigation={{ nextEl: ".next-player", prevEl: ".prev-player" }} modules={[Navigation, Autoplay]} loop>
+        <Swiper
+          slidesPerView={"auto"}
+          spaceBetween={16}
+          navigation={{ nextEl: ".next-player", prevEl: ".prev-player" }}
+          modules={[Navigation, Autoplay]}
+          loop
+        >
           {topPlayers.map((player) => (
             <SwiperSlide key={player.id} className="max-w-[340px]">
               <Card className="overflow-hidden h-full shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="!p-0">
                   <div className="relative">
-                    <Image src={cardCover} className="w-full object-cover size-full" alt="cover img" />
+                    <Image
+                      src={cardCover}
+                      className="w-full object-cover size-full"
+                      alt="cover img"
+                    />
                     {/* Avatar */}
                     <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">
                       <Avatar className="h-20 w-20 border-4 border-white shadow-md bg-background">
-                        <AvatarImage src={player.avatar || "/placeholder.svg"} className="object-cover object-center" alt={player.name} />
+                        <AvatarImage
+                          src={player.avatar || "/placeholder.svg"}
+                          className="object-cover object-center"
+                          alt={player.name}
+                        />
                         <AvatarFallback>{player.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                     </div>
 
                     {/* Badge */}
-                    <Badge variant={getBadgeVariant(player.rankTitle) as any} className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full">
+                    <Badge
+                      variant={getBadgeVariant(player.rankTitle) as any}
+                      className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full"
+                    >
                       {player.rankTitle}
                     </Badge>
                   </div>
@@ -206,7 +223,14 @@ export function TopPlayersCarousel() {
 
                     {/* Country */}
                     <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-4 mt-1">
-                      <Image width={16} height={12} unoptimized src={`https://flagcdn.com/16x12/${player.countryCode}.png`} alt={player.country} className="h-3" />
+                      <Image
+                        width={16}
+                        height={12}
+                        unoptimized
+                        src={`https://flagcdn.com/16x12/${player.countryCode}.png`}
+                        alt={player.country}
+                        className="h-3"
+                      />
                       <span>{player.country}</span>
                     </div>
 
@@ -214,7 +238,9 @@ export function TopPlayersCarousel() {
                     <div className="grid grid-cols-3 gap-4 text-center mb-5">
                       <div className="space-y-1">
                         <div className="flex items-center justify-center">
-                          <div className="h-6 w-6 rounded-full bg-muted text-xs font-semibold flex items-center justify-center">{player.rank}</div>
+                          <div className="h-6 w-6 rounded-full bg-muted text-xs font-semibold flex items-center justify-center">
+                            {player.rank}
+                          </div>
                         </div>
                         <p className="text-xs text-muted-foreground">Rank</p>
                       </div>
@@ -223,7 +249,9 @@ export function TopPlayersCarousel() {
                         <p className="text-xs text-muted-foreground">Wins</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="font-semibold text-green-600">${player.winAmount.toLocaleString()}</p>
+                        <p className="font-semibold text-green-600">
+                          ${player.winAmount.toLocaleString()}
+                        </p>
                         <p className="text-xs text-muted-foreground">Earned</p>
                       </div>
                     </div>

@@ -11,7 +11,11 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function GenerateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function GenerateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = use(params);
   const tip = getTipBySlug(slug);
 

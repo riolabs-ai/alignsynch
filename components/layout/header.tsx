@@ -1,13 +1,36 @@
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { recentMessages } from "@/data/chat-data";
 import { notifications } from "@/data/notifications";
 import { mockSearchData } from "@/data/searchdata";
-import { Bell, FileQuestion, FileText, LogOut, Mail, MessageCircleQuestion, MessageSquare, Moon, PanelLeftClose, PanelRightClose, Search, Settings, Tag, TrendingUp, User, Users } from "lucide-react";
+import {
+  Bell,
+  FileQuestion,
+  FileText,
+  LogOut,
+  Mail,
+  MessageCircleQuestion,
+  MessageSquare,
+  Moon,
+  PanelLeftClose,
+  PanelRightClose,
+  Search,
+  Settings,
+  Tag,
+  TrendingUp,
+  User,
+  Users,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -39,17 +62,37 @@ export function Header() {
     const query = searchQuery.toLowerCase().trim();
 
     return {
-      quizzes: mockSearchData.quizzes.filter((quiz) => quiz.title.toLowerCase().includes(query) || quiz.category.toLowerCase().includes(query)).slice(0, 4),
-      categories: mockSearchData.categories.filter((category) => category.name.toLowerCase().includes(query)).slice(0, 3),
-      creators: mockSearchData.creators.filter((creator) => creator.name.toLowerCase().includes(query) || creator.username.toLowerCase().includes(query)).slice(0, 3),
-      pages: mockSearchData.pages.filter((page) => page.title.toLowerCase().includes(query)).slice(0, 3),
+      quizzes: mockSearchData.quizzes
+        .filter(
+          (quiz) =>
+            quiz.title.toLowerCase().includes(query) || quiz.category.toLowerCase().includes(query),
+        )
+        .slice(0, 4),
+      categories: mockSearchData.categories
+        .filter((category) => category.name.toLowerCase().includes(query))
+        .slice(0, 3),
+      creators: mockSearchData.creators
+        .filter(
+          (creator) =>
+            creator.name.toLowerCase().includes(query) ||
+            creator.username.toLowerCase().includes(query),
+        )
+        .slice(0, 3),
+      pages: mockSearchData.pages
+        .filter((page) => page.title.toLowerCase().includes(query))
+        .slice(0, 3),
     };
   };
 
   // Add click outside handler to close search results
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchResultsRef.current && !searchResultsRef.current.contains(event.target as Node) && searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+      if (
+        searchResultsRef.current &&
+        !searchResultsRef.current.contains(event.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
         setIsSearchFocused(false);
       }
     };
@@ -103,16 +146,31 @@ export function Header() {
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={toggleCollapsed}>
-            {collapsed ? <PanelRightClose className="!text-3xl" /> : <PanelLeftClose className="!text-3xl" />}
+            {collapsed ? (
+              <PanelRightClose className="!text-3xl" />
+            ) : (
+              <PanelLeftClose className="!text-3xl" />
+            )}
           </Button>
 
           <div className="relative w-full md:w-64 lg:w-80 xl:w-96 max-md:hidden">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input ref={searchInputRef} type="search" placeholder="Search quizzes, categories, creators..." className="w-full rounded-md border-0 bg-muted pl-8 focus-visible:ring-0 focus-visible:ring-offset-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onFocus={() => setIsSearchFocused(true)} />
+            <Input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Search quizzes, categories, creators..."
+              className="w-full rounded-md border-0 bg-muted pl-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+            />
 
             {/* Search Results Dropdown */}
             {isSearchFocused && (
-              <div ref={searchResultsRef} className="absolute top-full left-0 w-full mt-1 p-2 bg-background rounded-md border shadow-lg z-50 max-h-[80vh] overflow-auto">
+              <div
+                ref={searchResultsRef}
+                className="absolute top-full left-0 w-full mt-1 p-2 bg-background rounded-md border shadow-lg z-50 max-h-[80vh] overflow-auto"
+              >
                 {!searchQuery.trim() ? (
                   <div className="p-4 text-center text-muted-foreground">
                     <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -120,7 +178,9 @@ export function Header() {
                   </div>
                 ) : (
                   <>
-                    {Object.entries(getFilteredResults()).every(([_, items]) => items.length === 0) ? (
+                    {Object.entries(getFilteredResults()).every(
+                      ([_, items]) => items.length === 0,
+                    ) ? (
                       <div className="p-4 text-center text-muted-foreground">
                         <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p>No results found for "{searchQuery}"</p>
@@ -222,7 +282,9 @@ export function Header() {
                                   </div>
                                   <div className="flex-1">
                                     <p className="font-medium">{creator.name}</p>
-                                    <p className="text-xs text-muted-foreground">@{creator.username}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      @{creator.username}
+                                    </p>
                                   </div>
                                   <Badge variant="outline" className="text-xs font-normal">
                                     {creator.quizCount} quizzes
@@ -286,19 +348,40 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" className="relative" onClick={() => setIsMessagesDrawerOpen(true)}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="relative"
+            onClick={() => setIsMessagesDrawerOpen(true)}
+          >
             <MessageSquare className="h-5 w-5" />
-            {unreadMessagesCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">{unreadMessagesCount}</span>}
+            {unreadMessagesCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                {unreadMessagesCount}
+              </span>
+            )}
           </Button>
 
-          <Button variant="outline" size="icon" className="relative" onClick={() => setIsNotificationsDrawerOpen(true)}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="relative"
+            onClick={() => setIsNotificationsDrawerOpen(true)}
+          >
             <Bell className="h-5 w-5" />
-            {unreadNotificationsCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">{unreadNotificationsCount}</span>}
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                {unreadNotificationsCount}
+              </span>
+            )}
           </Button>
 
           <ThemeToggle />
 
-          <Link href="/dashboard/user?tab=wallet" className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden">
+          <Link
+            href="/dashboard/user?tab=wallet"
+            className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden"
+          >
             <span className="text-sm font-medium">$124.50</span>
             <span className="text-green-500">💰</span>
           </Link>
@@ -389,7 +472,10 @@ export function Header() {
                       <span className="text-xs text-muted-foreground">Toggle theme</span>
                     </div>
                   </div>
-                  <Switch checked={theme === "dark"} onCheckedChange={() => setTheme(theme === "dark" ? "light" : "dark")} />
+                  <Switch
+                    checked={theme === "dark"}
+                    onCheckedChange={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  />
                 </DropdownMenuItem>
               </div>
 
@@ -416,10 +502,19 @@ export function Header() {
       />
 
       {/* Messages Drawer */}
-      <ChatDrawer setIsMessagesDrawerOpen={setIsMessagesDrawerOpen} isMessagesDrawerOpen={isMessagesDrawerOpen} handleMessageClick={handleMessageClick} />
+      <ChatDrawer
+        setIsMessagesDrawerOpen={setIsMessagesDrawerOpen}
+        isMessagesDrawerOpen={isMessagesDrawerOpen}
+        handleMessageClick={handleMessageClick}
+      />
 
       {/* Notifications Drawer */}
-      <NotificationDrawer handleNotificationClick={handleNotificationClick} isNotificationsDrawerOpen={isNotificationsDrawerOpen} markAllNotificationsAsRead={markAllNotificationsAsRead} setIsNotificationsDrawerOpen={setIsNotificationsDrawerOpen} />
+      <NotificationDrawer
+        handleNotificationClick={handleNotificationClick}
+        isNotificationsDrawerOpen={isNotificationsDrawerOpen}
+        markAllNotificationsAsRead={markAllNotificationsAsRead}
+        setIsNotificationsDrawerOpen={setIsNotificationsDrawerOpen}
+      />
     </>
   );
 }

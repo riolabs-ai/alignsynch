@@ -1,14 +1,42 @@
 "use client";
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, ArrowLeft, Award, BarChart3, Calendar, CheckCheck, CheckCircle, Clock, Copy, DollarSign, Edit, ExternalLink, Share2, Trash2, Users } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Award,
+  BarChart3,
+  Calendar,
+  CheckCheck,
+  CheckCircle,
+  Clock,
+  Copy,
+  DollarSign,
+  Edit,
+  ExternalLink,
+  Share2,
+  Trash2,
+  Users,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -28,7 +56,8 @@ const quizData = {
   spotsLeft: 15,
   createdAt: "2023-11-15T10:30:00Z",
   lastUpdated: "2023-12-01T14:20:00Z",
-  description: "Test your knowledge of world geography with this challenging quiz covering countries, capitals, landmarks, and geographical features from all continents.",
+  description:
+    "Test your knowledge of world geography with this challenging quiz covering countries, capitals, landmarks, and geographical features from all continents.",
   stats: {
     completionRate: 78,
     averageScore: 72,
@@ -201,7 +230,11 @@ export function QuizDetails({ id }: { id: string }) {
       {/* Quiz header */}
       <div className="relative rounded-xl overflow-hidden">
         <div className="h-64 w-full">
-          <Image src={quizData.image || "/placeholder.svg"} alt={quizData.title} className="h-full w-full object-cover" />
+          <Image
+            src={quizData.image || "/placeholder.svg"}
+            alt={quizData.title}
+            className="h-full w-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-end p-6">
             <div className="flex flex-wrap gap-2 mb-3">
               <Badge variant={getDifficultyVariant(quizData.difficulty)} className="font-medium">
@@ -274,11 +307,15 @@ export function QuizDetails({ id }: { id: string }) {
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 text-center">
                       <div className="text-muted-foreground mb-1 text-sm">Avg. Time/Question</div>
-                      <div className="text-2xl font-bold">{quizData.stats.averageTimePerQuestion}s</div>
+                      <div className="text-2xl font-bold">
+                        {quizData.stats.averageTimePerQuestion}s
+                      </div>
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 text-center">
                       <div className="text-green-600 mb-1 text-sm">Total Revenue</div>
-                      <div className="text-2xl font-bold text-green-600">${quizData.stats.revenue.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        ${quizData.stats.revenue.toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -293,14 +330,21 @@ export function QuizDetails({ id }: { id: string }) {
                     {quizData.recentPlayers.slice(0, 3).map((player, index) => (
                       <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">{index + 1}</div>
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
+                            {index + 1}
+                          </div>
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
+                            <AvatarImage
+                              src={player.avatar || "/placeholder.svg"}
+                              alt={player.name}
+                            />
                             <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{player.name}</p>
-                            <p className="text-sm text-muted-foreground">{formatDate(player.date)}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatDate(player.date)}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -325,7 +369,9 @@ export function QuizDetails({ id }: { id: string }) {
                       <AccordionItem key={question.id} value={`question-${question.id}`}>
                         <AccordionTrigger className="hover:no-underline">
                           <div className="flex items-center gap-3 text-left">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">{index + 1}</div>
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
+                              {index + 1}
+                            </div>
                             <span>{question.text}</span>
                           </div>
                         </AccordionTrigger>
@@ -333,14 +379,21 @@ export function QuizDetails({ id }: { id: string }) {
                           <div className="pl-9 space-y-4">
                             <div className="space-y-2">
                               {question.options.map((option) => (
-                                <div key={option.id} className={`flex items-center p-3 rounded-md border ${option.isCorrect ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900" : "bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700"}`}>
-                                  {option.isCorrect && <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />}
+                                <div
+                                  key={option.id}
+                                  className={`flex items-center p-3 rounded-md border ${option.isCorrect ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900" : "bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700"}`}
+                                >
+                                  {option.isCorrect && (
+                                    <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
+                                  )}
                                   <span>{option.text}</span>
                                 </div>
                               ))}
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">{question.correctPercentage}% of players answered correctly</span>
+                              <span className="text-muted-foreground">
+                                {question.correctPercentage}% of players answered correctly
+                              </span>
                             </div>
                           </div>
                         </AccordionContent>
@@ -372,7 +425,10 @@ export function QuizDetails({ id }: { id: string }) {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Avatar className="h-8 w-8">
-                                <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
+                                <AvatarImage
+                                  src={player.avatar || "/placeholder.svg"}
+                                  alt={player.name}
+                                />
                                 <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
                               </Avatar>
                               <span>{player.name}</span>
@@ -381,7 +437,9 @@ export function QuizDetails({ id }: { id: string }) {
                           <TableCell>{formatDate(player.date)}</TableCell>
                           <TableCell>{player.score}%</TableCell>
                           <TableCell className="text-right">
-                            <Badge variant={player.score >= 70 ? "success" : "warning"}>{player.score >= 70 ? "Passed" : "Failed"}</Badge>
+                            <Badge variant={player.score >= 70 ? "success" : "warning"}>
+                              {player.score >= 70 ? "Passed" : "Failed"}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -401,7 +459,20 @@ export function QuizDetails({ id }: { id: string }) {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex flex-col items-center">
-                <CircularProgress value={calculateProgress(quizData.players, quizData.maxPlayers)} size={120} strokeWidth={8} showValue={true} valueSize={24} color={quizData.spotsLeft <= 20 ? "hsl(var(--destructive))" : quizData.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                <CircularProgress
+                  value={calculateProgress(quizData.players, quizData.maxPlayers)}
+                  size={120}
+                  strokeWidth={8}
+                  showValue={true}
+                  valueSize={24}
+                  color={
+                    quizData.spotsLeft <= 20
+                      ? "hsl(var(--destructive))"
+                      : quizData.spotsLeft <= 50
+                        ? "hsl(var(--warning))"
+                        : "hsl(var(--primary))"
+                  }
+                />
                 <div className="mt-4 text-center">
                   <p className="text-lg font-medium">
                     {quizData.players} / {quizData.maxPlayers}
@@ -411,10 +482,14 @@ export function QuizDetails({ id }: { id: string }) {
                 {quizData.spotsLeft <= 20 ? (
                   <div className="mt-2 flex items-center text-destructive">
                     <AlertCircle className="h-4 w-4 mr-1" />
-                    <span className="text-sm font-medium">Only {quizData.spotsLeft} spots left!</span>
+                    <span className="text-sm font-medium">
+                      Only {quizData.spotsLeft} spots left!
+                    </span>
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm text-muted-foreground">{quizData.spotsLeft} spots available</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {quizData.spotsLeft} spots available
+                  </p>
                 )}
               </div>
 
@@ -460,7 +535,11 @@ export function QuizDetails({ id }: { id: string }) {
                   <span>View Full Analytics</span>
                 </Link>
               </Button>
-              <Button variant="outline" className="w-full flex items-center gap-2" onClick={handleCopyLink}>
+              <Button
+                variant="outline"
+                className="w-full flex items-center gap-2"
+                onClick={handleCopyLink}
+              >
                 {copied ? (
                   <>
                     <CheckCheck className="h-4 w-4" />

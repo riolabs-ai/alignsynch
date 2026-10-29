@@ -38,7 +38,9 @@ export function DailyChallengeHeader() {
     <div className="space-y-6">
       <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Daily Challenge</h1>
-        <p className="text-muted-foreground">A new quiz every day. Test your knowledge and compete with others!</p>
+        <p className="text-muted-foreground">
+          A new quiz every day. Test your knowledge and compete with others!
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -50,7 +52,8 @@ export function DailyChallengeHeader() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Time Remaining</p>
               <p className="text-xl font-bold">
-                {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
+                {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:
+                {formatTime(timeLeft.seconds)}
               </p>
             </div>
           </CardContent>

@@ -28,7 +28,8 @@ const quizData = {
   questions: 25,
   rating: 4.8,
   ratingCount: 156,
-  description: "Test your knowledge of the Space Exploration with this comprehensive trivia quiz. From Iron Man to the latest releases, this quiz covers characters, plot points, Easter eggs, and behind-the-scenes facts that only true fans would know.",
+  description:
+    "Test your knowledge of the Space Exploration with this comprehensive trivia quiz. From Iron Man to the latest releases, this quiz covers characters, plot points, Easter eggs, and behind-the-scenes facts that only true fans would know.",
   requirements: "Basic knowledge of Marvel movies and TV shows. No specific preparation needed.",
   creator: {
     name: "MarvelFan2023",
@@ -66,9 +67,24 @@ const quizData = {
     },
   ],
   relatedQuizzes: [
-    { id: 2, title: "DC Extended Universe Quiz", image: "/world-landmarks.png", difficulty: "Hard" },
-    { id: 3, title: "Star Wars Saga Trivia", image: "/brain-teasers-puzzles.png", difficulty: "Medium" },
-    { id: 4, title: "Harry Potter Wizarding World", image: "/history-mysteries.png", difficulty: "Easy" },
+    {
+      id: 2,
+      title: "DC Extended Universe Quiz",
+      image: "/world-landmarks.png",
+      difficulty: "Hard",
+    },
+    {
+      id: 3,
+      title: "Star Wars Saga Trivia",
+      image: "/brain-teasers-puzzles.png",
+      difficulty: "Medium",
+    },
+    {
+      id: 4,
+      title: "Harry Potter Wizarding World",
+      image: "/history-mysteries.png",
+      difficulty: "Easy",
+    },
   ],
 };
 
@@ -117,10 +133,16 @@ export function QuizDetails({ id }: { id: string }) {
         </Button>
 
         <div className="relative h-64 md:h-80 rounded-xl overflow-hidden mb-6">
-          <Image src={quizData.image || "/placeholder.svg"} alt={quizData.title} className="w-full h-full object-cover" />
+          <Image
+            src={quizData.image || "/placeholder.svg"}
+            alt={quizData.title}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4 md:p-6">
             <div className="flex flex-wrap gap-2 mb-3">
-              <Badge variant={getDifficultyVariant(quizData.difficulty)}>{quizData.difficulty}</Badge>
+              <Badge variant={getDifficultyVariant(quizData.difficulty)}>
+                {quizData.difficulty}
+              </Badge>
               <Badge variant="secondary" className="bg-purple-500/80 text-white border-0">
                 Featured
               </Badge>
@@ -128,7 +150,9 @@ export function QuizDetails({ id }: { id: string }) {
                 Popular
               </Badge>
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2">{quizData.title}</h1>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2">
+              {quizData.title}
+            </h1>
             <div className="flex flex-wrap gap-4 text-white/90">
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
@@ -189,10 +213,19 @@ export function QuizDetails({ id }: { id: string }) {
                     {quizData.relatedQuizzes.map((quiz) => (
                       <Card key={quiz.id} className="overflow-hidden">
                         <div className="relative h-32">
-                          <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="w-full h-full object-cover" />
+                          <Image
+                            width={600}
+                            height={350}
+                            src={quiz.image || "/placeholder.svg"}
+                            alt={quiz.title}
+                            className="w-full h-full object-cover"
+                          />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
                             <div>
-                              <Badge variant={getDifficultyVariant(quiz.difficulty)} className="mb-1">
+                              <Badge
+                                variant={getDifficultyVariant(quiz.difficulty)}
+                                className="mb-1"
+                              >
                                 {quiz.difficulty}
                               </Badge>
                               <h3 className="text-sm font-medium text-white">{quiz.title}</h3>
@@ -218,7 +251,10 @@ export function QuizDetails({ id }: { id: string }) {
                       <div className="col-span-1 text-center font-medium">{player.rank}</div>
                       <div className="col-span-5 flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
+                          <AvatarImage
+                            src={player.avatar || "/placeholder.svg"}
+                            alt={player.name}
+                          />
                           <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
                         </Avatar>
                         <span>{player.name}</span>
@@ -239,7 +275,9 @@ export function QuizDetails({ id }: { id: string }) {
                 {userReviews.length === 0 ? (
                   <Card>
                     <CardContent className="p-6 text-center">
-                      <p className="text-muted-foreground">No reviews yet. Be the first to review!</p>
+                      <p className="text-muted-foreground">
+                        No reviews yet. Be the first to review!
+                      </p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -248,7 +286,10 @@ export function QuizDetails({ id }: { id: string }) {
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <Avatar>
-                            <AvatarImage src={review.avatar || "/placeholder.svg"} alt={review.name} />
+                            <AvatarImage
+                              src={review.avatar || "/placeholder.svg"}
+                              alt={review.name}
+                            />
                             <AvatarFallback>{review.name.substring(0, 2)}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
@@ -256,7 +297,10 @@ export function QuizDetails({ id }: { id: string }) {
                               <h3 className="font-medium">{review.name}</h3>
                               <div className="flex items-center">
                                 {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star key={i} className={`h-4 w-4 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -282,7 +326,11 @@ export function QuizDetails({ id }: { id: string }) {
                     </span>
                   </div>
                   <Progress value={progressPercentage} className="h-2" />
-                  {quizData.spotsLeft <= 20 && <p className="text-xs font-medium text-destructive">Almost full! Only {quizData.spotsLeft} spots left</p>}
+                  {quizData.spotsLeft <= 20 && (
+                    <p className="text-xs font-medium text-destructive">
+                      Almost full! Only {quizData.spotsLeft} spots left
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -307,7 +355,10 @@ export function QuizDetails({ id }: { id: string }) {
                 <div className="rounded-lg border p-4">
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarImage src={quizData.creator.avatar || "/placeholder.svg"} alt={quizData.creator.name} />
+                      <AvatarImage
+                        src={quizData.creator.avatar || "/placeholder.svg"}
+                        alt={quizData.creator.name}
+                      />
                       <AvatarFallback>{quizData.creator.name.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -349,7 +400,12 @@ export function QuizDetails({ id }: { id: string }) {
           </div>
         </div>
       </div>
-      <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} onSubmit={handleReviewSubmit} quizTitle={quizData.title} />
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        onSubmit={handleReviewSubmit}
+        quizTitle={quizData.title}
+      />
     </div>
   );
 }

@@ -57,14 +57,19 @@ export function Explanation({ explanation }: ExplanationProps) {
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <Avatar>
-            <AvatarImage src={explanation.user.avatar || "/placeholder.svg"} alt={explanation.user.name} />
+            <AvatarImage
+              src={explanation.user.avatar || "/placeholder.svg"}
+              alt={explanation.user.name}
+            />
             <AvatarFallback>{explanation.user.name.substring(0, 2)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">{explanation.user.name}</h3>
-                <p className="text-xs text-muted-foreground">{new Date(explanation.timestamp).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(explanation.timestamp).toLocaleString()}
+                </p>
               </div>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Flag className="h-4 w-4" />
@@ -72,11 +77,21 @@ export function Explanation({ explanation }: ExplanationProps) {
             </div>
             <p className="text-sm mt-2">{explanation.text}</p>
             <div className="flex items-center gap-4 mt-3">
-              <Button variant="ghost" size="sm" onClick={handleUpvote} className={`flex items-center gap-1 h-8 ${userVote === "up" ? "text-green-600" : ""}`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleUpvote}
+                className={`flex items-center gap-1 h-8 ${userVote === "up" ? "text-green-600" : ""}`}
+              >
                 <ThumbsUp className="h-4 w-4" />
                 <span>{upvotes}</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleDownvote} className={`flex items-center gap-1 h-8 ${userVote === "down" ? "text-red-600" : ""}`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDownvote}
+                className={`flex items-center gap-1 h-8 ${userVote === "down" ? "text-red-600" : ""}`}
+              >
                 <ThumbsDown className="h-4 w-4" />
                 <span>{downvotes}</span>
               </Button>

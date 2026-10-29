@@ -68,7 +68,48 @@ export function ChatInput({ onSendMessage, onSendImage }: ChatInputProps) {
   };
 
   // Emoji data - simplified for demo
-  const emojis = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "👍", "👎", "👏", "🙌", "👌", "✌️", "🤞", "🤟", "🤘", "👊", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "❣️", "💕", "💞"];
+  const emojis = [
+    "😀",
+    "😃",
+    "😄",
+    "😁",
+    "😆",
+    "😅",
+    "😂",
+    "🤣",
+    "😊",
+    "😇",
+    "🙂",
+    "🙃",
+    "😉",
+    "😌",
+    "😍",
+    "🥰",
+    "😘",
+    "😗",
+    "😙",
+    "😚",
+    "👍",
+    "👎",
+    "👏",
+    "🙌",
+    "👌",
+    "✌️",
+    "🤞",
+    "🤟",
+    "🤘",
+    "👊",
+    "❤️",
+    "🧡",
+    "💛",
+    "💚",
+    "💙",
+    "💜",
+    "🖤",
+    "❣️",
+    "💕",
+    "💞",
+  ];
 
   return (
     <div className="flex items-end gap-2">
@@ -76,7 +117,13 @@ export function ChatInput({ onSendMessage, onSendImage }: ChatInputProps) {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button type="button" size="icon" variant="ghost" className="rounded-full h-9 w-9" onClick={() => fileInputRef.current?.click()}>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="rounded-full h-9 w-9"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <PaperclipIcon className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
@@ -87,7 +134,13 @@ export function ChatInput({ onSendMessage, onSendImage }: ChatInputProps) {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button type="button" size="icon" variant="ghost" className="rounded-full h-9 w-9" onClick={() => fileInputRef.current?.click()}>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="rounded-full h-9 w-9"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <ImageIcon className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
@@ -108,7 +161,16 @@ export function ChatInput({ onSendMessage, onSendImage }: ChatInputProps) {
           placeholder="Type a message..."
           className={cn("resize-none pr-12 rounded-2xl transition-all px-5 !py-4")}
         />
-        <Button type="button" size="icon" className={cn("size-9 rounded-full transition-colors", !message.trim() ? "text-muted-foreground" : "")} disabled={!message.trim()} onClick={handleSend}>
+        <Button
+          type="button"
+          size="icon"
+          className={cn(
+            "size-9 rounded-full transition-colors",
+            !message.trim() ? "text-muted-foreground" : "",
+          )}
+          disabled={!message.trim()}
+          onClick={handleSend}
+        >
           <Send className="h-4 w-4 text-white" />
         </Button>
       </div>
@@ -123,7 +185,11 @@ export function ChatInput({ onSendMessage, onSendImage }: ChatInputProps) {
           <PopoverContent className="w-64 p-2" align="end">
             <div className="grid grid-cols-8 gap-1">
               {emojis.map((emoji, index) => (
-                <button key={index} className="h-8 w-8 flex items-center justify-center rounded hover:bg-muted cursor-pointer text-lg" onClick={() => setMessage((prev) => prev + emoji)}>
+                <button
+                  key={index}
+                  className="h-8 w-8 flex items-center justify-center rounded hover:bg-muted cursor-pointer text-lg"
+                  onClick={() => setMessage((prev) => prev + emoji)}
+                >
                   {emoji}
                 </button>
               ))}
@@ -134,7 +200,13 @@ export function ChatInput({ onSendMessage, onSendImage }: ChatInputProps) {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button type="button" size="icon" variant={isRecording ? "destructive" : "ghost"} className="rounded-full h-9 w-9" onClick={toggleRecording}>
+              <Button
+                type="button"
+                size="icon"
+                variant={isRecording ? "destructive" : "ghost"}
+                className="rounded-full h-9 w-9"
+                onClick={toggleRecording}
+              >
                 {isRecording ? <X className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </Button>
             </TooltipTrigger>
@@ -143,7 +215,13 @@ export function ChatInput({ onSendMessage, onSendImage }: ChatInputProps) {
         </TooltipProvider>
       </div>
 
-      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleFileChange}
+      />
     </div>
   );
 }

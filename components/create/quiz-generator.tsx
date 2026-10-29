@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { mockQuizzes } from "@/data/mock-quizzes";
@@ -75,7 +81,12 @@ export function QuizGenerator() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="topic">Quiz Topic</Label>
-                <Input id="topic" placeholder="e.g., World History, Space Exploration, etc." value={topic} onChange={(e) => setTopic(e.target.value)} />
+                <Input
+                  id="topic"
+                  placeholder="e.g., World History, Space Exploration, etc."
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -111,7 +122,10 @@ export function QuizGenerator() {
 
               <div className="space-y-2">
                 <Label htmlFor="additional-info">Additional Information (Optional)</Label>
-                <Textarea id="additional-info" placeholder="Any specific requirements or focus areas for the quiz" />
+                <Textarea
+                  id="additional-info"
+                  placeholder="Any specific requirements or focus areas for the quiz"
+                />
               </div>
             </CardContent>
             <CardFooter>
@@ -131,9 +145,13 @@ export function QuizGenerator() {
             <div className="rounded-lg border bg-muted/50 p-4">
               <h3 className="mb-2 text-lg font-medium">Quiz Generated Successfully!</h3>
               <p className="text-muted-foreground">
-                Your quiz on "{topic}" has been generated with {questionCount} {difficulty} difficulty questions.
+                Your quiz on "{topic}" has been generated with {questionCount} {difficulty}{" "}
+                difficulty questions.
               </p>
-              <p className="mt-2 text-muted-foreground">Click the "Edit Generated Quiz" tab above to review and customize your quiz before publishing.</p>
+              <p className="mt-2 text-muted-foreground">
+                Click the "Edit Generated Quiz" tab above to review and customize your quiz before
+                publishing.
+              </p>
               <div className="mt-4 space-y-2">
                 <h4 className="font-medium">Generated Quizzes:</h4>
                 <div className="grid gap-2">
@@ -159,7 +177,9 @@ export function QuizGenerator() {
           )}
         </TabsContent>
 
-        <TabsContent value="editor">{isGenerated && <QuizEditor initialQuizzes={generatedQuizzes} />}</TabsContent>
+        <TabsContent value="editor">
+          {isGenerated && <QuizEditor initialQuizzes={generatedQuizzes} />}
+        </TabsContent>
       </Tabs>
     </div>
   );

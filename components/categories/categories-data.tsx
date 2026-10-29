@@ -1,4 +1,19 @@
-import { Atom, BookOpen, Building2, Code, Dumbbell, Globe, Landmark, Lightbulb, Music, Palette, Popcorn, Rocket, Utensils, Wallet } from "lucide-react";
+import {
+  Atom,
+  BookOpen,
+  Building2,
+  Code,
+  Dumbbell,
+  Globe,
+  Landmark,
+  Lightbulb,
+  Music,
+  Palette,
+  Popcorn,
+  Rocket,
+  Utensils,
+  Wallet,
+} from "lucide-react";
 import type React from "react";
 
 export interface CategoryType {
@@ -52,7 +67,8 @@ export const categoriesData: CategoryType[] = [
     id: 5,
     name: "Sports",
     slug: "sports",
-    description: "Challenge yourself with questions about various sports, athletes, and competitions.",
+    description:
+      "Challenge yourself with questions about various sports, athletes, and competitions.",
     icon: <Dumbbell className="h-12 w-12" />,
     count: 29,
     featured: true,
@@ -61,7 +77,8 @@ export const categoriesData: CategoryType[] = [
     id: 6,
     name: "Geography",
     slug: "geography",
-    description: "Test your knowledge of countries, capitals, landmarks, and geographical features.",
+    description:
+      "Test your knowledge of countries, capitals, landmarks, and geographical features.",
     icon: <Globe className="h-12 w-12" />,
     count: 27,
     featured: false,
@@ -88,7 +105,8 @@ export const categoriesData: CategoryType[] = [
     id: 9,
     name: "Music",
     slug: "music",
-    description: "Challenge yourself with questions about artists, songs, instruments, and music history.",
+    description:
+      "Challenge yourself with questions about artists, songs, instruments, and music history.",
     icon: <Music className="h-12 w-12" />,
     count: 33,
     featured: false,
@@ -106,7 +124,8 @@ export const categoriesData: CategoryType[] = [
     id: 11,
     name: "Food & Cooking",
     slug: "food-cooking",
-    description: "Test your knowledge of cuisines, ingredients, cooking techniques, and famous chefs.",
+    description:
+      "Test your knowledge of cuisines, ingredients, cooking techniques, and famous chefs.",
     icon: <Utensils className="h-12 w-12" />,
     count: 19,
     featured: false,
@@ -115,7 +134,8 @@ export const categoriesData: CategoryType[] = [
     id: 12,
     name: "Business & Finance",
     slug: "business-finance",
-    description: "Challenge yourself with questions about economics, companies, entrepreneurs, and financial concepts.",
+    description:
+      "Challenge yourself with questions about economics, companies, entrepreneurs, and financial concepts.",
     icon: <Wallet className="h-12 w-12" />,
     count: 24,
     featured: false,
@@ -124,7 +144,8 @@ export const categoriesData: CategoryType[] = [
     id: 13,
     name: "Architecture",
     slug: "architecture",
-    description: "Explore questions about famous buildings, architectural styles, and renowned architects.",
+    description:
+      "Explore questions about famous buildings, architectural styles, and renowned architects.",
     icon: <Building2 className="h-12 w-12" />,
     count: 17,
     featured: false,

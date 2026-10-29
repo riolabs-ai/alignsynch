@@ -1,51 +1,57 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Star } from "lucide-react"
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Star } from "lucide-react";
 
 interface ReviewModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (review: { rating: number; comment: string }) => void
-  quizTitle: string
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (review: { rating: number; comment: string }) => void;
+  quizTitle: string;
 }
 
 export function ReviewModal({ isOpen, onClose, onSubmit, quizTitle }: ReviewModalProps) {
-  const [rating, setRating] = useState(0)
-  const [comment, setComment] = useState("")
-  const [hoveredRating, setHoveredRating] = useState(0)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (rating === 0 || !comment.trim()) return
+    if (rating === 0 || !comment.trim()) return;
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    onSubmit({ rating, comment })
-    setIsSubmitting(false)
-    resetForm()
-    onClose()
-  }
+    onSubmit({ rating, comment });
+    setIsSubmitting(false);
+    resetForm();
+    onClose();
+  };
 
   const resetForm = () => {
-    setRating(0)
-    setComment("")
-    setHoveredRating(0)
-  }
+    setRating(0);
+    setComment("");
+    setHoveredRating(0);
+  };
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
-          onClose()
+          onClose();
         }
       }}
     >
@@ -73,13 +79,17 @@ export function ReviewModal({ isOpen, onClose, onSubmit, quizTitle }: ReviewModa
                 >
                   <Star
                     className={`h-8 w-8 ${
-                      star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                      star <= (hoveredRating || rating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
                     } transition-colors`}
                   />
                 </button>
               ))}
             </div>
-            {rating === 0 && <p className="text-xs text-muted-foreground">Please select a rating</p>}
+            {rating === 0 && (
+              <p className="text-xs text-muted-foreground">Please select a rating</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -91,7 +101,9 @@ export function ReviewModal({ isOpen, onClose, onSubmit, quizTitle }: ReviewModa
               onChange={(e) => setComment(e.target.value)}
               className="min-h-[120px]"
             />
-            {comment.trim() === "" && <p className="text-xs text-muted-foreground">Please write a review</p>}
+            {comment.trim() === "" && (
+              <p className="text-xs text-muted-foreground">Please write a review</p>
+            )}
           </div>
         </div>
 
@@ -99,7 +111,10 @@ export function ReviewModal({ isOpen, onClose, onSubmit, quizTitle }: ReviewModa
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={rating === 0 || comment.trim() === "" || isSubmitting}>
+          <Button
+            onClick={handleSubmit}
+            disabled={rating === 0 || comment.trim() === "" || isSubmitting}
+          >
             {isSubmitting ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
@@ -112,5 +127,5 @@ export function ReviewModal({ isOpen, onClose, onSubmit, quizTitle }: ReviewModa
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

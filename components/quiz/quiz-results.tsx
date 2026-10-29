@@ -5,7 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
-import { Award, CheckCircle, Clock, FileSearch, Home, Medal, MessageSquare, RotateCw, Star, Trophy } from "lucide-react";
+import {
+  Award,
+  CheckCircle,
+  Clock,
+  FileSearch,
+  Home,
+  Medal,
+  MessageSquare,
+  RotateCw,
+  Star,
+  Trophy,
+} from "lucide-react";
 import { StaticImageData } from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -109,9 +120,12 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
 
   // Get badge based on score
   const getScoreBadge = (score: number) => {
-    if (score >= 90) return { text: "Expert", variant: "success", icon: <Trophy className="h-5 w-5" /> };
-    if (score >= 70) return { text: "Advanced", variant: "success", icon: <Medal className="h-5 w-5" /> };
-    if (score >= 50) return { text: "Intermediate", variant: "warning", icon: <Star className="h-5 w-5" /> };
+    if (score >= 90)
+      return { text: "Expert", variant: "success", icon: <Trophy className="h-5 w-5" /> };
+    if (score >= 70)
+      return { text: "Advanced", variant: "success", icon: <Medal className="h-5 w-5" /> };
+    if (score >= 50)
+      return { text: "Intermediate", variant: "warning", icon: <Star className="h-5 w-5" /> };
     return { text: "Beginner", variant: "default", icon: <Award className="h-5 w-5" /> };
   };
 
@@ -133,11 +147,41 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
             <div className="relative mb-4">
               <svg className="w-40 h-40">
                 <circle cx="80" cy="80" r="70" fill="none" stroke="#e6e6e6" strokeWidth="12" />
-                <motion.circle cx="80" cy="80" r="70" fill="none" stroke={score >= 70 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444"} strokeWidth="12" strokeDasharray="439.8" strokeDashoffset={439.8 - (score / 100) * 439.8} strokeLinecap="round" transform="rotate(-90 80 80)" initial={{ strokeDashoffset: 439.8 }} animate={{ strokeDashoffset: 439.8 - (score / 100) * 439.8 }} transition={{ duration: 1.5, ease: "easeOut" }} />
-                <text x="80" y="80" textAnchor="middle" dominantBaseline="middle" fontSize="32" fontWeight="bold" fill="currentColor">
+                <motion.circle
+                  cx="80"
+                  cy="80"
+                  r="70"
+                  fill="none"
+                  stroke={score >= 70 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444"}
+                  strokeWidth="12"
+                  strokeDasharray="439.8"
+                  strokeDashoffset={439.8 - (score / 100) * 439.8}
+                  strokeLinecap="round"
+                  transform="rotate(-90 80 80)"
+                  initial={{ strokeDashoffset: 439.8 }}
+                  animate={{ strokeDashoffset: 439.8 - (score / 100) * 439.8 }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                />
+                <text
+                  x="80"
+                  y="80"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="32"
+                  fontWeight="bold"
+                  fill="currentColor"
+                >
                   {score}%
                 </text>
-                <text x="80" y="105" textAnchor="middle" dominantBaseline="middle" fontSize="14" fill="currentColor" opacity="0.7">
+                <text
+                  x="80"
+                  y="105"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize="14"
+                  fill="currentColor"
+                  opacity="0.7"
+                >
                   Score
                 </text>
               </svg>
@@ -192,7 +236,9 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
 
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Accuracy rate</span>
-              <span className="font-medium">{Math.round((correctAnswers / totalQuestions) * 100)}%</span>
+              <span className="font-medium">
+                {Math.round((correctAnswers / totalQuestions) * 100)}%
+              </span>
             </div>
 
             <div className="flex justify-between text-sm">
@@ -203,7 +249,11 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
         </CardContent>
 
         <CardFooter className="flex flex-col sm:flex-row gap-3 p-6 pt-0">
-          <Button onClick={onReview} variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            onClick={onReview}
+            variant="outline"
+            className="flex items-center gap-2 w-full sm:w-auto"
+          >
             <FileSearch className="h-4 w-4" />
             Review Answers
           </Button>
@@ -213,11 +263,19 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
               Join Discussion
             </Link>
           </Button>
-          <Button onClick={onRestart} variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            onClick={onRestart}
+            variant="outline"
+            className="flex items-center gap-2 w-full sm:w-auto"
+          >
             <RotateCw className="h-4 w-4" />
             Try Again
           </Button>
-          <Button onClick={onExit} variant="default" className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            onClick={onExit}
+            variant="default"
+            className="flex items-center gap-2 w-full sm:w-auto"
+          >
             <Home className="h-4 w-4" />
             Exit Quiz
           </Button>
@@ -235,31 +293,50 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {score >= 100 && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-yellow-50 to-amber-50">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-yellow-50 to-amber-50"
+              >
                 <div className="bg-yellow-500/20 p-2 rounded-full">
                   <Trophy className="h-5 w-5 text-yellow-600" />
                 </div>
                 <div>
                   <div className="font-medium">Perfect Score</div>
-                  <div className="text-sm text-muted-foreground">Answered all questions correctly</div>
+                  <div className="text-sm text-muted-foreground">
+                    Answered all questions correctly
+                  </div>
                 </div>
               </motion.div>
             )}
 
             {totalTime < totalQuestions * 10 && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-blue-50 to-cyan-50">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-blue-50 to-cyan-50"
+              >
                 <div className="bg-blue-500/20 p-2 rounded-full">
                   <Clock className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
                   <div className="font-medium">Speed Demon</div>
-                  <div className="text-sm text-muted-foreground">Completed the quiz in record time</div>
+                  <div className="text-sm text-muted-foreground">
+                    Completed the quiz in record time
+                  </div>
                 </div>
               </motion.div>
             )}
 
             {score >= 70 && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-green-50 to-emerald-50">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-green-50 to-emerald-50"
+              >
                 <div className="bg-green-100 p-2 rounded-full">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 </div>
@@ -270,7 +347,12 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
               </motion.div>
             )}
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-purple-50 to-violet-50">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-purple-50 to-violet-50"
+            >
               <div className="bg-purple-100 p-2 rounded-full">
                 <Award className="h-5 w-5 text-purple-600" />
               </div>

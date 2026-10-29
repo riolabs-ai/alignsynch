@@ -3,12 +3,34 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowDownRight, ArrowUpRight, CheckCircle, Clock, CreditCard, DollarSign, Download, Wallet } from "lucide-react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Wallet,
+} from "lucide-react";
 import { Dispatch, SetStateAction, useState } from "react";
 type Transaction = {
   id: number;
@@ -68,9 +90,13 @@ export function WalletDashboard() {
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const balance = 124.5;
-  const pendingWithdrawals = transactions.filter((t) => t.type === "withdrawal" && t.status === "pending").reduce((sum, t) => sum + t.amount, 0);
+  const pendingWithdrawals = transactions
+    .filter((t) => t.type === "withdrawal" && t.status === "pending")
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalEarnings = transactions.filter((t) => t.type === "earning").reduce((sum, t) => sum + t.amount, 0);
+  const totalEarnings = transactions
+    .filter((t) => t.type === "earning")
+    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -242,7 +268,15 @@ export function WalletDashboard() {
         </Card>
       </div>
 
-      <WithdrawDialog open={isWithdrawDialogOpen} onOpenChange={setIsWithdrawDialogOpen} balance={balance} withdrawAmount={withdrawAmount} setWithdrawAmount={setWithdrawAmount} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
+      <WithdrawDialog
+        open={isWithdrawDialogOpen}
+        onOpenChange={setIsWithdrawDialogOpen}
+        balance={balance}
+        withdrawAmount={withdrawAmount}
+        setWithdrawAmount={setWithdrawAmount}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+      />
     </div>
   );
 }
@@ -305,7 +339,15 @@ type WithdrawDialogProps = {
   paymentMethod: string;
   setPaymentMethod: Dispatch<SetStateAction<string>>;
 };
-function WithdrawDialog({ open, onOpenChange, balance, withdrawAmount, setWithdrawAmount, paymentMethod, setPaymentMethod }: WithdrawDialogProps) {
+function WithdrawDialog({
+  open,
+  onOpenChange,
+  balance,
+  withdrawAmount,
+  setWithdrawAmount,
+  paymentMethod,
+  setPaymentMethod,
+}: WithdrawDialogProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle withdrawal logic here
@@ -317,7 +359,9 @@ function WithdrawDialog({ open, onOpenChange, balance, withdrawAmount, setWithdr
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Withdraw Funds</DialogTitle>
-          <DialogDescription>Enter the amount you want to withdraw and select your payment method.</DialogDescription>
+          <DialogDescription>
+            Enter the amount you want to withdraw and select your payment method.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -330,7 +374,13 @@ function WithdrawDialog({ open, onOpenChange, balance, withdrawAmount, setWithdr
               <Label htmlFor="amount">Amount</Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="amount" placeholder="0.00" className="pl-9" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} />
+                <Input
+                  id="amount"
+                  placeholder="0.00"
+                  className="pl-9"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                />
               </div>
               <p className="text-xs text-muted-foreground">Minimum withdrawal: $10.00</p>
             </div>
@@ -352,7 +402,15 @@ function WithdrawDialog({ open, onOpenChange, balance, withdrawAmount, setWithdr
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!withdrawAmount || !paymentMethod || Number.parseFloat(withdrawAmount) > balance || Number.parseFloat(withdrawAmount) < 10}>
+            <Button
+              type="submit"
+              disabled={
+                !withdrawAmount ||
+                !paymentMethod ||
+                Number.parseFloat(withdrawAmount) > balance ||
+                Number.parseFloat(withdrawAmount) < 10
+              }
+            >
               Withdraw Funds
             </Button>
           </DialogFooter>

@@ -12,7 +12,11 @@ export default function CreatorTipsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const filteredTips = searchQuery ? searchTips(searchQuery) : selectedCategory ? tips.filter((tip) => tip.category === selectedCategory) : tips;
+  const filteredTips = searchQuery
+    ? searchTips(searchQuery)
+    : selectedCategory
+      ? tips.filter((tip) => tip.category === selectedCategory)
+      : tips;
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -28,7 +32,11 @@ export default function CreatorTipsPage() {
     <div className="container mx-auto ">
       <CreatorTipsHero onSearch={handleSearch} />
 
-      <CreatorTipsCategories categories={categories} selectedCategory={selectedCategory} onSelectCategory={handleCategorySelect} />
+      <CreatorTipsCategories
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleCategorySelect}
+      />
 
       {!searchQuery && !selectedCategory && <FeaturedTips />}
 

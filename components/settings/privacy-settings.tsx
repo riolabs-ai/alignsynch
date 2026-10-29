@@ -1,8 +1,21 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Eye, Loader2, Shield } from "lucide-react";
@@ -50,7 +63,9 @@ export function PrivacySettings() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Privacy Settings</h3>
-        <p className="text-sm text-muted-foreground">Control your privacy and how your information is shared on QuizHub .</p>
+        <p className="text-sm text-muted-foreground">
+          Control your privacy and how your information is shared on QuizHub .
+        </p>
       </div>
 
       <Card>
@@ -67,7 +82,10 @@ export function PrivacySettings() {
                 <p className="text-sm text-muted-foreground">Control who can see your profile.</p>
               </div>
             </div>
-            <Select value={privacy.profileVisibility} onValueChange={(value) => handleSelectChange("profileVisibility", value)}>
+            <Select
+              value={privacy.profileVisibility}
+              onValueChange={(value) => handleSelectChange("profileVisibility", value)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select visibility" />
               </SelectTrigger>
@@ -86,10 +104,15 @@ export function PrivacySettings() {
               <Eye className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Quiz Visibility</p>
-                <p className="text-sm text-muted-foreground">Control who can see your created quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Control who can see your created quizzes.
+                </p>
               </div>
             </div>
-            <Select value={privacy.quizVisibility} onValueChange={(value) => handleSelectChange("quizVisibility", value)}>
+            <Select
+              value={privacy.quizVisibility}
+              onValueChange={(value) => handleSelectChange("quizVisibility", value)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select visibility" />
               </SelectTrigger>
@@ -108,10 +131,15 @@ export function PrivacySettings() {
               <Trophy className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Leaderboard Visibility</p>
-                <p className="text-sm text-muted-foreground">Show your profile on public leaderboards.</p>
+                <p className="text-sm text-muted-foreground">
+                  Show your profile on public leaderboards.
+                </p>
               </div>
             </div>
-            <Switch checked={privacy.showOnLeaderboard} onCheckedChange={(value) => handleToggle("showOnLeaderboard", value)} />
+            <Switch
+              checked={privacy.showOnLeaderboard}
+              onCheckedChange={(value) => handleToggle("showOnLeaderboard", value)}
+            />
           </div>
 
           <Separator />
@@ -121,10 +149,15 @@ export function PrivacySettings() {
               <Activity className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Activity Visibility</p>
-                <p className="text-sm text-muted-foreground">Control who can see your activity feed.</p>
+                <p className="text-sm text-muted-foreground">
+                  Control who can see your activity feed.
+                </p>
               </div>
             </div>
-            <Select value={privacy.activityVisibility} onValueChange={(value) => handleSelectChange("activityVisibility", value)}>
+            <Select
+              value={privacy.activityVisibility}
+              onValueChange={(value) => handleSelectChange("activityVisibility", value)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select visibility" />
               </SelectTrigger>
@@ -149,10 +182,15 @@ export function PrivacySettings() {
               <Users className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Allow Tagging</p>
-                <p className="text-sm text-muted-foreground">Allow others to tag you in quizzes and comments.</p>
+                <p className="text-sm text-muted-foreground">
+                  Allow others to tag you in quizzes and comments.
+                </p>
               </div>
             </div>
-            <Switch checked={privacy.allowTagging} onCheckedChange={(value) => handleToggle("allowTagging", value)} />
+            <Switch
+              checked={privacy.allowTagging}
+              onCheckedChange={(value) => handleToggle("allowTagging", value)}
+            />
           </div>
 
           <Separator />
@@ -162,10 +200,15 @@ export function PrivacySettings() {
               <Mail className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Show Email Address</p>
-                <p className="text-sm text-muted-foreground">Show your email address on your public profile.</p>
+                <p className="text-sm text-muted-foreground">
+                  Show your email address on your public profile.
+                </p>
               </div>
             </div>
-            <Switch checked={privacy.showEmail} onCheckedChange={(value) => handleToggle("showEmail", value)} />
+            <Switch
+              checked={privacy.showEmail}
+              onCheckedChange={(value) => handleToggle("showEmail", value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -181,10 +224,15 @@ export function PrivacySettings() {
               <Shield className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Data Collection</p>
-                <p className="text-sm text-muted-foreground">Allow QuizHub to collect data to improve your experience.</p>
+                <p className="text-sm text-muted-foreground">
+                  Allow QuizHub to collect data to improve your experience.
+                </p>
               </div>
             </div>
-            <Switch checked={privacy.dataCollection} onCheckedChange={(value) => handleToggle("dataCollection", value)} />
+            <Switch
+              checked={privacy.dataCollection}
+              onCheckedChange={(value) => handleToggle("dataCollection", value)}
+            />
           </div>
         </CardContent>
         <CardFooter>

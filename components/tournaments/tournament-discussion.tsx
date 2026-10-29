@@ -2,12 +2,34 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Filter, Flag, MessageCircle, MoreHorizontal, PlusCircle, Search, ThumbsDown, ThumbsUp } from "lucide-react";
+import {
+  Filter,
+  Flag,
+  MessageCircle,
+  MoreHorizontal,
+  PlusCircle,
+  Search,
+  ThumbsDown,
+  ThumbsUp,
+} from "lucide-react";
 import { useState } from "react";
 
 interface TournamentDiscussionProps {
@@ -25,7 +47,8 @@ const mockDiscussions = [
       avatar: "/avatars/alex.png",
       role: "Tournament Finalist",
     },
-    content: "I'm wondering what everyone's approach is for the first round. Are you focusing on answering quickly to maximize points, or taking your time to ensure accuracy?",
+    content:
+      "I'm wondering what everyone's approach is for the first round. Are you focusing on answering quickly to maximize points, or taking your time to ensure accuracy?",
     createdAt: "2 hours ago",
     likes: 24,
     replies: 8,
@@ -41,7 +64,8 @@ const mockDiscussions = [
       avatar: "/avatars/sarah.webp",
       role: "Participant",
     },
-    content: "Did anyone else notice that the history questions in the practice round were significantly more difficult than other categories? I'm wondering if I should focus my preparation there.",
+    content:
+      "Did anyone else notice that the history questions in the practice round were significantly more difficult than other categories? I'm wondering if I should focus my preparation there.",
     createdAt: "5 hours ago",
     likes: 18,
     replies: 12,
@@ -57,7 +81,8 @@ const mockDiscussions = [
       avatar: "/avatars/wizard.webp",
       role: "Participant",
     },
-    content: "I'm looking to form a small study group (3-4 people) to prepare for the science questions. Anyone interested? We could share resources and quiz each other.",
+    content:
+      "I'm looking to form a small study group (3-4 people) to prepare for the science questions. Anyone interested? We could share resources and quiz each other.",
     createdAt: "1 day ago",
     likes: 15,
     replies: 20,
@@ -73,7 +98,8 @@ const mockDiscussions = [
       avatar: "/avatars/guru.png",
       role: "Participant",
     },
-    content: "I experienced some lag during the practice round that caused me to miss a few questions. Has anyone else had similar issues? Any tips for preventing this during the actual tournament?",
+    content:
+      "I experienced some lag during the practice round that caused me to miss a few questions. Has anyone else had similar issues? Any tips for preventing this during the actual tournament?",
     createdAt: "1 day ago",
     likes: 8,
     replies: 15,
@@ -89,7 +115,8 @@ const mockDiscussions = [
       avatar: "/avatars/master.png",
       role: "Participant",
     },
-    content: "The rules state that 'external resources are not permitted during the tournament.' Does this include personal notes made before the tournament starts?",
+    content:
+      "The rules state that 'external resources are not permitted during the tournament.' Does this include personal notes made before the tournament starts?",
     createdAt: "2 days ago",
     likes: 32,
     replies: 7,
@@ -108,7 +135,8 @@ const mockComments = [
       avatar: "/testimonials/jessica.png",
       role: "Tournament Moderator",
     },
-    content: "Great question! I personally focus on accuracy first, especially in the early rounds. Speed becomes more important in the later rounds when the questions get harder and time pressure increases.",
+    content:
+      "Great question! I personally focus on accuracy first, especially in the early rounds. Speed becomes more important in the later rounds when the questions get harder and time pressure increases.",
     createdAt: "1 hour ago",
     likes: 12,
     isOfficial: true,
@@ -121,7 +149,8 @@ const mockComments = [
       avatar: "/avatars/brain.png",
       role: "Previous Champion",
     },
-    content: "I've found that a balanced approach works best. For questions you're confident about, answer quickly. For ones you're unsure of, take a bit more time but don't overthink. Remember that in Round 1, incorrect answers don't have a penalty, so it's better to guess than to skip.",
+    content:
+      "I've found that a balanced approach works best. For questions you're confident about, answer quickly. For ones you're unsure of, take a bit more time but don't overthink. Remember that in Round 1, incorrect answers don't have a penalty, so it's better to guess than to skip.",
     createdAt: "1.5 hours ago",
     likes: 18,
     isOfficial: false,
@@ -134,7 +163,8 @@ const mockComments = [
       avatar: "/avatars/genious.png",
       role: "Participant",
     },
-    content: "I'm planning to go for speed in categories I'm strong in (science and literature) and take more time in my weaker areas (sports and geography). Has anyone tried this approach before?",
+    content:
+      "I'm planning to go for speed in categories I'm strong in (science and literature) and take more time in my weaker areas (sports and geography). Has anyone tried this approach before?",
     createdAt: "1.8 hours ago",
     likes: 5,
     isOfficial: false,
@@ -150,7 +180,12 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
 
   // Filter and sort discussions based on current filter and search
   const filteredDiscussions = mockDiscussions
-    .filter((discussion) => discussion.title.toLowerCase().includes(searchQuery.toLowerCase()) || discussion.content.toLowerCase().includes(searchQuery.toLowerCase()) || discussion.tags.some((tag) => tag.includes(searchQuery.toLowerCase())))
+    .filter(
+      (discussion) =>
+        discussion.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        discussion.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        discussion.tags.some((tag) => tag.includes(searchQuery.toLowerCase())),
+    )
     .sort((a, b) => {
       if (filter === "recent") {
         return a.createdAt < b.createdAt ? 1 : -1;
@@ -170,7 +205,11 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => setActiveDiscussion(null)} className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => setActiveDiscussion(null)}
+            className="flex items-center gap-2"
+          >
             ← Back to discussions
           </Button>
           <div className="flex items-center gap-2">
@@ -197,7 +236,10 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border-2 border-primary/20">
-                <AvatarImage src={discussion.author.avatar || "/placeholder.svg"} alt={discussion.author.name} />
+                <AvatarImage
+                  src={discussion.author.avatar || "/placeholder.svg"}
+                  alt={discussion.author.name}
+                />
                 <AvatarFallback>{discussion.author.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
@@ -212,7 +254,17 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
             </div>
             {discussion.pinned && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M12 2v10" />
                   <path d="M12 22v-3" />
                   <path d="M4.93 10.93l1.41 1.41" />
@@ -260,14 +312,22 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
             <div key={comment.id} className="bg-card rounded-lg p-5 shadow-sm">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
-                  <Avatar className={`h-9 w-9 ${comment.isOfficial ? "border-2 border-primary" : ""}`}>
-                    <AvatarImage src={comment.author.avatar || "/placeholder.svg"} alt={comment.author.name} />
+                  <Avatar
+                    className={`h-9 w-9 ${comment.isOfficial ? "border-2 border-primary" : ""}`}
+                  >
+                    <AvatarImage
+                      src={comment.author.avatar || "/placeholder.svg"}
+                      alt={comment.author.name}
+                    />
                     <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{comment.author.name}</span>
-                      <Badge variant={comment.isOfficial ? "default" : "outline"} className="text-xs">
+                      <Badge
+                        variant={comment.isOfficial ? "default" : "outline"}
+                        className="text-xs"
+                      >
                         {comment.author.role}
                       </Badge>
                     </div>
@@ -298,7 +358,12 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
 
           <div className="bg-muted/30 rounded-lg p-5">
             <h4 className="font-medium mb-3">Add your reply</h4>
-            <Textarea placeholder="Share your thoughts or questions..." className="mb-3 min-h-[100px]" value={newCommentText} onChange={(e) => setNewCommentText(e.target.value)} />
+            <Textarea
+              placeholder="Share your thoughts or questions..."
+              className="mb-3 min-h-[100px]"
+              value={newCommentText}
+              onChange={(e) => setNewCommentText(e.target.value)}
+            />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setNewCommentText("")}>
                 Cancel
@@ -326,7 +391,9 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
           <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
               <DialogTitle>Create New Discussion</DialogTitle>
-              <DialogDescription>Start a new discussion topic related to the Global Knowledge Championship.</DialogDescription>
+              <DialogDescription>
+                Start a new discussion topic related to the Global Knowledge Championship.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -339,13 +406,20 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                 <label htmlFor="content" className="text-sm font-medium">
                   Content
                 </label>
-                <Textarea id="content" placeholder="Share your thoughts, questions, or insights..." className="min-h-[150px]" />
+                <Textarea
+                  id="content"
+                  placeholder="Share your thoughts, questions, or insights..."
+                  className="min-h-[150px]"
+                />
               </div>
               <div className="space-y-2">
                 <label htmlFor="tags" className="text-sm font-medium">
                   Tags (optional)
                 </label>
-                <Input id="tags" placeholder="Add tags separated by commas (e.g., strategy, rules, round-1)" />
+                <Input
+                  id="tags"
+                  placeholder="Add tags separated by commas (e.g., strategy, rules, round-1)"
+                />
               </div>
             </div>
             <DialogFooter>
@@ -361,20 +435,31 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="relative w-full sm:w-[300px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search discussions..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <Input
+            placeholder="Search discussions..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                {filter === "recent" ? "Most Recent" : filter === "popular" ? "Most Popular" : "Most Replies"}
+                {filter === "recent"
+                  ? "Most Recent"
+                  : filter === "popular"
+                    ? "Most Popular"
+                    : "Most Replies"}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setFilter("recent")}>Most Recent</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setFilter("popular")}>Most Popular</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("most-replies")}>Most Replies</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilter("most-replies")}>
+                Most Replies
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -392,11 +477,18 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
       <div className="space-y-4">
         {filteredDiscussions.length > 0 ? (
           filteredDiscussions.map((discussion) => (
-            <div key={discussion.id} className="bg-card hover:bg-card/80 rounded-lg p-5 shadow-sm cursor-pointer transition-colors" onClick={() => setActiveDiscussion(discussion.id)}>
+            <div
+              key={discussion.id}
+              className="bg-card hover:bg-card/80 rounded-lg p-5 shadow-sm cursor-pointer transition-colors"
+              onClick={() => setActiveDiscussion(discussion.id)}
+            >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={discussion.author.avatar || "/placeholder.svg"} alt={discussion.author.name} />
+                    <AvatarImage
+                      src={discussion.author.avatar || "/placeholder.svg"}
+                      alt={discussion.author.name}
+                    />
                     <AvatarFallback>{discussion.author.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -406,7 +498,17 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                 </div>
                 {discussion.pinned && (
                   <Badge variant="secondary" className="flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M12 2v10" />
                       <path d="M12 22v-3" />
                       <path d="M4.93 10.93l1.41 1.41" />
@@ -422,7 +524,9 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
               </div>
 
               <h3 className="text-lg font-medium mb-2">{discussion.title}</h3>
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{discussion.content}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                {discussion.content}
+              </p>
 
               <div className="flex flex-wrap gap-2 mb-3">
                 {discussion.tags.map((tag) => (
@@ -447,7 +551,11 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
         ) : (
           <div className="bg-muted/50 rounded-lg p-8 text-center">
             <h3 className="text-xl font-medium mb-2">No discussions found</h3>
-            <p className="text-muted-foreground mb-4">{searchQuery ? `No discussions match "${searchQuery}"` : "Be the first to start a discussion about this tournament!"}</p>
+            <p className="text-muted-foreground mb-4">
+              {searchQuery
+                ? `No discussions match "${searchQuery}"`
+                : "Be the first to start a discussion about this tournament!"}
+            </p>
             <Button
               onClick={() => {
                 setSearchQuery("");

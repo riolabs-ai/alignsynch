@@ -1,4 +1,12 @@
-export const categories = ["Quiz Tips", "Platform Updates", "Community", "Tutorials", "Events", "Success Stories", "Industry News"];
+export const categories = [
+  "Quiz Tips",
+  "Platform Updates",
+  "Community",
+  "Tutorials",
+  "Events",
+  "Success Stories",
+  "Industry News",
+];
 import news1 from "@/public/news/news1.png";
 import news2 from "@/public/news/news2.png";
 import news3 from "@/public/news/news3.png";
@@ -45,7 +53,8 @@ export const newsData: Article[] = [
   {
     slug: "10-strategies-for-creating-engaging-quizzes",
     title: "10 Strategies for Creating Engaging Quizzes That Keep Players Coming Back",
-    excerpt: "Learn how to design quizzes that captivate your audience and drive repeat participation with these proven strategies.",
+    excerpt:
+      "Learn how to design quizzes that captivate your audience and drive repeat participation with these proven strategies.",
     date: "May 15, 2025",
     readTime: 8,
     author: {
@@ -66,7 +75,10 @@ export const newsData: Article[] = [
       },
       {
         heading: "Strategy #1: Start With a Compelling Title",
-        paragraphs: ["Your quiz title is the first thing potential players will see, and it can make or break their decision to participate. A great title should be clear, intriguing, and promise value.", "Consider using numbers ('10 Questions That Will Reveal Your Leadership Style'), challenges ('Only 2% of People Can Ace This History Quiz'), or personalization ('What Type of Investor Are You?') to increase click-through rates."],
+        paragraphs: [
+          "Your quiz title is the first thing potential players will see, and it can make or break their decision to participate. A great title should be clear, intriguing, and promise value.",
+          "Consider using numbers ('10 Questions That Will Reveal Your Leadership Style'), challenges ('Only 2% of People Can Ace This History Quiz'), or personalization ('What Type of Investor Are You?') to increase click-through rates.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=quiz+titles",
         imageAlt: "Examples of compelling quiz titles",
         imageCaption: "Examples of high-performing quiz titles from our platform",
@@ -80,18 +92,27 @@ export const newsData: Article[] = [
       },
       {
         heading: "Strategy #3: Use Visuals Strategically",
-        paragraphs: ["Incorporating relevant images, charts, or videos can significantly enhance quiz engagement. Visual elements not only make your quiz more appealing but can also help communicate concepts more effectively than text alone.", "For each question, consider whether a visual element would enhance understanding or engagement. Just be sure that any visuals you include are high-quality, relevant, and properly licensed."],
+        paragraphs: [
+          "Incorporating relevant images, charts, or videos can significantly enhance quiz engagement. Visual elements not only make your quiz more appealing but can also help communicate concepts more effectively than text alone.",
+          "For each question, consider whether a visual element would enhance understanding or engagement. Just be sure that any visuals you include are high-quality, relevant, and properly licensed.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=quiz+visuals",
         imageAlt: "Visual elements in quizzes",
         imageCaption: "Visual elements can increase quiz completion rates by up to 80%",
       },
       {
         heading: "Strategy #4: Provide Meaningful Feedback",
-        paragraphs: ["Immediate feedback after each question or at the end of the quiz is crucial for learning and satisfaction. Go beyond simply indicating whether an answer was correct—provide context, explanations, and additional information.", "For personality or assessment quizzes, ensure that results are thoughtful, personalized, and actionable. Players should feel that they've gained genuine insight from completing your quiz."],
+        paragraphs: [
+          "Immediate feedback after each question or at the end of the quiz is crucial for learning and satisfaction. Go beyond simply indicating whether an answer was correct—provide context, explanations, and additional information.",
+          "For personality or assessment quizzes, ensure that results are thoughtful, personalized, and actionable. Players should feel that they've gained genuine insight from completing your quiz.",
+        ],
       },
       {
         heading: "Strategy #5: Optimize for Social Sharing",
-        paragraphs: ["Make it easy and appealing for players to share their quiz results on social media. Create shareable result cards with eye-catching visuals and text that sparks curiosity without giving everything away.", "Include social sharing buttons prominently on the results page, and consider adding a competitive element by showing how the player's results compare to others."],
+        paragraphs: [
+          "Make it easy and appealing for players to share their quiz results on social media. Create shareable result cards with eye-catching visuals and text that sparks curiosity without giving everything away.",
+          "Include social sharing buttons prominently on the results page, and consider adding a competitive element by showing how the player's results compare to others.",
+        ],
       },
       {
         heading: "Implementing These Strategies",
@@ -105,7 +126,8 @@ export const newsData: Article[] = [
   {
     slug: "new-quiz-analytics-features",
     title: "Introducing Advanced Quiz Analytics: Gain Deeper Insights Into Player Behavior",
-    excerpt: "Our new analytics dashboard provides comprehensive data on quiz performance, player demographics, and engagement patterns.",
+    excerpt:
+      "Our new analytics dashboard provides comprehensive data on quiz performance, player demographics, and engagement patterns.",
     date: "May 10, 2025",
     readTime: 5,
     author: {
@@ -119,14 +141,21 @@ export const newsData: Article[] = [
     content: [
       {
         heading: "Transforming Quiz Data Into Actionable Insights",
-        paragraphs: ["We're excited to announce the launch of our Advanced Quiz Analytics suite, designed to give creators unprecedented visibility into how players interact with their quizzes.", "Whether you're creating quizzes for education, marketing, or entertainment, these new tools will help you optimize your content and better understand your audience."],
+        paragraphs: [
+          "We're excited to announce the launch of our Advanced Quiz Analytics suite, designed to give creators unprecedented visibility into how players interact with their quizzes.",
+          "Whether you're creating quizzes for education, marketing, or entertainment, these new tools will help you optimize your content and better understand your audience.",
+        ],
       },
       {
         heading: "Key Features of the New Analytics Dashboard",
-        paragraphs: ["Our redesigned analytics dashboard puts the most important metrics front and center, with intuitive visualizations that make it easy to spot trends and opportunities for improvement.", "The new dashboard includes detailed question-level analytics, player demographic data, completion rates, time spent analysis, and social sharing metrics—all accessible from a single, user-friendly interface."],
+        paragraphs: [
+          "Our redesigned analytics dashboard puts the most important metrics front and center, with intuitive visualizations that make it easy to spot trends and opportunities for improvement.",
+          "The new dashboard includes detailed question-level analytics, player demographic data, completion rates, time spent analysis, and social sharing metrics—all accessible from a single, user-friendly interface.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=analytics+dashboard",
         imageAlt: "New analytics dashboard interface",
-        imageCaption: "The redesigned analytics dashboard provides comprehensive insights at a glance",
+        imageCaption:
+          "The redesigned analytics dashboard provides comprehensive insights at a glance",
       },
       {
         heading: "Question-Level Performance Analysis",
@@ -137,14 +166,21 @@ export const newsData: Article[] = [
       },
       {
         heading: "Audience Demographics and Segmentation",
-        paragraphs: ["Understanding who is taking your quizzes is crucial for creating targeted content that resonates with your audience. Our new demographics section provides insights into your players' age ranges, geographic locations, devices used, and more.", "You can also create custom segments to compare performance across different audience groups, helping you tailor your quizzes to specific target demographics."],
+        paragraphs: [
+          "Understanding who is taking your quizzes is crucial for creating targeted content that resonates with your audience. Our new demographics section provides insights into your players' age ranges, geographic locations, devices used, and more.",
+          "You can also create custom segments to compare performance across different audience groups, helping you tailor your quizzes to specific target demographics.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=audience+demographics",
         imageAlt: "Audience demographics visualization",
-        imageCaption: "Detailed audience demographics help you understand who's taking your quizzes",
+        imageCaption:
+          "Detailed audience demographics help you understand who's taking your quizzes",
       },
       {
         heading: "Engagement Over Time",
-        paragraphs: ["Track how engagement with your quizzes changes over time with our new temporal analysis tools. Identify peak usage times, measure the impact of promotional efforts, and understand seasonal trends that affect quiz participation.", "These insights can help you optimize when you publish new quizzes and when to promote existing content for maximum reach and engagement."],
+        paragraphs: [
+          "Track how engagement with your quizzes changes over time with our new temporal analysis tools. Identify peak usage times, measure the impact of promotional efforts, and understand seasonal trends that affect quiz participation.",
+          "These insights can help you optimize when you publish new quizzes and when to promote existing content for maximum reach and engagement.",
+        ],
       },
       {
         heading: "Getting Started With Advanced Analytics",
@@ -158,7 +194,8 @@ export const newsData: Article[] = [
   {
     slug: "quiz-maker-community-spotlight-may",
     title: "Community Spotlight: Meet the Creator Behind 'History Mysteries'",
-    excerpt: "Learn how history teacher James Wilson built a quiz empire with over 2 million plays and a dedicated following.",
+    excerpt:
+      "Learn how history teacher James Wilson built a quiz empire with over 2 million plays and a dedicated following.",
     date: "May 5, 2025",
     readTime: 6,
     author: {
@@ -173,7 +210,10 @@ export const newsData: Article[] = [
     content: [
       {
         heading: "From Classroom to Quiz Stardom",
-        paragraphs: ["When James Wilson first created a quiz on ancient civilizations for his high school history class, he never imagined it would lead to a side career as one of QuizMaker's most successful creators.", "Three years and over 200 quizzes later, James's 'History Mysteries' series has amassed more than 2 million plays and a dedicated following of history enthusiasts from around the world."],
+        paragraphs: [
+          "When James Wilson first created a quiz on ancient civilizations for his high school history class, he never imagined it would lead to a side career as one of QuizMaker's most successful creators.",
+          "Three years and over 200 quizzes later, James's 'History Mysteries' series has amassed more than 2 million plays and a dedicated following of history enthusiasts from around the world.",
+        ],
       },
       {
         heading: "Finding a Niche in Historical Puzzles",
@@ -183,7 +223,8 @@ export const newsData: Article[] = [
         ],
         image: "/placeholder.svg?height=500&width=800&query=history+quiz",
         imageAlt: "Screenshot of a History Mysteries quiz",
-        imageCaption: "A sample question from the popular 'Lost Treasures of the Ancient World' quiz",
+        imageCaption:
+          "A sample question from the popular 'Lost Treasures of the Ancient World' quiz",
       },
       {
         heading: "Building a Community Around Historical Content",
@@ -221,7 +262,8 @@ export const newsData: Article[] = [
   {
     slug: "quiz-accessibility-guidelines",
     title: "Making Your Quizzes Accessible to All: A Comprehensive Guide",
-    excerpt: "Learn how to design inclusive quizzes that can be enjoyed by players with disabilities and different learning styles.",
+    excerpt:
+      "Learn how to design inclusive quizzes that can be enjoyed by players with disabilities and different learning styles.",
     date: "April 28, 2025",
     readTime: 7,
     author: {
@@ -259,14 +301,21 @@ export const newsData: Article[] = [
       },
       {
         heading: "Time Constraints and Flexibility",
-        paragraphs: ["Time limits can present significant barriers for users with cognitive disabilities or those using assistive technologies. When possible, avoid strict time limits for completing quizzes, or provide options to extend or disable time constraints.", "If your quiz concept requires timing elements, consider offering alternative versions or modes that allow users to proceed at their own pace."],
+        paragraphs: [
+          "Time limits can present significant barriers for users with cognitive disabilities or those using assistive technologies. When possible, avoid strict time limits for completing quizzes, or provide options to extend or disable time constraints.",
+          "If your quiz concept requires timing elements, consider offering alternative versions or modes that allow users to proceed at their own pace.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=flexible+timing",
         imageAlt: "Quiz settings with flexible timing options",
-        imageCaption: "Providing options for extended time or no time limit increases accessibility",
+        imageCaption:
+          "Providing options for extended time or no time limit increases accessibility",
       },
       {
         heading: "Clear Instructions and Feedback",
-        paragraphs: ["Clear, concise instructions are essential for all users but particularly beneficial for those with cognitive disabilities. Explain how to navigate the quiz, select answers, and what to expect at each stage.", "Provide immediate, clear feedback for both correct and incorrect answers. For incorrect answers, offer constructive guidance rather than simply indicating that the answer is wrong."],
+        paragraphs: [
+          "Clear, concise instructions are essential for all users but particularly beneficial for those with cognitive disabilities. Explain how to navigate the quiz, select answers, and what to expect at each stage.",
+          "Provide immediate, clear feedback for both correct and incorrect answers. For incorrect answers, offer constructive guidance rather than simply indicating that the answer is wrong.",
+        ],
       },
       {
         heading: "Testing Your Quiz for Accessibility",
@@ -287,7 +336,8 @@ export const newsData: Article[] = [
   {
     slug: "summer-quiz-championship-announcement",
     title: "Announcing the 2025 Summer Quiz Championship: $10,000 in Prizes",
-    excerpt: "Join our biggest quiz competition yet with categories for all interests and skill levels. Registration opens June 1.",
+    excerpt:
+      "Join our biggest quiz competition yet with categories for all interests and skill levels. Registration opens June 1.",
     date: "April 22, 2025",
     readTime: 4,
     author: {
@@ -308,25 +358,37 @@ export const newsData: Article[] = [
       },
       {
         heading: "Competition Categories",
-        paragraphs: ["This year's championship will feature six main categories: General Knowledge, Science & Technology, History & Culture, Entertainment, Sports, and a special 'Quiz Creator' category for those who build and share quizzes on our platform.", "Each category will have its own leaderboard and prizes, with the overall championship title going to the player who performs best across multiple categories."],
+        paragraphs: [
+          "This year's championship will feature six main categories: General Knowledge, Science & Technology, History & Culture, Entertainment, Sports, and a special 'Quiz Creator' category for those who build and share quizzes on our platform.",
+          "Each category will have its own leaderboard and prizes, with the overall championship title going to the player who performs best across multiple categories.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=quiz+categories",
         imageAlt: "Championship categories illustration",
         imageCaption: "The six competition categories for the 2025 Summer Quiz Championship",
       },
       {
         heading: "New Team Competition",
-        paragraphs: ["For the first time, we're introducing a team-based competition where groups of 3-5 players can compete together. Teams will face a series of collaborative challenges that test not only knowledge but also communication and strategy.", "Team registration requires at least one premium member, and teams can represent schools, companies, friend groups, or online communities."],
+        paragraphs: [
+          "For the first time, we're introducing a team-based competition where groups of 3-5 players can compete together. Teams will face a series of collaborative challenges that test not only knowledge but also communication and strategy.",
+          "Team registration requires at least one premium member, and teams can represent schools, companies, friend groups, or online communities.",
+        ],
       },
       {
         heading: "Prize Structure",
-        paragraphs: ["The $10,000 prize pool will be distributed across all competition categories, with the overall champion receiving $2,000. Each category winner will receive $1,000, with additional prizes for runners-up and team competition winners.", "Beyond cash prizes, winners will receive exclusive digital badges, custom profile features, and opportunities to contribute to official QuizMaker content."],
+        paragraphs: [
+          "The $10,000 prize pool will be distributed across all competition categories, with the overall champion receiving $2,000. Each category winner will receive $1,000, with additional prizes for runners-up and team competition winners.",
+          "Beyond cash prizes, winners will receive exclusive digital badges, custom profile features, and opportunities to contribute to official QuizMaker content.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=prize+trophy",
         imageAlt: "Championship trophy and prizes",
         imageCaption: "The championship trophy and prizes for this year's winners",
       },
       {
         heading: "How to Participate",
-        paragraphs: ["Registration for the 2025 Summer Quiz Championship opens on June 1 and closes on June 15. The competition will run from June 20 to July 20, with the finals streamed live on our platform and social media channels.", "To register, simply log in to your QuizMaker account and visit the 'Championships' tab in the main menu. Basic participation is free, with optional premium features available for subscribers."],
+        paragraphs: [
+          "Registration for the 2025 Summer Quiz Championship opens on June 1 and closes on June 15. The competition will run from June 20 to July 20, with the finals streamed live on our platform and social media channels.",
+          "To register, simply log in to your QuizMaker account and visit the 'Championships' tab in the main menu. Basic participation is free, with optional premium features available for subscribers.",
+        ],
       },
       {
         heading: "Preparation Resources",
@@ -347,7 +409,8 @@ export const newsData: Article[] = [
   {
     slug: "quiz-monetization-strategies-2025",
     title: "Quiz Monetization Strategies That Work in 2025",
-    excerpt: "Discover proven approaches to generating revenue from your quizzes, from premium content to sponsorships and beyond.",
+    excerpt:
+      "Discover proven approaches to generating revenue from your quizzes, from premium content to sponsorships and beyond.",
     date: "April 15, 2025",
     readTime: 9,
     author: {
@@ -361,7 +424,10 @@ export const newsData: Article[] = [
     content: [
       {
         heading: "The Evolving Quiz Monetization Landscape",
-        paragraphs: ["The ways creators can earn money from quizzes have expanded dramatically in recent years. What was once limited to basic advertising has evolved into a diverse ecosystem of revenue streams that can support full-time careers in quiz creation.", "In this article, we'll explore the most effective monetization strategies for 2025, with real examples from successful creators on our platform."],
+        paragraphs: [
+          "The ways creators can earn money from quizzes have expanded dramatically in recent years. What was once limited to basic advertising has evolved into a diverse ecosystem of revenue streams that can support full-time careers in quiz creation.",
+          "In this article, we'll explore the most effective monetization strategies for 2025, with real examples from successful creators on our platform.",
+        ],
       },
       {
         heading: "Strategy #1: Premium Quiz Subscriptions",
@@ -399,14 +465,20 @@ export const newsData: Article[] = [
       },
       {
         heading: "Strategy #5: Corporate Training and Education",
-        paragraphs: ["Many businesses and educational institutions are willing to pay for custom quiz content for training, assessment, or educational purposes. This B2B approach often yields higher returns than consumer-focused monetization strategies.", "Creator spotlight: Former teacher Jonathan Lee now earns six figures annually creating custom assessment quizzes for educational technology companies and school districts."],
+        paragraphs: [
+          "Many businesses and educational institutions are willing to pay for custom quiz content for training, assessment, or educational purposes. This B2B approach often yields higher returns than consumer-focused monetization strategies.",
+          "Creator spotlight: Former teacher Jonathan Lee now earns six figures annually creating custom assessment quizzes for educational technology companies and school districts.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=corporate+training",
         imageAlt: "Corporate training quiz example",
         imageCaption: "Custom quizzes can be valuable tools for corporate training and assessment",
       },
       {
         heading: "Strategy #6: Quiz-Based Digital Products",
-        paragraphs: ["Beyond the quizzes themselves, consider creating complementary digital products like workbooks, guides, or courses that expand on quiz topics or results. These products can provide deeper value to engaged users who want more than just the quiz experience.", "For instance, a personality quiz might offer a basic result for free, with an option to purchase a comprehensive guide tailored to the user's personality type."],
+        paragraphs: [
+          "Beyond the quizzes themselves, consider creating complementary digital products like workbooks, guides, or courses that expand on quiz topics or results. These products can provide deeper value to engaged users who want more than just the quiz experience.",
+          "For instance, a personality quiz might offer a basic result for free, with an option to purchase a comprehensive guide tailored to the user's personality type.",
+        ],
       },
       {
         heading: "Building a Sustainable Quiz Business",
@@ -420,7 +492,8 @@ export const newsData: Article[] = [
   {
     slug: "ai-powered-quiz-creation-tools",
     title: "How AI is Revolutionizing Quiz Creation: New Tools and Techniques",
-    excerpt: "Explore the latest AI-powered features that are making it easier than ever to create engaging, personalized quizzes.",
+    excerpt:
+      "Explore the latest AI-powered features that are making it easier than ever to create engaging, personalized quizzes.",
     date: "April 8, 2025",
     readTime: 7,
     author: {
@@ -441,14 +514,21 @@ export const newsData: Article[] = [
       },
       {
         heading: "AI-Generated Questions and Answers",
-        paragraphs: ["One of the most time-consuming aspects of quiz creation is developing high-quality questions and answers. Modern AI systems can now generate diverse question sets on virtually any topic, complete with accurate answers and explanations.", "These systems go beyond simple fact-based questions to create scenario-based problems, critical thinking challenges, and even humor-infused content that feels genuinely human-crafted."],
+        paragraphs: [
+          "One of the most time-consuming aspects of quiz creation is developing high-quality questions and answers. Modern AI systems can now generate diverse question sets on virtually any topic, complete with accurate answers and explanations.",
+          "These systems go beyond simple fact-based questions to create scenario-based problems, critical thinking challenges, and even humor-infused content that feels genuinely human-crafted.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=ai+question+generation",
         imageAlt: "AI question generation interface",
-        imageCaption: "AI systems can generate diverse question types with explanations and difficulty ratings",
+        imageCaption:
+          "AI systems can generate diverse question types with explanations and difficulty ratings",
       },
       {
         heading: "Dynamic Difficulty Adjustment",
-        paragraphs: ["Static quizzes with fixed difficulty levels are becoming a thing of the past. AI-powered dynamic difficulty adjustment analyzes each player's performance in real-time and modifies subsequent questions to maintain an optimal challenge level.", "This technology ensures that players remain in the 'flow state'—challenged enough to stay engaged but not so overwhelmed that they become frustrated and abandon the quiz."],
+        paragraphs: [
+          "Static quizzes with fixed difficulty levels are becoming a thing of the past. AI-powered dynamic difficulty adjustment analyzes each player's performance in real-time and modifies subsequent questions to maintain an optimal challenge level.",
+          "This technology ensures that players remain in the 'flow state'—challenged enough to stay engaged but not so overwhelmed that they become frustrated and abandon the quiz.",
+        ],
       },
       {
         heading: "Personalized Learning Paths",
@@ -458,7 +538,8 @@ export const newsData: Article[] = [
         ],
         image: "/placeholder.svg?height=500&width=800&query=personalized+learning+path",
         imageAlt: "Personalized learning path visualization",
-        imageCaption: "AI-generated learning paths adapt to individual knowledge gaps and learning styles",
+        imageCaption:
+          "AI-generated learning paths adapt to individual knowledge gaps and learning styles",
       },
       {
         heading: "Natural Language Processing for Answer Evaluation",
@@ -496,7 +577,8 @@ export const newsData: Article[] = [
   {
     slug: "quiz-design-psychology",
     title: "The Psychology of Quiz Design: How to Create Addictive Learning Experiences",
-    excerpt: "Understand the psychological principles that make quizzes engaging and how to apply them to your own creations.",
+    excerpt:
+      "Understand the psychological principles that make quizzes engaging and how to apply them to your own creations.",
     date: "April 1, 2025",
     readTime: 8,
     featured: true,
@@ -545,7 +627,10 @@ export const newsData: Article[] = [
       },
       {
         heading: "The Power of Personalization",
-        paragraphs: ["Our brains are naturally self-referential—we pay more attention to information that relates directly to ourselves. Personalized quiz experiences leverage this psychological tendency to increase engagement and retention.", "Incorporate personalization by using the participant's name, tailoring questions or results to their previous responses, or framing information in terms of how it relates to their life or interests."],
+        paragraphs: [
+          "Our brains are naturally self-referential—we pay more attention to information that relates directly to ourselves. Personalized quiz experiences leverage this psychological tendency to increase engagement and retention.",
+          "Incorporate personalization by using the participant's name, tailoring questions or results to their previous responses, or framing information in terms of how it relates to their life or interests.",
+        ],
       },
       {
         heading: "Social Comparison and Identity",
@@ -556,7 +641,10 @@ export const newsData: Article[] = [
       },
       {
         heading: "The Endowed Progress Effect",
-        paragraphs: ["Research has shown that people are more likely to complete a task if they feel they've already made progress toward it. This psychological principle, known as the 'endowed progress effect,' can be powerful in quiz design.", "Show progress indicators throughout your quiz, and consider giving participants a 'head start' by marking the first question as already complete or starting progress bars at 10% rather than 0%."],
+        paragraphs: [
+          "Research has shown that people are more likely to complete a task if they feel they've already made progress toward it. This psychological principle, known as the 'endowed progress effect,' can be powerful in quiz design.",
+          "Show progress indicators throughout your quiz, and consider giving participants a 'head start' by marking the first question as already complete or starting progress bars at 10% rather than 0%.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=progress+bar",
         imageAlt: "Quiz progress bar with endowed progress",
         imageCaption: "Progress indicators with a head start leverage the endowed progress effect",
@@ -573,7 +661,8 @@ export const newsData: Article[] = [
   {
     slug: "quiz-trends-2025",
     title: "Quiz Trends to Watch in 2025: What's Hot and What's Next",
-    excerpt: "Stay ahead of the curve with our analysis of emerging trends in quiz formats, technology, and user preferences.",
+    excerpt:
+      "Stay ahead of the curve with our analysis of emerging trends in quiz formats, technology, and user preferences.",
     date: "March 25, 2025",
     featured: true,
     readTime: 7,
@@ -601,7 +690,8 @@ export const newsData: Article[] = [
         ],
         image: "/placeholder.svg?height=500&width=800&query=immersive+quiz+experience",
         imageAlt: "Immersive quiz experience example",
-        imageCaption: "Immersive quizzes blend storytelling, visuals, and interactivity for deeper engagement",
+        imageCaption:
+          "Immersive quizzes blend storytelling, visuals, and interactivity for deeper engagement",
       },
       {
         heading: "Trend #2: Micro-Learning Quizzes",
@@ -629,10 +719,14 @@ export const newsData: Article[] = [
       },
       {
         heading: "Trend #5: Hyper-Personalization",
-        paragraphs: ["Generic, one-size-fits-all quizzes are being replaced by hyper-personalized experiences that adapt not just to a user's knowledge level but to their learning style, interests, goals, and even emotional state.", "Advanced AI systems now analyze hundreds of data points to create truly individualized quiz experiences, from the topics covered and question difficulty to the presentation style and feedback approach."],
+        paragraphs: [
+          "Generic, one-size-fits-all quizzes are being replaced by hyper-personalized experiences that adapt not just to a user's knowledge level but to their learning style, interests, goals, and even emotional state.",
+          "Advanced AI systems now analyze hundreds of data points to create truly individualized quiz experiences, from the topics covered and question difficulty to the presentation style and feedback approach.",
+        ],
         image: "/placeholder.svg?height=500&width=800&query=personalized+quiz+experience",
         imageAlt: "Personalized quiz dashboard",
-        imageCaption: "Hyper-personalized quizzes adapt to individual preferences, goals, and learning styles",
+        imageCaption:
+          "Hyper-personalized quizzes adapt to individual preferences, goals, and learning styles",
       },
       {
         heading: "Trend #6: Integration with Physical Products",

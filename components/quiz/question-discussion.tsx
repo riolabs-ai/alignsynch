@@ -7,7 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, ChevronDown, ChevronUp, Clock, Flag, MessageSquare, Send, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Flag,
+  MessageSquare,
+  Send,
+  XCircle,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 type Reply = {
@@ -102,12 +111,18 @@ export function QuestionDiscussion({ question, questionNumber }: QuestionDiscuss
   };
 
   return (
-    <Card className={`border-l-4 ${question.isCorrect ? "border-l-green-500" : "border-l-red-500"}`}>
+    <Card
+      className={`border-l-4 ${question.isCorrect ? "border-l-green-500" : "border-l-red-500"}`}
+    >
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <span>Question {questionNumber}:</span>
-            {question.isCorrect ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />}
+            {question.isCorrect ? (
+              <CheckCircle className="h-5 w-5 text-green-500" />
+            ) : (
+              <XCircle className="h-5 w-5 text-red-500" />
+            )}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge className={getDifficultyColor(question.difficulty)}>{question.difficulty}</Badge>
@@ -155,7 +170,12 @@ export function QuestionDiscussion({ question, questionNumber }: QuestionDiscuss
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium">Community Explanations & Discussion</h3>
-                <Button variant="ghost" size="sm" onClick={() => setShowDiscussion(!showDiscussion)} className="flex items-center gap-1 h-8">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDiscussion(!showDiscussion)}
+                  className="flex items-center gap-1 h-8"
+                >
                   {showDiscussion ? (
                     <>
                       <ChevronUp className="h-4 w-4" />
@@ -184,7 +204,12 @@ export function QuestionDiscussion({ question, questionNumber }: QuestionDiscuss
             <div className="space-y-3">
               {!showAddExplanation ? (
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowAddExplanation(true)} className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddExplanation(true)}
+                    className="flex items-center gap-1"
+                  >
                     <MessageSquare className="h-4 w-4" />
                     <span>Add Explanation</span>
                   </Button>
@@ -195,12 +220,25 @@ export function QuestionDiscussion({ question, questionNumber }: QuestionDiscuss
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <Textarea placeholder="Add your explanation or insight about this question..." value={newExplanation} onChange={(e) => setNewExplanation(e.target.value)} className="min-h-[100px]" />
+                  <Textarea
+                    placeholder="Add your explanation or insight about this question..."
+                    value={newExplanation}
+                    onChange={(e) => setNewExplanation(e.target.value)}
+                    className="min-h-[100px]"
+                  />
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setShowAddExplanation(false)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddExplanation(false)}
+                    >
                       Cancel
                     </Button>
-                    <Button size="sm" onClick={handleAddExplanation} className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      onClick={handleAddExplanation}
+                      className="flex items-center gap-1"
+                    >
                       <Send className="h-4 w-4" />
                       <span>Submit Explanation</span>
                     </Button>
@@ -217,10 +255,20 @@ export function QuestionDiscussion({ question, questionNumber }: QuestionDiscuss
                         <AvatarImage src="/avatars/master.png" alt="Your Avatar" />
                         <AvatarFallback>YO</AvatarFallback>
                       </Avatar>
-                      <Textarea placeholder="Add a comment or question..." value={newComment} onChange={(e) => setNewComment(e.target.value)} className="flex-1" />
+                      <Textarea
+                        placeholder="Add a comment or question..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        className="flex-1"
+                      />
                     </div>
                     <div className="flex justify-end">
-                      <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim()} className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        onClick={handleAddComment}
+                        disabled={!newComment.trim()}
+                        className="flex items-center gap-1"
+                      >
                         <Send className="h-4 w-4" />
                         <span>Post</span>
                       </Button>
@@ -230,7 +278,12 @@ export function QuestionDiscussion({ question, questionNumber }: QuestionDiscuss
               )}
             </div>
           ) : (
-            <Button variant="outline" size="sm" onClick={() => setShowDiscussion(true)} className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDiscussion(true)}
+              className="flex items-center gap-1"
+            >
               <MessageSquare className="h-4 w-4" />
               <span>Join Discussion ({discussions.length})</span>
             </Button>

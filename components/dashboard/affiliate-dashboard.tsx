@@ -90,7 +90,9 @@ export function AffiliateDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeReferrals}</div>
-            <p className="text-xs text-muted-foreground">{((activeReferrals / totalReferrals) * 100).toFixed(1)}% of total referrals</p>
+            <p className="text-xs text-muted-foreground">
+              {((activeReferrals / totalReferrals) * 100).toFixed(1)}% of total referrals
+            </p>
           </CardContent>
         </Card>
 
@@ -283,7 +285,12 @@ function ReferralCard({ referral }: { referral: Referral }) {
     <div className="flex items-center justify-between p-4 border rounded-lg">
       <div className="flex items-center gap-3">
         <div className="relative w-10 h-10 rounded-full overflow-hidden">
-          <Image src={referral.avatar || "/placeholder.svg"} alt={referral.name} fill className="object-cover" />
+          <Image
+            src={referral.avatar || "/placeholder.svg"}
+            alt={referral.name}
+            fill
+            className="object-cover"
+          />
         </div>
 
         <div>

@@ -30,12 +30,24 @@ export function TournamentHeader({ tournament }: TournamentHeaderProps) {
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-indigo-900/90 z-10 rounded-lg" />
-      <Image src={"/abstract-geometric-shapes.png"} alt={tournament.title} width={1200} height={400} className="w-full h-64 object-cover rounded-lg" />
+      <Image
+        src={"/abstract-geometric-shapes.png"}
+        alt={tournament.title}
+        width={1200}
+        height={400}
+        className="w-full h-64 object-cover rounded-lg"
+      />
       <div className="absolute top-4 left-4 z-20">
-        <Badge className={`${statusColors[tournament.status]} text-white`}>{statusText[tournament.status]}</Badge>
+        <Badge className={`${statusColors[tournament.status]} text-white`}>
+          {statusText[tournament.status]}
+        </Badge>
       </div>
       <div className="absolute top-4 right-4 z-20">
-        <Button variant="outline" size="icon" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+        <Button
+          variant="outline"
+          size="icon"
+          className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+        >
           <Share2 className="h-4 w-4" />
         </Button>
       </div>
@@ -75,7 +87,9 @@ export function TournamentHeader({ tournament }: TournamentHeaderProps) {
               </Button>
             )}
 
-            {tournament.status === "ongoing" && <Button className="bg-amber-500 hover:bg-amber-600 text-white">Join Live</Button>}
+            {tournament.status === "ongoing" && (
+              <Button className="bg-amber-500 hover:bg-amber-600 text-white">Join Live</Button>
+            )}
 
             {tournament.status === "completed" && (
               <Button variant="outline" className="border-white/30 hover:bg-white/10">

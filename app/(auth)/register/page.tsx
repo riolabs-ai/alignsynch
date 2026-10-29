@@ -5,8 +5,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, BookOpen, Brain, Eye, EyeOff, Gamepad2, Globe, Link, Trophy, Users } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Brain,
+  Eye,
+  EyeOff,
+  Gamepad2,
+  Globe,
+  Link,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -53,7 +71,9 @@ export default function AuthPage() {
   const handleInterestToggle = (interest: string) => {
     setFormData((prev) => ({
       ...prev,
-      interests: prev.interests.includes(interest) ? prev.interests.filter((i) => i !== interest) : [...prev.interests, interest],
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter((i) => i !== interest)
+        : [...prev.interests, interest],
     }));
   };
 
@@ -72,7 +92,12 @@ export default function AuthPage() {
       case 2:
         return formData.firstName && formData.lastName && formData.email && formData.phone;
       case 3:
-        return formData.password && formData.confirmPassword && formData.terms && formData.password === formData.confirmPassword;
+        return (
+          formData.password &&
+          formData.confirmPassword &&
+          formData.terms &&
+          formData.password === formData.confirmPassword
+        );
       default:
         return false;
     }
@@ -91,15 +116,25 @@ export default function AuthPage() {
               <BookOpen className="w-12 h-12 text-white" />
             </div>
             <h1 className="text-4xl font-bold mb-4">Join the Quiz Revolution</h1>
-            <p className="text-xl text-white/90 leading-relaxed mb-8">Discover your potential, challenge your friends, and become a quiz champion</p>
+            <p className="text-xl text-white/90 leading-relaxed mb-8">
+              Discover your potential, challenge your friends, and become a quiz champion
+            </p>
           </div>
 
           {/* Progress Indicator */}
           <div className="flex items-center space-x-4 mb-8">
             {steps.map((step, index) => (
               <div key={step.number} className="flex items-center">
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= step.number ? "bg-white text-indigo-600 border-white" : "border-white/50 text-white/70"}`}>{step.number}</div>
-                {index < steps.length - 1 && <div className={`w-12 h-0.5 mx-2 ${currentStep > step.number ? "bg-white" : "bg-white/30"}`}></div>}
+                <div
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= step.number ? "bg-white text-indigo-600 border-white" : "border-white/50 text-white/70"}`}
+                >
+                  {step.number}
+                </div>
+                {index < steps.length - 1 && (
+                  <div
+                    className={`w-12 h-0.5 mx-2 ${currentStep > step.number ? "bg-white" : "bg-white/30"}`}
+                  ></div>
+                )}
               </div>
             ))}
           </div>
@@ -139,14 +174,22 @@ export default function AuthPage() {
               {currentStep === 1 && (
                 <div className="space-y-6">
                   <div>
-                    <Label className="text-base font-semibold mb-4 block">What types of quizzes interest you? *</Label>
+                    <Label className="text-base font-semibold mb-4 block">
+                      What types of quizzes interest you? *
+                    </Label>
                     <div className="grid grid-cols-1 gap-3">
                       {quizCategories.map((category) => {
                         const Icon = category.icon;
                         return (
-                          <div key={category.id} onClick={() => handleInterestToggle(category.id)} className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.interests.includes(category.id) ? "border-indigo-600 bg-indigo-500/20" : "border-gray-200 dark:border-neutral-500 hover:border-gray-300"}`}>
+                          <div
+                            key={category.id}
+                            onClick={() => handleInterestToggle(category.id)}
+                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.interests.includes(category.id) ? "border-indigo-600 bg-indigo-500/20" : "border-gray-200 dark:border-neutral-500 hover:border-gray-300"}`}
+                          >
                             <div className="flex items-center space-x-3">
-                              <Icon className={`w-5 h-5 ${formData.interests.includes(category.id) ? "text-indigo-600" : "text-gray-400"}`} />
+                              <Icon
+                                className={`w-5 h-5 ${formData.interests.includes(category.id) ? "text-indigo-600" : "text-gray-400"}`}
+                              />
                               <span className="font-medium">{category.label}</span>
                             </div>
                           </div>
@@ -159,13 +202,18 @@ export default function AuthPage() {
                     <Label htmlFor="skillLevel" className="text-base font-semibold">
                       What's your quiz skill level? *
                     </Label>
-                    <Select value={formData.skillLevel} onValueChange={(value) => handleInputChange("skillLevel", value)}>
+                    <Select
+                      value={formData.skillLevel}
+                      onValueChange={(value) => handleInputChange("skillLevel", value)}
+                    >
                       <SelectTrigger className="mt-2 h-12">
                         <SelectValue placeholder="Select your skill level" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="beginner">Beginner - Just getting started</SelectItem>
-                        <SelectItem value="intermediate">Intermediate - I know my way around</SelectItem>
+                        <SelectItem value="intermediate">
+                          Intermediate - I know my way around
+                        </SelectItem>
                         <SelectItem value="advanced">Advanced - Bring on the challenge!</SelectItem>
                         <SelectItem value="expert">Expert - Quiz master level</SelectItem>
                       </SelectContent>
@@ -182,13 +230,25 @@ export default function AuthPage() {
                       <Label htmlFor="firstName" className="text-sm font-medium ">
                         First Name *
                       </Label>
-                      <Input id="firstName" value={formData.firstName} onChange={(e) => handleInputChange("firstName", e.target.value)} placeholder="John" className="h-12 mt-1" />
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange("firstName", e.target.value)}
+                        placeholder="John"
+                        className="h-12 mt-1"
+                      />
                     </div>
                     <div>
                       <Label htmlFor="lastName" className="text-sm font-medium ">
                         Last Name *
                       </Label>
-                      <Input id="lastName" value={formData.lastName} onChange={(e) => handleInputChange("lastName", e.target.value)} placeholder="Smith" className="h-12 mt-1" />
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange("lastName", e.target.value)}
+                        placeholder="Smith"
+                        className="h-12 mt-1"
+                      />
                     </div>
                   </div>
 
@@ -196,14 +256,28 @@ export default function AuthPage() {
                     <Label htmlFor="email" className="text-sm font-medium ">
                       Email *
                     </Label>
-                    <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} placeholder="john@example.com" className="h-12 mt-1" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      placeholder="john@example.com"
+                      className="h-12 mt-1"
+                    />
                   </div>
 
                   <div>
                     <Label htmlFor="phone" className="text-sm font-medium ">
                       Phone Number *
                     </Label>
-                    <Input id="phone" type="tel" value={formData.phone} onChange={(e) => handleInputChange("phone", e.target.value)} placeholder="+1 (555) 123-4567" className="h-12 mt-1" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      placeholder="+1 (555) 123-4567"
+                      className="h-12 mt-1"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -211,13 +285,22 @@ export default function AuthPage() {
                       <Label htmlFor="dateOfBirth" className="text-sm font-medium ">
                         Date of Birth
                       </Label>
-                      <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={(e) => handleInputChange("dateOfBirth", e.target.value)} className="h-12 mt-1" />
+                      <Input
+                        id="dateOfBirth"
+                        type="date"
+                        value={formData.dateOfBirth}
+                        onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                        className="h-12 mt-1"
+                      />
                     </div>
                     <div>
                       <Label htmlFor="country" className="text-sm font-medium ">
                         Country
                       </Label>
-                      <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                      <Select
+                        value={formData.country}
+                        onValueChange={(value) => handleInputChange("country", value)}
+                      >
                         <SelectTrigger className="h-12 mt-1">
                           <SelectValue placeholder="Select country" />
                         </SelectTrigger>
@@ -244,12 +327,29 @@ export default function AuthPage() {
                       Password *
                     </Label>
                     <div className="relative mt-1">
-                      <Input id="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={(e) => handleInputChange("password", e.target.value)} placeholder="Create a strong password" className="h-12 pr-10" />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) => handleInputChange("password", e.target.value)}
+                        placeholder="Create a strong password"
+                        className="h-12 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Password must be at least 8 characters long</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Password must be at least 8 characters long
+                    </p>
                   </div>
 
                   <div>
@@ -257,24 +357,53 @@ export default function AuthPage() {
                       Confirm Password *
                     </Label>
                     <div className="relative mt-1">
-                      <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} value={formData.confirmPassword} onChange={(e) => handleInputChange("confirmPassword", e.target.value)} placeholder="Confirm your password" className="h-12 pr-10" />
-                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                        placeholder="Confirm your password"
+                        className="h-12 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
-                    {formData.confirmPassword && formData.password !== formData.confirmPassword && <p className="text-xs text-red-500 mt-1">Passwords do not match</p>}
+                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                      <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+                    )}
                   </div>
 
                   <div className="space-y-3 pt-4">
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="newsletter" checked={formData.newsletter} onCheckedChange={(checked) => handleInputChange("newsletter", checked as boolean)} />
+                      <Checkbox
+                        id="newsletter"
+                        checked={formData.newsletter}
+                        onCheckedChange={(checked) =>
+                          handleInputChange("newsletter", checked as boolean)
+                        }
+                      />
                       <Label htmlFor="newsletter" className="text-sm ">
                         Subscribe to our newsletter for quiz updates and tips
                       </Label>
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="terms" checked={formData.terms} onCheckedChange={(checked) => handleInputChange("terms", checked as boolean)} />
+                      <Checkbox
+                        id="terms"
+                        checked={formData.terms}
+                        onCheckedChange={(checked) =>
+                          handleInputChange("terms", checked as boolean)
+                        }
+                      />
                       <Label htmlFor="terms" className="text-sm ">
                         I agree to the{" "}
                         <Link href="#" className="text-indigo-600 hover:underline">

@@ -1,23 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ProfileSettings } from "./profile-settings"
-import { SecuritySettings } from "./security-settings"
-import { NotificationSettings } from "./notification-settings"
-import { PrivacySettings } from "./privacy-settings"
-import { AppearanceSettings } from "./appearance-settings"
-import { QuizPreferences } from "./quiz-preferences"
-import { ConnectedAccounts } from "./connected-accounts"
-import { SubscriptionSettings } from "./subscription-settings"
-import { PageHeader } from "../ui/page-header"
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProfileSettings } from "./profile-settings";
+import { SecuritySettings } from "./security-settings";
+import { NotificationSettings } from "./notification-settings";
+import { PrivacySettings } from "./privacy-settings";
+import { AppearanceSettings } from "./appearance-settings";
+import { QuizPreferences } from "./quiz-preferences";
+import { ConnectedAccounts } from "./connected-accounts";
+import { SubscriptionSettings } from "./subscription-settings";
+import { PageHeader } from "../ui/page-header";
 
 export function AccountSettings() {
-  const [activeTab, setActiveTab] = useState("profile")
+  const [activeTab, setActiveTab] = useState("profile");
 
   return (
     <div className="container mx-auto">
-      <PageHeader title="Account Settings" description="Manage your account settings and preferences" />
+      <PageHeader
+        title="Account Settings"
+        description="Manage your account settings and preferences"
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
         <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-8">
@@ -66,5 +69,5 @@ export function AccountSettings() {
         </div>
       </Tabs>
     </div>
-  )
+  );
 }

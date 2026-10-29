@@ -2,10 +2,25 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BadgeCheck, Calendar, ChevronDown, Globe, Medal, Search, TrendingUp, Trophy, Users } from "lucide-react";
+import {
+  BadgeCheck,
+  Calendar,
+  ChevronDown,
+  Globe,
+  Medal,
+  Search,
+  TrendingUp,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { LeaderboardFilters } from "./leaderboard-filters";
 import { LeaderboardPodium } from "./leaderboard-podium";
@@ -222,7 +237,9 @@ export function LeaderboardPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
-          <p className="text-muted-foreground">See who's leading the pack in our global quiz rankings.</p>
+          <p className="text-muted-foreground">
+            See who's leading the pack in our global quiz rankings.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
@@ -241,7 +258,9 @@ export function LeaderboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle>Leaderboard Highlights</CardTitle>
-            <CardDescription>Top performers across different categories and time periods</CardDescription>
+            <CardDescription>
+              Top performers across different categories and time periods
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="global" className="w-full">
@@ -260,7 +279,12 @@ export function LeaderboardPage() {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="global" className="pt-4">
-                <LeaderboardFilters timeFilter={timeFilter} setTimeFilter={setTimeFilter} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} />
+                <LeaderboardFilters
+                  timeFilter={timeFilter}
+                  setTimeFilter={setTimeFilter}
+                  categoryFilter={categoryFilter}
+                  setCategoryFilter={setCategoryFilter}
+                />
                 <LeaderboardPodium leaderboardData={leaderboardData.slice(0, 3)} />
               </TabsContent>
               <TabsContent value="categories" className="pt-4">
@@ -281,7 +305,9 @@ export function LeaderboardPage() {
                     This Week
                   </Button>
                 </div>
-                <LeaderboardTable leaderboardData={[...leaderboardData].sort(() => Math.random() - 0.5).slice(0, 5)} />
+                <LeaderboardTable
+                  leaderboardData={[...leaderboardData].sort(() => Math.random() - 0.5).slice(0, 5)}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -294,7 +320,9 @@ export function LeaderboardPage() {
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <div>
               <h2 className="text-2xl font-bold tracking-tight">Global Leaderboard</h2>
-              <p className="text-white/80">Compete with the best quiz masters from around the world</p>
+              <p className="text-white/80">
+                Compete with the best quiz masters from around the world
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="secondary" size="sm">
@@ -313,21 +341,29 @@ export function LeaderboardPage() {
           <div className="mb-6 flex flex-wrap flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search players..." className="pl-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <Input
+                placeholder="Search players..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
-                    Sort by: {sortBy === "score" ? "Score" : sortBy === "level" ? "Level" : "Quizzes"}
+                    Sort by:{" "}
+                    {sortBy === "score" ? "Score" : sortBy === "level" ? "Level" : "Quizzes"}
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setSortBy("score")}>Score</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setSortBy("level")}>Level</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("quizzes")}>Quizzes Completed</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("quizzes")}>
+                    Quizzes Completed
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -335,21 +371,37 @@ export function LeaderboardPage() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Calendar className="mr-2 h-4 w-4" />
-                    {timeFilter === "all-time" ? "All Time" : timeFilter === "monthly" ? "This Month" : "This Week"}
+                    {timeFilter === "all-time"
+                      ? "All Time"
+                      : timeFilter === "monthly"
+                        ? "This Month"
+                        : "This Week"}
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setTimeFilter("all-time")}>All Time</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTimeFilter("monthly")}>This Month</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTimeFilter("weekly")}>This Week</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTimeFilter("all-time")}>
+                    All Time
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTimeFilter("monthly")}>
+                    This Month
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTimeFilter("weekly")}>
+                    This Week
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
 
           <div className="rounded-xl border bg-card shadow-sm">
-            <LeaderboardTable leaderboardData={leaderboardData.filter((user) => user.name.toLowerCase().includes(searchQuery.toLowerCase()))} showPagination enhanced />
+            <LeaderboardTable
+              leaderboardData={leaderboardData.filter((user) =>
+                user.name.toLowerCase().includes(searchQuery.toLowerCase()),
+              )}
+              showPagination
+              enhanced
+            />
           </div>
         </CardContent>
       </Card>

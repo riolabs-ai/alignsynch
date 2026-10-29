@@ -2,9 +2,19 @@
 export const mockSearchData = {
   quizzes: [
     { id: "q1", title: "World Geography Quiz", category: "Geography", difficulty: "Medium" },
-    { id: "q2", title: "Marvel Cinematic Universe Trivia", category: "Entertainment", difficulty: "Hard" },
+    {
+      id: "q2",
+      title: "Marvel Cinematic Universe Trivia",
+      category: "Entertainment",
+      difficulty: "Hard",
+    },
     { id: "q3", title: "Basic Mathematics", category: "Education", difficulty: "Easy" },
-    { id: "q4", title: "History of Ancient Civilizations", category: "History", difficulty: "Medium" },
+    {
+      id: "q4",
+      title: "History of Ancient Civilizations",
+      category: "History",
+      difficulty: "Medium",
+    },
   ],
   categories: [
     { id: "c1", name: "Science", quizCount: 42 },

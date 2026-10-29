@@ -4,14 +4,51 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { ArrowLeft, BarChart3, Calendar, CheckCircle, Clock, Download, Filter, Globe, PieChartIcon, Timer, TrendingUp, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  BarChart3,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Download,
+  Filter,
+  Globe,
+  PieChartIcon,
+  Timer,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+  ZAxis,
+} from "recharts";
 
 // Mock data for the quiz
 const getQuizData = (id: string) => {
@@ -242,13 +279,33 @@ export function QuizStatistics({ id }: { id: string }) {
   const RADIAN = Math.PI / 180;
 
   // Custom label for pie charts
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: { cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number }) => {
+  const renderCustomizedLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }: {
+    cx: number;
+    cy: number;
+    midAngle: number;
+    innerRadius: number;
+    outerRadius: number;
+    percent: number;
+  }) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     return (
-      <text x={x} y={y} fill="white" textAnchor={x > cx ? "start" : "end"} dominantBaseline="central">
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+      >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
     );
@@ -259,18 +316,29 @@ export function QuizStatistics({ id }: { id: string }) {
       {/* Header */}
       <div className="mb-6 flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <div>
-          <Link href={`/my-quizzes/${id}`} className="mb-2 flex items-center text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            href={`/my-quizzes/${id}`}
+            className="mb-2 flex items-center text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="mr-1 h-4 w-4" /> Back to Quiz Details
           </Link>
           <h1 className="text-2xl font-bold">{quiz.title} - Statistics</h1>
-          <p className="text-muted-foreground">Analyze performance and engagement metrics for your quiz</p>
+          <p className="text-muted-foreground">
+            Analyze performance and engagement metrics for your quiz
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <Filter className="mr-2 h-4 w-4" />
-                {timeRange === "7d" ? "Last 7 days" : timeRange === "30d" ? "Last 30 days" : timeRange === "90d" ? "Last 90 days" : "All time"}
+                {timeRange === "7d"
+                  ? "Last 7 days"
+                  : timeRange === "30d"
+                    ? "Last 30 days"
+                    : timeRange === "90d"
+                      ? "Last 90 days"
+                      : "All time"}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -291,7 +359,14 @@ export function QuizStatistics({ id }: { id: string }) {
       <Card className="mb-6">
         <div className="flex flex-col md:flex-row">
           <div className="relative h-48 w-full md:h-auto md:w-64">
-            <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} fill className="object-cover md:rounded-l-lg" />
+            <Image
+              width={600}
+              height={350}
+              src={quiz.image || "/placeholder.svg"}
+              alt={quiz.title}
+              fill
+              className="object-cover md:rounded-l-lg"
+            />
           </div>
           <div className="flex flex-1 flex-col p-6">
             <div className="mb-4">
@@ -371,7 +446,10 @@ export function QuizStatistics({ id }: { id: string }) {
                     className="h-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={quiz.stats.scoreDistribution} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <BarChart
+                        data={quiz.stats.scoreDistribution}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="range" />
                         <YAxis />
@@ -407,12 +485,22 @@ export function QuizStatistics({ id }: { id: string }) {
                     className="h-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={quiz.stats.playTimeDistribution} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <AreaChart
+                        data={quiz.stats.playTimeDistribution}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="hour" />
                         <YAxis />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Area type="monotone" dataKey="count" name="Plays" stroke="var(--color-count)" fill="var(--color-count)" fillOpacity={0.3} />
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          name="Plays"
+                          stroke="var(--color-count)"
+                          fill="var(--color-count)"
+                          fillOpacity={0.3}
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -439,12 +527,23 @@ export function QuizStatistics({ id }: { id: string }) {
                     className="h-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={quiz.stats.dailyPlayers} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <LineChart
+                        data={quiz.stats.dailyPlayers}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" tickFormatter={formatDate} />
                         <YAxis />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line type="monotone" dataKey="players" name="Players" stroke="var(--color-players)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        <Line
+                          type="monotone"
+                          dataKey="players"
+                          name="Players"
+                          stroke="var(--color-players)"
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -463,7 +562,16 @@ export function QuizStatistics({ id }: { id: string }) {
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={quiz.stats.completionAnalysis} cx="50%" cy="50%" labelLine={false} label={renderCustomizedLabel} outerRadius={80} fill="#8884d8" dataKey="value">
+                      <Pie
+                        data={quiz.stats.completionAnalysis}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={renderCustomizedLabel}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
                         {quiz.stats.completionAnalysis.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
@@ -499,19 +607,50 @@ export function QuizStatistics({ id }: { id: string }) {
                   className="h-80 w-full"
                 >
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={quiz.stats.questionStats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <BarChart
+                      data={quiz.stats.questionStats}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="id" />
                       <YAxis yAxisId="left" orientation="left" stroke="var(--color-correctRate)" />
-                      <YAxis yAxisId="right" orientation="right" stroke="var(--color-avgTimeSpent)" domain={[0, 60]} />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        stroke="var(--color-avgTimeSpent)"
+                        domain={[0, 60]}
+                      />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Legend />
-                      <Bar yAxisId="left" dataKey="correctRate" name="Correct Rate" fill="var(--color-correctRate)" radius={[4, 4, 0, 0]}>
+                      <Bar
+                        yAxisId="left"
+                        dataKey="correctRate"
+                        name="Correct Rate"
+                        fill="var(--color-correctRate)"
+                        radius={[4, 4, 0, 0]}
+                      >
                         {quiz.stats.questionStats.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.correctRate >= 80 ? "#22c55e" : entry.correctRate >= 60 ? "#eab308" : "#ef4444"} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              entry.correctRate >= 80
+                                ? "#22c55e"
+                                : entry.correctRate >= 60
+                                  ? "#eab308"
+                                  : "#ef4444"
+                            }
+                          />
                         ))}
                       </Bar>
-                      <Line yAxisId="right" type="monotone" dataKey="avgTimeSpent" name="Avg. Time" stroke="var(--color-avgTimeSpent)" strokeWidth={2} dot={{ r: 4 }} />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="avgTimeSpent"
+                        name="Avg. Time"
+                        stroke="var(--color-avgTimeSpent)"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -528,8 +667,19 @@ export function QuizStatistics({ id }: { id: string }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" dataKey="correctRate" name="Correct Rate" domain={[0, 100]} label={{ value: "Correct Rate (%)", position: "insideBottom", offset: -5 }} />
-                    <YAxis type="number" dataKey="avgTimeSpent" name="Avg. Time" label={{ value: "Avg. Time (sec)", angle: -90, position: "insideLeft" }} />
+                    <XAxis
+                      type="number"
+                      dataKey="correctRate"
+                      name="Correct Rate"
+                      domain={[0, 100]}
+                      label={{ value: "Correct Rate (%)", position: "insideBottom", offset: -5 }}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="avgTimeSpent"
+                      name="Avg. Time"
+                      label={{ value: "Avg. Time (sec)", angle: -90, position: "insideLeft" }}
+                    />
                     <ZAxis type="number" range={[100, 500]} />
                     <Tooltip
                       cursor={{ strokeDasharray: "3 3" }}
@@ -539,9 +689,15 @@ export function QuizStatistics({ id }: { id: string }) {
                           return (
                             <div className="rounded-lg border bg-background p-2 shadow-sm">
                               <p className="text-sm font-medium">Question {data.id}</p>
-                              <p className="text-sm text-muted-foreground">Correct Rate: {data.correctRate}%</p>
-                              <p className="text-sm text-muted-foreground">Avg. Time: {data.avgTimeSpent} sec</p>
-                              <p className="text-sm text-muted-foreground">Difficulty: {data.difficulty}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Correct Rate: {data.correctRate}%
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Avg. Time: {data.avgTimeSpent} sec
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Difficulty: {data.difficulty}
+                              </p>
                             </div>
                           );
                         }
@@ -552,12 +708,22 @@ export function QuizStatistics({ id }: { id: string }) {
                       name="Questions"
                       data={quiz.stats.questionStats.map((q) => ({
                         ...q,
-                        difficulty: q.correctRate >= 80 ? "Easy" : q.correctRate >= 60 ? "Medium" : "Hard",
+                        difficulty:
+                          q.correctRate >= 80 ? "Easy" : q.correctRate >= 60 ? "Medium" : "Hard",
                       }))}
                       fill="#8884d8"
                     >
                       {quiz.stats.questionStats.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.correctRate >= 80 ? "#22c55e" : entry.correctRate >= 60 ? "#eab308" : "#ef4444"} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            entry.correctRate >= 80
+                              ? "#22c55e"
+                              : entry.correctRate >= 60
+                                ? "#eab308"
+                                : "#ef4444"
+                          }
+                        />
                       ))}
                     </Scatter>
                   </ScatterChart>
@@ -589,7 +755,10 @@ export function QuizStatistics({ id }: { id: string }) {
                           <td className="px-4 py-3 text-sm">
                             <div className="flex items-center">
                               <div className="mr-2 h-2 w-16 overflow-hidden rounded-full bg-gray-200">
-                                <div className={`h-full ${question.correctRate >= 80 ? "bg-green-500" : question.correctRate >= 60 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${question.correctRate}%` }} />
+                                <div
+                                  className={`h-full ${question.correctRate >= 80 ? "bg-green-500" : question.correctRate >= 60 ? "bg-yellow-500" : "bg-red-500"}`}
+                                  style={{ width: `${question.correctRate}%` }}
+                                />
                               </div>
                               <span>{question.correctRate}%</span>
                             </div>
@@ -599,15 +768,24 @@ export function QuizStatistics({ id }: { id: string }) {
                             {question.id === quiz.stats.mostMissedQuestion ? (
                               <Badge variant="destructive">Most Missed</Badge>
                             ) : question.correctRate >= 90 ? (
-                              <Badge variant="outline" className="border-green-500 bg-green-50 text-green-700">
+                              <Badge
+                                variant="outline"
+                                className="border-green-500 bg-green-50 text-green-700"
+                              >
                                 Easy
                               </Badge>
                             ) : question.correctRate <= 50 ? (
-                              <Badge variant="outline" className="border-red-500 bg-red-50 text-red-700">
+                              <Badge
+                                variant="outline"
+                                className="border-red-500 bg-red-50 text-red-700"
+                              >
                                 Difficult
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="border-yellow-500 bg-yellow-50 text-yellow-700">
+                              <Badge
+                                variant="outline"
+                                className="border-yellow-500 bg-yellow-50 text-yellow-700"
+                              >
                                 Average
                               </Badge>
                             )}
@@ -633,7 +811,17 @@ export function QuizStatistics({ id }: { id: string }) {
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={quiz.stats.playerDemographics.ageGroups} cx="50%" cy="50%" labelLine={true} outerRadius={80} fill="#8884d8" dataKey="percentage" nameKey="group" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                      <Pie
+                        data={quiz.stats.playerDemographics.ageGroups}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="percentage"
+                        nameKey="group"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
                         {quiz.stats.playerDemographics.ageGroups.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
@@ -645,7 +833,9 @@ export function QuizStatistics({ id }: { id: string }) {
                             return (
                               <div className="rounded-lg border bg-background p-2 shadow-sm">
                                 <p className="text-sm font-medium">{payload[0].name}</p>
-                                <p className="text-sm text-muted-foreground">{payload[0].value}% of players</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {payload[0].value}% of players
+                                </p>
                               </div>
                             );
                           }
@@ -666,7 +856,17 @@ export function QuizStatistics({ id }: { id: string }) {
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={quiz.stats.playerDemographics.genderDistribution} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="percentage" nameKey="gender" label={renderCustomizedLabel}>
+                      <Pie
+                        data={quiz.stats.playerDemographics.genderDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="percentage"
+                        nameKey="gender"
+                        label={renderCustomizedLabel}
+                      >
                         {quiz.stats.playerDemographics.genderDistribution.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
@@ -678,7 +878,9 @@ export function QuizStatistics({ id }: { id: string }) {
                             return (
                               <div className="rounded-lg border bg-background p-2 shadow-sm">
                                 <p className="text-sm font-medium">{payload[0].name}</p>
-                                <p className="text-sm text-muted-foreground">{payload[0].value}% of players</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {payload[0].value}% of players
+                                </p>
                               </div>
                             );
                           }
@@ -711,12 +913,26 @@ export function QuizStatistics({ id }: { id: string }) {
                     className="h-full w-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={quiz.stats.playerDemographics.topCountries} layout="vertical" margin={{ top: 20, right: 30, left: 100, bottom: 5 }}>
+                      <BarChart
+                        data={quiz.stats.playerDemographics.topCountries}
+                        layout="vertical"
+                        margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis type="number" domain={[0, 100]} />
-                        <YAxis type="category" dataKey="country" width={80} tick={{ fontSize: 12 }} />
+                        <YAxis
+                          type="category"
+                          dataKey="country"
+                          width={80}
+                          tick={{ fontSize: 12 }}
+                        />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="percentage" name="Percentage" fill="var(--color-percentage)" radius={[0, 4, 4, 0]}>
+                        <Bar
+                          dataKey="percentage"
+                          name="Percentage"
+                          fill="var(--color-percentage)"
+                          radius={[0, 4, 4, 0]}
+                        >
                           {quiz.stats.playerDemographics.topCountries.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
@@ -752,12 +968,23 @@ export function QuizStatistics({ id }: { id: string }) {
                     className="h-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={quiz.stats.completionRateOverTime} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <LineChart
+                        data={quiz.stats.completionRateOverTime}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" tickFormatter={formatDate} />
                         <YAxis domain={[70, 100]} />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line type="monotone" dataKey="rate" name="Completion Rate" stroke="var(--color-rate)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        <Line
+                          type="monotone"
+                          dataKey="rate"
+                          name="Completion Rate"
+                          stroke="var(--color-rate)"
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -784,7 +1011,10 @@ export function QuizStatistics({ id }: { id: string }) {
                     className="h-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={quiz.stats.averageTimeSpentOverTime} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <AreaChart
+                        data={quiz.stats.averageTimeSpentOverTime}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" tickFormatter={formatDate} />
                         <YAxis domain={[800, 900]} />
@@ -794,14 +1024,23 @@ export function QuizStatistics({ id }: { id: string }) {
                               return (
                                 <div className="rounded-lg border bg-background p-2 shadow-sm">
                                   <p className="text-sm font-medium">{formatDate(label)}</p>
-                                  <p className="text-sm text-muted-foreground">Average Time: {formatTime(payload[0]?.value as number)}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Average Time: {formatTime(payload[0]?.value as number)}
+                                  </p>
                                 </div>
                               );
                             }
                             return null;
                           }}
                         />
-                        <Area type="monotone" dataKey="time" name="Average Time" stroke="var(--color-time)" fill="var(--color-time)" fillOpacity={0.3} />
+                        <Area
+                          type="monotone"
+                          dataKey="time"
+                          name="Average Time"
+                          stroke="var(--color-time)"
+                          fill="var(--color-time)"
+                          fillOpacity={0.3}
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -828,12 +1067,23 @@ export function QuizStatistics({ id }: { id: string }) {
                     className="size-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={quiz.stats.playerRetention} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <LineChart
+                        data={quiz.stats.playerRetention}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="day" />
                         <YAxis />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line type="monotone" dataKey="retention" name="Retention Rate" stroke="var(--color-retention)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        <Line
+                          type="monotone"
+                          dataKey="retention"
+                          name="Retention Rate"
+                          stroke="var(--color-retention)"
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartContainer>

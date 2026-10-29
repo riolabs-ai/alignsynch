@@ -1,5 +1,5 @@
-import { BarChart3, Trophy, Users, DollarSign } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BarChart3, Trophy, Users, DollarSign } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function DashboardStats() {
   return (
@@ -48,5 +48,5 @@ export function DashboardStats() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

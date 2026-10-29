@@ -81,7 +81,9 @@ export function Comment({ comment }: CommentProps) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-medium">{comment.user.name}</h3>
-              <p className="text-xs text-muted-foreground">{new Date(comment.timestamp).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">
+                {new Date(comment.timestamp).toLocaleString()}
+              </p>
             </div>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Flag className="h-4 w-4" />
@@ -89,17 +91,32 @@ export function Comment({ comment }: CommentProps) {
           </div>
           <p className="text-sm mt-2">{comment.text}</p>
           <div className="flex items-center gap-4 mt-3">
-            <Button variant="ghost" size="sm" onClick={handleLike} className={`flex items-center gap-1 h-8 ${userLiked ? "text-blue-600" : ""}`}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLike}
+              className={`flex items-center gap-1 h-8 ${userLiked ? "text-blue-600" : ""}`}
+            >
               <ThumbsUp className="h-4 w-4" />
               <span>{likes}</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowReplyForm(!showReplyForm)} className="flex items-center gap-1 h-8">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowReplyForm(!showReplyForm)}
+              className="flex items-center gap-1 h-8"
+            >
               <MessageSquare className="h-4 w-4" />
               <span>Reply</span>
             </Button>
 
             {replies.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={() => setShowReplies(!showReplies)} className="flex items-center gap-1 h-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReplies(!showReplies)}
+                className="flex items-center gap-1 h-8"
+              >
                 {showReplies ? (
                   <>
                     <ChevronUp className="h-4 w-4" />
@@ -117,12 +134,22 @@ export function Comment({ comment }: CommentProps) {
 
           {showReplyForm && (
             <div className="mt-3 space-y-3">
-              <Textarea placeholder="Write a reply..." value={replyText} onChange={(e) => setReplyText(e.target.value)} className="min-h-[80px]" />
+              <Textarea
+                placeholder="Write a reply..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="min-h-[80px]"
+              />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => setShowReplyForm(false)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleAddReply} disabled={!replyText.trim()} className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  onClick={handleAddReply}
+                  disabled={!replyText.trim()}
+                  className="flex items-center gap-1"
+                >
                   <Send className="h-4 w-4" />
                   <span>Reply</span>
                 </Button>
@@ -135,14 +162,19 @@ export function Comment({ comment }: CommentProps) {
               {replies.map((reply) => (
                 <div key={reply.id} className="flex items-start gap-3">
                   <Avatar className="h-7 w-7">
-                    <AvatarImage src={reply.user.avatar || "/placeholder.svg"} alt={reply.user.name} />
+                    <AvatarImage
+                      src={reply.user.avatar || "/placeholder.svg"}
+                      alt={reply.user.name}
+                    />
                     <AvatarFallback>{reply.user.name.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="text-sm font-medium">{reply.user.name}</h4>
-                        <p className="text-xs text-muted-foreground">{new Date(reply.timestamp).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(reply.timestamp).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                     <p className="text-sm mt-1">{reply.text}</p>

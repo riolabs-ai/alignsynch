@@ -256,7 +256,10 @@ export function QuizPlay({ id }: { id: string }) {
       const existingAnswerIndex = state.answers.findIndex((a) => a.questionId === questionId);
 
       if (existingAnswerIndex >= 0) {
-        dispatch({ type: "UPDATE_ANSWER", payload: { index: existingAnswerIndex, answer: newAnswer } });
+        dispatch({
+          type: "UPDATE_ANSWER",
+          payload: { index: existingAnswerIndex, answer: newAnswer },
+        });
       } else {
         dispatch({ type: "ADD_ANSWER", payload: newAnswer });
       }
@@ -277,7 +280,14 @@ export function QuizPlay({ id }: { id: string }) {
         }
       }, 1500);
     },
-    [state.currentQuestionIndex, state.quiz, state.questionStartTime, state.isReviewMode, state.showFeedback, state.answers]
+    [
+      state.currentQuestionIndex,
+      state.quiz,
+      state.questionStartTime,
+      state.isReviewMode,
+      state.showFeedback,
+      state.answers,
+    ],
   );
 
   // Navigate to next question (in review mode)
@@ -308,7 +318,9 @@ export function QuizPlay({ id }: { id: string }) {
   };
 
   // Calculate progress percentage
-  const progressPercentage = state.quiz ? ((state.currentQuestionIndex + 1) / state.quiz.questions.length) * 100 : 0;
+  const progressPercentage = state.quiz
+    ? ((state.currentQuestionIndex + 1) / state.quiz.questions.length) * 100
+    : 0;
 
   // Handle quiz restart
   const handleRestartQuiz = () => {
@@ -335,7 +347,10 @@ export function QuizPlay({ id }: { id: string }) {
     const totalQuestions = state.quiz.questions.length;
     const correctAnswers = state.answers.filter((a) => a.isCorrect).length;
     const score = Math.round((correctAnswers / totalQuestions) * 100);
-    const totalTime = state.quizEndTime && state.quizStartTime ? Math.floor((state.quizEndTime - state.quizStartTime) / 1000) : 0;
+    const totalTime =
+      state.quizEndTime && state.quizStartTime
+        ? Math.floor((state.quizEndTime - state.quizStartTime) / 1000)
+        : 0;
 
     return {
       totalQuestions,
@@ -363,7 +378,9 @@ export function QuizPlay({ id }: { id: string }) {
         <Alert variant="destructive" className="mb-6">
           <AlertTriangle className="h-5 w-5" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{state.error || "Failed to load quiz. Please try again later."}</AlertDescription>
+          <AlertDescription>
+            {state.error || "Failed to load quiz. Please try again later."}
+          </AlertDescription>
         </Alert>
         <Button onClick={() => router.push("/explore")}>Back to Explore</Button>
       </div>
@@ -375,7 +392,13 @@ export function QuizPlay({ id }: { id: string }) {
     const results = calculateResults();
     return (
       <div className="container mx-auto py-8 px-4">
-        <QuizResults results={results} quiz={state.quiz} onRestart={handleRestartQuiz} onReview={handleReviewAnswers} onExit={handleExitQuiz} />
+        <QuizResults
+          results={results}
+          quiz={state.quiz}
+          onRestart={handleRestartQuiz}
+          onReview={handleReviewAnswers}
+          onExit={handleExitQuiz}
+        />
       </div>
     );
   }
@@ -386,14 +409,21 @@ export function QuizPlay({ id }: { id: string }) {
 
   return (
     <div className="container mx-auto py-4 px-4 md:py-8 max-w-4xl">
-      <QuizHeader title={state.quiz.title} category={state.quiz.category} difficulty={state.quiz.difficulty} isReviewMode={state.isReviewMode} />
+      <QuizHeader
+        title={state.quiz.title}
+        category={state.quiz.category}
+        difficulty={state.quiz.difficulty}
+        isReviewMode={state.isReviewMode}
+      />
 
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <div className="text-sm font-medium">
             Question {state.currentQuestionIndex + 1} of {state.quiz.questions.length}
           </div>
-          {!state.isReviewMode && state.timeRemaining !== null && <QuizTimer timeRemaining={state.timeRemaining} formatTime={formatTime} />}
+          {!state.isReviewMode && state.timeRemaining !== null && (
+            <QuizTimer timeRemaining={state.timeRemaining} formatTime={formatTime} />
+          )}
         </div>
         <Progress value={progressPercentage} className="h-2" />
       </div>
@@ -402,10 +432,22 @@ export function QuizPlay({ id }: { id: string }) {
         {/* Feedback overlay */}
         {state.showFeedback && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
-            <div className={`text-center p-6 rounded-lg ${state.lastAnswerCorrect ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-              <div className={`text-5xl mb-2 ${state.lastAnswerCorrect ? "text-green-500" : "text-red-500"}`}>{state.lastAnswerCorrect ? "✓" : "✗"}</div>
-              <h3 className="text-xl font-bold mb-1">{state.lastAnswerCorrect ? "Correct!" : "Incorrect!"}</h3>
-              <p>{state.lastAnswerCorrect ? "Great job! Moving to next question..." : `The correct answer was: ${state.quiz.questions[state.currentQuestionIndex].options.find((o) => o.id === state.quiz!.questions[state.currentQuestionIndex].correctOptionId)?.text}`}</p>
+            <div
+              className={`text-center p-6 rounded-lg ${state.lastAnswerCorrect ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+            >
+              <div
+                className={`text-5xl mb-2 ${state.lastAnswerCorrect ? "text-green-500" : "text-red-500"}`}
+              >
+                {state.lastAnswerCorrect ? "✓" : "✗"}
+              </div>
+              <h3 className="text-xl font-bold mb-1">
+                {state.lastAnswerCorrect ? "Correct!" : "Incorrect!"}
+              </h3>
+              <p>
+                {state.lastAnswerCorrect
+                  ? "Great job! Moving to next question..."
+                  : `The correct answer was: ${state.quiz.questions[state.currentQuestionIndex].options.find((o) => o.id === state.quiz!.questions[state.currentQuestionIndex].correctOptionId)?.text}`}
+              </p>
             </div>
           </div>
         )}
@@ -413,15 +455,32 @@ export function QuizPlay({ id }: { id: string }) {
         <Card className="overflow-hidden">
           <div ref={questionContainerRef}>
             <AnimatePresence mode="wait" initial={false}>
-              <motion.div key={currentQuestion.id} initial={{ opacity: 0, x: state.direction * 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: state.direction * -100 }} transition={{ duration: 0.3 }} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <motion.div
+                key={currentQuestion.id}
+                initial={{ opacity: 0, x: state.direction * 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: state.direction * -100 }}
+                transition={{ duration: 0.3 }}
+                className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
                 {/* Question image */}
                 {currentQuestion.image && (
                   <div className="rounded-lg overflow-hidden">
-                    <Image src={currentQuestion.image || "/placeholder.svg"} alt="Question illustration" className="size-full object-center object-cover" />
+                    <Image
+                      src={currentQuestion.image || "/placeholder.svg"}
+                      alt="Question illustration"
+                      className="size-full object-center object-cover"
+                    />
                   </div>
                 )}
 
-                <QuizQuestion question={currentQuestion} selectedOptionId={currentAnswer?.selectedOptionId || null} correctOptionId={state.isReviewMode ? currentQuestion.correctOptionId : undefined} onSelectOption={handleAnswerSelect} isReviewMode={state.isReviewMode} />
+                <QuizQuestion
+                  question={currentQuestion}
+                  selectedOptionId={currentAnswer?.selectedOptionId || null}
+                  correctOptionId={state.isReviewMode ? currentQuestion.correctOptionId : undefined}
+                  onSelectOption={handleAnswerSelect}
+                  isReviewMode={state.isReviewMode}
+                />
 
                 {state.isReviewMode && (
                   <div className="mt-6 space-y-4">
@@ -433,11 +492,21 @@ export function QuizPlay({ id }: { id: string }) {
                     )}
 
                     <div className="flex justify-between mt-6">
-                      <Button variant="outline" onClick={handlePrevQuestion} disabled={state.currentQuestionIndex === 0} className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handlePrevQuestion}
+                        disabled={state.currentQuestionIndex === 0}
+                        className="flex items-center gap-2"
+                      >
                         <ChevronLeft className="h-4 w-4" /> Previous
                       </Button>
 
-                      <Button variant="outline" onClick={handleNextQuestion} disabled={state.currentQuestionIndex === state.quiz.questions.length - 1} className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleNextQuestion}
+                        disabled={state.currentQuestionIndex === state.quiz.questions.length - 1}
+                        className="flex items-center gap-2"
+                      >
                         Next <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>

@@ -5,9 +5,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, DollarSign, Filter, Grid3X3, List, Search, Users } from "lucide-react";
 import Image from "next/image";
@@ -194,7 +210,20 @@ const quizzes = [
 ];
 
 // Categories
-const categories = ["All Categories", "Science", "History", "Geography", "Mathematics", "Literature", "Sports", "Music", "Technology", "Art", "Movies", "General Knowledge"];
+const categories = [
+  "All Categories",
+  "Science",
+  "History",
+  "Geography",
+  "Mathematics",
+  "Literature",
+  "Sports",
+  "Music",
+  "Technology",
+  "Art",
+  "Movies",
+  "General Knowledge",
+];
 
 export function ExploreQuizzes() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -237,7 +266,12 @@ export function ExploreQuizzes() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search quizzes by title, category, or creator..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <Input
+            placeholder="Search quizzes by title, category, or creator..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <div className="flex items-center gap-2">
@@ -299,11 +333,21 @@ export function ExploreQuizzes() {
           </DropdownMenu>
 
           <div className="flex items-center rounded-md border bg-muted/40">
-            <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("grid")}>
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode("grid")}
+            >
               <Grid3X3 className="h-4 w-4" />
               <span className="sr-only">Grid view</span>
             </Button>
-            <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode("list")}
+            >
               <List className="h-4 w-4" />
               <span className="sr-only">List view</span>
             </Button>
@@ -326,14 +370,26 @@ export function ExploreQuizzes() {
       {viewMode === "grid" && (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {quizzes.map((quiz) => (
-            <Card key={quiz.id} className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600">
+            <Card
+              key={quiz.id}
+              className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600"
+            >
               {/* Image with overlay */}
               <div className="relative h-48">
-                <Image width={1000} height={600} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-full w-full object-cover" />
+                <Image
+                  width={1000}
+                  height={600}
+                  src={quiz.image || "/placeholder.svg"}
+                  alt={quiz.title}
+                  className="h-full w-full object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                   <div className="w-full">
                     <div className="flex justify-between items-center mb-2">
-                      <Badge variant={getDifficultyVariant(quiz.difficulty)} className="font-medium">
+                      <Badge
+                        variant={getDifficultyVariant(quiz.difficulty)}
+                        className="font-medium"
+                      >
                         {quiz.difficulty}
                       </Badge>
                       <div className="flex items-center gap-1 text-white text-sm">
@@ -351,7 +407,10 @@ export function ExploreQuizzes() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={quiz.creatorAvatar || "/placeholder.svg"} alt={quiz.createdBy} />
+                      <AvatarImage
+                        src={quiz.creatorAvatar || "/placeholder.svg"}
+                        alt={quiz.createdBy}
+                      />
                       <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">{quiz.createdBy}</span>
@@ -364,11 +423,16 @@ export function ExploreQuizzes() {
                 {/* Rating and reward */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <svg className="h-4 w-4 text-yellow-400 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg
+                      className="h-4 w-4 text-yellow-400 fill-current"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
                       <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                     </svg>
                     <span className="text-sm font-medium">
-                      {quiz.rating} <span className="text-muted-foreground">({quiz.totalRatings})</span>
+                      {quiz.rating}{" "}
+                      <span className="text-muted-foreground">({quiz.totalRatings})</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-green-600 font-medium">
@@ -385,12 +449,29 @@ export function ExploreQuizzes() {
                       <span>{formatPlayerCount(quiz.players)} players</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-600 dark:text-slate-400 text-sm">{quiz.spotsLeft} spots left</span>
-                      <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                      <span className="text-slate-600 dark:text-slate-400 text-sm">
+                        {quiz.spotsLeft} spots left
+                      </span>
+                      <CircularProgress
+                        value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                        size={36}
+                        strokeWidth={3}
+                        color={
+                          quiz.spotsLeft <= 20
+                            ? "hsl(var(--destructive))"
+                            : quiz.spotsLeft <= 50
+                              ? "hsl(var(--warning))"
+                              : "hsl(var(--primary))"
+                        }
+                      />
                     </div>
                   </div>
 
-                  {quiz.spotsLeft <= 20 && <p className="text-xs font-medium text-destructive">Almost full! Only {quiz.spotsLeft} spots left</p>}
+                  {quiz.spotsLeft <= 20 && (
+                    <p className="text-xs font-medium text-destructive">
+                      Almost full! Only {quiz.spotsLeft} spots left
+                    </p>
+                  )}
                 </div>
               </CardContent>
 
@@ -406,12 +487,24 @@ export function ExploreQuizzes() {
       {viewMode === "list" && (
         <div className="space-y-4">
           {quizzes.map((quiz) => (
-            <Card key={quiz.id} className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600">
+            <Card
+              key={quiz.id}
+              className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600"
+            >
               <div className="flex flex-col sm:flex-row">
                 {/* Image */}
                 <div className="relative h-48 sm:h-auto sm:w-48 md:w-64">
-                  <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-full w-full object-cover" />
-                  <Badge variant={getDifficultyVariant(quiz.difficulty)} className="absolute top-2 left-2 font-medium">
+                  <Image
+                    width={600}
+                    height={350}
+                    src={quiz.image || "/placeholder.svg"}
+                    alt={quiz.title}
+                    className="h-full w-full object-cover"
+                  />
+                  <Badge
+                    variant={getDifficultyVariant(quiz.difficulty)}
+                    className="absolute top-2 left-2 font-medium"
+                  >
                     {quiz.difficulty}
                   </Badge>
                 </div>
@@ -432,16 +525,24 @@ export function ExploreQuizzes() {
 
                   <div className="flex items-center gap-2 mb-4">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={quiz.creatorAvatar || "/placeholder.svg"} alt={quiz.createdBy} />
+                      <AvatarImage
+                        src={quiz.creatorAvatar || "/placeholder.svg"}
+                        alt={quiz.createdBy}
+                      />
                       <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">by {quiz.createdBy}</span>
                     <div className="flex items-center gap-1 ml-2">
-                      <svg className="h-4 w-4 text-yellow-400 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <svg
+                        className="h-4 w-4 text-yellow-400 fill-current"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                       </svg>
                       <span className="text-sm font-medium">
-                        {quiz.rating} <span className="text-muted-foreground">({quiz.totalRatings})</span>
+                        {quiz.rating}{" "}
+                        <span className="text-muted-foreground">({quiz.totalRatings})</span>
                       </span>
                     </div>
                   </div>
@@ -453,13 +554,34 @@ export function ExploreQuizzes() {
                         <span>{formatPlayerCount(quiz.players)} players</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-600 dark:text-slate-400">{quiz.spotsLeft} spots left</span>
-                        <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                        <span className="text-slate-600 dark:text-slate-400">
+                          {quiz.spotsLeft} spots left
+                        </span>
+                        <CircularProgress
+                          value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                          size={36}
+                          strokeWidth={3}
+                          color={
+                            quiz.spotsLeft <= 20
+                              ? "hsl(var(--destructive))"
+                              : quiz.spotsLeft <= 50
+                                ? "hsl(var(--warning))"
+                                : "hsl(var(--primary))"
+                          }
+                        />
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      {quiz.spotsLeft <= 20 ? <p className="text-xs font-medium text-destructive">Almost full! Only {quiz.spotsLeft} spots left</p> : <p className="text-xs text-muted-foreground">{quiz.spotsLeft} spots available</p>}
+                      {quiz.spotsLeft <= 20 ? (
+                        <p className="text-xs font-medium text-destructive">
+                          Almost full! Only {quiz.spotsLeft} spots left
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {quiz.spotsLeft} spots available
+                        </p>
+                      )}
 
                       <Button>Play Now</Button>
                     </div>

@@ -42,20 +42,39 @@ export function NewsletterSection() {
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} viewport={{ once: true }} className="text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
             <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-md rounded-full mb-6 border border-white/20">
               <Mail className="h-6 w-6 text-white" />
             </div>
 
             <h2 className="text-4xl font-bold text-white mb-4">Get Quiz Insights Weekly</h2>
 
-            <p className="text-white/80 mb-8 text-lg max-w-2xl mx-auto">Join 10,000+ quiz creators and players receiving our weekly tips, strategies, and exclusive opportunities</p>
+            <p className="text-white/80 mb-8 text-lg max-w-2xl mx-auto">
+              Join 10,000+ quiz creators and players receiving our weekly tips, strategies, and
+              exclusive opportunities
+            </p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} viewport={{ once: true }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
             {isSubmitted ? (
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 text-center border border-white/20">
-                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 10 }} className="flex items-center justify-center gap-2 text-white font-medium text-lg">
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                  className="flex items-center justify-center gap-2 text-white font-medium text-lg"
+                >
                   <div className="bg-green-500 rounded-full p-1">
                     <CheckCircle className="h-6 w-6 text-white" />
                   </div>
@@ -66,10 +85,21 @@ export function NewsletterSection() {
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
                 <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
-                    <Input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="pr-10 h-14 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white focus:ring-white" required />
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pr-10 h-14 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white focus:ring-white"
+                      required
+                    />
                     <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/60" />
                   </div>
-                  <Button type="submit" className="h-14 px-8 bg-white text-indigo-900 hover:bg-white/90 transition-all duration-200 font-medium text-base" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="h-14 px-8 bg-white text-indigo-900 hover:bg-white/90 transition-all duration-200 font-medium text-base"
+                    disabled={isLoading}
+                  >
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <span className="h-4 w-4 border-2 border-indigo-900 border-t-transparent rounded-full animate-spin"></span>
@@ -108,7 +138,13 @@ export function NewsletterSection() {
             )}
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }} viewport={{ once: true }} className="mt-8 flex flex-wrap justify-center gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="mt-8 flex flex-wrap justify-center gap-6"
+          >
             <div className="flex flex-col items-center">
               <p className="text-3xl font-bold text-white">10k+</p>
               <p className="text-white/70 text-sm">Subscribers</p>

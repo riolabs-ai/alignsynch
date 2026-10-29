@@ -15,13 +15,18 @@ export default function CreatorTipsCta() {
 
         <div className="relative grid md:grid-cols-2 gap-8 p-8 md:p-12 items-center">
           <div className="space-y-6">
-            <div className="inline-block rounded-lg bg-white/10 backdrop-blur-sm px-4 py-2 text-white font-medium text-sm">Ready to apply what you've learned?</div>
+            <div className="inline-block rounded-lg bg-white/10 backdrop-blur-sm px-4 py-2 text-white font-medium text-sm">
+              Ready to apply what you've learned?
+            </div>
 
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
               Create your own engaging quiz <span className="text-purple-200">today!</span>
             </h2>
 
-            <p className="text-purple-100 text-lg max-w-md">Put these tips into practice and start creating quizzes that engage your audience and showcase your expertise.</p>
+            <p className="text-purple-100 text-lg max-w-md">
+              Put these tips into practice and start creating quizzes that engage your audience and
+              showcase your expertise.
+            </p>
 
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
@@ -30,7 +35,9 @@ export default function CreatorTipsCta() {
                     <Sparkles className="h-4 w-4 text-purple-100" />
                   </div>
                 </div>
-                <p className="text-purple-100">Create interactive quizzes with multiple question types</p>
+                <p className="text-purple-100">
+                  Create interactive quizzes with multiple question types
+                </p>
               </div>
 
               <div className="flex items-start space-x-3">
@@ -39,7 +46,9 @@ export default function CreatorTipsCta() {
                     <Target className="h-4 w-4 text-purple-100" />
                   </div>
                 </div>
-                <p className="text-purple-100">Reach your target audience and grow your community</p>
+                <p className="text-purple-100">
+                  Reach your target audience and grow your community
+                </p>
               </div>
 
               <div className="flex items-start space-x-3">

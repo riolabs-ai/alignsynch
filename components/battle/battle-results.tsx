@@ -2,7 +2,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import confetti from "canvas-confetti";
 import { Award, CheckCircle, Clock, Home, RotateCw, Share2, Trophy } from "lucide-react";
 import { useEffect } from "react";
@@ -61,7 +68,11 @@ export function BattleResults({ battleState, onRematch, onReturnHome }: BattleRe
     <div className="max-w-4xl mx-auto">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold mb-2">Battle Results</h1>
-        <p className="text-muted-foreground">{isWinner ? "Congratulations! You won the battle!" : `You placed ${currentPlayerRank}${currentPlayerRank === 2 ? "nd" : currentPlayerRank === 3 ? "rd" : "th"} in the battle`}</p>
+        <p className="text-muted-foreground">
+          {isWinner
+            ? "Congratulations! You won the battle!"
+            : `You placed ${currentPlayerRank}${currentPlayerRank === 2 ? "nd" : currentPlayerRank === 3 ? "rd" : "th"} in the battle`}
+        </p>
       </div>
 
       {battleState.mode === "group" && (
@@ -84,7 +95,9 @@ export function BattleResults({ battleState, onRematch, onReturnHome }: BattleRe
                     <div className="font-bold">{player.name}</div>
                     <div className="text-sm text-muted-foreground">{player.score} pts</div>
                   </div>
-                  <div className={`${podiumHeight} w-24 rounded-t-lg bg-primary/90 flex items-center justify-center relative`}>
+                  <div
+                    className={`${podiumHeight} w-24 rounded-t-lg bg-primary/90 flex items-center justify-center relative`}
+                  >
                     <span className="text-2xl font-bold text-primary-foreground">#{position}</span>
                     {player.isCurrentUser && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -104,12 +117,19 @@ export function BattleResults({ battleState, onRematch, onReturnHome }: BattleRe
           <Card>
             <CardHeader>
               <CardTitle>Final Rankings</CardTitle>
-              <CardDescription>{battleState.mode === "1v1" ? "You vs your opponent" : `All ${battleState.players.length} players ranked by score`}</CardDescription>
+              <CardDescription>
+                {battleState.mode === "1v1"
+                  ? "You vs your opponent"
+                  : `All ${battleState.players.length} players ranked by score`}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 {sortedPlayers.map((player, index) => (
-                  <div key={player.id} className={`flex items-center p-3 rounded-lg border ${player.isCurrentUser ? "bg-primary/5 border-primary" : ""}`}>
+                  <div
+                    key={player.id}
+                    className={`flex items-center p-3 rounded-lg border ${player.isCurrentUser ? "bg-primary/5 border-primary" : ""}`}
+                  >
                     <div className="font-bold text-lg w-5">{index + 1}</div>
                     <Avatar className="h-10 w-10 mr-3">
                       <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />

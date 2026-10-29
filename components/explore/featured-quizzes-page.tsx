@@ -5,8 +5,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Award, ChevronLeft, Clock, Filter, Flame, Star, TrendingUp, Users } from "lucide-react";
 import Image from "next/image";
@@ -421,15 +435,21 @@ export function FeaturedQuizzesPage() {
         <TabsList className="w-full justify-start mb-6">
           <TabsTrigger value="trending" className="flex-1 sm:flex-none">
             Trending
-            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">{featuredQuizzes.trending.length}</span>
+            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">
+              {featuredQuizzes.trending.length}
+            </span>
           </TabsTrigger>
           <TabsTrigger value="popular" className="flex-1 sm:flex-none">
             Popular
-            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">{featuredQuizzes.popular.length}</span>
+            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">
+              {featuredQuizzes.popular.length}
+            </span>
           </TabsTrigger>
           <TabsTrigger value="new" className="flex-1 sm:flex-none">
             New
-            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">{featuredQuizzes.new.length}</span>
+            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">
+              {featuredQuizzes.new.length}
+            </span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -439,7 +459,13 @@ export function FeaturedQuizzesPage() {
         {getCurrentQuizzes().map((quiz) => (
           <Card key={quiz.id} className="overflow-hidden group">
             <div className="relative">
-              <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <Image
+                width={600}
+                height={350}
+                src={quiz.image || "/placeholder.svg"}
+                alt={quiz.title}
+                className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
                 <h3 className="text-white font-semibold line-clamp-2">{quiz.title}</h3>
@@ -455,7 +481,9 @@ export function FeaturedQuizzesPage() {
               {quiz.limitedTime && (
                 <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center">
                   <Clock className="h-3 w-3 mr-1" />
-                  {quiz.expiresIn > 86400 ? `${Math.floor(quiz.expiresIn / 86400)}d left` : `${Math.floor(quiz.expiresIn / 3600)}h left`}
+                  {quiz.expiresIn > 86400
+                    ? `${Math.floor(quiz.expiresIn / 86400)}d left`
+                    : `${Math.floor(quiz.expiresIn / 3600)}h left`}
                 </div>
               )}
             </div>
@@ -464,7 +492,10 @@ export function FeaturedQuizzesPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={quiz.creatorAvatar || "/placeholder.svg"} alt={quiz.createdBy} />
+                    <AvatarImage
+                      src={quiz.creatorAvatar || "/placeholder.svg"}
+                      alt={quiz.createdBy}
+                    />
                     <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <span className="text-sm text-muted-foreground">{quiz.createdBy}</span>
@@ -485,7 +516,18 @@ export function FeaturedQuizzesPage() {
 
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">{quiz.spotsLeft} spots left</p>
-                <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                <CircularProgress
+                  value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                  size={36}
+                  strokeWidth={3}
+                  color={
+                    quiz.spotsLeft <= 20
+                      ? "hsl(var(--destructive))"
+                      : quiz.spotsLeft <= 50
+                        ? "hsl(var(--warning))"
+                        : "hsl(var(--primary))"
+                  }
+                />
               </div>
 
               <Button className="w-full" asChild>
@@ -514,7 +556,13 @@ export function FeaturedQuizzesPage() {
               const pageNumber = index + 1;
 
               // Show first page, current page, last page, and one page before and after current
-              if (pageNumber === 1 || pageNumber === totalPages || pageNumber === currentPage || pageNumber === currentPage - 1 || pageNumber === currentPage + 1) {
+              if (
+                pageNumber === 1 ||
+                pageNumber === totalPages ||
+                pageNumber === currentPage ||
+                pageNumber === currentPage - 1 ||
+                pageNumber === currentPage + 1
+              ) {
                 return (
                   <PaginationItem key={pageNumber}>
                     <PaginationLink
@@ -531,7 +579,10 @@ export function FeaturedQuizzesPage() {
               }
 
               // Show ellipsis if there's a gap
-              if ((pageNumber === 2 && currentPage > 3) || (pageNumber === totalPages - 1 && currentPage < totalPages - 2)) {
+              if (
+                (pageNumber === 2 && currentPage > 3) ||
+                (pageNumber === totalPages - 1 && currentPage < totalPages - 2)
+              ) {
                 return (
                   <PaginationItem key={pageNumber}>
                     <PaginationEllipsis />

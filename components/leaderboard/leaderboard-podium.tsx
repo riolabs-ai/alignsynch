@@ -38,7 +38,11 @@ export function LeaderboardPodium({ leaderboardData }: LeaderboardPodiumProps) {
             <div key={user.id} className="flex flex-col items-center">
               <div className="relative mb-2">
                 <Avatar className={`${avatarSizes[i]} ring-2 ring-offset-2 ${borderColors[i]}`}>
-                  <AvatarImage src={user.avatar || "/placeholder.svg"} className="object-cover object-center" alt={user.name} />
+                  <AvatarImage
+                    src={user.avatar || "/placeholder.svg"}
+                    className="object-cover object-center"
+                    alt={user.name}
+                  />
                   <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 {i === 1 && (
@@ -46,7 +50,11 @@ export function LeaderboardPodium({ leaderboardData }: LeaderboardPodiumProps) {
                     <Crown className="h-8 w-8 text-amber-500" />
                   </div>
                 )}
-                <div className={`absolute -bottom-2 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full ${bgColors[i]} text-sm font-bold text-white`}>{position}</div>
+                <div
+                  className={`absolute -bottom-2 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full ${bgColors[i]} text-sm font-bold text-white`}
+                >
+                  {position}
+                </div>
               </div>
               <h3 className={`${textSizes[i]} font-semibold`}>{user.name}</h3>
               <div className="flex items-center gap-1 text-muted-foreground">
@@ -54,7 +62,10 @@ export function LeaderboardPodium({ leaderboardData }: LeaderboardPodiumProps) {
                 <span>pts</span>
               </div>
               <div className="mt-1 flex items-center gap-1.5">
-                <Badge variant={i === 1 ? "default" : i === 0 ? "secondary" : "outline"} className="px-2 py-0.5">
+                <Badge
+                  variant={i === 1 ? "default" : i === 0 ? "secondary" : "outline"}
+                  className="px-2 py-0.5"
+                >
                   {i === 1 && <Medal className="mr-1 h-3 w-3" />}
                   {user.badge}
                 </Badge>
@@ -63,7 +74,9 @@ export function LeaderboardPodium({ leaderboardData }: LeaderboardPodiumProps) {
                   {user.level}
                 </div>
               </div>
-              <div className={`mt-3 w-full ${podiumHeights[i]} rounded-t-lg bg-gradient-to-t from-muted/80 to-muted/20`} />
+              <div
+                className={`mt-3 w-full ${podiumHeights[i]} rounded-t-lg bg-gradient-to-t from-muted/80 to-muted/20`}
+              />
             </div>
           );
         })}

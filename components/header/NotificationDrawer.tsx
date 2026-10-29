@@ -9,17 +9,34 @@ type Props = {
   handleNotificationClick: (notification: Notification) => void;
   markAllNotificationsAsRead: () => void;
 };
-const NotificationDrawer = ({ handleNotificationClick, isNotificationsDrawerOpen, markAllNotificationsAsRead, setIsNotificationsDrawerOpen }: Props) => {
+const NotificationDrawer = ({
+  handleNotificationClick,
+  isNotificationsDrawerOpen,
+  markAllNotificationsAsRead,
+  setIsNotificationsDrawerOpen,
+}: Props) => {
   return (
-    <div className={`fixed top-0 right-0 z-50 h-full w-full sm:w-96 bg-background shadow-xl transition-transform duration-300 ease-in-out ${isNotificationsDrawerOpen ? "translate-x-0" : "translate-x-full"}`}>
+    <div
+      className={`fixed top-0 right-0 z-50 h-full w-full sm:w-96 bg-background shadow-xl transition-transform duration-300 ease-in-out ${isNotificationsDrawerOpen ? "translate-x-0" : "translate-x-full"}`}
+    >
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="text-lg font-semibold">Notifications</h2>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={markAllNotificationsAsRead}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+            onClick={markAllNotificationsAsRead}
+          >
             <Check className="h-4 w-4" />
             <span>Mark all read</span>
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsNotificationsDrawerOpen(false)} aria-label="Close notifications">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsNotificationsDrawerOpen(false)}
+            aria-label="Close notifications"
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -31,7 +48,9 @@ const NotificationDrawer = ({ handleNotificationClick, isNotificationsDrawerOpen
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium">No notifications</h3>
-              <p className="text-sm text-muted-foreground mt-1">You're all caught up! We'll notify you when something new happens.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                You're all caught up! We'll notify you when something new happens.
+              </p>
             </div>
           ) : (
             <>
@@ -42,8 +61,14 @@ const NotificationDrawer = ({ handleNotificationClick, isNotificationsDrawerOpen
                 {notifications
                   .filter((notification) => !notification.read)
                   .map((notification) => (
-                    <div key={notification.id} className="flex items-start gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors border-l-2 border-primary" onClick={() => handleNotificationClick(notification)}>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">{notification.icon}</div>
+                    <div
+                      key={notification.id}
+                      className="flex items-start gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors border-l-2 border-primary"
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                        {notification.icon}
+                      </div>
                       <div className="flex-1 space-y-1 overflow-hidden">
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{notification.title}</p>
@@ -64,8 +89,14 @@ const NotificationDrawer = ({ handleNotificationClick, isNotificationsDrawerOpen
                 {notifications
                   .filter((notification) => notification.read)
                   .map((notification) => (
-                    <div key={notification.id} className="flex items-start gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors opacity-70" onClick={() => handleNotificationClick(notification)}>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">{notification.icon}</div>
+                    <div
+                      key={notification.id}
+                      className="flex items-start gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors opacity-70"
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                        {notification.icon}
+                      </div>
                       <div className="flex-1 space-y-1 overflow-hidden">
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{notification.title}</p>

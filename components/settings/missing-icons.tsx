@@ -1,6 +1,6 @@
-import { SVGProps } from "react"
+import { SVGProps } from "react";
 
-export const Activity = (props:SVGProps<SVGSVGElement>) => (
+export const Activity = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -15,9 +15,9 @@ export const Activity = (props:SVGProps<SVGSVGElement>) => (
   >
     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
   </svg>
-)
+);
 
-export const Trophy = (props:SVGProps<SVGSVGElement>) => (
+export const Trophy = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -37,9 +37,9 @@ export const Trophy = (props:SVGProps<SVGSVGElement>) => (
     <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
     <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
   </svg>
-)
+);
 
-export const Lightbulb = (props:SVGProps<SVGSVGElement>) => (
+export const Lightbulb = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -56,9 +56,9 @@ export const Lightbulb = (props:SVGProps<SVGSVGElement>) => (
     <path d="M9 18h6"></path>
     <path d="M10 22h4"></path>
   </svg>
-)
+);
 
-export const CheckCircle = (props:SVGProps<SVGSVGElement>) => (
+export const CheckCircle = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -74,9 +74,9 @@ export const CheckCircle = (props:SVGProps<SVGSVGElement>) => (
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
     <polyline points="22 4 12 14.01 9 11.01"></polyline>
   </svg>
-)
+);
 
-export const Save = (props:SVGProps<SVGSVGElement>) => (
+export const Save = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -93,9 +93,9 @@ export const Save = (props:SVGProps<SVGSVGElement>) => (
     <polyline points="17 21 17 13 7 13 7 21"></polyline>
     <polyline points="7 3 7 8 15 8"></polyline>
   </svg>
-)
+);
 
-export const Users = (props:SVGProps<SVGSVGElement>) => (
+export const Users = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -113,9 +113,9 @@ export const Users = (props:SVGProps<SVGSVGElement>) => (
     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
   </svg>
-)
+);
 
-export const Mail = (props:SVGProps<SVGSVGElement>) => (
+export const Mail = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -131,4 +131,4 @@ export const Mail = (props:SVGProps<SVGSVGElement>) => (
     <rect width="20" height="16" x="2" y="4" rx="2"></rect>
     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
   </svg>
-)
+);

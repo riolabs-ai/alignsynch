@@ -1,6 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import Link from "next/link";
 
 // Sample data
@@ -83,7 +90,9 @@ export function RecentQuizzes({ compact = false }: RecentQuizzesProps) {
                   <span>{quiz.date}</span>
                 </div>
               </div>
-              <Badge variant={quiz.status === "active" ? "default" : "outline"}>{quiz.status === "active" ? "Active" : "Draft"}</Badge>
+              <Badge variant={quiz.status === "active" ? "default" : "outline"}>
+                {quiz.status === "active" ? "Active" : "Draft"}
+              </Badge>
             </div>
           ))}
         </div>

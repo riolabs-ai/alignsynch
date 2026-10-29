@@ -36,7 +36,12 @@ export function UserProfile({ user }: UserProfileProps) {
         </Link>
       </div>
 
-      <ProfileHeader user={user} isFollowing={isFollowing} onFollowToggle={handleFollowToggle} onMessageClick={() => setIsMessageModalOpen(true)} />
+      <ProfileHeader
+        user={user}
+        isFollowing={isFollowing}
+        onFollowToggle={handleFollowToggle}
+        onMessageClick={() => setIsMessageModalOpen(true)}
+      />
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -72,7 +77,11 @@ export function UserProfile({ user }: UserProfileProps) {
 
           <div className="rounded-lg border bg-card p-4 shadow-sm">
             <h3 className="mb-3 font-semibold">Contact</h3>
-            <Button variant="outline" className="w-full" onClick={() => setIsMessageModalOpen(true)}>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setIsMessageModalOpen(true)}
+            >
               <MessageSquare className="mr-2 h-4 w-4" />
               Send Message
             </Button>
@@ -80,7 +89,11 @@ export function UserProfile({ user }: UserProfileProps) {
         </div>
       </div>
 
-      <MessageModal isOpen={isMessageModalOpen} onClose={() => setIsMessageModalOpen(false)} recipient={user} />
+      <MessageModal
+        isOpen={isMessageModalOpen}
+        onClose={() => setIsMessageModalOpen(false)}
+        recipient={user}
+      />
     </div>
   );
 }

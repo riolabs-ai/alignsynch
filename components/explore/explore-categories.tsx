@@ -2,7 +2,20 @@
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Atom, BookOpen, Brain, Calculator, Code, Film, Globe, History, Lightbulb, Music, Palette, Trophy } from "lucide-react";
+import {
+  Atom,
+  BookOpen,
+  Brain,
+  Calculator,
+  Code,
+  Film,
+  Globe,
+  History,
+  Lightbulb,
+  Music,
+  Palette,
+  Trophy,
+} from "lucide-react";
 
 interface ExploreCategoriesProps {
   selectedCategory: string;
@@ -25,7 +38,10 @@ const categories = [
   { id: "trivia", name: "Trivia", icon: Lightbulb },
 ];
 
-export function ExploreCategories({ selectedCategory, setSelectedCategory }: ExploreCategoriesProps) {
+export function ExploreCategories({
+  selectedCategory,
+  setSelectedCategory,
+}: ExploreCategoriesProps) {
   return (
     <div className="relative">
       <ScrollArea className="w-full whitespace-nowrap pb-4">
@@ -33,7 +49,12 @@ export function ExploreCategories({ selectedCategory, setSelectedCategory }: Exp
           {categories.map((category) => {
             const Icon = category.icon;
             return (
-              <Button key={category.id} variant={selectedCategory === category.id ? "default" : "outline"} className="flex items-center gap-2 rounded-full px-4" onClick={() => setSelectedCategory(category.id)}>
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
+                className="flex items-center gap-2 rounded-full px-4"
+                onClick={() => setSelectedCategory(category.id)}
+              >
                 <Icon className="h-4 w-4" />
                 <span>{category.name}</span>
               </Button>

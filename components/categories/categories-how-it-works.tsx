@@ -40,34 +40,76 @@ export function CategoriesHowItWorks() {
     <section className="py-10 xl:py-20 bg-white dark:bg-slate-900 px-3">
       <div className="container mx-auto xl:px-4">
         <div className="text-center mb-16">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} viewport={{ once: true }} className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-1.5 rounded-full mb-4">
-            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Simple Process</span>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-1.5 rounded-full mb-4"
+          >
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
+              Simple Process
+            </span>
           </motion.div>
 
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} viewport={{ once: true }} className="text-3xl font-bold mb-4 text-slate-900 dark:text-white">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={{ once: true }}
+            className="text-3xl font-bold mb-4 text-slate-900 dark:text-white"
+          >
             How It Works
           </motion.h2>
 
-          <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} viewport={{ once: true }} className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Getting started with our quiz platform is easy. Follow these simple steps to begin your quiz journey.
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto"
+          >
+            Getting started with our quiz platform is easy. Follow these simple steps to begin your
+            quiz journey.
           </motion.p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {steps.map((step, index) => (
-            <motion.div key={index} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: step.delay }} viewport={{ once: true }} className="relative">
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: step.delay }}
+              viewport={{ once: true }}
+              className="relative"
+            >
               {/* Connector line */}
 
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className=" relative">
-                  <Image src={step.img || "/placeholder.svg"} alt={step.title} width={300} height={200} className="object-cover aspect-[16/10] w-full border-b object-center" />
+                  <Image
+                    src={step.img || "/placeholder.svg"}
+                    alt={step.title}
+                    width={300}
+                    height={200}
+                    className="object-cover aspect-[16/10] w-full border-b object-center"
+                  />
                   <div className="absolute top-4 left-4">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r ${step.color} shadow-lg`}>{step.icon}</div>
+                    <div
+                      className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r ${step.color} shadow-lg`}
+                    >
+                      {step.icon}
+                    </div>
                   </div>
-                  <div className="absolute top-4 right-4 bg-white dark:bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-md border border-slate-100 dark:border-slate-700">{index + 1}</div>
+                  <div className="absolute top-4 right-4 bg-white dark:bg-slate-900 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-md border border-slate-100 dark:border-slate-700">
+                    {index + 1}
+                  </div>
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">{step.title}</h3>
+                  <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
+                    {step.title}
+                  </h3>
                   <p className="text-slate-600 dark:text-slate-400">{step.description}</p>
                 </div>
               </div>
@@ -75,8 +117,17 @@ export function CategoriesHowItWorks() {
           ))}
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.8 }} viewport={{ once: true }} className="mt-16 text-center">
-          <p className="text-slate-600 dark:text-slate-400 mb-6">Ready to start your quiz journey? Browse categories, find your interests, and begin challenging yourself today!</p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+          viewport={{ once: true }}
+          className="mt-16 text-center"
+        >
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            Ready to start your quiz journey? Browse categories, find your interests, and begin
+            challenging yourself today!
+          </p>
           <div className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
             <span className="text-sm font-medium text-slate-800 dark:text-slate-200">

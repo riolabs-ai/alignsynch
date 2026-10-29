@@ -36,7 +36,8 @@ export interface Answer {
 export const currentQuiz: Quiz = {
   id: "q1",
   title: "Ultimate World History Trivia",
-  description: "Test your knowledge of world history with this comprehensive trivia quiz covering ancient civilizations to modern times.",
+  description:
+    "Test your knowledge of world history with this comprehensive trivia quiz covering ancient civilizations to modern times.",
   timeLimit: 20 * 60, // 20 minutes in seconds
   difficulty: "Medium",
   category: "History",
@@ -53,7 +54,8 @@ export const currentQuiz: Quiz = {
         { id: "d", text: "The Temple of Artemis" },
       ],
       correctOptionId: "b",
-      explanation: "The Lighthouse of Alexandria was one of the Seven Wonders of the Ancient World, built around 280 BC.",
+      explanation:
+        "The Lighthouse of Alexandria was one of the Seven Wonders of the Ancient World, built around 280 BC.",
     },
     {
       id: "q2",
@@ -66,7 +68,8 @@ export const currentQuiz: Quiz = {
         { id: "d", text: "1947" },
       ],
       correctOptionId: "b",
-      explanation: "World War II ended in 1945, with Germany surrendering in May and Japan surrendering in September.",
+      explanation:
+        "World War II ended in 1945, with Germany surrendering in May and Japan surrendering in September.",
     },
     {
       id: "q3",
@@ -79,7 +82,8 @@ export const currentQuiz: Quiz = {
         { id: "d", text: "Juan Sebastián Elcano" },
       ],
       correctOptionId: "d",
-      explanation: "While Magellan started the voyage, Juan Sebastián Elcano completed the first circumnavigation after Magellan's death in 1522.",
+      explanation:
+        "While Magellan started the voyage, Juan Sebastián Elcano completed the first circumnavigation after Magellan's death in 1522.",
     },
     {
       id: "q4",
@@ -92,7 +96,8 @@ export const currentQuiz: Quiz = {
         { id: "d", text: "Persian Empire" },
       ],
       correctOptionId: "c",
-      explanation: "Julius Caesar was a Roman general and statesman who played a critical role in the transformation of the Roman Republic into the Roman Empire.",
+      explanation:
+        "Julius Caesar was a Roman general and statesman who played a critical role in the transformation of the Roman Republic into the Roman Empire.",
     },
     {
       id: "q5",
@@ -105,7 +110,8 @@ export const currentQuiz: Quiz = {
         { id: "d", text: "England" },
       ],
       correctOptionId: "c",
-      explanation: "The Renaissance began in Italy during the 14th century, particularly in Florence, before spreading throughout Europe.",
+      explanation:
+        "The Renaissance began in Italy during the 14th century, particularly in Florence, before spreading throughout Europe.",
     },
   ],
 };

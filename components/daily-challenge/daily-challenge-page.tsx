@@ -18,7 +18,13 @@ function DailyChallengePage() {
     correctAnswers: number;
   } | null>(null);
 
-  const handleChallengeComplete = (result: { score: number; totalQuestions: number; timeTaken: number; rank: number; correctAnswers: number }) => {
+  const handleChallengeComplete = (result: {
+    score: number;
+    totalQuestions: number;
+    timeTaken: number;
+    rank: number;
+    correctAnswers: number;
+  }) => {
     setUserResult(result);
     setHasCompleted(true);
     // In a real app, you would save this to the server
@@ -35,7 +41,16 @@ function DailyChallengePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
         <div className="lg:col-span-2">
-          {hasCompleted && userResult ? <CompletedChallenge selectedAnswers={[]} dailyQuizData={dailyQuizData} result={userResult} onReset={resetChallenge} /> : <DailyQuiz onComplete={handleChallengeComplete} />}
+          {hasCompleted && userResult ? (
+            <CompletedChallenge
+              selectedAnswers={[]}
+              dailyQuizData={dailyQuizData}
+              result={userResult}
+              onReset={resetChallenge}
+            />
+          ) : (
+            <DailyQuiz onComplete={handleChallengeComplete} />
+          )}
 
           <div className="mt-8">
             <DailyStats />

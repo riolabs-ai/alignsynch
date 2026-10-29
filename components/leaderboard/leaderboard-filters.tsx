@@ -1,14 +1,19 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Calendar, ChevronDown } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Calendar, ChevronDown } from "lucide-react";
 
 interface LeaderboardFiltersProps {
-  timeFilter: string
-  setTimeFilter: (filter: string) => void
-  categoryFilter: string
-  setCategoryFilter: (filter: string) => void
+  timeFilter: string;
+  setTimeFilter: (filter: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (filter: string) => void;
 }
 
 export function LeaderboardFilters({
@@ -53,14 +58,20 @@ export function LeaderboardFilters({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setCategoryFilter("all")}>All Categories</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setCategoryFilter("all")}>
+            All Categories
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setCategoryFilter("Science")}>Science</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setCategoryFilter("History")}>History</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setCategoryFilter("Mathematics")}>Mathematics</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setCategoryFilter("Literature")}>Literature</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setCategoryFilter("Mathematics")}>
+            Mathematics
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setCategoryFilter("Literature")}>
+            Literature
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setCategoryFilter("Sports")}>Sports</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  )
+  );
 }
