@@ -3,42 +3,29 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { formatDateTimeLong } from "@/content/core";
+import type { QuizComment, QuizCommentThread } from "@/content/quiz-result";
+import { media } from "@/data/media";
 import { ChevronDown, ChevronUp, Flag, MessageSquare, Send, ThumbsUp } from "lucide-react";
 import { useState } from "react";
-import { media } from "@/data/media";
-type Reply = {
-  id: string;
-  user: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
-  text: string;
-  timestamp: string;
-  likes: number;
-};
-interface CommentProps {
-  comment: {
-    id: string;
-    user: {
-      id: string;
-      name: string;
-      avatar: string;
-    };
-    text: string;
-    timestamp: string;
-    likes: number;
-    replies: Reply[];
-  };
-}
 
-export function Comment({ comment }: CommentProps) {
+/**
+ * One comment and its one level of replies.
+ *
+ * The record comes from `data/quiz-comments.ts` through `selectCommentThreads`;
+ * only the interactions (the like toggle, a reply typed in this session) are local
+ * state. Before, this file declared its own `Comment`/`Reply` shapes and
+ * `question-discussion.tsx` declared them a second time — two types for one row,
+ * which is how the two screens drifted.
+ */
+export function Comment({ thread }: { thread: QuizCommentThread }) {
+  const { comment } = thread;
   const [likes, setLikes] = useState(comment.likes);
   const [userLiked, setUserLiked] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
-  const [replies, setReplies] = useState(comment.replies);
+  const [replies, setReplies] = useState<QuizComment[]>(thread.replies);
 
   const handleLike = () => {
     if (userLiked) {
@@ -53,16 +40,21 @@ export function Comment({ comment }: CommentProps) {
   const handleAddReply = () => {
     if (!replyText.trim()) return;
 
-    const newReply = {
-      id: `r${Date.now()}`,
-      user: {
+    // A reply typed here is a draft: it is not a fixture record, so it carries a
+    // session id rather than pretending to be one of the authored comments.
+    const newReply: QuizComment = {
+      id: `local-reply-${replies.length + 1}`,
+      quizId: comment.quizId,
+      ...(comment.questionId !== undefined ? { questionId: comment.questionId } : {}),
+      author: {
         id: "current-user",
         name: "You",
-        avatar: media["avatars.master"].src,
+        avatar: { src: media["avatars.master"].src, alt: "You" },
       },
-      text: replyText,
-      timestamp: new Date().toISOString(),
+      body: replyText,
+      createdAt: new Date().toISOString(),
       likes: 0,
+      parentId: comment.id,
     };
 
     setReplies([...replies, newReply]);
@@ -75,22 +67,25 @@ export function Comment({ comment }: CommentProps) {
     <div className="border rounded-md p-4">
       <div className="flex items-start gap-3">
         <Avatar>
-          <AvatarImage src={comment.user.avatar || media.placeholder.src} alt={comment.user.name} />
-          <AvatarFallback>{comment.user.name.substring(0, 2)}</AvatarFallback>
+          <AvatarImage
+            src={comment.author.avatar?.src ?? media.placeholder.src}
+            alt={comment.author.name}
+          />
+          <AvatarFallback>{comment.author.name.substring(0, 2)}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium">{comment.user.name}</h3>
+              <h3 className="font-medium">{comment.author.name}</h3>
               <p className="text-xs text-muted-foreground">
-                {new Date(comment.timestamp).toLocaleString()}
+                {formatDateTimeLong(comment.createdAt)}
               </p>
             </div>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Flag className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-sm mt-2">{comment.text}</p>
+          <p className="text-sm mt-2">{comment.body}</p>
           <div className="flex items-center gap-4 mt-3">
             <Button
               variant="ghost"
@@ -164,21 +159,21 @@ export function Comment({ comment }: CommentProps) {
                 <div key={reply.id} className="flex items-start gap-3">
                   <Avatar className="h-7 w-7">
                     <AvatarImage
-                      src={reply.user.avatar || media.placeholder.src}
-                      alt={reply.user.name}
+                      src={reply.author.avatar?.src ?? media.placeholder.src}
+                      alt={reply.author.name}
                     />
-                    <AvatarFallback>{reply.user.name.substring(0, 2)}</AvatarFallback>
+                    <AvatarFallback>{reply.author.name.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-sm font-medium">{reply.user.name}</h4>
+                        <h4 className="text-sm font-medium">{reply.author.name}</h4>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(reply.timestamp).toLocaleString()}
+                          {formatDateTimeLong(reply.createdAt)}
                         </p>
                       </div>
                     </div>
-                    <p className="text-sm mt-1">{reply.text}</p>
+                    <p className="text-sm mt-1">{reply.body}</p>
                   </div>
                 </div>
               ))}

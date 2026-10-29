@@ -27,7 +27,7 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 | -------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                                                   |
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                             |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 192 `node:test` cases → validator; prints record counts                                              |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                              |
 | `pnpm gen`                       | exit 0, ~0.1 s       | `node scripts/gen-fixtures.mjs`; bulk fixtures → `data/generated/` (gitignored, validated by `data:check`) |
 | `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 231 warnings, 12 infos                                                        |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 316 files; CI gate                                                                         |
@@ -104,7 +104,7 @@ process bug.
   current quiz, categories). Card shapes are projections (`selectQuizCard`), never authored arrays;
   a per-slot campaign is an engagement-only overlay (`data/promotions.ts`), never a second record.
 - `scripts/data-check.ts` — the validator: per-record schema pass, then collection invariants
-  E0–E17 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
+  E0–E21 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
   `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E17/W6,
   and `scripts/__tests__/explore-curation.test.ts` pins which authored tab block each explore
   shelf owns (the 3-vs-6 decision in `docs/p1-migration/MIGRATION.md`).
@@ -112,6 +112,10 @@ process bug.
   `router.push`/`replace`/`redirect` in `components/` + `app/` and every `public/` asset literal,
   and fails on a route the manifest cannot match or a file `public/` does not have.
   `scripts/ui-refs.ts` holds the pure extraction (no `fs`), so the cases test it directly.
+  E21 is the second one that reads the UI tree: `scripts/island-refs.ts` finds module-scope record
+  arrays and fixture text pasted into a component. It binds `components/search/**`,
+  `components/chat/**` and the header palette; copies still sitting in the other feature
+  directories are counted on the summary line every run instead of being allowed silently.
 - `app/(mainlayout)/**` — every product page behind the header/sidebar shell; `app/(auth)/**` —
   login/register, no shell. Dynamic segments: `quiz/[id]/{play,discussion}`,
   `my-quizzes/[id]/{statistics}`, `categories/[slug]`, `news/[slug]`, `creator-tips/[slug]`,
@@ -175,6 +179,13 @@ process bug.
   long. Legacy paths from the pre-P1 shell now 308 to the real route in `next.config.mjs`; never
   add a second page to satisfy a link. There is no asset allowlist: E10 fails on any literal with
   no file under `public/`, so a new missing image is a red build, exactly like a dead link.
+- **A fixture row is imported, never pasted.** `data:check` E21 fails on a module-scope record array
+  in `components/search/**` or `components/chat/**` and on any quiz title or chat message body
+  written into one of those components (or the header palette) — as a literal, JSX text or a
+  comment. The `/search` page and the palette both render `querySearchIndex()` over
+  `data/searchdata.ts`, which is `buildSearchIndex()` over the real collections; a row that only
+  exists in a component cannot be edited by changing a fixture, which is how two unrelated search
+  catalogs survived two migrations.
 - **`public/category/*.webp` are placeholders:** all 23 files are the same 1536×1024 PNG stamped
   with its own dimensions. Category art is a content task, not a styling bug.
 - `pnpm data:check` prints **98** warnings and no errors on the current tree: `W1` 24 (a published

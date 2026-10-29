@@ -14,173 +14,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Award,
-  Clock,
-  FileQuestion,
-  FileText,
-  Filter,
-  Search,
-  Tag,
-  User,
-  Users,
-} from "lucide-react";
+import { popularSearches, querySearchIndex, type SearchIndex } from "@/content/search";
+import { FileQuestion, FileText, Filter, Search, Tag, User, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// Mock search data
-const mockSearchData = {
-  quizzes: [
-    {
-      id: "q1",
-      title: "World Geography Quiz",
-      category: "Geography",
-      difficulty: "Medium",
-      creator: "geographyexpert",
-      plays: 1245,
-      rating: 4.7,
-    },
-    {
-      id: "q2",
-      title: "Marvel Cinematic Universe Trivia",
-      category: "Entertainment",
-      difficulty: "Hard",
-      creator: "marveladdict",
-      plays: 3782,
-      rating: 4.9,
-    },
-    {
-      id: "q3",
-      title: "Basic Mathematics",
-      category: "Education",
-      difficulty: "Easy",
-      creator: "mathteacher",
-      plays: 2156,
-      rating: 4.5,
-    },
-    {
-      id: "q4",
-      title: "History of Ancient Civilizations",
-      category: "History",
-      difficulty: "Medium",
-      creator: "historyprof",
-      plays: 1876,
-      rating: 4.6,
-    },
-    {
-      id: "q5",
-      title: "Programming Fundamentals",
-      category: "Technology",
-      difficulty: "Medium",
-      creator: "codemaster",
-      plays: 1543,
-      rating: 4.4,
-    },
-    {
-      id: "q6",
-      title: "Famous Paintings and Artists",
-      category: "Art",
-      difficulty: "Hard",
-      creator: "artlover",
-      plays: 987,
-      rating: 4.8,
-    },
-    {
-      id: "q7",
-      title: "World Capitals",
-      category: "Geography",
-      difficulty: "Medium",
-      creator: "geographyexpert",
-      plays: 2345,
-      rating: 4.5,
-    },
-    {
-      id: "q8",
-      title: "Human Anatomy",
-      category: "Science",
-      difficulty: "Hard",
-      creator: "doctorwho",
-      plays: 1432,
-      rating: 4.7,
-    },
-  ],
-  categories: [
-    { id: "c1", name: "Science", quizCount: 42, icon: "🔬" },
-    { id: "c2", name: "History", quizCount: 38, icon: "📜" },
-    { id: "c3", name: "Entertainment", quizCount: 65, icon: "🎬" },
-    { id: "c4", name: "Sports", quizCount: 29, icon: "⚽" },
-    { id: "c5", name: "Geography", quizCount: 31, icon: "🌍" },
-    { id: "c6", name: "Technology", quizCount: 27, icon: "💻" },
-  ],
-  creators: [
-    {
-      id: "u1",
-      username: "quizmaster",
-      name: "Quiz Master",
-      quizCount: 87,
-      followers: 1243,
-      bio: "Creating the best quizzes for all knowledge enthusiasts",
-    },
-    {
-      id: "u2",
-      username: "historyprof",
-      name: "History Professor",
-      quizCount: 34,
-      followers: 567,
-      bio: "History teacher with a passion for making learning fun",
-    },
-    {
-      id: "u3",
-      username: "scienceguru",
-      name: "Science Guru",
-      quizCount: 56,
-      followers: 892,
-      bio: "Explaining complex science concepts through engaging quizzes",
-    },
-    {
-      id: "u4",
-      username: "geographyexpert",
-      name: "Geography Expert",
-      quizCount: 29,
-      followers: 421,
-      bio: "Travel the world through my geography quizzes",
-    },
-  ],
-  pages: [
-    {
-      id: "p1",
-      title: "Tournaments",
-      path: "/tournaments",
-      description: "Compete in quiz tournaments and win prizes",
-    },
-    {
-      id: "p2",
-      title: "Leaderboard",
-      path: "/leaderboard",
-      description: "See who's topping the charts in our global rankings",
-    },
-    {
-      id: "p3",
-      title: "Creator Tips",
-      path: "/creator-tips",
-      description: "Learn how to create engaging and educational quizzes",
-    },
-    {
-      id: "p4",
-      title: "Quiz Discussions",
-      path: "/quiz-discussions",
-      description: "Join conversations about quizzes and share your insights",
-    },
-  ],
-};
-
-export function SearchResults({ query }: { query: string }) {
+/**
+ * The search page renders `buildSearchIndex()` output — `data/searchdata.ts` derives it from
+ * the quiz collection, the category table, the user collection and the route manifest. This
+ * component holds no catalog of its own: `data:check` E21 fails the build if a search result
+ * or a chat message list is written into a component again (this file used to carry 8 quizzes,
+ * 6 categories, 4 creators and 4 pages, none of which existed in any collection).
+ *
+ * The index arrives as a prop from the server page so the client bundle never imports
+ * `data/quizzes.ts` (62 records with their questions) just to filter 74 rows.
+ *
+ * Three columns of the old mock are gone because no record could answer them: `plays`, `rating`
+ * (and the "Most Played"/"Highest Rated" sort that ordered them), `followers` and `bio` on a
+ * creator, and a `description` on a page. What is left is either stored or counted.
+ */
+export function SearchResults({ query, index }: { query: string; index: SearchIndex }) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState(query);
   const [activeTab, setActiveTab] = useState("all");
-  const [sortOption, setSortOption] = useState("relevance");
-  const [difficultyFilter, setDifficultyFilter] = useState("all");
+  const [difficultyFilter, setDifficultyFilter] = useState<"all" | "easy" | "medium" | "hard">(
+    "all",
+  );
 
   useEffect(() => {
     setSearchQuery(query);
@@ -193,59 +53,11 @@ export function SearchResults({ query }: { query: string }) {
     }
   };
 
-  // Filter and sort results based on query and filters
-  const getFilteredResults = () => {
-    if (!searchQuery.trim()) return { quizzes: [], categories: [], creators: [], pages: [] };
+  const results = querySearchIndex(index, { text: searchQuery, difficulty: difficultyFilter });
+  const suggestions = popularSearches(index);
 
-    const q = searchQuery.toLowerCase().trim();
-
-    // Filter by query
-    let filteredQuizzes = mockSearchData.quizzes.filter(
-      (quiz) =>
-        quiz.title.toLowerCase().includes(q) ||
-        quiz.category.toLowerCase().includes(q) ||
-        quiz.creator.toLowerCase().includes(q),
-    );
-
-    // Apply difficulty filter
-    if (difficultyFilter !== "all") {
-      filteredQuizzes = filteredQuizzes.filter(
-        (quiz) => quiz.difficulty.toLowerCase() === difficultyFilter.toLowerCase(),
-      );
-    }
-
-    // Sort quizzes
-    if (sortOption === "plays") {
-      filteredQuizzes.sort((a, b) => b.plays - a.plays);
-    } else if (sortOption === "rating") {
-      filteredQuizzes.sort((a, b) => b.rating - a.rating);
-    }
-    // relevance is default (no additional sorting)
-
-    return {
-      quizzes: filteredQuizzes,
-      categories: mockSearchData.categories.filter((category) =>
-        category.name.toLowerCase().includes(q),
-      ),
-      creators: mockSearchData.creators.filter(
-        (creator) =>
-          creator.name.toLowerCase().includes(q) ||
-          creator.username.toLowerCase().includes(q) ||
-          creator.bio.toLowerCase().includes(q),
-      ),
-      pages: mockSearchData.pages.filter(
-        (page) =>
-          page.title.toLowerCase().includes(q) || page.description.toLowerCase().includes(q),
-      ),
-    };
-  };
-
-  const results = getFilteredResults();
-  const totalResults =
-    results.quizzes.length +
-    results.categories.length +
-    results.creators.length +
-    results.pages.length;
+  /** `hard` is the stored value; `Hard` is what the badge prints. No other casing is stored. */
+  const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
   return (
     <div className="container py-8">
@@ -271,11 +83,16 @@ export function SearchResults({ query }: { query: string }) {
         <>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <p className="text-muted-foreground">
-              {totalResults} results for "{searchQuery}"
+              {results.total} results for "{searchQuery}"
             </p>
 
             <div className="flex flex-wrap gap-2">
-              <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+              <Select
+                value={difficultyFilter}
+                onValueChange={(value) =>
+                  setDifficultyFilter(value as "all" | "easy" | "medium" | "hard")
+                }
+              >
                 <SelectTrigger className="w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Difficulty" />
@@ -287,24 +104,12 @@ export function SearchResults({ query }: { query: string }) {
                   <SelectItem value="hard">Hard</SelectItem>
                 </SelectContent>
               </Select>
-
-              <Select value={sortOption} onValueChange={setSortOption}>
-                <SelectTrigger className="w-[180px]">
-                  <Clock className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="relevance">Relevance</SelectItem>
-                  <SelectItem value="plays">Most Played</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
           <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-8">
             <TabsList className="mb-6 overflow-x-auto w-full">
-              <TabsTrigger value="all">All Results ({totalResults})</TabsTrigger>
+              <TabsTrigger value="all">All Results ({results.total})</TabsTrigger>
               <TabsTrigger value="quizzes">Quizzes ({results.quizzes.length})</TabsTrigger>
               <TabsTrigger value="categories">Categories ({results.categories.length})</TabsTrigger>
               <TabsTrigger value="creators">Creators ({results.creators.length})</TabsTrigger>
@@ -329,28 +134,21 @@ export function SearchResults({ query }: { query: string }) {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {results.quizzes.slice(0, 4).map((quiz) => (
-                      <Link key={quiz.id} href={`/quiz/${quiz.id}`} className="block">
+                      <Link key={quiz.id} href={quiz.path} className="block">
                         <Card className="h-full hover:shadow-md transition-shadow">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-lg line-clamp-2">{quiz.title}</CardTitle>
                           </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              <Badge variant="outline">{quiz.category}</Badge>
-                              <Badge variant="outline">{quiz.difficulty}</Badge>
+                          <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                              {quiz.categoryNames.map((name) => (
+                                <Badge key={name} variant="outline">
+                                  {name}
+                                </Badge>
+                              ))}
+                              <Badge variant="outline">{titleCase(quiz.difficulty)}</Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground">By @{quiz.creator}</p>
                           </CardContent>
-                          <CardFooter className="flex justify-between text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Award className="h-4 w-4" />
-                              <span>{quiz.rating}/5</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <User className="h-4 w-4" />
-                              <span>{quiz.plays.toLocaleString()} plays</span>
-                            </div>
-                          </CardFooter>
                         </Card>
                       </Link>
                     ))}
@@ -375,20 +173,16 @@ export function SearchResults({ query }: { query: string }) {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {results.categories.slice(0, 3).map((category) => (
-                      <Link
-                        key={category.id}
-                        href={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
-                        className="block"
-                      >
+                      <Link key={category.id} href={category.path} className="block">
                         <Card className="h-full hover:shadow-md transition-shadow">
                           <CardContent className="flex items-center gap-4 p-6">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-2xl">
-                              {category.icon}
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                              <Tag className="h-6 w-6 text-primary" />
                             </div>
                             <div>
                               <h3 className="text-lg font-semibold">{category.name}</h3>
                               <p className="text-sm text-muted-foreground">
-                                {category.quizCount} quizzes
+                                {category.count} {category.count === 1 ? "quiz" : "quizzes"}
                               </p>
                             </div>
                           </CardContent>
@@ -416,26 +210,20 @@ export function SearchResults({ query }: { query: string }) {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {results.creators.slice(0, 2).map((creator) => (
-                      <Link
-                        key={creator.id}
-                        href={`/profile/${creator.username}`}
-                        className="block"
-                      >
+                      <Link key={creator.id} href={creator.path} className="block">
                         <Card className="h-full hover:shadow-md transition-shadow">
-                          <CardContent className="flex items-start gap-4 p-6">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-                              <User className="h-8 w-8" />
+                          <CardContent className="flex items-center gap-4 p-6">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600">
+                              <User className="h-7 w-7" />
                             </div>
                             <div>
                               <h3 className="text-lg font-semibold">{creator.name}</h3>
                               <p className="text-sm text-muted-foreground mb-1">
                                 @{creator.username}
                               </p>
-                              <p className="text-sm line-clamp-2">{creator.bio}</p>
-                              <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                                <span>{creator.quizCount} quizzes</span>
-                                <span>{creator.followers} followers</span>
-                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {creator.quizCount} {creator.quizCount === 1 ? "quiz" : "quizzes"}
+                              </p>
                             </div>
                           </CardContent>
                         </Card>
@@ -469,7 +257,7 @@ export function SearchResults({ query }: { query: string }) {
                               <FileText className="h-5 w-5 text-purple-600" />
                             </div>
                             <h3 className="text-lg font-semibold mb-1">{page.title}</h3>
-                            <p className="text-sm text-muted-foreground">{page.description}</p>
+                            <p className="font-mono text-sm text-muted-foreground">{page.path}</p>
                           </CardContent>
                         </Card>
                       </Link>
@@ -478,7 +266,7 @@ export function SearchResults({ query }: { query: string }) {
                 </div>
               )}
 
-              {totalResults === 0 && (
+              {results.total === 0 && (
                 <div className="text-center py-12">
                   <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h2 className="text-2xl font-semibold mb-2">No results found</h2>
@@ -494,27 +282,23 @@ export function SearchResults({ query }: { query: string }) {
               {results.quizzes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {results.quizzes.map((quiz) => (
-                    <Link key={quiz.id} href={`/quiz/${quiz.id}`} className="block">
+                    <Link key={quiz.id} href={quiz.path} className="block">
                       <Card className="h-full hover:shadow-md transition-shadow">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-lg line-clamp-2">{quiz.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="pb-2">
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            <Badge variant="outline">{quiz.category}</Badge>
-                            <Badge variant="outline">{quiz.difficulty}</Badge>
+                          <div className="flex flex-wrap gap-2">
+                            {quiz.categoryNames.map((name) => (
+                              <Badge key={name} variant="outline">
+                                {name}
+                              </Badge>
+                            ))}
+                            <Badge variant="outline">{titleCase(quiz.difficulty)}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">By @{quiz.creator}</p>
                         </CardContent>
-                        <CardFooter className="flex justify-between text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Award className="h-4 w-4" />
-                            <span>{quiz.rating}/5</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <User className="h-4 w-4" />
-                            <span>{quiz.plays.toLocaleString()} plays</span>
-                          </div>
+                        <CardFooter className="font-mono text-xs text-muted-foreground">
+                          {quiz.path}
                         </CardFooter>
                       </Card>
                     </Link>
@@ -535,19 +319,17 @@ export function SearchResults({ query }: { query: string }) {
               {results.categories.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.categories.map((category) => (
-                    <Link
-                      key={category.id}
-                      href={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
-                      className="block"
-                    >
+                    <Link key={category.id} href={category.path} className="block">
                       <Card className="h-full hover:shadow-md transition-shadow">
                         <CardContent className="flex items-center gap-4 p-6">
-                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-3xl">
-                            {category.icon}
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                            <Tag className="h-8 w-8 text-primary" />
                           </div>
                           <div>
                             <h3 className="text-xl font-semibold">{category.name}</h3>
-                            <p className="text-muted-foreground">{category.quizCount} quizzes</p>
+                            <p className="text-muted-foreground">
+                              {category.count} {category.count === 1 ? "quiz" : "quizzes"}
+                            </p>
                           </div>
                         </CardContent>
                       </Card>
@@ -569,25 +351,20 @@ export function SearchResults({ query }: { query: string }) {
               {results.creators.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {results.creators.map((creator) => (
-                    <Link key={creator.id} href={`/profile/${creator.username}`} className="block">
+                    <Link key={creator.id} href={creator.path} className="block">
                       <Card className="h-full hover:shadow-md transition-shadow">
-                        <CardContent className="flex items-start gap-4 p-6">
+                        <CardContent className="flex items-center gap-4 p-6">
                           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600">
                             <User className="h-10 w-10" />
                           </div>
                           <div className="flex-1">
                             <h3 className="text-xl font-semibold">{creator.name}</h3>
-                            <p className="text-muted-foreground mb-2">@{creator.username}</p>
-                            <p className="mb-3">{creator.bio}</p>
-                            <div className="flex gap-6 text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <FileQuestion className="h-4 w-4" />
-                                <span>{creator.quizCount} quizzes</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Users className="h-4 w-4" />
-                                <span>{creator.followers} followers</span>
-                              </div>
+                            <p className="text-muted-foreground mb-3">@{creator.username}</p>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <UserCheck className="h-4 w-4" />
+                              <span>
+                                {creator.quizCount} {creator.quizCount === 1 ? "quiz" : "quizzes"}
+                              </span>
                             </div>
                           </div>
                         </CardContent>
@@ -617,7 +394,7 @@ export function SearchResults({ query }: { query: string }) {
                             <FileText className="h-6 w-6 text-purple-600" />
                           </div>
                           <h3 className="text-xl font-semibold mb-2">{page.title}</h3>
-                          <p className="text-muted-foreground">{page.description}</p>
+                          <p className="font-mono text-muted-foreground">{page.path}</p>
                         </CardContent>
                       </Card>
                     </Link>
@@ -647,18 +424,7 @@ export function SearchResults({ query }: { query: string }) {
           <div className="max-w-3xl mx-auto">
             <h3 className="text-lg font-medium mb-4">Popular searches</h3>
             <div className="flex flex-wrap justify-center gap-2">
-              {[
-                "History",
-                "Science",
-                "Geography",
-                "Entertainment",
-                "Sports",
-                "Technology",
-                "Art",
-                "Music",
-                "Food",
-                "Movies",
-              ].map((term) => (
+              {suggestions.map((term) => (
                 <Button
                   key={term}
                   variant="outline"

@@ -5,215 +5,100 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDate } from "@/content/core";
+import type { Quiz } from "@/content/quiz";
+import {
+  formatDurationWords,
+  type QuizCommentThread,
+  type QuizResult,
+} from "@/content/quiz-result";
 import { ArrowLeft, CheckCircle, Clock, RotateCw, Share2, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { media } from "@/data/media";
 
-// Mock quiz result data - in a real app, you would fetch this based on the ID
-const mockQuizResult = {
-  id: "1",
-  title: "Avengers Quiz",
-  score: {
-    correct: 7,
-    wrong: 3,
-    total: 10,
-    percentage: 70,
-  },
-  timeTaken: "8m 45s",
-  completedAt: "2023-10-15T14:30:00Z",
-  questions: [
-    {
-      id: "q1",
-      text: "Who was the first Avenger to be introduced in the MCU?",
-      correctAnswer: "Iron Man",
-      userAnswer: "Iron Man",
-      isCorrect: true,
-      difficulty: "easy",
-      timeTaken: 12,
-      explanation:
-        "Iron Man was released in 2008 and was the first film in the Marvel Cinematic Universe.",
-      discussions: [
-        {
-          id: "d1",
-          user: {
-            id: "u1",
-            name: "MarvelFan",
-            avatar: media["avatars.genious"].src,
-          },
-          text: "Technically, Captain America existed first in the timeline, but Iron Man was the first movie released.",
-          timestamp: "2023-10-15T15:30:00Z",
-          likes: 12,
-          replies: [
-            {
-              id: "r1",
-              user: {
-                id: "u2",
-                name: "ComicBookGuru",
-                avatar: media["avatars.guru"].src,
-              },
-              text: "That's right! The Captain America movie came out in 2011 but was set during World War II.",
-              timestamp: "2023-10-15T16:15:00Z",
-              likes: 5,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "q2",
-      text: "What is the name of Thor's hammer?",
-      correctAnswer: "Mjölnir",
-      userAnswer: "Mjölnir",
-      isCorrect: true,
-      difficulty: "easy",
-      timeTaken: 8,
-      explanation: "Mjölnir is the enchanted hammer wielded by Thor, the Norse god of thunder.",
-      discussions: [],
-    },
-    {
-      id: "q3",
-      text: "What is the real name of the Black Panther?",
-      correctAnswer: "T'Challa",
-      userAnswer: "T'Challa",
-      isCorrect: true,
-      difficulty: "medium",
-      timeTaken: 15,
-      explanation:
-        "T'Challa is the king of the fictional African nation of Wakanda and the superhero known as Black Panther.",
-      discussions: [],
-    },
-    {
-      id: "q4",
-      text: "Which Infinity Stone was located in Loki's scepter?",
-      correctAnswer: "Mind Stone",
-      userAnswer: "Soul Stone",
-      isCorrect: false,
-      difficulty: "medium",
-      timeTaken: 20,
-      explanation:
-        "The Mind Stone was housed in Loki's scepter, which was later used to create Vision.",
-      discussions: [
-        {
-          id: "d2",
-          user: {
-            id: "u3",
-            name: "InfinityExpert",
-            avatar: media["avatars.brain"].src,
-          },
-          text: "The Mind Stone has a yellow color, while the Soul Stone is orange. This is a common mix-up!",
-          timestamp: "2023-10-16T10:45:00Z",
-          likes: 8,
-          replies: [],
-        },
-      ],
-    },
-    {
-      id: "q5",
-      text: "Who was the main villain in 'Guardians of the Galaxy'?",
-      correctAnswer: "Ronan the Accuser",
-      userAnswer: "Thanos",
-      isCorrect: false,
-      difficulty: "medium",
-      timeTaken: 18,
-      explanation:
-        "While Thanos appeared in the film, Ronan the Accuser was the main antagonist in the first Guardians of the Galaxy movie.",
-      discussions: [],
-    },
-    {
-      id: "q6",
-      text: "What type of doctor is Stephen Strange?",
-      correctAnswer: "Neurosurgeon",
-      userAnswer: "Neurosurgeon",
-      isCorrect: true,
-      difficulty: "medium",
-      timeTaken: 10,
-      explanation:
-        "Before becoming the Sorcerer Supreme, Dr. Stephen Strange was a brilliant neurosurgeon.",
-      discussions: [],
-    },
-    {
-      id: "q7",
-      text: "What is the name of Tony Stark's AI assistant that replaced JARVIS?",
-      correctAnswer: "FRIDAY",
-      userAnswer: "FRIDAY",
-      isCorrect: true,
-      difficulty: "hard",
-      timeTaken: 22,
-      explanation:
-        "After JARVIS became Vision, Tony Stark activated FRIDAY as his new AI assistant.",
-      discussions: [],
-    },
-    {
-      id: "q8",
-      text: "In which film did Spider-Man make his first appearance in the MCU?",
-      correctAnswer: "Captain America: Civil War",
-      userAnswer: "Captain America: Civil War",
-      isCorrect: true,
-      difficulty: "medium",
-      timeTaken: 14,
-      explanation:
-        "Spider-Man, played by Tom Holland, first appeared in the MCU in Captain America: Civil War before getting his solo film.",
-      discussions: [],
-    },
-    {
-      id: "q9",
-      text: "What is the name of the planet where Thor and Hulk reunite in Thor: Ragnarok?",
-      correctAnswer: "Sakaar",
-      userAnswer: "Asgard",
-      isCorrect: false,
-      difficulty: "hard",
-      timeTaken: 25,
-      explanation:
-        "Sakaar is the garbage planet ruled by the Grandmaster where Thor is captured and forced to fight in the Contest of Champions.",
-      discussions: [],
-    },
-    {
-      id: "q10",
-      text: "Who directed 'Avengers: Endgame'?",
-      correctAnswer: "The Russo Brothers",
-      userAnswer: "The Russo Brothers",
-      isCorrect: true,
-      difficulty: "medium",
-      timeTaken: 16,
-      explanation:
-        "Anthony and Joe Russo directed both Avengers: Infinity War and Avengers: Endgame.",
-      discussions: [],
-    },
-  ],
-};
+interface QuizDiscussionProps {
+  /** The quiz record the review belongs to. */
+  quiz: Quiz;
+  /** The viewer's attempt. Absent means the review screen has nothing to show. */
+  result?: QuizResult;
+  /** Threads per question id, from `selectCommentThreads`. */
+  threads: Record<string, QuizCommentThread[]>;
+}
 
-export function QuizDiscussion({ id }: { id: string }) {
+/**
+ * The result review — `quiz-discustion` in the route tree (`/quiz/[id]/discussion`).
+ *
+ * Every value here used to come from `mockQuizResult`: a ten-record object that
+ * carried its own title, its own score, its own per-question answers and its own
+ * nested discussion threads, so the page could not change when a fixture did and
+ * `data:check` could not see it. Now the header is `quiz` + `result`, the question
+ * list is `quiz.questions` joined to `result.answers`, and the threads come from
+ * `data/quiz-comments.ts` through `selectCommentThreads`.
+ */
+export function QuizDiscussion({ quiz, result, threads }: QuizDiscussionProps) {
   const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [questionsPerPage] = useState(5);
-  const [filteredQuestions, setFilteredQuestions] = useState(mockQuizResult.questions);
 
-  // Filter questions based on active tab
+  const answers = result?.answers ?? [];
+  const questions = quiz.questions.map((question) => ({
+    question,
+    answer: answers.find((entry) => entry.questionId === question.id),
+    threads: threads[question.id] ?? [],
+  }));
+
+  const filtered = questions.filter(({ answer, threads: about }) => {
+    if (activeTab === "correct") return answer?.isCorrect === true;
+    if (activeTab === "incorrect") return answer?.isCorrect === false;
+    if (activeTab === "discussed") return about.length > 0;
+    return true;
+  });
+
+  const indexOfLastQuestion = currentPage * questionsPerPage;
+  const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
+  const currentQuestions = filtered.slice(indexOfFirstQuestion, indexOfLastQuestion);
+  const totalPages = Math.ceil(filtered.length / questionsPerPage);
+
   useEffect(() => {
-    if (activeTab === "all") {
-      setFilteredQuestions(mockQuizResult.questions);
-    } else if (activeTab === "correct") {
-      setFilteredQuestions(mockQuizResult.questions.filter((q) => q.isCorrect));
-    } else if (activeTab === "incorrect") {
-      setFilteredQuestions(mockQuizResult.questions.filter((q) => !q.isCorrect));
-    } else if (activeTab === "discussed") {
-      setFilteredQuestions(mockQuizResult.questions.filter((q) => q.discussions.length > 0));
-    }
     setCurrentPage(1);
   }, [activeTab]);
 
-  // Get current questions for pagination
-  const indexOfLastQuestion = currentPage * questionsPerPage;
-  const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
-  const currentQuestions = filteredQuestions.slice(indexOfFirstQuestion, indexOfLastQuestion);
-  const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
+  if (result === undefined) {
+    return (
+      <div className="container mx-auto py-4">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" asChild className="mb-4">
+            <Link href={`/quiz/${quiz.id}`} className="flex items-center gap-1">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Quiz
+            </Link>
+          </Button>
+
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xl md:text-2xl">{quiz.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+              <p className="text-muted-foreground mb-4">
+                You have not completed this quiz yet, so there is no result to review.
+              </p>
+              <Button asChild>
+                <Link href={`/quiz/${quiz.id}/play`}>Play Quiz</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const incorrect = result.score.total - result.score.correct;
 
   return (
     <div className="container mx-auto py-4">
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild className="mb-4">
-          <Link href={`/quiz/${id}`} className="flex items-center gap-1">
+          <Link href={`/quiz/${quiz.id}`} className="flex items-center gap-1">
             <ArrowLeft className="h-4 w-4" />
             Back to Quiz
           </Link>
@@ -223,15 +108,17 @@ export function QuizDiscussion({ id }: { id: string }) {
           <CardHeader className="pb-3">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle className="text-xl md:text-2xl">{mockQuizResult.title}</CardTitle>
+                <CardTitle className="text-xl md:text-2xl">{quiz.title}</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Completed on {new Date(mockQuizResult.completedAt).toLocaleDateString()}
+                  Completed on {formatDate(result.completedAt)}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <RotateCw className="h-4 w-4" />
-                  <span>Play Again</span>
+                <Button variant="outline" size="sm" className="flex items-center gap-1" asChild>
+                  <Link href={`/quiz/${quiz.id}/play`}>
+                    <RotateCw className="h-4 w-4" />
+                    <span>Play Again</span>
+                  </Link>
                 </Button>
                 <Button variant="outline" size="sm" className="flex items-center gap-1">
                   <Share2 className="h-4 w-4" />
@@ -249,7 +136,7 @@ export function QuizDiscussion({ id }: { id: string }) {
                 <div>
                   <div className="text-sm text-muted-foreground">Correct</div>
                   <div className="font-medium">
-                    {mockQuizResult.score.correct} / {mockQuizResult.score.total}
+                    {result.score.correct} / {result.score.total}
                   </div>
                 </div>
               </div>
@@ -261,7 +148,7 @@ export function QuizDiscussion({ id }: { id: string }) {
                 <div>
                   <div className="text-sm text-muted-foreground">Incorrect</div>
                   <div className="font-medium">
-                    {mockQuizResult.score.wrong} / {mockQuizResult.score.total}
+                    {incorrect} / {result.score.total}
                   </div>
                 </div>
               </div>
@@ -272,7 +159,7 @@ export function QuizDiscussion({ id }: { id: string }) {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Time Taken</div>
-                  <div className="font-medium">{mockQuizResult.timeTaken}</div>
+                  <div className="font-medium">{formatDurationWords(result.timeTakenSeconds)}</div>
                 </div>
               </div>
             </div>
@@ -282,22 +169,26 @@ export function QuizDiscussion({ id }: { id: string }) {
         <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="flex overflow-x-auto md:grid w-full md:grid-cols-4">
             <TabsTrigger value="all">All Questions</TabsTrigger>
-            <TabsTrigger value="correct">Correct ({mockQuizResult.score.correct})</TabsTrigger>
-            <TabsTrigger value="incorrect">Incorrect ({mockQuizResult.score.wrong})</TabsTrigger>
+            <TabsTrigger value="correct">Correct ({result.score.correct})</TabsTrigger>
+            <TabsTrigger value="incorrect">Incorrect ({incorrect})</TabsTrigger>
             <TabsTrigger value="discussed">Discussed</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-6">
             <div className="space-y-6">
-              {currentQuestions.map((question, index) => (
+              {currentQuestions.map(({ question, answer, threads: about }, index) => (
                 <QuestionDiscussion
                   key={question.id}
+                  quizId={quiz.id}
                   question={question}
+                  {...(answer !== undefined ? { answer } : {})}
+                  difficulty={quiz.difficulty}
+                  threads={about}
                   questionNumber={indexOfFirstQuestion + index + 1}
                 />
               ))}
 
-              {filteredQuestions.length === 0 && (
+              {filtered.length === 0 && (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                     <p className="text-muted-foreground mb-4">
