@@ -23,18 +23,19 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 
 ## Commands (repo root, `pnpm` only — the lockfile is `pnpm-lock.yaml` v9)
 
-| Command                          | Verified             | Notes                                                                    |
-| -------------------------------- | -------------------- | ------------------------------------------------------------------------ |
-| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/REPO-LAYERS.md) |
-| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                 |
-| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                           |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts            |
-| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 231 warnings, 12 infos                      |
-| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 316 files; CI gate                                       |
-| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                                 |
-| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                            |
-| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                  |
-| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                      |
+| Command                          | Verified             | Notes                                                                                                      |
+| -------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/REPO-LAYERS.md)                                   |
+| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                                                   |
+| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                             |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                              |
+| `pnpm gen`                       | exit 0, ~0.1 s       | `node scripts/gen-fixtures.mjs`; bulk fixtures → `data/generated/` (gitignored, validated by `data:check`) |
+| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 231 warnings, 12 infos                                                        |
+| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 316 files; CI gate                                                                         |
+| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                                                                   |
+| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                              |
+| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                                                    |
+| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                                                        |
 
 Node must be **≥ 20.9** and the PATH is the only thing that decides which node you get:
 
