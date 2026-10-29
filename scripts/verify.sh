@@ -38,6 +38,13 @@
 # now runs inside one of QUIZHUB_BUILD_SLOTS (default 2) flock slots under
 # ~/.cache/quizhub/, and the step prints whether it waited.
 #
+# TEST RUNNERS — `pnpm test` is `vitest run` over `tests/**/*.test.ts` (#8): app-side
+# units that import `lib/quiz-cards.ts` and `data/searchdata.ts` through the `@/` alias.
+# The `node --test` suite over `.datacheck/scripts/__tests__/*.test.js` stays inside
+# `data:check`, because it is compiled by `tsconfig.datacheck.json` with the content
+# model. Two runners, one gate: the `test` step runs in every non-docs lane, directly
+# after `data:check`, and costs ~1.3 s in vitest (~2.7 s wall through pnpm) on 4 files.
+#
 # BUDGET — measured 2026-10-29, Node 24.22.0 / pnpm 12.16.1, warm node_modules,
 # on an 8-core box that was ALSO running other agents' builds (load 7–14), so
 # every row is "as measured under real fleet load", not on a quiet box:

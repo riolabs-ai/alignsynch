@@ -12,6 +12,7 @@
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "data:check": "tsc -p tsconfig.datacheck.json && node --test .datacheck/scripts/__tests__/*.test.js && node .datacheck/scripts/data-check.js",
+    "test": "vitest run",
     "gen": "node scripts/gen-fixtures.mjs",
     "lint": "biome check",
     "lint:fix": "biome check --write",
@@ -82,6 +83,7 @@
     "@types/react-dom": "^19",
     "postcss": "^8",
     "tailwindcss": "3.4.17",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   }
 }

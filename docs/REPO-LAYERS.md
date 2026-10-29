@@ -77,6 +77,15 @@ the commit) classifies what it is about to push. `GATE_REF` defaults to
 | `test`               |      | ✓       | ✓      | ✓    |
 | `build` (next build) |      |         |        | ✓    |
 
+`test` is `pnpm test` — `vitest run` over `tests/**/*.test.ts`, the app-side units
+(card projection, promotion window, search index, media registry). It is a **second
+runner** on purpose (#8): `data:check` keeps its `node --test` suite, because those
+cases are compiled by `tsconfig.datacheck.json` _with the content model_ and prove the
+fixtures that model describes, while vitest imports `lib/` and `data/` through the `@/`
+alias with no build step and asserts what the pages actually render. ~1.3 s for 4 files
+/ 36 cases, so it rides in every lane that already pays for `data:check` and never in
+docs.
+
 Two deviations from the layer table, both in the same direction — a lane may be
 **deeper** than its row, never shallower:
 
