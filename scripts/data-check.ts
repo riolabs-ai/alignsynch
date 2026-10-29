@@ -15,6 +15,7 @@
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { createRequire } from "node:module";
 
 import { zArticleCollection, zKbArticle, zNewsArticle, zTip } from "../content/article";
 import {
@@ -32,9 +33,12 @@ import {
   zQuiz,
   zQuizAuthoringCard,
   zQuizCard,
+  zQuizPromotion,
   selectQuizAuthoringCard,
   selectQuizCard,
   type Question,
+  type Quiz,
+  type QuizPromotion,
 } from "../content/quiz";
 import { zQuizComment, zQuizResult, zQuizReview } from "../content/quiz-result";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
@@ -107,6 +111,36 @@ const err = (code: string, message: string) =>
 const warn = (code: string, message: string) =>
   diagnostics.push({ code, severity: "warn", message });
 
+const nodeRequire = createRequire(__filename);
+
+/**
+ * The generated fixtures (P3 bulk variation) are gitignored and present only after
+ * `pnpm gen`. When the source file exists, its compiled CommonJS module — produced by the
+ * same `tsc -p tsconfig.datacheck.json` that compiled this validator — is required and its
+ * exported array returned; when it is absent the generated set is simply empty. A present
+ * but unloadable module is an E20 error, never a silent skip.
+ */
+function loadGenerated<T>(label: string, exportName: string): readonly T[] {
+  const source = join(process.cwd(), "data", "generated", `${label}.ts`);
+  if (!existsSync(source)) return [];
+  let moduleValue: unknown;
+  try {
+    moduleValue = nodeRequire(join(__dirname, "..", "data", "generated", label));
+  } catch (cause) {
+    err(
+      "E20",
+      `data/generated/${label}.ts exists but its compiled module failed to load: ${String(cause)}`,
+    );
+    return [];
+  }
+  const value = (moduleValue as Record<string, unknown>)[exportName];
+  if (!Array.isArray(value)) {
+    err("E20", `data/generated/${label}.ts must export \`${exportName}\` as an array`);
+    return [];
+  }
+  return value as T[];
+}
+
 /* ------------------------------------------------------------------ *
  * E0 — per-record schema
  * ------------------------------------------------------------------ */
@@ -166,6 +200,27 @@ for (const [label, table] of [
 }
 
 /* ------------------------------------------------------------------ *
+ * P3 — generated fixtures (bulk variation), validated when present
+ *
+ * `pnpm gen` writes `data/generated/quizzes.ts` + `promotions.ts`, which are
+ * gitignored. When the files exist the records are folded into every collection
+ * check below, so a generated record is held to exactly the same invariants as a
+ * hand-authored one; when they are absent `allQuizzes === quizzes` and this
+ * validator behaves as it did before P3.
+ * ------------------------------------------------------------------ */
+
+const generatedQuizRecords = loadGenerated<Quiz>("quizzes", "generatedQuizzes");
+const generatedPromotionRecords = loadGenerated<QuizPromotion>("promotions", "generatedPromotions");
+const generatedQuizzes = validateCollection("E0", "generated quiz", zQuiz, [
+  ...generatedQuizRecords,
+]);
+const generatedPromotions = validateCollection("E0", "generated promotion", zQuizPromotion, [
+  ...generatedPromotionRecords,
+]);
+const allQuizzes = [...quizzes, ...generatedQuizzes];
+const allPromotions = [...promotions, ...generatedPromotions];
+
+/* ------------------------------------------------------------------ *
  * E1 — ids and slugs are unique
  * ------------------------------------------------------------------ */
 
@@ -196,13 +251,13 @@ if (!articleCollection.success) {
 assertUnique(
   "E1",
   "content ids",
-  [...quizzes, ...news, ...tipRecords, ...kbRecords],
+  [...allQuizzes, ...news, ...tipRecords, ...kbRecords],
   (row) => row.id,
 );
 assertUnique(
   "E2",
   "content slugs",
-  [...quizzes, ...news, ...tipRecords, ...kbRecords],
+  [...allQuizzes, ...news, ...tipRecords, ...kbRecords],
   (row) => `${row.kind}/${row.slug}`,
 );
 assertUnique("E1", "category ids", categoryTable, (row) => row.id);
@@ -212,7 +267,7 @@ assertUnique("E1", "category ids", categoryTable, (row) => row.id);
  * ------------------------------------------------------------------ */
 
 const questionOwners = new Map<string, string>();
-for (const quiz of quizzes) {
+for (const quiz of allQuizzes) {
   for (const question of quiz.questions) {
     const owner = questionOwners.get(question.id);
     if (owner && owner !== quiz.id)
@@ -280,7 +335,7 @@ const subjectKey = (title: string) =>
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
-assertUnique("E12", "quiz subjects", quizzes, (row) => subjectKey(row.title));
+assertUnique("E12", "quiz subjects", allQuizzes, (row) => subjectKey(row.title));
 
 /** An alias is only evidence while it stays out of the collection: if one is ever
  *  added back as a record, E12 above catches the duplicate title — this catches the
@@ -320,7 +375,7 @@ for (const quizId of Object.keys(quizAnalytics)) {
  * a negative case in `scripts/__tests__/promotion-invariants.test.ts`.
  * ------------------------------------------------------------------ */
 
-for (const finding of promotionFindings(promotions, quizzes)) {
+for (const finding of promotionFindings(allPromotions, allQuizzes)) {
   diagnostics.push({ code: finding.rule, severity: finding.severity, message: finding.message });
 }
 
@@ -329,7 +384,7 @@ for (const finding of promotionFindings(promotions, quizzes)) {
  * ------------------------------------------------------------------ */
 
 const scopeProblems = assertCategoryScopes(
-  [...quizzes, ...news, ...tipRecords, ...kbRecords],
+  [...allQuizzes, ...news, ...tipRecords, ...kbRecords],
   categoryTable,
 );
 for (const problem of scopeProblems) err("E4", problem);
@@ -727,6 +782,7 @@ function imageRefs(node: unknown, where: string, found: { where: string; src: st
 
 const fixtureImageRefs = [
   ...imageRefs(quizzes, "data/quizzes"),
+  ...imageRefs(generatedQuizzes, "data/generated/quizzes"),
   ...imageRefs(news, "data/news-data"),
   ...imageRefs(tipRecords, "data/creator-tips-data"),
   ...imageRefs(kbRecords, "data/knowledge-base-data"),
@@ -1050,7 +1106,7 @@ const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "war
  * literals. Both are already gated above (E4 scope, E5 route resolution); printing
  * the real numbers means the line can never congratulate a tree it did not check.
  */
-const unknownCategoryRefs = [...quizzes, ...news, ...tipRecords, ...kbRecords]
+const unknownCategoryRefs = [...allQuizzes, ...news, ...tipRecords, ...kbRecords]
   .flatMap((record) => record.categoryIds)
   .filter((categoryId) => !categoryIds.has(categoryId)).length;
 const deadLinks = notificationRecords.filter((record) => !resolveRoute(record.link).ok).length;
@@ -1070,6 +1126,12 @@ const counts = [
   `${Object.keys(registry).length} media entries`,
   `${Object.keys(pageCopies).length} page-copy routes`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
+  ...(generatedQuizzes.length > 0 || generatedPromotions.length > 0
+    ? [
+        `${generatedQuizzes.length} generated quizzes`,
+        `${generatedPromotions.length} generated promotions`,
+      ]
+    : []),
 ].join(", ");
 
 /** Printed on both paths: a validator that only reports its coverage when it passes
