@@ -43,7 +43,6 @@ export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"   # node 24.22.0 + pnp
 ```
 
 CI (`.github/workflows/ci.yml`) runs `bash scripts/verify.sh` on every push, PR and
-
 merge-queue group; the job name is `typecheck / lint / build`.
 
 ## The gate: one script, two callers
