@@ -1,14 +1,17 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface TournamentCategoriesProps {
-  activeCategory: string
-  setActiveCategory: (category: string) => void
+  activeCategory: string;
+  setActiveCategory: (category: string) => void;
 }
 
-export function TournamentCategories({ activeCategory, setActiveCategory }: TournamentCategoriesProps) {
+export function TournamentCategories({
+  activeCategory,
+  setActiveCategory,
+}: TournamentCategoriesProps) {
   const categories = [
     { id: "all", name: "All Categories" },
     { id: "general", name: "General Knowledge" },
@@ -20,7 +23,7 @@ export function TournamentCategories({ activeCategory, setActiveCategory }: Tour
     { id: "literature", name: "Literature" },
     { id: "technology", name: "Technology" },
     { id: "art", name: "Art & Culture" },
-  ]
+  ];
 
   return (
     <div className="mb-8">
@@ -41,5 +44,5 @@ export function TournamentCategories({ activeCategory, setActiveCategory }: Tour
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
     </div>
-  )
+  );
 }

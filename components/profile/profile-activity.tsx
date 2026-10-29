@@ -56,7 +56,9 @@ export function ProfileActivity({ activities }: ProfileActivityProps) {
 
             return (
               <div key={activity.id} className="flex items-start gap-3 p-4">
-                <div className="mt-0.5 rounded-full bg-muted p-1.5">{getActivityIcon(activity.type)}</div>
+                <div className="mt-0.5 rounded-full bg-muted p-1.5">
+                  {getActivityIcon(activity.type)}
+                </div>
                 <div className="flex-1">
                   <p className="text-sm">
                     {activityLink ? (
@@ -66,7 +68,10 @@ export function ProfileActivity({ activities }: ProfileActivityProps) {
                           return (
                             <span key={i}>
                               {part}
-                              <Link href={activityLink} className="font-medium text-primary hover:underline">
+                              <Link
+                                href={activityLink}
+                                className="font-medium text-primary hover:underline"
+                              >
                                 {activity.relatedName}
                               </Link>
                             </span>
@@ -77,7 +82,9 @@ export function ProfileActivity({ activities }: ProfileActivityProps) {
                       activity.content
                     )}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">{formatTimestamp(activity.timestamp)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatTimestamp(activity.timestamp)}
+                  </p>
                 </div>
               </div>
             );

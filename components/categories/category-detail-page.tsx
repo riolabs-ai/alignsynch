@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Clock, DollarSign, Filter, Search, SortAsc, Target, Users } from "lucide-react";
 import Image from "next/image";
@@ -154,7 +159,10 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter((quiz) => quiz.title.toLowerCase().includes(query) || quiz.category.toLowerCase().includes(query));
+      result = result.filter(
+        (quiz) =>
+          quiz.title.toLowerCase().includes(query) || quiz.category.toLowerCase().includes(query),
+      );
     }
 
     // Filter by difficulty
@@ -189,7 +197,10 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
         case "difficulty":
           // Sort by difficulty: Hard > Medium > Easy
           const difficultyOrder = { Hard: 3, Medium: 2, Easy: 1 };
-          return (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0) - (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0);
+          return (
+            (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0) -
+            (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0)
+          );
         default:
           return 0;
       }
@@ -261,7 +272,12 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder={`Search quizzes...`} className="pl-10" value={searchQuery} onChange={handleSearchChange} />
+          <Input
+            placeholder={`Search quizzes...`}
+            className="pl-10"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
         </div>
 
         <div className="flex gap-2">
@@ -273,10 +289,16 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleSortChange("popular")}>Most Popular</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSortChange("rating")}>Highest Rated</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange("popular")}>
+                Most Popular
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange("rating")}>
+                Highest Rated
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleSortChange("newest")}>Newest</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSortChange("reward")}>Highest Reward</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange("reward")}>
+                Highest Reward
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -288,10 +310,18 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleDifficultyChange("all")}>All Difficulties</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDifficultyChange("easy")}>Easy</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDifficultyChange("medium")}>Medium</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDifficultyChange("hard")}>Hard</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDifficultyChange("all")}>
+                All Difficulties
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDifficultyChange("easy")}>
+                Easy
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDifficultyChange("medium")}>
+                Medium
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDifficultyChange("hard")}>
+                Hard
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -301,14 +331,26 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
       {quizzes.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4">
           {filteredQuizzes.map((quiz) => (
-            <Card key={quiz.id} className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600">
+            <Card
+              key={quiz.id}
+              className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600"
+            >
               {/* Image with overlay */}
               <div className="relative h-48">
-                <Image width={1000} height={500} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-full w-full object-cover" />
+                <Image
+                  width={1000}
+                  height={500}
+                  src={quiz.image || "/placeholder.svg"}
+                  alt={quiz.title}
+                  className="h-full w-full object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                   <div className="w-full">
                     <div className="flex justify-between items-center mb-2">
-                      <Badge variant={getDifficultyVariant(quiz.difficulty)} className="font-medium">
+                      <Badge
+                        variant={getDifficultyVariant(quiz.difficulty)}
+                        className="font-medium"
+                      >
                         {quiz.difficulty}
                       </Badge>
                       <div className="flex items-center gap-1 text-white text-sm">
@@ -326,7 +368,10 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={quiz.creatorAvatar || "/placeholder.svg"} alt={quiz.createdBy} />
+                      <AvatarImage
+                        src={quiz.creatorAvatar || "/placeholder.svg"}
+                        alt={quiz.createdBy}
+                      />
                       <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">{quiz.createdBy}</span>
@@ -339,11 +384,16 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                 {/* Rating and reward */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <svg className="h-4 w-4 text-yellow-400 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg
+                      className="h-4 w-4 text-yellow-400 fill-current"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
                       <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                     </svg>
                     <span className="text-sm font-medium">
-                      {quiz.rating} <span className="text-muted-foreground">({quiz.totalRatings})</span>
+                      {quiz.rating}{" "}
+                      <span className="text-muted-foreground">({quiz.totalRatings})</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-green-600 font-medium">
@@ -360,12 +410,29 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                       <span>{quiz.players} players</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-600 dark:text-slate-400 text-sm">{quiz.spotsLeft} spots left</span>
-                      <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                      <span className="text-slate-600 dark:text-slate-400 text-sm">
+                        {quiz.spotsLeft} spots left
+                      </span>
+                      <CircularProgress
+                        value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                        size={36}
+                        strokeWidth={3}
+                        color={
+                          quiz.spotsLeft <= 20
+                            ? "hsl(var(--destructive))"
+                            : quiz.spotsLeft <= 50
+                              ? "hsl(var(--warning))"
+                              : "hsl(var(--primary))"
+                        }
+                      />
                     </div>
                   </div>
 
-                  {quiz.spotsLeft <= 20 && <p className="text-xs font-medium text-destructive">Almost full! Only {quiz.spotsLeft} spots left</p>}
+                  {quiz.spotsLeft <= 20 && (
+                    <p className="text-xs font-medium text-destructive">
+                      Almost full! Only {quiz.spotsLeft} spots left
+                    </p>
+                  )}
                 </div>
               </CardContent>
 
@@ -383,7 +450,11 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
             <Search className="h-10 w-10 text-muted-foreground" />
           </div>
           <h3 className="text-xl font-semibold mb-2">No quizzes found</h3>
-          <p className="text-muted-foreground max-w-md mb-6">{searchQuery ? `No quizzes match your search "${searchQuery}". Try a different search term or filter.` : "No quizzes found with the selected filters. Try adjusting your filters."}</p>
+          <p className="text-muted-foreground max-w-md mb-6">
+            {searchQuery
+              ? `No quizzes match your search "${searchQuery}". Try a different search term or filter.`
+              : "No quizzes found with the selected filters. Try adjusting your filters."}
+          </p>
           <Button
             variant="outline"
             onClick={() => {

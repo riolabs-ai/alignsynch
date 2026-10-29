@@ -1,17 +1,34 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Globe, ListChecks, Lock, Swords, Trophy, Users } from "lucide-react";
 import { useState } from "react";
 import { BattleState } from "./battle-page";
 
 interface BattleModeSelectionProps {
-  onModeSelect: (mode: "1v1" | "group", type: "public" | "private", settings: Partial<BattleState>) => void;
+  onModeSelect: (
+    mode: "1v1" | "group",
+    type: "public" | "private",
+    settings: Partial<BattleState>,
+  ) => void;
 }
 
 export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) {
@@ -37,10 +54,16 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
     <div className="max-w-4xl mx-auto">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold mb-2">Quiz Battle</h1>
-        <p className="text-muted-foreground">Challenge friends or random players to real-time quiz battles</p>
+        <p className="text-muted-foreground">
+          Challenge friends or random players to real-time quiz battles
+        </p>
       </div>
 
-      <Tabs defaultValue="1v1" className="w-full" onValueChange={(value) => setActiveTab(value as "1v1" | "group")}>
+      <Tabs
+        defaultValue="1v1"
+        className="w-full"
+        onValueChange={(value) => setActiveTab(value as "1v1" | "group")}
+      >
         <TabsList className="mb-6 flex overflow-x-auto gap-4 sm:grid grid-cols-2">
           <TabsTrigger value="1v1" className="flex items-center gap-2">
             <Swords className="h-4 w-4" />
@@ -56,18 +79,29 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
           <Card>
             <CardHeader>
               <CardTitle>1v1 Battle</CardTitle>
-              <CardDescription>Challenge a friend or get matched with a random player for a head-to-head quiz battle.</CardDescription>
+              <CardDescription>
+                Challenge a friend or get matched with a random player for a head-to-head quiz
+                battle.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="battle-type">Battle Type</Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Button variant={battleType === "public" ? "default" : "outline"} className="w-full flex items-center justify-center gap-2" onClick={() => setBattleType("public")}>
+                    <Button
+                      variant={battleType === "public" ? "default" : "outline"}
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={() => setBattleType("public")}
+                    >
                       <Globe className="h-4 w-4" />
                       <span>Public</span>
                     </Button>
-                    <Button variant={battleType === "private" ? "default" : "outline"} className="w-full flex items-center justify-center gap-2" onClick={() => setBattleType("private")}>
+                    <Button
+                      variant={battleType === "private" ? "default" : "outline"}
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={() => setBattleType("private")}
+                    >
                       <Lock className="h-4 w-4" />
                       <span>Private</span>
                     </Button>
@@ -77,7 +111,12 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
                 {battleType === "private" && (
                   <div className="space-y-2">
                     <Label htmlFor="room-code">Room Code</Label>
-                    <Input id="room-code" placeholder="Enter or generate room code" value={roomCode} onChange={(e) => setRoomCode(e.target.value)} />
+                    <Input
+                      id="room-code"
+                      placeholder="Enter or generate room code"
+                      value={roomCode}
+                      onChange={(e) => setRoomCode(e.target.value)}
+                    />
                   </div>
                 )}
 
@@ -100,7 +139,10 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
 
                 <div className="space-y-2">
                   <Label htmlFor="difficulty">Difficulty</Label>
-                  <Select value={difficulty} onValueChange={(value) => setDifficulty(value as "easy" | "medium" | "hard")}>
+                  <Select
+                    value={difficulty}
+                    onValueChange={(value) => setDifficulty(value as "easy" | "medium" | "hard")}
+                  >
                     <SelectTrigger id="difficulty">
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
@@ -114,7 +156,10 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
 
                 <div className="space-y-2">
                   <Label htmlFor="time-per-question">Time Per Question (seconds)</Label>
-                  <Select value={timePerQuestion.toString()} onValueChange={(value) => setTimePerQuestion(Number.parseInt(value))}>
+                  <Select
+                    value={timePerQuestion.toString()}
+                    onValueChange={(value) => setTimePerQuestion(Number.parseInt(value))}
+                  >
                     <SelectTrigger id="time-per-question">
                       <SelectValue placeholder="Select time" />
                     </SelectTrigger>
@@ -128,7 +173,10 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
 
                 <div className="space-y-2">
                   <Label htmlFor="total-questions">Number of Questions</Label>
-                  <Select value={totalQuestions.toString()} onValueChange={(value) => setTotalQuestions(Number.parseInt(value))}>
+                  <Select
+                    value={totalQuestions.toString()}
+                    onValueChange={(value) => setTotalQuestions(Number.parseInt(value))}
+                  >
                     <SelectTrigger id="total-questions">
                       <SelectValue placeholder="Select number" />
                     </SelectTrigger>
@@ -154,18 +202,28 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
           <Card>
             <CardHeader>
               <CardTitle>Group Battle</CardTitle>
-              <CardDescription>Create or join a group battle with 3-10 players competing simultaneously.</CardDescription>
+              <CardDescription>
+                Create or join a group battle with 3-10 players competing simultaneously.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="battle-type-group">Battle Type</Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Button variant={battleType === "public" ? "default" : "outline"} className="w-full flex items-center justify-center gap-2" onClick={() => setBattleType("public")}>
+                    <Button
+                      variant={battleType === "public" ? "default" : "outline"}
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={() => setBattleType("public")}
+                    >
                       <Globe className="h-4 w-4" />
                       <span>Public</span>
                     </Button>
-                    <Button variant={battleType === "private" ? "default" : "outline"} className="w-full flex items-center justify-center gap-2" onClick={() => setBattleType("private")}>
+                    <Button
+                      variant={battleType === "private" ? "default" : "outline"}
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={() => setBattleType("private")}
+                    >
                       <Lock className="h-4 w-4" />
                       <span>Private</span>
                     </Button>
@@ -175,7 +233,12 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
                 {battleType === "private" && (
                   <div className="space-y-2">
                     <Label htmlFor="room-code-group">Room Code</Label>
-                    <Input id="room-code-group" placeholder="Enter or generate room code" value={roomCode} onChange={(e) => setRoomCode(e.target.value)} />
+                    <Input
+                      id="room-code-group"
+                      placeholder="Enter or generate room code"
+                      value={roomCode}
+                      onChange={(e) => setRoomCode(e.target.value)}
+                    />
                   </div>
                 )}
 
@@ -198,7 +261,10 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
 
                 <div className="space-y-2">
                   <Label htmlFor="difficulty-group">Difficulty</Label>
-                  <Select value={difficulty} onValueChange={(value) => setDifficulty(value as "easy" | "medium" | "hard")}>
+                  <Select
+                    value={difficulty}
+                    onValueChange={(value) => setDifficulty(value as "easy" | "medium" | "hard")}
+                  >
                     <SelectTrigger id="difficulty-group">
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
@@ -212,7 +278,10 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
 
                 <div className="space-y-2">
                   <Label htmlFor="time-per-question-group">Time Per Question (seconds)</Label>
-                  <Select value={timePerQuestion.toString()} onValueChange={(value) => setTimePerQuestion(Number.parseInt(value))}>
+                  <Select
+                    value={timePerQuestion.toString()}
+                    onValueChange={(value) => setTimePerQuestion(Number.parseInt(value))}
+                  >
                     <SelectTrigger id="time-per-question-group">
                       <SelectValue placeholder="Select time" />
                     </SelectTrigger>
@@ -226,7 +295,10 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
 
                 <div className="space-y-2">
                   <Label htmlFor="total-questions-group">Number of Questions</Label>
-                  <Select value={totalQuestions.toString()} onValueChange={(value) => setTotalQuestions(Number.parseInt(value))}>
+                  <Select
+                    value={totalQuestions.toString()}
+                    onValueChange={(value) => setTotalQuestions(Number.parseInt(value))}
+                  >
                     <SelectTrigger id="total-questions-group">
                       <SelectValue placeholder="Select number" />
                     </SelectTrigger>

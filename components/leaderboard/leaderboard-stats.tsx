@@ -1,7 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Medal, Trophy, Users } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { CalendarDays, Medal, Trophy, Users } from "lucide-react";
 
 export function LeaderboardStats() {
   return (
@@ -60,5 +60,5 @@ export function LeaderboardStats() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

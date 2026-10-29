@@ -3,7 +3,14 @@
 import type React from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -31,7 +38,9 @@ export function SecuritySettings() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Security Settings</h3>
-        <p className="text-sm text-muted-foreground">Manage your account security and authentication methods.</p>
+        <p className="text-sm text-muted-foreground">
+          Manage your account security and authentication methods.
+        </p>
       </div>
 
       <Card>
@@ -75,7 +84,11 @@ export function SecuritySettings() {
               <Shield className="h-8 w-8 text-primary" />
               <div>
                 <p className="font-medium">Two-Factor Authentication</p>
-                <p className="text-sm text-muted-foreground">{twoFactorEnabled ? "Your account is protected with two-factor authentication." : "Protect your account with two-factor authentication."}</p>
+                <p className="text-sm text-muted-foreground">
+                  {twoFactorEnabled
+                    ? "Your account is protected with two-factor authentication."
+                    : "Protect your account with two-factor authentication."}
+                </p>
               </div>
             </div>
             <Switch checked={twoFactorEnabled} onCheckedChange={setTwoFactorEnabled} />
@@ -116,7 +129,9 @@ export function SecuritySettings() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <p className="font-medium">Current Device</p>
-                <p className="text-sm text-muted-foreground">Chrome on Windows • New York, USA • Active now</p>
+                <p className="text-sm text-muted-foreground">
+                  Chrome on Windows • New York, USA • Active now
+                </p>
               </div>
               <Button variant="outline" size="sm" disabled>
                 Current
@@ -126,7 +141,9 @@ export function SecuritySettings() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <p className="font-medium">iPhone 13</p>
-                <p className="text-sm text-muted-foreground">Safari on iOS • Boston, USA • 2 days ago</p>
+                <p className="text-sm text-muted-foreground">
+                  Safari on iOS • Boston, USA • 2 days ago
+                </p>
               </div>
               <Button variant="outline" size="sm">
                 <LogOut className="mr-2 h-4 w-4" />
@@ -137,7 +154,9 @@ export function SecuritySettings() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <p className="font-medium">MacBook Pro</p>
-                <p className="text-sm text-muted-foreground">Firefox on macOS • San Francisco, USA • 5 days ago</p>
+                <p className="text-sm text-muted-foreground">
+                  Firefox on macOS • San Francisco, USA • 5 days ago
+                </p>
               </div>
               <Button variant="outline" size="sm">
                 <LogOut className="mr-2 h-4 w-4" />
@@ -165,7 +184,9 @@ export function SecuritySettings() {
               <AlertTriangle className="h-8 w-8 text-destructive" />
               <div>
                 <p className="font-medium">Delete Account</p>
-                <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data.</p>
+                <p className="text-sm text-muted-foreground">
+                  Permanently delete your account and all associated data.
+                </p>
               </div>
             </div>
             <Button variant="destructive">Delete Account</Button>

@@ -2,7 +2,19 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 // Mock data for the stats
 const performanceData = [
@@ -44,18 +56,26 @@ export function DailyStats() {
           <CardContent className="p-4">
             <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={performanceData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                <BarChart
+                  data={performanceData}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`${value}%`, "Score"]} labelFormatter={(label) => `${label}day`} />
+                  <Tooltip
+                    formatter={(value) => [`${value}%`, "Score"]}
+                    labelFormatter={(label) => `${label}day`}
+                  />
                   <Legend />
                   <Bar name="Your Score" dataKey="score" fill="#8884d8" />
                   <Bar name="Average Score" dataKey="avgScore" fill="#82ca9d" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-xs text-muted-foreground text-center mt-2">Your daily challenge performance compared to the average</p>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Your daily challenge performance compared to the average
+            </p>
           </CardContent>
         </TabsContent>
 
@@ -64,7 +84,16 @@ export function DailyStats() {
             <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={categoryData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
                     {categoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -74,7 +103,9 @@ export function DailyStats() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-xs text-muted-foreground text-center mt-2">Distribution of your correct answers by category</p>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Distribution of your correct answers by category
+            </p>
           </CardContent>
         </TabsContent>
       </Tabs>

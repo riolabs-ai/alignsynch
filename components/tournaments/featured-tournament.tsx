@@ -29,7 +29,10 @@ export function FeaturedTournament() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h2 className="text-3xl font-bold mb-2">Global Knowledge Championship</h2>
-              <p className="text-gray-200 mb-4">Test your knowledge against the best quiz enthusiasts from around the world in this premier tournament with multiple rounds of challenging questions.</p>
+              <p className="text-gray-200 mb-4">
+                Test your knowledge against the best quiz enthusiasts from around the world in this
+                premier tournament with multiple rounds of challenging questions.
+              </p>
 
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="flex items-center gap-2">
@@ -46,7 +49,10 @@ export function FeaturedTournament() {
                 </div>
               </div>
 
-              <Button onClick={() => router.push("/tournaments/global-championship")} className="bg-white text-purple-900 hover:bg-gray-100">
+              <Button
+                onClick={() => router.push("/tournaments/global-championship")}
+                className="bg-white text-purple-900 hover:bg-gray-100"
+              >
                 Join Tournament <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -77,7 +83,9 @@ export function FeaturedTournament() {
                   </div>
                 </div>
 
-                <div className="text-xs text-gray-300">Top 100 participants advance to the final round</div>
+                <div className="text-xs text-gray-300">
+                  Top 100 participants advance to the final round
+                </div>
               </div>
             </div>
           </div>

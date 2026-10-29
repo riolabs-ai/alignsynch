@@ -37,7 +37,10 @@ export function TournamentDetail({ id }: TournamentDetailProps) {
   const tournament = {
     id,
     title: id === "global-championship" ? "Global Knowledge Championship" : "Science Showdown",
-    description: id === "global-championship" ? "Test your knowledge against the best quiz enthusiasts from around the world in this premier tournament with multiple rounds of challenging questions." : "Test your scientific knowledge across physics, chemistry, biology and more.",
+    description:
+      id === "global-championship"
+        ? "Test your knowledge against the best quiz enthusiasts from around the world in this premier tournament with multiple rounds of challenging questions."
+        : "Test your scientific knowledge across physics, chemistry, biology and more.",
     image: id === "global-championship" ? "/placeholder.svg?key=85jbh" : "/science-quiz-lab.png",
     category: id === "global-championship" ? "general" : "science",
     status: id === "global-championship" ? "registration" : "registration",

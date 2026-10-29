@@ -14,7 +14,11 @@ interface CalculatorState {
   yearlyEarnings: number;
 }
 
-type CalculatorAction = { type: "SET_REFERRALS"; payload: number } | { type: "SET_CONVERSION_RATE"; payload: number } | { type: "SET_AVERAGE_VALUE"; payload: number } | { type: "UPDATE_EARNINGS" };
+type CalculatorAction =
+  | { type: "SET_REFERRALS"; payload: number }
+  | { type: "SET_CONVERSION_RATE"; payload: number }
+  | { type: "SET_AVERAGE_VALUE"; payload: number }
+  | { type: "UPDATE_EARNINGS" };
 
 // Initial state
 const initialState: CalculatorState = {
@@ -80,22 +84,42 @@ export function ProfitCalculator(): JSX.Element {
       <div className="container px-4 mx-auto">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Calculate Your Potential Earnings</h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Use our calculator to estimate how much you could earn as a QuizHub affiliate. Adjust the sliders to match your audience and see your potential earnings.</p>
+          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+            Use our calculator to estimate how much you could earn as a QuizHub affiliate. Adjust
+            the sliders to match your audience and see your potential earnings.
+          </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Calculator inputs */}
-          <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} viewport={{ once: true }} className="space-y-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <label className="font-medium flex items-center gap-2">
                   <Users className="h-4 w-4 text-purple-500" />
                   Monthly Referrals
                 </label>
-                <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">{state.referrals}</span>
+                <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">
+                  {state.referrals}
+                </span>
               </div>
-              <Slider value={[state.referrals]} min={1} max={100} step={1} onValueChange={handleReferralsChange} className="py-2 " />
-              <p className="text-sm text-slate-500 dark:text-slate-400">The number of people you refer to QuizHub each month</p>
+              <Slider
+                value={[state.referrals]}
+                min={1}
+                max={100}
+                step={1}
+                onValueChange={handleReferralsChange}
+                className="py-2 "
+              />
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                The number of people you refer to QuizHub each month
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -104,10 +128,21 @@ export function ProfitCalculator(): JSX.Element {
                   <Users className="h-4 w-4 text-indigo-500" />
                   Conversion Rate
                 </label>
-                <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">{state.conversionRate}%</span>
+                <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">
+                  {state.conversionRate}%
+                </span>
               </div>
-              <Slider value={[state.conversionRate]} min={1} max={100} step={1} onValueChange={handleConversionRateChange} className="py-2" />
-              <p className="text-sm text-slate-500 dark:text-slate-400">The percentage of referrals who become paying customers</p>
+              <Slider
+                value={[state.conversionRate]}
+                min={1}
+                max={100}
+                step={1}
+                onValueChange={handleConversionRateChange}
+                className="py-2"
+              />
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                The percentage of referrals who become paying customers
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -116,22 +151,40 @@ export function ProfitCalculator(): JSX.Element {
                   <DollarSign className="h-4 w-4 text-blue-500" />
                   Average Purchase Value
                 </label>
-                <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">${state.averageValue}</span>
+                <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">
+                  ${state.averageValue}
+                </span>
               </div>
-              <Slider value={[state.averageValue]} min={10} max={200} step={5} onValueChange={handleAverageValueChange} className="py-2" />
-              <p className="text-sm text-slate-500 dark:text-slate-400">The average amount your referrals spend on QuizHub </p>
+              <Slider
+                value={[state.averageValue]}
+                min={10}
+                max={200}
+                step={5}
+                onValueChange={handleAverageValueChange}
+                className="py-2"
+              />
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                The average amount your referrals spend on QuizHub{" "}
+              </p>
             </div>
           </motion.div>
 
           {/* Results */}
-          <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} viewport={{ once: true }}>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
             <Card className="overflow-hidden border-0 shadow-xl bg-white dark:bg-slate-900">
               <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl">Your Earnings Potential</CardTitle>
                   <Calculator className="h-5 w-5 opacity-75" />
                 </div>
-                <CardDescription className="text-purple-100">Based on your audience and our 30% commission rate</CardDescription>
+                <CardDescription className="text-purple-100">
+                  Based on your audience and our 30% commission rate
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-3 xl:p-6">
                 <div className="space-y-6">
@@ -148,7 +201,9 @@ export function ProfitCalculator(): JSX.Element {
                         <Users className="h-4 w-4" />
                         <span>Conversions</span>
                       </div>
-                      <div className="text-2xl font-bold">{Math.round(state.referrals * (state.conversionRate / 100))}</div>
+                      <div className="text-2xl font-bold">
+                        {Math.round(state.referrals * (state.conversionRate / 100))}
+                      </div>
                     </div>
                   </div>
 
@@ -161,7 +216,9 @@ export function ProfitCalculator(): JSX.Element {
                           </div>
                           <span className="font-medium">Monthly Earnings</span>
                         </div>
-                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">${state.monthlyEarnings.toFixed(2)}</div>
+                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          ${state.monthlyEarnings.toFixed(2)}
+                        </div>
                       </div>
                     </div>
 
@@ -173,12 +230,17 @@ export function ProfitCalculator(): JSX.Element {
                           </div>
                           <span className="font-medium">Yearly Earnings</span>
                         </div>
-                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${state.yearlyEarnings.toFixed(2)}</div>
+                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                          ${state.yearlyEarnings.toFixed(2)}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-sm text-slate-500 dark:text-slate-400 italic">* These calculations are estimates and actual earnings may vary based on multiple factors.</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400 italic">
+                    * These calculations are estimates and actual earnings may vary based on
+                    multiple factors.
+                  </div>
                 </div>
               </CardContent>
             </Card>

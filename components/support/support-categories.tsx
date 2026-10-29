@@ -11,7 +11,10 @@ interface SupportCategoriesProps {
   setSelectedCategory: (category: SupportCategory) => void;
 }
 
-export function SupportCategories({ selectedCategory, setSelectedCategory }: SupportCategoriesProps) {
+export function SupportCategories({
+  selectedCategory,
+  setSelectedCategory,
+}: SupportCategoriesProps) {
   const categories = [
     { id: "all", name: "All Categories", icon: <HelpCircle className="h-4 w-4" /> },
     { id: "account", name: "Account", icon: <Users className="h-4 w-4" /> },
@@ -31,7 +34,15 @@ export function SupportCategories({ selectedCategory, setSelectedCategory }: Sup
       <CardContent className="p-4">
         <div className="space-y-2">
           {categories.map((category) => (
-            <Button key={category.id} variant={selectedCategory === category.id ? "default" : "ghost"} className={cn("w-full justify-start", selectedCategory === category.id ? "bg-indigo-500 text-white" : "")} onClick={() => setSelectedCategory(category.id as SupportCategory)}>
+            <Button
+              key={category.id}
+              variant={selectedCategory === category.id ? "default" : "ghost"}
+              className={cn(
+                "w-full justify-start",
+                selectedCategory === category.id ? "bg-indigo-500 text-white" : "",
+              )}
+              onClick={() => setSelectedCategory(category.id as SupportCategory)}
+            >
               <span className="mr-2">{category.icon}</span>
               {category.name}
             </Button>

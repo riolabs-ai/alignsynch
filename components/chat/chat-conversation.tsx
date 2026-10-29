@@ -7,7 +7,12 @@ import { cn } from "@/lib/utils";
 import { Archive, Info, MoreVertical, Phone, Search, Trash2, UserPlus, Video } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
 import type { Contact, Conversation, Message } from "./chat-page";
@@ -19,7 +24,12 @@ interface ChatConversationProps {
   onSendImage: (imageUrl: string) => void;
 }
 
-export function ChatConversation({ conversation, contact, onSendMessage, onSendImage }: ChatConversationProps) {
+export function ChatConversation({
+  conversation,
+  contact,
+  onSendMessage,
+  onSendImage,
+}: ChatConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
@@ -97,8 +107,20 @@ export function ChatConversation({ conversation, contact, onSendMessage, onSendI
       <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center">
           <div className="relative">
-            <Image src={avatarError ? "/placeholder.svg?height=40&width=40" : contact.avatar} alt={contact.name} width={40} height={40} className="rounded-full object-cover" onError={() => setAvatarError(true)} />
-            <span className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background", getStatusColor(contact.status))} />
+            <Image
+              src={avatarError ? "/placeholder.svg?height=40&width=40" : contact.avatar}
+              alt={contact.name}
+              width={40}
+              height={40}
+              className="rounded-full object-cover"
+              onError={() => setAvatarError(true)}
+            />
+            <span
+              className={cn(
+                "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background",
+                getStatusColor(contact.status),
+              )}
+            />
           </div>
           <div className="ml-3">
             <h3 className="font-medium">{contact.name}</h3>
@@ -137,7 +159,7 @@ export function ChatConversation({ conversation, contact, onSendMessage, onSendI
               </TooltipTrigger>
               <TooltipContent>Search in conversation</TooltipContent>
             </Tooltip>
-          </TooltipProvider>      
+          </TooltipProvider>
           <DropdownMenu>
             <DropdownMenuTrigger>
               <MoreVertical className="h-5 w-5" />
@@ -168,10 +190,18 @@ export function ChatConversation({ conversation, contact, onSendMessage, onSendI
           {messageGroups.map((group, index) => (
             <div key={index} className="space-y-4">
               <div className="flex justify-center">
-                <span className="text-xs bg-muted/80 px-3 py-1 rounded-full text-muted-foreground font-medium shadow-sm">{formatDate(group.date)}</span>
+                <span className="text-xs bg-muted/80 px-3 py-1 rounded-full text-muted-foreground font-medium shadow-sm">
+                  {formatDate(group.date)}
+                </span>
               </div>
               {group.messages.map((message) => (
-                <ChatMessage key={message.id} message={message} isOwn={message.senderId === "current-user"} contactName={contact.name} contactAvatar={contact.avatar} />
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  isOwn={message.senderId === "current-user"}
+                  contactName={contact.name}
+                  contactAvatar={contact.avatar}
+                />
               ))}
             </div>
           ))}

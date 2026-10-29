@@ -13,7 +13,9 @@ export function CategoryCard({ category }: CategoryCardProps) {
       <div className="h-32 flex items-center justify-center p-4">
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Category count badge */}
-          <div className="absolute top-0 right-0 bg-white/20 text-white text-sm font-medium rounded-full w-8 h-8 flex items-center justify-center">{category.count}</div>
+          <div className="absolute top-0 right-0 bg-white/20 text-white text-sm font-medium rounded-full w-8 h-8 flex items-center justify-center">
+            {category.count}
+          </div>
 
           {/* Category icon */}
           <div className="text-white">{category.icon}</div>

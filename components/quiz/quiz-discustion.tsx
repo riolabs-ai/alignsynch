@@ -30,7 +30,8 @@ const mockQuizResult = {
       isCorrect: true,
       difficulty: "easy",
       timeTaken: 12,
-      explanation: "Iron Man was released in 2008 and was the first film in the Marvel Cinematic Universe.",
+      explanation:
+        "Iron Man was released in 2008 and was the first film in the Marvel Cinematic Universe.",
       discussions: [
         {
           id: "d1",
@@ -77,7 +78,8 @@ const mockQuizResult = {
       isCorrect: true,
       difficulty: "medium",
       timeTaken: 15,
-      explanation: "T'Challa is the king of the fictional African nation of Wakanda and the superhero known as Black Panther.",
+      explanation:
+        "T'Challa is the king of the fictional African nation of Wakanda and the superhero known as Black Panther.",
       discussions: [],
     },
     {
@@ -88,7 +90,8 @@ const mockQuizResult = {
       isCorrect: false,
       difficulty: "medium",
       timeTaken: 20,
-      explanation: "The Mind Stone was housed in Loki's scepter, which was later used to create Vision.",
+      explanation:
+        "The Mind Stone was housed in Loki's scepter, which was later used to create Vision.",
       discussions: [
         {
           id: "d2",
@@ -112,7 +115,8 @@ const mockQuizResult = {
       isCorrect: false,
       difficulty: "medium",
       timeTaken: 18,
-      explanation: "While Thanos appeared in the film, Ronan the Accuser was the main antagonist in the first Guardians of the Galaxy movie.",
+      explanation:
+        "While Thanos appeared in the film, Ronan the Accuser was the main antagonist in the first Guardians of the Galaxy movie.",
       discussions: [],
     },
     {
@@ -123,7 +127,8 @@ const mockQuizResult = {
       isCorrect: true,
       difficulty: "medium",
       timeTaken: 10,
-      explanation: "Before becoming the Sorcerer Supreme, Dr. Stephen Strange was a brilliant neurosurgeon.",
+      explanation:
+        "Before becoming the Sorcerer Supreme, Dr. Stephen Strange was a brilliant neurosurgeon.",
       discussions: [],
     },
     {
@@ -134,7 +139,8 @@ const mockQuizResult = {
       isCorrect: true,
       difficulty: "hard",
       timeTaken: 22,
-      explanation: "After JARVIS became Vision, Tony Stark activated FRIDAY as his new AI assistant.",
+      explanation:
+        "After JARVIS became Vision, Tony Stark activated FRIDAY as his new AI assistant.",
       discussions: [],
     },
     {
@@ -145,7 +151,8 @@ const mockQuizResult = {
       isCorrect: true,
       difficulty: "medium",
       timeTaken: 14,
-      explanation: "Spider-Man, played by Tom Holland, first appeared in the MCU in Captain America: Civil War before getting his solo film.",
+      explanation:
+        "Spider-Man, played by Tom Holland, first appeared in the MCU in Captain America: Civil War before getting his solo film.",
       discussions: [],
     },
     {
@@ -156,7 +163,8 @@ const mockQuizResult = {
       isCorrect: false,
       difficulty: "hard",
       timeTaken: 25,
-      explanation: "Sakaar is the garbage planet ruled by the Grandmaster where Thor is captured and forced to fight in the Contest of Champions.",
+      explanation:
+        "Sakaar is the garbage planet ruled by the Grandmaster where Thor is captured and forced to fight in the Contest of Champions.",
       discussions: [],
     },
     {
@@ -167,7 +175,8 @@ const mockQuizResult = {
       isCorrect: true,
       difficulty: "medium",
       timeTaken: 16,
-      explanation: "Anthony and Joe Russo directed both Avengers: Infinity War and Avengers: Endgame.",
+      explanation:
+        "Anthony and Joe Russo directed both Avengers: Infinity War and Avengers: Endgame.",
       discussions: [],
     },
   ],
@@ -214,7 +223,9 @@ export function QuizDiscussion({ id }: { id: string }) {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <CardTitle className="text-xl md:text-2xl">{mockQuizResult.title}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">Completed on {new Date(mockQuizResult.completedAt).toLocaleDateString()}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Completed on {new Date(mockQuizResult.completedAt).toLocaleDateString()}
+                </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button variant="outline" size="sm" className="flex items-center gap-1">
@@ -278,13 +289,19 @@ export function QuizDiscussion({ id }: { id: string }) {
           <TabsContent value={activeTab} className="mt-6">
             <div className="space-y-6">
               {currentQuestions.map((question, index) => (
-                <QuestionDiscussion key={question.id} question={question} questionNumber={indexOfFirstQuestion + index + 1} />
+                <QuestionDiscussion
+                  key={question.id}
+                  question={question}
+                  questionNumber={indexOfFirstQuestion + index + 1}
+                />
               ))}
 
               {filteredQuestions.length === 0 && (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                    <p className="text-muted-foreground mb-4">No questions found in this category.</p>
+                    <p className="text-muted-foreground mb-4">
+                      No questions found in this category.
+                    </p>
                     <Button variant="outline" onClick={() => setActiveTab("all")}>
                       View All Questions
                     </Button>
@@ -296,7 +313,12 @@ export function QuizDiscussion({ id }: { id: string }) {
             {totalPages > 1 && (
               <div className="flex justify-center mt-8">
                 <Pagination>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
                     Previous
                   </Button>
                   <div className="flex items-center mx-4">
@@ -304,7 +326,12 @@ export function QuizDiscussion({ id }: { id: string }) {
                       Page {currentPage} of {totalPages}
                     </span>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  >
                     Next
                   </Button>
                 </Pagination>

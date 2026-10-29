@@ -267,13 +267,20 @@ export function QuizDiscussionsPage() {
     <div className="container mx-auto py-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Quiz Discussions</h1>
-        <p className="text-muted-foreground">Join discussions about quizzes, share explanations, and learn from the community.</p>
+        <p className="text-muted-foreground">
+          Join discussions about quizzes, share explanations, and learn from the community.
+        </p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search discussions..." className="pl-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <Input
+            placeholder="Search discussions..."
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <div className="flex gap-2">
           <Button variant="outline">Filter</Button>
@@ -307,13 +314,17 @@ export function QuizDiscussionsPage() {
         <TabsContent value="yours" className="mt-6">
           <div className="space-y-4">
             {yourDiscussions.length > 0 ? (
-              yourDiscussions.map((discussion) => <DiscussionCard key={discussion.id} discussion={discussion} />)
+              yourDiscussions.map((discussion) => (
+                <DiscussionCard key={discussion.id} discussion={discussion} />
+              ))
             ) : (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <MessageSquare className="h-12 w-12 text-muted-foreground opacity-20 mb-4" />
                   <h3 className="text-lg font-medium mb-2">No discussions yet</h3>
-                  <p className="text-muted-foreground mb-4">You haven't participated in any quiz discussions yet.</p>
+                  <p className="text-muted-foreground mb-4">
+                    You haven't participated in any quiz discussions yet.
+                  </p>
                   <Button asChild>
                     <Link href="/explore">Find Quizzes to Take</Link>
                   </Button>
@@ -353,15 +364,22 @@ function DiscussionCard({ discussion }: { discussion: Discussion }) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0 xl:pt-6">
-        <Link href={`/quiz/${discussion.id}/discussion`} className="block hover:bg-muted/50 transition-colors">
+        <Link
+          href={`/quiz/${discussion.id}/discussion`}
+          className="block hover:bg-muted/50 transition-colors"
+        >
           <div className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
               <div>
                 <h3 className="text-lg font-medium">{discussion.quizTitle}</h3>
                 <div className="flex flex-wrap items-center gap-2 mt-1">
                   <Badge variant="outline">{discussion.category}</Badge>
-                  <Badge className={getDifficultyColor(discussion.difficulty)}>{discussion.difficulty}</Badge>
-                  <span className="text-sm text-muted-foreground">Last activity: {formatDate(discussion.lastActivity)}</span>
+                  <Badge className={getDifficultyColor(discussion.difficulty)}>
+                    {discussion.difficulty}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    Last activity: {formatDate(discussion.lastActivity)}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -378,7 +396,10 @@ function DiscussionCard({ discussion }: { discussion: Discussion }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={discussion.user.avatar || "/placeholder.svg"} alt={discussion.user.name} />
+                  <AvatarImage
+                    src={discussion.user.avatar || "/placeholder.svg"}
+                    alt={discussion.user.name}
+                  />
                   <AvatarFallback>{discussion.user.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium">{discussion.user.name}</span>
@@ -392,7 +413,9 @@ function DiscussionCard({ discussion }: { discussion: Discussion }) {
                   <XCircle className="h-4 w-4" />
                   <span>{discussion.score.total - discussion.score.correct}</span>
                 </div>
-                <div className="text-sm font-medium">{Math.round((discussion.score.correct / discussion.score.total) * 100)}%</div>
+                <div className="text-sm font-medium">
+                  {Math.round((discussion.score.correct / discussion.score.total) * 100)}%
+                </div>
               </div>
             </div>
           </div>

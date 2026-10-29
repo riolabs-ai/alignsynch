@@ -142,7 +142,12 @@ export function TopPlayers() {
           <p className="text-muted-foreground">This week's highest performers</p>
         </div>
 
-        <Tabs defaultValue="earnings" value={leaderboardType} onValueChange={setLeaderboardType} className="w-full sm:w-auto">
+        <Tabs
+          defaultValue="earnings"
+          value={leaderboardType}
+          onValueChange={setLeaderboardType}
+          className="w-full sm:w-auto"
+        >
           <TabsList className="grid grid-cols-2 w-full sm:w-auto">
             <TabsTrigger value="earnings" className="flex items-center gap-1">
               <DollarSign className="h-3.5 w-3.5" />
@@ -165,10 +170,23 @@ export function TopPlayers() {
             {players.map((player: Player, index) => (
               <div key={player.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted font-semibold">{index + 1}</div>
-                  <Avatar className="h-10 w-10 border-2" style={{ borderColor: `var(--${player.badge}-color, #e2e8f0)` }}>
-                    <AvatarImage src={player.avatar || `/placeholder.svg?height=40&width=40&query=avatar ${player.username}`} alt={player.username} />
-                    <AvatarFallback className={getBadgeColor(player.badge)}>{player.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted font-semibold">
+                    {index + 1}
+                  </div>
+                  <Avatar
+                    className="h-10 w-10 border-2"
+                    style={{ borderColor: `var(--${player.badge}-color, #e2e8f0)` }}
+                  >
+                    <AvatarImage
+                      src={
+                        player.avatar ||
+                        `/placeholder.svg?height=40&width=40&query=avatar ${player.username}`
+                      }
+                      alt={player.username}
+                    />
+                    <AvatarFallback className={getBadgeColor(player.badge)}>
+                      {player.username.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
@@ -177,11 +195,19 @@ export function TopPlayers() {
                         {player.badge}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">{player.quizzes} quizzes completed</p>
+                    <p className="text-xs text-muted-foreground">
+                      {player.quizzes} quizzes completed
+                    </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold">{leaderboardType === "earnings" ? <span className="text-green-600">${player.earnings!.toFixed(2)}</span> : <span>{player?.score?.toLocaleString()} pts</span>}</div>
+                  <div className="font-semibold">
+                    {leaderboardType === "earnings" ? (
+                      <span className="text-green-600">${player.earnings!.toFixed(2)}</span>
+                    ) : (
+                      <span>{player?.score?.toLocaleString()} pts</span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">This week</p>
                 </div>
               </div>

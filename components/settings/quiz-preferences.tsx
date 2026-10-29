@@ -2,9 +2,22 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -61,7 +74,9 @@ export function QuizPreferences() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Quiz Preferences</h3>
-        <p className="text-sm text-muted-foreground">Customize your quiz creation and playing experience.</p>
+        <p className="text-sm text-muted-foreground">
+          Customize your quiz creation and playing experience.
+        </p>
       </div>
 
       <Card>
@@ -76,12 +91,21 @@ export function QuizPreferences() {
                 <Clock className="h-5 w-5 text-primary" />
                 <div>
                   <p className="font-medium">Default Time Limit</p>
-                  <p className="text-sm text-muted-foreground">Set the default time limit for quiz questions.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Set the default time limit for quiz questions.
+                  </p>
                 </div>
               </div>
               <span className="font-medium">{preferences.defaultTimeLimit} seconds</span>
             </div>
-            <Slider value={[preferences.defaultTimeLimit]} min={10} max={120} step={5} onValueChange={handleSliderChange} className="mt-2" />
+            <Slider
+              value={[preferences.defaultTimeLimit]}
+              min={10}
+              max={120}
+              step={5}
+              onValueChange={handleSliderChange}
+              className="mt-2"
+            />
           </div>
 
           <Separator />
@@ -91,10 +115,15 @@ export function QuizPreferences() {
               <Brain className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Default Difficulty</p>
-                <p className="text-sm text-muted-foreground">Set the default difficulty for your quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Set the default difficulty for your quizzes.
+                </p>
               </div>
             </div>
-            <Select value={preferences.defaultDifficulty} onValueChange={(value) => handleSelectChange("defaultDifficulty", value)}>
+            <Select
+              value={preferences.defaultDifficulty}
+              onValueChange={(value) => handleSelectChange("defaultDifficulty", value)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select difficulty" />
               </SelectTrigger>
@@ -113,10 +142,15 @@ export function QuizPreferences() {
               <Save className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Auto-Save</p>
-                <p className="text-sm text-muted-foreground">Automatically save quiz drafts while editing.</p>
+                <p className="text-sm text-muted-foreground">
+                  Automatically save quiz drafts while editing.
+                </p>
               </div>
             </div>
-            <Switch checked={preferences.autoSave} onCheckedChange={(value) => handleToggle("autoSave", value)} />
+            <Switch
+              checked={preferences.autoSave}
+              onCheckedChange={(value) => handleToggle("autoSave", value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -132,10 +166,15 @@ export function QuizPreferences() {
               <Clock className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Show Timer</p>
-                <p className="text-sm text-muted-foreground">Show countdown timer when playing quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Show countdown timer when playing quizzes.
+                </p>
               </div>
             </div>
-            <Switch checked={preferences.showTimer} onCheckedChange={(value) => handleToggle("showTimer", value)} />
+            <Switch
+              checked={preferences.showTimer}
+              onCheckedChange={(value) => handleToggle("showTimer", value)}
+            />
           </div>
 
           <Separator />
@@ -145,10 +184,15 @@ export function QuizPreferences() {
               <Lightbulb className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Show Hints</p>
-                <p className="text-sm text-muted-foreground">Show hints when available in quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Show hints when available in quizzes.
+                </p>
               </div>
             </div>
-            <Switch checked={preferences.showHints} onCheckedChange={(value) => handleToggle("showHints", value)} />
+            <Switch
+              checked={preferences.showHints}
+              onCheckedChange={(value) => handleToggle("showHints", value)}
+            />
           </div>
 
           <Separator />
@@ -158,10 +202,15 @@ export function QuizPreferences() {
               <CheckCircle className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Show Correct Answers</p>
-                <p className="text-sm text-muted-foreground">Show correct answers after completing a quiz.</p>
+                <p className="text-sm text-muted-foreground">
+                  Show correct answers after completing a quiz.
+                </p>
               </div>
             </div>
-            <Switch checked={preferences.showCorrectAnswers} onCheckedChange={(value) => handleToggle("showCorrectAnswers", value)} />
+            <Switch
+              checked={preferences.showCorrectAnswers}
+              onCheckedChange={(value) => handleToggle("showCorrectAnswers", value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -174,43 +223,61 @@ export function QuizPreferences() {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label className="font-medium">Preferred Categories</Label>
-            <p className="text-sm text-muted-foreground mb-2">Select categories you're most interested in.</p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Select categories you're most interested in.
+            </p>
             <div className="flex flex-wrap gap-2">
               <Badge
-                variant={preferences.preferredCategories.includes("science") ? "default" : "outline"}
+                variant={
+                  preferences.preferredCategories.includes("science") ? "default" : "outline"
+                }
                 className="cursor-pointer"
                 onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("science") ? preferences.preferredCategories.filter((c) => c !== "science") : [...preferences.preferredCategories, "science"];
+                  const newCategories = preferences.preferredCategories.includes("science")
+                    ? preferences.preferredCategories.filter((c) => c !== "science")
+                    : [...preferences.preferredCategories, "science"];
                   setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
                 }}
               >
                 Science
               </Badge>
               <Badge
-                variant={preferences.preferredCategories.includes("history") ? "default" : "outline"}
+                variant={
+                  preferences.preferredCategories.includes("history") ? "default" : "outline"
+                }
                 className="cursor-pointer"
                 onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("history") ? preferences.preferredCategories.filter((c) => c !== "history") : [...preferences.preferredCategories, "history"];
+                  const newCategories = preferences.preferredCategories.includes("history")
+                    ? preferences.preferredCategories.filter((c) => c !== "history")
+                    : [...preferences.preferredCategories, "history"];
                   setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
                 }}
               >
                 History
               </Badge>
               <Badge
-                variant={preferences.preferredCategories.includes("geography") ? "default" : "outline"}
+                variant={
+                  preferences.preferredCategories.includes("geography") ? "default" : "outline"
+                }
                 className="cursor-pointer"
                 onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("geography") ? preferences.preferredCategories.filter((c) => c !== "geography") : [...preferences.preferredCategories, "geography"];
+                  const newCategories = preferences.preferredCategories.includes("geography")
+                    ? preferences.preferredCategories.filter((c) => c !== "geography")
+                    : [...preferences.preferredCategories, "geography"];
                   setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
                 }}
               >
                 Geography
               </Badge>
               <Badge
-                variant={preferences.preferredCategories.includes("literature") ? "default" : "outline"}
+                variant={
+                  preferences.preferredCategories.includes("literature") ? "default" : "outline"
+                }
                 className="cursor-pointer"
                 onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("literature") ? preferences.preferredCategories.filter((c) => c !== "literature") : [...preferences.preferredCategories, "literature"];
+                  const newCategories = preferences.preferredCategories.includes("literature")
+                    ? preferences.preferredCategories.filter((c) => c !== "literature")
+                    : [...preferences.preferredCategories, "literature"];
                   setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
                 }}
               >
@@ -220,7 +287,9 @@ export function QuizPreferences() {
                 variant={preferences.preferredCategories.includes("movies") ? "default" : "outline"}
                 className="cursor-pointer"
                 onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("movies") ? preferences.preferredCategories.filter((c) => c !== "movies") : [...preferences.preferredCategories, "movies"];
+                  const newCategories = preferences.preferredCategories.includes("movies")
+                    ? preferences.preferredCategories.filter((c) => c !== "movies")
+                    : [...preferences.preferredCategories, "movies"];
                   setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
                 }}
               >
@@ -230,7 +299,9 @@ export function QuizPreferences() {
                 variant={preferences.preferredCategories.includes("music") ? "default" : "outline"}
                 className="cursor-pointer"
                 onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("music") ? preferences.preferredCategories.filter((c) => c !== "music") : [...preferences.preferredCategories, "music"];
+                  const newCategories = preferences.preferredCategories.includes("music")
+                    ? preferences.preferredCategories.filter((c) => c !== "music")
+                    : [...preferences.preferredCategories, "music"];
                   setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
                 }}
               >
@@ -240,7 +311,9 @@ export function QuizPreferences() {
                 variant={preferences.preferredCategories.includes("sports") ? "default" : "outline"}
                 className="cursor-pointer"
                 onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("sports") ? preferences.preferredCategories.filter((c) => c !== "sports") : [...preferences.preferredCategories, "sports"];
+                  const newCategories = preferences.preferredCategories.includes("sports")
+                    ? preferences.preferredCategories.filter((c) => c !== "sports")
+                    : [...preferences.preferredCategories, "sports"];
                   setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
                 }}
               >
@@ -256,10 +329,15 @@ export function QuizPreferences() {
               <Globe className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">Preferred Language</p>
-                <p className="text-sm text-muted-foreground">Set your preferred language for quizzes.</p>
+                <p className="text-sm text-muted-foreground">
+                  Set your preferred language for quizzes.
+                </p>
               </div>
             </div>
-            <Select value={preferences.preferredLanguage} onValueChange={(value) => handleSelectChange("preferredLanguage", value)}>
+            <Select
+              value={preferences.preferredLanguage}
+              onValueChange={(value) => handleSelectChange("preferredLanguage", value)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>

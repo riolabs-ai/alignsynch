@@ -1,6 +1,11 @@
 "use client";
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tournament } from "./tournament-detail";
 
@@ -21,7 +26,10 @@ export function TournamentRules({ tournament }: TournamentRulesProps) {
             <AccordionContent>
               <ul className="list-disc pl-5 space-y-2">
                 <li>All registered users of QuizHub are eligible to participate.</li>
-                <li>Registration must be completed before the deadline ({tournament.registrationEnds} remaining).</li>
+                <li>
+                  Registration must be completed before the deadline ({tournament.registrationEnds}{" "}
+                  remaining).
+                </li>
                 <li>Each participant may only register once using their primary account.</li>
                 <li>By registering, participants agree to abide by all tournament rules.</li>
               </ul>
@@ -35,10 +43,16 @@ export function TournamentRules({ tournament }: TournamentRulesProps) {
                 <li>The tournament consists of {tournament.rounds} rounds.</li>
                 <li>Each round contains {tournament.questionsPerRound} questions.</li>
                 <li>Questions will be drawn from multiple categories.</li>
-                <li>Participants have {tournament.timePerQuestion} seconds to answer each question.</li>
+                <li>
+                  Participants have {tournament.timePerQuestion} seconds to answer each question.
+                </li>
                 <li>The format is {tournament.format}.</li>
-                {tournament.format === "Elimination" && <li>Top performers from each round advance to the next round.</li>}
-                {tournament.format === "Points-based" && <li>Points accumulate across all rounds to determine final standings.</li>}
+                {tournament.format === "Elimination" && (
+                  <li>Top performers from each round advance to the next round.</li>
+                )}
+                {tournament.format === "Points-based" && (
+                  <li>Points accumulate across all rounds to determine final standings.</li>
+                )}
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -60,11 +74,18 @@ export function TournamentRules({ tournament }: TournamentRulesProps) {
             <AccordionTrigger>Fair Play & Conduct</AccordionTrigger>
             <AccordionContent>
               <ul className="list-disc pl-5 space-y-2">
-                <li>Use of external resources or assistance during the tournament is prohibited.</li>
+                <li>
+                  Use of external resources or assistance during the tournament is prohibited.
+                </li>
                 <li>Sharing questions or answers with other participants is not allowed.</li>
                 <li>Multiple accounts or collaborative play is forbidden.</li>
-                <li>QuizHub reserves the right to disqualify participants suspected of cheating.</li>
-                <li>All participants are expected to maintain respectful conduct in tournament discussions.</li>
+                <li>
+                  QuizHub reserves the right to disqualify participants suspected of cheating.
+                </li>
+                <li>
+                  All participants are expected to maintain respectful conduct in tournament
+                  discussions.
+                </li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -75,8 +96,14 @@ export function TournamentRules({ tournament }: TournamentRulesProps) {
               <ul className="list-disc pl-5 space-y-2">
                 <li>Stable internet connection is required.</li>
                 <li>Participants are responsible for their own technical setup.</li>
-                <li>In case of technical issues, limited accommodations may be made at the organizer's discretion.</li>
-                <li>The tournament platform works best on modern browsers (Chrome, Firefox, Safari, Edge).</li>
+                <li>
+                  In case of technical issues, limited accommodations may be made at the organizer's
+                  discretion.
+                </li>
+                <li>
+                  The tournament platform works best on modern browsers (Chrome, Firefox, Safari,
+                  Edge).
+                </li>
               </ul>
             </AccordionContent>
           </AccordionItem>

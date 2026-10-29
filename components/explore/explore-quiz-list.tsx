@@ -5,7 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock, DollarSign, Users } from "lucide-react";
 import Image from "next/image";
@@ -203,7 +208,12 @@ const quizzes = [
   },
 ];
 
-export function ExploreQuizList({ category, searchQuery, viewMode, filters }: ExploreQuizListProps) {
+export function ExploreQuizList({
+  category,
+  searchQuery,
+  viewMode,
+  filters,
+}: ExploreQuizListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const itemsPerPage = 6;
@@ -240,7 +250,11 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
     })
     .filter((quiz) => {
       if (!searchQuery) return true;
-      return quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) || quiz.category.toLowerCase().includes(searchQuery.toLowerCase()) || quiz.createdBy.toLowerCase().includes(searchQuery.toLowerCase());
+      return (
+        quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quiz.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quiz.createdBy.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     })
     .filter((quiz) => {
       if (filters.difficulty === "all") return true;
@@ -256,7 +270,13 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className={viewMode === "grid" ? "grid gap-6 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-3" : "space-y-4"}>
+      <div
+        className={
+          viewMode === "grid"
+            ? "grid gap-6 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-3"
+            : "space-y-4"
+        }
+      >
         {Array.from({ length: 6 }).map((_, index) => (
           <Card key={index} className="overflow-hidden">
             <div className="h-48 bg-muted animate-pulse" />
@@ -292,7 +312,11 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
           <Users className="h-10 w-10 text-muted-foreground" />
         </div>
         <h3 className="text-xl font-semibold mb-2">No quizzes found</h3>
-        <p className="text-muted-foreground max-w-md mb-6">{searchQuery ? `No quizzes match your search "${searchQuery}". Try a different search term or filter.` : "No quizzes found with the selected filters. Try adjusting your filters."}</p>
+        <p className="text-muted-foreground max-w-md mb-6">
+          {searchQuery
+            ? `No quizzes match your search "${searchQuery}". Try a different search term or filter.`
+            : "No quizzes found with the selected filters. Try adjusting your filters."}
+        </p>
         <Button variant="outline" onClick={() => window.location.reload()}>
           Reset Filters
         </Button>
@@ -304,7 +328,8 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {startIndex + 1}-{Math.min(endIndex, filteredQuizzes.length)} of {filteredQuizzes.length} quizzes
+          Showing {startIndex + 1}-{Math.min(endIndex, filteredQuizzes.length)} of{" "}
+          {filteredQuizzes.length} quizzes
         </p>
       </div>
 
@@ -312,14 +337,26 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
       {viewMode === "grid" && (
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-1 min-[900px]:grid-cols-2 xxl:grid-cols-3">
           {currentQuizzes.map((quiz) => (
-            <Card key={quiz.id} className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600">
+            <Card
+              key={quiz.id}
+              className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600"
+            >
               {/* Image with overlay */}
               <div className="relative h-48">
-                <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-full w-full object-cover" />
+                <Image
+                  width={600}
+                  height={350}
+                  src={quiz.image || "/placeholder.svg"}
+                  alt={quiz.title}
+                  className="h-full w-full object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                   <div className="w-full">
                     <div className="flex justify-between items-center mb-2">
-                      <Badge variant={getDifficultyVariant(quiz.difficulty)} className="font-medium">
+                      <Badge
+                        variant={getDifficultyVariant(quiz.difficulty)}
+                        className="font-medium"
+                      >
                         {quiz.difficulty}
                       </Badge>
                       <div className="flex items-center gap-1 text-white text-sm">
@@ -337,7 +374,10 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={quiz.creatorAvatar || "/placeholder.svg"} alt={quiz.createdBy} />
+                      <AvatarImage
+                        src={quiz.creatorAvatar || "/placeholder.svg"}
+                        alt={quiz.createdBy}
+                      />
                       <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">{quiz.createdBy}</span>
@@ -350,11 +390,16 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
                 {/* Rating and reward */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <svg className="h-4 w-4 text-yellow-400 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg
+                      className="h-4 w-4 text-yellow-400 fill-current"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
                       <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                     </svg>
                     <span className="text-sm font-medium">
-                      {quiz.rating} <span className="text-muted-foreground">({quiz.totalRatings})</span>
+                      {quiz.rating}{" "}
+                      <span className="text-muted-foreground">({quiz.totalRatings})</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-green-600 font-medium">
@@ -371,12 +416,29 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
                       <span>{formatPlayerCount(quiz.players)} players</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-600 dark:text-slate-400 text-sm">{quiz.spotsLeft} spots left</span>
-                      <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                      <span className="text-slate-600 dark:text-slate-400 text-sm">
+                        {quiz.spotsLeft} spots left
+                      </span>
+                      <CircularProgress
+                        value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                        size={36}
+                        strokeWidth={3}
+                        color={
+                          quiz.spotsLeft <= 20
+                            ? "hsl(var(--destructive))"
+                            : quiz.spotsLeft <= 50
+                              ? "hsl(var(--warning))"
+                              : "hsl(var(--primary))"
+                        }
+                      />
                     </div>
                   </div>
 
-                  {quiz.spotsLeft <= 20 && <p className="text-xs font-medium text-destructive">Almost full! Only {quiz.spotsLeft} spots left</p>}
+                  {quiz.spotsLeft <= 20 && (
+                    <p className="text-xs font-medium text-destructive">
+                      Almost full! Only {quiz.spotsLeft} spots left
+                    </p>
+                  )}
                 </div>
               </CardContent>
 
@@ -394,12 +456,24 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
       {viewMode === "list" && (
         <div className="space-y-4">
           {currentQuizzes.map((quiz) => (
-            <Card key={quiz.id} className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600">
+            <Card
+              key={quiz.id}
+              className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600"
+            >
               <div className="flex flex-col sm:flex-row">
                 {/* Image */}
                 <div className="relative h-48 sm:h-auto sm:w-48 md:w-64">
-                  <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-full w-full object-cover" />
-                  <Badge variant={getDifficultyVariant(quiz.difficulty)} className="absolute top-2 left-2 font-medium">
+                  <Image
+                    width={600}
+                    height={350}
+                    src={quiz.image || "/placeholder.svg"}
+                    alt={quiz.title}
+                    className="h-full w-full object-cover"
+                  />
+                  <Badge
+                    variant={getDifficultyVariant(quiz.difficulty)}
+                    className="absolute top-2 left-2 font-medium"
+                  >
                     {quiz.difficulty}
                   </Badge>
                 </div>
@@ -420,16 +494,24 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
 
                   <div className="flex items-center gap-2 mb-4">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={quiz.creatorAvatar || "/placeholder.svg"} alt={quiz.createdBy} />
+                      <AvatarImage
+                        src={quiz.creatorAvatar || "/placeholder.svg"}
+                        alt={quiz.createdBy}
+                      />
                       <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">by {quiz.createdBy}</span>
                     <div className="flex items-center gap-1 ml-2">
-                      <svg className="h-4 w-4 text-yellow-400 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <svg
+                        className="h-4 w-4 text-yellow-400 fill-current"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
                         <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                       </svg>
                       <span className="text-sm font-medium">
-                        {quiz.rating} <span className="text-muted-foreground">({quiz.totalRatings})</span>
+                        {quiz.rating}{" "}
+                        <span className="text-muted-foreground">({quiz.totalRatings})</span>
                       </span>
                     </div>
                   </div>
@@ -441,8 +523,21 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
                         <span>{formatPlayerCount(quiz.players)} players</span>
                       </div>
                       <span className="text-slate-600 dark:text-slate-400 mx-2">•</span>
-                      <span className="text-slate-600 dark:text-slate-400">{quiz.spotsLeft} spots left</span>
-                      <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                      <span className="text-slate-600 dark:text-slate-400">
+                        {quiz.spotsLeft} spots left
+                      </span>
+                      <CircularProgress
+                        value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                        size={36}
+                        strokeWidth={3}
+                        color={
+                          quiz.spotsLeft <= 20
+                            ? "hsl(var(--destructive))"
+                            : quiz.spotsLeft <= 50
+                              ? "hsl(var(--warning))"
+                              : "hsl(var(--primary))"
+                        }
+                      />
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -467,19 +562,34 @@ export function ExploreQuizList({ category, searchQuery, viewMode, filters }: Ex
         <div className="flex justify-center mt-6">
           <Pagination>
             <PaginationContent>
-              <Button variant="outline" size="sm" onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="mr-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="mr-1"
+              >
                 Previous
               </Button>
 
               {Array.from({ length: totalPages }).map((_, index) => (
                 <PaginationItem key={index}>
-                  <PaginationLink onClick={() => setCurrentPage(index + 1)} isActive={currentPage === index + 1}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(index + 1)}
+                    isActive={currentPage === index + 1}
+                  >
                     {index + 1}
                   </PaginationLink>
                 </PaginationItem>
               ))}
 
-              <Button variant="outline" size="sm" onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="ml-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="ml-1"
+              >
                 Next
               </Button>
             </PaginationContent>

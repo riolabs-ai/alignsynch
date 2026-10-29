@@ -6,9 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Award, Clock, FileQuestion, FileText, Filter, Search, Tag, User, Users } from "lucide-react";
+import {
+  Award,
+  Clock,
+  FileQuestion,
+  FileText,
+  Filter,
+  Search,
+  Tag,
+  User,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -132,7 +148,12 @@ const mockSearchData = {
     },
   ],
   pages: [
-    { id: "p1", title: "Tournaments", path: "/tournaments", description: "Compete in quiz tournaments and win prizes" },
+    {
+      id: "p1",
+      title: "Tournaments",
+      path: "/tournaments",
+      description: "Compete in quiz tournaments and win prizes",
+    },
     {
       id: "p2",
       title: "Leaderboard",
@@ -179,11 +200,18 @@ export function SearchResults({ query }: { query: string }) {
     const q = searchQuery.toLowerCase().trim();
 
     // Filter by query
-    let filteredQuizzes = mockSearchData.quizzes.filter((quiz) => quiz.title.toLowerCase().includes(q) || quiz.category.toLowerCase().includes(q) || quiz.creator.toLowerCase().includes(q));
+    let filteredQuizzes = mockSearchData.quizzes.filter(
+      (quiz) =>
+        quiz.title.toLowerCase().includes(q) ||
+        quiz.category.toLowerCase().includes(q) ||
+        quiz.creator.toLowerCase().includes(q),
+    );
 
     // Apply difficulty filter
     if (difficultyFilter !== "all") {
-      filteredQuizzes = filteredQuizzes.filter((quiz) => quiz.difficulty.toLowerCase() === difficultyFilter.toLowerCase());
+      filteredQuizzes = filteredQuizzes.filter(
+        (quiz) => quiz.difficulty.toLowerCase() === difficultyFilter.toLowerCase(),
+      );
     }
 
     // Sort quizzes
@@ -196,14 +224,28 @@ export function SearchResults({ query }: { query: string }) {
 
     return {
       quizzes: filteredQuizzes,
-      categories: mockSearchData.categories.filter((category) => category.name.toLowerCase().includes(q)),
-      creators: mockSearchData.creators.filter((creator) => creator.name.toLowerCase().includes(q) || creator.username.toLowerCase().includes(q) || creator.bio.toLowerCase().includes(q)),
-      pages: mockSearchData.pages.filter((page) => page.title.toLowerCase().includes(q) || page.description.toLowerCase().includes(q)),
+      categories: mockSearchData.categories.filter((category) =>
+        category.name.toLowerCase().includes(q),
+      ),
+      creators: mockSearchData.creators.filter(
+        (creator) =>
+          creator.name.toLowerCase().includes(q) ||
+          creator.username.toLowerCase().includes(q) ||
+          creator.bio.toLowerCase().includes(q),
+      ),
+      pages: mockSearchData.pages.filter(
+        (page) =>
+          page.title.toLowerCase().includes(q) || page.description.toLowerCase().includes(q),
+      ),
     };
   };
 
   const results = getFilteredResults();
-  const totalResults = results.quizzes.length + results.categories.length + results.creators.length + results.pages.length;
+  const totalResults =
+    results.quizzes.length +
+    results.categories.length +
+    results.creators.length +
+    results.pages.length;
 
   return (
     <div className="container py-8">
@@ -213,7 +255,13 @@ export function SearchResults({ query }: { query: string }) {
         <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input type="search" placeholder="Search quizzes, categories, creators..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Input
+              type="search"
+              placeholder="Search quizzes, categories, creators..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <Button type="submit">Search</Button>
         </form>
@@ -327,13 +375,21 @@ export function SearchResults({ query }: { query: string }) {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {results.categories.slice(0, 3).map((category) => (
-                      <Link key={category.id} href={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`} className="block">
+                      <Link
+                        key={category.id}
+                        href={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
+                        className="block"
+                      >
                         <Card className="h-full hover:shadow-md transition-shadow">
                           <CardContent className="flex items-center gap-4 p-6">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-2xl">{category.icon}</div>
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-2xl">
+                              {category.icon}
+                            </div>
                             <div>
                               <h3 className="text-lg font-semibold">{category.name}</h3>
-                              <p className="text-sm text-muted-foreground">{category.quizCount} quizzes</p>
+                              <p className="text-sm text-muted-foreground">
+                                {category.quizCount} quizzes
+                              </p>
                             </div>
                           </CardContent>
                         </Card>
@@ -360,7 +416,11 @@ export function SearchResults({ query }: { query: string }) {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {results.creators.slice(0, 2).map((creator) => (
-                      <Link key={creator.id} href={`/profile/${creator.username}`} className="block">
+                      <Link
+                        key={creator.id}
+                        href={`/profile/${creator.username}`}
+                        className="block"
+                      >
                         <Card className="h-full hover:shadow-md transition-shadow">
                           <CardContent className="flex items-start gap-4 p-6">
                             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
@@ -368,7 +428,9 @@ export function SearchResults({ query }: { query: string }) {
                             </div>
                             <div>
                               <h3 className="text-lg font-semibold">{creator.name}</h3>
-                              <p className="text-sm text-muted-foreground mb-1">@{creator.username}</p>
+                              <p className="text-sm text-muted-foreground mb-1">
+                                @{creator.username}
+                              </p>
                               <p className="text-sm line-clamp-2">{creator.bio}</p>
                               <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                                 <span>{creator.quizCount} quizzes</span>
@@ -420,7 +482,10 @@ export function SearchResults({ query }: { query: string }) {
                 <div className="text-center py-12">
                   <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h2 className="text-2xl font-semibold mb-2">No results found</h2>
-                  <p className="text-muted-foreground max-w-md mx-auto">We couldn't find anything matching "{searchQuery}". Try different keywords or check your spelling.</p>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    We couldn't find anything matching "{searchQuery}". Try different keywords or
+                    check your spelling.
+                  </p>
                 </div>
               )}
             </TabsContent>
@@ -459,7 +524,9 @@ export function SearchResults({ query }: { query: string }) {
                 <div className="text-center py-12">
                   <FileQuestion className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h2 className="text-xl font-semibold mb-2">No quizzes found</h2>
-                  <p className="text-muted-foreground">We couldn't find any quizzes matching "{searchQuery}".</p>
+                  <p className="text-muted-foreground">
+                    We couldn't find any quizzes matching "{searchQuery}".
+                  </p>
                 </div>
               )}
             </TabsContent>
@@ -468,10 +535,16 @@ export function SearchResults({ query }: { query: string }) {
               {results.categories.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.categories.map((category) => (
-                    <Link key={category.id} href={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`} className="block">
+                    <Link
+                      key={category.id}
+                      href={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
+                      className="block"
+                    >
                       <Card className="h-full hover:shadow-md transition-shadow">
                         <CardContent className="flex items-center gap-4 p-6">
-                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-3xl">{category.icon}</div>
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-3xl">
+                            {category.icon}
+                          </div>
                           <div>
                             <h3 className="text-xl font-semibold">{category.name}</h3>
                             <p className="text-muted-foreground">{category.quizCount} quizzes</p>
@@ -485,7 +558,9 @@ export function SearchResults({ query }: { query: string }) {
                 <div className="text-center py-12">
                   <Tag className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h2 className="text-xl font-semibold mb-2">No categories found</h2>
-                  <p className="text-muted-foreground">We couldn't find any categories matching "{searchQuery}".</p>
+                  <p className="text-muted-foreground">
+                    We couldn't find any categories matching "{searchQuery}".
+                  </p>
                 </div>
               )}
             </TabsContent>
@@ -524,7 +599,9 @@ export function SearchResults({ query }: { query: string }) {
                 <div className="text-center py-12">
                   <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h2 className="text-xl font-semibold mb-2">No creators found</h2>
-                  <p className="text-muted-foreground">We couldn't find any creators matching "{searchQuery}".</p>
+                  <p className="text-muted-foreground">
+                    We couldn't find any creators matching "{searchQuery}".
+                  </p>
                 </div>
               )}
             </TabsContent>
@@ -550,7 +627,9 @@ export function SearchResults({ query }: { query: string }) {
                 <div className="text-center py-12">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h2 className="text-xl font-semibold mb-2">No pages found</h2>
-                  <p className="text-muted-foreground">We couldn't find any pages matching "{searchQuery}".</p>
+                  <p className="text-muted-foreground">
+                    We couldn't find any pages matching "{searchQuery}".
+                  </p>
                 </div>
               )}
             </TabsContent>
@@ -560,12 +639,26 @@ export function SearchResults({ query }: { query: string }) {
         <div className="text-center py-16">
           <Search className="h-16 w-16 mx-auto mb-6 text-muted-foreground opacity-30" />
           <h2 className="text-2xl font-semibold mb-3">Search for quizzes, categories, and more</h2>
-          <p className="text-muted-foreground max-w-md mx-auto mb-8">Enter a search term above to find quizzes, categories, creators, and pages across QuizMaker.</p>
+          <p className="text-muted-foreground max-w-md mx-auto mb-8">
+            Enter a search term above to find quizzes, categories, creators, and pages across
+            QuizMaker.
+          </p>
 
           <div className="max-w-3xl mx-auto">
             <h3 className="text-lg font-medium mb-4">Popular searches</h3>
             <div className="flex flex-wrap justify-center gap-2">
-              {["History", "Science", "Geography", "Entertainment", "Sports", "Technology", "Art", "Music", "Food", "Movies"].map((term) => (
+              {[
+                "History",
+                "Science",
+                "Geography",
+                "Entertainment",
+                "Sports",
+                "Technology",
+                "Art",
+                "Music",
+                "Food",
+                "Movies",
+              ].map((term) => (
                 <Button
                   key={term}
                   variant="outline"

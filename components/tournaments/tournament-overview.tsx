@@ -17,15 +17,24 @@ export function TournamentOverview({ tournament }: TournamentOverviewProps) {
             <CardTitle>About This Tournament</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p>Welcome to the {tournament.title}! This exciting tournament will test your knowledge across multiple categories and challenge you to compete against quiz enthusiasts from around the world.</p>
+            <p>
+              Welcome to the {tournament.title}! This exciting tournament will test your knowledge
+              across multiple categories and challenge you to compete against quiz enthusiasts from
+              around the world.
+            </p>
 
             <h3 className="font-semibold text-lg">Tournament Format</h3>
             <p>
-              This tournament follows a {tournament.format} format with {tournament.rounds} rounds of competition. Each round consists of {tournament.questionsPerRound} questions across various categories, with {tournament.timePerQuestion} seconds allowed per question.
+              This tournament follows a {tournament.format} format with {tournament.rounds} rounds
+              of competition. Each round consists of {tournament.questionsPerRound} questions across
+              various categories, with {tournament.timePerQuestion} seconds allowed per question.
             </p>
 
             <h3 className="font-semibold text-lg">Eligibility</h3>
-            <p>{tournament.eligibility}. All participants must have a registered account on QuizHub and agree to the tournament rules and fair play guidelines.</p>
+            <p>
+              {tournament.eligibility}. All participants must have a registered account on QuizHub
+              and agree to the tournament rules and fair play guidelines.
+            </p>
 
             <h3 className="font-semibold text-lg">How to Participate</h3>
             <ol className="list-decimal list-inside space-y-2 ml-4">
@@ -124,7 +133,9 @@ export function TournamentOverview({ tournament }: TournamentOverviewProps) {
                   <HelpCircle className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">Total Questions</span>
                 </div>
-                <span className="font-medium">{tournament.rounds * tournament.questionsPerRound}</span>
+                <span className="font-medium">
+                  {tournament.rounds * tournament.questionsPerRound}
+                </span>
               </div>
             </div>
           </CardContent>

@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Copy, Facebook, Twitter, Mail, Share2, CheckCircle2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { motion } from "framer-motion"
+import { useState } from "react";
+import { Copy, Facebook, Twitter, Mail, Share2, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
 
 export function ReferralProgramCTA() {
-  const [copied, setCopied] = useState(false)
-  const referralCode = "QUIZ2024FRIEND"
+  const [copied, setCopied] = useState(false);
+  const referralCode = "QUIZ2024FRIEND";
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(referralCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    navigator.clipboard.writeText(referralCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <section className="py-16 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30">
@@ -33,9 +33,12 @@ export function ReferralProgramCTA() {
               </h2>
               <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
                 Share your referral code with friends and earn{" "}
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">$5 bonus</span> for each friend who
-                joins. Plus, they'll get a{" "}
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">$5 welcome bonus</span> too!
+                <span className="font-semibold text-indigo-600 dark:text-indigo-400">$5 bonus</span>{" "}
+                for each friend who joins. Plus, they'll get a{" "}
+                <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                  $5 welcome bonus
+                </span>{" "}
+                too!
               </p>
             </motion.div>
           </div>
@@ -49,31 +52,41 @@ export function ReferralProgramCTA() {
               className="space-y-6"
             >
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">How it works</h3>
+                <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
+                  How it works
+                </h3>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 text-sm font-medium">
                       1
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400">Share your unique referral code with friends</p>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      Share your unique referral code with friends
+                    </p>
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 text-sm font-medium">
                       2
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400">Friends sign up using your code</p>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      Friends sign up using your code
+                    </p>
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 text-sm font-medium">
                       3
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400">Both of you receive $5 bonus credit</p>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      Both of you receive $5 bonus credit
+                    </p>
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 text-sm font-medium">
                       4
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400">Earn unlimited rewards with more referrals</p>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      Earn unlimited rewards with more referrals
+                    </p>
                   </li>
                 </ul>
               </div>
@@ -99,7 +112,9 @@ export function ReferralProgramCTA() {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <h4 className="font-medium text-slate-800 dark:text-slate-200">Your Referral Code</h4>
+                      <h4 className="font-medium text-slate-800 dark:text-slate-200">
+                        Your Referral Code
+                      </h4>
                       <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-1 rounded-full">
                         Active
                       </div>
@@ -117,7 +132,11 @@ export function ReferralProgramCTA() {
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
                         onClick={handleCopy}
                       >
-                        {copied ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                        {copied ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
 
@@ -162,5 +181,5 @@ export function ReferralProgramCTA() {
         </div>
       </div>
     </section>
-  )
+  );
 }

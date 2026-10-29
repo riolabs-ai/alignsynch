@@ -1,15 +1,26 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef, useEffect } from "react"
-import { X, Send, ImageIcon, Smile, Search, Phone, Video, MoreVertical, Check, CheckCheck } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
+import { useState, useRef, useEffect } from "react";
+import {
+  X,
+  Send,
+  ImageIcon,
+  Smile,
+  Search,
+  Phone,
+  Video,
+  MoreVertical,
+  Check,
+  CheckCheck,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 // Mock data for contacts and messages
 const contacts = [
@@ -58,7 +69,7 @@ const contacts = [
     unread: 0,
     lastSeen: "2h ago",
   },
-]
+];
 
 const initialMessages = [
   {
@@ -101,30 +112,32 @@ const initialMessages = [
     isMe: false,
     status: "delivered",
   },
-]
+];
 
 interface ChatWindowProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export function ChatWindow({ onClose }: ChatWindowProps) {
-  const [activeContact, setActiveContact] = useState(contacts[0])
-  const [messages, setMessages] = useState(initialMessages)
-  const [newMessage, setNewMessage] = useState("")
-  const [searchTerm, setSearchTerm] = useState("")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [activeContact, setActiveContact] = useState(contacts[0]);
+  const [messages, setMessages] = useState(initialMessages);
+  const [newMessage, setNewMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Filter contacts based on search term
-  const filteredContacts = contacts.filter((contact) => contact.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredContacts = contacts.filter((contact) =>
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   // Scroll to bottom of messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // Send a new message
   const handleSendMessage = () => {
-    if (newMessage.trim() === "") return
+    if (newMessage.trim() === "") return;
 
     const newMsg = {
       id: messages.length + 1,
@@ -133,10 +146,10 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       isMe: true,
       status: "sent" as const,
-    }
+    };
 
-    setMessages([...messages, newMsg])
-    setNewMessage("")
+    setMessages([...messages, newMsg]);
+    setNewMessage("");
 
     // Simulate reply after 1-2 seconds
     setTimeout(
@@ -148,12 +161,12 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           isMe: false,
           status: "delivered" as const,
-        }
-        setMessages((prev) => [...prev, reply])
+        };
+        setMessages((prev) => [...prev, reply]);
       },
       1000 + Math.random() * 1000,
-    )
-  }
+    );
+  };
 
   return (
     <div className="fixed right-4 top-16 z-50 flex h-[600px] w-[350px] flex-col rounded-lg border bg-background shadow-lg md:w-[400px]">
@@ -201,7 +214,10 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
                   >
                     <div className="relative">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={contact.avatar || "/placeholder.svg"} alt={contact.name} />
+                        <AvatarImage
+                          src={contact.avatar || "/placeholder.svg"}
+                          alt={contact.name}
+                        />
                         <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <span
@@ -226,7 +242,10 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
               <div className="flex items-center justify-between border-b p-2">
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={activeContact.avatar || "/placeholder.svg"} alt={activeContact.name} />
+                    <AvatarImage
+                      src={activeContact.avatar || "/placeholder.svg"}
+                      alt={activeContact.name}
+                    />
                     <AvatarFallback>{activeContact.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -254,10 +273,15 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
                 {messages
                   .filter((msg) => msg.contactId === activeContact.id)
                   .map((message) => (
-                    <div key={message.id} className={`mb-2 flex ${message.isMe ? "justify-end" : "justify-start"}`}>
+                    <div
+                      key={message.id}
+                      className={`mb-2 flex ${message.isMe ? "justify-end" : "justify-start"}`}
+                    >
                       <div
                         className={`max-w-[80%] rounded-lg p-2 ${
-                          message.isMe ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                          message.isMe
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
                         }`}
                       >
                         <div>{message.content}</div>
@@ -292,7 +316,7 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                        handleSendMessage()
+                        handleSendMessage();
                       }
                     }}
                   />
@@ -324,10 +348,10 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
                 key={contact.id}
                 className="flex items-center justify-between p-3 hover:bg-muted"
                 onClick={() => {
-                  setActiveContact(contact)
+                  setActiveContact(contact);
                   document
                     .querySelector('[data-value="chats"]')
-                    ?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+                    ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -364,13 +388,15 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
               <Users className="h-10 w-10 text-muted-foreground" />
             </div>
             <h3 className="mb-2 text-xl font-semibold">Create a Group</h3>
-            <p className="mb-4 text-muted-foreground">Start a group chat with your friends and quiz together</p>
+            <p className="mb-4 text-muted-foreground">
+              Start a group chat with your friends and quiz together
+            </p>
             <Button>Create New Group</Button>
           </div>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
 
 // Users icon component for the Groups tab
@@ -393,5 +419,5 @@ function Users(props: React.SVGProps<SVGSVGElement>) {
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
-  )
+  );
 }

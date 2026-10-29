@@ -1,24 +1,29 @@
-"use client"
+"use client";
 
-import type { User } from "@/lib/data/users"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Flag, MessageSquare, Star, UserCheck, UserPlus } from "lucide-react"
+import type { User } from "@/lib/data/users";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CalendarDays, Flag, MessageSquare, Star, UserCheck, UserPlus } from "lucide-react";
 
 interface ProfileHeaderProps {
-  user: User
-  isFollowing: boolean
-  onFollowToggle: () => void
-  onMessageClick: () => void
+  user: User;
+  isFollowing: boolean;
+  onFollowToggle: () => void;
+  onMessageClick: () => void;
 }
 
-export function ProfileHeader({ user, isFollowing, onFollowToggle, onMessageClick }: ProfileHeaderProps) {
+export function ProfileHeader({
+  user,
+  isFollowing,
+  onFollowToggle,
+  onMessageClick,
+}: ProfileHeaderProps) {
   const joinedDate = new Date(user.joinedDate).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
-  })
+  });
 
   return (
     <div className="rounded-xl bg-gradient-to-r from-purple-100 to-blue-100 p-6 shadow-sm dark:from-purple-950/30 dark:to-blue-950/30">
@@ -92,7 +97,11 @@ export function ProfileHeader({ user, isFollowing, onFollowToggle, onMessageClic
         </div>
 
         <div className="flex gap-2 self-start sm:self-center">
-          <Button variant={isFollowing ? "secondary" : "default"} size="sm" onClick={onFollowToggle}>
+          <Button
+            variant={isFollowing ? "secondary" : "default"}
+            size="sm"
+            onClick={onFollowToggle}
+          >
             {isFollowing ? (
               <>
                 <UserCheck className="mr-1.5 h-4 w-4" />
@@ -112,5 +121,5 @@ export function ProfileHeader({ user, isFollowing, onFollowToggle, onMessageClic
         </div>
       </div>
     </div>
-  )
+  );
 }

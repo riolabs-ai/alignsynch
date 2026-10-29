@@ -1,10 +1,16 @@
-"use client"
+"use client";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TournamentFiltersProps {
-  activeFilter: string
-  setActiveFilter: (filter: string) => void
+  activeFilter: string;
+  setActiveFilter: (filter: string) => void;
 }
 
 export function TournamentFilters({ activeFilter, setActiveFilter }: TournamentFiltersProps) {
@@ -23,5 +29,5 @@ export function TournamentFilters({ activeFilter, setActiveFilter }: TournamentF
         </SelectContent>
       </Select>
     </div>
-  )
+  );
 }

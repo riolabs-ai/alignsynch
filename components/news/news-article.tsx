@@ -9,7 +9,19 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Article, newsData } from "@/data/news-data";
-import { Bookmark, Calendar, ChevronLeft, Clock, Copy, Facebook, Linkedin, MessageSquare, Share2, ThumbsUp, Twitter } from "lucide-react";
+import {
+  Bookmark,
+  Calendar,
+  ChevronLeft,
+  Clock,
+  Copy,
+  Facebook,
+  Linkedin,
+  MessageSquare,
+  Share2,
+  ThumbsUp,
+  Twitter,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,7 +47,12 @@ export function NewsArticle({ slug }: { slug: string }) {
 
     // Find related articles based on categories
     if (currentArticle) {
-      const related = newsData.filter((a) => a.slug !== slug && a.categories.some((cat) => currentArticle.categories.includes(cat))).slice(0, 3);
+      const related = newsData
+        .filter(
+          (a) =>
+            a.slug !== slug && a.categories.some((cat) => currentArticle.categories.includes(cat)),
+        )
+        .slice(0, 3);
       setRelatedArticles(related);
     }
   }, [slug, router]);
@@ -76,7 +93,9 @@ export function NewsArticle({ slug }: { slug: string }) {
           ))}
         </div>
 
-        <h2 className="text-2xl md:text-3xl xl:text-4xl font-bold tracking-tight mb-4">{article.title}</h2>
+        <h2 className="text-2xl md:text-3xl xl:text-4xl font-bold tracking-tight mb-4">
+          {article.title}
+        </h2>
 
         <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <div className="flex items-center space-x-4">
@@ -117,7 +136,12 @@ export function NewsArticle({ slug }: { slug: string }) {
                   <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
                     <Linkedin className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={copyToClipboard}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={copyToClipboard}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -133,7 +157,12 @@ export function NewsArticle({ slug }: { slug: string }) {
 
       {/* Featured Image */}
       <div className="relative h-[300px] md:h-[400px] w-full mb-8 rounded-lg overflow-hidden">
-        <Image src={article.coverImage || "/placeholder.svg"} alt={article.title} fill className="object-cover" />
+        <Image
+          src={article.coverImage || "/placeholder.svg"}
+          alt={article.title}
+          fill
+          className="object-cover"
+        />
       </div>
 
       {/* Article Content */}
@@ -142,22 +171,42 @@ export function NewsArticle({ slug }: { slug: string }) {
           <div className="prose max-w-none">
             <p className="text-lg font-medium mb-4">{article.excerpt}</p>
 
-            {article.content.map((section: { heading?: string; paragraphs: string[]; image?: string; imageAlt?: string; imageCaption?: string }, index: number) => (
-              <div key={index} className="mb-6">
-                {section.heading && <h2 className="text-2xl font-bold mb-4">{section.heading}</h2>}
-                {section.paragraphs.map((paragraph: string, pIndex: number) => (
-                  <p key={pIndex} className="mb-4">
-                    {paragraph}
-                  </p>
-                ))}
-                {section.image && (
-                  <div className="relative h-[250px] w-full my-6 rounded-lg overflow-hidden">
-                    <Image src={section.image || "/placeholder.svg"} alt={section.imageAlt || "Article image"} fill className="object-cover" />
-                    {section.imageCaption && <p className="text-sm text-muted-foreground mt-2">{section.imageCaption}</p>}
-                  </div>
-                )}
-              </div>
-            ))}
+            {article.content.map(
+              (
+                section: {
+                  heading?: string;
+                  paragraphs: string[];
+                  image?: string;
+                  imageAlt?: string;
+                  imageCaption?: string;
+                },
+                index: number,
+              ) => (
+                <div key={index} className="mb-6">
+                  {section.heading && (
+                    <h2 className="text-2xl font-bold mb-4">{section.heading}</h2>
+                  )}
+                  {section.paragraphs.map((paragraph: string, pIndex: number) => (
+                    <p key={pIndex} className="mb-4">
+                      {paragraph}
+                    </p>
+                  ))}
+                  {section.image && (
+                    <div className="relative h-[250px] w-full my-6 rounded-lg overflow-hidden">
+                      <Image
+                        src={section.image || "/placeholder.svg"}
+                        alt={section.imageAlt || "Article image"}
+                        fill
+                        className="object-cover"
+                      />
+                      {section.imageCaption && (
+                        <p className="text-sm text-muted-foreground mt-2">{section.imageCaption}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ),
+            )}
           </div>
 
           <Separator className="my-8" />
@@ -190,7 +239,12 @@ export function NewsArticle({ slug }: { slug: string }) {
                     <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
                       <Linkedin className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={copyToClipboard}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                      onClick={copyToClipboard}
+                    >
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
@@ -212,7 +266,12 @@ export function NewsArticle({ slug }: { slug: string }) {
 
               <TabsContent value="newest">
                 <form onSubmit={handleCommentSubmit} className="mb-6">
-                  <Textarea placeholder="Add a comment..." value={comment} onChange={(e) => setComment(e.target.value)} className="mb-2" />
+                  <Textarea
+                    placeholder="Add a comment..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="mb-2"
+                  />
                   <Button type="submit" disabled={!comment.trim()}>
                     Post Comment
                   </Button>
@@ -223,7 +282,10 @@ export function NewsArticle({ slug }: { slug: string }) {
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex space-x-4">
                       <Avatar>
-                        <AvatarImage src={`/abstract-geometric-shapes.png?height=40&width=40&query=user${i}`} alt="User" />
+                        <AvatarImage
+                          src={`/abstract-geometric-shapes.png?height=40&width=40&query=user${i}`}
+                          alt="User"
+                        />
                         <AvatarFallback>U{i}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -231,12 +293,16 @@ export function NewsArticle({ slug }: { slug: string }) {
                           <h4 className="font-medium">User Name {i}</h4>
                           <span className="text-xs text-muted-foreground">2 days ago</span>
                         </div>
-                        <p className="text-sm mb-2">This is a great article! I learned a lot about quiz creation strategies.</p>
+                        <p className="text-sm mb-2">
+                          This is a great article! I learned a lot about quiz creation strategies.
+                        </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <button className="text-muted-foreground hover:text-foreground flex items-center">
                             <ThumbsUp className="mr-1 h-3 w-3" /> 5
                           </button>
-                          <button className="text-muted-foreground hover:text-foreground">Reply</button>
+                          <button className="text-muted-foreground hover:text-foreground">
+                            Reply
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -251,7 +317,10 @@ export function NewsArticle({ slug }: { slug: string }) {
                   {[3, 1, 2].map((i) => (
                     <div key={i} className="flex space-x-4">
                       <Avatar>
-                        <AvatarImage src={`/abstract-geometric-shapes.png?height=40&width=40&query=user${i}`} alt="User" />
+                        <AvatarImage
+                          src={`/abstract-geometric-shapes.png?height=40&width=40&query=user${i}`}
+                          alt="User"
+                        />
                         <AvatarFallback>U{i}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -259,12 +328,17 @@ export function NewsArticle({ slug }: { slug: string }) {
                           <h4 className="font-medium">Popular User {i}</h4>
                           <span className="text-xs text-muted-foreground">3 days ago</span>
                         </div>
-                        <p className="text-sm mb-2">I've been using these strategies and my quiz engagement has increased by 45%!</p>
+                        <p className="text-sm mb-2">
+                          I've been using these strategies and my quiz engagement has increased by
+                          45%!
+                        </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <button className="text-muted-foreground hover:text-foreground flex items-center">
                             <ThumbsUp className="mr-1 h-3 w-3" /> {10 - i}
                           </button>
-                          <button className="text-muted-foreground hover:text-foreground">Reply</button>
+                          <button className="text-muted-foreground hover:text-foreground">
+                            Reply
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -285,7 +359,10 @@ export function NewsArticle({ slug }: { slug: string }) {
             <CardContent>
               <div className="flex items-center space-x-4 mb-4">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={article.author.avatar || "/placeholder.svg"} alt={article.author.name} />
+                  <AvatarImage
+                    src={article.author.avatar || "/placeholder.svg"}
+                    alt={article.author.name}
+                  />
                   <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -308,7 +385,12 @@ export function NewsArticle({ slug }: { slug: string }) {
                 <Card key={related.slug}>
                   <div className="flex">
                     <div className="relative h-24 w-24">
-                      <Image src={related.coverImage || "/placeholder.svg"} alt={related.title} fill className="object-cover" />
+                      <Image
+                        src={related.coverImage || "/placeholder.svg"}
+                        alt={related.title}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                     <div className="flex-1 p-3">
                       <Link href={`/news/${related.slug}`} className="hover:underline">
@@ -332,7 +414,9 @@ export function NewsArticle({ slug }: { slug: string }) {
               <h3 className="text-lg font-bold">Subscribe to Our Newsletter</h3>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">Get the latest quiz news, tips, and updates delivered to your inbox.</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Get the latest quiz news, tips, and updates delivered to your inbox.
+              </p>
               <form className="space-y-2">
                 <Input placeholder="Your email address" type="email" />
                 <Button className="w-full">Subscribe</Button>

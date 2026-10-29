@@ -108,10 +108,19 @@ export function LiveWinners() {
       </div>
 
       <div className="relative overflow-hidden">
-        <Swiper slidesPerView={"auto"} autoplay={{ delay: 2500 }} navigation={{ nextEl: ".next-winner", prevEl: ".prev-winner" }} spaceBetween={16} modules={[Navigation, Autoplay]} loop>
+        <Swiper
+          slidesPerView={"auto"}
+          autoplay={{ delay: 2500 }}
+          navigation={{ nextEl: ".next-winner", prevEl: ".prev-winner" }}
+          spaceBetween={16}
+          modules={[Navigation, Autoplay]}
+          loop
+        >
           {initialWinners.map((winner) => (
             <SwiperSlide key={winner.id} className="flex-shrink-0 max-w-[256px]">
-              <Card className={`relative w-64 p-4 backdrop-blur-sm ${winner.isHighValue ? "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20" : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-900/20"} rounded-xl shadow-md hover:shadow-lg transition-all`}>
+              <Card
+                className={`relative w-64 p-4 backdrop-blur-sm ${winner.isHighValue ? "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20" : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-900/20"} rounded-xl shadow-md hover:shadow-lg transition-all`}
+              >
                 {winner.isHighValue && (
                   <div className="absolute top-4 right-2 animate-bounce">
                     <span className="text-2xl">🎉</span>
@@ -119,20 +128,30 @@ export function LiveWinners() {
                 )}
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                    <AvatarImage src={winner.avatar || "/placeholder.svg"} className="object-cover object-center" alt={winner.name} />
+                    <AvatarImage
+                      src={winner.avatar || "/placeholder.svg"}
+                      className="object-cover object-center"
+                      alt={winner.name}
+                    />
                     <AvatarFallback>{winner.name.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div>
                     <h3 className="font-medium">
                       <Link href={`/profile/${winner.id}`}>{winner.name}</Link>
                     </h3>
-                    <p className="text-sm text-muted-foreground">{formatDistanceToNow(winner.timestamp, { addSuffix: true })}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDistanceToNow(winner.timestamp, { addSuffix: true })}
+                    </p>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <span className="text-xl">💰</span>
                   <p className="text-sm">
-                    Won <span className="font-semibold text-green-600">${winner.amount.toFixed(2)}</span> playing <span className="font-medium">"{winner.quiz}"</span>
+                    Won{" "}
+                    <span className="font-semibold text-green-600">
+                      ${winner.amount.toFixed(2)}
+                    </span>{" "}
+                    playing <span className="font-medium">"{winner.quiz}"</span>
                   </p>
                 </div>
               </Card>

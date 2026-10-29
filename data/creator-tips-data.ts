@@ -1,4 +1,10 @@
-export type TipCategory = "question-writing" | "engagement" | "monetization" | "design" | "promotion" | "technical";
+export type TipCategory =
+  | "question-writing"
+  | "engagement"
+  | "monetization"
+  | "design"
+  | "promotion"
+  | "technical";
 
 export interface Tip {
   id: string;
@@ -67,7 +73,8 @@ export const tips: Tip[] = [
     id: "1",
     slug: "writing-effective-quiz-questions",
     title: "Writing Effective Quiz Questions",
-    excerpt: "Learn how to craft quiz questions that are clear, engaging, and test knowledge effectively.",
+    excerpt:
+      "Learn how to craft quiz questions that are clear, engaging, and test knowledge effectively.",
     content: `
 # Writing Effective Quiz Questions
 
@@ -122,7 +129,8 @@ Before publishing, have someone else take your quiz to ensure the questions are 
     id: "2",
     slug: "increasing-quiz-engagement",
     title: "Strategies for Increasing Quiz Engagement",
-    excerpt: "Discover proven methods to boost participation and keep users coming back to your quizzes.",
+    excerpt:
+      "Discover proven methods to boost participation and keep users coming back to your quizzes.",
     content: `
 # Strategies for Increasing Quiz Engagement
 
@@ -232,7 +240,8 @@ Aggregate anonymized data from quizzes to provide valuable market insights to pa
     id: "4",
     slug: "quiz-design-principles",
     title: "Quiz Design Principles for Maximum Impact",
-    excerpt: "Design principles that make your quizzes more effective and enjoyable for participants.",
+    excerpt:
+      "Design principles that make your quizzes more effective and enjoyable for participants.",
     content: `
 # Quiz Design Principles for Maximum Impact
 
@@ -463,10 +472,17 @@ export function getTipBySlug(slug: string) {
 }
 
 export function getRelatedTips(currentTip: Tip, count = 3) {
-  return tips.filter((tip) => tip.id !== currentTip.id && tip.category === currentTip.category).slice(0, count);
+  return tips
+    .filter((tip) => tip.id !== currentTip.id && tip.category === currentTip.category)
+    .slice(0, count);
 }
 
 export function searchTips(query: string) {
   const lowerCaseQuery = query.toLowerCase();
-  return tips.filter((tip) => tip.title.toLowerCase().includes(lowerCaseQuery) || tip.excerpt.toLowerCase().includes(lowerCaseQuery) || tip.content.toLowerCase().includes(lowerCaseQuery));
+  return tips.filter(
+    (tip) =>
+      tip.title.toLowerCase().includes(lowerCaseQuery) ||
+      tip.excerpt.toLowerCase().includes(lowerCaseQuery) ||
+      tip.content.toLowerCase().includes(lowerCaseQuery),
+  );
 }

@@ -1,42 +1,48 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import type { User } from "@/lib/data/users"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Send } from "lucide-react"
+import { useState } from "react";
+import type { User } from "@/lib/data/users";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Send } from "lucide-react";
 
 interface MessageModalProps {
-  isOpen: boolean
-  onClose: () => void
-  recipient: User
+  isOpen: boolean;
+  onClose: () => void;
+  recipient: User;
 }
 
 export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) {
-  const [message, setMessage] = useState("")
-  const [sending, setSending] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const handleSend = async () => {
-    if (!message.trim()) return
+    if (!message.trim()) return;
 
-    setSending(true)
+    setSending(true);
 
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    setSending(false)
-    setSent(true)
+    setSending(false);
+    setSent(true);
 
     // Reset after showing success message
     setTimeout(() => {
-      setMessage("")
-      setSent(false)
-      onClose()
-    }, 1500)
-  }
+      setMessage("");
+      setSent(false);
+      onClose();
+    }, 1500);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -70,7 +76,9 @@ export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) 
               </svg>
             </div>
             <h3 className="text-lg font-medium">Message Sent!</h3>
-            <p className="text-sm text-muted-foreground">Your message has been sent to {recipient.name}</p>
+            <p className="text-sm text-muted-foreground">
+              Your message has been sent to {recipient.name}
+            </p>
           </div>
         ) : (
           <>
@@ -81,7 +89,9 @@ export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) 
                   <AvatarFallback>{recipient.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div className="rounded-lg bg-muted p-3">
-                  <p className="text-sm">Hi there! Feel free to send me a message about quizzes or anything else.</p>
+                  <p className="text-sm">
+                    Hi there! Feel free to send me a message about quizzes or anything else.
+                  </p>
                 </div>
               </div>
 
@@ -115,5 +125,5 @@ export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) 
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

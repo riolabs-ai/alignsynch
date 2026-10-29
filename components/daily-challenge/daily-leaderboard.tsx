@@ -93,16 +93,30 @@ export function DailyLeaderboard() {
           <CardContent className="p-2 md:p-4 xl:pt-6">
             <div className="space-y-2">
               {getLeaderboardData().map((user, index) => (
-                <div key={user.id} className={`flex items-center justify-between p-2 rounded-lg ${index < 3 ? "bg-muted/50" : ""}`}>
+                <div
+                  key={user.id}
+                  className={`flex items-center justify-between p-2 rounded-lg ${index < 3 ? "bg-muted/50" : ""}`}
+                >
                   <div className="flex items-center space-x-2 md:space-x-3">
-                    <div className="flex items-center justify-center w-6">{index < 3 ? getRankIcon(index) : <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>}</div>
+                    <div className="flex items-center justify-center w-6">
+                      {index < 3 ? (
+                        getRankIcon(index)
+                      ) : (
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {index + 1}
+                        </span>
+                      )}
+                    </div>
 
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.username} />
                       <AvatarFallback>{user.username.substring(0, 2)}</AvatarFallback>
                     </Avatar>
 
-                    <Link href={`/profile/${user.username}`} className="text-sm hover:underline duration-300 font-medium truncate max-w-[100px] sm:max-w-[150px]">
+                    <Link
+                      href={`/profile/${user.username}`}
+                      className="text-sm hover:underline duration-300 font-medium truncate max-w-[100px] sm:max-w-[150px]"
+                    >
                       {user.username}
                     </Link>
                   </div>
@@ -113,7 +127,9 @@ export function DailyLeaderboard() {
                       <span className="text-muted-foreground text-xs ml-1">pts</span>
                     </div>
 
-                    <div className="text-xs text-muted-foreground">{activeTab === "today" ? formatTime(user.time) : ""}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {activeTab === "today" ? formatTime(user.time) : ""}
+                    </div>
                   </div>
                 </div>
               ))}

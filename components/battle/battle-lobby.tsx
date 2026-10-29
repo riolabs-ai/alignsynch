@@ -3,7 +3,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Clock, Copy, ListChecks, Trophy, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -51,8 +58,12 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">{battleState.mode === "1v1" ? "1v1 Battle" : "Group Battle"} Lobby</h1>
-        <p className="text-muted-foreground">{countdown > 0 ? `Battle starts in ${countdown} seconds` : "Ready to start battle!"}</p>
+        <h1 className="text-3xl font-bold mb-2">
+          {battleState.mode === "1v1" ? "1v1 Battle" : "Group Battle"} Lobby
+        </h1>
+        <p className="text-muted-foreground">
+          {countdown > 0 ? `Battle starts in ${countdown} seconds` : "Ready to start battle!"}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -60,12 +71,19 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
           <Card>
             <CardHeader>
               <CardTitle>Players</CardTitle>
-              <CardDescription>{battleState.mode === "1v1" ? "You and your opponent" : `${battleState.players.length} players in the lobby`}</CardDescription>
+              <CardDescription>
+                {battleState.mode === "1v1"
+                  ? "You and your opponent"
+                  : `${battleState.players.length} players in the lobby`}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {battleState.players.map((player, index) => (
-                  <div key={player.id} className="flex flex-col items-center p-3 border rounded-lg bg-background">
+                  <div
+                    key={player.id}
+                    className="flex flex-col items-center p-3 border rounded-lg bg-background"
+                  >
                     <Avatar className="h-16 w-16 mb-2">
                       <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
                       <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
@@ -100,7 +118,9 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
             <CardContent className="space-y-4">
               <div className="space-y-1">
                 <div className="text-sm text-muted-foreground">Mode</div>
-                <div className="font-medium">{battleState.mode === "1v1" ? "1v1 Battle" : "Group Battle"}</div>
+                <div className="font-medium">
+                  {battleState.mode === "1v1" ? "1v1 Battle" : "Group Battle"}
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -110,8 +130,17 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
                     <>
                       <span>Private Room</span>
                       {battleState.roomCode && (
-                        <Button variant="ghost" size="sm" className="ml-2 h-6 px-2" onClick={copyRoomCode}>
-                          {copied ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-2 h-6 px-2"
+                          onClick={copyRoomCode}
+                        >
+                          {copied ? (
+                            <CheckCircle2 className="h-3 w-3" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
                         </Button>
                       )}
                     </>

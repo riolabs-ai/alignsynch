@@ -18,7 +18,9 @@ export function NewsPage() {
   const featuredArticles = newsData.filter((article) => article.featured).slice(0, 3);
 
   const filteredArticles = newsData.filter((article) => {
-    const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) || article.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      article.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = activeCategory === "all" || article.categories.includes(activeCategory);
     return matchesSearch && matchesCategory;
   });
@@ -28,12 +30,20 @@ export function NewsPage() {
       <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Quiz News & Updates</h1>
-          <p className="text-muted-foreground mt-1">Stay updated with the latest quiz trends, updates, and community news</p>
+          <p className="text-muted-foreground mt-1">
+            Stay updated with the latest quiz trends, updates, and community news
+          </p>
         </div>
         <div className="flex items-center space-x-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search articles..." className="pl-8 w-full md:w-[260px]" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Input
+              type="search"
+              placeholder="Search articles..."
+              className="pl-8 w-full md:w-[260px]"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
@@ -49,7 +59,12 @@ export function NewsPage() {
             {featuredArticles.map((article) => (
               <Card key={article.slug} className="overflow-hidden">
                 <div className="relative h-44 xl:h-60 w-full">
-                  <Image src={article.coverImage || "/placeholder.svg"} alt={article.title} fill className="object-cover aspect-video" />
+                  <Image
+                    src={article.coverImage || "/placeholder.svg"}
+                    alt={article.title}
+                    fill
+                    className="object-cover aspect-video"
+                  />
                   <div className="absolute top-2 right-2">
                     <Badge variant="secondary" className="bg-primary text-primary-foreground">
                       Featured
@@ -82,7 +97,10 @@ export function NewsPage() {
                       </Badge>
                     ))}
                   </div>
-                  <Link href={`/news/${article.slug}`} className="text-primary text-sm font-medium flex items-center">
+                  <Link
+                    href={`/news/${article.slug}`}
+                    className="text-primary text-sm font-medium flex items-center"
+                  >
                     Read more <ChevronRight className="ml-1 h-3 w-3" />
                   </Link>
                 </CardFooter>
@@ -93,7 +111,12 @@ export function NewsPage() {
       )}
 
       {/* Categories and Articles */}
-      <Tabs defaultValue="all" value={activeCategory} onValueChange={setActiveCategory} className="mb-8">
+      <Tabs
+        defaultValue="all"
+        value={activeCategory}
+        onValueChange={setActiveCategory}
+        className="mb-8"
+      >
         <div className="border-b">
           <TabsList className="overflow-x-auto w-full justify-start">
             <TabsTrigger value="all">All</TabsTrigger>
@@ -110,7 +133,12 @@ export function NewsPage() {
             {filteredArticles.map((article) => (
               <Card key={article.slug}>
                 <div className="relative h-44 xl:h-60 w-full">
-                  <Image src={article.coverImage || "/placeholder.svg"} alt={article.title} fill className="object-cover" />
+                  <Image
+                    src={article.coverImage || "/placeholder.svg"}
+                    alt={article.title}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
                 <CardHeader className="p-4">
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
@@ -138,7 +166,10 @@ export function NewsPage() {
                       </Badge>
                     ))}
                   </div>
-                  <Link href={`/news/${article.slug}`} className="text-primary text-sm font-medium flex items-center">
+                  <Link
+                    href={`/news/${article.slug}`}
+                    className="text-primary text-sm font-medium flex items-center"
+                  >
                     Read more <ChevronRight className="ml-1 h-3 w-3" />
                   </Link>
                 </CardFooter>
@@ -149,7 +180,9 @@ export function NewsPage() {
           {filteredArticles.length === 0 && (
             <div className="text-center py-12">
               <h3 className="text-xl font-medium mb-2">No articles found</h3>
-              <p className="text-muted-foreground">Try adjusting your search or filter to find what you're looking for.</p>
+              <p className="text-muted-foreground">
+                Try adjusting your search or filter to find what you're looking for.
+              </p>
             </div>
           )}
         </TabsContent>

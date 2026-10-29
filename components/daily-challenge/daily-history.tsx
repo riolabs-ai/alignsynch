@@ -61,7 +61,10 @@ export function DailyHistory() {
       <CardContent className="p-4">
         <div className="space-y-3">
           {pastChallenges.map((challenge) => (
-            <div key={challenge.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
+            <div
+              key={challenge.id}
+              className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"
+            >
               <div>
                 <div className="font-medium mb-2">{challenge.date}</div>
                 <div className="text-sm text-muted-foreground flex items-center">

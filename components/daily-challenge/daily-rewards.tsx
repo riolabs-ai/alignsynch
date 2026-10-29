@@ -19,7 +19,10 @@ export function DailyRewards() {
 
             <div className="flex space-x-1">
               {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                <div key={day} className={`relative flex items-center justify-center h-8 w-8 rounded-full border ${day <= 4 ? "bg-blue-100 border-blue-300 dark:bg-blue-900 dark:border-blue-700" : "bg-muted/30 border-muted"}`}>
+                <div
+                  key={day}
+                  className={`relative flex items-center justify-center h-8 w-8 rounded-full border ${day <= 4 ? "bg-blue-100 border-blue-300 dark:bg-blue-900 dark:border-blue-700" : "bg-muted/30 border-muted"}`}
+                >
                   <span className="text-xs font-medium">{day}</span>
                   {day === 7 && (
                     <div className="absolute -top-1 -right-1">
@@ -30,7 +33,9 @@ export function DailyRewards() {
               ))}
             </div>
 
-            <p className="text-xs text-muted-foreground">Current streak: 4 days. Keep playing daily!</p>
+            <p className="text-xs text-muted-foreground">
+              Current streak: 4 days. Keep playing daily!
+            </p>
           </div>
 
           <div className="space-y-2">

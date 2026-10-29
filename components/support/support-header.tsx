@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { HelpCircle, MessageSquare, BookOpen } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HelpCircle, MessageSquare, BookOpen } from "lucide-react";
 
 interface SupportHeaderProps {
-  activeTab: "faq" | "contact" | "knowledge"
-  setActiveTab: (tab: "faq" | "contact" | "knowledge") => void
+  activeTab: "faq" | "contact" | "knowledge";
+  setActiveTab: (tab: "faq" | "contact" | "knowledge") => void;
 }
 
 export function SupportHeader({ activeTab, setActiveTab }: SupportHeaderProps) {
@@ -42,5 +42,5 @@ export function SupportHeader({ activeTab, setActiveTab }: SupportHeaderProps) {
         </TabsList>
       </Tabs>
     </div>
-  )
+  );
 }

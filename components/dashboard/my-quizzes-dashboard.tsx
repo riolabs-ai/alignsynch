@@ -104,7 +104,9 @@ export function MyQuizzesDashboard() {
             <CardTitle className="text-sm font-medium">Total Plays</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{quizzes.reduce((sum, quiz) => sum + quiz.plays, 0)}</div>
+            <div className="text-2xl font-bold">
+              {quizzes.reduce((sum, quiz) => sum + quiz.plays, 0)}
+            </div>
             <p className="text-xs text-muted-foreground">Across all quizzes</p>
           </CardContent>
         </Card>
@@ -114,7 +116,12 @@ export function MyQuizzesDashboard() {
             <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(quizzes.reduce((sum, quiz) => sum + quiz.rating, 0) / quizzes.filter((q) => q.rating > 0).length).toFixed(1)}</div>
+            <div className="text-2xl font-bold">
+              {(
+                quizzes.reduce((sum, quiz) => sum + quiz.rating, 0) /
+                quizzes.filter((q) => q.rating > 0).length
+              ).toFixed(1)}
+            </div>
             <p className="text-xs text-muted-foreground">Out of 5.0</p>
           </CardContent>
         </Card>
@@ -161,7 +168,14 @@ function QuizCard({ quiz }: { quiz: Quiz }) {
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg">
       <div className="relative w-full md:w-24 h-24 rounded-md overflow-hidden">
-        <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} fill className="object-cover" />
+        <Image
+          width={600}
+          height={350}
+          src={quiz.image || "/placeholder.svg"}
+          alt={quiz.title}
+          fill
+          className="object-cover"
+        />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -181,7 +195,9 @@ function QuizCard({ quiz }: { quiz: Quiz }) {
             </div>
           </div>
           <div>
-            <Badge variant={quiz.status === "active" ? "default" : "outline"}>{quiz.status === "active" ? "Active" : "Draft"}</Badge>
+            <Badge variant={quiz.status === "active" ? "default" : "outline"}>
+              {quiz.status === "active" ? "Active" : "Draft"}
+            </Badge>
           </div>
         </div>
       </div>

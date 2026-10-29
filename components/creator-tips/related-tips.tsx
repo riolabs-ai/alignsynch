@@ -1,13 +1,13 @@
-import type { Tip } from "@/data/creator-tips-data"
-import TipCard from "./tip-card"
+import type { Tip } from "@/data/creator-tips-data";
+import TipCard from "./tip-card";
 
 interface RelatedTipsProps {
-  tips: Tip[]
+  tips: Tip[];
 }
 
 export default function RelatedTips({ tips }: RelatedTipsProps) {
   if (tips.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -20,5 +20,5 @@ export default function RelatedTips({ tips }: RelatedTipsProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }

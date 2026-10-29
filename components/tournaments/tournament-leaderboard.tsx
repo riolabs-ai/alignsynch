@@ -4,8 +4,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ArrowDown, ArrowUp, Award, Medal, Minus, Search, Trophy } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -134,7 +147,11 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
   ];
 
   // Filter leaderboard data based on search query
-  const filteredData = leaderboardData.filter((player) => player.username.toLowerCase().includes(searchQuery.toLowerCase()) || player.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredData = leaderboardData.filter(
+    (player) =>
+      player.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      player.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   // Function to render rank change indicator
   const renderRankChange = (current: number, previous: number) => {
@@ -183,7 +200,12 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search players..." className="pl-8 w-full sm:w-[200px]" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                <Input
+                  placeholder="Search players..."
+                  className="pl-8 w-full sm:w-[200px]"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
               <Select value={roundFilter} onValueChange={setRoundFilter}>
                 <SelectTrigger className="w-full sm:w-[150px]">
@@ -223,17 +245,26 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
                   filteredData.map((player) => (
                     <TableRow key={player.username}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center justify-center">{renderRankMedal(player.rank)}</div>
+                        <div className="flex items-center justify-center">
+                          {renderRankMedal(player.rank)}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="relative h-8 w-8">
-                            <Image src={player.avatar || "/placeholder.svg"} alt={player.username} fill className="rounded-full object-cover" />
+                            <Image
+                              src={player.avatar || "/placeholder.svg"}
+                              alt={player.username}
+                              fill
+                              className="rounded-full object-cover"
+                            />
                             <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white" />
                           </div>
                           <div>
                             <div className="font-medium">{player.username}</div>
-                            <div className="hidden md:block text-xs text-muted-foreground">{player.name}</div>
+                            <div className="hidden md:block text-xs text-muted-foreground">
+                              {player.name}
+                            </div>
                           </div>
                           <Badge variant="outline" className="ml-2 hidden lg:inline-flex">
                             {player.country}
@@ -241,9 +272,15 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-bold">{player.score}</TableCell>
-                      <TableCell className="hidden md:table-cell text-right">{player.accuracy}%</TableCell>
-                      <TableCell className="hidden md:table-cell text-right">{player.streak}</TableCell>
-                      <TableCell className="hidden md:table-cell text-right">{renderRankChange(player.rank, player.previousRank)}</TableCell>
+                      <TableCell className="hidden md:table-cell text-right">
+                        {player.accuracy}%
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-right">
+                        {player.streak}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-right">
+                        {renderRankChange(player.rank, player.previousRank)}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -272,7 +309,12 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="relative h-12 w-12">
-                  <Image src="/avatars/alex.png" alt="Your Avatar" fill className="rounded-full object-cover" />
+                  <Image
+                    src="/avatars/alex.png"
+                    alt="Your Avatar"
+                    fill
+                    className="rounded-full object-cover"
+                  />
                 </div>
                 <div>
                   <div className="font-medium">

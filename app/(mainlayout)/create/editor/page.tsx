@@ -1,5 +1,5 @@
-import { QuizEditor } from "@/components/create/quiz-editor"
+import { QuizEditor } from "@/components/create/quiz-editor";
 
 export default function EditorPage() {
-  return <QuizEditor />
+  return <QuizEditor />;
 }

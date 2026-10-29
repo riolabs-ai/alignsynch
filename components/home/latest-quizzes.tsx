@@ -59,10 +59,19 @@ export function LatestQuizzes() {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4">
         {quizzes.map((quiz) => (
-          <Card key={quiz.id} className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600">
+          <Card
+            key={quiz.id}
+            className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600"
+          >
             {/* Image with overlay */}
             <div className="relative h-48">
-              <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} className="h-full w-full object-cover" />
+              <Image
+                width={600}
+                height={350}
+                src={quiz.image || "/placeholder.svg"}
+                alt={quiz.title}
+                className="h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                 <div className="w-full">
                   <div className="flex justify-between items-center mb-2">

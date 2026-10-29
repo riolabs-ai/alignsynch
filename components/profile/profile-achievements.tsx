@@ -1,48 +1,48 @@
-import type { Achievement } from "@/lib/data/users"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Award, Book, FlaskRoundIcon as Flask, Pencil, Search, Star, Trophy } from "lucide-react"
+import type { Achievement } from "@/lib/data/users";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Award, Book, FlaskRoundIcon as Flask, Pencil, Search, Star, Trophy } from "lucide-react";
 
 interface ProfileAchievementsProps {
-  achievements: Achievement[]
+  achievements: Achievement[];
 }
 
 export function ProfileAchievements({ achievements }: ProfileAchievementsProps) {
   const getAchievementIcon = (icon: string) => {
     switch (icon) {
       case "trophy":
-        return <Trophy className="h-4 w-4" />
+        return <Trophy className="h-4 w-4" />;
       case "star":
-        return <Star className="h-4 w-4" />
+        return <Star className="h-4 w-4" />;
       case "search":
-        return <Search className="h-4 w-4" />
+        return <Search className="h-4 w-4" />;
       case "pencil":
-        return <Pencil className="h-4 w-4" />
+        return <Pencil className="h-4 w-4" />;
       case "flask":
-        return <Flask className="h-4 w-4" />
+        return <Flask className="h-4 w-4" />;
       case "book":
-        return <Book className="h-4 w-4" />
+        return <Book className="h-4 w-4" />;
       default:
-        return <Award className="h-4 w-4" />
+        return <Award className="h-4 w-4" />;
     }
-  }
+  };
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
       case "common":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
       case "uncommon":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       case "rare":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "epic":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
       case "legendary":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
-  }
+  };
 
   return (
     <Card>
@@ -82,5 +82,5 @@ export function ProfileAchievements({ achievements }: ProfileAchievementsProps) 
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

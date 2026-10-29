@@ -35,7 +35,9 @@ export function QuizHeader({ title, category, difficulty, isReviewMode = false }
         </Link>
       </Button>
 
-      <h1 className="text-2xl md:text-3xl font-bold mb-3">{isReviewMode ? `Review: ${title}` : title}</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-3">
+        {isReviewMode ? `Review: ${title}` : title}
+      </h1>
 
       <div className="flex flex-wrap gap-2">
         <Badge variant="outline" className="px-3 py-1 text-sm">

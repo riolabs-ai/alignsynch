@@ -9,12 +9,22 @@ export function HeroSection() {
           <h2 className="text-3xl font-bold xl:leading-tight tracking-tight md:text-4xl xl:text-5xl">
             Your Quiz Adventure Starts Here: <br /> Play, Share, Earn!
           </h2>
-          <p className="text-lg text-white/80">Build engaging quizzes, challenge others, and earn rewards for your knowledge.</p>
+          <p className="text-lg text-white/80">
+            Build engaging quizzes, challenge others, and earn rewards for your knowledge.
+          </p>
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" asChild className="bg-white duration-300 text-indigo-600 hover:bg-white/90">
+            <Button
+              size="lg"
+              asChild
+              className="bg-white duration-300 text-indigo-600 hover:bg-white/90"
+            >
               <Link href="/create/editor">Create Quiz</Link>
             </Button>
-            <Button size="lg" className="bg-indigo-600 text-white duration-300 hover:bg-indigo-700" asChild>
+            <Button
+              size="lg"
+              className="bg-indigo-600 text-white duration-300 hover:bg-indigo-700"
+              asChild
+            >
               <Link href="/battle">Join Contest</Link>
             </Button>
           </div>

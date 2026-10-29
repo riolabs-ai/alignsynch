@@ -1,6 +1,11 @@
 "use client";
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -141,7 +146,13 @@ export function ExploreFilters({ activeFilters, setActiveFilters }: ExploreFilte
                   <span className="text-sm">${rewardRange[0]}</span>
                   <span className="text-sm">${rewardRange[1]}+</span>
                 </div>
-                <Slider defaultValue={[0, 15]} max={15} step={1} value={rewardRange} onValueChange={setRewardRange} />
+                <Slider
+                  defaultValue={[0, 15]}
+                  max={15}
+                  step={1}
+                  value={rewardRange}
+                  onValueChange={setRewardRange}
+                />
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -154,7 +165,13 @@ export function ExploreFilters({ activeFilters, setActiveFilters }: ExploreFilte
                   <span className="text-sm">{timeRange[0]} min</span>
                   <span className="text-sm">{timeRange[1]}+ min</span>
                 </div>
-                <Slider defaultValue={[0, 30]} max={30} step={5} value={timeRange} onValueChange={setTimeRange} />
+                <Slider
+                  defaultValue={[0, 30]}
+                  max={30}
+                  step={5}
+                  value={timeRange}
+                  onValueChange={setTimeRange}
+                />
               </div>
             </AccordionContent>
           </AccordionItem>

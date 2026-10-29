@@ -12,35 +12,40 @@ export const mockQuizzes: Quiz[] = [
         text: "Which empire was ruled by Julius Caesar?",
         options: ["Roman Empire", "Greek Empire", "Persian Empire", "Egyptian Empire"],
         correctAnswer: 0,
-        explanation: "Julius Caesar was a Roman general and statesman who played a critical role in the events that led to the demise of the Roman Republic and the rise of the Roman Empire.",
+        explanation:
+          "Julius Caesar was a Roman general and statesman who played a critical role in the events that led to the demise of the Roman Republic and the rise of the Roman Empire.",
       },
       {
         id: 2,
         text: "In which year did World War II end?",
         options: ["1943", "1944", "1945", "1946"],
         correctAnswer: 2,
-        explanation: "World War II ended in 1945 with the surrender of Nazi Germany in May and Japan in September.",
+        explanation:
+          "World War II ended in 1945 with the surrender of Nazi Germany in May and Japan in September.",
       },
       {
         id: 3,
         text: "Who was the first President of the United States?",
         options: ["Thomas Jefferson", "John Adams", "George Washington", "Benjamin Franklin"],
         correctAnswer: 2,
-        explanation: "George Washington was the first President of the United States, serving from 1789 to 1797.",
+        explanation:
+          "George Washington was the first President of the United States, serving from 1789 to 1797.",
       },
       {
         id: 4,
         text: "Which civilization built the Machu Picchu?",
         options: ["Aztec", "Maya", "Inca", "Olmec"],
         correctAnswer: 2,
-        explanation: "Machu Picchu was built by the Incas in the 15th century and is located in present-day Peru.",
+        explanation:
+          "Machu Picchu was built by the Incas in the 15th century and is located in present-day Peru.",
       },
       {
         id: 5,
         text: "The Renaissance period began in which country?",
         options: ["France", "England", "Italy", "Spain"],
         correctAnswer: 2,
-        explanation: "The Renaissance began in Italy in the late 14th century and later spread to the rest of Europe.",
+        explanation:
+          "The Renaissance began in Italy in the late 14th century and later spread to the rest of Europe.",
       },
     ],
     tags: ["history", "world events", "civilization"],
@@ -65,35 +70,45 @@ export const mockQuizzes: Quiz[] = [
         text: "Which spacecraft was the first to land humans on the Moon?",
         options: ["Apollo 10", "Apollo 11", "Apollo 12", "Apollo 13"],
         correctAnswer: 1,
-        explanation: "Apollo 11 was the first spacecraft to land humans on the Moon on July 20, 1969.",
+        explanation:
+          "Apollo 11 was the first spacecraft to land humans on the Moon on July 20, 1969.",
       },
       {
         id: 2,
         text: "What is the largest planet in our solar system?",
         options: ["Earth", "Saturn", "Jupiter", "Neptune"],
         correctAnswer: 2,
-        explanation: "Jupiter is the largest planet in our solar system, with a mass more than 300 times that of Earth.",
+        explanation:
+          "Jupiter is the largest planet in our solar system, with a mass more than 300 times that of Earth.",
       },
       {
         id: 3,
         text: "Which space telescope was launched in 1990 and remains in operation?",
-        options: ["Hubble Space Telescope", "James Webb Space Telescope", "Spitzer Space Telescope", "Kepler Space Telescope"],
+        options: [
+          "Hubble Space Telescope",
+          "James Webb Space Telescope",
+          "Spitzer Space Telescope",
+          "Kepler Space Telescope",
+        ],
         correctAnswer: 0,
-        explanation: "The Hubble Space Telescope was launched in 1990 and continues to operate, providing stunning images of distant galaxies.",
+        explanation:
+          "The Hubble Space Telescope was launched in 1990 and continues to operate, providing stunning images of distant galaxies.",
       },
       {
         id: 4,
         text: "What is the name of the first artificial satellite launched into Earth's orbit?",
         options: ["Explorer 1", "Vanguard 1", "Sputnik 1", "Telstar 1"],
         correctAnswer: 2,
-        explanation: "Sputnik 1 was launched by the Soviet Union on October 4, 1957, becoming the first artificial satellite in Earth's orbit.",
+        explanation:
+          "Sputnik 1 was launched by the Soviet Union on October 4, 1957, becoming the first artificial satellite in Earth's orbit.",
       },
       {
         id: 5,
         text: "Which planet has the Great Red Spot, a giant storm system?",
         options: ["Mars", "Venus", "Jupiter", "Saturn"],
         correctAnswer: 2,
-        explanation: "Jupiter's Great Red Spot is a persistent high-pressure region in the atmosphere, producing an anticyclonic storm.",
+        explanation:
+          "Jupiter's Great Red Spot is a persistent high-pressure region in the atmosphere, producing an anticyclonic storm.",
       },
     ],
     tags: ["space", "astronomy", "science"],
@@ -118,35 +133,40 @@ export const mockQuizzes: Quiz[] = [
         text: "What is the powerhouse of the cell?",
         options: ["Nucleus", "Mitochondria", "Endoplasmic Reticulum", "Golgi Apparatus"],
         correctAnswer: 1,
-        explanation: "Mitochondria are often referred to as the powerhouse of the cell because they generate most of the cell's supply of ATP, used as a source of chemical energy.",
+        explanation:
+          "Mitochondria are often referred to as the powerhouse of the cell because they generate most of the cell's supply of ATP, used as a source of chemical energy.",
       },
       {
         id: 2,
         text: "Which of these is NOT a type of blood cell?",
         options: ["Red blood cells", "White blood cells", "Platelets", "Stem cells"],
         correctAnswer: 3,
-        explanation: "While stem cells can develop into blood cells, they are not considered a type of blood cell themselves.",
+        explanation:
+          "While stem cells can develop into blood cells, they are not considered a type of blood cell themselves.",
       },
       {
         id: 3,
         text: "What is the process by which plants make their own food?",
         options: ["Respiration", "Photosynthesis", "Fermentation", "Digestion"],
         correctAnswer: 1,
-        explanation: "Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize foods with carbon dioxide and water.",
+        explanation:
+          "Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize foods with carbon dioxide and water.",
       },
       {
         id: 4,
         text: "Which organ is responsible for filtering blood in the human body?",
         options: ["Liver", "Kidney", "Heart", "Lung"],
         correctAnswer: 1,
-        explanation: "The kidneys filter blood to remove waste and excess fluid, which is then excreted as urine.",
+        explanation:
+          "The kidneys filter blood to remove waste and excess fluid, which is then excreted as urine.",
       },
       {
         id: 5,
         text: "What is the basic unit of heredity?",
         options: ["Cell", "Chromosome", "Gene", "DNA"],
         correctAnswer: 2,
-        explanation: "Genes are the basic physical and functional units of heredity, made up of DNA.",
+        explanation:
+          "Genes are the basic physical and functional units of heredity, made up of DNA.",
       },
     ],
     tags: ["biology", "science", "cells"],
@@ -192,14 +212,21 @@ export const mockQuizzes: Quiz[] = [
         text: "What is the next number in the sequence: 2, 4, 8, 16, ...?",
         options: ["24", "32", "36", "64"],
         correctAnswer: 1,
-        explanation: "Each number in the sequence is doubled to get the next number. So, 16 × 2 = 32.",
+        explanation:
+          "Each number in the sequence is doubled to get the next number. So, 16 × 2 = 32.",
       },
       {
         id: 5,
         text: "What is the area of a circle with radius 5 units? (Use π = 3.14)",
-        options: ["15.7 square units", "31.4 square units", "78.5 square units", "157 square units"],
+        options: [
+          "15.7 square units",
+          "31.4 square units",
+          "78.5 square units",
+          "157 square units",
+        ],
         correctAnswer: 2,
-        explanation: "The area of a circle is πr². So, area = 3.14 × 5² = 3.14 × 25 = 78.5 square units.",
+        explanation:
+          "The area of a circle is πr². So, area = 3.14 × 5² = 3.14 × 25 = 78.5 square units.",
       },
     ],
     tags: ["math", "numbers", "problem solving"],
@@ -231,7 +258,8 @@ export const mockQuizzes: Quiz[] = [
         text: "Which Shakespeare play features the character Hamlet?",
         options: ["Macbeth", "Romeo and Juliet", "Hamlet", "Othello"],
         correctAnswer: 2,
-        explanation: "The character Hamlet is the protagonist of Shakespeare's tragedy of the same name, 'Hamlet'.",
+        explanation:
+          "The character Hamlet is the protagonist of Shakespeare's tragedy of the same name, 'Hamlet'.",
       },
       {
         id: 3,
@@ -243,9 +271,15 @@ export const mockQuizzes: Quiz[] = [
       {
         id: 4,
         text: "Which novel begins with the line 'It was the best of times, it was the worst of times'?",
-        options: ["Great Expectations", "Oliver Twist", "A Tale of Two Cities", "David Copperfield"],
+        options: [
+          "Great Expectations",
+          "Oliver Twist",
+          "A Tale of Two Cities",
+          "David Copperfield",
+        ],
         correctAnswer: 2,
-        explanation: "A Tale of Two Cities by Charles Dickens begins with this famous opening line.",
+        explanation:
+          "A Tale of Two Cities by Charles Dickens begins with this famous opening line.",
       },
       {
         id: 5,
@@ -277,35 +311,40 @@ export const mockQuizzes: Quiz[] = [
         text: "What is the capital of Australia?",
         options: ["Sydney", "Melbourne", "Canberra", "Brisbane"],
         correctAnswer: 2,
-        explanation: "Canberra is the capital city of Australia, not Sydney or Melbourne as many people think.",
+        explanation:
+          "Canberra is the capital city of Australia, not Sydney or Melbourne as many people think.",
       },
       {
         id: 2,
         text: "Which is the longest river in the world?",
         options: ["Amazon", "Nile", "Mississippi", "Yangtze"],
         correctAnswer: 1,
-        explanation: "The Nile River is generally considered the longest river in the world at approximately 6,650 kilometers.",
+        explanation:
+          "The Nile River is generally considered the longest river in the world at approximately 6,650 kilometers.",
       },
       {
         id: 3,
         text: "Which country has the largest land area?",
         options: ["United States", "China", "Canada", "Russia"],
         correctAnswer: 3,
-        explanation: "Russia is the largest country by land area, covering approximately 17 million square kilometers.",
+        explanation:
+          "Russia is the largest country by land area, covering approximately 17 million square kilometers.",
       },
       {
         id: 4,
         text: "Which mountain range separates Europe and Asia?",
         options: ["Alps", "Himalayas", "Andes", "Ural Mountains"],
         correctAnswer: 3,
-        explanation: "The Ural Mountains form part of the conventional boundary between the continents of Europe and Asia.",
+        explanation:
+          "The Ural Mountains form part of the conventional boundary between the continents of Europe and Asia.",
       },
       {
         id: 5,
         text: "Which desert is the largest in the world?",
         options: ["Gobi Desert", "Kalahari Desert", "Sahara Desert", "Antarctic Desert"],
         correctAnswer: 3,
-        explanation: "The Antarctic Desert is the largest desert in the world, covering the entire continent of Antarctica.",
+        explanation:
+          "The Antarctic Desert is the largest desert in the world, covering the entire continent of Antarctica.",
       },
     ],
     tags: ["geography", "world", "landmarks"],
@@ -344,7 +383,8 @@ export const mockQuizzes: Quiz[] = [
         text: "Which of these is NOT a type of musical note?",
         options: ["Quarter note", "Half note", "Whole note", "Double note"],
         correctAnswer: 3,
-        explanation: "There is no standard note value called a 'double note'. The common note values are whole, half, quarter, eighth, etc.",
+        explanation:
+          "There is no standard note value called a 'double note'. The common note values are whole, half, quarter, eighth, etc.",
       },
       {
         id: 4,
@@ -381,30 +421,44 @@ export const mockQuizzes: Quiz[] = [
       {
         id: 1,
         text: "What does CPU stand for?",
-        options: ["Central Processing Unit", "Computer Personal Unit", "Central Processor Utility", "Core Processing Unit"],
+        options: [
+          "Central Processing Unit",
+          "Computer Personal Unit",
+          "Central Processor Utility",
+          "Core Processing Unit",
+        ],
         correctAnswer: 0,
-        explanation: "CPU stands for Central Processing Unit, which is the primary component of a computer that performs most of the processing.",
+        explanation:
+          "CPU stands for Central Processing Unit, which is the primary component of a computer that performs most of the processing.",
       },
       {
         id: 2,
         text: "Which of these is NOT a programming language?",
         options: ["Java", "Python", "HTML", "Photoshop"],
         correctAnswer: 3,
-        explanation: "Photoshop is an image editing software, not a programming language. HTML is a markup language, while Java and Python are programming languages.",
+        explanation:
+          "Photoshop is an image editing software, not a programming language. HTML is a markup language, while Java and Python are programming languages.",
       },
       {
         id: 3,
         text: "What does HTTP stand for?",
-        options: ["HyperText Transfer Protocol", "High Tech Transfer Protocol", "HyperText Transit Process", "High Tech Transit Process"],
+        options: [
+          "HyperText Transfer Protocol",
+          "High Tech Transfer Protocol",
+          "HyperText Transit Process",
+          "High Tech Transit Process",
+        ],
         correctAnswer: 0,
-        explanation: "HTTP stands for HyperText Transfer Protocol, which is the foundation of data communication on the World Wide Web.",
+        explanation:
+          "HTTP stands for HyperText Transfer Protocol, which is the foundation of data communication on the World Wide Web.",
       },
       {
         id: 4,
         text: "Which data structure operates on a Last-In-First-Out (LIFO) principle?",
         options: ["Queue", "Stack", "Linked List", "Array"],
         correctAnswer: 1,
-        explanation: "A stack operates on the Last-In-First-Out (LIFO) principle, where the last element added is the first one to be removed.",
+        explanation:
+          "A stack operates on the Last-In-First-Out (LIFO) principle, where the last element added is the first one to be removed.",
       },
       {
         id: 5,
@@ -443,28 +497,32 @@ export const mockQuizzes: Quiz[] = [
         text: "Which art movement is Salvador Dalí associated with?",
         options: ["Impressionism", "Cubism", "Surrealism", "Renaissance"],
         correctAnswer: 2,
-        explanation: "Salvador Dalí was a prominent figure in the Surrealist movement, known for his dreamlike and bizarre images.",
+        explanation:
+          "Salvador Dalí was a prominent figure in the Surrealist movement, known for his dreamlike and bizarre images.",
       },
       {
         id: 3,
         text: "Who cut off part of his own ear?",
         options: ["Claude Monet", "Vincent van Gogh", "Pablo Picasso", "Edvard Munch"],
         correctAnswer: 1,
-        explanation: "Vincent van Gogh famously cut off part of his left ear during a psychotic episode.",
+        explanation:
+          "Vincent van Gogh famously cut off part of his left ear during a psychotic episode.",
       },
       {
         id: 4,
         text: "Which of these is NOT a Renaissance artist?",
         options: ["Leonardo da Vinci", "Michelangelo", "Raphael", "Claude Monet"],
         correctAnswer: 3,
-        explanation: "Claude Monet was an Impressionist painter of the 19th century, not a Renaissance artist.",
+        explanation:
+          "Claude Monet was an Impressionist painter of the 19th century, not a Renaissance artist.",
       },
       {
         id: 5,
         text: "Who painted 'Starry Night'?",
         options: ["Pablo Picasso", "Claude Monet", "Vincent van Gogh", "Salvador Dalí"],
         correctAnswer: 2,
-        explanation: "Starry Night was painted by Vincent van Gogh in 1889 while he was in an asylum in Saint-Rémy-de-Provence.",
+        explanation:
+          "Starry Night was painted by Vincent van Gogh in 1889 while he was in an asylum in Saint-Rémy-de-Provence.",
       },
     ],
     tags: ["art", "history", "painters"],
@@ -496,14 +554,16 @@ export const mockQuizzes: Quiz[] = [
         text: "What is the pH of pure water at room temperature?",
         options: ["0", "7", "14", "10"],
         correctAnswer: 1,
-        explanation: "Pure water has a pH of 7, which is considered neutral (neither acidic nor basic).",
+        explanation:
+          "Pure water has a pH of 7, which is considered neutral (neither acidic nor basic).",
       },
       {
         id: 3,
         text: "Which element has the atomic number 1?",
         options: ["Helium", "Hydrogen", "Oxygen", "Carbon"],
         correctAnswer: 1,
-        explanation: "Hydrogen has the atomic number 1, making it the lightest and most abundant element in the universe.",
+        explanation:
+          "Hydrogen has the atomic number 1, making it the lightest and most abundant element in the universe.",
       },
       {
         id: 4,
@@ -517,7 +577,8 @@ export const mockQuizzes: Quiz[] = [
         text: "Which of these is NOT a noble gas?",
         options: ["Helium", "Neon", "Argon", "Nitrogen"],
         correctAnswer: 3,
-        explanation: "Nitrogen is not a noble gas. The noble gases are helium, neon, argon, krypton, xenon, and radon.",
+        explanation:
+          "Nitrogen is not a noble gas. The noble gases are helium, neon, argon, krypton, xenon, and radon.",
       },
     ],
     tags: ["chemistry", "elements", "science"],
@@ -542,21 +603,24 @@ export const mockQuizzes: Quiz[] = [
         text: "In which sport would you perform a slam dunk?",
         options: ["Soccer", "Basketball", "Tennis", "Golf"],
         correctAnswer: 1,
-        explanation: "A slam dunk is a basketball move where a player jumps high and forcefully puts the ball through the hoop.",
+        explanation:
+          "A slam dunk is a basketball move where a player jumps high and forcefully puts the ball through the hoop.",
       },
       {
         id: 2,
         text: "How many players are there on a standard soccer team on the field?",
         options: ["9", "10", "11", "12"],
         correctAnswer: 2,
-        explanation: "A standard soccer team has 11 players on the field, including the goalkeeper.",
+        explanation:
+          "A standard soccer team has 11 players on the field, including the goalkeeper.",
       },
       {
         id: 3,
         text: "Which country has won the most FIFA World Cup titles?",
         options: ["Germany", "Italy", "Argentina", "Brazil"],
         correctAnswer: 3,
-        explanation: "Brazil has won the FIFA World Cup a record five times (1958, 1962, 1970, 1994, and 2002).",
+        explanation:
+          "Brazil has won the FIFA World Cup a record five times (1958, 1962, 1970, 1994, and 2002).",
       },
       {
         id: 4,
@@ -570,7 +634,8 @@ export const mockQuizzes: Quiz[] = [
         text: "How many points is a touchdown worth in American football?",
         options: ["3", "6", "7", "2"],
         correctAnswer: 1,
-        explanation: "A touchdown in American football is worth 6 points. The subsequent extra point kick is worth 1 point.",
+        explanation:
+          "A touchdown in American football is worth 6 points. The subsequent extra point kick is worth 1 point.",
       },
     ],
     tags: ["sports", "athletes", "games"],
@@ -602,28 +667,32 @@ export const mockQuizzes: Quiz[] = [
         text: "Which actor played Iron Man in the Marvel Cinematic Universe?",
         options: ["Chris Evans", "Chris Hemsworth", "Robert Downey Jr.", "Mark Ruffalo"],
         correctAnswer: 2,
-        explanation: "Robert Downey Jr. played Tony Stark/Iron Man in the Marvel Cinematic Universe.",
+        explanation:
+          "Robert Downey Jr. played Tony Stark/Iron Man in the Marvel Cinematic Universe.",
       },
       {
         id: 3,
         text: "Which film won the Academy Award for Best Picture in 2020?",
         options: ["1917", "Joker", "Parasite", "Once Upon a Time in Hollywood"],
         correctAnswer: 2,
-        explanation: "Parasite, directed by Bong Joon-ho, won the Academy Award for Best Picture in 2020.",
+        explanation:
+          "Parasite, directed by Bong Joon-ho, won the Academy Award for Best Picture in 2020.",
       },
       {
         id: 4,
         text: "Which movie features the character Jack Dawson?",
         options: ["The Departed", "Inception", "Titanic", "The Revenant"],
         correctAnswer: 2,
-        explanation: "Jack Dawson, played by Leonardo DiCaprio, is a character in the 1997 film Titanic.",
+        explanation:
+          "Jack Dawson, played by Leonardo DiCaprio, is a character in the 1997 film Titanic.",
       },
       {
         id: 5,
         text: "Who played the character of Harry Potter in the film series?",
         options: ["Daniel Radcliffe", "Rupert Grint", "Tom Felton", "Eddie Redmayne"],
         correctAnswer: 0,
-        explanation: "Daniel Radcliffe played the title character Harry Potter in all eight films of the series.",
+        explanation:
+          "Daniel Radcliffe played the title character Harry Potter in all eight films of the series.",
       },
     ],
     tags: ["movies", "cinema", "actors"],
@@ -655,7 +724,8 @@ export const mockQuizzes: Quiz[] = [
         text: "Which planet is known as the Red Planet?",
         options: ["Venus", "Mars", "Jupiter", "Saturn"],
         correctAnswer: 1,
-        explanation: "Mars is often called the Red Planet due to its reddish appearance, caused by iron oxide (rust) on its surface.",
+        explanation:
+          "Mars is often called the Red Planet due to its reddish appearance, caused by iron oxide (rust) on its surface.",
       },
       {
         id: 3,
@@ -669,7 +739,8 @@ export const mockQuizzes: Quiz[] = [
         text: "What is the largest organ in the human body?",
         options: ["Heart", "Liver", "Brain", "Skin"],
         correctAnswer: 3,
-        explanation: "The skin is the largest organ of the human body, covering an area of about 2 square meters in adults.",
+        explanation:
+          "The skin is the largest organ of the human body, covering an area of about 2 square meters in adults.",
       },
       {
         id: 5,
@@ -699,9 +770,15 @@ export const mockQuizzes: Quiz[] = [
       {
         id: 1,
         text: "What is Newton's First Law of Motion?",
-        options: ["Force equals mass times acceleration", "An object at rest stays at rest unless acted upon by an external force", "For every action, there is an equal and opposite reaction", "Energy cannot be created or destroyed"],
+        options: [
+          "Force equals mass times acceleration",
+          "An object at rest stays at rest unless acted upon by an external force",
+          "For every action, there is an equal and opposite reaction",
+          "Energy cannot be created or destroyed",
+        ],
         correctAnswer: 1,
-        explanation: "Newton's First Law of Motion states that an object at rest stays at rest and an object in motion stays in motion with the same speed and direction unless acted upon by an external force.",
+        explanation:
+          "Newton's First Law of Motion states that an object at rest stays at rest and an object in motion stays in motion with the same speed and direction unless acted upon by an external force.",
       },
       {
         id: 2,
@@ -722,14 +799,16 @@ export const mockQuizzes: Quiz[] = [
         text: "What is the speed of light in a vacuum?",
         options: ["300,000 km/s", "150,000 km/s", "200,000 km/s", "250,000 km/s"],
         correctAnswer: 0,
-        explanation: "The speed of light in a vacuum is approximately 300,000 kilometers per second (or precisely 299,792,458 meters per second).",
+        explanation:
+          "The speed of light in a vacuum is approximately 300,000 kilometers per second (or precisely 299,792,458 meters per second).",
       },
       {
         id: 5,
         text: "Which particle has a positive charge?",
         options: ["Electron", "Proton", "Neutron", "Photon"],
         correctAnswer: 1,
-        explanation: "Protons have a positive charge, electrons have a negative charge, and neutrons have no charge.",
+        explanation:
+          "Protons have a positive charge, electrons have a negative charge, and neutrons have no charge.",
       },
     ],
     tags: ["physics", "science", "laws"],
@@ -754,21 +833,24 @@ export const mockQuizzes: Quiz[] = [
         text: "Which ancient civilization built the pyramids at Giza?",
         options: ["Mesopotamians", "Egyptians", "Greeks", "Romans"],
         correctAnswer: 1,
-        explanation: "The ancient Egyptians built the pyramids at Giza, with the Great Pyramid being constructed around 2560 BCE.",
+        explanation:
+          "The ancient Egyptians built the pyramids at Giza, with the Great Pyramid being constructed around 2560 BCE.",
       },
       {
         id: 2,
         text: "Which ancient civilization developed the concept of democracy?",
         options: ["Romans", "Persians", "Greeks", "Egyptians"],
         correctAnswer: 2,
-        explanation: "Ancient Athens in Greece is credited with developing the first democratic system of government around 508 BCE.",
+        explanation:
+          "Ancient Athens in Greece is credited with developing the first democratic system of government around 508 BCE.",
       },
       {
         id: 3,
         text: "Which ancient civilization built Machu Picchu?",
         options: ["Maya", "Aztec", "Inca", "Olmec"],
         correctAnswer: 2,
-        explanation: "Machu Picchu was built by the Incas in the 15th century and is located in present-day Peru.",
+        explanation:
+          "Machu Picchu was built by the Incas in the 15th century and is located in present-day Peru.",
       },
       {
         id: 4,
@@ -782,7 +864,8 @@ export const mockQuizzes: Quiz[] = [
         text: "Which ancient civilization built the Colosseum?",
         options: ["Greeks", "Persians", "Egyptians", "Romans"],
         correctAnswer: 3,
-        explanation: "The Colosseum was built by the Romans and completed in 80 CE under Emperor Titus.",
+        explanation:
+          "The Colosseum was built by the Romans and completed in 80 CE under Emperor Titus.",
       },
     ],
     tags: ["history", "ancient", "civilization"],
@@ -805,9 +888,15 @@ export const mockQuizzes: Quiz[] = [
       {
         id: 1,
         text: "What does AI stand for in the context of computer science?",
-        options: ["Automated Interface", "Artificial Intelligence", "Advanced Integration", "Algorithmic Iteration"],
+        options: [
+          "Automated Interface",
+          "Artificial Intelligence",
+          "Advanced Integration",
+          "Algorithmic Iteration",
+        ],
         correctAnswer: 1,
-        explanation: "AI stands for Artificial Intelligence, which refers to the simulation of human intelligence in machines.",
+        explanation:
+          "AI stands for Artificial Intelligence, which refers to the simulation of human intelligence in machines.",
       },
       {
         id: 2,
@@ -821,21 +910,29 @@ export const mockQuizzes: Quiz[] = [
         text: "What is blockchain primarily known for?",
         options: ["Social media", "Cryptocurrency", "Video streaming", "Cloud computing"],
         correctAnswer: 1,
-        explanation: "Blockchain is primarily known as the technology behind cryptocurrencies like Bitcoin, though it has many other applications.",
+        explanation:
+          "Blockchain is primarily known as the technology behind cryptocurrencies like Bitcoin, though it has many other applications.",
       },
       {
         id: 4,
         text: "What does IoT stand for?",
-        options: ["Internet of Things", "Integration of Technology", "Interface of Terminals", "Input Output Transfer"],
+        options: [
+          "Internet of Things",
+          "Integration of Technology",
+          "Interface of Terminals",
+          "Input Output Transfer",
+        ],
         correctAnswer: 0,
-        explanation: "IoT stands for Internet of Things, referring to physical objects embedded with sensors and software, connected to the internet.",
+        explanation:
+          "IoT stands for Internet of Things, referring to physical objects embedded with sensors and software, connected to the internet.",
       },
       {
         id: 5,
         text: "Which of these is NOT a major cloud computing provider?",
         options: ["Amazon Web Services (AWS)", "Microsoft Azure", "Google Cloud", "Oracle Network"],
         correctAnswer: 3,
-        explanation: "Oracle Cloud is a major cloud provider, but 'Oracle Network' is not a major cloud computing service.",
+        explanation:
+          "Oracle Cloud is a major cloud provider, but 'Oracle Network' is not a major cloud computing service.",
       },
     ],
     tags: ["technology", "innovation", "digital"],
@@ -867,14 +964,16 @@ export const mockQuizzes: Quiz[] = [
         text: "Which famous landmark is located in Agra, India?",
         options: ["Colosseum", "Taj Mahal", "Great Wall", "Petra"],
         correctAnswer: 1,
-        explanation: "The Taj Mahal is located in Agra, India. It was built by Emperor Shah Jahan in memory of his wife.",
+        explanation:
+          "The Taj Mahal is located in Agra, India. It was built by Emperor Shah Jahan in memory of his wife.",
       },
       {
         id: 3,
         text: "Where would you find the Statue of Liberty?",
         options: ["Washington D.C.", "Boston", "New York", "Philadelphia"],
         correctAnswer: 2,
-        explanation: "The Statue of Liberty is located on Liberty Island in New York Harbor, New York, USA.",
+        explanation:
+          "The Statue of Liberty is located on Liberty Island in New York Harbor, New York, USA.",
       },
       {
         id: 4,
@@ -911,37 +1010,57 @@ export const mockQuizzes: Quiz[] = [
       {
         id: 1,
         text: "What is the main cause of global warming?",
-        options: ["Solar flares", "Greenhouse gas emissions", "Ocean currents", "Volcanic activity"],
+        options: [
+          "Solar flares",
+          "Greenhouse gas emissions",
+          "Ocean currents",
+          "Volcanic activity",
+        ],
         correctAnswer: 1,
-        explanation: "The main cause of global warming is the increase in greenhouse gas emissions, primarily carbon dioxide from human activities.",
+        explanation:
+          "The main cause of global warming is the increase in greenhouse gas emissions, primarily carbon dioxide from human activities.",
       },
       {
         id: 2,
         text: "Which of these is NOT a renewable energy source?",
         options: ["Solar", "Wind", "Natural gas", "Hydroelectric"],
         correctAnswer: 2,
-        explanation: "Natural gas is a fossil fuel and is not considered a renewable energy source.",
+        explanation:
+          "Natural gas is a fossil fuel and is not considered a renewable energy source.",
       },
       {
         id: 3,
         text: "What is biodiversity?",
-        options: ["A type of environmental policy", "The variety of life in a particular habitat or ecosystem", "A chemical process in plants", "A measure of air quality"],
+        options: [
+          "A type of environmental policy",
+          "The variety of life in a particular habitat or ecosystem",
+          "A chemical process in plants",
+          "A measure of air quality",
+        ],
         correctAnswer: 1,
-        explanation: "Biodiversity refers to the variety of plant and animal life in a particular habitat or ecosystem.",
+        explanation:
+          "Biodiversity refers to the variety of plant and animal life in a particular habitat or ecosystem.",
       },
       {
         id: 4,
         text: "Which layer of the atmosphere contains the ozone layer?",
         options: ["Troposphere", "Stratosphere", "Mesosphere", "Thermosphere"],
         correctAnswer: 1,
-        explanation: "The ozone layer is located in the stratosphere, which is the second layer of Earth's atmosphere.",
+        explanation:
+          "The ozone layer is located in the stratosphere, which is the second layer of Earth's atmosphere.",
       },
       {
         id: 5,
         text: "What is deforestation?",
-        options: ["Planting new forests", "The natural death of trees", "Clearing forests for other land uses", "The process of forest aging"],
+        options: [
+          "Planting new forests",
+          "The natural death of trees",
+          "Clearing forests for other land uses",
+          "The process of forest aging",
+        ],
         correctAnswer: 2,
-        explanation: "Deforestation is the clearing, removal, or destruction of forests for non-forest use, such as agriculture or urban development.",
+        explanation:
+          "Deforestation is the clearing, removal, or destruction of forests for non-forest use, such as agriculture or urban development.",
       },
     ],
     tags: ["environment", "science", "conservation"],
@@ -973,28 +1092,32 @@ export const mockQuizzes: Quiz[] = [
         text: "What is sushi traditionally wrapped in?",
         options: ["Seaweed (Nori)", "Rice paper", "Cabbage leaves", "Banana leaves"],
         correctAnswer: 0,
-        explanation: "Traditional sushi is often wrapped in nori, which is a type of edible seaweed.",
+        explanation:
+          "Traditional sushi is often wrapped in nori, which is a type of edible seaweed.",
       },
       {
         id: 3,
         text: "Which spice gives curry its yellow color?",
         options: ["Paprika", "Cumin", "Turmeric", "Coriander"],
         correctAnswer: 2,
-        explanation: "Turmeric gives curry its characteristic yellow color and is also known for its health benefits.",
+        explanation:
+          "Turmeric gives curry its characteristic yellow color and is also known for its health benefits.",
       },
       {
         id: 4,
         text: "What is the main ingredient in traditional hummus?",
         options: ["Lentils", "Chickpeas", "Black beans", "Soybeans"],
         correctAnswer: 1,
-        explanation: "The main ingredient in traditional hummus is chickpeas (also known as garbanzo beans).",
+        explanation:
+          "The main ingredient in traditional hummus is chickpeas (also known as garbanzo beans).",
       },
       {
         id: 5,
         text: "Which country is known for inventing the croissant?",
         options: ["France", "Austria", "Italy", "Switzerland"],
         correctAnswer: 1,
-        explanation: "While commonly associated with France, the croissant was actually invented in Austria, and its crescent shape was inspired by the Ottoman flag.",
+        explanation:
+          "While commonly associated with France, the croissant was actually invented in Austria, and its crescent shape was inspired by the Ottoman flag.",
       },
     ],
     tags: ["food", "cuisine", "cooking"],
@@ -1019,14 +1142,16 @@ export const mockQuizzes: Quiz[] = [
         text: "Who is credited with inventing the telephone?",
         options: ["Thomas Edison", "Alexander Graham Bell", "Nikola Tesla", "Guglielmo Marconi"],
         correctAnswer: 1,
-        explanation: "Alexander Graham Bell is credited with inventing the first practical telephone in 1876.",
+        explanation:
+          "Alexander Graham Bell is credited with inventing the first practical telephone in 1876.",
       },
       {
         id: 2,
         text: "Which inventor is known for the light bulb?",
         options: ["Thomas Edison", "Alexander Graham Bell", "Nikola Tesla", "Benjamin Franklin"],
         correctAnswer: 0,
-        explanation: "Thomas Edison is credited with developing the first commercially practical incandescent light bulb in 1879.",
+        explanation:
+          "Thomas Edison is credited with developing the first commercially practical incandescent light bulb in 1879.",
       },
       {
         id: 3,
@@ -1040,14 +1165,21 @@ export const mockQuizzes: Quiz[] = [
         text: "Who is credited with inventing the first automobile?",
         options: ["Henry Ford", "Karl Benz", "Gottlieb Daimler", "Rudolf Diesel"],
         correctAnswer: 1,
-        explanation: "Karl Benz is credited with inventing the first practical automobile powered by an internal combustion engine in 1885.",
+        explanation:
+          "Karl Benz is credited with inventing the first practical automobile powered by an internal combustion engine in 1885.",
       },
       {
         id: 5,
         text: "Who invented the first successful airplane?",
-        options: ["The Wright Brothers", "Leonardo da Vinci", "Amelia Earhart", "Charles Lindbergh"],
+        options: [
+          "The Wright Brothers",
+          "Leonardo da Vinci",
+          "Amelia Earhart",
+          "Charles Lindbergh",
+        ],
         correctAnswer: 0,
-        explanation: "The Wright Brothers (Orville and Wilbur Wright) are credited with inventing and building the world's first successful airplane in 1903.",
+        explanation:
+          "The Wright Brothers (Orville and Wilbur Wright) are credited with inventing and building the world's first successful airplane in 1903.",
       },
     ],
     tags: ["inventions", "history", "technology"],

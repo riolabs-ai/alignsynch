@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -25,7 +31,9 @@ export function SettingsDashboard() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="compact-mode">Compact Mode</Label>
-                  <p className="text-sm text-muted-foreground">Display more information in less space</p>
+                  <p className="text-sm text-muted-foreground">
+                    Display more information in less space
+                  </p>
                 </div>
                 <Switch id="compact-mode" />
               </div>
@@ -33,7 +41,9 @@ export function SettingsDashboard() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="show-earnings">Show Earnings</Label>
-                  <p className="text-sm text-muted-foreground">Display earnings information on dashboard</p>
+                  <p className="text-sm text-muted-foreground">
+                    Display earnings information on dashboard
+                  </p>
                 </div>
                 <Switch id="show-earnings" defaultChecked />
               </div>
@@ -79,7 +89,9 @@ export function SettingsDashboard() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="show-tooltips">Show Chart Tooltips</Label>
-                  <p className="text-sm text-muted-foreground">Display detailed information when hovering over charts</p>
+                  <p className="text-sm text-muted-foreground">
+                    Display detailed information when hovering over charts
+                  </p>
                 </div>
                 <Switch id="show-tooltips" defaultChecked />
               </div>
@@ -105,7 +117,9 @@ export function SettingsDashboard() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="quiz-notifications">Quiz Activity</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when someone plays your quiz</p>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified when someone plays your quiz
+                  </p>
                 </div>
                 <Switch id="quiz-notifications" defaultChecked />
               </div>
@@ -121,7 +135,9 @@ export function SettingsDashboard() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="withdrawal-notifications">Withdrawal Updates</Label>
-                  <p className="text-sm text-muted-foreground">Get notified about withdrawal status changes</p>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified about withdrawal status changes
+                  </p>
                 </div>
                 <Switch id="withdrawal-notifications" defaultChecked />
               </div>
@@ -154,7 +170,9 @@ export function SettingsDashboard() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="auto-refresh">Auto-refresh Dashboard</Label>
-                  <p className="text-sm text-muted-foreground">Automatically update dashboard data</p>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically update dashboard data
+                  </p>
                 </div>
                 <Switch id="auto-refresh" defaultChecked />
               </div>
@@ -162,7 +180,9 @@ export function SettingsDashboard() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="show-tips">Show Dashboard Tips</Label>
-                  <p className="text-sm text-muted-foreground">Display helpful tips and suggestions</p>
+                  <p className="text-sm text-muted-foreground">
+                    Display helpful tips and suggestions
+                  </p>
                 </div>
                 <Switch id="show-tips" defaultChecked />
               </div>

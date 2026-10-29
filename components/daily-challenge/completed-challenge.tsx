@@ -1,6 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
@@ -32,7 +39,12 @@ interface CompletedChallengeProps {
   selectedAnswers: string[];
 }
 
-export function CompletedChallenge({ result, onReset, dailyQuizData, selectedAnswers }: CompletedChallengeProps) {
+export function CompletedChallenge({
+  result,
+  onReset,
+  dailyQuizData,
+  selectedAnswers,
+}: CompletedChallengeProps) {
   const [activeTab, setActiveTab] = useState("summary");
 
   const formatTime = (seconds: number) => {
@@ -173,9 +185,13 @@ export function CompletedChallenge({ result, onReset, dailyQuizData, selectedAns
           <TabsContent value="summary" className="space-y-4">
             <div className="space-y-2">
               <h3 className="font-medium">Your Performance</h3>
-              <p className="text-sm text-muted-foreground">You completed today's challenge in {formatTime(result.timeTaken)}, which is faster than 65% of participants.</p>
               <p className="text-sm text-muted-foreground">
-                Your score of {result.score}% places you in the top {result.rank <= 10 ? "10%" : "30%"} of today's participants.
+                You completed today's challenge in {formatTime(result.timeTaken)}, which is faster
+                than 65% of participants.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Your score of {result.score}% places you in the top{" "}
+                {result.rank <= 10 ? "10%" : "30%"} of today's participants.
               </p>
             </div>
 
@@ -183,13 +199,20 @@ export function CompletedChallenge({ result, onReset, dailyQuizData, selectedAns
 
             <div className="space-y-2">
               <h3 className="font-medium">Streak Update</h3>
-              <p className="text-sm text-muted-foreground">You've maintained a 4-day streak! Keep it up to earn bonus rewards.</p>
+              <p className="text-sm text-muted-foreground">
+                You've maintained a 4-day streak! Keep it up to earn bonus rewards.
+              </p>
               <div className="flex space-x-1 mt-2">
                 {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                  <div key={day} className={`h-2 w-full rounded-full ${day <= 4 ? "bg-green-500" : "bg-muted"}`} />
+                  <div
+                    key={day}
+                    className={`h-2 w-full rounded-full ${day <= 4 ? "bg-green-500" : "bg-muted"}`}
+                  />
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground text-right mt-1">3 days until 7-day streak badge</p>
+              <p className="text-xs text-muted-foreground text-right mt-1">
+                3 days until 7-day streak badge
+              </p>
             </div>
           </TabsContent>
 
@@ -258,7 +281,9 @@ export function CompletedChallenge({ result, onReset, dailyQuizData, selectedAns
           </TabsContent>
 
           <TabsContent value="answers" className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">Review your answers and see the correct solutions.</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Review your answers and see the correct solutions.
+            </p>
 
             <div className="space-y-4">
               {dailyQuizData.questions.map((q, index) => {
@@ -271,19 +296,33 @@ export function CompletedChallenge({ result, onReset, dailyQuizData, selectedAns
                       <h4 className="font-medium">
                         {index + 1}. {q.question}
                       </h4>
-                      <span className={`text-xs px-2 py-1 rounded-full ${isCorrect ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>{isCorrect ? "Correct" : "Incorrect"}</span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${isCorrect ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}
+                      >
+                        {isCorrect ? "Correct" : "Incorrect"}
+                      </span>
                     </div>
 
                     <div className="mt-2 space-y-1 text-sm">
                       <p>
                         <span className="text-muted-foreground">Your answer: </span>
-                        <span className={isCorrect ? "text-green-600 dark:text-green-400 font-medium" : "text-red-600 dark:text-red-400 font-medium"}>{userAnswer}</span>
+                        <span
+                          className={
+                            isCorrect
+                              ? "text-green-600 dark:text-green-400 font-medium"
+                              : "text-red-600 dark:text-red-400 font-medium"
+                          }
+                        >
+                          {userAnswer}
+                        </span>
                       </p>
 
                       {!isCorrect && (
                         <p>
                           <span className="text-muted-foreground">Correct answer: </span>
-                          <span className="text-green-600 dark:text-green-400 font-medium">{q.correctAnswer}</span>
+                          <span className="text-green-600 dark:text-green-400 font-medium">
+                            {q.correctAnswer}
+                          </span>
                         </p>
                       )}
                     </div>
@@ -310,15 +349,30 @@ export function CompletedChallenge({ result, onReset, dailyQuizData, selectedAns
             </PopoverTrigger>
             <PopoverContent className="w-auto p-2" align="end">
               <div className="flex space-x-2">
-                <Button size="sm" variant="outline" className="flex items-center" onClick={() => handleShare("twitter")}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center"
+                  onClick={() => handleShare("twitter")}
+                >
                   <Twitter className="h-4 w-4 mr-2" />
                   Twitter
                 </Button>
-                <Button size="sm" variant="outline" className="flex items-center" onClick={() => handleShare("facebook")}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center"
+                  onClick={() => handleShare("facebook")}
+                >
                   <Facebook className="h-4 w-4 mr-2" />
                   Facebook
                 </Button>
-                <Button size="sm" variant="outline" className="flex items-center" onClick={() => handleShare("copy")}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center"
+                  onClick={() => handleShare("copy")}
+                >
                   <Link className="h-4 w-4 mr-2" />
                   Copy
                 </Button>

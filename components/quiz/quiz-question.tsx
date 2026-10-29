@@ -23,7 +23,13 @@ interface QuestionProps {
   isReviewMode?: boolean;
 }
 
-export function QuizQuestion({ question, selectedOptionId, correctOptionId, onSelectOption, isReviewMode = false }: QuestionProps) {
+export function QuizQuestion({
+  question,
+  selectedOptionId,
+  correctOptionId,
+  onSelectOption,
+  isReviewMode = false,
+}: QuestionProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(selectedOptionId);
   const [answered, setAnswered] = useState<boolean>(!!selectedOptionId);
 
@@ -46,7 +52,8 @@ export function QuizQuestion({ question, selectedOptionId, correctOptionId, onSe
 
     if (isReviewMode || answered) {
       if (optionId === question.correctOptionId) return "success";
-      if (optionId === selectedOption && optionId !== question.correctOptionId) return "destructive";
+      if (optionId === selectedOption && optionId !== question.correctOptionId)
+        return "destructive";
     }
 
     return "outline";
@@ -64,15 +71,31 @@ export function QuizQuestion({ question, selectedOptionId, correctOptionId, onSe
           const showIncorrectIndicator = (isReviewMode || answered) && isSelected && !isCorrect;
 
           return (
-            <motion.div key={option.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.1 }}>
-              <Button variant={getOptionVariant(option.id)} className={`w-full justify-start text-left h-auto py-4 px-6 ${isSelected ? "border-2 shadow-md" : ""} ${showCorrectIndicator ? "bg-green-50" : ""} ${showIncorrectIndicator ? "bg-red-50" : ""} hover:bg-accent/80 transition-all duration-200`} onClick={() => handleOptionSelect(option.id)} disabled={answered || isReviewMode}>
+            <motion.div
+              key={option.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+            >
+              <Button
+                variant={getOptionVariant(option.id)}
+                className={`w-full justify-start text-left h-auto py-4 px-6 ${isSelected ? "border-2 shadow-md" : ""} ${showCorrectIndicator ? "bg-green-50" : ""} ${showIncorrectIndicator ? "bg-red-50" : ""} hover:bg-accent/80 transition-all duration-200`}
+                onClick={() => handleOptionSelect(option.id)}
+                disabled={answered || isReviewMode}
+              >
                 <div className="flex items-center justify-between w-full gap-4">
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground font-medium">{option.id.toUpperCase()}</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground font-medium">
+                      {option.id.toUpperCase()}
+                    </span>
                     <span className="text-base">{option.text}</span>
                   </div>
-                  {showCorrectIndicator && <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />}
-                  {showIncorrectIndicator && <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />}
+                  {showCorrectIndicator && (
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  )}
+                  {showIncorrectIndicator && (
+                    <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                  )}
                 </div>
               </Button>
             </motion.div>

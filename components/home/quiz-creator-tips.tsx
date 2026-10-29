@@ -1,11 +1,20 @@
-"use client"
+"use client";
 
-import { useRef } from "react"
-import { ChevronLeft, ChevronRight, ArrowRight, BookOpen, TrendingUp, DollarSign, Lightbulb, Clock } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
+import { useRef } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  BookOpen,
+  TrendingUp,
+  DollarSign,
+  Lightbulb,
+  Clock,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
 // Sample tips data
 const quizTips = [
@@ -54,10 +63,10 @@ const quizTips = [
     icon: Clock,
     color: "bg-indigo-500",
   },
-]
+];
 
 export function QuizCreatorTips() {
-  const carouselRef = useRef<HTMLDivElement>(null)
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   return (
     <section className="py-16 bg-white dark:bg-slate-950">
@@ -65,7 +74,9 @@ export function QuizCreatorTips() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div className="space-y-1">
             <h2 className="text-3xl font-bold tracking-tight">Quiz Creator Resources</h2>
-            <p className="text-muted-foreground">Expert tips and strategies to create successful quizzes</p>
+            <p className="text-muted-foreground">
+              Expert tips and strategies to create successful quizzes
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -89,11 +100,16 @@ export function QuizCreatorTips() {
         <Carousel className="w-full">
           <CarouselContent className="-ml-2 md:-ml-4" ref={carouselRef}>
             {quizTips.map((tip) => (
-              <CarouselItem key={tip.id} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+              <CarouselItem
+                key={tip.id}
+                className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+              >
                 <Card className="h-full flex flex-col">
                   <CardContent className="flex-1 p-6">
                     <div className="mb-4">
-                      <div className={`inline-flex items-center justify-center rounded-lg p-2 ${tip.color}`}>
+                      <div
+                        className={`inline-flex items-center justify-center rounded-lg p-2 ${tip.color}`}
+                      >
                         <tip.icon className="h-5 w-5 text-white" />
                       </div>
                     </div>
@@ -128,5 +144,5 @@ export function QuizCreatorTips() {
         </div>
       </div>
     </section>
-  )
+  );
 }

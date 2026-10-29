@@ -1,17 +1,22 @@
-"use client"
+"use client";
 
-import { Search, Grid3X3, List } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { Search, Grid3X3, List } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface ExploreHeaderProps {
-  searchQuery: string
-  setSearchQuery: (query: string) => void
-  viewMode: "grid" | "list"
-  setViewMode: (mode: "grid" | "list") => void
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  viewMode: "grid" | "list";
+  setViewMode: (mode: "grid" | "list") => void;
 }
 
-export function ExploreHeader({ searchQuery, setSearchQuery, viewMode, setViewMode }: ExploreHeaderProps) {
+export function ExploreHeader({
+  searchQuery,
+  setSearchQuery,
+  viewMode,
+  setViewMode,
+}: ExploreHeaderProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -54,5 +59,5 @@ export function ExploreHeader({ searchQuery, setSearchQuery, viewMode, setViewMo
         </div>
       </div>
     </div>
-  )
+  );
 }

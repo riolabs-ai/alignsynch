@@ -1,7 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
@@ -35,7 +42,9 @@ export function AppearanceSettings() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Appearance Settings</h3>
-        <p className="text-sm text-muted-foreground">Customize how QuizHub looks and feels for you.</p>
+        <p className="text-sm text-muted-foreground">
+          Customize how QuizHub looks and feels for you.
+        </p>
       </div>
 
       <Card>
@@ -44,10 +53,17 @@ export function AppearanceSettings() {
           <CardDescription>Choose your preferred color theme.</CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={theme} onValueChange={handleThemeChange} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <RadioGroup
+            value={theme}
+            onValueChange={handleThemeChange}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
             <div>
               <RadioGroupItem value="light" id="theme-light" className="peer sr-only" />
-              <Label htmlFor="theme-light" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+              <Label
+                htmlFor="theme-light"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+              >
                 <Sun className="mb-3 h-6 w-6" />
                 <span className="font-medium">Light</span>
               </Label>
@@ -55,7 +71,10 @@ export function AppearanceSettings() {
 
             <div>
               <RadioGroupItem value="dark" id="theme-dark" className="peer sr-only" />
-              <Label htmlFor="theme-dark" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+              <Label
+                htmlFor="theme-dark"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+              >
                 <Moon className="mb-3 h-6 w-6" />
                 <span className="font-medium">Dark</span>
               </Label>
@@ -63,7 +82,10 @@ export function AppearanceSettings() {
 
             <div>
               <RadioGroupItem value="system" id="theme-system" className="peer sr-only" />
-              <Label htmlFor="theme-system" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+              <Label
+                htmlFor="theme-system"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+              >
                 <Monitor className="mb-3 h-6 w-6" />
                 <span className="font-medium">System</span>
               </Label>
@@ -78,10 +100,17 @@ export function AppearanceSettings() {
           <CardDescription>Choose your preferred font size.</CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={fontSize} onValueChange={setFontSize} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <RadioGroup
+            value={fontSize}
+            onValueChange={setFontSize}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
             <div>
               <RadioGroupItem value="small" id="font-small" className="peer sr-only" />
-              <Label htmlFor="font-small" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+              <Label
+                htmlFor="font-small"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+              >
                 <span className="text-sm mb-3">Aa</span>
                 <span className="font-medium">Small</span>
               </Label>
@@ -89,7 +118,10 @@ export function AppearanceSettings() {
 
             <div>
               <RadioGroupItem value="medium" id="font-medium" className="peer sr-only" />
-              <Label htmlFor="font-medium" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+              <Label
+                htmlFor="font-medium"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+              >
                 <span className="text-base mb-3">Aa</span>
                 <span className="font-medium">Medium</span>
               </Label>
@@ -97,7 +129,10 @@ export function AppearanceSettings() {
 
             <div>
               <RadioGroupItem value="large" id="font-large" className="peer sr-only" />
-              <Label htmlFor="font-large" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+              <Label
+                htmlFor="font-large"
+                className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+              >
                 <span className="text-lg mb-3">Aa</span>
                 <span className="font-medium">Large</span>
               </Label>
@@ -115,7 +150,9 @@ export function AppearanceSettings() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Reduced Motion</p>
-              <p className="text-sm text-muted-foreground">Reduce the amount of animations and transitions.</p>
+              <p className="text-sm text-muted-foreground">
+                Reduce the amount of animations and transitions.
+              </p>
             </div>
             <Switch checked={reducedMotion} onCheckedChange={setReducedMotion} />
           </div>
@@ -125,7 +162,9 @@ export function AppearanceSettings() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">High Contrast</p>
-              <p className="text-sm text-muted-foreground">Increase contrast for better visibility.</p>
+              <p className="text-sm text-muted-foreground">
+                Increase contrast for better visibility.
+              </p>
             </div>
             <Switch checked={highContrast} onCheckedChange={setHighContrast} />
           </div>

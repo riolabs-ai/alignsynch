@@ -3,15 +3,44 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import type { CreatedQuiz, User } from "@/lib/data/users";
 import { format } from "date-fns";
-import { AlertTriangle, Award, BarChart2, Calendar, Edit, Eye, Filter, Grid, List, MoreHorizontal, Search, Star, Trophy, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Award,
+  BarChart2,
+  Calendar,
+  Edit,
+  Eye,
+  Filter,
+  Grid,
+  List,
+  MoreHorizontal,
+  Search,
+  Star,
+  Trophy,
+  Users,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -36,7 +65,9 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
 
   // Filter quizzes based on search query, category, and difficulty
   const filteredQuizzes = createdQuizzes.filter((quiz) => {
-    const matchesSearch = quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) || quiz.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      quiz.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory ? quiz.category === selectedCategory : true;
     const matchesDifficulty = selectedDifficulty ? quiz.difficulty === selectedDifficulty : true;
 
@@ -71,7 +102,10 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
   const totalPlays = createdQuizzes.reduce((sum, quiz) => sum + quiz.plays, 0);
 
   // Calculate average rating
-  const averageRating = createdQuizzes.length > 0 ? createdQuizzes.reduce((sum, quiz) => sum + quiz.rating, 0) / createdQuizzes.length : 0;
+  const averageRating =
+    createdQuizzes.length > 0
+      ? createdQuizzes.reduce((sum, quiz) => sum + quiz.rating, 0) / createdQuizzes.length
+      : 0;
 
   // Action handlers
   const handleEditQuiz = (quiz: CreatedQuiz) => {
@@ -155,7 +189,13 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div className="relative w-full md:w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search quizzes..." className="pl-8" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <Input
+            type="search"
+            placeholder="Search quizzes..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -167,7 +207,9 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSelectedCategory(null)}>All Categories</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedCategory(null)}>
+                All Categories
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {categories.map((category) => (
                 <DropdownMenuItem key={category} onClick={() => setSelectedCategory(category)}>
@@ -185,11 +227,19 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSelectedDifficulty(null)}>All Difficulties</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedDifficulty(null)}>
+                All Difficulties
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setSelectedDifficulty("easy")}>Easy</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedDifficulty("medium")}>Medium</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedDifficulty("hard")}>Hard</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedDifficulty("easy")}>
+                Easy
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedDifficulty("medium")}>
+                Medium
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedDifficulty("hard")}>
+                Hard
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -201,20 +251,40 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSelectedSort("newest")}>Newest First</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedSort("oldest")}>Oldest First</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedSort("most-played")}>Most Played</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedSort("highest-rated")}>Highest Rated</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSelectedSort("highest-score")}>Highest Average Score</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedSort("newest")}>
+                Newest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedSort("oldest")}>
+                Oldest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedSort("most-played")}>
+                Most Played
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedSort("highest-rated")}>
+                Highest Rated
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedSort("highest-score")}>
+                Highest Average Score
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <div className="flex items-center rounded-md border bg-background p-1">
-            <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="sm" className="h-8 w-8 p-0" onClick={() => setViewMode("grid")}>
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setViewMode("grid")}
+            >
               <Grid className="h-4 w-4" />
               <span className="sr-only">Grid view</span>
             </Button>
-            <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="sm" className="h-8 w-8 p-0" onClick={() => setViewMode("list")}>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setViewMode("list")}
+            >
               <List className="h-4 w-4" />
               <span className="sr-only">List view</span>
             </Button>
@@ -234,13 +304,27 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
               {sortedQuizzes.map((quiz) => (
-                <QuizCard key={quiz.id} quiz={quiz} onEdit={() => handleEditQuiz(quiz)} onPreview={() => handlePreviewQuiz(quiz)} onViewStats={() => handleViewStatistics(quiz)} onDelete={() => handleDeleteQuiz(quiz)} />
+                <QuizCard
+                  key={quiz.id}
+                  quiz={quiz}
+                  onEdit={() => handleEditQuiz(quiz)}
+                  onPreview={() => handlePreviewQuiz(quiz)}
+                  onViewStats={() => handleViewStatistics(quiz)}
+                  onDelete={() => handleDeleteQuiz(quiz)}
+                />
               ))}
             </div>
           ) : (
             <div className="space-y-4">
               {sortedQuizzes.map((quiz) => (
-                <QuizListItem key={quiz.id} quiz={quiz} onEdit={() => handleEditQuiz(quiz)} onPreview={() => handlePreviewQuiz(quiz)} onViewStats={() => handleViewStatistics(quiz)} onDelete={() => handleDeleteQuiz(quiz)} />
+                <QuizListItem
+                  key={quiz.id}
+                  quiz={quiz}
+                  onEdit={() => handleEditQuiz(quiz)}
+                  onPreview={() => handlePreviewQuiz(quiz)}
+                  onViewStats={() => handleViewStatistics(quiz)}
+                  onDelete={() => handleDeleteQuiz(quiz)}
+                />
               ))}
             </div>
           )}
@@ -252,7 +336,14 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               {sortedQuizzes
                 .filter((q) => !q.isTournament)
                 .map((quiz) => (
-                  <QuizCard key={quiz.id} quiz={quiz} onEdit={() => handleEditQuiz(quiz)} onPreview={() => handlePreviewQuiz(quiz)} onViewStats={() => handleViewStatistics(quiz)} onDelete={() => handleDeleteQuiz(quiz)} />
+                  <QuizCard
+                    key={quiz.id}
+                    quiz={quiz}
+                    onEdit={() => handleEditQuiz(quiz)}
+                    onPreview={() => handlePreviewQuiz(quiz)}
+                    onViewStats={() => handleViewStatistics(quiz)}
+                    onDelete={() => handleDeleteQuiz(quiz)}
+                  />
                 ))}
             </div>
           ) : (
@@ -260,7 +351,14 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               {sortedQuizzes
                 .filter((q) => !q.isTournament)
                 .map((quiz) => (
-                  <QuizListItem key={quiz.id} quiz={quiz} onEdit={() => handleEditQuiz(quiz)} onPreview={() => handlePreviewQuiz(quiz)} onViewStats={() => handleViewStatistics(quiz)} onDelete={() => handleDeleteQuiz(quiz)} />
+                  <QuizListItem
+                    key={quiz.id}
+                    quiz={quiz}
+                    onEdit={() => handleEditQuiz(quiz)}
+                    onPreview={() => handlePreviewQuiz(quiz)}
+                    onViewStats={() => handleViewStatistics(quiz)}
+                    onDelete={() => handleDeleteQuiz(quiz)}
+                  />
                 ))}
             </div>
           )}
@@ -272,7 +370,14 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               {sortedQuizzes
                 .filter((q) => q.isTournament)
                 .map((quiz) => (
-                  <QuizCard key={quiz.id} quiz={quiz} onEdit={() => handleEditQuiz(quiz)} onPreview={() => handlePreviewQuiz(quiz)} onViewStats={() => handleViewStatistics(quiz)} onDelete={() => handleDeleteQuiz(quiz)} />
+                  <QuizCard
+                    key={quiz.id}
+                    quiz={quiz}
+                    onEdit={() => handleEditQuiz(quiz)}
+                    onPreview={() => handlePreviewQuiz(quiz)}
+                    onViewStats={() => handleViewStatistics(quiz)}
+                    onDelete={() => handleDeleteQuiz(quiz)}
+                  />
                 ))}
             </div>
           ) : (
@@ -280,7 +385,14 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               {sortedQuizzes
                 .filter((q) => q.isTournament)
                 .map((quiz) => (
-                  <QuizListItem key={quiz.id} quiz={quiz} onEdit={() => handleEditQuiz(quiz)} onPreview={() => handlePreviewQuiz(quiz)} onViewStats={() => handleViewStatistics(quiz)} onDelete={() => handleDeleteQuiz(quiz)} />
+                  <QuizListItem
+                    key={quiz.id}
+                    quiz={quiz}
+                    onEdit={() => handleEditQuiz(quiz)}
+                    onPreview={() => handlePreviewQuiz(quiz)}
+                    onViewStats={() => handleViewStatistics(quiz)}
+                    onDelete={() => handleDeleteQuiz(quiz)}
+                  />
                 ))}
             </div>
           )}
@@ -294,7 +406,9 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
             <Search className="h-6 w-6 text-primary" />
           </div>
           <h3 className="mb-1 text-lg font-medium">No quizzes found</h3>
-          <p className="text-sm text-muted-foreground">Try adjusting your search or filter criteria</p>
+          <p className="text-sm text-muted-foreground">
+            Try adjusting your search or filter criteria
+          </p>
         </div>
       )}
 
@@ -306,7 +420,10 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               <AlertTriangle className="h-5 w-5 text-destructive" />
               Delete Quiz
             </DialogTitle>
-            <DialogDescription>Are you sure you want to delete &quot;{quizToDelete?.title}&quot;? This action cannot be undone.</DialogDescription>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{quizToDelete?.title}&quot;? This action cannot
+              be undone.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
@@ -328,7 +445,12 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
           {previewQuiz && (
             <div className="max-h-[70vh] overflow-y-auto">
               <div className="relative aspect-video w-full">
-                <Image src={previewQuiz.image || "/placeholder.svg"} alt={previewQuiz.title} fill className="rounded-md object-cover" />
+                <Image
+                  src={previewQuiz.image || "/placeholder.svg"}
+                  alt={previewQuiz.title}
+                  fill
+                  className="rounded-md object-cover"
+                />
               </div>
 
               <div className="mt-4 space-y-4">
@@ -347,7 +469,8 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
                       ${previewQuiz.difficulty === "easy" ? "border-green-500 bg-green-50 text-green-700" : previewQuiz.difficulty === "medium" ? "border-yellow-500 bg-yellow-50 text-yellow-700" : "border-red-500 bg-red-50 text-red-700"}
                     `}
                   >
-                    {previewQuiz.difficulty.charAt(0).toUpperCase() + previewQuiz.difficulty.slice(1)}
+                    {previewQuiz.difficulty.charAt(0).toUpperCase() +
+                      previewQuiz.difficulty.slice(1)}
                   </Badge>
                   <Badge variant="outline" className="bg-background">
                     {previewQuiz.questions} Questions
@@ -386,7 +509,9 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Created</span>
-                        <span className="font-semibold">{format(new Date(previewQuiz.createdAt), "MMM d, yyyy")}</span>
+                        <span className="font-semibold">
+                          {format(new Date(previewQuiz.createdAt), "MMM d, yyyy")}
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
@@ -395,24 +520,44 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
                 {previewQuiz.isTournament && previewQuiz.tournamentDetails && (
                   <Card className="border-purple-200 bg-purple-50">
                     <CardHeader className="pb-2">
-                      <h3 className="text-base font-semibold text-purple-800">Tournament Details</h3>
+                      <h3 className="text-base font-semibold text-purple-800">
+                        Tournament Details
+                      </h3>
                     </CardHeader>
                     <CardContent className="pb-4 pt-0">
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <span className="font-medium text-purple-700">Status:</span> <span className="capitalize text-purple-900">{previewQuiz.tournamentDetails.status}</span>
+                          <span className="font-medium text-purple-700">Status:</span>{" "}
+                          <span className="capitalize text-purple-900">
+                            {previewQuiz.tournamentDetails.status}
+                          </span>
                         </div>
                         <div>
-                          <span className="font-medium text-purple-700">Participants:</span> <span className="text-purple-900">{previewQuiz.tournamentDetails.participants}</span>
+                          <span className="font-medium text-purple-700">Participants:</span>{" "}
+                          <span className="text-purple-900">
+                            {previewQuiz.tournamentDetails.participants}
+                          </span>
                         </div>
                         <div>
-                          <span className="font-medium text-purple-700">Start Date:</span> <span className="text-purple-900">{format(new Date(previewQuiz.tournamentDetails.startDate), "MMM d, yyyy")}</span>
+                          <span className="font-medium text-purple-700">Start Date:</span>{" "}
+                          <span className="text-purple-900">
+                            {format(
+                              new Date(previewQuiz.tournamentDetails.startDate),
+                              "MMM d, yyyy",
+                            )}
+                          </span>
                         </div>
                         <div>
-                          <span className="font-medium text-purple-700">End Date:</span> <span className="text-purple-900">{format(new Date(previewQuiz.tournamentDetails.endDate), "MMM d, yyyy")}</span>
+                          <span className="font-medium text-purple-700">End Date:</span>{" "}
+                          <span className="text-purple-900">
+                            {format(new Date(previewQuiz.tournamentDetails.endDate), "MMM d, yyyy")}
+                          </span>
                         </div>
                         <div className="col-span-2">
-                          <span className="font-medium text-purple-700">Prize:</span> <span className="text-purple-900">{previewQuiz.tournamentDetails.prize}</span>
+                          <span className="font-medium text-purple-700">Prize:</span>{" "}
+                          <span className="text-purple-900">
+                            {previewQuiz.tournamentDetails.prize}
+                          </span>
                         </div>
                       </div>
                     </CardContent>
@@ -452,17 +597,30 @@ function QuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizCardPr
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video">
-        <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} fill className="object-cover" />
+        <Image
+          width={600}
+          height={350}
+          src={quiz.image || "/placeholder.svg"}
+          alt={quiz.title}
+          fill
+          className="object-cover"
+        />
         {quiz.featured && (
           <div className="absolute left-2 top-2">
-            <Badge variant="secondary" className="bg-yellow-500/90 text-white hover:bg-yellow-500/90">
+            <Badge
+              variant="secondary"
+              className="bg-yellow-500/90 text-white hover:bg-yellow-500/90"
+            >
               <Star className="mr-1 h-3 w-3" /> Featured
             </Badge>
           </div>
         )}
         {quiz.isTournament && (
           <div className="absolute right-2 top-2">
-            <Badge variant="secondary" className="bg-purple-500/90 text-white hover:bg-purple-500/90">
+            <Badge
+              variant="secondary"
+              className="bg-purple-500/90 text-white hover:bg-purple-500/90"
+            >
               <Trophy className="mr-1 h-3 w-3" /> Tournament
             </Badge>
           </div>
@@ -533,9 +691,15 @@ function QuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizCardPr
 
         {quiz.isTournament && quiz.tournamentDetails && (
           <div className="mt-3 rounded-md bg-purple-50 p-2 text-xs">
-            <div className="font-medium text-purple-800">Tournament Status: {quiz.tournamentDetails.status.charAt(0).toUpperCase() + quiz.tournamentDetails.status.slice(1)}</div>
+            <div className="font-medium text-purple-800">
+              Tournament Status:{" "}
+              {quiz.tournamentDetails.status.charAt(0).toUpperCase() +
+                quiz.tournamentDetails.status.slice(1)}
+            </div>
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-purple-700">{quiz.tournamentDetails.participants} participants</span>
+              <span className="text-purple-700">
+                {quiz.tournamentDetails.participants} participants
+              </span>
               <span className="font-medium text-purple-800">{quiz.tournamentDetails.prize}</span>
             </div>
           </div>
@@ -570,17 +734,30 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
     <Card>
       <div className="flex flex-col sm:flex-row">
         <div className="relative h-40 w-full sm:h-auto sm:w-48">
-          <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} fill className="object-cover sm:rounded-l-lg" />
+          <Image
+            width={600}
+            height={350}
+            src={quiz.image || "/placeholder.svg"}
+            alt={quiz.title}
+            fill
+            className="object-cover sm:rounded-l-lg"
+          />
           {quiz.featured && (
             <div className="absolute left-2 top-2">
-              <Badge variant="secondary" className="bg-yellow-500/90 text-white hover:bg-yellow-500/90">
+              <Badge
+                variant="secondary"
+                className="bg-yellow-500/90 text-white hover:bg-yellow-500/90"
+              >
                 <Star className="mr-1 h-3 w-3" /> Featured
               </Badge>
             </div>
           )}
           {quiz.isTournament && (
             <div className="absolute right-2 top-2">
-              <Badge variant="secondary" className="bg-purple-500/90 text-white hover:bg-purple-500/90">
+              <Badge
+                variant="secondary"
+                className="bg-purple-500/90 text-white hover:bg-purple-500/90"
+              >
                 <Trophy className="mr-1 h-3 w-3" /> Tournament
               </Badge>
             </div>
@@ -656,9 +833,15 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
 
           {quiz.isTournament && quiz.tournamentDetails && (
             <div className="mt-3 rounded-md bg-purple-50 p-2 text-xs">
-              <div className="font-medium text-purple-800">Tournament Status: {quiz.tournamentDetails.status.charAt(0).toUpperCase() + quiz.tournamentDetails.status.slice(1)}</div>
+              <div className="font-medium text-purple-800">
+                Tournament Status:{" "}
+                {quiz.tournamentDetails.status.charAt(0).toUpperCase() +
+                  quiz.tournamentDetails.status.slice(1)}
+              </div>
               <div className="mt-1 flex items-center justify-between">
-                <span className="text-purple-700">{quiz.tournamentDetails.participants} participants</span>
+                <span className="text-purple-700">
+                  {quiz.tournamentDetails.participants} participants
+                </span>
                 <span className="font-medium text-purple-800">{quiz.tournamentDetails.prize}</span>
               </div>
             </div>

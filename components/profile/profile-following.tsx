@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { type User, getUserFollowing } from "@/lib/data/users"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { UserCheck, UserPlus } from "lucide-react"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { type User, getUserFollowing } from "@/lib/data/users";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { UserCheck, UserPlus } from "lucide-react";
 
 interface ProfileFollowingProps {
-  userId: string
+  userId: string;
 }
 
 export function ProfileFollowing({ userId }: ProfileFollowingProps) {
-  const [following, setFollowing] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+  const [following, setFollowing] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFollowing = async () => {
       try {
-        const data = await getUserFollowing(userId)
-        setFollowing(data)
+        const data = await getUserFollowing(userId);
+        setFollowing(data);
       } catch (error) {
-        console.error("Failed to fetch following:", error)
+        console.error("Failed to fetch following:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchFollowing()
-  }, [userId])
+    fetchFollowing();
+  }, [userId]);
 
   const handleUnfollow = (followingId: string) => {
     // In a real app, this would call an API to unfollow
-    setFollowing((prev) => prev.filter((user) => user.id !== followingId))
-  }
+    setFollowing((prev) => prev.filter((user) => user.id !== followingId));
+  };
 
   if (loading) {
     return (
@@ -44,7 +44,7 @@ export function ProfileFollowing({ userId }: ProfileFollowingProps) {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -100,5 +100,5 @@ export function ProfileFollowing({ userId }: ProfileFollowingProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

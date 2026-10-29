@@ -25,9 +25,17 @@ export function ExploreQuizzesPage() {
 
   return (
     <div className="space-y-4 xl:space-y-6">
-      <ExploreHeader searchQuery={searchQuery} setSearchQuery={setSearchQuery} viewMode={viewMode} setViewMode={setViewMode} />
+      <ExploreHeader
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+      />
 
-      <ExploreCategories selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+      <ExploreCategories
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+      />
 
       {selectedCategory === "all" && (
         <>
@@ -40,7 +48,12 @@ export function ExploreQuizzesPage() {
         <ExploreFilters activeFilters={activeFilters} setActiveFilters={setActiveFilters} />
 
         <div className="flex-1">
-          <ExploreQuizList category={selectedCategory} searchQuery={searchQuery} viewMode={viewMode} filters={activeFilters} />
+          <ExploreQuizList
+            category={selectedCategory}
+            searchQuery={searchQuery}
+            viewMode={viewMode}
+            filters={activeFilters}
+          />
         </div>
       </div>
     </div>

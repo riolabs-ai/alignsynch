@@ -105,29 +105,56 @@ export function TournamentTestimonials() {
     <section className="py-16 mt-8">
       <div className="text-center mb-12">
         <h2 className="text-3xl font-bold mb-4">What Tournament Players Say</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">Hear from our community of quiz enthusiasts who have participated in our tournaments</p>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Hear from our community of quiz enthusiasts who have participated in our tournaments
+        </p>
       </div>
 
-      <div className="relative max-w-4xl mx-auto px-4" onMouseEnter={() => setAutoplay(false)} onMouseLeave={() => setAutoplay(true)}>
-        <button onClick={handlePrev} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-full shadow-md border border-border hover:bg-muted transition-colors" aria-label="Previous testimonial">
+      <div
+        className="relative max-w-4xl mx-auto px-4"
+        onMouseEnter={() => setAutoplay(false)}
+        onMouseLeave={() => setAutoplay(true)}
+      >
+        <button
+          onClick={handlePrev}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-full shadow-md border border-border hover:bg-muted transition-colors"
+          aria-label="Previous testimonial"
+        >
           <ChevronLeft className="h-6 w-6" />
         </button>
 
         <div className="overflow-hidden">
-          <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
+          <div
+            className="flex transition-transform duration-500 ease-in-out"
+            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+          >
             {testimonials.map((testimonial) => (
               <div key={testimonial.id} className="w-full flex-shrink-0 px-4">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="bg-card rounded-xl shadow-lg p-8 border border-border">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-card rounded-xl shadow-lg p-8 border border-border"
+                >
                   <div className="flex items-center mb-6">
                     <div className="mr-4">
-                      <Image src={testimonial.avatar || "/placeholder.svg"} width={48} height={48} alt={testimonial.name} className="w-16 h-16 rounded-full object-cover border-2 border-primary" />
+                      <Image
+                        src={testimonial.avatar || "/placeholder.svg"}
+                        width={48}
+                        height={48}
+                        alt={testimonial.name}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-primary"
+                      />
                     </div>
                     <div>
                       <h3 className="font-bold text-lg">{testimonial.name}</h3>
                       <p className="text-muted-foreground text-sm">{testimonial.role}</p>
                       <div className="flex mt-1">
                         {[...Array(5)].map((_, i) => (
-                          <Star key={i} className={`w-4 h-4 ${i < testimonial.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`} />
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${i < testimonial.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                          />
                         ))}
                       </div>
                     </div>
@@ -149,21 +176,34 @@ export function TournamentTestimonials() {
           </div>
         </div>
 
-        <button onClick={handleNext} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-full shadow-md border border-border hover:bg-muted transition-colors" aria-label="Next testimonial">
+        <button
+          onClick={handleNext}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-full shadow-md border border-border hover:bg-muted transition-colors"
+          aria-label="Next testimonial"
+        >
           <ChevronRight className="h-6 w-6" />
         </button>
 
         {/* Dots navigation */}
         <div className="flex justify-center mt-6 space-x-2">
           {testimonials.map((_, index) => (
-            <button key={index} onClick={() => handleDotClick(index)} className={`w-3 h-3 rounded-full transition-colors ${index === currentIndex ? "bg-primary" : "bg-muted hover:bg-primary/50"}`} aria-label={`Go to testimonial ${index + 1}`} />
+            <button
+              key={index}
+              onClick={() => handleDotClick(index)}
+              className={`w-3 h-3 rounded-full transition-colors ${index === currentIndex ? "bg-primary" : "bg-muted hover:bg-primary/50"}`}
+              aria-label={`Go to testimonial ${index + 1}`}
+            />
           ))}
         </div>
       </div>
 
       <div className="text-center mt-12">
-        <p className="text-lg font-medium mb-4">Join over 50,000 quiz enthusiasts in our tournaments</p>
-        <button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-full font-medium">View Upcoming Tournaments</button>
+        <p className="text-lg font-medium mb-4">
+          Join over 50,000 quiz enthusiasts in our tournaments
+        </p>
+        <button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-full font-medium">
+          View Upcoming Tournaments
+        </button>
       </div>
     </section>
   );

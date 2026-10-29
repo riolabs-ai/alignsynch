@@ -3,7 +3,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { CreatedQuiz } from "@/lib/data/users";
 import { format } from "date-fns";
 import { Star } from "lucide-react";
@@ -27,7 +33,14 @@ export function QuizPreviewModal({ quiz, isOpen, onClose, onViewFull }: QuizPrev
         </DialogHeader>
         <div className="max-h-[70vh] overflow-y-auto">
           <div className="relative aspect-video w-full">
-            <Image width={600} height={350} src={quiz.image || "/placeholder.svg"} alt={quiz.title} fill className="rounded-md object-cover" />
+            <Image
+              width={600}
+              height={350}
+              src={quiz.image || "/placeholder.svg"}
+              alt={quiz.title}
+              fill
+              className="rounded-md object-cover"
+            />
           </div>
 
           <div className="mt-4 space-y-4">
@@ -85,7 +98,9 @@ export function QuizPreviewModal({ quiz, isOpen, onClose, onViewFull }: QuizPrev
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Created</span>
-                    <span className="font-semibold">{format(new Date(quiz.createdAt), "MMM d, yyyy")}</span>
+                    <span className="font-semibold">
+                      {format(new Date(quiz.createdAt), "MMM d, yyyy")}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -94,22 +109,35 @@ export function QuizPreviewModal({ quiz, isOpen, onClose, onViewFull }: QuizPrev
             {quiz.isTournament && quiz.tournamentDetails && (
               <Card className="border-purple-200 bg-purple-50">
                 <CardContent className="p-4">
-                  <h3 className="mb-2 text-base font-semibold text-purple-800">Tournament Details</h3>
+                  <h3 className="mb-2 text-base font-semibold text-purple-800">
+                    Tournament Details
+                  </h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="font-medium text-purple-700">Status:</span> <span className="capitalize text-purple-900">{quiz.tournamentDetails.status}</span>
+                      <span className="font-medium text-purple-700">Status:</span>{" "}
+                      <span className="capitalize text-purple-900">
+                        {quiz.tournamentDetails.status}
+                      </span>
                     </div>
                     <div>
-                      <span className="font-medium text-purple-700">Participants:</span> <span className="text-purple-900">{quiz.tournamentDetails.participants}</span>
+                      <span className="font-medium text-purple-700">Participants:</span>{" "}
+                      <span className="text-purple-900">{quiz.tournamentDetails.participants}</span>
                     </div>
                     <div>
-                      <span className="font-medium text-purple-700">Start Date:</span> <span className="text-purple-900">{format(new Date(quiz.tournamentDetails.startDate), "MMM d, yyyy")}</span>
+                      <span className="font-medium text-purple-700">Start Date:</span>{" "}
+                      <span className="text-purple-900">
+                        {format(new Date(quiz.tournamentDetails.startDate), "MMM d, yyyy")}
+                      </span>
                     </div>
                     <div>
-                      <span className="font-medium text-purple-700">End Date:</span> <span className="text-purple-900">{format(new Date(quiz.tournamentDetails.endDate), "MMM d, yyyy")}</span>
+                      <span className="font-medium text-purple-700">End Date:</span>{" "}
+                      <span className="text-purple-900">
+                        {format(new Date(quiz.tournamentDetails.endDate), "MMM d, yyyy")}
+                      </span>
                     </div>
                     <div className="col-span-2">
-                      <span className="font-medium text-purple-700">Prize:</span> <span className="text-purple-900">{quiz.tournamentDetails.prize}</span>
+                      <span className="font-medium text-purple-700">Prize:</span>{" "}
+                      <span className="text-purple-900">{quiz.tournamentDetails.prize}</span>
                     </div>
                   </div>
                 </CardContent>

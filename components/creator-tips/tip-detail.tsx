@@ -35,7 +35,10 @@ export default function TipDetail({ tip }: TipDetailProps) {
 
   return (
     <div className="container mx-auto">
-      <Link href="/creator-tips" className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-6">
+      <Link
+        href="/creator-tips"
+        className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-6"
+      >
         <ArrowLeft size={16} className="mr-2" />
         Back to all tips
       </Link>
@@ -58,11 +61,23 @@ export default function TipDetail({ tip }: TipDetailProps) {
           <h1 className="text-2xl md:text-3xl xl:text-4xl font-bold mb-4">{tip.title}</h1>
 
           <p className="text-xl text-gray-600 dark:text-gray-50 mb-6">{tip.excerpt}</p>
-          <Image src={tip.image || "/placeholder.svg"} alt={tip.title} width={1000} height={300} className="object-cover aspect-[16/6] mb-6" />
+          <Image
+            src={tip.image || "/placeholder.svg"}
+            alt={tip.title}
+            width={1000}
+            height={300}
+            className="object-cover aspect-[16/6] mb-6"
+          />
           <div className="flex items-center justify-between flex-wrap gap-3 border-b border-gray-200 dark:border-gray-700 pb-6">
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-                <Image src={tip.author.avatar || "/placeholder.svg"} alt={tip.author.name} width={40} height={40} className="object-cover" />
+                <Image
+                  src={tip.author.avatar || "/placeholder.svg"}
+                  alt={tip.author.name}
+                  width={40}
+                  height={40}
+                  className="object-cover"
+                />
               </div>
               <div>
                 <div className="font-medium">{tip.author.name}</div>
@@ -71,13 +86,29 @@ export default function TipDetail({ tip }: TipDetailProps) {
             </div>
 
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" className={cn("flex items-center", isBookmarked && "text-purple-600 border-purple-200 bg-purple-50")} onClick={handleBookmark}>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "flex items-center",
+                  isBookmarked && "text-purple-600 border-purple-200 bg-purple-50",
+                )}
+                onClick={handleBookmark}
+              >
                 <Bookmark size={16} className="mr-2" />
                 {isBookmarked ? "Saved" : "Save"}
               </Button>
 
-              <Button variant="outline" size="sm" className="flex items-center" onClick={handleLike}>
-                <ThumbsUp size={16} className={cn("mr-2", hasLiked && "fill-purple-600 text-purple-600")} />
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center"
+                onClick={handleLike}
+              >
+                <ThumbsUp
+                  size={16}
+                  className={cn("mr-2", hasLiked && "fill-purple-600 text-purple-600")}
+                />
                 {likeCount}
               </Button>
 
@@ -98,8 +129,12 @@ export default function TipDetail({ tip }: TipDetailProps) {
               h4: ({ node, ...props }) => <h4 className="text-xl font-bold mb-3" {...props} />,
               h5: ({ node, ...props }) => <h5 className="text-lg font-bold mb-2" {...props} />,
               h6: ({ node, ...props }) => <h6 className="text-base font-bold mb-2" {...props} />,
-              p: ({ node, ...props }) => <p className="text-base mb-4 leading-relaxed" {...props} />,
-              a: ({ node, ...props }) => <a className="text-purple-600 hover:text-purple-700 mb-3 block" {...props} />,
+              p: ({ node, ...props }) => (
+                <p className="text-base mb-4 leading-relaxed" {...props} />
+              ),
+              a: ({ node, ...props }) => (
+                <a className="text-purple-600 hover:text-purple-700 mb-3 block" {...props} />
+              ),
             }}
           >
             {tip.content}

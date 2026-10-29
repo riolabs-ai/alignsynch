@@ -1,19 +1,19 @@
-import type { UserStats } from "@/lib/data/users"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Award, BarChart2, Clock, Flame, Percent, Star, ThumbsUp, TrendingUp } from "lucide-react"
+import type { UserStats } from "@/lib/data/users";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Award, BarChart2, Clock, Flame, Percent, Star, ThumbsUp, TrendingUp } from "lucide-react";
 
 interface ProfileStatsProps {
-  stats: UserStats
+  stats: UserStats;
 }
 
 export function ProfileStats({ stats }: ProfileStatsProps) {
   // Format time played in hours and minutes
   const formatTimePlayed = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    return `${hours}h ${minutes}m`
-  }
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  };
 
   return (
     <Card>
@@ -106,5 +106,5 @@ export function ProfileStats({ stats }: ProfileStatsProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

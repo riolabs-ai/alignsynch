@@ -260,13 +260,22 @@ export function QuizzesByDifficulty() {
         <div className="flex items-center gap-2">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="easy" className="data-[state=active]:bg-green-500 data-[state=active]:text-white">
+              <TabsTrigger
+                value="easy"
+                className="data-[state=active]:bg-green-500 data-[state=active]:text-white"
+              >
                 Easy
               </TabsTrigger>
-              <TabsTrigger value="medium" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white">
+              <TabsTrigger
+                value="medium"
+                className="data-[state=active]:bg-amber-500 data-[state=active]:text-white"
+              >
                 Medium
               </TabsTrigger>
-              <TabsTrigger value="hard" className="data-[state=active]:bg-red-500 data-[state=active]:text-white">
+              <TabsTrigger
+                value="hard"
+                className="data-[state=active]:bg-red-500 data-[state=active]:text-white"
+              >
                 Hard
               </TabsTrigger>
             </TabsList>
@@ -286,18 +295,37 @@ export function QuizzesByDifficulty() {
       <div className="relative">
         {/* Easy Quizzes */}
         <div className={activeTab === "easy" ? "block" : "hidden"}>
-          <Swiper slidesPerView={"auto"} spaceBetween={16} navigation={{ nextEl: ".next-card", prevEl: ".prev-card" }} modules={[Navigation]} loop autoplay>
+          <Swiper
+            slidesPerView={"auto"}
+            spaceBetween={16}
+            navigation={{ nextEl: ".next-card", prevEl: ".prev-card" }}
+            modules={[Navigation]}
+            loop
+            autoplay
+          >
             {quizzesByDifficulty.easy.map((quiz) => (
               <SwiperSlide key={quiz.id} className="max-w-[306px]">
                 <Card className="overflow-hidden h-full">
                   <div className="relative">
-                    <Image width={600} height={350} src={quiz.img} alt={quiz.title} className="h-40 w-full object-cover" />
+                    <Image
+                      width={600}
+                      height={350}
+                      src={quiz.img}
+                      alt={quiz.title}
+                      className="h-40 w-full object-cover"
+                    />
                     <Badge variant="success" className="absolute top-2 right-2">
                       Easy
                     </Badge>
                     <div className="flex bg-gradient-to-b from-transparent to-black justify-between items-center gap-2 absolute px-3 pb-3 bottom-0 left-0 right-0">
                       <div className="flex items-center gap-3">
-                        <Image src={"/avatars/alex.png"} width={36} height={36} className="size-9 object-cover object-center rounded-full" alt="creator" />
+                        <Image
+                          src={"/avatars/alex.png"}
+                          width={36}
+                          height={36}
+                          className="size-9 object-cover object-center rounded-full"
+                          alt="creator"
+                        />
                         <div className="flex items-centere gap-2">
                           <span className="font-medium text-white">Alex Smith</span>
                         </div>
@@ -329,7 +357,19 @@ export function QuizzesByDifficulty() {
                         <Progress value={calculateProgress(quiz.players, quiz.maxPlayers)} />
                       </div>
 
-                      {quiz.spotsLeft <= 20 ? <p className="text-xs font-medium text-destructive">Only {quiz.spotsLeft} spots left!</p> : quiz.spotsLeft <= 50 ? <p className="text-xs font-medium text-amber-600">Only {quiz.spotsLeft} spots left</p> : <p className="text-xs text-muted-foreground">{quiz.spotsLeft} spots available</p>}
+                      {quiz.spotsLeft <= 20 ? (
+                        <p className="text-xs font-medium text-destructive">
+                          Only {quiz.spotsLeft} spots left!
+                        </p>
+                      ) : quiz.spotsLeft <= 50 ? (
+                        <p className="text-xs font-medium text-amber-600">
+                          Only {quiz.spotsLeft} spots left
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {quiz.spotsLeft} spots available
+                        </p>
+                      )}
                     </div>
                   </CardContent>
 
@@ -351,10 +391,19 @@ export function QuizzesByDifficulty() {
           <Carousel className="w-full">
             <CarouselContent className="-ml-2 md:-ml-4">
               {quizzesByDifficulty.medium.map((quiz) => (
-                <CarouselItem key={quiz.id} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                <CarouselItem
+                  key={quiz.id}
+                  className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5"
+                >
                   <Card className="overflow-hidden h-full">
                     <div className="relative">
-                      <Image width={600} height={350} src={quiz.img} alt={quiz.title} className="h-40 w-full object-cover" />
+                      <Image
+                        width={600}
+                        height={350}
+                        src={quiz.img}
+                        alt={quiz.title}
+                        className="h-40 w-full object-cover"
+                      />
                       <Badge variant="yellow" className="absolute top-2 right-2">
                         Medium
                       </Badge>
@@ -381,7 +430,19 @@ export function QuizzesByDifficulty() {
                       </div>
                       <div className="space-y-1.5">
                         <Progress value={calculateProgress(quiz.players, quiz.maxPlayers)} />
-                        {quiz.spotsLeft <= 20 ? <p className="text-xs font-medium text-destructive">Only {quiz.spotsLeft} spots left!</p> : quiz.spotsLeft <= 50 ? <p className="text-xs font-medium text-amber-600">Only {quiz.spotsLeft} spots left</p> : <p className="text-xs text-muted-foreground">{quiz.spotsLeft} spots available</p>}
+                        {quiz.spotsLeft <= 20 ? (
+                          <p className="text-xs font-medium text-destructive">
+                            Only {quiz.spotsLeft} spots left!
+                          </p>
+                        ) : quiz.spotsLeft <= 50 ? (
+                          <p className="text-xs font-medium text-amber-600">
+                            Only {quiz.spotsLeft} spots left
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            {quiz.spotsLeft} spots available
+                          </p>
+                        )}
                       </div>
                     </CardContent>
 
@@ -404,10 +465,19 @@ export function QuizzesByDifficulty() {
           <Carousel className="w-full">
             <CarouselContent className="-ml-2 md:-ml-4">
               {quizzesByDifficulty.hard.map((quiz) => (
-                <CarouselItem key={quiz.id} className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                <CarouselItem
+                  key={quiz.id}
+                  className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5"
+                >
                   <Card className="overflow-hidden h-full">
                     <div className="relative">
-                      <Image width={600} height={350} src={quiz.img} alt={quiz.title} className="h-40 w-full object-cover" />
+                      <Image
+                        width={600}
+                        height={350}
+                        src={quiz.img}
+                        alt={quiz.title}
+                        className="h-40 w-full object-cover"
+                      />
                       <Badge variant="destructive" className="absolute top-2 right-2">
                         Hard
                       </Badge>
@@ -432,10 +502,33 @@ export function QuizzesByDifficulty() {
                             <Users className="h-3.5 w-3.5" />
                             <span>{formatPlayerCount(quiz.players)} players</span>
                           </div>
-                          <CircularProgress value={calculateProgress(quiz.players, quiz.maxPlayers)} size={36} strokeWidth={3} color={quiz.spotsLeft <= 20 ? "hsl(var(--destructive))" : quiz.spotsLeft <= 50 ? "hsl(var(--warning))" : "hsl(var(--primary))"} />
+                          <CircularProgress
+                            value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                            size={36}
+                            strokeWidth={3}
+                            color={
+                              quiz.spotsLeft <= 20
+                                ? "hsl(var(--destructive))"
+                                : quiz.spotsLeft <= 50
+                                  ? "hsl(var(--warning))"
+                                  : "hsl(var(--primary))"
+                            }
+                          />
                         </div>
 
-                        {quiz.spotsLeft <= 20 ? <p className="text-xs font-medium text-destructive">Only {quiz.spotsLeft} spots left!</p> : quiz.spotsLeft <= 50 ? <p className="text-xs font-medium text-amber-600">Only {quiz.spotsLeft} spots left</p> : <p className="text-xs text-muted-foreground">{quiz.spotsLeft} spots available</p>}
+                        {quiz.spotsLeft <= 20 ? (
+                          <p className="text-xs font-medium text-destructive">
+                            Only {quiz.spotsLeft} spots left!
+                          </p>
+                        ) : quiz.spotsLeft <= 50 ? (
+                          <p className="text-xs font-medium text-amber-600">
+                            Only {quiz.spotsLeft} spots left
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            {quiz.spotsLeft} spots available
+                          </p>
+                        )}
                       </div>
                     </CardContent>
 

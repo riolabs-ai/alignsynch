@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 // Sample data
 const data = [
@@ -12,7 +12,7 @@ const data = [
   { date: "Apr", earnings: 22 },
   { date: "May", earnings: 28 },
   { date: "Jun", earnings: 35 },
-]
+];
 
 export function EarningsChart() {
   return (
@@ -48,5 +48,5 @@ export function EarningsChart() {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }
