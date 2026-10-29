@@ -13,7 +13,7 @@ fixtures that must satisfy it, and `pnpm data:check` fails the build when a fixt
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                |
 | `pnpm data:check`                | exit 0, 5–6 s        | tsc → 157 `node:test` cases → validator; prints record counts |
 | `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 232 warnings, 12 infos           |
-| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 313 files; CI gate                            |
+| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 314 files; CI gate                            |
 | `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 31 static pages                      |
 | `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                 |
 | `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                       |
