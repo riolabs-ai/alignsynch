@@ -423,6 +423,8 @@ first and every later unit shrinks rather than grows the surface.
 | WU-11 | 248  | 15    | 8    | 33    | 0   | 0      | 207  | Tournament copy and mode data (needs the domain decision)      |
 | OUT   | 720  | 41    | 10   | 19    | 0   | 0      | 691  | Product-surface microcopy (settings, dashboard, profile, crea… |
 
+**One issue per unit** (all labelled `tech-debt` + `needs-validation`): #47 WU-12 · #48 WU-1 · #49 WU-4 · #50 WU-5 · #51 WU-2 · #52 WU-3 · #53 WU-6 · #54 WU-7 · #55 WU-8 · #56 WU-9 · #57 WU-10 · #58 WU-11. Tracking issue: #46.
+
 ### Ranked list
 
 1. **WU-12 — delete the 15 components no route imports** (157 hits
