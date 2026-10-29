@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Clock, Copy, ListChecks, Trophy, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BattleState } from "./battle-page";
+import { media } from "@/data/media";
 
 interface BattleLobbyProps {
   battleState: BattleState;
@@ -85,7 +86,7 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
                     className="flex flex-col items-center p-3 border rounded-lg bg-background"
                   >
                     <Avatar className="h-16 w-16 mb-2">
-                      <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
+                      <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
                       <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="text-center">

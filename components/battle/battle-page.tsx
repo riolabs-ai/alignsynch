@@ -5,6 +5,7 @@ import { ActiveBattle } from "./active-battle";
 import { BattleLobby } from "./battle-lobby";
 import { BattleModeSelection } from "./battle-mode-selection";
 import { BattleResults } from "./battle-results";
+import { media } from "@/data/media";
 
 type BattleStage = "selection" | "lobby" | "active" | "results";
 type BattleMode = "1v1" | "group";
@@ -51,7 +52,7 @@ export function BattlePage() {
     {
       id: "1",
       name: "You",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
       score: 0,
       isReady: true,
       isCurrentUser: true,
@@ -62,7 +63,7 @@ export function BattlePage() {
     {
       id: "2",
       name: "QuizMaster",
-      avatar: "/avatars/master.png",
+      avatar: media["avatars.master"].src,
       score: 0,
       isReady: false,
       isCurrentUser: false,
@@ -77,7 +78,7 @@ export function BattlePage() {
     {
       id: "3",
       name: "BrainGenius",
-      avatar: "/avatars/genious.png",
+      avatar: media["avatars.genious"].src,
       score: 0,
       isReady: false,
       isCurrentUser: false,
@@ -88,7 +89,7 @@ export function BattlePage() {
     {
       id: "4",
       name: "QuizGuru",
-      avatar: "/avatars/guru.png",
+      avatar: media["avatars.guru"].src,
       score: 0,
       isReady: false,
       isCurrentUser: false,
@@ -99,7 +100,7 @@ export function BattlePage() {
     {
       id: "5",
       name: "MindChamp",
-      avatar: "/avatars/champion.png",
+      avatar: media["avatars.champion"].src,
       score: 0,
       isReady: false,
       isCurrentUser: false,

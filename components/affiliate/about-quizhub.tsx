@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Award, BookOpen, Globe, Users } from "lucide-react";
 import Image from "next/image";
+import { media } from "@/data/media";
 
 export function AboutQuizHub() {
   const stats = [
@@ -58,7 +59,7 @@ export function AboutQuizHub() {
           >
             <div className="relative z-10 rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700">
               <Image
-                src="/about-affiliate.png"
+                src={media["about-affiliate"].src}
                 alt="QuizMaker Platform"
                 width={600}
                 height={400}

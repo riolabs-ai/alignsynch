@@ -7,6 +7,7 @@ import { formatClockTime, formatDateTimeLong } from "@/content/core";
 import { Check, CheckCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { media } from "@/data/media";
 
 interface ChatMessageProps {
   message: Message;
@@ -46,7 +47,7 @@ export function ChatMessage({ message, isOwn, contactName, contactAvatar }: Chat
         <div className="flex-shrink-0">
           <div className="relative w-7 h-7">
             <Image
-              src={imageError ? "/placeholder.svg?height=28&width=28" : contactAvatar}
+              src={imageError ? media.placeholder.src : contactAvatar}
               alt={contactName}
               width={28}
               height={28}
@@ -82,7 +83,7 @@ export function ChatMessage({ message, isOwn, contactName, contactAvatar }: Chat
                       <span className="text-xs">Loading image...</span>
                     </div>
                     <Image
-                      src={message.image || "/placeholder.svg"}
+                      src={message.image || media.placeholder.src}
                       alt="Shared image"
                       width={300}
                       height={200}

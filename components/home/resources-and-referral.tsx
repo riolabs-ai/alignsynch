@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { media } from "@/data/media";
 import {
   ArrowRight,
   ChevronLeft,
@@ -84,7 +85,10 @@ export function ResourcesAndReferral() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Referral Program CTA - 5 columns */}
           <div className="md:col-span-5">
-            <Card className="overflow-hidden h-full  border-0 shadow-md bg-[url('/refer-bg.png')]">
+            <Card
+              className="overflow-hidden h-full  border-0 shadow-md"
+              style={{ backgroundImage: `url(${media["refer-bg"].src})` }}
+            >
               <CardContent className="p-6 xl:pt-6 h-full">
                 <div className="flex flex-col h-full">
                   <div className="flex justify-between items-start mb-4">

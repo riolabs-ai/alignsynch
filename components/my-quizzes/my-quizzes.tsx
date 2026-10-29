@@ -44,6 +44,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 /** The tabs speak the product's words; the model stores publication state. */
 const STATUS_LABEL: Record<PublishStatus, string> = {
@@ -241,7 +242,7 @@ export function MyQuizzes() {
                     <Image
                       width={600}
                       height={350}
-                      src={quiz.cover?.src ?? "/placeholder.svg"}
+                      src={quiz.cover?.src ?? media.placeholder.src}
                       alt={quiz.cover?.alt || quiz.title}
                       className="h-full w-full object-cover"
                     />
@@ -382,7 +383,7 @@ export function MyQuizzes() {
                       <Image
                         width={600}
                         height={350}
-                        src={quiz.cover?.src ?? "/placeholder.svg"}
+                        src={quiz.cover?.src ?? media.placeholder.src}
                         alt={quiz.cover?.alt || quiz.title}
                         className="h-full w-full object-cover"
                       />

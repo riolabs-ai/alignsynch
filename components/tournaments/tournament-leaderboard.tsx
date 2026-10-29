@@ -23,6 +23,7 @@ import { ArrowDown, ArrowUp, Award, Medal, Minus, Search, Trophy } from "lucide-
 import Image from "next/image";
 import { useState } from "react";
 import { Tournament } from "./tournament-detail";
+import { media } from "@/data/media";
 
 interface TournamentLeaderboardProps {
   tournament: Tournament;
@@ -39,7 +40,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 2,
       username: "QuizWizard",
       name: "Alex Johnson",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
       score: 980,
       accuracy: 98,
       streak: 15,
@@ -50,7 +51,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 1,
       username: "BrainMaster",
       name: "Sarah Chen",
-      avatar: "/avatars/brain.png",
+      avatar: media["avatars.brain"].src,
       score: 945,
       accuracy: 94,
       streak: 12,
@@ -61,7 +62,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 5,
       username: "KnowledgeKing",
       name: "Michael Smith",
-      avatar: "/avatars/king.webp",
+      avatar: media["avatars.king"].src,
       score: 920,
       accuracy: 92,
       streak: 10,
@@ -72,7 +73,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 3,
       username: "QuizChampion",
       name: "Emma Wilson",
-      avatar: "/avatars/champion.png",
+      avatar: media["avatars.champion"].src,
       score: 890,
       accuracy: 89,
       streak: 8,
@@ -83,7 +84,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 4,
       username: "GeniusQuizzer",
       name: "David Lee",
-      avatar: "/avatars/genious.png",
+      avatar: media["avatars.genious"].src,
       score: 875,
       accuracy: 87,
       streak: 7,
@@ -94,7 +95,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 6,
       username: "MindMaster",
       name: "Olivia Brown",
-      avatar: "/avatars/mind.webp",
+      avatar: media["avatars.mind"].src,
       score: 840,
       accuracy: 84,
       streak: 6,
@@ -105,7 +106,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 9,
       username: "QuizGuru",
       name: "James Wilson",
-      avatar: "/avatars/guru.png",
+      avatar: media["avatars.guru"].src,
       score: 820,
       accuracy: 82,
       streak: 5,
@@ -116,7 +117,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 7,
       username: "KnowledgeMaster",
       name: "Sophia Garcia",
-      avatar: "/avatars/master.png",
+      avatar: media["avatars.master"].src,
       score: 795,
       accuracy: 79,
       streak: 4,
@@ -127,7 +128,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 8,
       username: "QuizGenius",
       name: "Daniel Kim",
-      avatar: "/avatars/genious.png",
+      avatar: media["avatars.genious"].src,
       score: 780,
       accuracy: 78,
       streak: 3,
@@ -138,7 +139,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       previousRank: 10,
       username: "BrainWave",
       name: "Ava Martinez",
-      avatar: "/avatars/brain.png",
+      avatar: media["avatars.brain"].src,
       score: 760,
       accuracy: 76,
       streak: 2,
@@ -253,7 +254,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
                         <div className="flex items-center gap-3">
                           <div className="relative h-8 w-8">
                             <Image
-                              src={player.avatar || "/placeholder.svg"}
+                              src={player.avatar || media.placeholder.src}
                               alt={player.username}
                               fill
                               className="rounded-full object-cover"
@@ -310,7 +311,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
               <div className="flex items-center gap-3">
                 <div className="relative h-12 w-12">
                   <Image
-                    src="/avatars/alex.png"
+                    src={media["avatars.alex"].src}
                     alt="Your Avatar"
                     fill
                     className="rounded-full object-cover"

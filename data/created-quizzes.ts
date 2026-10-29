@@ -11,6 +11,7 @@
  * carried them, so nothing in the app could join to them.
  */
 import type { Quiz } from "../content/quiz";
+import { media } from "./media";
 
 export const createdQuizzes: readonly Quiz[] = [
   {
@@ -22,7 +23,7 @@ export const createdQuizzes: readonly Quiz[] = [
     categoryIds: ["geography"],
     tags: [],
     cover: {
-      src: "/world-map-quiz.png",
+      src: media["world-map-quiz"].src,
       alt: "World Geography Challenge",
     },
     difficulty: "medium",
@@ -56,7 +57,7 @@ export const createdQuizzes: readonly Quiz[] = [
     categoryIds: ["science"],
     tags: [],
     cover: {
-      src: "/space-exploration-quiz.png",
+      src: media["space-exploration-quiz"].src,
       alt: "Science Quiz Extravaganza",
     },
     difficulty: "hard",
@@ -89,7 +90,7 @@ export const createdQuizzes: readonly Quiz[] = [
     categoryIds: ["history"],
     tags: [],
     cover: {
-      src: "/ancient-civilizations-quiz.png",
+      src: media["ancient-civilizations-quiz"].src,
       alt: "History Through the Ages",
     },
     difficulty: "medium",
@@ -123,7 +124,7 @@ export const createdQuizzes: readonly Quiz[] = [
     categoryIds: ["general-knowledge"],
     tags: [],
     cover: {
-      src: "/space-exploration-quiz.png",
+      src: media["space-exploration-quiz"].src,
       alt: "Pop Culture Trivia",
     },
     difficulty: "easy",
@@ -156,7 +157,7 @@ export const createdQuizzes: readonly Quiz[] = [
     categoryIds: ["science"],
     tags: [],
     cover: {
-      src: "/technology-quiz.png",
+      src: media["technology-quiz"].src,
       alt: "Annual Science Tournament",
     },
     difficulty: "hard",

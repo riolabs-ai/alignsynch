@@ -9,13 +9,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { media } from "@/data/media";
 // Sample top players data
 const topPlayers = [
   {
     id: 1,
     name: "Alex Johnson",
     username: "alexmaster",
-    avatar: "/avatars/alex.png",
+    avatar: media["avatars.alex"].src,
     country: "United States",
     countryCode: "us",
     rank: 1,
@@ -30,7 +31,7 @@ const topPlayers = [
     id: 2,
     name: "Sarah Williams",
     username: "quizwizard",
-    avatar: "/avatars/wizard.webp",
+    avatar: media["avatars.wizard"].src,
     country: "Canada",
     countryCode: "ca",
     rank: 2,
@@ -45,7 +46,7 @@ const topPlayers = [
     id: 3,
     name: "Michael Brown",
     username: "brainiacsarah",
-    avatar: "/avatars/sarah.webp",
+    avatar: media["avatars.sarah"].src,
     country: "United Kingdom",
     countryCode: "gb",
     rank: 3,
@@ -60,7 +61,7 @@ const topPlayers = [
     id: 4,
     name: "Emily Davis",
     username: "triviaking",
-    avatar: "/avatars/king.webp",
+    avatar: media["avatars.king"].src,
     country: "Australia",
     countryCode: "au",
     rank: 4,
@@ -75,7 +76,7 @@ const topPlayers = [
     id: 5,
     name: "David Wilson",
     username: "quizchampion",
-    avatar: "/avatars/champion.png",
+    avatar: media["avatars.champion"].src,
     country: "Germany",
     countryCode: "de",
     rank: 5,
@@ -90,7 +91,7 @@ const topPlayers = [
     id: 6,
     name: "Jessica Taylor",
     username: "mindmaster",
-    avatar: "/avatars/mind.webp",
+    avatar: media["avatars.mind"].src,
     country: "France",
     countryCode: "fr",
     rank: 6,
@@ -105,7 +106,7 @@ const topPlayers = [
     id: 7,
     name: "Ryan Martinez",
     username: "quizgenius",
-    avatar: "/avatars/genious.png",
+    avatar: media["avatars.genious"].src,
     country: "Spain",
     countryCode: "es",
     rank: 7,
@@ -120,7 +121,7 @@ const topPlayers = [
     id: 8,
     name: "Olivia Anderson",
     username: "brainpower",
-    avatar: "/avatars/brain.png",
+    avatar: media["avatars.brain"].src,
     country: "Italy",
     countryCode: "it",
     rank: 8,
@@ -196,7 +197,7 @@ export function TopPlayersCarousel() {
                     <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">
                       <Avatar className="h-20 w-20 border-4 border-white shadow-md bg-background">
                         <AvatarImage
-                          src={player.avatar || "/placeholder.svg"}
+                          src={player.avatar || media.placeholder.src}
                           className="object-cover object-center"
                           alt={player.name}
                         />

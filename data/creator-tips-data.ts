@@ -6,6 +6,7 @@
 import type { Tip } from "../content/article";
 import type { Category } from "../content/category";
 import { tipCategories as taxonomyTipCategories } from "../content/categories";
+import { media } from "./media";
 
 export type { Tip } from "../content/article";
 
@@ -20,13 +21,13 @@ export const tips: readonly Tip[] = [
     categoryIds: ["tip-question-writing"],
     tags: [],
     cover: {
-      src: "/tips/tip-1.png",
+      src: media["tips.tip-1"].src,
       alt: "",
     },
     author: {
       name: "Alex Johnson",
       avatar: {
-        src: "/avatars/alex.png",
+        src: media["avatars.alex"].src,
         alt: "Alex Johnson",
       },
     },
@@ -50,13 +51,13 @@ export const tips: readonly Tip[] = [
     categoryIds: ["tip-engagement"],
     tags: [],
     cover: {
-      src: "/tips/tip-2.png",
+      src: media["tips.tip-2"].src,
       alt: "",
     },
     author: {
       name: "Sarah Williams",
       avatar: {
-        src: "/avatars/sarah.webp",
+        src: media["avatars.sarah"].src,
         alt: "Sarah Williams",
       },
     },
@@ -78,13 +79,13 @@ export const tips: readonly Tip[] = [
     categoryIds: ["tip-monetization"],
     tags: [],
     cover: {
-      src: "/tips/tip-3.png",
+      src: media["tips.tip-3"].src,
       alt: "",
     },
     author: {
       name: "Michael Chen",
       avatar: {
-        src: "/placeholder.svg?height=100&width=100",
+        src: media["placeholder"].src,
         alt: "Michael Chen",
       },
     },
@@ -108,13 +109,13 @@ export const tips: readonly Tip[] = [
     categoryIds: ["tip-design"],
     tags: [],
     cover: {
-      src: "/tips/tip-4.png",
+      src: media["tips.tip-4"].src,
       alt: "",
     },
     author: {
       name: "Emma Rodriguez",
       avatar: {
-        src: "/avatars/alex.png",
+        src: media["avatars.alex"].src,
         alt: "Emma Rodriguez",
       },
     },
@@ -136,13 +137,13 @@ export const tips: readonly Tip[] = [
     categoryIds: ["tip-promotion"],
     tags: [],
     cover: {
-      src: "/tips/tip-5.png",
+      src: media["tips.tip-5"].src,
       alt: "",
     },
     author: {
       name: "David Wilson",
       avatar: {
-        src: "/avatars/guru.png",
+        src: media["avatars.guru"].src,
         alt: "David Wilson",
       },
     },
@@ -165,13 +166,13 @@ export const tips: readonly Tip[] = [
     categoryIds: ["tip-technical"],
     tags: [],
     cover: {
-      src: "/tips/tip-5.png",
+      src: media["tips.tip-5"].src,
       alt: "",
     },
     author: {
       name: "Tech Team",
       avatar: {
-        src: "/avatars/king.webp",
+        src: media["avatars.king"].src,
         alt: "Tech Team",
       },
     },

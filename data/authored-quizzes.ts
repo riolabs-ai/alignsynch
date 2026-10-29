@@ -16,6 +16,7 @@
  * subject — E10 forbids a duplicate record and A4 forbids a shadow identity.
  */
 import type { Quiz } from "../content/quiz";
+import { media } from "./media";
 
 export const authoredQuizzes: readonly Quiz[] = [
   {
@@ -166,28 +167,28 @@ export const authoredQuizzes: readonly Quiz[] = [
         {
           name: "Alex J.",
           avatar: {
-            src: "/avatars/alex.png",
+            src: media["avatars.alex"].src,
             alt: "Alex J.",
           },
         },
         {
           name: "Sarah W.",
           avatar: {
-            src: "/avatars/wizard.webp",
+            src: media["avatars.wizard"].src,
             alt: "Sarah W.",
           },
         },
         {
           name: "Mike B.",
           avatar: {
-            src: "/avatars/sarah.webp",
+            src: media["avatars.sarah"].src,
             alt: "Mike B.",
           },
         },
         {
           name: "Emily D.",
           avatar: {
-            src: "/avatars/king.webp",
+            src: media["avatars.king"].src,
             alt: "Emily D.",
           },
         },
@@ -204,13 +205,13 @@ export const authoredQuizzes: readonly Quiz[] = [
       updatedAt: "2024-12-27T00:00:00.000Z",
     },
     cover: {
-      src: "/space-exploration-quiz.png",
+      src: media["space-exploration-quiz"].src,
       alt: "Science Quiz: Space Exploration",
     },
     author: {
       name: "MarvelFan",
       avatar: {
-        src: "/avatars/alex.png",
+        src: media["avatars.alex"].src,
         alt: "MarvelFan",
       },
     },
@@ -363,28 +364,28 @@ export const authoredQuizzes: readonly Quiz[] = [
         {
           name: "David W.",
           avatar: {
-            src: "/avatars/champion.png",
+            src: media["avatars.champion"].src,
             alt: "David W.",
           },
         },
         {
           name: "Jessica T.",
           avatar: {
-            src: "/avatars/mind.webp",
+            src: media["avatars.mind"].src,
             alt: "Jessica T.",
           },
         },
         {
           name: "Ryan M.",
           avatar: {
-            src: "/avatars/genious.png",
+            src: media["avatars.genious"].src,
             alt: "Ryan M.",
           },
         },
         {
           name: "Olivia A.",
           avatar: {
-            src: "/avatars/brain.png",
+            src: media["avatars.brain"].src,
             alt: "Olivia A.",
           },
         },
@@ -399,13 +400,13 @@ export const authoredQuizzes: readonly Quiz[] = [
       rewardCents: 750,
     },
     cover: {
-      src: "/world-landmarks.png",
+      src: media["world-landmarks"].src,
       alt: "World Geography Challenge: Capitals & Landmarks",
     },
     author: {
       name: "GeoExplorer",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "GeoExplorer",
       },
     },
@@ -558,28 +559,28 @@ export const authoredQuizzes: readonly Quiz[] = [
         {
           name: "James K.",
           avatar: {
-            src: "/avatars/alex.png",
+            src: media["avatars.alex"].src,
             alt: "James K.",
           },
         },
         {
           name: "Sophia L.",
           avatar: {
-            src: "/avatars/wizard.webp",
+            src: media["avatars.wizard"].src,
             alt: "Sophia L.",
           },
         },
         {
           name: "Noah P.",
           avatar: {
-            src: "/avatars/sarah.webp",
+            src: media["avatars.sarah"].src,
             alt: "Noah P.",
           },
         },
         {
           name: "Emma R.",
           avatar: {
-            src: "/avatars/king.webp",
+            src: media["avatars.king"].src,
             alt: "Emma R.",
           },
         },
@@ -595,13 +596,13 @@ export const authoredQuizzes: readonly Quiz[] = [
       limitedTimeEndsAt: "2025-01-02T00:00:00.000Z",
     },
     cover: {
-      src: "/brain-teasers-puzzles.png",
+      src: media["brain-teasers-puzzles"].src,
       alt: "Brain Teasers & Logic Puzzles",
     },
     author: {
       name: "PuzzleMaster",
       avatar: {
-        src: "/avatars/sarah.webp",
+        src: media["avatars.sarah"].src,
         alt: "PuzzleMaster",
       },
     },
@@ -756,28 +757,28 @@ export const authoredQuizzes: readonly Quiz[] = [
         {
           name: "William T.",
           avatar: {
-            src: "/avatars/champion.png",
+            src: media["avatars.champion"].src,
             alt: "William T.",
           },
         },
         {
           name: "Ava M.",
           avatar: {
-            src: "/avatars/mind.webp",
+            src: media["avatars.mind"].src,
             alt: "Ava M.",
           },
         },
         {
           name: "Liam S.",
           avatar: {
-            src: "/avatars/genious.png",
+            src: media["avatars.genious"].src,
             alt: "Liam S.",
           },
         },
         {
           name: "Mia J.",
           avatar: {
-            src: "/avatars/brain.png",
+            src: media["avatars.brain"].src,
             alt: "Mia J.",
           },
         },
@@ -792,13 +793,13 @@ export const authoredQuizzes: readonly Quiz[] = [
       rewardCents: 650,
     },
     cover: {
-      src: "/history-mysteries.png",
+      src: media["history-mysteries"].src,
       alt: "History's Greatest Mysteries",
     },
     author: {
       name: "HistoryBuff",
       avatar: {
-        src: "/avatars/king.webp",
+        src: media["avatars.king"].src,
         alt: "HistoryBuff",
       },
     },
@@ -962,12 +963,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "HistoryBuff",
       avatar: {
-        src: "/avatars/king.webp",
+        src: media["avatars.king"].src,
         alt: "HistoryBuff",
       },
     },
     cover: {
-      src: "/ancient-civilizations-quiz.png",
+      src: media["ancient-civilizations-quiz"].src,
       alt: "Ancient Civilizations: Egypt, Greece & Rome",
     },
   },
@@ -1129,12 +1130,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "MathWhiz",
       avatar: {
-        src: "/avatars/genious.png",
+        src: media["avatars.genious"].src,
         alt: "MathWhiz",
       },
     },
     cover: {
-      src: "/math-puzzles-quiz.png",
+      src: media["math-puzzles-quiz"].src,
       alt: "Mathematical Puzzles & Brain Teasers",
     },
   },
@@ -1296,12 +1297,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "BookWorm",
       avatar: {
-        src: "/avatars/mind.webp",
+        src: media["avatars.mind"].src,
         alt: "BookWorm",
       },
     },
     cover: {
-      src: "/classic-novels-quiz.png",
+      src: media["classic-novels-quiz"].src,
       alt: "World of Fantasy Literature",
     },
   },
@@ -1462,12 +1463,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "BookWorm",
       avatar: {
-        src: "/avatars/mind.webp",
+        src: media["avatars.mind"].src,
         alt: "BookWorm",
       },
     },
     cover: {
-      src: "/classic-novels-quiz.png",
+      src: media["classic-novels-quiz"].src,
       alt: "Literature: Classic Novels",
     },
   },
@@ -1628,12 +1629,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "SportsNut",
       avatar: {
-        src: "/avatars/guru.png",
+        src: media["avatars.guru"].src,
         alt: "SportsNut",
       },
     },
     cover: {
-      src: "/sports-trivia-quiz.png",
+      src: media["sports-trivia-quiz"].src,
       alt: "World Cup Football History",
     },
   },
@@ -1794,12 +1795,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "MovieBuff",
       avatar: {
-        src: "/avatars/brain.png",
+        src: media["avatars.brain"].src,
         alt: "MovieBuff",
       },
     },
     cover: {
-      src: "/space-exploration-quiz.png",
+      src: media["space-exploration-quiz"].src,
       alt: "Blockbuster Movies Trivia",
     },
   },
@@ -1960,12 +1961,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "NatureExplorer",
       avatar: {
-        src: "/avatars/master.png",
+        src: media["avatars.master"].src,
         alt: "NatureExplorer",
       },
     },
     cover: {
-      src: "/world-landmarks.png",
+      src: media["world-landmarks"].src,
       alt: "Wonders of the Natural World",
     },
   },
@@ -2126,12 +2127,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "MusicMaestro",
       avatar: {
-        src: "/avatars/genious.png",
+        src: media["avatars.genious"].src,
         alt: "MusicMaestro",
       },
     },
     cover: {
-      src: "/music-quiz.png",
+      src: media["music-quiz"].src,
       alt: "Music Through the Decades",
     },
   },
@@ -2292,12 +2293,12 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "TechGuru",
       avatar: {
-        src: "/avatars/brain.png",
+        src: media["avatars.brain"].src,
         alt: "TechGuru",
       },
     },
     cover: {
-      src: "/technology-quiz.png",
+      src: media["technology-quiz"].src,
       alt: "Technology & Gadgets",
     },
   },
@@ -2458,13 +2459,9 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "FoodieChef",
       avatar: {
-        src: "/avatars/alex.png",
+        src: media["avatars.alex"].src,
         alt: "FoodieChef",
       },
-    },
-    cover: {
-      src: "/easy-quiz-1.png",
-      alt: "Culinary World Tour",
     },
   },
   {
@@ -2623,13 +2620,9 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "ArtLover",
       avatar: {
-        src: "/avatars/sarah.webp",
+        src: media["avatars.sarah"].src,
         alt: "ArtLover",
       },
-    },
-    cover: {
-      src: "/easy-quiz-2.png",
-      alt: "Artistic Masterpieces",
     },
   },
   {
@@ -2789,13 +2782,9 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "ScienceGeek",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "ScienceGeek",
       },
-    },
-    cover: {
-      src: "/easy-quiz-3.png",
-      alt: "Famous Inventors & Discoveries",
     },
   },
 ];

@@ -4,6 +4,7 @@
  * comes from the schema, so a field can never drift from the model.
  */
 import type { Quiz } from "../content/quiz";
+import { media } from "./media";
 
 /** The one playable quiz. Was data/currentQuiz.tsx (5 StaticImageData question images). */
 export const currentQuiz: Quiz = {
@@ -17,10 +18,6 @@ export const currentQuiz: Quiz = {
   tags: ["history", "world events"],
   status: "published",
   difficulty: "medium",
-  cover: {
-    src: "/history-quiz.png",
-    alt: "",
-  },
   questions: [
     {
       id: "quiz-ultimate-world-history-trivia-q1",
@@ -47,7 +44,7 @@ export const currentQuiz: Quiz = {
       explanation:
         "The Lighthouse of Alexandria was one of the Seven Wonders of the Ancient World, built around 280 BC.",
       media: {
-        src: "/quiz/q13.png",
+        src: media["quiz.q13"].src,
         alt: "",
       },
     },
@@ -76,7 +73,7 @@ export const currentQuiz: Quiz = {
       explanation:
         "World War II ended in 1945, with Germany surrendering in May and Japan surrendering in September.",
       media: {
-        src: "/quiz/q6.png",
+        src: media["quiz.q6"].src,
         alt: "",
       },
     },
@@ -105,7 +102,7 @@ export const currentQuiz: Quiz = {
       explanation:
         "While Magellan started the voyage, Juan Sebastián Elcano completed the first circumnavigation after Magellan's death in 1522.",
       media: {
-        src: "/quiz/q12.png",
+        src: media["quiz.q12"].src,
         alt: "",
       },
     },
@@ -134,7 +131,7 @@ export const currentQuiz: Quiz = {
       explanation:
         "Julius Caesar was a Roman general and statesman who played a critical role in the transformation of the Roman Republic into the Roman Empire.",
       media: {
-        src: "/quiz/q15.png",
+        src: media["quiz.q15"].src,
         alt: "",
       },
     },
@@ -163,7 +160,7 @@ export const currentQuiz: Quiz = {
       explanation:
         "The Renaissance began in Italy during the 14th century, particularly in Florence, before spreading throughout Europe.",
       media: {
-        src: "/quiz/q17.png",
+        src: media["quiz.q17"].src,
         alt: "",
       },
     },

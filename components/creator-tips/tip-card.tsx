@@ -4,6 +4,7 @@ import { tipCategoryName, type Tip } from "@/data/creator-tips-data";
 import { Bookmark, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { media } from "@/data/media";
 
 interface TipCardProps {
   tip: Tip;
@@ -17,7 +18,7 @@ export default function TipCard({ tip }: TipCardProps) {
     >
       <div className="aspect-video relative">
         <Image
-          src={tip.cover?.src ?? "/placeholder.svg"}
+          src={tip.cover?.src ?? media.placeholder.src}
           alt={tip.title}
           fill
           className="object-cover"
@@ -45,7 +46,7 @@ export default function TipCard({ tip }: TipCardProps) {
           <div className="flex items-center">
             <div className="w-6 h-6 rounded-full overflow-hidden mr-2">
               <Image
-                src={tip.author.avatar?.src ?? "/placeholder.svg"}
+                src={tip.author.avatar?.src ?? media.placeholder.src}
                 alt={tip.author.name}
                 width={24}
                 height={24}

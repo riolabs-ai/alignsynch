@@ -35,7 +35,19 @@ const NAV_CALL = /\b(?:router\.(?:push|replace)|redirect)\(\s*"([^"]*)"\s*\)/g;
 /** Any quoted literal — used only to hunt for `public/` asset paths. */
 const STRING_LITERAL = /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'/g;
 
+/** A backtick literal. An interpolated one (`${id}`) is dynamic and stays with the runtime. */
+const TEMPLATE_LITERAL = /`([^`\\]*)`/g;
+
 const ASSET = /^\/[^?#\s]*\.(?:png|jpe?g|webp|svg|gif|avif|ico)(?:[?#].*)?$/i;
+
+/**
+ * A path inside a class list or a style string: `bg-[url('/hero-bg.jpg')]`,
+ * `"url(/newsletter-bg.png)"`. The whole string does not start with `/`, so `ASSET` above
+ * reads it as a class list and the asset was invisible to every check — three real
+ * backgrounds shipped that way.
+ */
+const CSS_URL =
+  /url\(\s*['"]?(\/[^'")\s?#]*\.(?:png|jpe?g|webp|svg|gif|avif|ico)(?:[?#][^'")\s]*)?)['"]?\s*\)/gi;
 
 /** `"/x"` is checkable; `http(s)://`, `mailto:`, `tel:`, `#frag` and bare words are not. */
 function isInternalPath(value: string): boolean {
@@ -85,10 +97,59 @@ export function navigationReferences(files: SourceFile[]): UiReference[] {
 
 /** Every literal that looks like a `public/` asset path, wherever it is written. */
 export function assetReferences(files: SourceFile[]): UiReference[] {
-  return collect(files, STRING_LITERAL, (match) => {
-    const literal = match[1] ?? match[2];
-    return literal !== undefined && ASSET.test(literal) ? literal : undefined;
-  });
+  const found: (UiReference & { at: number })[] = [];
+
+  /** One literal body -> its asset paths (whole-literal, or `url(...)` inside it). */
+  const inspect = (file: SourceFile, literal: string, bodyStart: number) => {
+    if (ASSET.test(literal)) {
+      found.push({
+        file: file.path,
+        line: lineAt(file.source, bodyStart - 1),
+        value: literal,
+        at: bodyStart - 1,
+      });
+    }
+
+    // A path inside a class/style string: the literal as a whole is not an asset, but the
+    // `url(...)` in it is.
+    CSS_URL.lastIndex = 0;
+    for (let nested = CSS_URL.exec(literal); nested !== null; nested = CSS_URL.exec(literal)) {
+      const index = bodyStart + nested.index;
+      found.push({
+        file: file.path,
+        line: lineAt(file.source, index),
+        value: nested[1],
+        at: index,
+      });
+    }
+  };
+
+  for (const file of files) {
+    STRING_LITERAL.lastIndex = 0;
+    for (
+      let match = STRING_LITERAL.exec(file.source);
+      match !== null;
+      match = STRING_LITERAL.exec(file.source)
+    ) {
+      inspect(file, match[1] ?? match[2] ?? "", match.index + 1);
+    }
+
+    TEMPLATE_LITERAL.lastIndex = 0;
+    for (
+      let match = TEMPLATE_LITERAL.exec(file.source);
+      match !== null;
+      match = TEMPLATE_LITERAL.exec(file.source)
+    ) {
+      const literal = match[1] ?? "";
+      // `${id}` makes it dynamic: the model or the route owns it, not a static path.
+      if (literal.includes("${")) continue;
+      inspect(file, literal, match.index + 1);
+    }
+  }
+
+  return found
+    .sort((a, b) => a.file.localeCompare(b.file) || a.at - b.at)
+    .map(({ at: _at, ...reference }) => reference);
 }
 
 /** Internal references whose path no route resolves. External/scheme/fragment values are skipped. */

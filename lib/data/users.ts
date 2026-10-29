@@ -1,6 +1,7 @@
 // Mock data for demonstration purposes
 // In a real app, this would fetch from a database
 
+import { media } from "../../data/media";
 export interface User {
   id: string;
   username: string;
@@ -103,7 +104,7 @@ export const users: User[] = [
     id: "1",
     username: "alexjohnson",
     name: "Alex Johnson",
-    avatar: "/avatars/alex.png",
+    avatar: media["avatars.alex"].src,
     bio: "Quiz enthusiast and knowledge seeker. I love challenging myself with difficult quizzes!",
     level: 42,
     score: 9850,
@@ -216,7 +217,7 @@ export const users: User[] = [
         id: "q1",
         title: "World Geography Challenge",
         description: "Test your knowledge of world geography with this challenging quiz!",
-        image: "/world-map-quiz.png",
+        image: media["world-map-quiz"].src,
         category: "Geography",
         difficulty: "medium",
         questions: 20,
@@ -240,7 +241,7 @@ export const users: User[] = [
         id: "q2",
         title: "Science Quiz Extravaganza",
         description: "From physics to biology, test your science knowledge!",
-        image: "/space-exploration-quiz.png",
+        image: media["space-exploration-quiz"].src,
         category: "Science",
         difficulty: "hard",
         questions: 25,
@@ -264,7 +265,7 @@ export const users: User[] = [
         id: "q3",
         title: "History Through the Ages",
         description: "Journey through time with this comprehensive history quiz!",
-        image: "/ancient-civilizations-quiz.png",
+        image: media["ancient-civilizations-quiz"].src,
         category: "History",
         difficulty: "medium",
         questions: 30,
@@ -288,7 +289,7 @@ export const users: User[] = [
         id: "q4",
         title: "Pop Culture Trivia",
         description: "Test your knowledge of movies, music, and celebrities!",
-        image: "/space-exploration-quiz.png",
+        image: media["space-exploration-quiz"].src,
         category: "Entertainment",
         difficulty: "easy",
         questions: 15,
@@ -312,7 +313,7 @@ export const users: User[] = [
         id: "q5",
         title: "Annual Science Tournament",
         description: "Compete with others in this annual science knowledge tournament!",
-        image: "/technology-quiz.png",
+        image: media["technology-quiz"].src,
         category: "Science",
         difficulty: "hard",
         questions: 40,
@@ -345,7 +346,7 @@ export const users: User[] = [
     id: "2",
     username: "sarahwilliams",
     name: "Sarah Williams",
-    avatar: "/avatars/sarah.webp",
+    avatar: media["avatars.sarah"].src,
     bio: "Trivia lover and quiz creator. Follow me for the best science quizzes!",
     level: 38,
     score: 8720,
@@ -434,7 +435,7 @@ export const users: User[] = [
     id: "3",
     username: "michaelbrown",
     name: "Michael Brown",
-    avatar: "/avatars/brain.png",
+    avatar: media["avatars.brain"].src,
     bio: "History buff and trivia enthusiast. Always looking for challenging quizzes!",
     level: 35,
     score: 7640,
