@@ -21,16 +21,32 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { quizCategoryLabel } from "@/content/categories";
+import { DIFFICULTIES, type Difficulty, difficultyLabel, isDifficulty } from "@/content/core";
 import { Brain, Clock, Globe, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle, Lightbulb, Save } from "./missing-icons";
 
+/**
+ * The subjects a player can prefer. Slugs, not labels: `quizCategories` owns the text, and
+ * the stored value is the slug `categoryIds` uses, so the preference survives a rename.
+ */
+const PREFERRED_SUBJECTS = [
+  "science",
+  "history",
+  "geography",
+  "literature",
+  "movies",
+  "music",
+  "sports",
+] as const;
+
 export function QuizPreferences() {
   const [isLoading, setIsLoading] = useState(false);
   const [preferences, setPreferences] = useState({
     defaultTimeLimit: 30,
-    defaultDifficulty: "medium",
+    defaultDifficulty: "medium" as Difficulty,
     autoSave: true,
     showTimer: true,
     showHints: true,
@@ -122,15 +138,21 @@ export function QuizPreferences() {
             </div>
             <Select
               value={preferences.defaultDifficulty}
-              onValueChange={(value) => handleSelectChange("defaultDifficulty", value)}
+              onValueChange={(value) => {
+                // The Select hands back a string; the enum decides whether it is a difficulty,
+                // so the preference can never hold a value the schema does not define.
+                if (isDifficulty(value)) handleSelectChange("defaultDifficulty", value);
+              }}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select difficulty" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="easy">Easy</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="hard">Hard</SelectItem>
+                {DIFFICULTIES.map((difficulty) => (
+                  <SelectItem key={difficulty} value={difficulty}>
+                    {difficultyLabel(difficulty)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -227,98 +249,26 @@ export function QuizPreferences() {
               Select categories you're most interested in.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Badge
-                variant={
-                  preferences.preferredCategories.includes("science") ? "default" : "outline"
-                }
-                className="cursor-pointer"
-                onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("science")
-                    ? preferences.preferredCategories.filter((c) => c !== "science")
-                    : [...preferences.preferredCategories, "science"];
-                  setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
-                }}
-              >
-                Science
-              </Badge>
-              <Badge
-                variant={
-                  preferences.preferredCategories.includes("history") ? "default" : "outline"
-                }
-                className="cursor-pointer"
-                onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("history")
-                    ? preferences.preferredCategories.filter((c) => c !== "history")
-                    : [...preferences.preferredCategories, "history"];
-                  setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
-                }}
-              >
-                History
-              </Badge>
-              <Badge
-                variant={
-                  preferences.preferredCategories.includes("geography") ? "default" : "outline"
-                }
-                className="cursor-pointer"
-                onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("geography")
-                    ? preferences.preferredCategories.filter((c) => c !== "geography")
-                    : [...preferences.preferredCategories, "geography"];
-                  setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
-                }}
-              >
-                Geography
-              </Badge>
-              <Badge
-                variant={
-                  preferences.preferredCategories.includes("literature") ? "default" : "outline"
-                }
-                className="cursor-pointer"
-                onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("literature")
-                    ? preferences.preferredCategories.filter((c) => c !== "literature")
-                    : [...preferences.preferredCategories, "literature"];
-                  setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
-                }}
-              >
-                Literature
-              </Badge>
-              <Badge
-                variant={preferences.preferredCategories.includes("movies") ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("movies")
-                    ? preferences.preferredCategories.filter((c) => c !== "movies")
-                    : [...preferences.preferredCategories, "movies"];
-                  setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
-                }}
-              >
-                Movies
-              </Badge>
-              <Badge
-                variant={preferences.preferredCategories.includes("music") ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("music")
-                    ? preferences.preferredCategories.filter((c) => c !== "music")
-                    : [...preferences.preferredCategories, "music"];
-                  setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
-                }}
-              >
-                Music
-              </Badge>
-              <Badge
-                variant={preferences.preferredCategories.includes("sports") ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => {
-                  const newCategories = preferences.preferredCategories.includes("sports")
-                    ? preferences.preferredCategories.filter((c) => c !== "sports")
-                    : [...preferences.preferredCategories, "sports"];
-                  setPreferences((prev) => ({ ...prev, preferredCategories: newCategories }));
-                }}
-              >
-                Sports
-              </Badge>
+              {PREFERRED_SUBJECTS.map((slug) => {
+                const selected = preferences.preferredCategories.includes(slug);
+                return (
+                  <Badge
+                    key={slug}
+                    variant={selected ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() =>
+                      setPreferences((prev) => ({
+                        ...prev,
+                        preferredCategories: selected
+                          ? prev.preferredCategories.filter((category) => category !== slug)
+                          : [...prev.preferredCategories, slug],
+                      }))
+                    }
+                  >
+                    {quizCategoryLabel(slug)}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
 

@@ -21,6 +21,7 @@
     "scripts/ui-refs.ts",
     "scripts/metric-refs.ts",
     "scripts/metric-invariants.ts",
+    "scripts/taxonomy-refs.ts",
     "scripts/media-refs.ts",
     "scripts/copy-refs.ts",
     "scripts/__tests__/**/*.ts"

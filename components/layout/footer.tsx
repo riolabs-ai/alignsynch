@@ -1,6 +1,13 @@
 import { Button } from "@/components/ui/button";
+import { quizCategoryLabel } from "@/content/categories";
 import { ArrowRight, BookOpen, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
+
+/**
+ * The subject column. Slugs, not labels — `quizCategories` owns the text, and the slug is
+ * also the `/categories/[slug]` route, so a link can never name a category the table lost.
+ */
+const FOOTER_SUBJECTS = ["science", "history", "math", "literature", "sports"] as const;
 
 export function Footer() {
   return (
@@ -157,51 +164,17 @@ export function Footer() {
                   <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
                 </h3>
                 <ul className="space-y-3">
-                  <li>
-                    <Link
-                      href="#"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Science
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="#"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      History
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="#"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Mathematics
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="#"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Literature
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="#"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Sports
-                    </Link>
-                  </li>
+                  {FOOTER_SUBJECTS.map((slug) => (
+                    <li key={slug}>
+                      <Link
+                        href={`/categories/${slug}`}
+                        className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
+                        {quizCategoryLabel(slug)}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               </div>
 

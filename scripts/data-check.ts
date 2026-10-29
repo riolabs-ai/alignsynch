@@ -27,6 +27,7 @@ import {
 import {
   categories as quizCategoryTable,
   categories as taxonomyTable,
+  quizCategories as quizSubjects,
 } from "../content/categories";
 import {
   zQuiz,
@@ -65,6 +66,10 @@ import { catalogueAliases, quizShelves, shelvedIds } from "../data/quiz-catalogu
 import { quizAnalytics } from "../data/quiz-analytics";
 import { promotions } from "../data/promotions";
 import { quizzes as quizRecords } from "../data/quizzes";
+import { authoredQuizzes } from "../data/authored-quizzes";
+import { createdQuizzes } from "../data/created-quizzes";
+import { currentQuiz } from "../data/currentQuiz";
+import { mockQuizzes } from "../data/mock-quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
@@ -106,6 +111,7 @@ import {
   navigationReferences,
   type SourceFile,
 } from "./ui-refs";
+import { findTaxonomyLiterals, taxonomyEntries, taxonomyVocabulary } from "./taxonomy-refs";
 
 type Severity = "error" | "warn";
 interface Diagnostic {
@@ -127,7 +133,8 @@ const nodeRequire = createRequire(__filename);
  * `pnpm gen`. When the source file exists, its compiled CommonJS module — produced by the
  * same `tsc -p tsconfig.datacheck.json` that compiled this validator — is required and its
  * exported array returned; when it is absent the generated set is simply empty. A present
- * but unloadable module is an E20 error, never a silent skip.
+ * but unloadable module is an E26 error, never a silent skip. (E20 is reserved for WU-5's
+ * DUP tier — `docs/P2-INVENTORY.md` — so the generator takes the next free code.)
  */
 function loadGenerated<T>(label: string, exportName: string): readonly T[] {
   const source = join(process.cwd(), "data", "generated", `${label}.ts`);
@@ -137,14 +144,14 @@ function loadGenerated<T>(label: string, exportName: string): readonly T[] {
     moduleValue = nodeRequire(join(__dirname, "..", "data", "generated", label));
   } catch (cause) {
     err(
-      "E20",
+      "E26",
       `data/generated/${label}.ts exists but its compiled module failed to load: ${String(cause)}`,
     );
     return [];
   }
   const value = (moduleValue as Record<string, unknown>)[exportName];
   if (!Array.isArray(value)) {
-    err("E20", `data/generated/${label}.ts must export \`${exportName}\` as an array`);
+    err("E26", `data/generated/${label}.ts must export \`${exportName}\` as an array`);
     return [];
   }
   return value as T[];
@@ -905,6 +912,48 @@ if (metricLiterals.length === 0 && Object.keys(metricTable).length === 0) {
   err(
     "E22",
     "the metric scan found 0 literals and data/metrics.ts holds 0 snapshots: the scan walked no sources or the fixture was not parsed",
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * E20 — no component types a label the model already owns
+ *
+ * E17/E18/E19 made a *file path* the registry's business. This is the same rule one
+ * layer up: a category name, a quiz title and a badge label are the fixtures' business.
+ * The shape it forbids is a whole node — `<span>Science</span>`, `label="Science"` —
+ * because that is exactly the copy that drifts: rename the subject in
+ * `content/categories.ts` and the page keeps saying the old name while typecheck, lint,
+ * data:check and build all stay green (docs/P2-INVENTORY.md, DUP tier: 26 hits).
+ *
+ * The vocabulary is built from the model here, never from the component tree, so the
+ * scan cannot agree with the code it is checking. Record-shaped literals inside a
+ * component-level mock (`category: "Science"`) are E21's business, not this rule's.
+ *
+ * Quiz scope only, on purpose: the editorial categories (`news`/`tip`/`kb`) are ordinary
+ * prose words — a chat settings tab called "Privacy" is not the `kb-privacy` category, and
+ * "Tournaments" is a nav label in three places — so a whole-node rule over them reports
+ * chrome, not a duplicated label. Their copy is the editorial work units' business.
+ * ------------------------------------------------------------------ */
+
+const taxonomy = taxonomyVocabulary(
+  taxonomyEntries({
+    categories: quizSubjects,
+    quizzes: [
+      ...quizRecords,
+      ...browseQuizzes,
+      ...authoredQuizzes,
+      ...mockQuizzes,
+      ...createdQuizzes,
+      currentQuiz,
+    ],
+    badges: promotions,
+  }),
+);
+
+for (const literal of findTaxonomyLiterals(uiSources, taxonomy)) {
+  err(
+    "E20",
+    `${literal.file}:${literal.line} types the ${literal.kind} label "${literal.label}", which "${literal.owner}" already owns — render it from ${literal.from} instead of writing it again`,
   );
 }
 

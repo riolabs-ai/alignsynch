@@ -1,10 +1,18 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { quizCategoryLabel } from "@/content/categories";
 import { formatMetricValue, formatDayCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
 import { Calendar, Clock, Flame, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
+
+/**
+ * Today's subject, as the taxonomy names it. The daily challenge is a Science quiz
+ * (components/daily-challenge/daily-quiz.tsx); the label comes from `quizCategories`, so a
+ * renamed subject moves here without touching this file.
+ */
+const TODAYS_THEME = quizCategoryLabel("science");
 
 export function DailyChallengeHeader() {
   const [timeLeft, setTimeLeft] = useState({
@@ -68,7 +76,7 @@ export function DailyChallengeHeader() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Today's Theme</p>
-              <p className="text-xl font-bold">Science & Technology</p>
+              <p className="text-xl font-bold">{TODAYS_THEME}</p>
             </div>
           </CardContent>
         </Card>

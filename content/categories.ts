@@ -14,8 +14,7 @@
  *
  * `count` is absent everywhere by design: see deriveCategoryCounts().
  */
-import type { Category } from "./category";
-import { makeCategoryNameResolver } from "./category";
+import { type Category, makeCategoryNameResolver, type QuizCategorySlug } from "./category";
 
 const img = (src: string) => ({ src, alt: "" });
 
@@ -375,3 +374,24 @@ export const categories: readonly Category[] = [
  * legible; `data:check` rejects unknown ids long before this is reached.
  */
 export const categoryName = makeCategoryNameResolver(categories);
+
+/* ------------------------------------------------------------------ *
+ * Quiz subjects: the selector a component is allowed to use
+ * ------------------------------------------------------------------ */
+
+const quizCategoryBySlugIndex: ReadonlyMap<string, Category> = new Map(
+  quizCategories.map((category) => [category.slug, category]),
+);
+
+/**
+ * The display label for a subject. A component picks a slug; the table owns the text.
+ * `data:check` E20 fails any `components/**` file that types the label instead.
+ *
+ * The taxonomy is a frozen 25-row table, so a slug with no row is a programming error,
+ * not a data condition: it throws instead of rendering a blank label no gate would see.
+ */
+export function quizCategoryLabel(slug: QuizCategorySlug): string {
+  const row = quizCategoryBySlugIndex.get(slug);
+  if (!row) throw new Error(`unknown quiz category slug "${slug}"`);
+  return row.name;
+}

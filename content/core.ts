@@ -44,6 +44,32 @@ export const zIsoDateTime = z.string().datetime({ offset: true });
 /** `easy | medium | hard`, lowercase (D5: `"Medium"` in currentQuiz and searchdata). */
 export const zDifficulty = z.enum(["easy", "medium", "hard"]);
 
+/** The enum's members, in display order — the ONE list a difficulty control iterates. */
+export const DIFFICULTIES = zDifficulty.options;
+
+/**
+ * Display label for a difficulty. The enum value is the identity; this table is the only
+ * place it becomes text, so a component never types `"Easy"` (or `"Hard"`) itself.
+ */
+export const DIFFICULTY_LABELS: Readonly<Record<Difficulty, string>> = {
+  easy: "Easy",
+  medium: "Medium",
+  hard: "Hard",
+};
+
+export function difficultyLabel(difficulty: Difficulty): string {
+  return DIFFICULTY_LABELS[difficulty];
+}
+
+/**
+ * Narrowing guard for the one place a string arrives from outside the model: a `<Select>`
+ * hands back `string`, so the enum decides whether it is a difficulty instead of a cast
+ * (`value as "easy" | "medium" | "hard"`) that would accept anything.
+ */
+export function isDifficulty(value: string): value is Difficulty {
+  return zDifficulty.safeParse(value).success;
+}
+
 /**
  * Publication state. The fixtures encode this three ways (`published: boolean`,
  * `status: "active" | "draft"`, `visibility`) and no record carries a date.
