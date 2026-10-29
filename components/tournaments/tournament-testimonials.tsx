@@ -1,10 +1,12 @@
 "use client";
 
+import type { PageCopySection } from "@/content/pages";
+import { media } from "@/data/media";
+import { itemLabel } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { media } from "@/data/media";
 
 type Testimonial = {
   id: number;
@@ -16,7 +18,9 @@ type Testimonial = {
   tournament: string;
 };
 
-export function TournamentTestimonials() {
+export function TournamentTestimonials({ copy }: { copy: PageCopySection }) {
+  // A record list, not page copy: the testimonial rows belong to the social fixture
+  // (WU-2/WU-9 territory), so WU-11 moved the band's words only.
   const testimonials: Testimonial[] = [
     {
       id: 1,
@@ -105,10 +109,8 @@ export function TournamentTestimonials() {
   return (
     <section className="py-16 mt-8">
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold mb-4">What Tournament Players Say</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Hear from our community of quiz enthusiasts who have participated in our tournaments
-        </p>
+        <h2 className="text-3xl font-bold mb-4">{copy.heading}</h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">{copy.body}</p>
       </div>
 
       <div
@@ -168,7 +170,8 @@ export function TournamentTestimonials() {
 
                   <div className="mt-6 pt-4 border-t border-border">
                     <p className="text-sm font-medium">
-                      Tournament: <span className="text-primary">{testimonial.tournament}</span>
+                      {itemLabel(copy, "tournament-prefix")}{" "}
+                      <span className="text-primary">{testimonial.tournament}</span>
                     </p>
                   </div>
                 </motion.div>
@@ -199,11 +202,9 @@ export function TournamentTestimonials() {
       </div>
 
       <div className="text-center mt-12">
-        <p className="text-lg font-medium mb-4">
-          Join over 50,000 quiz enthusiasts in our tournaments
-        </p>
+        <p className="text-lg font-medium mb-4">{itemLabel(copy, "join-count")}</p>
         <button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-full font-medium">
-          View Upcoming Tournaments
+          {itemLabel(copy, "view-upcoming")}
         </button>
       </div>
     </section>

@@ -1,6 +1,8 @@
 "use client";
 
 import { Footer } from "@/components/layout/footer";
+import type { PageCopy } from "@/content/pages";
+import { sectionOf } from "@/lib/page-copy";
 import { useState } from "react";
 import { FeaturedTournament } from "./featured-tournament";
 import { TournamentCategories } from "./tournament-categories";
@@ -10,42 +12,57 @@ import { TournamentHowItWorks } from "./tournament-how-it-works";
 import { TournamentList } from "./tournament-list";
 import { TournamentTestimonials } from "./tournament-testimonials";
 
-export function TournamentPage() {
+/**
+ * `/tournaments`'s body. The route module hands it the fixture; this resolves one
+ * section per band and passes it down, so a band's words are never typed here (E23).
+ * The catalogue band (`all-tournaments`) is one section shared by the filter row, the
+ * category chips and the list — they are one band, and three components reading one
+ * section beats three sections whose order the fixture cannot express.
+ */
+export function TournamentPage({ copy }: { copy: PageCopy }) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const catalogue = sectionOf(copy, "all-tournaments");
 
   return (
     <>
       <div className="container mx-auto">
-        <h1 className="text-3xl font-bold mb-2">Quiz Tournaments</h1>
-        <p className="text-muted-foreground mb-8">
-          Compete against other quiz enthusiasts and win amazing prizes
-        </p>
+        <h1 className="text-3xl font-bold mb-2">{copy.heading}</h1>
+        <p className="text-muted-foreground mb-8">{copy.subtitle}</p>
 
-        <FeaturedTournament />
+        <FeaturedTournament copy={sectionOf(copy, "featured")} />
 
         <div className="mt-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-            <h2 className="text-2xl font-bold">All Tournaments</h2>
-            <TournamentFilters activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+            <h2 className="text-2xl font-bold">{catalogue.heading}</h2>
+            <TournamentFilters
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+              copy={catalogue}
+            />
           </div>
 
           <TournamentCategories
             activeCategory={activeCategory}
             setActiveCategory={setActiveCategory}
+            copy={catalogue}
           />
 
-          <TournamentList activeCategory={activeCategory} activeFilter={activeFilter} />
+          <TournamentList
+            activeCategory={activeCategory}
+            activeFilter={activeFilter}
+            copy={catalogue}
+          />
         </div>
 
         {/* Call to Action section */}
-        <TournamentCta />
+        <TournamentCta copy={sectionOf(copy, "call-to-action")} />
 
         {/* How It Works section */}
-        <TournamentHowItWorks />
+        <TournamentHowItWorks copy={sectionOf(copy, "how-it-works")} />
 
         {/* Testimonials section */}
-        <TournamentTestimonials />
+        <TournamentTestimonials copy={sectionOf(copy, "testimonials")} />
       </div>
 
       {/* Add the Footer */}

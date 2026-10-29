@@ -144,11 +144,13 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
 
 /**
  * Attributes that are markup, not copy: they address a thing (href, src, id), name
- * a variant (variant, size, type), or carry styling (any `*class*`), a11y plumbing
- * (`aria-*`) or a test hook (`data-*`). `alt` is excluded too, because alt text is
- * `MediaEntry.alt`'s job (E17–E19) — a literal alt is a media defect, not a copy one.
+ * a variant (variant, size, orientation), carry styling (any `*class*`, a `stroke*`
+ * SVG attribute), a11y plumbing (`aria-*`), a test hook (`data-*`), or position a
+ * layer (`align`). `alt` is excluded too, because alt text is `MediaEntry.alt`'s job
+ * (E17–E19) — a literal alt is a media defect, not a copy one.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
+  "align",
   "alt",
   "asChild",
   "color",
@@ -160,11 +162,14 @@ const TECHNICAL_ATTRIBUTES = new Set([
   "id",
   "key",
   "name",
+  "orientation",
   "rel",
   "role",
   "size",
   "src",
   "stroke",
+  "strokeLinecap",
+  "strokeLinejoin",
   "strokeWidth",
   "target",
   "type",

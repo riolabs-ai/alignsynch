@@ -8,7 +8,11 @@
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { homePageCopy } from "./home";
+import { tournamentDetailPageCopy } from "./tournament-detail";
+import { tournamentsPageCopy } from "./tournaments";
 
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
+  "/tournaments": tournamentsPageCopy,
+  "/tournaments/[id]": tournamentDetailPageCopy,
 });
