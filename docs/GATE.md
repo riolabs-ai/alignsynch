@@ -60,6 +60,15 @@ Local, Node 24.22.0 / pnpm 12.16.1, 7-core host, warm `node_modules` and warm Ne
 | build (`next build`)                       | 40.5 s                               |
 | **gate total**                             | **44.8 s** (n=3: 37.5 / 44.8 / 49.6) |
 
+A cold clone (fresh `git clone`, no `node_modules`, no Next cache) runs the same gate green
+in **43 s** — the install is 0.7 s off the shared pnpm store, so "works on my machine" is not
+carrying the result.
+
+CI, same tree: the first post-change run is **1 m 0 s** end to end, of which the script itself
+is **43.6 s** (`data:check` and `test` skipped there too). The extra ~17 s is runner setup; the
+pre-change p50 was 55 s, so the gate bought the parity preflight and the two skip-aware steps
+for about the cost of the runner's checkout.
+
 Budget: local p50 < 90 s, CI < 4 min. Both hold; the build is 90 % of the gate, so if it
 ever needs splitting the fast lane is `typecheck+lint+format` (~4.4 s, and it is the lane
 that catches real mistakes) and the slow lane is `build`. Do not make a step optional to buy
