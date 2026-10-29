@@ -9,11 +9,16 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { currentQuiz } from "@/data/currentQuiz";
 import { categoryName } from "@/content/categories";
+import { selectQuizForPlay, type QuizForPlay } from "@/content/quiz";
+import type { Question } from "@/content/quiz";
 
 /**
- * The play surface works on a PROJECTION of the content record, not on the record:
- * `category` is a resolved label and `text`/`image` are the renderer's names.
- * Built once from the model by `playableQuiz` below.
+ * The play surface works on the PROJECTION of the content record that
+ * `content/quiz.ts::selectQuizForPlay` returns, not on the record itself.
+ *
+ * The renderer only renames: a model question's `prompt`/`media.src` are its
+ * `text`/`image`. That projection is the one renderer-local type below, and it is
+ * deliberately not called `Quiz` — there is exactly one `Quiz` type, in `content/`.
  */
 interface PlayQuestion {
   id: string;
@@ -24,29 +29,22 @@ interface PlayQuestion {
   image?: string;
 }
 
-interface Quiz {
-  id: string;
-  title: string;
-  category: string;
-  difficulty: string;
-  timeLimit: number;
-  questions: PlayQuestion[];
-}
+/** `QuizForPlay` owns id/title/category label/difficulty/time limit; only the
+ *  questions are renamed for the renderer, so a model change still breaks here. */
+type PlayableQuiz = Omit<QuizForPlay, "questions"> & { questions: PlayQuestion[] };
 
-const playableQuiz: Quiz = {
-  id: currentQuiz.id,
-  title: currentQuiz.title,
-  category: categoryName(currentQuiz.categoryIds[0] ?? "") ?? "",
-  difficulty: currentQuiz.difficulty,
-  timeLimit: currentQuiz.settings.timeLimitSeconds,
-  questions: currentQuiz.questions.map((question) => ({
-    id: question.id,
-    text: question.prompt,
-    options: question.options.map((option) => ({ id: option.id, text: option.text })),
-    correctOptionId: question.correctOptionId,
-    ...(question.explanation ? { explanation: question.explanation } : {}),
-    ...(question.media ? { image: question.media.src } : {}),
-  })),
+const toPlayQuestion = (question: Question): PlayQuestion => ({
+  id: question.id,
+  text: question.prompt,
+  options: question.options.map((option) => ({ id: option.id, text: option.text })),
+  correctOptionId: question.correctOptionId,
+  ...(question.explanation ? { explanation: question.explanation } : {}),
+  ...(question.media ? { image: question.media.src } : {}),
+});
+
+const playableQuiz: PlayableQuiz = {
+  ...selectQuizForPlay(currentQuiz, categoryName),
+  questions: currentQuiz.questions.map(toPlayQuestion),
 };
 
 /** One answered question, local to the play surface (UI state, not content). */
@@ -64,7 +62,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 
 // Types for the quiz state
 interface QuizState {
-  quiz: Quiz | null;
+  quiz: PlayableQuiz | null;
   loading: boolean;
   error: string | null;
   currentQuestionIndex: number;
@@ -84,7 +82,7 @@ interface QuizState {
 type QuizAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
-  | { type: "SET_QUIZ"; payload: Quiz }
+  | { type: "SET_QUIZ"; payload: PlayableQuiz }
   | { type: "SET_CURRENT_QUESTION_INDEX"; payload: number }
   | { type: "SET_DIRECTION"; payload: number }
   | { type: "SET_QUIZ_START_TIME"; payload: number }
@@ -100,7 +98,7 @@ type QuizAction =
   | { type: "UPDATE_ANSWER"; payload: { index: number; answer: Answer } }
   | { type: "NAVIGATE_QUESTION"; payload: { direction: number; index: number } }
   | { type: "TIMEOUT_QUIZ" }
-  | { type: "RESTART_QUIZ"; payload: { timeLimit: number | null } }
+  | { type: "RESTART_QUIZ"; payload: { timeLimitSeconds: number | null } }
   | { type: "START_REVIEW" };
 
 // Initial state
@@ -134,7 +132,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         quiz: action.payload,
-        timeRemaining: action.payload.timeLimit,
+        timeRemaining: action.payload.timeLimitSeconds,
         loading: false,
       };
 
@@ -206,7 +204,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         quizStartTime: now,
         quizEndTime: null,
         questionStartTime: now,
-        timeRemaining: action.payload.timeLimit,
+        timeRemaining: action.payload.timeLimitSeconds,
         isQuizCompleted: false,
         isReviewMode: false,
         showFeedback: false,
@@ -374,7 +372,7 @@ export function QuizPlay({ id }: { id: string }) {
   const handleRestartQuiz = () => {
     dispatch({
       type: "RESTART_QUIZ",
-      payload: { timeLimit: state.quiz?.timeLimit || null },
+      payload: { timeLimitSeconds: state.quiz?.timeLimitSeconds || null },
     });
   };
 
@@ -459,7 +457,7 @@ export function QuizPlay({ id }: { id: string }) {
     <div className="container mx-auto py-4 px-4 md:py-8 max-w-4xl">
       <QuizHeader
         title={state.quiz.title}
-        category={state.quiz.category}
+        category={state.quiz.categoryLabel}
         difficulty={state.quiz.difficulty}
         isReviewMode={state.isReviewMode}
       />

@@ -17,9 +17,9 @@ import {
   Star,
   Trophy,
 } from "lucide-react";
-import { StaticImageData } from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { QuizForPlay } from "@/content/quiz";
 
 interface Answer {
   questionId: string;
@@ -27,21 +27,11 @@ interface Answer {
   isCorrect: boolean;
   timeSpent: number;
 }
-interface Question {
-  id: string;
-  text: string;
-  options: { id: string; text: string }[];
-  correctOptionId: string;
-  explanation?: string;
-  image?: string | StaticImageData;
-}
-interface Quiz {
-  id: string;
-  title: string;
-  difficulty: string;
-  category: string;
-  questions: Question[];
-}
+/**
+ * The results screen reads the header of the play projection and nothing else.
+ * Derived from `QuizForPlay` (`content/quiz.ts`) — never a second `Quiz` type.
+ */
+type ResultsQuizHeader = Pick<QuizForPlay, "id" | "title" | "difficulty" | "categoryLabel">;
 
 interface Results {
   totalQuestions: number;
@@ -53,7 +43,7 @@ interface Results {
 
 interface QuizResultsProps {
   results: Results | null;
-  quiz: Quiz;
+  quiz: ResultsQuizHeader;
   onRestart: () => void;
   onReview: () => void;
   onExit: () => void;
@@ -196,7 +186,7 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
                 {badge.text}
               </Badge>
               <Badge variant="outline" className="px-3 py-1 text-sm">
-                {quiz.category}
+                {quiz.categoryLabel}
               </Badge>
               <Badge variant="outline" className="px-3 py-1 text-sm">
                 {quiz.difficulty}

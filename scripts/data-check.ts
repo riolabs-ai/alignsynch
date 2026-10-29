@@ -13,7 +13,7 @@
  * Diagnostics are collected, not thrown, so one run reports every problem instead
  * of the first one. Exit code is 1 if any E* check fails.
  */
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { zArticleCollection, zKbArticle, zNewsArticle, zTip } from "../content/article";
@@ -336,12 +336,57 @@ if (!existsSync(join(process.cwd(), "content/quiz.ts"))) {
   err("E9", "content/quiz.ts is missing: the single source of truth for the Quiz type is gone");
 }
 
+/**
+ * The same drift in one file: a component that declares its own `Quiz` looks like
+ * the model but is hand-maintained against it (`components/quiz/quiz-play.tsx` did).
+ * Renderer-local *views* stay legal — they just may not be called `Quiz`.
+ */
+const QUIZ_DECLARATION = /^[ \t]*(?:export[ \t]+)?(?:interface|type)[ \t]+Quiz\b/m;
+
+function walkSourceFiles(dir: string): string[] {
+  const found: string[] = [];
+  if (!existsSync(dir)) return found;
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      if (entry === "node_modules" || entry.startsWith(".")) continue;
+      found.push(...walkSourceFiles(full));
+      continue;
+    }
+    if (/\.tsx?$/.test(entry)) found.push(full);
+  }
+  return found;
+}
+
+for (const root of ["components", "app", "lib", "hooks"]) {
+  for (const file of walkSourceFiles(join(process.cwd(), root))) {
+    const declaration = QUIZ_DECLARATION.exec(readFileSync(file, "utf8"));
+    if (declaration) {
+      const where = file.slice(process.cwd().length + 1);
+      err(
+        "E9",
+        `${where}: declares its own \`Quiz\` (${declaration[0].trim()}). Drift D1 — import the type, or name the local view something else.`,
+      );
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ *
  * report
  * ------------------------------------------------------------------ */
 
 const errors = diagnostics.filter((diagnostic) => diagnostic.severity === "error");
 const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "warn");
+
+/**
+ * Measured, not asserted: the two counts the summary line used to claim as string
+ * literals. Both are already gated above (E4 scope, E5 route resolution); printing
+ * the real numbers means the line can never congratulate a tree it did not check.
+ */
+const unknownCategoryRefs = [...quizzes, ...news, ...tipRecords, ...kbRecords]
+  .flatMap((record) => record.categoryIds)
+  .filter((categoryId) => !categoryIds.has(categoryId)).length;
+const deadLinks = notificationRecords.filter((record) => !resolveRoute(record.link).ok).length;
 
 const counts = [
   `${quizzes.length} quizzes`,
@@ -356,6 +401,10 @@ const counts = [
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
 ].join(", ");
 
+/** Printed on both paths: a validator that only reports its coverage when it passes
+ *  is telling you the same number either way. */
+const coverage = `${ROUTE_PATTERNS.length} routes match app/, ${unknownCategoryRefs} unknown category ids, ${deadLinks} dead links`;
+
 if (warnings.length > 0) {
   console.log(`WARN  ${warnings.length}`);
   for (const warning of warnings) console.log(`  [${warning.code}] ${warning.message}`);
@@ -364,10 +413,9 @@ if (warnings.length > 0) {
 if (errors.length > 0) {
   console.log(`FAIL  ${errors.length} error(s) across ${counts}`);
   for (const error of errors) console.log(`  [${error.code}] ${error.message}`);
+  console.log(`      ${coverage}`);
   process.exit(1);
 }
 
 console.log(`PASS  ${counts}`);
-console.log(
-  `      ${ROUTE_PATTERNS.length} routes match app/, 0 unknown category ids, 0 dead links`,
-);
+console.log(`      ${coverage}`);

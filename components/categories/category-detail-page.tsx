@@ -17,7 +17,9 @@ import { ArrowLeft, Clock, DollarSign, Filter, Search, SortAsc, Target, Users } 
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-interface Quiz {
+/** A hand-authored sample tile on this page (not a content-model record: numeric id,
+ *  pre-formatted reward, stored `spotsLeft`). Named apart from `Quiz` on purpose. */
+interface CategoryQuizTile {
   id: number;
   title: string;
   image: string;
@@ -146,7 +148,7 @@ const quizzes = [
 
 export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>(quizzes);
+  const [filteredQuizzes, setFilteredQuizzes] = useState<CategoryQuizTile[]>(quizzes);
   const [sortBy, setSortBy] = useState("popular");
   const [difficulty, setDifficulty] = useState("all");
   const [category, setCategory] = useState("all");
@@ -183,7 +185,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
   }, [searchQuery, difficulty, category, sortBy]);
 
   // Function to sort quizzes
-  const sortQuizzes = (quizzes: Quiz[], sortMethod: string): Quiz[] => {
+  const sortQuizzes = (quizzes: CategoryQuizTile[], sortMethod: string): CategoryQuizTile[] => {
     return [...quizzes].sort((a, b) => {
       switch (sortMethod) {
         case "popular":

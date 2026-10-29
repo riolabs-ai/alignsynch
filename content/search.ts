@@ -204,7 +204,9 @@ export function buildSearchIndex(
     throw new Error(
       `buildSearchIndex: ${problems.length} invalid row(s)\n  - ${problems.join("\n  - ")}`,
     );
-  return index;
+  // The schema is the contract, not documentation: a row that gains or loses a field
+  // has to fail here, exactly like a `data/` fixture fails `pnpm data:check`.
+  return zSearchIndex.parse(index);
 }
 
 // ---------------------------------------------------------------------------------------------
