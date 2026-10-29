@@ -64,6 +64,9 @@ import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
 import { media } from "../data/media";
 import { promotionFindings } from "./data-check-promotions";
+import { COPY_LITERAL_MAX, copyProblems, measureRoute } from "./copy-refs";
+import { pageCopies } from "../data/pages";
+import { pageCopyBudget } from "../data/pages/budget";
 import {
   danglingEntries,
   registryProblems,
@@ -734,6 +737,52 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  */
 
 /* ------------------------------------------------------------------ *
+ * E23 — page copy lives in a fixture, and the budget only goes down
+ *
+ * The inventory found 1,809 page-copy strings with no home. A number in a document
+ * is not a gate, so this is the gate: for each route with a `PageCopy` fixture,
+ * attribute the files the route actually renders (its page module plus the import
+ * closure inside the directories the route declares), extract the literals they
+ * still write, and compare against the recorded budget.
+ *
+ * Two rules, because one cannot do the job:
+ *
+ *   leaf rule   a literal longer than COPY_LITERAL_MAX chars is a sentence, and a
+ *               sentence in a component is an error on its own — the diagnostic
+ *               names `file:line` and the fixture, so the fix is mechanical.
+ *   budget      the *count* may not rise, including short labels. That is what
+ *               makes the ratchet a ratchet: every later copy unit lowers one number
+ *               and cannot quietly re-add a label to buy headroom.
+ *
+ * Attribution is by reachability, not by directory listing: a file in `components/home/`
+ * that no page imports is not this route's copy, and counting it would make two cards
+ * fight over one number — deleting a dead component would look like a budget regression.
+ *
+ * The same pass proves the fixture is wired (reachable from the page module) and that
+ * every id a component asks for exists in the fixture — `sectionOf(copy, "x")` and
+ * `itemLabel(copy, "y")` throw at runtime, so a typo would otherwise be a blank band.
+ * ------------------------------------------------------------------ */
+
+const copySources: SourceFile[] = [...uiSources, ...walkSources("data")];
+
+for (const finding of copyProblems({
+  copies: pageCopies,
+  budget: pageCopyBudget,
+  sources: copySources,
+  routePatterns: ROUTE_PATTERNS,
+  resolves: (href) => resolveRoute(href).ok,
+})) {
+  err(finding.code, finding.message);
+}
+
+/** Measured per route, so the summary prints what the tree actually contains. */
+const copyMeasured = Object.entries(pageCopyBudget).map(([route, entry]) => ({
+  route,
+  budget: entry.budget,
+  measured: measureRoute(entry, copySources).literals.length,
+}));
+
+/* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock
  *
  * The UI renders relative labels against `DEMO_NOW_ISO` (content/core.ts), so an instant
@@ -778,6 +827,7 @@ const counts = [
   `${notificationRecords.length} notifications`,
   `${promotions.length} promotions`,
   `${Object.keys(registry).length} media entries`,
+  `${Object.keys(pageCopies).length} page-copy routes`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
 ].join(", ");
 
@@ -823,6 +873,9 @@ const assetRefs = assetReferences(uiSources);
 
 console.log(`PASS  ${counts}`);
 console.log(`      ${coverage}`);
+console.log(
+  `      ${copyMeasured.map((row) => `${row.route} ${row.measured}/${row.budget} page-copy literals`).join(", ")} (measured/budget, E23; a literal longer than ${COPY_LITERAL_MAX} chars is an error on its own)`,
+);
 console.log(
   `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
 );

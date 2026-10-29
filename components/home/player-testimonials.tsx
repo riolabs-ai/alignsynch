@@ -8,6 +8,8 @@ import avatarBrain from "@/public/avatars/brain.png";
 import avatarChampion from "@/public/avatars/champion.png";
 import avatarGenius from "@/public/avatars/genious.png";
 import avatarSarah from "@/public/avatars/sarah.webp";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -67,7 +69,7 @@ const testimonials = [
   },
 ];
 
-export function PlayerTestimonials() {
+export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const handlePrev = () => {
@@ -95,12 +97,9 @@ export function PlayerTestimonials() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-4">
-            Success Stories
+            {copy.heading}
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Hear from our community of quiz creators and players who are earning rewards and
-            building their audience
-          </p>
+          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">{copy.body}</p>
         </div>
 
         <div className="relative max-w-5xl mx-auto">
@@ -145,19 +144,25 @@ export function PlayerTestimonials() {
                   <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                     {testimonials[activeIndex].stats.earnings}
                   </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Earnings</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {itemLabel(copy, "earnings")}
+                  </p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                     {testimonials[activeIndex].stats.quizzes}
                   </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Quizzes</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {itemLabel(copy, "quizzes")}
+                  </p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                     {testimonials[activeIndex].stats.followers}
                   </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Followers</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {itemLabel(copy, "followers")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -202,19 +207,25 @@ export function PlayerTestimonials() {
                     <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                       {testimonials[activeIndex].stats.earnings}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Earnings</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "earnings")}
+                    </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-md">
                     <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                       {testimonials[activeIndex].stats.quizzes}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Quizzes</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "quizzes")}
+                    </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-md">
                     <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                       {testimonials[activeIndex].stats.followers}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Followers</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "followers")}
+                    </p>
                   </div>
                 </div>
               </CardContent>
