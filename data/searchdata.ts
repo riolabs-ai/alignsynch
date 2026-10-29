@@ -18,11 +18,10 @@ import { buildSearchIndex } from "../content/search";
 import { routeManifest } from "../content/routes";
 import { users } from "../lib/data/users";
 import { categories } from "./categories";
-import { currentQuiz } from "./currentQuiz";
-import { mockQuizzes } from "./mock-quizzes";
+import { quizzes } from "./quizzes";
 
 /** Only `public` quizzes enter the index; the 20 generator templates are private drafts. */
-const searchableQuizzes = [...mockQuizzes, currentQuiz].map((quiz) => ({
+const searchableQuizzes = quizzes.map((quiz) => ({
   id: quiz.id,
   slug: quiz.slug,
   title: quiz.title,

@@ -8,10 +8,9 @@
  */
 import { deriveCategoryCounts } from "../content/category";
 import { quizCategories } from "../content/categories";
-import { currentQuiz } from "./currentQuiz";
-import { mockQuizzes } from "./mock-quizzes";
+import { quizzes } from "./quizzes";
 
-const counts = deriveCategoryCounts([...mockQuizzes, currentQuiz]);
+const counts = deriveCategoryCounts(quizzes);
 
 /** Table row + its derived count. Same shape the components already read. */
 export const categories = quizCategories.map((category) => ({
