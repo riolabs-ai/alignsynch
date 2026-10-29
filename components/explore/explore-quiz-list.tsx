@@ -26,6 +26,7 @@ const progress = (quiz: { stats: { plays: number; capacity?: number } }) =>
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 interface ExploreQuizListProps {
   category: string;
@@ -168,7 +169,7 @@ export function ExploreQuizList({
                 <Image
                   width={600}
                   height={350}
-                  src={quiz.cover?.src ?? "/placeholder.svg"}
+                  src={quiz.cover?.src ?? media.placeholder.src}
                   alt={quiz.cover?.alt || quiz.title}
                   className="h-full w-full object-cover"
                 />
@@ -197,7 +198,7 @@ export function ExploreQuizList({
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.author?.avatar?.src ?? "/placeholder.svg"}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
                         alt={quiz.author?.name ?? "creator"}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
@@ -294,7 +295,7 @@ export function ExploreQuizList({
                   <Image
                     width={600}
                     height={350}
-                    src={quiz.cover?.src ?? "/placeholder.svg"}
+                    src={quiz.cover?.src ?? media.placeholder.src}
                     alt={quiz.cover?.alt || quiz.title}
                     className="h-full w-full object-cover"
                   />
@@ -323,7 +324,7 @@ export function ExploreQuizList({
                   <div className="flex items-center gap-2 mb-4">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.author?.avatar?.src ?? "/placeholder.svg"}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
                         alt={quiz.author?.name ?? "creator"}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>

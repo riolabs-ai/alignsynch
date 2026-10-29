@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
+import { media } from "@/data/media";
 import Link from "next/link";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden rounded-xl bg-[url('/hero-bg.jpg')] bg-no-repeat bg-cover p-6 text-white md:p-10 xl:py-14">
+    <section
+      className="relative overflow-hidden rounded-xl bg-no-repeat bg-cover p-6 text-white md:p-10 xl:py-14"
+      style={{ backgroundImage: `url(${media["hero-bg"].src})` }}
+    >
       <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
         <div className="max-w-lg space-y-4">
           <h2 className="text-3xl font-bold xl:leading-tight tracking-tight md:text-4xl xl:text-5xl">

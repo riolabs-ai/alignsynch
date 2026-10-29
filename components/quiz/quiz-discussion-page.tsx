@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, MessageSquare, Search, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 type Discussion = {
   id: string;
   quizId: string;
@@ -42,7 +43,7 @@ const recentDiscussions: Discussion[] = [
     difficulty: "Medium",
     user: {
       name: "MarvelFan",
-      avatar: "/avatars/alex.png",
+      avatar: media["avatars.alex"].src,
     },
   },
   {
@@ -59,7 +60,7 @@ const recentDiscussions: Discussion[] = [
     difficulty: "Hard",
     user: {
       name: "GeoExpert",
-      avatar: "/avatars/mind.webp",
+      avatar: media["avatars.mind"].src,
     },
   },
   {
@@ -76,7 +77,7 @@ const recentDiscussions: Discussion[] = [
     difficulty: "Medium",
     user: {
       name: "HistoryBuff",
-      avatar: "/avatars/sarah.webp",
+      avatar: media["avatars.sarah"].src,
     },
   },
   {
@@ -93,7 +94,7 @@ const recentDiscussions: Discussion[] = [
     difficulty: "Easy",
     user: {
       name: "TechWiz",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
     },
   },
   {
@@ -110,7 +111,7 @@ const recentDiscussions: Discussion[] = [
     difficulty: "Easy",
     user: {
       name: "PopCultureFan",
-      avatar: "/avatars/king.webp",
+      avatar: media["avatars.king"].src,
     },
   },
 ];
@@ -131,7 +132,7 @@ const popularDiscussions = [
     difficulty: "Medium",
     user: {
       name: "WizardingExpert",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
     },
   },
   {
@@ -148,7 +149,7 @@ const popularDiscussions = [
     difficulty: "Hard",
     user: {
       name: "MathGenius",
-      avatar: "/avatars/mind.webp",
+      avatar: media["avatars.mind"].src,
     },
   },
   {
@@ -165,7 +166,7 @@ const popularDiscussions = [
     difficulty: "Medium",
     user: {
       name: "HistoryBuff",
-      avatar: "/avatars/guru.png",
+      avatar: media["avatars.guru"].src,
     },
   },
   {
@@ -182,7 +183,7 @@ const popularDiscussions = [
     difficulty: "Medium",
     user: {
       name: "ArtLover",
-      avatar: "/avatars/sarah.webp",
+      avatar: media["avatars.sarah"].src,
     },
   },
   {
@@ -199,7 +200,7 @@ const popularDiscussions = [
     difficulty: "Easy",
     user: {
       name: "FoodieExplorer",
-      avatar: "/avatars/champion.png",
+      avatar: media["avatars.champion"].src,
     },
   },
 ];
@@ -220,7 +221,7 @@ const yourDiscussions = [
     difficulty: "Medium",
     user: {
       name: "You",
-      avatar: "/avatars/sarah.webp",
+      avatar: media["avatars.sarah"].src,
     },
   },
   {
@@ -237,7 +238,7 @@ const yourDiscussions = [
     difficulty: "Easy",
     user: {
       name: "You",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
     },
   },
   {
@@ -254,7 +255,7 @@ const yourDiscussions = [
     difficulty: "Hard",
     user: {
       name: "You",
-      avatar: "/avatars/king.webp",
+      avatar: media["avatars.king"].src,
     },
   },
 ];
@@ -397,7 +398,7 @@ function DiscussionCard({ discussion }: { discussion: Discussion }) {
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage
-                    src={discussion.user.avatar || "/placeholder.svg"}
+                    src={discussion.user.avatar || media.placeholder.src}
                     alt={discussion.user.name}
                   />
                   <AvatarFallback>{discussion.user.name.substring(0, 2)}</AvatarFallback>

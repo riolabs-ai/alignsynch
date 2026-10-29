@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { media } from "@/data/media";
 type Reply = {
   id: string;
   user: {
@@ -89,7 +90,7 @@ export function QuestionDiscussion({ question, questionNumber }: QuestionDiscuss
       user: {
         id: "current-user",
         name: "You",
-        avatar: "/avatars/master.png",
+        avatar: media["avatars.master"].src,
       },
       text: newComment,
       timestamp: new Date().toISOString(),
@@ -252,7 +253,7 @@ export function QuestionDiscussion({ question, questionNumber }: QuestionDiscuss
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="/avatars/master.png" alt="Your Avatar" />
+                        <AvatarImage src={media["avatars.master"].src} alt="Your Avatar" />
                         <AvatarFallback>YO</AvatarFallback>
                       </Avatar>
                       <Textarea

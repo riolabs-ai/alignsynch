@@ -23,6 +23,7 @@ import { Plus, Search } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import type { Contact, Conversation } from "./chat-page";
+import { media } from "@/data/media";
 
 interface ChatSidebarProps {
   contacts: Contact[];
@@ -159,11 +160,7 @@ export function ChatSidebar({
                 >
                   <div className="relative flex-shrink-0">
                     <Image
-                      src={
-                        imageErrors[contact.id]
-                          ? "/placeholder.svg?height=48&width=48"
-                          : contact.avatar
-                      }
+                      src={imageErrors[contact.id] ? media.placeholder.src : contact.avatar}
                       alt={contact.name}
                       width={48}
                       height={48}
@@ -268,11 +265,7 @@ export function ChatSidebar({
                   >
                     <div className="relative">
                       <Image
-                        src={
-                          imageErrors[contact.id]
-                            ? "/placeholder.svg?height=40&width=40"
-                            : contact.avatar
-                        }
+                        src={imageErrors[contact.id] ? media.placeholder.src : contact.avatar}
                         alt={contact.name}
                         width={40}
                         height={40}

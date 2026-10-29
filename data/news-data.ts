@@ -6,6 +6,7 @@
 import type { NewsArticle } from "../content/article";
 import type { Category } from "../content/category";
 import { newsCategories } from "../content/categories";
+import { media } from "./media";
 
 export const newsData: readonly NewsArticle[] = [
   {
@@ -18,7 +19,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-quiz-tips", "news-tutorials"],
     tags: [],
     cover: {
-      src: "/news/news1.png",
+      src: media["news.news1"].src,
       alt: "",
     },
     author: {
@@ -26,7 +27,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "Quiz Design Specialist",
       bio: "Sarah has created over 500 successful quizzes and helps creators optimize their content for maximum engagement.",
       avatar: {
-        src: "/avatars/sarah.webp",
+        src: media["avatars.sarah"].src,
         alt: "Sarah Johnson",
       },
     },
@@ -62,7 +63,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=quiz+titles",
+          src: media["placeholder"].src,
           alt: "Examples of compelling quiz titles",
         },
         caption: "Examples of high-performing quiz titles from our platform",
@@ -96,7 +97,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=quiz+visuals",
+          src: media["placeholder"].src,
           alt: "Visual elements in quizzes",
         },
         caption: "Visual elements can increase quiz completion rates by up to 80%",
@@ -152,7 +153,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-platform-updates", "news-tutorials"],
     tags: [],
     cover: {
-      src: "/news/news2.png",
+      src: media["news.news2"].src,
       alt: "",
     },
     author: {
@@ -160,7 +161,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "Product Manager",
       bio: "Michael leads product development at QuizMaker, focusing on creating features that help quiz creators succeed.",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "Michael Chen",
       },
     },
@@ -196,7 +197,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=analytics+dashboard",
+          src: media["placeholder"].src,
           alt: "New analytics dashboard interface",
         },
         caption: "The redesigned analytics dashboard provides comprehensive insights at a glance",
@@ -230,7 +231,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=audience+demographics",
+          src: media["placeholder"].src,
           alt: "Audience demographics visualization",
         },
         caption: "Detailed audience demographics help you understand who's taking your quizzes",
@@ -273,7 +274,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-community", "news-success-stories"],
     tags: [],
     cover: {
-      src: "/news/news3.png",
+      src: media["news.news3"].src,
       alt: "",
     },
     author: {
@@ -281,7 +282,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "Community Manager",
       bio: "Elena manages the QuizMaker community, highlighting success stories and fostering connections between creators.",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "Elena Rodriguez",
       },
     },
@@ -318,7 +319,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=history+quiz",
+          src: media["placeholder"].src,
           alt: "Screenshot of a History Mysteries quiz",
         },
         caption: "A sample question from the popular 'Lost Treasures of the Ancient World' quiz",
@@ -352,7 +353,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=income+chart",
+          src: media["placeholder"].src,
           alt: "Growth chart of quiz income",
         },
         caption: "James's quiz income has grown steadily over the past three years",
@@ -395,7 +396,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-tutorials", "news-quiz-tips"],
     tags: [],
     cover: {
-      src: "/news/news4.png",
+      src: media["news.news4"].src,
       alt: "",
     },
     author: {
@@ -403,7 +404,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "Accessibility Specialist",
       bio: "Alex specializes in digital accessibility and helps creators make their content available to all users.",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "Alex Morgan",
       },
     },
@@ -439,7 +440,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=accessible+typography",
+          src: media["placeholder"].src,
           alt: "Examples of accessible and inaccessible text",
         },
         caption: "Examples of accessible typography with proper contrast and font size",
@@ -473,7 +474,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=flexible+timing",
+          src: media["placeholder"].src,
           alt: "Quiz settings with flexible timing options",
         },
         caption: "Providing options for extended time or no time limit increases accessibility",
@@ -529,7 +530,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-events", "news-community"],
     tags: [],
     cover: {
-      src: "/news/news5.png",
+      src: media["news.news5"].src,
       alt: "",
     },
     author: {
@@ -537,7 +538,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "Events Coordinator",
       bio: "Daniel organizes QuizMaker's tournaments and special events, bringing the community together for friendly competition.",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "Daniel Park",
       },
     },
@@ -573,7 +574,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=quiz+categories",
+          src: media["placeholder"].src,
           alt: "Championship categories illustration",
         },
         caption: "The six competition categories for the 2025 Summer Quiz Championship",
@@ -607,7 +608,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=prize+trophy",
+          src: media["placeholder"].src,
           alt: "Championship trophy and prizes",
         },
         caption: "The championship trophy and prizes for this year's winners",
@@ -663,7 +664,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-quiz-tips", "news-industry-news"],
     tags: [],
     cover: {
-      src: "/news/news6.png",
+      src: media["news.news6"].src,
       alt: "",
     },
     author: {
@@ -671,7 +672,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "Business Development Specialist",
       bio: "Olivia helps quiz creators develop sustainable business models and maximize their earning potential.",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "Olivia Thompson",
       },
     },
@@ -707,7 +708,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=subscription+model",
+          src: media["placeholder"].src,
           alt: "Premium subscription model illustration",
         },
         caption: "A typical tiered subscription model for quiz content",
@@ -741,7 +742,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=lead+generation+funnel",
+          src: media["placeholder"].src,
           alt: "Lead generation funnel",
         },
         caption: "How assessment quizzes can feed into a service-based business model",
@@ -775,7 +776,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=corporate+training",
+          src: media["placeholder"].src,
           alt: "Corporate training quiz example",
         },
         caption: "Custom quizzes can be valuable tools for corporate training and assessment",
@@ -818,7 +819,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-platform-updates", "news-industry-news"],
     tags: [],
     cover: {
-      src: "/news/news7.png",
+      src: media["news.news7"].src,
       alt: "",
     },
     author: {
@@ -826,7 +827,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "AI Product Specialist",
       bio: "Ryan specializes in AI applications for content creation and helps develop QuizMaker's AI-powered features.",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "Ryan Zhang",
       },
     },
@@ -862,7 +863,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=ai+question+generation",
+          src: media["placeholder"].src,
           alt: "AI question generation interface",
         },
         caption:
@@ -897,7 +898,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=personalized+learning+path",
+          src: media["placeholder"].src,
           alt: "Personalized learning path visualization",
         },
         caption:
@@ -932,7 +933,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=multimodal+quiz+content",
+          src: media["placeholder"].src,
           alt: "Multimodal quiz content examples",
         },
         caption: "AI can generate diverse content types to enhance quiz questions",
@@ -975,7 +976,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-quiz-tips", "news-tutorials"],
     tags: [],
     cover: {
-      src: "/news/news8.png",
+      src: media["news.news8"].src,
       alt: "",
     },
     author: {
@@ -983,7 +984,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "Cognitive Psychologist",
       bio: "Dr. Williams specializes in educational psychology and has published research on engagement in digital learning environments.",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "Dr. Sophia Williams",
       },
     },
@@ -1020,7 +1021,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=curiosity+gap",
+          src: media["placeholder"].src,
           alt: "Illustration of the curiosity gap concept",
         },
         caption: "The curiosity gap creates a psychological tension that motivates engagement",
@@ -1054,7 +1055,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=flow+state+diagram",
+          src: media["placeholder"].src,
           alt: "Flow state diagram showing the balance between challenge and skill",
         },
         caption: "The flow state occurs when challenge level matches skill level",
@@ -1101,7 +1102,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=progress+bar",
+          src: media["placeholder"].src,
           alt: "Quiz progress bar with endowed progress",
         },
         caption: "Progress indicators with a head start leverage the endowed progress effect",
@@ -1131,7 +1132,7 @@ export const newsData: readonly NewsArticle[] = [
     categoryIds: ["news-industry-news"],
     tags: [],
     cover: {
-      src: "/news/news9.png",
+      src: media["news.news9"].src,
       alt: "",
     },
     author: {
@@ -1139,7 +1140,7 @@ export const newsData: readonly NewsArticle[] = [
       role: "Trend Analyst",
       bio: "Jordan analyzes industry trends and consumer behavior to identify emerging opportunities in interactive content.",
       avatar: {
-        src: "/avatars/wizard.webp",
+        src: media["avatars.wizard"].src,
         alt: "Jordan Taylor",
       },
     },
@@ -1176,7 +1177,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=immersive+quiz+experience",
+          src: media["placeholder"].src,
           alt: "Immersive quiz experience example",
         },
         caption:
@@ -1211,7 +1212,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=voice+interactive+quiz",
+          src: media["placeholder"].src,
           alt: "Person interacting with a voice quiz",
         },
         caption: "Voice-interactive quizzes enable hands-free learning and entertainment",
@@ -1245,7 +1246,7 @@ export const newsData: readonly NewsArticle[] = [
       {
         type: "image",
         image: {
-          src: "/placeholder.svg?height=500&width=800&query=personalized+quiz+experience",
+          src: media["placeholder"].src,
           alt: "Personalized quiz dashboard",
         },
         caption:

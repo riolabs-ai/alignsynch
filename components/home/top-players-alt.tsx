@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight, Trophy } from "lucide-react";
 import Link from "next/link";
+import { media } from "@/data/media";
 
 // Sample top players data
 const topPlayers = [
   {
     id: 1,
     username: "AlexMaster",
-    avatar: "/avatars/alex.png",
+    avatar: media["avatars.alex"].src,
     earnings: 1250.75,
     score: 9850,
     rank: 1,
@@ -20,7 +21,7 @@ const topPlayers = [
   {
     id: 2,
     username: "QuizWizard",
-    avatar: "/avatars/wizard.webp",
+    avatar: media["avatars.wizard"].src,
     earnings: 980.5,
     score: 8720,
     rank: 2,
@@ -28,7 +29,7 @@ const topPlayers = [
   {
     id: 3,
     username: "BrainiacSarah",
-    avatar: "/avatars/sarah.webp",
+    avatar: media["avatars.sarah"].src,
     earnings: 875.25,
     score: 7640,
     rank: 3,
@@ -36,7 +37,7 @@ const topPlayers = [
   {
     id: 4,
     username: "TriviaKing",
-    avatar: "/avatars/king.webp",
+    avatar: media["avatars.king"].src,
     earnings: 720.8,
     score: 6980,
     rank: 4,
@@ -44,7 +45,7 @@ const topPlayers = [
   {
     id: 5,
     username: "QuizChampion",
-    avatar: "/avatars/champion.png",
+    avatar: media["avatars.champion"].src,
     earnings: 695.4,
     score: 6540,
     rank: 5,
@@ -91,7 +92,7 @@ export function TopPlayers() {
                 <div className="relative mb-2">
                   <Avatar className="h-20 w-20 border-4 border-slate-300">
                     <AvatarImage
-                      src={topPlayers[1].avatar || "/placeholder.svg"}
+                      src={topPlayers[1].avatar || media.placeholder.src}
                       alt={topPlayers[1].username}
                     />
                     <AvatarFallback>
@@ -126,7 +127,7 @@ export function TopPlayers() {
                   </div>
                   <Avatar className="h-24 w-24 border-4 border-yellow-400">
                     <AvatarImage
-                      src={topPlayers[0].avatar || "/placeholder.svg"}
+                      src={topPlayers[0].avatar || media.placeholder.src}
                       alt={topPlayers[0].username}
                     />
                     <AvatarFallback>
@@ -146,7 +147,7 @@ export function TopPlayers() {
                 <div className="relative mb-2">
                   <Avatar className="h-16 w-16 border-4 border-amber-700">
                     <AvatarImage
-                      src={topPlayers[2].avatar || "/placeholder.svg"}
+                      src={topPlayers[2].avatar || media.placeholder.src}
                       alt={topPlayers[2].username}
                     />
                     <AvatarFallback>
@@ -182,7 +183,7 @@ export function TopPlayers() {
                     </div>
                     <Avatar className="h-10 w-10">
                       <AvatarImage
-                        src={player.avatar || "/placeholder.svg"}
+                        src={player.avatar || media.placeholder.src}
                         alt={player.username}
                       />
                       <AvatarFallback>

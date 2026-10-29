@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight, DollarSign, TrendingUp, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 type Player = {
   id: number;
   username: string;
@@ -27,7 +28,7 @@ const topPlayers: TopPlayers = {
     {
       id: 1,
       username: "AlexMaster",
-      avatar: "/avatars/alex.png",
+      avatar: media["avatars.alex"].src,
       earnings: 1250.75,
       quizzes: 42,
       badge: "diamond",
@@ -35,7 +36,7 @@ const topPlayers: TopPlayers = {
     {
       id: 2,
       username: "QuizWizard",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
       earnings: 980.5,
       quizzes: 38,
       badge: "platinum",
@@ -43,7 +44,7 @@ const topPlayers: TopPlayers = {
     {
       id: 3,
       username: "BrainiacSarah",
-      avatar: "/avatars/sarah.webp",
+      avatar: media["avatars.sarah"].src,
       earnings: 875.25,
       quizzes: 35,
       badge: "gold",
@@ -51,7 +52,7 @@ const topPlayers: TopPlayers = {
     {
       id: 4,
       username: "TriviaKing",
-      avatar: "/avatars/king.webp",
+      avatar: media["avatars.king"].src,
       earnings: 720.8,
       quizzes: 31,
       badge: "gold",
@@ -59,7 +60,7 @@ const topPlayers: TopPlayers = {
     {
       id: 5,
       username: "QuizChampion",
-      avatar: "/avatars/champion.png",
+      avatar: media["avatars.champion"].src,
       earnings: 695.4,
       quizzes: 29,
       badge: "silver",
@@ -69,7 +70,7 @@ const topPlayers: TopPlayers = {
     {
       id: 6,
       username: "MindMaster",
-      avatar: "/avatars/mind.webp",
+      avatar: media["avatars.mind"].src,
       score: 9850,
       quizzes: 47,
       badge: "diamond",
@@ -77,7 +78,7 @@ const topPlayers: TopPlayers = {
     {
       id: 7,
       username: "QuizGenius",
-      avatar: "/avatars/genious.png",
+      avatar: media["avatars.genious"].src,
       score: 8720,
       quizzes: 42,
       badge: "platinum",
@@ -85,7 +86,7 @@ const topPlayers: TopPlayers = {
     {
       id: 8,
       username: "BrainPower",
-      avatar: "/avatars/brain.png",
+      avatar: media["avatars.brain"].src,
       score: 7640,
       quizzes: 38,
       badge: "gold",
@@ -93,7 +94,7 @@ const topPlayers: TopPlayers = {
     {
       id: 9,
       username: "KnowledgeGuru",
-      avatar: "/avatars/guru.png",
+      avatar: media["avatars.guru"].src,
       score: 6980,
       quizzes: 35,
       badge: "gold",
@@ -101,7 +102,7 @@ const topPlayers: TopPlayers = {
     {
       id: 10,
       username: "QuizMaster",
-      avatar: "/avatars/master.png",
+      avatar: media["avatars.master"].src,
       score: 6540,
       quizzes: 32,
       badge: "silver",
@@ -178,10 +179,7 @@ export function TopPlayers() {
                     style={{ borderColor: `var(--${player.badge}-color, #e2e8f0)` }}
                   >
                     <AvatarImage
-                      src={
-                        player.avatar ||
-                        `/placeholder.svg?height=40&width=40&query=avatar ${player.username}`
-                      }
+                      src={player.avatar || media.placeholder.src}
                       alt={player.username}
                     />
                     <AvatarFallback className={getBadgeColor(player.badge)}>

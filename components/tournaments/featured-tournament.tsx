@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowRight, CalendarDays, Clock, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { media } from "@/data/media";
 
 export function FeaturedTournament() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function FeaturedTournament() {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-indigo-900/90 z-10" />
         <Image
-          src="/abstract-geometric-shapes.png" // Using existing abstract image for featured tournament
+          src={media["abstract-geometric-shapes"].src} // Using existing abstract image for featured tournament
           alt="Featured Tournament"
           width={1200}
           height={400}

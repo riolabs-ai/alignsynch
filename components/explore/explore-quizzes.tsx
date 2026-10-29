@@ -30,6 +30,7 @@ import Image from "next/image";
 import { formatCurrency, formatPlayerCount, type Difficulty } from "@/content/core";
 import { shelfCards } from "@/lib/quiz-cards";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 /** The card prints minutes; the model stores seconds. */
 const minutes = (quiz: { timeLimitSeconds: number }) => Math.round(quiz.timeLimitSeconds / 60);
@@ -201,7 +202,7 @@ export function ExploreQuizzes() {
                 <Image
                   width={1000}
                   height={600}
-                  src={quiz.cover?.src ?? "/placeholder.svg"}
+                  src={quiz.cover?.src ?? media.placeholder.src}
                   alt={quiz.cover?.alt || quiz.title}
                   className="h-full w-full object-cover"
                 />
@@ -230,7 +231,7 @@ export function ExploreQuizzes() {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.author?.avatar?.src ?? "/placeholder.svg"}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
                         alt={quiz.author?.name ?? "creator"}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
@@ -325,7 +326,7 @@ export function ExploreQuizzes() {
                   <Image
                     width={600}
                     height={350}
-                    src={quiz.cover?.src ?? "/placeholder.svg"}
+                    src={quiz.cover?.src ?? media.placeholder.src}
                     alt={quiz.cover?.alt || quiz.title}
                     className="h-full w-full object-cover"
                   />
@@ -354,7 +355,7 @@ export function ExploreQuizzes() {
                   <div className="flex items-center gap-2 mb-4">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.author?.avatar?.src ?? "/placeholder.svg"}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
                         alt={quiz.author?.name ?? "creator"}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>

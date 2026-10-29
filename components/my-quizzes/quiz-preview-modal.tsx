@@ -14,6 +14,7 @@ import type { CreatedQuiz } from "@/lib/data/users";
 import { format } from "date-fns";
 import { Star } from "lucide-react";
 import Image from "next/image";
+import { media } from "@/data/media";
 
 interface QuizPreviewModalProps {
   quiz: CreatedQuiz | null;
@@ -36,7 +37,7 @@ export function QuizPreviewModal({ quiz, isOpen, onClose, onViewFull }: QuizPrev
             <Image
               width={600}
               height={350}
-              src={quiz.image || "/placeholder.svg"}
+              src={quiz.image || media.placeholder.src}
               alt={quiz.title}
               fill
               className="rounded-md object-cover"

@@ -6,13 +6,14 @@ import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { media } from "@/data/media";
 
 // Sample live winners data
 const initialWinners = [
   {
     id: 1,
     name: "Alex J.",
-    avatar: "/avatars/alex.png",
+    avatar: media["avatars.alex"].src,
     amount: 5.75,
     quiz: "Science Trivia",
     timestamp: new Date("2025-05-20T10:58:00"), // Fixed date
@@ -22,7 +23,7 @@ const initialWinners = [
   {
     id: 2,
     name: "Sarah W.",
-    avatar: "/avatars/wizard.webp",
+    avatar: media["avatars.wizard"].src,
     amount: 12.5,
     quiz: "History Masters",
     timestamp: new Date("2025-05-20T10:55:00"), // Fixed date
@@ -32,7 +33,7 @@ const initialWinners = [
   {
     id: 3,
     name: "Mike B.",
-    avatar: "/avatars/sarah.webp",
+    avatar: media["avatars.sarah"].src,
     amount: 3.25,
     quiz: "Pop Culture Quiz",
     timestamp: new Date("2025-05-20T10:52:00"), // Fixed date
@@ -42,7 +43,7 @@ const initialWinners = [
   {
     id: 4,
     name: "Emily D.",
-    avatar: "/avatars/king.webp",
+    avatar: media["avatars.king"].src,
     amount: 7.8,
     quiz: "Geography Challenge",
     timestamp: new Date("2025-05-20T10:48:00"), // Fixed date
@@ -52,7 +53,7 @@ const initialWinners = [
   {
     id: 5,
     name: "David W.",
-    avatar: "/avatars/champion.png",
+    avatar: media["avatars.champion"].src,
     amount: 15.0,
     quiz: "Math Wizards",
     timestamp: new Date("2025-05-20T10:42:00"), // Fixed date
@@ -62,7 +63,7 @@ const initialWinners = [
   {
     id: 6,
     name: "Jessica T.",
-    avatar: "/avatars/mind.webp",
+    avatar: media["avatars.mind"].src,
     amount: 4.5,
     quiz: "Movie Buffs",
     timestamp: new Date("2025-05-20T10:35:00"), // Fixed date
@@ -72,7 +73,7 @@ const initialWinners = [
   {
     id: 7,
     name: "Ryan M.",
-    avatar: "/avatars/genious.png",
+    avatar: media["avatars.genious"].src,
     amount: 9.25,
     quiz: "Sports Trivia",
     timestamp: new Date("2025-05-20T10:25:00"), // Fixed date
@@ -82,7 +83,7 @@ const initialWinners = [
   {
     id: 8,
     name: "Olivia A.",
-    avatar: "/avatars/brain.png",
+    avatar: media["avatars.brain"].src,
     amount: 6.75,
     quiz: "Music Masters",
     timestamp: new Date("2025-05-21T10:15:00"), // Fixed date
@@ -129,7 +130,7 @@ export function LiveWinners() {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
                     <AvatarImage
-                      src={winner.avatar || "/placeholder.svg"}
+                      src={winner.avatar || media.placeholder.src}
                       className="object-cover object-center"
                       alt={winner.name}
                     />

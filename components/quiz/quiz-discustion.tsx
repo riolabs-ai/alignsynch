@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, CheckCircle, Clock, RotateCw, Share2, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { media } from "@/data/media";
 
 // Mock quiz result data - in a real app, you would fetch this based on the ID
 const mockQuizResult = {
@@ -38,7 +39,7 @@ const mockQuizResult = {
           user: {
             id: "u1",
             name: "MarvelFan",
-            avatar: "/avatars/genious.png",
+            avatar: media["avatars.genious"].src,
           },
           text: "Technically, Captain America existed first in the timeline, but Iron Man was the first movie released.",
           timestamp: "2023-10-15T15:30:00Z",
@@ -49,7 +50,7 @@ const mockQuizResult = {
               user: {
                 id: "u2",
                 name: "ComicBookGuru",
-                avatar: "/avatars/guru.png",
+                avatar: media["avatars.guru"].src,
               },
               text: "That's right! The Captain America movie came out in 2011 but was set during World War II.",
               timestamp: "2023-10-15T16:15:00Z",
@@ -98,7 +99,7 @@ const mockQuizResult = {
           user: {
             id: "u3",
             name: "InfinityExpert",
-            avatar: "/avatars/brain.png",
+            avatar: media["avatars.brain"].src,
           },
           text: "The Mind Stone has a yellow color, while the Soul Stone is orange. This is a common mix-up!",
           timestamp: "2023-10-16T10:45:00Z",

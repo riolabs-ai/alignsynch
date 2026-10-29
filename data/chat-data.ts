@@ -11,6 +11,7 @@
  */
 import type { Contact, Conversation } from "../content/social";
 import { deriveLastMessage, deriveUnread, selectRecentMessages } from "../content/social";
+import { media } from "./media";
 
 /** The stored records — what `data:check` validates. */
 export const contacts: readonly Contact[] = [
@@ -18,7 +19,7 @@ export const contacts: readonly Contact[] = [
     id: "contact-1",
     name: "Alex Johnson",
     avatar: {
-      src: "/avatars/alex.png",
+      src: media["avatars.alex"].src,
       alt: "Alex Johnson",
     },
     status: "online",
@@ -27,7 +28,7 @@ export const contacts: readonly Contact[] = [
     id: "contact-2",
     name: "Sarah Williams",
     avatar: {
-      src: "/avatars/brain.png",
+      src: media["avatars.brain"].src,
       alt: "Sarah Williams",
     },
     status: "offline",
@@ -37,7 +38,7 @@ export const contacts: readonly Contact[] = [
     id: "contact-3",
     name: "Michael Brown",
     avatar: {
-      src: "/avatars/champion.png",
+      src: media["avatars.champion"].src,
       alt: "Michael Brown",
     },
     status: "online",
@@ -46,7 +47,7 @@ export const contacts: readonly Contact[] = [
     id: "contact-4",
     name: "Emily Davis",
     avatar: {
-      src: "/avatars/genious.png",
+      src: media["avatars.genious"].src,
       alt: "Emily Davis",
     },
     status: "away",
@@ -55,7 +56,7 @@ export const contacts: readonly Contact[] = [
     id: "contact-5",
     name: "David Wilson",
     avatar: {
-      src: "/avatars/guru.png",
+      src: media["avatars.guru"].src,
       alt: "David Wilson",
     },
     status: "offline",
@@ -230,7 +231,7 @@ export const conversations: readonly Conversation[] = [
         id: "msg-4-4",
         senderId: "contact-4",
         image: {
-          src: "/placeholder.svg?height=300&width=400",
+          src: media["placeholder"].src,
           alt: "Shared image",
         },
         sentAt: "2026-10-28T13:00:00.000Z",

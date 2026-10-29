@@ -44,6 +44,7 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 interface ProfileCreatedQuizzesProps {
   user: User;
@@ -446,7 +447,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
             <div className="max-h-[70vh] overflow-y-auto">
               <div className="relative aspect-video w-full">
                 <Image
-                  src={previewQuiz.image || "/placeholder.svg"}
+                  src={previewQuiz.image || media.placeholder.src}
                   alt={previewQuiz.title}
                   fill
                   className="rounded-md object-cover"
@@ -600,7 +601,7 @@ function ProfileQuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: Pro
         <Image
           width={600}
           height={350}
-          src={quiz.image || "/placeholder.svg"}
+          src={quiz.image || media.placeholder.src}
           alt={quiz.title}
           fill
           className="object-cover"
@@ -737,7 +738,7 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
           <Image
             width={600}
             height={350}
-            src={quiz.image || "/placeholder.svg"}
+            src={quiz.image || media.placeholder.src}
             alt={quiz.title}
             fill
             className="object-cover sm:rounded-l-lg"

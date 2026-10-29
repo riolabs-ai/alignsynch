@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertCircle, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useEffect, useReducer } from "react";
 import { BattleState } from "./battle-page";
+import { media } from "@/data/media";
 
 interface ActiveBattleProps {
   battleState: BattleState;
@@ -312,7 +313,7 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
               >
                 <div className="relative">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
+                    <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
                     <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-bold">
