@@ -170,6 +170,12 @@ export const zQuiz = zContentBase
     /** Required: every quiz record has one and every playable surface filters on it. */
     difficulty: zDifficulty,
     /**
+     * What a player needs before starting ("basic knowledge of the ancient world").
+     * Optional: most records have none, and an invented prerequisite is worse than
+     * an absent one — the detail page renders the block only when it is authored.
+     */
+    requirements: z.string().min(1).optional(),
+    /**
      * Empty is legal: an authoring draft starts with no questions. `data:check`
      * reports a PUBLISHED quiz with 0 questions (W1) rather than failing here.
      */

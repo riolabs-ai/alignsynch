@@ -4,7 +4,9 @@
  * The 16 quizzes decision A authored so that all 31 card records project instead
  * of orphaning: `title`, `cover.src`, `author` and `stats` are lifted from the card
  * records unchanged; `summary`, `difficulty`, `categoryIds` and the 5 questions (4
- * options each, answer by option id) are authored, and are the only new prose.
+ * options each, answer by option id) are authored, and are the only new prose
+ * (`requirements` was added later, on the one record whose detail page renders it —
+ * WU-2/#51 — and is optional everywhere else).
  *
  * Slugs are FROZEN (E8): `historys-greatest-mysteries` deletes the apostrophe on
  * purpose. Renaming one is a new URL, not a rename.
@@ -28,6 +30,8 @@ export const authoredQuizzes: readonly Quiz[] = [
       "Blast off through the solar system and beyond: planets, orbits and the scale of the galaxy, five questions at a time.",
     categoryIds: ["space", "science"],
     tags: [],
+    requirements:
+      "No preparation needed — a general interest in space is enough. Every answer has a one-line explanation.",
     difficulty: "medium",
     status: "published",
     questions: [

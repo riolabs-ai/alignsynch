@@ -15,6 +15,7 @@
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { createRequire } from "node:module";
 
 import { zArticleCollection, zKbArticle, zNewsArticle, zTip } from "../content/article";
 import {
@@ -33,7 +34,9 @@ import {
   zQuizCard,
   selectQuizAuthoringCard,
   selectQuizCard,
+  type Question,
 } from "../content/quiz";
+import { zQuizComment, zQuizResult, zQuizReview } from "../content/quiz-result";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
 import { matchRoute, normalizePath } from "../content/route-manifest";
 import {
@@ -63,6 +66,9 @@ import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
 import { media } from "../data/media";
+import { quizComments } from "../data/quiz-comments";
+import { quizResults } from "../data/quiz-results";
+import { quizReviews } from "../data/quiz-reviews";
 import { promotionFindings } from "./data-check-promotions";
 import {
   danglingEntries,
@@ -91,6 +97,36 @@ const err = (code: string, message: string) =>
   diagnostics.push({ code, severity: "error", message });
 const warn = (code: string, message: string) =>
   diagnostics.push({ code, severity: "warn", message });
+
+const nodeRequire = createRequire(__filename);
+
+/**
+ * The generated fixtures (P3 bulk variation) are gitignored and present only after
+ * `pnpm gen`. When the source file exists, its compiled CommonJS module — produced by the
+ * same `tsc -p tsconfig.datacheck.json` that compiled this validator — is required and its
+ * exported array returned; when it is absent the generated set is simply empty. A present
+ * but unloadable module is an E20 error, never a silent skip.
+ */
+function loadGenerated<T>(label: string, exportName: string): readonly T[] {
+  const source = join(process.cwd(), "data", "generated", `${label}.ts`);
+  if (!existsSync(source)) return [];
+  let moduleValue: unknown;
+  try {
+    moduleValue = nodeRequire(join(__dirname, "..", "data", "generated", label));
+  } catch (cause) {
+    err(
+      "E20",
+      `data/generated/${label}.ts exists but its compiled module failed to load: ${String(cause)}`,
+    );
+    return [];
+  }
+  const value = (moduleValue as Record<string, unknown>)[exportName];
+  if (!Array.isArray(value)) {
+    err("E20", `data/generated/${label}.ts must export \`${exportName}\` as an array`);
+    return [];
+  }
+  return value as T[];
+}
 
 /* ------------------------------------------------------------------ *
  * E0 — per-record schema
@@ -732,6 +768,130 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  */
 
 /* ------------------------------------------------------------------ *
+ * E24 — the quiz activity resolves against the quiz it names
+ *
+ * The quiz surface (detail page, review screen, discussions feed) reads three
+ * collections joined by id: results, comments, reviews. A dangling `quizId` does
+ * not throw — it renders an empty page, which is the failure mode that makes a
+ * fixture look finished while the page is blank. So the join is checked here.
+ *
+ *   * every `result.quizId` / `comment.quizId` / `review.quizId` names a `Quiz`;
+ *   * every `comment.questionId` names a question of THAT quiz, and a reply's
+ *     parent is a top-level comment on the same quiz (one level, like the UI);
+ *   * every answer in a sheet names a question of that quiz and, when the player
+ *     did not skip, an option of that question — an answer key pointing at a
+ *     renamed option is exactly the drift the option-id rule (D4) exists to stop;
+ *   * `score.total` never exceeds the quiz's question count, so a 10-answer result
+ *     cannot hang off a 5-question record;
+ *   * no instant is after the fixture clock — a card dated in the future renders
+ *     "in 2 days", the same defect E10 blocks for the social fixtures.
+ *
+ * Numbering: E20–E23 are reserved by `docs/P2-INVENTORY.md` (DUP / MOCK / METRIC /
+ * PageCopy), so the next free code is E24 rather than reusing a reserved one.
+ * ------------------------------------------------------------------ */
+
+const activityResults = validateCollection("E0", "quiz result", zQuizResult, [...quizResults]);
+const activityComments = validateCollection("E0", "quiz comment", zQuizComment, [...quizComments]);
+const activityReviews = validateCollection("E0", "quiz review", zQuizReview, [...quizReviews]);
+
+const recordById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+const questionIdsOf = new Map(
+  quizzes.map((quiz) => [
+    quiz.id,
+    new Map(quiz.questions.map((question) => [question.id, question])),
+  ]),
+);
+
+const uniqueIds = (code: string, label: string, rows: readonly { id: string }[]) => {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.id)) err(code, `${label}: duplicate id "${row.id}"`);
+    seen.add(row.id);
+  }
+};
+uniqueIds("E24", "quiz result", activityResults);
+uniqueIds("E24", "quiz comment", activityComments);
+uniqueIds("E24", "quiz review", activityReviews);
+
+for (const result of activityResults) {
+  const quiz = recordById.get(result.quizId);
+  if (quiz === undefined) {
+    err("E24", `result "${result.id}" references unknown quiz "${result.quizId}"`);
+    continue;
+  }
+  if (result.score.total > quiz.questions.length) {
+    err(
+      "E24",
+      `result "${result.id}" scores out of ${result.score.total}, but quiz "${quiz.id}" has ${quiz.questions.length} question(s)`,
+    );
+  }
+  const questions = questionIdsOf.get(quiz.id) ?? new Map<string, Question>();
+  for (const answer of result.answers ?? []) {
+    const question = questions.get(answer.questionId);
+    if (question === undefined) {
+      err(
+        "E24",
+        `result "${result.id}" answers "${answer.questionId}", which is not a question of "${quiz.id}"`,
+      );
+      continue;
+    }
+    if (
+      answer.selectedOptionId !== null &&
+      !question.options.some((option) => option.id === answer.selectedOptionId)
+    ) {
+      err(
+        "E24",
+        `result "${result.id}" selects option "${answer.selectedOptionId}" on "${question.id}" (options: ${question.options.map((option) => option.id).join(", ")})`,
+      );
+    }
+  }
+  if (new Date(result.completedAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `result "${result.id}" completed after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+const commentById = new Map(activityComments.map((comment) => [comment.id, comment]));
+for (const comment of activityComments) {
+  const quiz = recordById.get(comment.quizId);
+  if (quiz === undefined) {
+    err("E24", `comment "${comment.id}" references unknown quiz "${comment.quizId}"`);
+  } else if (comment.questionId !== undefined) {
+    const questions = questionIdsOf.get(quiz.id) ?? new Map<string, Question>();
+    if (!questions.has(comment.questionId)) {
+      err(
+        "E24",
+        `comment "${comment.id}" is about "${comment.questionId}", which is not a question of "${quiz.id}"`,
+      );
+    }
+  }
+  if (comment.parentId !== undefined) {
+    const parent = commentById.get(comment.parentId);
+    if (parent === undefined) {
+      err("E24", `comment "${comment.id}" replies to unknown comment "${comment.parentId}"`);
+    } else if (parent.quizId !== comment.quizId) {
+      err(
+        "E24",
+        `comment "${comment.id}" replies across quizzes ("${parent.quizId}" → "${comment.quizId}")`,
+      );
+    } else if (parent.parentId !== undefined) {
+      err("E24", `comment "${comment.id}" is a reply to a reply — threads are one level`);
+    }
+  }
+  if (new Date(comment.createdAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `comment "${comment.id}" created after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+for (const review of activityReviews) {
+  if (!recordById.has(review.quizId)) {
+    err("E24", `review "${review.id}" references unknown quiz "${review.quizId}"`);
+  }
+  if (new Date(review.createdAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `review "${review.id}" created after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock
  *
  * The UI renders relative labels against `DEMO_NOW_ISO` (content/core.ts), so an instant
@@ -775,6 +935,7 @@ const counts = [
   `${conversations.length} conversations`,
   `${notificationRecords.length} notifications`,
   `${promotions.length} promotions`,
+  `${activityResults.length} quiz results, ${activityComments.length} comments, ${activityReviews.length} reviews`,
   `${Object.keys(registry).length} media entries`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
 ].join(", ");

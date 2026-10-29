@@ -28,3 +28,8 @@ next-env.d.ts
 # data:check build output (generated)
 .datacheck/
 .migration/
+
+# static HTML template drop (issue #1): not part of the tree, not built, nothing
+# imports it. It is ignored so `git status` and `biome check` (vcs.useIgnoreFile)
+# agree with AGENTS.md instead of linting 8 MB of someone else's markup.
+/lib/quizhub/
