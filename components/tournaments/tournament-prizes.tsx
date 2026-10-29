@@ -2,15 +2,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPercentValue } from "@/content/metrics";
+import type { PageCopySection } from "@/content/pages";
 import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Award, Clock, Gift, Medal, Sparkles, Star, Target, Trophy, Zap } from "lucide-react";
 import { Tournament } from "./tournament-detail";
 
 interface TournamentPrizesProps {
   tournament: Tournament;
+  copy: PageCopySection;
 }
 
-export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
+export function TournamentPrizes({ tournament, copy }: TournamentPrizesProps) {
   // Determine prize amounts based on tournament prize pool
   const prizePool = Number.parseInt(tournament?.prize?.replace(/[^0-9]/g, "") || "10000");
   const firstPrize = Math.floor(prizePool * 0.5);
@@ -24,7 +27,7 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-amber-500" />
-            Prize Distribution
+            {copy.heading}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -34,16 +37,16 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                 <div className="mx-auto w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mb-4">
                   <Trophy className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold mb-1">1st Place</h3>
+                <h3 className="text-xl font-bold mb-1">{itemLabel(copy, "first-place")}</h3>
                 <div className="text-3xl font-bold text-amber-900">${firstPrize}</div>
                 <div className="mt-4 space-y-2 text-sm text-amber-900">
                   <div className="flex items-center justify-center gap-1">
                     <Star className="h-4 w-4" />
-                    <span>Champion Badge</span>
+                    <span>{itemLabel(copy, "champion-badge")}</span>
                   </div>
                   <div className="flex items-center justify-center gap-1">
                     <Zap className="h-4 w-4" />
-                    <span>1 Year Premium</span>
+                    <span>{itemLabel(copy, "one-year")}</span>
                   </div>
                 </div>
               </div>
@@ -54,16 +57,16 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                 <div className="mx-auto w-14 h-14 bg-gray-500 rounded-full flex items-center justify-center mb-4">
                   <Medal className="h-7 w-7 text-white" />
                 </div>
-                <h3 className="text-lg font-bold mb-1">2nd Place</h3>
+                <h3 className="text-lg font-bold mb-1">{itemLabel(copy, "second-place")}</h3>
                 <div className="text-2xl font-bold text-gray-700">${secondPrize}</div>
                 <div className="mt-4 space-y-2 text-sm text-gray-700">
                   <div className="flex items-center justify-center gap-1">
                     <Star className="h-4 w-4" />
-                    <span>Silver Badge</span>
+                    <span>{itemLabel(copy, "silver-badge")}</span>
                   </div>
                   <div className="flex items-center justify-center gap-1">
                     <Zap className="h-4 w-4" />
-                    <span>6 Months Premium</span>
+                    <span>{itemLabel(copy, "six-months")}</span>
                   </div>
                 </div>
               </div>
@@ -74,16 +77,16 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                 <div className="mx-auto w-14 h-14 bg-amber-700 rounded-full flex items-center justify-center mb-4">
                   <Award className="h-7 w-7 text-white" />
                 </div>
-                <h3 className="text-lg font-bold mb-1">3rd Place</h3>
+                <h3 className="text-lg font-bold mb-1">{itemLabel(copy, "third-place")}</h3>
                 <div className="text-2xl font-bold text-amber-800">${thirdPrize}</div>
                 <div className="mt-4 space-y-2 text-sm text-amber-800">
                   <div className="flex items-center justify-center gap-1">
                     <Star className="h-4 w-4" />
-                    <span>Bronze Badge</span>
+                    <span>{itemLabel(copy, "bronze-badge")}</span>
                   </div>
                   <div className="flex items-center justify-center gap-1">
                     <Zap className="h-4 w-4" />
-                    <span>3 Months Premium</span>
+                    <span>{itemLabel(copy, "three-months")}</span>
                   </div>
                 </div>
               </div>
@@ -95,15 +98,19 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Gift className="h-4 w-4 text-purple-500" />
-                  Runner-up Prizes (4th-10th)
+                  {itemLabel(copy, "runner-up")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3">
                   <div>
-                    <div className="font-medium">${runnerUpPrize} each</div>
+                    <div className="font-medium">
+                      {fillLabel(itemLabel(copy, "runner-up-each"), {
+                        amount: `$${runnerUpPrize}`,
+                      })}
+                    </div>
                     <div className="text-sm text-muted-foreground">
-                      Plus 1 month Premium subscription
+                      {itemLabel(copy, "runner-up-perk")}
                     </div>
                   </div>
                 </div>
@@ -114,15 +121,15 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Gift className="h-4 w-4 text-blue-500" />
-                  Participation Rewards
+                  {itemLabel(copy, "participation")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3">
                   <div>
-                    <div className="font-medium">Tournament Badge</div>
+                    <div className="font-medium">{itemLabel(copy, "participation-badge")}</div>
                     <div className="text-sm text-muted-foreground">
-                      For all participants who complete the tournament
+                      {itemLabel(copy, "participation-perk")}
                     </div>
                   </div>
                 </div>
@@ -135,7 +142,7 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-amber-500" />
-                  Special Achievements
+                  {itemLabel(copy, "achievements")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -145,10 +152,13 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                       <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <div className="font-medium">Perfect Round</div>
+                      <div className="font-medium">{itemLabel(copy, "perfect-round")}</div>
                       <div className="text-xs text-muted-foreground">
-                        {formatPercentValue(metric("tournament.prizes.perfectRoundAccuracy").value)}{" "}
-                        accuracy in any round
+                        {fillLabel(itemLabel(copy, "perfect-round-body"), {
+                          percent: formatPercentValue(
+                            metric("tournament.prizes.perfectRoundAccuracy").value,
+                          ),
+                        })}
                       </div>
                     </div>
                   </div>
@@ -158,8 +168,10 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                       <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                      <div className="font-medium">Speed Demon</div>
-                      <div className="text-xs text-muted-foreground">Fastest completion time</div>
+                      <div className="font-medium">{itemLabel(copy, "speed-demon")}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {itemLabel(copy, "speed-demon-body")}
+                      </div>
                     </div>
                   </div>
 
@@ -168,9 +180,9 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                       <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div>
-                      <div className="font-medium">Consistency King</div>
+                      <div className="font-medium">{itemLabel(copy, "consistency")}</div>
                       <div className="text-xs text-muted-foreground">
-                        Least score variance across rounds
+                        {itemLabel(copy, "consistency-body")}
                       </div>
                     </div>
                   </div>
@@ -188,9 +200,9 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                       <Trophy className="h-6 w-6 text-amber-600 dark:text-amber-300" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold">Total Prize Pool</h3>
+                      <h3 className="text-lg font-bold">{itemLabel(copy, "total-pool")}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Distributed among winners and special achievements
+                        {itemLabel(copy, "total-pool-body")}
                       </p>
                     </div>
                   </div>

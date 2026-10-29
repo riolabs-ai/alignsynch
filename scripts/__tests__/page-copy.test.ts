@@ -189,12 +189,16 @@ describe("leafLiterals", () => {
     assert.equal(literals[0].line, 3);
   });
 
-  it("ignores markup: className, href, alt, variant, aria-* and data-*", () => {
+  it("ignores markup: className, href, alt, variant, orientation, align, stroke-*, aria-* and data-*", () => {
     const literals = leafLiterals(
       file(
         "components/home/x.tsx",
         `<a className="rounded bg-indigo-50" href="/explore" aria-label="see all" data-test="x">
   <Badge variant="outline" alt="A cover" />
+  <ScrollBar orientation="horizontal" />
+  <DropdownMenuContent align="end">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+  </DropdownMenuContent>
 </a>
 `,
       ),

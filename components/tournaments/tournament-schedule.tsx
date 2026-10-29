@@ -3,9 +3,11 @@
 import { Badge } from "@/components/ui/badge";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { PageCopySection } from "@/content/pages";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { CalendarDays, Clock } from "lucide-react";
 
-export function TournamentSchedule() {
+export function TournamentSchedule({ copy }: { copy: PageCopySection }) {
   // Mock schedule data
   const scheduleData = [
     {
@@ -31,14 +33,16 @@ export function TournamentSchedule() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tournament Schedule</CardTitle>
+        <CardTitle>{copy.heading}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {scheduleData.map((item) => (
           <div key={item.round} className="border rounded-md p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-medium">Round {item.round}</h3>
-              <Badge variant="outline">Qualifying</Badge>
+              <h3 className="text-lg font-medium">
+                {fillLabel(itemLabel(copy, "round-heading"), { number: item.round })}
+              </h3>
+              <Badge variant="outline">{itemLabel(copy, "badge")}</Badge>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CalendarDays className="h-4 w-4" />

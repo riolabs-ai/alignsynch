@@ -19,19 +19,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatMetricValue, formatPercentValue } from "@/content/metrics";
+import type { PageCopySection } from "@/content/pages";
+import { media } from "@/data/media";
+import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowDown, ArrowUp, Award, Medal, Minus, Search, Trophy } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Tournament } from "./tournament-detail";
-import { formatMetricValue, formatPercentValue } from "@/content/metrics";
-import { media } from "@/data/media";
-import { metric } from "@/data/metrics";
 
 interface TournamentLeaderboardProps {
   tournament: Tournament;
+  copy: PageCopySection;
 }
 
-export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps) {
+export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [roundFilter, setRoundFilter] = useState("all");
 
@@ -199,12 +202,12 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle>Tournament Leaderboard</CardTitle>
+            <CardTitle>{copy.heading}</CardTitle>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search players..."
+                  placeholder={itemLabel(copy, "search-placeholder")}
                   className="pl-8 w-full sm:w-[200px]"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -212,13 +215,15 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
               </div>
               <Select value={roundFilter} onValueChange={setRoundFilter}>
                 <SelectTrigger className="w-full sm:w-[150px]">
-                  <SelectValue placeholder="Filter by round" />
+                  <SelectValue placeholder={itemLabel(copy, "round-placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Rounds</SelectItem>
-                  <SelectItem value="1">Round 1</SelectItem>
-                  <SelectItem value="2">Round 2</SelectItem>
-                  {tournament.rounds >= 3 && <SelectItem value="3">Round 3</SelectItem>}
+                  <SelectItem value="all">{itemLabel(copy, "round-all")}</SelectItem>
+                  <SelectItem value="1">{itemLabel(copy, "round-1")}</SelectItem>
+                  <SelectItem value="2">{itemLabel(copy, "round-2")}</SelectItem>
+                  {tournament.rounds >= 3 && (
+                    <SelectItem value="3">{itemLabel(copy, "round-3")}</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -229,19 +234,25 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">Rank</TableHead>
-                  <TableHead>Player</TableHead>
-                  <TableHead className="text-right">Score</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">Accuracy</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">Best Streak</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">Change</TableHead>
+                  <TableHead className="w-[80px]">{itemLabel(copy, "column-rank")}</TableHead>
+                  <TableHead>{itemLabel(copy, "column-player")}</TableHead>
+                  <TableHead className="text-right">{itemLabel(copy, "column-score")}</TableHead>
+                  <TableHead className="hidden md:table-cell text-right">
+                    {itemLabel(copy, "column-accuracy")}
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell text-right">
+                    {itemLabel(copy, "column-streak")}
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell text-right">
+                    {itemLabel(copy, "column-change")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No players found matching your search
+                      {itemLabel(copy, "empty")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -292,12 +303,15 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
           </div>
 
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            Showing {filteredData.length} of {leaderboardData.length} players
+            {fillLabel(itemLabel(copy, "showing"), {
+              shown: filteredData.length,
+              total: leaderboardData.length,
+            })}
           </div>
 
           <div className="mt-6 flex justify-center">
             <Button variant="outline" size="sm">
-              View Full Leaderboard
+              {itemLabel(copy, "view-full")}
             </Button>
           </div>
         </CardContent>
@@ -305,7 +319,7 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Performance</CardTitle>
+          <CardTitle>{itemLabel(copy, "performance")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border p-4">
@@ -321,11 +335,13 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
                 </div>
                 <div>
                   <div className="font-medium">
-                    Your Rank: <span className="text-purple-600 font-bold">#42</span>
+                    {itemLabel(copy, "your-rank")}{" "}
+                    <span className="text-purple-600 font-bold">#42</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Top {formatPercentValue(metric("tournament.you.percentile").value)} of
-                    participants
+                    {fillLabel(itemLabel(copy, "percentile"), {
+                      percent: formatPercentValue(metric("tournament.you.percentile").value),
+                    })}
                   </div>
                 </div>
               </div>
@@ -333,17 +349,23 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold">620</div>
-                  <div className="text-xs text-muted-foreground">Score</div>
+                  <div className="text-xs text-muted-foreground">
+                    {itemLabel(copy, "stat-score")}
+                  </div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold">
                     {formatMetricValue(metric("tournament.you.accuracy"))}
                   </div>
-                  <div className="text-xs text-muted-foreground">Accuracy</div>
+                  <div className="text-xs text-muted-foreground">
+                    {itemLabel(copy, "stat-accuracy")}
+                  </div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold">5</div>
-                  <div className="text-xs text-muted-foreground">Best Streak</div>
+                  <div className="text-xs text-muted-foreground">
+                    {itemLabel(copy, "stat-streak")}
+                  </div>
                 </div>
               </div>
             </div>

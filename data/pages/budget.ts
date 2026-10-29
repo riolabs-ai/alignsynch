@@ -163,4 +163,16 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/not-found",
     budget: 0,
   },
+  "/tournaments": {
+    page: "app/(mainlayout)/tournaments/page.tsx",
+    dirs: ["components/tournaments"],
+    fixture: "data/pages/tournaments",
+    budget: 0,
+  },
+  "/tournaments/[id]": {
+    page: "app/(mainlayout)/tournaments/[id]/page.tsx",
+    dirs: ["components/tournaments"],
+    fixture: "data/pages/tournament-detail",
+    budget: 0,
+  },
 });
