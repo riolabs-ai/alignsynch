@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { type Tip, getRelatedTips, tipCategoryName } from "@/data/creator-tips-data";
 import { ContentBlocks } from "@/components/content/content-blocks";
 import { formatDate } from "@/content/core";
+import type { PageCopySection } from "@/content/pages";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Bookmark, Clock, Share2, ThumbsUp } from "lucide-react";
 import Image from "next/image";
@@ -13,9 +15,11 @@ import RelatedTips from "./related-tips";
 import { media } from "@/data/media";
 interface TipDetailProps {
   tip: Tip;
+  copy: PageCopySection;
+  related: PageCopySection;
 }
 
-export default function TipDetail({ tip }: TipDetailProps) {
+export default function TipDetail({ tip, copy, related }: TipDetailProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [likeCount, setLikeCount] = useState(45);
   const [hasLiked, setHasLiked] = useState(false);
@@ -42,7 +46,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
         className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-6"
       >
         <ArrowLeft size={16} className="mr-2" />
-        Back to all tips
+        {copy.heading}
       </Link>
 
       <article className="max-w-4xl mx-auto">
@@ -53,7 +57,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
             </span>
             <div className="flex items-center ml-4 text-sm text-gray-500 dark:text-gray-200">
               <Clock size={14} className="mr-1" />
-              {tip.readMinutes} min read
+              {fillLabel(itemLabel(copy, "read-minutes"), { count: tip.readMinutes })}
             </div>
           </div>
 
@@ -97,7 +101,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
                 onClick={handleBookmark}
               >
                 <Bookmark size={16} className="mr-2" />
-                {isBookmarked ? "Saved" : "Save"}
+                {isBookmarked ? itemLabel(copy, "saved") : itemLabel(copy, "save")}
               </Button>
 
               <Button
@@ -115,7 +119,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
 
               <Button variant="outline" size="sm" className="flex items-center">
                 <Share2 size={16} className="mr-2" />
-                Share
+                {itemLabel(copy, "share")}
               </Button>
             </div>
           </div>
@@ -126,7 +130,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
         </div>
       </article>
 
-      {relatedTips.length > 0 && <RelatedTips tips={relatedTips} />}
+      {relatedTips.length > 0 && <RelatedTips tips={relatedTips} copy={related} />}
     </div>
   );
 }
