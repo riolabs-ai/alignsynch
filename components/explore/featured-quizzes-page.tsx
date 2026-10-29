@@ -34,20 +34,30 @@ import { media } from "@/data/media";
 type Tabs = "trending" | "popular" | "new";
 
 /** Each tab is a curated shelf; the cards come from `selectQuizCard` (D2). */
-function shelves(): Record<Tabs, QuizCard[]> {
+function shelves(now: Date): Record<Tabs, QuizCard[]> {
   return {
-    trending: shelfCards("featuredTrending"),
-    popular: shelfCards("featuredPopular"),
-    new: shelfCards("featuredNew"),
+    trending: shelfCards("featuredTrending", now),
+    popular: shelfCards("featuredPopular", now),
+    new: shelfCards("featuredNew", now),
   };
 }
 
-export function FeaturedQuizzesPage() {
+/**
+ * `now` is the **server's** request instant, ISO-8601, and it is the only clock this
+ * page projects against. The route is request-time (`force-dynamic` on
+ * `app/(mainlayout)/explore/featured/page.tsx`), so the instant comes from the request;
+ * the client reuses it, so server render and hydration project the same campaign at the
+ * same instant. A client component that called `new Date()` here instead would evaluate
+ * the campaign window against the visitor's clock — a second clock, the D9/#418 class.
+ */
+export function FeaturedQuizzesPage({ now }: { now: string }) {
   const [activeTab, setActiveTab] = useState<Tabs>("trending");
   const [sortBy, setSortBy] = useState<string>("popular");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 9;
-  const featuredQuizzes = shelves();
+  const featuredQuizzes = shelves(new Date(now));
+  /** The same instant for the countdown chip — `formatTimeRemaining` defaults to `new Date()`. */
+  const clock = new Date(now);
 
   // Get badge icon based on type
   const getBadgeIcon = (type: QuizBadgeType) => {
@@ -198,7 +208,7 @@ export function FeaturedQuizzesPage() {
                 {quiz.stats.limitedTime && quiz.stats.limitedTimeEndsAt && (
                   <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
-                    {formatTimeRemaining(quiz.stats.limitedTimeEndsAt)}
+                    {formatTimeRemaining(quiz.stats.limitedTimeEndsAt, clock)}
                   </div>
                 )}
               </div>

@@ -15,6 +15,7 @@
   "include": [
     "content/**/*.ts",
     "data/**/*.ts",
+    "lib/quiz-cards.ts",
     "scripts/data-check*",
     "scripts/ui-refs.ts",
     "scripts/media-refs.ts",

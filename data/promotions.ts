@@ -32,9 +32,18 @@
  * `MarvelFan` on the record, never the card's `CosmicMind`.
  *
  * `scripts/data-check.ts` runs the collection rules over exactly this list (E14 join
- * and uniqueness, E15 window and prize, E16 concurrent agreement, W6 staging), and
+ * and uniqueness, E15 window and prize, E16 concurrent agreement, E17 that the slot
+ * is a position a shelf renders, W6 staging), and
  * `scripts/__tests__/promotion-fixtures.test.ts` proves the two slots reproduce their
  * authored cards while the other 29 records project unchanged.
+ *
+ * **Who reads `slot`:** `lib/quiz-cards.ts` does, through
+ * `data/quiz-catalogue.ts::slotShelves` — the table that maps a slot group
+ * (`explore-page/popular`) to the shelf that renders it (`explorePopular`) — and it
+ * passes the campaign into `selectQuizCard()` for that position only. So a slot is a
+ * *place*, not a property of the quiz: the same record on a shelf no slot addresses
+ * stays the catalog projection. That is why E17 is load-bearing: a slot nothing
+ * renders is a campaign that silently never runs.
  */
 import type { QuizPromotion } from "../content/quiz";
 

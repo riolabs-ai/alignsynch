@@ -345,12 +345,14 @@ for (const quizId of Object.keys(quizAnalytics)) {
 }
 
 /* ------------------------------------------------------------------ *
- * E14/E15/E16/W6 — the promotion overlays (B-01)
+ * E14/E15/E16/E17/W6 — the promotion overlays (B-01, P3)
  *
  * The collection rules a single overlay cannot see: the join and the identity
  * (E14), the window and the prize (E15), concurrent overlays agreeing field-wise
- * (E16), and a campaign staged outside the quiz's published life (W6, a warning —
- * preparing a campaign against a draft is legitimate).
+ * (E16), the slot actually being a place a shelf renders (E17 — the rule that
+ * stops a campaign from silently never running), and a campaign staged outside
+ * the quiz's published life (W6, a warning — preparing a campaign against a
+ * draft is legitimate).
  *
  * Issue #27 numbered these E11/E12/E13, which are already taken above (shelves,
  * one record per subject, analytics keys), so they continue the set. The checks
