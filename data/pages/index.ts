@@ -7,8 +7,16 @@
  * else in the repo has to change.
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
+import { categoriesPageCopy } from "./categories";
+import { categoryDetailPageCopy } from "./category-detail";
+import { exploreFeaturedPageCopy } from "./explore-featured";
+import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
 
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
+  "/categories": categoriesPageCopy,
+  "/categories/[slug]": categoryDetailPageCopy,
+  "/explore": explorePageCopy,
+  "/explore/featured": exploreFeaturedPageCopy,
 });

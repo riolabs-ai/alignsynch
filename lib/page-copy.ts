@@ -40,6 +40,35 @@ export function itemLabel(section: PageCopySection, id: string): string {
   return itemOf(section, id).label;
 }
 
+/**
+ * The paragraph an item carries (`"Join tournaments, climb the leaderboards, …"`).
+ * Throws when the item is a bare label: a card whose description silently renders
+ * empty is the bug this reader exists to prevent.
+ */
+export function itemBody(section: PageCopySection, id: string): string {
+  const item = itemOf(section, id);
+  if (item.body === undefined) {
+    throw new Error(`PageCopy: item "${id}" in section "${section.id}" has no body`);
+  }
+  return item.body;
+}
+
+/**
+ * An item declared on the *page* rather than in a band — a search field's placeholder,
+ * a sort option, the label a wall of cards repeats. Same contract as `itemOf`: the id
+ * must exist in `data/pages/<route>.ts` and E23 resolves it at build time.
+ */
+export function pageItemOf(copy: PageCopy, id: string): PageCopyItem {
+  const item = copy.items?.find((candidate) => candidate.id === id);
+  if (!item) {
+    const available = (copy.items ?? []).map((candidate) => candidate.id).join(", ") || "none";
+    throw new Error(
+      `PageCopy: this route declares no page item "${id}" (have: ${available}) — add it to the fixture, do not write the string in the view`,
+    );
+  }
+  return item;
+}
+
 /** A stat's value (`"10k+"`). Throws when the item carries a label only. */
 export function itemValue(section: PageCopySection, id: string): string {
   const item = itemOf(section, id);

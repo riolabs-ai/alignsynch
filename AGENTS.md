@@ -131,8 +131,11 @@ process bug.
   `profile/[username]`, `support/articles/[id]`, `tournaments/[id]`.
 - `components/<feature>/` — one directory per feature; `components/ui/` is shadcn primitives.
 - `docs/p1-migration/{MIGRATION.md,ledger.json}` — what the P1 model changed, field by field.
-- Generated, not part of the build: `.next/`, `.datacheck/`, `node_modules/`, `.migration/`. An
-  untracked `lib/quizhub/` is a static HTML template drop — nothing imports it.
+- Generated, not part of the build: `.next/`, `.datacheck/`, `node_modules/`, `.migration/`.
+- `lib/quizhub/` — a **vendored** static HTML template drop (`index.html` + `assets/`, `css/`, `js/`,
+  `scss/`), kept as reference and out of the build: nothing imports it. It is listed in `.gitignore`,
+  so it never shows in `git status` and `biome check` (`vcs.useIgnoreFile`) never lints it — do not
+  delete it as dead code, and do not commit it back into the tree.
 
 ## Conventions (measured, not aspirational)
 
@@ -298,3 +301,10 @@ CI job p50 **55 s**, first-pass yield **81.8 %** (18/22 pushes green on the firs
 
 `docs/ENV-SPEC.md` is the environment, team, integration and P1–P4 gate spec, and carries the P1
 completion record and QA evidence. Read it before adding tooling or a dependency.
+
+`docs/ORCHESTRATION.md` is the orchestrator's behavioural contract: decisions arrive as `clarify`
+forms (never prose option lists), blocked cards carry the `❓ DECISION REQUIRED` block, block kinds
+are declared, the board is re-carded when it drains, and it records the traps that have already cost
+this repo a day — a PR URL in a kanban comment freezes that card for 24 h, after a reboot every
+`running` card must be `reclaim`ed before any status is trusted, and a `scratch` workspace makes a
+worker fall back to the operator's checkout.
