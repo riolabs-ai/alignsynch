@@ -102,6 +102,81 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
   regression even though `pnpm lint` exits 0.
 - Stop `pnpm dev` before `pnpm build` — both write `.next/` and a concurrent run corrupts it.
 
+## Voice capture: memo → issue → card (ops loop)
+
+A voice note is an issue intake channel, not a chat toy. Four steps, all reproducible on one
+machine; STT never leaves it (issue [#32](https://github.com/riolabs-ai/alignsynch/issues/32)).
+
+1. **Capture.** Drop the clip on disk and keep it with the ticket — a bare transcript loses the
+   tone, the numbers read aloud, and any "this part is broken" inflection. 20 s is the practical
+   ceiling for one memo = one issue.
+2. **Transcribe locally.** `stt.enabled: true`, `stt.provider: local` (faster-whisper `base`, Silero
+   VAD on, `stt.language: en`). The `stt` toolset must be enabled (`hermes tools enable stt`); it is
+   a **config-only** toolset (`_CONFIG_ONLY_TOOLSETS` in `hermes_cli/tools_config.py`) — it gates the
+   transcription of inbound voice messages and voice mode, and registers no agent-callable tool, so
+   "enabled" is verified by transcribing a clip, never by looking for a tool in the list.
+   The Python extra is not installed by default: `hermes pm install --extra stt-whisper`. Without it
+   the resolver reports `STT provider 'local' configured but unavailable` and falls to `none` — do
+   **not** "fix" that by pointing `stt` at a cloud provider.
+3. **File the issue.** The PM role turns the transcript into a ticket: verbatim transcript in the
+   body above the summary, labels from the labels that already exist (`enhancement`, `ci`,
+   `tech-debt`, `documentation`, `needs-validation`, `bug` — there is no `ops` label; adding one is a
+   deliberate repo decision, not a reflex), milestone `#1 Hardening & validation` (the only one) when
+   the work is in scope for it, and the acceptance line written as something a command can prove.
+   The transcription command and the provider it used go in the body, so the ticket is auditable.
+4. **Mirror the card.** The kanban card cites the issue number and carries the same acceptance
+   criteria; when the card is worked, its handoff carries the commands that were run, not a summary
+   of them. One memo → one issue → one card; a memo that wants three changes is three issues.
+
+Measured on this machine (keep the numbers honest when re-checking):
+
+| Check                                                                                | Result                               |
+| ------------------------------------------------------------------------------------ | ------------------------------------ |
+| 13.06 s clip, `unshare -rn` (no network, `huggingface.co` unreachable), model `base` | transcript in 2.9 s, near-verbatim   |
+| Same clip, cold model cache (first run on this machine)                              | 9.8 s, including the model fetch     |
+| 6.65 s Xiaomi-generated WAV → same local STT, offline                                | transcript in 3.4 s, near-verbatim   |
+| `faster-whisper 1.2.1` present / absent                                              | `provider: local` / `provider: none` |
+
+The `base` model mis-hears proper nouns ("Neuphonic" → "pneumonic"). That is a model-size limit, not
+a config bug: raise `stt.local.model` (`small` / `medium`) for memos dense in product names, and
+never "correct" a transcript into something the speaker did not say.
+
+### Xiaomi: TTS yes (as a command provider), ASR not through `stt` today
+
+`tts.providers.xiaomi` is wired in `~/.hermes/config.yaml` against `XIAOMI_BASE_URL`
+(`https://token-plan-sgp.xiaomimimo.com/v1`) and backed by `~/.hermes/scripts/xiaomi_tts.py`; select
+it with `hermes config set tts.provider xiaomi` (default stays `nous`). It is a **command** provider,
+not a Python plugin provider — the config layer docs call that the supported path.
+
+- **Endpoint:** Xiaomi synthesises through `POST {base}/chat/completions` with `model:
+  mimo-v2.5-tts`, the text in an **`assistant`** message, and `audio: {format: wav, voice:
+  mimo_default}`; the audio arrives base64 in `choices[0].message.audio.data`. `POST
+  /v1/audio/speech` is documented as OpenAI-client compatible but returns **404** from this gateway
+  (openresty), so a spike that only tries `/audio/speech` concludes "no TTS" — it is there, on the
+  chat route.
+- **Output:** `wav`, 24 kHz mono PCM16, ~47 KB/s (6.65 s ≈ 319 KB). Round-trip through the local STT
+  is intelligible, so this is usable for voice-memo playback, not just for the spike.
+- **Secrets:** command providers run with Hermes secrets scrubbed, so the provider needs
+  `env_passthrough: [XIAOMI_API_KEY, XIAOMI_BASE_URL]`. Without it the script exits 2 with
+  `XIAOMI_API_KEY is empty` — the error names the real cause.
+- **Quota:** the text models on this gateway are `mimo-v2.6-flash` / `mimo-v2.6-pro`; TTS/ASR are the
+  `mimo-v2.5-*` family (`-tts`, `-tts-voiceclone`, `-tts-voicedesign`, `-asr`). There is no v2.7.
+  Spikes stay at a handful of short calls; that is the whole budget.
+- **ASR has no route through `stt` today — and the reason is not "no base URL":** `mimo-v2.5-asr`
+  is on `/v1/models`, but `xiaomi` is not a registered STT provider name. Unknown names pass
+  through the explicit resolver untouched, so `stt.provider: xiaomi` fails as
+  _provider-not-registered_. The OpenAI-compatible providers **do** accept a base URL —
+  `stt.openai.base_url` is read and honoured (`_direct_openai_credentials`), and
+  `stt.deepinfra.base_url`, `stt.xai.base_url` / `XAI_STT_BASE_URL`,
+  `stt.elevenlabs.base_url` / `ELEVENLABS_STT_BASE_URL` exist too. So the untested route is
+  `stt.provider: openai` + `stt.openai.base_url: https://token-plan-sgp.xiaomimimo.com/v1` +
+  `stt.openai.model: mimo-v2.5-asr`. **Untested, not impossible:** it was left alone because it
+  spends ASR quota outside this spike's budget, and for a non-OpenAI-shaped API the zero-Python
+  alternative is `stt.providers.<name>: {type: command}` (same registry as TTS) or
+  `HERMES_LOCAL_STT_COMMAND`; a plugin `TranscriptionProvider` is the heavier option. Neither is
+  planned: local faster-whisper is the offline answer and the ops constraint is that audio does
+  not leave the machine.
+
 ## Docs
 
 `docs/ENV-SPEC.md` is the environment, team, integration and P1–P4 gate spec, and carries the P1
