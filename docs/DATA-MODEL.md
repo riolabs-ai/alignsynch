@@ -1,28 +1,28 @@
 # Data model — AlignSynch (quizhub)
 
 One typed model: `content/*.ts` zod schemas are the single source of truth; types are `z.infer`red,
-every `data/*` fixture is validated at build by `pnpm data:check` (83 tests, exit 0). A drift is a
+every `data/*` fixture is validated at build by `pnpm data:check` (134 tests, exit 0). A drift is a
 red build. `content/` has no React/Next import. Full history: docs/p1-migration/MIGRATION.md.
 
 ## Inventory — every `data/*` module → entity (62 quizzes · 9 news · 6 tips · 8 kb · 5 contacts · 5 conv · 6 notifs)
 
-| module | entity (count) | storage / view |
-|---|---|---|
-| data/quizzes.ts | Quiz ×62 (mock 20 + currentQuiz 1 + created 5 + authored 16 + browse 20) | THE one list; `quizById`/`quizBySlug` |
-| data/mock-quizzes.ts | Quiz ×20 generator templates (draft, private) | storage |
-| data/currentQuiz.ts | Quiz ×1 playable | storage |
-| data/created-quizzes.ts | Quiz ×5 (§7; published, no questions) | storage |
-| data/authored-quizzes.ts | Quiz ×16 (decision-A card-only) | storage |
-| data/browse-quizzes.ts | Quiz ×20 (d2 card-only) | storage |
-| data/quiz-catalogue.ts | none — 13 shelves (ordered ids) + 7 `catalogueAliases` | curation view, no records |
-| data/quiz-analytics.ts | QuizAnalytics ×6 keyed by quiz id | storage (engagement) |
-| data/categories.ts | Category ×25 (quiz rows + derived `count`) | view of content/categories.ts |
-| data/news-data.ts | NewsArticle ×9 + news Category ×7 (re-export) | storage |
-| data/creator-tips-data.ts | Tip ×6 + tip Category ×6 (re-export) | storage |
-| data/knowledge-base-data.ts | KbArticle ×8 | storage |
-| data/chat-data.ts | Contact ×5, Conversation ×5 (+ derived mock views) | storage |
-| data/notifications.ts | Notification ×6 | storage |
-| data/searchdata.ts | SearchIndex ×74 derived rows | derived, never authored |
+| module                      | entity (count)                                                           | storage / view                        |
+| --------------------------- | ------------------------------------------------------------------------ | ------------------------------------- |
+| data/quizzes.ts             | Quiz ×62 (mock 20 + currentQuiz 1 + created 5 + authored 16 + browse 20) | THE one list; `quizById`/`quizBySlug` |
+| data/mock-quizzes.ts        | Quiz ×20 generator templates (draft, private)                            | storage                               |
+| data/currentQuiz.ts         | Quiz ×1 playable                                                         | storage                               |
+| data/created-quizzes.ts     | Quiz ×5 (§7; published, no questions)                                    | storage                               |
+| data/authored-quizzes.ts    | Quiz ×16 (decision-A card-only)                                          | storage                               |
+| data/browse-quizzes.ts      | Quiz ×20 (d2 card-only)                                                  | storage                               |
+| data/quiz-catalogue.ts      | none — 13 shelves (ordered ids) + 7 `catalogueAliases`                   | curation view, no records             |
+| data/quiz-analytics.ts      | QuizAnalytics ×6 keyed by quiz id                                        | storage (engagement)                  |
+| data/categories.ts          | Category ×25 (quiz rows + derived `count`)                               | view of content/categories.ts         |
+| data/news-data.ts           | NewsArticle ×9 + news Category ×7 (re-export)                            | storage                               |
+| data/creator-tips-data.ts   | Tip ×6 + tip Category ×6 (re-export)                                     | storage                               |
+| data/knowledge-base-data.ts | KbArticle ×8                                                             | storage                               |
+| data/chat-data.ts           | Contact ×5, Conversation ×5 (+ derived mock views)                       | storage                               |
+| data/notifications.ts       | Notification ×6                                                          | storage                               |
+| data/searchdata.ts          | SearchIndex ×74 derived rows                                             | derived, never authored               |
 
 Demoted to views, not retired: `quiz-catalogue.ts` (was a 40-record second collection), `categories.ts`
 (was a 22-row copy), `searchdata.ts` (was an unrelated catalog).
@@ -43,35 +43,35 @@ Demoted to views, not retired: `quiz-catalogue.ts` (was a 40-record second colle
 
 ## Invariants (`data:check`; E = hard, W = declared drift — each names its proving test)
 
-| code | invariant | proven by |
-|---|---|---|
-| E0 | every record parses against its schema; every object `.strict()` | data-check.ts `validateCollection` |
-| E1 | ids unique across all four kinds + category table | data-check.ts `assertUnique`; quiz-collection.test.ts |
-| E2 | `kind/slug` unique (slug is URL identity) | data-check.ts `assertUnique` |
-| E3 | question ids unique; card outputs re-parse as their card type | data-check.ts; data-model.test.ts |
-| E4 | a record references only its own category scope | data-check.ts `assertCategoryScopes` |
-| E5/E6 | contacts, conversations, notification links/icons resolve; message ids unique | data-check.ts `checkContactRefs`/`checkConversationRefs`/`checkNotificationRefs` |
-| E7 | `content/routes.ts` and the `app/` tree agree, both directions | data-check.ts `walkRoutes` |
-| E8 | every search row names a real quiz/category/curated page | data-check.ts index checks |
-| E9 | exactly one `Quiz` type (`types/quiz.ts` absent, no local `Quiz` declarations) | data-check.ts E9 regex; data-model.test.ts |
-| E10 | every shelf id resolves; no alias is a record; analytics keys name records | data-check.ts; quiz-collection.test.ts |
-| E11 | one record per subject (normalised title unique) | data-check.ts `subjectKey`; quiz-collection.test.ts |
-| E12/E13 | promotion `rewardCents > 0`; ids + `(quizId, slot)` unique (2nd campaign on a slot = an edit) | promotion.test.ts |
-| W1 | published quiz, no questions — 24: `data/created-quizzes.ts:30` `questions: []` (+19 browse) | data-check.ts warn |
-| W2 | published quiz, no `publishedAt` — 42: `data/created-quizzes.ts:16-49` (published, no date) | data-check.ts warn |
-| W3 | renderable quiz category with neither `image` nor `iconKey` — 0: `content/categories.ts` (science/history/art carry `iconKey` only) | data-check.ts `assertRenderableCategories` |
-| W4 | reward, no window — 32: `data/authored-quizzes.ts:399` `rewardCents: 750`, no `limitedTimeEndsAt` | data-check.ts warn |
-| W5 | browse record on no shelf — 0: `data/browse-quizzes.ts` (every browse card is shelved) | data-check.ts warn |
-| W6 | campaign before the quiz's `publishedAt` — clamped, not an error | promotion.test.ts |
-
-E12/E13 are schema-level and unit-tested but not yet in `data:check` (promotion fixture not in `data/`).
+| code        | invariant                                                                                                                                                                          | proven by                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| E0          | every record parses against its schema; every object `.strict()`                                                                                                                   | data-check.ts `validateCollection`                                               |
+| E1          | ids unique across all four kinds + category table                                                                                                                                  | data-check.ts `assertUnique`; quiz-collection.test.ts                            |
+| E2          | `kind/slug` unique (slug is URL identity)                                                                                                                                          | data-check.ts `assertUnique`                                                     |
+| E3          | question ids unique; card outputs re-parse as their card type                                                                                                                      | data-check.ts; data-model.test.ts                                                |
+| E4          | a record references only its own category scope                                                                                                                                    | data-check.ts `assertCategoryScopes`                                             |
+| E5/E6       | contacts, conversations, notification links/icons resolve; message ids unique                                                                                                      | data-check.ts `checkContactRefs`/`checkConversationRefs`/`checkNotificationRefs` |
+| E7          | `content/routes.ts` and the `app/` tree agree, both directions                                                                                                                     | data-check.ts `walkRoutes`                                                       |
+| E8          | every search row names a real quiz/category/curated page                                                                                                                           | data-check.ts index checks                                                       |
+| E9          | exactly one `Quiz` type (`types/quiz.ts` absent, no local `Quiz` declarations)                                                                                                     | data-check.ts E9 regex; data-model.test.ts                                       |
+| E10         | hardcoded `href`/asset literals in `components/` + `app/` resolve; no route exports a metadata function Next never reads; every social instant sits at or before the fixture clock | data-check.ts E10 blocks; data-model.test.ts `ui-refs` + `fixture clock`         |
+| E11         | every shelf id resolves against the one collection                                                                                                                                 | data-check.ts `shelves`; quiz-collection.test.ts                                 |
+| E12         | one record per subject (normalised title unique), and a `catalogueAlias` is never a record of its own                                                                              | data-check.ts `subjectKey`/`assertUnique`; quiz-collection.test.ts               |
+| E13         | every analytics key names a real quiz record                                                                                                                                       | data-check.ts analytics check                                                    |
+| E14/E15/E16 | promotion join+identity; window and prize; one quiz advertises one set of numbers (issue #27 called these E11–E13; those codes were taken)                                         | data-check-promotions.ts; promotion.test.ts / promotion-invariants.test.ts       |
+| W1          | published quiz, no questions — 24: `data/created-quizzes.ts:30` `questions: []` (+19 browse)                                                                                       | data-check.ts warn                                                               |
+| W2          | published quiz, no `publishedAt` — 42: `data/created-quizzes.ts:16-49` (published, no date)                                                                                        | data-check.ts warn                                                               |
+| W3          | renderable quiz category with neither `image` nor `iconKey` — 0: `content/categories.ts` (science/history/art carry `iconKey` only)                                                | data-check.ts `assertRenderableCategories`                                       |
+| W4          | reward, no window — 32: `data/authored-quizzes.ts:399` `rewardCents: 750`, no `limitedTimeEndsAt`                                                                                  | data-check.ts warn                                                               |
+| W5          | browse record on no shelf — 0: `data/browse-quizzes.ts` (every browse card is shelved)                                                                                             | data-check.ts warn                                                               |
+| W6          | campaign staged outside the quiz's published life — warns, never fails (staging against a draft is legitimate)                                                                     | data-check-promotions.ts                                                         |
 
 ## Strictness
 
-| object | mode | unknown key |
-|---|---|---|
-| every `z*` schema in `content/` (Quiz, Question, QuizStats, QuizPromotion, Category, ContentBlock, Article, Contact, Message, Conversation, Notification, SearchIndex rows, RoutePattern) | strict | reject — validation error |
-| legacy input interfaces `content/blocks.ts` (`LegacyNewsSection`, `LegacyKbSection`) | n/a (boundary adapter) | not parsed; converted losslessly to `ContentBlock[]` |
+| object                                                                                                                                                                                    | mode                   | unknown key                                          |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------- |
+| every `z*` schema in `content/` (Quiz, Question, QuizStats, QuizPromotion, Category, ContentBlock, Article, Contact, Message, Conversation, Notification, SearchIndex rows, RoutePattern) | strict                 | reject — validation error                            |
+| legacy input interfaces `content/blocks.ts` (`LegacyNewsSection`, `LegacyKbSection`)                                                                                                      | n/a (boundary adapter) | not parsed; converted losslessly to `ContentBlock[]` |
 
 `featured` is omit-or-true: `featured: false` is unrepresentable. No object is passthrough.
 
@@ -99,8 +99,8 @@ record: `selectQuizCard`→`QuizCard`, `selectQuizAuthoringCard`→`QuizAuthorin
 4. `content/social.ts` → E5/E6.
 5. `content/search.ts` + `content/route-manifest.ts` + `content/routes.ts` → E7/E8.
 6. `data/*` fixtures (already ported) → E0–E11.
-7. Promotion fixture into `data/` (task t_bbba624a) → wire E12/E13 into `data:check`.
-Adding content: add to the right `data/` module, run `data:check`; widen a schema **before** a fixture, never silently.
+7. Promotion fixture `data/promotions.ts` → E14–E16/W6 in `data:check` (landed, B-01).
+   Adding content: add to the right `data/` module, run `data:check`; widen a schema **before** a fixture, never silently.
 
 ## P3 variation dimensions
 
@@ -117,4 +117,4 @@ Adding content: add to the right `data/` module, run `data:check`; widen a schem
 - User / profile domain (`lib/data/users.ts` nested `CreatedQuiz` — a profile-model change).
 - Quiz results / per-question `correctPercentage` tables (observed results, not content).
 - Auth, accounts, route metadata (D14).
-- The promotion fixture port itself (t_bbba624a) — model defined above; fixture not yet in `data/`.
+- The promotion fixture's own copy — the fixture landed in B-01 (`data/promotions.ts`); this page defines the model, not the campaign.
