@@ -5,13 +5,31 @@ import type React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCompactCount } from "@/content/metrics";
+import type { PageCopySection } from "@/content/pages";
 import { media } from "@/data/media";
 import { metric } from "@/data/metrics";
+import { itemLabel, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle, Mail } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
-export function NewsletterSection() {
+/** The band's two repeated rows, in render order: the fixture owns the words. */
+const PERKS = ["perk-insights", "perk-strategies", "perk-unsubscribe"] as const;
+const STATS = ["stat-subscribers", "stat-satisfaction", "stat-updates"] as const;
+
+/**
+ * A stat's value. The caption and the two display-only values come from the page-copy
+ * fixture; the subscriber count is a product quantity, so it is computed from
+ * `data/metrics.ts` (E22) instead of being re-authored twice — the fixture and the page
+ * would drift apart the day either changed.
+ */
+function statValue(copy: PageCopySection, id: (typeof STATS)[number]): string {
+  return id === "stat-subscribers"
+    ? `${formatCompactCount(metric("home.newsletterSubscribers").value)}+`
+    : itemValue(copy, id);
+}
+
+export function NewsletterSection({ copy }: { copy: PageCopySection }) {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,12 +74,9 @@ export function NewsletterSection() {
               <Mail className="h-6 w-6 text-white" />
             </div>
 
-            <h2 className="text-4xl font-bold text-white mb-4">Get Quiz Insights Weekly</h2>
+            <h2 className="text-4xl font-bold text-white mb-4">{copy.heading}</h2>
 
-            <p className="text-white/80 mb-8 text-lg max-w-2xl mx-auto">
-              Join 10,000+ quiz creators and players receiving our weekly tips, strategies, and
-              exclusive opportunities
-            </p>
+            <p className="text-white/80 mb-8 text-lg max-w-2xl mx-auto">{copy.body}</p>
           </motion.div>
 
           <motion.div
@@ -81,7 +96,7 @@ export function NewsletterSection() {
                   <div className="bg-green-500 rounded-full p-1">
                     <CheckCircle className="h-6 w-6 text-white" />
                   </div>
-                  <span>Thank you for subscribing! Check your inbox soon.</span>
+                  <span>{itemLabel(copy, "subscribed")}</span>
                 </motion.div>
               </div>
             ) : (
@@ -90,7 +105,7 @@ export function NewsletterSection() {
                   <div className="relative flex-1">
                     <Input
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={itemLabel(copy, "email-placeholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pr-10 h-14 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white focus:ring-white"
@@ -106,11 +121,11 @@ export function NewsletterSection() {
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <span className="h-4 w-4 border-2 border-indigo-900 border-t-transparent rounded-full animate-spin"></span>
-                        Subscribing...
+                        {itemLabel(copy, "subscribing")}
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
-                        Subscribe
+                        {itemLabel(copy, "subscribe")}
                         <ArrowRight className="h-4 w-4" />
                       </span>
                     )}
@@ -118,24 +133,14 @@ export function NewsletterSection() {
                 </form>
 
                 <div className="mt-6 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-white/80">
-                  <div className="flex items-center">
-                    <div className="bg-white/20 rounded-full p-1 mr-2">
-                      <CheckCircle className="h-3 w-3 text-white" />
+                  {PERKS.map((id) => (
+                    <div key={id} className="flex items-center">
+                      <div className="bg-white/20 rounded-full p-1 mr-2">
+                        <CheckCircle className="h-3 w-3 text-white" />
+                      </div>
+                      <span>{itemLabel(copy, id)}</span>
                     </div>
-                    <span>Weekly insights</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="bg-white/20 rounded-full p-1 mr-2">
-                      <CheckCircle className="h-3 w-3 text-white" />
-                    </div>
-                    <span>Exclusive strategies</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="bg-white/20 rounded-full p-1 mr-2">
-                      <CheckCircle className="h-3 w-3 text-white" />
-                    </div>
-                    <span>Unsubscribe anytime</span>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -148,22 +153,15 @@ export function NewsletterSection() {
             viewport={{ once: true }}
             className="mt-8 flex flex-wrap justify-center gap-6"
           >
-            <div className="flex flex-col items-center">
-              <p className="text-3xl font-bold text-white">
-                {formatCompactCount(metric("home.newsletterSubscribers").value)}+
-              </p>
-              <p className="text-white/70 text-sm">Subscribers</p>
-            </div>
-            <div className="w-px h-12 bg-white/20 self-center"></div>
-            <div className="flex flex-col items-center">
-              <p className="text-3xl font-bold text-white">4.9/5</p>
-              <p className="text-white/70 text-sm">Satisfaction</p>
-            </div>
-            <div className="w-px h-12 bg-white/20 self-center"></div>
-            <div className="flex flex-col items-center">
-              <p className="text-3xl font-bold text-white">Weekly</p>
-              <p className="text-white/70 text-sm">Updates</p>
-            </div>
+            {STATS.map((id, index) => (
+              <Fragment key={id}>
+                {index > 0 && <div className="w-px h-12 bg-white/20 self-center"></div>}
+                <div className="flex flex-col items-center">
+                  <p className="text-3xl font-bold text-white">{statValue(copy, id)}</p>
+                  <p className="text-white/70 text-sm">{itemLabel(copy, id)}</p>
+                </div>
+              </Fragment>
+            ))}
           </motion.div>
         </div>
       </div>

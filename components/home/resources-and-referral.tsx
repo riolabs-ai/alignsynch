@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatWholeCurrency } from "@/content/metrics";
+import type { PageCopySection } from "@/content/pages";
 import { media } from "@/data/media";
 import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import {
   ArrowRight,
   ChevronLeft,
@@ -20,7 +22,13 @@ import { useRef, useState } from "react";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
-export function ResourcesAndReferral() {
+export function ResourcesAndReferral({
+  referral,
+  tips: tipsCopy,
+}: {
+  referral: PageCopySection;
+  tips: PageCopySection;
+}) {
   const [copied, setCopied] = useState(false);
   const referralCode = "QUIZ2024FRIEND";
   const cardsRef = useRef<HTMLDivElement>(null);
@@ -95,20 +103,22 @@ export function ResourcesAndReferral() {
                 <div className="flex flex-col h-full">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h2 className="text-2xl xl:text-4xl font-bold text-slate-50">Refer & Earn</h2>
-                      <p className="text-slate-100 xl:text-lg">
-                        Invite friends and earn bonus rewards!
-                      </p>
+                      <h2 className="text-2xl xl:text-4xl font-bold text-slate-50">
+                        {referral.heading}
+                      </h2>
+                      <p className="text-slate-100 xl:text-lg">{referral.body}</p>
                     </div>
                     <Badge className="bg-amber-500 hover:bg-amber-600">
-                      Earn up to {formatWholeCurrency(metric("affiliate.referralBonus").value)}
+                      {fillLabel(itemLabel(referral, "bonus-badge"), {
+                        amount: formatWholeCurrency(metric("affiliate.referralBonus").value),
+                      })}
                     </Badge>
                   </div>
 
                   <div className="flex-1 flex items-end h-full justify-between">
                     <Button variant={"outline"} className="w-full">
                       <Gift className="mr-2 h-4 w-4" />
-                      Invite Friends
+                      {itemLabel(referral, "invite-friends")}
                     </Button>
                   </div>
                 </div>
@@ -122,14 +132,12 @@ export function ResourcesAndReferral() {
               <div className="mb-6 flex justify-between items-center gap-3 flex-wrap">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                    Quiz Creator Tips
+                    {tipsCopy.heading}
                   </h2>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    Grow faster with expert advice
-                  </p>
+                  <p className="text-slate-600 dark:text-slate-400">{tipsCopy.body}</p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Button variant="outline">View All Resources</Button>
+                  <Button variant="outline">{itemLabel(tipsCopy, "view-all")}</Button>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -186,7 +194,7 @@ export function ResourcesAndReferral() {
                                   variant="ghost"
                                   className="justify-start p-0 h-auto text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-transparent"
                                 >
-                                  Read more
+                                  {itemLabel(tipsCopy, "read-more")}
                                   <ArrowRight className="ml-1 h-4 w-4" />
                                 </Button>
                               </div>
