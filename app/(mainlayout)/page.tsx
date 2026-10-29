@@ -10,6 +10,7 @@ import { QuizzesByDifficulty } from "@/components/home/quizzes-by-difficulty";
 import { ResourcesAndReferral } from "@/components/home/resources-and-referral";
 import { TopPlayersCarousel } from "@/components/home/top-players-carousel";
 import { Footer } from "@/components/layout/footer";
+import { winFeed } from "@/lib/win-feed";
 import "swiper/swiper-bundle.css";
 
 export default function Home() {
@@ -21,7 +22,7 @@ export default function Home() {
       <FeaturedQuizzes />
       <TopPlayersCarousel />
       <QuizzesByDifficulty />
-      <LiveWinners />
+      <LiveWinners wins={winFeed(8)} />
       <CategoriesHowItWorks />
       <PlayerTestimonials />
       <ResourcesAndReferral />

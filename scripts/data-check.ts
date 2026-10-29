@@ -62,8 +62,11 @@ import { quizzes as quizRecords } from "../data/quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
+import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
 import { media } from "../data/media";
+import { leaderboards, players, winEvents } from "../data/players";
 import { promotionFindings } from "./data-check-promotions";
+import { peopleFindings } from "./data-check-people";
 import {
   danglingEntries,
   registryProblems,
@@ -732,6 +735,49 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  */
 
 /* ------------------------------------------------------------------ *
+ * E24 — the people and leaderboard fixture resolves
+ *
+ * Six surfaces (`/leaderboard` ×3, `/daily-challenge`, the two home widgets) each authored
+ * their own records: 107 literals in eight files, and no fixture could reach one of them.
+ * `content/people.ts` now owns `Player`, `LeaderboardRow` and `WinEvent`; this is the half a
+ * single record cannot prove — that a row's `playerId` is a player, that a win's `quizId` is
+ * a quiz, that a player's `avatarKey` is a registered **avatar** file, that a board's ranks
+ * match its positions, and that a board carrying movement is ordered by it. Every one of
+ * those failures renders a plausible page (a board one person short, a crown on the wrong
+ * head, a payout for a quiz nobody can play) which is why they are errors, not warnings.
+ *
+ * The per-record pass is E0 like every other collection; the rules themselves live in
+ * `scripts/data-check-people.ts` so `scripts/__tests__/people-invariants.test.ts` can violate
+ * each of them without a filesystem.
+ * ------------------------------------------------------------------ */
+
+const playerRecords = validateCollection("E0", "player", zPlayer, [...players]);
+const winRecords = validateCollection("E0", "win", zWinEvent, [...winEvents]);
+for (const [board, rows] of Object.entries(leaderboards)) {
+  validateCollection("E0", `leaderboard "${board}"`, zLeaderboardRow, [...rows]);
+}
+
+const leaderboardRowCount = Object.values(leaderboards).reduce(
+  (total, rows) => total + rows.length,
+  0,
+);
+
+for (const finding of peopleFindings({
+  players: playerRecords,
+  leaderboards,
+  wins: winRecords,
+  quizIds: new Set(quizzes.map((quiz) => quiz.id)),
+  media: {
+    entry: (key) => registry[key],
+    /** The registry addresses one file per key (E18); this is the file-exists half. */
+    fileExists: (src) => existsSync(join(process.cwd(), "public", assetOf(src))),
+  },
+  nowIso: DEMO_NOW_ISO,
+})) {
+  err(finding.rule, finding.message);
+}
+
+/* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock
  *
  * The UI renders relative labels against `DEMO_NOW_ISO` (content/core.ts), so an instant
@@ -776,6 +822,9 @@ const counts = [
   `${notificationRecords.length} notifications`,
   `${promotions.length} promotions`,
   `${Object.keys(registry).length} media entries`,
+  `${playerRecords.length} players`,
+  `${leaderboardRowCount} leaderboard rows`,
+  `${winRecords.length} wins`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
 ].join(", ");
 
