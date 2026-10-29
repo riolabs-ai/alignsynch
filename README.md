@@ -94,17 +94,26 @@ binary) and is never exercised by `scripts/verify.sh`, which runs `next build` a
 `next start` plus an image fetch — so it would fail as a 500 on every image while the gate stayed
 green.
 
-It also cannot pay off yet: 21 of the 57 `<Image>` tags use `fill` and none passes `sizes`, so
+It also cannot pay off yet: 22 of the 57 `<Image>` tags use `fill` and none passes `sizes`, so
 optimized output falls back to `sizes="100vw"` with a `w=3840` candidate for a ~340 px tile.
 `fill` tags need `sizes` before the flag can come off.
 
-Known call-site bugs that `unoptimized` currently hides, all of them dev-only 500s because
-`next/image`'s dimension check sits inside `NODE_ENV !== "production"`: two tags with no
-dimension source at all (`components/home/player-testimonials.tsx`,
-`components/settings/security-settings.tsx`) and three that pass `fill` together with
-`width`/`height` (`components/dashboard/my-quizzes-dashboard.tsx`,
-`components/profile/profile-created-quizzes.tsx`). No route renders them today — they sit behind
-a toggle, an unreached fallback and tab state — which is why `pnpm dev` is still 200 everywhere.
+The two mistakes `unoptimized` hides are `next/image`'s own dimension rules, and both sit inside
+`NODE_ENV !== "production"`, so `next build` never reads them: a tag with no size source is a
+dev-only 500 (E451), and `fill` together with `width`/`height` is another (E96). Five such tags
+were live on `main` — two with no dimension source at all
+(`components/home/player-testimonials.tsx`, `components/settings/security-settings.tsx`) and three
+passing `fill` plus `width`/`height` (`components/dashboard/my-quizzes-dashboard.tsx`, twice in
+`components/profile/profile-created-quizzes.tsx`). None was reachable from a route — they sat
+behind a toggle, an unreached fallback and tab state — which is why `pnpm dev` was 200 everywhere
+while they were there.
+
+They are fixed, and the rule is a check now instead of a habit: `pnpm data:check`
+invariant **E27** (`scripts/image-refs.ts`) scans every `<Image>` tag in `app/`, `components/`,
+`lib/` and `hooks/` and fails on a tag with no size source (E451 in dev) and on one that passes
+`fill` together with `width`/`height` (E96 in dev). A static import counts as a size source —
+`cover` carries its dimensions, `cover.src` is the plain string and does not — and the census
+(`57 tags: 34 width+height, 22 fill, 1 static import, 0 invalid`) is printed on every run.
 
 ## Where the docs live
 
@@ -129,18 +138,19 @@ manager and Node version; a command change belongs in both.
 - **P2 — media and content templatization: closing.** Every rendered string and media reference
   should come from the schema; the remaining work is ranked in
   [docs/P2-INVENTORY.md](docs/P2-INVENTORY.md).
-- **P3 — bulk generation: next.** The generator exists and is reproducible:
+- **P3 — bulk generation: complete.** One command emits template variants of a quiz and the gate
+  stays green on them; the same seed rewrites byte-identical files:
 
   ```bash
-  pnpm gen --count 20 --seed 42   # writes data/generated/{quizzes,promotions}.ts, gitignored
+  pnpm gen --count 20 --seed 42 && pnpm data:check   # exit 0 — 62 fixtures + 20 generated
   ```
 
-  The same seed rewrites byte-identical files. It is not yet green against the collection
-  invariants: `pnpm data:check` reads `data/generated/` when it exists and fails `E17`, because the
-  generated promotions are placed on curated explore slots that the curation map renders with
-  different quizzes — 7 errors at `--count 20 --seed 42`. Until that is settled, remove
-  `data/generated/` before running the gate.
-- **P4 — multi-usecase: after P3.** A second vertical config, opened only once P3 passes.
+  It emits **quizzes only**. A promotion names a slot that a shelf in `data/quiz-catalogue.ts`
+  renders (`E17`), and a generated quiz is in no shelf, so a generated campaign could never run;
+  the overlays stay curated in `data/promotions.ts`. `data:check` rejects a
+  `data/generated/promotions.ts` that reappears (`E26`), and `pnpm gen` deletes one left by an
+  older clone, so `data/generated/` is always safe to leave on disk.
+- **P4 — multi-usecase: after P3.** A second vertical config, opened now that P3 passes.
 
 Stage-by-stage definitions of done are §5 of [docs/ENV-SPEC.md](docs/ENV-SPEC.md); the CI gate
 itself is documented in [docs/GATE.md](docs/GATE.md) and

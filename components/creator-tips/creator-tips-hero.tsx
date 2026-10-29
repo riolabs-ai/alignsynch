@@ -1,5 +1,7 @@
 "use client";
 
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import type React from "react";
 
 import { Search } from "lucide-react";
@@ -9,7 +11,10 @@ interface CreatorTipsHeroProps {
   onSearch: (query: string) => void;
 }
 
-export default function CreatorTipsHero({ onSearch }: CreatorTipsHeroProps) {
+export default function CreatorTipsHero({
+  onSearch,
+  copy,
+}: CreatorTipsHeroProps & { copy: PageCopySection }) {
   const [searchInput, setSearchInput] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -22,19 +27,14 @@ export default function CreatorTipsHero({ onSearch }: CreatorTipsHeroProps) {
       <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
 
       <div className="relative max-w-3xl mx-auto text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          Quiz Creator Tips & Best Practices
-        </h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{copy.heading}</h1>
 
-        <p className="text-lg text-white/90 mb-8">
-          Discover strategies, techniques, and insights to create more engaging and effective
-          quizzes
-        </p>
+        <p className="text-lg text-white/90 mb-8">{copy.body}</p>
 
         <form onSubmit={handleSubmit} className="relative max-w-md mx-auto ">
           <input
             type="text"
-            placeholder="Search for tips..."
+            placeholder={itemLabel(copy, "search-placeholder")}
             className="w-full dark:bg-slate-900 px-4 py-3 rounded-full pl-12 pr-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}

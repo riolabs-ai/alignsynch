@@ -38,6 +38,12 @@
  * surface in this table is at 0 and the next literal added to any of them is a red
  * build. `shell` and `not-found` are the two declared non-route surfaces
  * (`NON_ROUTE_COPY_SURFACES` in `content/pages.ts`).
+ *
+ * WU-9 recorded the same 0 for the five marketing surfaces it moved: 184 literal strings
+ * across 30 components became 8 fixtures, and the two news routes and the two support
+ * routes that share one component directory each measured 0 on their own import closure.
+ * A row here is per *surface*, so a shared band is counted once per surface that reaches
+ * it — that is the number that has to stay at 0 when the next band is added to either page.
  */
 import { zPageCopyBudget, type PageCopyBudget } from "../../content/pages";
 
@@ -46,6 +52,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/page.tsx",
     dirs: ["components/home", "components/categories"],
     fixture: "data/pages/home",
+    budget: 0,
+  },
+  "/battle": {
+    page: "app/(mainlayout)/battle/page.tsx",
+    dirs: ["components/battle"],
+    fixture: "data/pages/battle",
     budget: 0,
   },
   "/categories": {
@@ -58,6 +70,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/categories/[slug]/page.tsx",
     dirs: ["components/categories"],
     fixture: "data/pages/category-detail",
+    budget: 0,
+  },
+  "/daily-challenge": {
+    page: "app/(mainlayout)/daily-challenge/page.tsx",
+    dirs: ["components/daily-challenge"],
+    fixture: "data/pages/daily-challenge",
     budget: 0,
   },
   "/explore": {
@@ -84,6 +102,54 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/register",
     budget: 0,
   },
+  "/affiliate": {
+    page: "app/(mainlayout)/affiliate/page.tsx",
+    dirs: ["components/affiliate"],
+    fixture: "data/pages/affiliate",
+    budget: 0,
+  },
+  "/pricing": {
+    page: "app/(mainlayout)/pricing/page.tsx",
+    dirs: ["components/pricing"],
+    fixture: "data/pages/pricing",
+    budget: 0,
+  },
+  "/news": {
+    page: "app/(mainlayout)/news/page.tsx",
+    dirs: ["components/news"],
+    fixture: "data/pages/news",
+    budget: 0,
+  },
+  "/news/[slug]": {
+    page: "app/(mainlayout)/news/[slug]/page.tsx",
+    dirs: ["components/news"],
+    fixture: "data/pages/news-article",
+    budget: 0,
+  },
+  "/support": {
+    page: "app/(mainlayout)/support/page.tsx",
+    dirs: ["components/support"],
+    fixture: "data/pages/support",
+    budget: 0,
+  },
+  "/support/articles/[id]": {
+    page: "app/(mainlayout)/support/articles/[id]/page.tsx",
+    dirs: ["components/support"],
+    fixture: "data/pages/support-article",
+    budget: 0,
+  },
+  "/creator-tips": {
+    page: "app/(mainlayout)/creator-tips/page.tsx",
+    dirs: ["components/creator-tips"],
+    fixture: "data/pages/creator-tips",
+    budget: 0,
+  },
+  "/creator-tips/[slug]": {
+    page: "app/(mainlayout)/creator-tips/[slug]/page.tsx",
+    dirs: ["components/creator-tips"],
+    fixture: "data/pages/creator-tips-detail",
+    budget: 0,
+  },
   shell: {
     page: "app/(mainlayout)/layout.tsx",
     mounts: ["components/layout/footer.tsx"],
@@ -95,6 +161,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/not-found.tsx",
     dirs: ["components/not-found"],
     fixture: "data/pages/not-found",
+    budget: 0,
+  },
+  "/tournaments": {
+    page: "app/(mainlayout)/tournaments/page.tsx",
+    dirs: ["components/tournaments"],
+    fixture: "data/pages/tournaments",
+    budget: 0,
+  },
+  "/tournaments/[id]": {
+    page: "app/(mainlayout)/tournaments/[id]/page.tsx",
+    dirs: ["components/tournaments"],
+    fixture: "data/pages/tournament-detail",
     budget: 0,
   },
 });

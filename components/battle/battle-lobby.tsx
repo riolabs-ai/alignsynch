@@ -12,18 +12,42 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Clock, Copy, ListChecks, Trophy, X } from "lucide-react";
+import { difficultyLabel } from "@/content/core";
+import type { PageCopy } from "@/content/pages";
+import { battleMode } from "@/data/battle-modes";
+import { media } from "@/data/media";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
+import { CheckCircle2, Clock, Copy, ListChecks, Trophy, X, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BattleState } from "./battle-page";
-import { media } from "@/data/media";
+
+/**
+ * The icon and colour each lobby rule renders with, keyed by the rule's id in
+ * `data/pages/battle.ts`. Presentation, so it stays here: a fixture that `data:check`
+ * compiles and runs under plain node cannot import React. A rule with no art still
+ * renders — it falls back to the trophy.
+ */
+const RULE_ART: Record<string, { Icon: LucideIcon; iconClassName: string }> = {
+  "bonus-points": { Icon: Clock, iconClassName: "h-4 w-4 text-blue-500" },
+  "no-changing": { Icon: ListChecks, iconClassName: "h-4 w-4 text-green-500" },
+  "streak-xp": { Icon: Trophy, iconClassName: "h-4 w-4 text-purple-500" },
+};
+
+const DEFAULT_RULE_ART = { Icon: Trophy, iconClassName: "h-4 w-4" };
 
 interface BattleLobbyProps {
+  copy: PageCopy;
   battleState: BattleState;
   onStartBattle: () => void;
   onCancel: () => void;
 }
 
-export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobbyProps) {
+export function BattleLobby({ copy, battleState, onStartBattle, onCancel }: BattleLobbyProps) {
+  const playersCopy = sectionOf(copy, "lobby-players");
+  const settingsCopy = sectionOf(copy, "lobby-settings");
+  const rulesCopy = sectionOf(copy, "lobby-rules");
+  const modeName = battleMode(battleState.mode).name;
+
   const [countdown, setCountdown] = useState(15);
   const [copied, setCopied] = useState(false);
   const [allReady, setAllReady] = useState(false);
@@ -60,10 +84,12 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
     <div className="max-w-4xl mx-auto">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold mb-2">
-          {battleState.mode === "1v1" ? "1v1 Battle" : "Group Battle"} Lobby
+          {fillLabel(itemLabel(playersCopy, "title"), { name: modeName })}
         </h1>
         <p className="text-muted-foreground">
-          {countdown > 0 ? `Battle starts in ${countdown} seconds` : "Ready to start battle!"}
+          {countdown > 0
+            ? fillLabel(itemLabel(playersCopy, "countdown"), { seconds: countdown })
+            : itemLabel(playersCopy, "ready-to-start")}
         </p>
       </div>
 
@@ -71,11 +97,13 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
         <div className="md:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Players</CardTitle>
+              <CardTitle>{playersCopy.heading}</CardTitle>
               <CardDescription>
                 {battleState.mode === "1v1"
-                  ? "You and your opponent"
-                  : `${battleState.players.length} players in the lobby`}
+                  ? itemLabel(playersCopy, "opponent")
+                  : fillLabel(itemLabel(playersCopy, "lobby-count"), {
+                      count: battleState.players.length,
+                    })}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -92,7 +120,9 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
                     <div className="text-center">
                       <div className="font-medium">{player.name}</div>
                       <Badge variant={player.isReady ? "default" : "outline"} className="mt-1">
-                        {player.isReady ? "Ready" : "Waiting..."}
+                        {player.isReady
+                          ? itemLabel(playersCopy, "badge-ready")
+                          : itemLabel(playersCopy, "badge-waiting")}
                       </Badge>
                     </div>
                   </div>
@@ -102,10 +132,12 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
             <CardFooter className="flex justify-between">
               <Button variant="outline" onClick={onCancel}>
                 <X className="mr-2 h-4 w-4" />
-                Cancel
+                {itemLabel(playersCopy, "cancel")}
               </Button>
               <Button onClick={onStartBattle} disabled={!allReady && countdown > 0}>
-                {countdown > 0 ? `Starting in ${countdown}s` : "Start Battle Now"}
+                {countdown > 0
+                  ? fillLabel(itemLabel(playersCopy, "start-countdown"), { seconds: countdown })
+                  : itemLabel(playersCopy, "start-now")}
               </Button>
             </CardFooter>
           </Card>
@@ -114,22 +146,24 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
         <div className="space-y-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Battle Settings</CardTitle>
+              <CardTitle className="text-lg">{settingsCopy.heading}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
-                <div className="text-sm text-muted-foreground">Mode</div>
-                <div className="font-medium">
-                  {battleState.mode === "1v1" ? "1v1 Battle" : "Group Battle"}
+                <div className="text-sm text-muted-foreground">
+                  {itemLabel(settingsCopy, "mode")}
                 </div>
+                <div className="font-medium">{modeName}</div>
               </div>
 
               <div className="space-y-1">
-                <div className="text-sm text-muted-foreground">Type</div>
+                <div className="text-sm text-muted-foreground">
+                  {itemLabel(settingsCopy, "type")}
+                </div>
                 <div className="font-medium flex items-center">
                   {battleState.type === "private" ? (
                     <>
-                      <span>Private Room</span>
+                      <span>{itemLabel(settingsCopy, "type-private")}</span>
                       {battleState.roomCode && (
                         <Button
                           variant="ghost"
@@ -146,29 +180,49 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
                       )}
                     </>
                   ) : (
-                    "Public Match"
+                    itemLabel(settingsCopy, "type-public")
                   )}
                 </div>
               </div>
 
               <div className="space-y-1">
-                <div className="text-sm text-muted-foreground">Category</div>
-                <div className="font-medium capitalize">{battleState.category || "Random"}</div>
+                <div className="text-sm text-muted-foreground">
+                  {itemLabel(settingsCopy, "category")}
+                </div>
+                <div className="font-medium capitalize">
+                  {battleState.category || itemLabel(settingsCopy, "category-random")}
+                </div>
               </div>
 
               <div className="space-y-1">
-                <div className="text-sm text-muted-foreground">Difficulty</div>
-                <div className="font-medium capitalize">{battleState.difficulty || "Medium"}</div>
+                <div className="text-sm text-muted-foreground">
+                  {itemLabel(settingsCopy, "difficulty")}
+                </div>
+                <div className="font-medium capitalize">
+                  {difficultyLabel(battleState.difficulty ?? "medium")}
+                </div>
               </div>
 
               <div className="space-y-1">
-                <div className="text-sm text-muted-foreground">Questions</div>
-                <div className="font-medium">{battleState.totalQuestions} questions</div>
+                <div className="text-sm text-muted-foreground">
+                  {itemLabel(settingsCopy, "questions")}
+                </div>
+                <div className="font-medium">
+                  {fillLabel(itemLabel(settingsCopy, "question-count"), {
+                    count: battleState.totalQuestions,
+                  })}
+                </div>
               </div>
 
               <div className="space-y-1">
-                <div className="text-sm text-muted-foreground">Time per question</div>
-                <div className="font-medium">{battleState.timePerQuestion} seconds</div>
+                <div className="text-sm text-muted-foreground">
+                  {itemLabel(settingsCopy, "time-per-question")}
+                </div>
+                <div className="font-medium">
+                  {fillLabel(itemLabel(settingsCopy, "time"), {
+                    count: battleState.timePerQuestion,
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -177,23 +231,20 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-yellow-500" />
-                Battle Rules
+                {rulesCopy.heading}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-blue-500" />
-                  <span>Answer quickly for bonus points</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <ListChecks className="h-4 w-4 text-green-500" />
-                  <span>No changing answers once submitted</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-purple-500" />
-                  <span>Win streaks earn bonus XP</span>
-                </li>
+                {(rulesCopy.items ?? []).map((rule) => {
+                  const { Icon, iconClassName } = RULE_ART[rule.id] ?? DEFAULT_RULE_ART;
+                  return (
+                    <li key={rule.id} className="flex items-center gap-2">
+                      <Icon className={iconClassName} />
+                      <span>{rule.label}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </CardContent>
           </Card>
@@ -202,8 +253,12 @@ export function BattleLobby({ battleState, onStartBattle, onCancel }: BattleLobb
 
       <div className="mt-6">
         <div className="flex justify-between text-sm mb-2">
-          <span>Waiting for players...</span>
-          <span>{allReady ? "All players ready!" : "Getting ready..."}</span>
+          <span>{itemLabel(playersCopy, "waiting")}</span>
+          <span>
+            {allReady
+              ? itemLabel(playersCopy, "all-ready")
+              : itemLabel(playersCopy, "getting-ready")}
+          </span>
         </div>
         <Progress value={allReady ? 100 : 66} className="h-2" />
       </div>

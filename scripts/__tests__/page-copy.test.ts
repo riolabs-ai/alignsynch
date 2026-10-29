@@ -189,12 +189,16 @@ describe("leafLiterals", () => {
     assert.equal(literals[0].line, 3);
   });
 
-  it("ignores markup: className, href, alt, variant, aria-* and data-*", () => {
+  it("ignores markup: className, href, alt, variant, orientation, align, stroke-*, aria-* and data-*", () => {
     const literals = leafLiterals(
       file(
         "components/home/x.tsx",
         `<a className="rounded bg-indigo-50" href="/explore" aria-label="see all" data-test="x">
   <Badge variant="outline" alt="A cover" />
+  <ScrollBar orientation="horizontal" />
+  <DropdownMenuContent align="end">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+  </DropdownMenuContent>
 </a>
 `,
       ),
@@ -226,6 +230,18 @@ describe("leafLiterals", () => {
 
   it("ignores glyph-only segments — `$`, a quote mark, an emoji are not copy", () => {
     const literals = leafLiterals(file("components/home/x.tsx", `<p>$<span>{"x"}</span>💰</p>`));
+    assert.deepEqual(literals, []);
+  });
+
+  it("ignores `dataKey` and `align` — a charted field and a popover edge are not copy", () => {
+    const literals = leafLiterals(
+      file(
+        "components/home/x.tsx",
+        `<Bar name="Your Score" dataKey="score" />
+<PopoverContent align="end" />`,
+      ),
+    );
+    // `name` is markup too; `align` and `dataKey` are the two this case exists for.
     assert.deepEqual(literals, []);
   });
 

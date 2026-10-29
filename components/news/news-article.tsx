@@ -13,6 +13,8 @@ import { metric } from "@/data/metrics";
 import { categories as categoryNames, newsData } from "@/data/news-data";
 import type { NewsArticle as NewsArticleContent } from "@/content/article";
 import { formatDate } from "@/content/core";
+import type { PageCopy } from "@/content/pages";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { ContentBlocks } from "@/components/content/content-blocks";
 import {
   Bookmark,
@@ -35,12 +37,20 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { media } from "@/data/media";
 
-export function NewsArticle({ slug }: { slug: string }) {
+export function NewsArticle({ slug, copy }: { slug: string; copy: PageCopy }) {
   const router = useRouter();
   const [article, setArticle] = useState<NewsArticleContent>();
   const [relatedArticles, setRelatedArticles] = useState<NewsArticleContent[]>([]);
   const [comment, setComment] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // The bands this reader renders around the record. The article's own title, author,
+  // date and body come from `newsData`; everything else is the route's copy.
+  const actions = sectionOf(copy, "article-actions");
+  const comments = sectionOf(copy, "comments");
+  const authorCard = sectionOf(copy, "author");
+  const relatedCopy = sectionOf(copy, "related-articles");
+  const newsletter = sectionOf(copy, "newsletter");
 
   useEffect(() => {
     const currentArticle = newsData.find((a) => a.slug === slug);
@@ -66,7 +76,7 @@ export function NewsArticle({ slug }: { slug: string }) {
   if (!article) {
     return (
       <div className="container mx-auto py-12 px-4 md:px-6 text-center">
-        <p>Loading article...</p>
+        <p>{copy.heading}</p>
       </div>
     );
   }
@@ -88,7 +98,7 @@ export function NewsArticle({ slug }: { slug: string }) {
     <div className="container mx-auto ">
       <div className="mb-8">
         <Button variant="ghost" size="sm" onClick={() => router.push("/news")} className="mb-4">
-          <ChevronLeft className="mr-2 h-4 w-4" /> Back to News
+          <ChevronLeft className="mr-2 h-4 w-4" /> {itemLabel(actions, "back-to-news")}
         </Button>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -121,7 +131,9 @@ export function NewsArticle({ slug }: { slug: string }) {
                 </div>
                 <div className="flex items-center">
                   <Clock className="mr-1 h-3 w-3" />
-                  <span>{article.readMinutes} min read</span>
+                  <span>
+                    {article.readMinutes} {itemLabel(actions, "min-read")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -131,7 +143,7 @@ export function NewsArticle({ slug }: { slug: string }) {
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Share2 className="mr-2 h-4 w-4" /> Share
+                  <Share2 className="mr-2 h-4 w-4" /> {actions.heading}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-2">
@@ -154,11 +166,13 @@ export function NewsArticle({ slug }: { slug: string }) {
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-                {copied && <p className="text-xs text-center mt-2">Link copied!</p>}
+                {copied && (
+                  <p className="text-xs text-center mt-2">{itemLabel(actions, "link-copied")}</p>
+                )}
               </PopoverContent>
             </Popover>
             <Button variant="outline" size="sm">
-              <Bookmark className="mr-2 h-4 w-4" /> Save
+              <Bookmark className="mr-2 h-4 w-4" /> {itemLabel(actions, "save")}
             </Button>
           </div>
         </div>
@@ -189,17 +203,17 @@ export function NewsArticle({ slug }: { slug: string }) {
           <div className="flex items-center gap-3 flex-wrap justify-between mb-8">
             <div className="flex items-center space-x-4">
               <Button variant="outline" size="sm">
-                <ThumbsUp className="mr-2 h-4 w-4" /> Like
+                <ThumbsUp className="mr-2 h-4 w-4" /> {itemLabel(actions, "like")}
               </Button>
               <Button variant="outline" size="sm">
-                <MessageSquare className="mr-2 h-4 w-4" /> Comment
+                <MessageSquare className="mr-2 h-4 w-4" /> {itemLabel(actions, "comment")}
               </Button>
             </div>
             <div className="flex items-center space-x-2">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm">
-                    <Share2 className="mr-2 h-4 w-4" /> Share
+                    <Share2 className="mr-2 h-4 w-4" /> {actions.heading}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-2">
@@ -222,7 +236,9 @@ export function NewsArticle({ slug }: { slug: string }) {
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
-                  {copied && <p className="text-xs text-center mt-2">Link copied!</p>}
+                  {copied && (
+                    <p className="text-xs text-center mt-2">{itemLabel(actions, "link-copied")}</p>
+                  )}
                 </PopoverContent>
               </Popover>
             </div>
@@ -230,24 +246,24 @@ export function NewsArticle({ slug }: { slug: string }) {
 
           {/* Comments Section */}
           <div>
-            <h3 className="text-xl font-bold mb-4">Comments (12)</h3>
+            <h3 className="text-xl font-bold mb-4">{comments.heading}</h3>
 
             <Tabs defaultValue="newest">
               <TabsList className="mb-4">
-                <TabsTrigger value="newest">Newest</TabsTrigger>
-                <TabsTrigger value="popular">Popular</TabsTrigger>
+                <TabsTrigger value="newest">{itemLabel(comments, "tab-newest")}</TabsTrigger>
+                <TabsTrigger value="popular">{itemLabel(comments, "tab-popular")}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="newest">
                 <form onSubmit={handleCommentSubmit} className="mb-6">
                   <Textarea
-                    placeholder="Add a comment..."
+                    placeholder={itemLabel(comments, "comment-placeholder")}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     className="mb-2"
                   />
                   <Button type="submit" disabled={!comment.trim()}>
-                    Post Comment
+                    {itemLabel(comments, "post-comment")}
                   </Button>
                 </form>
 
@@ -257,22 +273,26 @@ export function NewsArticle({ slug }: { slug: string }) {
                     <div key={i} className="flex space-x-4">
                       <Avatar>
                         <AvatarImage src={media["abstract-geometric-shapes"].src} alt="User" />
-                        <AvatarFallback>U{i}</AvatarFallback>
+                        <AvatarFallback>
+                          {fillLabel(itemLabel(comments, "avatar-fallback"), { index: i })}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-medium">User Name {i}</h4>
-                          <span className="text-xs text-muted-foreground">2 days ago</span>
+                          <h4 className="font-medium">
+                            {fillLabel(itemLabel(comments, "comment-author"), { index: i })}
+                          </h4>
+                          <span className="text-xs text-muted-foreground">
+                            {itemLabel(comments, "comment-time")}
+                          </span>
                         </div>
-                        <p className="text-sm mb-2">
-                          This is a great article! I learned a lot about quiz creation strategies.
-                        </p>
+                        <p className="text-sm mb-2">{itemLabel(comments, "comment-body")}</p>
                         <div className="flex items-center space-x-4 text-sm">
                           <button className="text-muted-foreground hover:text-foreground flex items-center">
                             <ThumbsUp className="mr-1 h-3 w-3" /> 5
                           </button>
                           <button className="text-muted-foreground hover:text-foreground">
-                            Reply
+                            {itemLabel(comments, "reply")}
                           </button>
                         </div>
                       </div>
@@ -282,30 +302,39 @@ export function NewsArticle({ slug }: { slug: string }) {
               </TabsContent>
 
               <TabsContent value="popular">
-                <p className="text-muted-foreground">Showing most popular comments first.</p>
+                <p className="text-muted-foreground">{itemLabel(comments, "popular-summary")}</p>
                 <div className="space-y-6 mt-4">
                   {/* Sample popular comments */}
                   {[3, 1, 2].map((i) => (
                     <div key={i} className="flex space-x-4">
                       <Avatar>
                         <AvatarImage src={media["abstract-geometric-shapes"].src} alt="User" />
-                        <AvatarFallback>U{i}</AvatarFallback>
+                        <AvatarFallback>
+                          {fillLabel(itemLabel(comments, "avatar-fallback"), { index: i })}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-medium">Popular User {i}</h4>
-                          <span className="text-xs text-muted-foreground">3 days ago</span>
+                          <h4 className="font-medium">
+                            {fillLabel(itemLabel(comments, "popular-author"), { index: i })}
+                          </h4>
+                          <span className="text-xs text-muted-foreground">
+                            {itemLabel(comments, "popular-time")}
+                          </span>
                         </div>
                         <p className="text-sm mb-2">
-                          I've been using these strategies and my quiz engagement has increased by{" "}
-                          {formatPercentValue(metric("news.testimonialEngagementLift").value)}!
+                          {fillLabel(itemLabel(comments, "popular-body"), {
+                            percent: formatPercentValue(
+                              metric("news.testimonialEngagementLift").value,
+                            ),
+                          })}
                         </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <button className="text-muted-foreground hover:text-foreground flex items-center">
                             <ThumbsUp className="mr-1 h-3 w-3" /> {10 - i}
                           </button>
                           <button className="text-muted-foreground hover:text-foreground">
-                            Reply
+                            {itemLabel(comments, "reply")}
                           </button>
                         </div>
                       </div>
@@ -322,7 +351,7 @@ export function NewsArticle({ slug }: { slug: string }) {
           {/* Author Card */}
           <Card className="mb-6">
             <CardHeader>
-              <h3 className="text-lg font-bold">About the Author</h3>
+              <h3 className="text-lg font-bold">{authorCard.heading}</h3>
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-4 mb-4">
@@ -340,14 +369,14 @@ export function NewsArticle({ slug }: { slug: string }) {
               </div>
               <p className="text-sm mb-4">{article.author.bio}</p>
               <Button variant="outline" size="sm" className="w-full">
-                View Profile
+                {itemLabel(authorCard, "view-profile")}
               </Button>
             </CardContent>
           </Card>
 
           {/* Related Articles */}
           <div className="mb-6">
-            <h3 className="text-lg font-bold mb-4">Related Articles</h3>
+            <h3 className="text-lg font-bold mb-4">{relatedCopy.heading}</h3>
             <div className="space-y-4">
               {relatedArticles.map((related) => (
                 <Card key={related.slug}>
@@ -367,7 +396,9 @@ export function NewsArticle({ slug }: { slug: string }) {
                       <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-2">
                         <span>{related.publishedAt ? formatDate(related.publishedAt) : ""}</span>
                         <span>•</span>
-                        <span>{related.readMinutes} min read</span>
+                        <span>
+                          {related.readMinutes} {itemLabel(relatedCopy, "min-read")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -379,15 +410,13 @@ export function NewsArticle({ slug }: { slug: string }) {
           {/* Newsletter Signup */}
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-bold">Subscribe to Our Newsletter</h3>
+              <h3 className="text-lg font-bold">{newsletter.heading}</h3>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Get the latest quiz news, tips, and updates delivered to your inbox.
-              </p>
+              <p className="text-sm text-muted-foreground mb-4">{newsletter.body}</p>
               <form className="space-y-2">
-                <Input placeholder="Your email address" type="email" />
-                <Button className="w-full">Subscribe</Button>
+                <Input placeholder={itemLabel(newsletter, "email-placeholder")} type="email" />
+                <Button className="w-full">{itemLabel(newsletter, "subscribe")}</Button>
               </form>
             </CardContent>
           </Card>

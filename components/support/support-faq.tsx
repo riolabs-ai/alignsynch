@@ -8,15 +8,19 @@ import {
 } from "@/components/ui/accordion";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import type { SupportCategory } from "./support-page";
 
 interface SupportFAQProps {
   selectedCategory: SupportCategory;
+  copy: PageCopySection;
+  categoryCopy: PageCopySection;
 }
 
-export function SupportFAQ({ selectedCategory }: SupportFAQProps) {
+export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const allFaqs = {
@@ -236,34 +240,36 @@ export function SupportFAQ({ selectedCategory }: SupportFAQProps) {
   const getCategoryName = () => {
     switch (selectedCategory) {
       case "all":
-        return "All Categories";
+        return itemLabel(categoryCopy, "all");
       case "account":
-        return "Account";
+        return itemLabel(categoryCopy, "account");
       case "billing":
-        return "Billing";
+        return itemLabel(categoryCopy, "billing");
       case "quiz-creation":
-        return "Quiz Creation";
+        return itemLabel(categoryCopy, "quiz-creation");
       case "tournaments":
-        return "Tournaments";
+        return itemLabel(categoryCopy, "tournaments");
       case "privacy":
-        return "Privacy";
+        return itemLabel(categoryCopy, "privacy");
       case "technical":
-        return "Technical Issues";
+        return itemLabel(categoryCopy, "technical");
       case "general":
-        return "General";
+        return itemLabel(categoryCopy, "general");
       default:
-        return "All Categories";
+        return itemLabel(categoryCopy, "all");
     }
   };
 
   return (
     <Card className="p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h2 className="text-2xl font-bold">{getCategoryName()} FAQs</h2>
+        <h2 className="text-2xl font-bold">
+          {getCategoryName()} {copy.heading}
+        </h2>
         <div className="relative w-full md:w-64 mt-4 md:mt-0">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search FAQs..."
+            placeholder={itemLabel(copy, "search-placeholder")}
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -282,7 +288,7 @@ export function SupportFAQ({ selectedCategory }: SupportFAQProps) {
         </Accordion>
       ) : (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No FAQs found matching your search.</p>
+          <p className="text-muted-foreground">{itemLabel(copy, "empty")}</p>
         </div>
       )}
     </Card>

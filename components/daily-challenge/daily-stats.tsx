@@ -2,6 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import {
   Bar,
   BarChart,
@@ -37,18 +39,18 @@ const categoryData = [
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088fe"];
 
-export function DailyStats() {
+export function DailyStats({ copy }: { copy: PageCopySection }) {
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl">Your Challenge Stats</CardTitle>
+        <CardTitle className="text-xl">{copy.heading}</CardTitle>
       </CardHeader>
 
       <Tabs defaultValue="performance">
         <div className="px-6">
           <TabsList className="grid grid-cols-2 w-full">
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
+            <TabsTrigger value="performance">{itemLabel(copy, "tab-performance")}</TabsTrigger>
+            <TabsTrigger value="categories">{itemLabel(copy, "tab-categories")}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -64,17 +66,17 @@ export function DailyStats() {
                   <XAxis dataKey="day" />
                   <YAxis />
                   <Tooltip
-                    formatter={(value) => [`${value}%`, "Score"]}
+                    formatter={(value) => [`${value}%`, itemLabel(copy, "tooltip-score")]}
                     labelFormatter={(label) => `${label}day`}
                   />
                   <Legend />
-                  <Bar name="Your Score" dataKey="score" fill="#8884d8" />
-                  <Bar name="Average Score" dataKey="avgScore" fill="#82ca9d" />
+                  <Bar name={itemLabel(copy, "legend-score")} dataKey="score" fill="#8884d8" />
+                  <Bar name={itemLabel(copy, "legend-average")} dataKey="avgScore" fill="#82ca9d" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2">
-              Your daily challenge performance compared to the average
+              {itemLabel(copy, "performance-caption")}
             </p>
           </CardContent>
         </TabsContent>
@@ -98,13 +100,15 @@ export function DailyStats() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value}%`, "Percentage"]} />
+                  <Tooltip
+                    formatter={(value) => [`${value}%`, itemLabel(copy, "tooltip-percentage")]}
+                  />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2">
-              Distribution of your correct answers by category
+              {itemLabel(copy, "categories-caption")}
             </p>
           </CardContent>
         </TabsContent>

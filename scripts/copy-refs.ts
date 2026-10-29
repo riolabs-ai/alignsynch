@@ -158,18 +158,30 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * is excluded too, because alt text is `MediaEntry.alt`'s job (E17–E19) — a literal
  * alt is a media defect, not a copy one.
  *
+ * `dataKey` and `align` are the same class in JSX-prop spelling: a recharts `dataKey`
+ * names a field of the row it charts (`dataKey="score"` is `data-score`, not a word), and
+ * a Radix `align` is where a popover sits (`align="end"`). Both were being counted as
+ * copy on the battle and daily-challenge surfaces until WU-10, which is why the list is
+ * explicit about them rather than leaving it to the next reader to re-discover.
+ *
  * The SVG presentation attributes are here for the same reason: `fillRule="evenodd"`,
  * `preserveAspectRatio="none"` and `strokeLinecap="round"` are drawing instructions whose
  * values are keywords in the SVG vocabulary. They were counted as copy until WU-7 put the
  * footer's icon set inside a budget, which is a false positive the ratchet cannot afford —
  * a component would have to move `evenodd` into a copy fixture to get green.
+ *
+ * `accept` is the same class of value: a file-picker MIME list
+ * (`image/*,.pdf,.doc,.docx,.txt`) that WU-9's contact form carries. A reader never sees
+ * it, and moving it into `PageCopy` would put a MIME string in an editor's fixture.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
+  "accept",
   "align",
   "alt",
   "asChild",
   "clipRule",
   "color",
+  "dataKey",
   "defaultValue",
   "dominantBaseline",
   "fill",

@@ -31,6 +31,7 @@ import {
   type MetricSnapshot,
 } from "../../content/metrics";
 import { affiliateTiers, earningSources, metricTable, streakRewards } from "../../data/metrics";
+import { battleModes } from "../../data/battle-modes";
 import {
   breakdownProblems,
   metricKeyProblems,
@@ -242,12 +243,15 @@ describe("the shipped fixture keeps its own invariants", () => {
   });
 
   it("the group battle range is closed", () => {
+    /**
+     * The roster moved to the mode record (WU-10): `battle.group.minPlayers`/`maxPlayers`
+     * were metric snapshots until `data/battle-modes.ts` took ownership, because the card
+     * renders the range from the mode it is configuring. The check follows the owner.
+     */
+    const groupMode = battleModes.find((mode) => mode.id === "group");
+    assert.ok(groupMode, "data/battle-modes.ts must carry the group mode");
     assert.deepEqual(
-      rangeProblems(
-        "the group battle player range",
-        metricTable["battle.group.minPlayers"].value,
-        metricTable["battle.group.maxPlayers"].value,
-      ),
+      rangeProblems("the group battle player range", groupMode.playersMin, groupMode.playersMax),
       [],
     );
   });
