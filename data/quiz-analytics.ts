@@ -9,6 +9,11 @@
  *
  * Only quizzes with a shipped analytics snapshot appear. An absent id means "no
  * data", which the authoring card renders as a dash — never as zero.
+ *
+ * Keys are record ids. `Sports Trivia Challenge` is keyed `quiz-11` because that is
+ * the record the two card grids promote: d2 keyed it `quiz-sports-trivia` when it
+ * had invented a second record for the same card, and a key that names no record is
+ * dead (E13 fails on one).
  */
 import type { QuizAnalytics } from "../content/quiz";
 
@@ -26,7 +31,7 @@ export const quizAnalytics: Readonly<Record<string, QuizAnalytics>> = {
   },
   "quiz-math-puzzles-and-problems": { completionRate: 0, averageScore: 0, revenueCents: 0 },
   "quiz-literature-classic-novels": { completionRate: 91, averageScore: 82, revenueCents: 150_000 },
-  "quiz-sports-trivia": { completionRate: 85, averageScore: 79, revenueCents: 37_200 },
+  "quiz-11": { completionRate: 85, averageScore: 79, revenueCents: 37_200 },
 };
 
 export function analyticsFor(quizId: string): QuizAnalytics | undefined {

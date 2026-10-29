@@ -1,10 +1,15 @@
 /**
- * The 42-record collection in `data/` — the base every card projects from.
+ * The 62-record collection in `data/` — the base every card projects from.
  *
  * Written AFTER the port (t_438d54e9) and against the acceptance that matters:
  * the collection is exactly the migration's, the Science quiz resolves with its
  * catalog stats, and the merchandising overlay stays expressible *without* a
  * second record for the same subject.
+ *
+ * Extended for the reconciliation (t_23940666): d2's `data/quiz-catalogue.ts` was
+ * a second 40-record collection sharing 13 ids with this one and holding 7 more
+ * cards under invented ids. The 20 records genuinely outside the migration were
+ * folded in; the 7 aliases are asserted *absent*, because one card is one record.
  *
  * The overlay records themselves are NOT in `data/` (that is t_bbba624a); the two
  * literals below are the migrated snapshot from `migrated/promotions.json`, used
@@ -15,8 +20,10 @@ import { describe, it } from "node:test";
 
 import { selectQuizCard, zQuiz, zQuizPromotion, type Quiz } from "../../content/quiz";
 import { authoredQuizzes } from "../../data/authored-quizzes";
+import { browseQuizzes } from "../../data/browse-quizzes";
 import { createdQuizzes } from "../../data/created-quizzes";
 import { mockQuizzes } from "../../data/mock-quizzes";
+import { catalogueAliases, quizShelves, shelvedIds } from "../../data/quiz-catalogue";
 import { quizById, quizBySlug, quizzes } from "../../data/quizzes";
 
 /** The fixture instant (`migrated/facts.json`): the card snapshots were captured here. */
@@ -76,20 +83,51 @@ function mustResolve(id: string): Quiz {
 }
 
 describe("the collection", () => {
-  it("holds 42 records — the migration's count, not 21", () => {
-    assert.equal(quizzes.length, 42);
+  it("holds 62 records — the migration's 42 plus d2's 20 card-only titles", () => {
+    assert.equal(quizzes.length, 62);
     assert.equal(mockQuizzes.length, 20);
     assert.equal(createdQuizzes.length, 5);
     assert.equal(authoredQuizzes.length, 16);
+    assert.equal(browseQuizzes.length, 20);
     assert.equal(
       quizzes.length,
-      mockQuizzes.length + 1 + createdQuizzes.length + authoredQuizzes.length,
+      mockQuizzes.length +
+        1 +
+        createdQuizzes.length +
+        authoredQuizzes.length +
+        browseQuizzes.length,
     );
   });
 
   it("carries no duplicate id or slug (E1/E2 would fail first, this pins the intent)", () => {
-    assert.equal(new Set(quizzes.map((quiz) => quiz.id)).size, 42);
-    assert.equal(new Set(quizzes.map((quiz) => quiz.slug)).size, 42);
+    assert.equal(new Set(quizzes.map((quiz) => quiz.id)).size, 62);
+    assert.equal(new Set(quizzes.map((quiz) => quiz.slug)).size, 62);
+  });
+
+  it("carries no duplicate subject — one record per card title (E11)", () => {
+    const subject = (title: string) =>
+      title
+        .toLowerCase()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    const bySubject = new Map<string, string[]>();
+    for (const quiz of quizzes) {
+      const key = subject(quiz.title);
+      bySubject.set(key, [...(bySubject.get(key) ?? []), quiz.id]);
+    }
+    const duplicates = [...bySubject].filter(([, ids]) => ids.length > 1);
+    assert.deepEqual(duplicates, []);
+  });
+
+  it("adds the browse records without reusing a migration id", () => {
+    for (const quiz of browseQuizzes) {
+      assert.equal(
+        [...mockQuizzes, ...authoredQuizzes, ...createdQuizzes].some((row) => row.id === quiz.id),
+        false,
+        quiz.id,
+      );
+    }
   });
 
   it("parses every record against the schema", () => {
@@ -164,7 +202,7 @@ describe("the Science quiz — the record both overlays join to", () => {
     assert.deepEqual(quiz.categoryIds, ["space", "science"]);
   });
 
-  it("is the only record for that subject (E10: no duplicate, no shadow identity)", () => {
+  it("is the only record for that subject (E11: no duplicate, no shadow identity)", () => {
     const sameSubject = quizzes.filter((row) => row.slug === "science-quiz-space-exploration");
     assert.equal(sameSubject.length, 1);
     // the merchandised variant exists only as an overlay, never as a second record
@@ -197,5 +235,61 @@ describe("the Science quiz — the record both overlays join to", () => {
     assert.equal(card.slug, quiz.slug);
     assert.equal(card.author?.name, "MarvelFan");
     assert.equal(card.summary, quiz.summary);
+  });
+});
+
+describe("the card shelves — a view over the one collection", () => {
+  it("resolves every shelf id against data/quizzes.ts", () => {
+    for (const [shelf, ids] of Object.entries(quizShelves)) {
+      for (const id of ids) {
+        assert.notEqual(quizById(id), undefined, `${shelf} -> ${id}`);
+      }
+    }
+  });
+
+  it("is not a second collection: every shelved id is a collection id", () => {
+    const collection = new Set(quizzes.map((quiz) => quiz.id));
+    for (const id of shelvedIds) assert.equal(collection.has(id), true, id);
+  });
+
+  it("keeps every d2 alias out of the collection, mapped to the frozen record", () => {
+    for (const [alias, target] of Object.entries(catalogueAliases)) {
+      assert.equal(quizById(alias), undefined, `alias ${alias} must not be a record`);
+      assert.notEqual(quizById(target), undefined, `alias target ${target} must resolve`);
+      // the alias exists because the two trees spelled one card two ways: the
+      // record that owns the card is the one with the title, and it is unique
+      assert.equal(
+        quizzes.filter((row) => row.id === target).length,
+        1,
+        `${target} must be the only record for that card`,
+      );
+    }
+  });
+
+  it("keeps the seven folded cards on the shelves under their frozen ids", () => {
+    const frozenIds = [
+      "quiz-brain-teasers-logic-puzzles",
+      "quiz-famous-inventors-discoveries",
+      "quiz-mathematical-puzzles-brain-teasers",
+      "quiz-11",
+      "quiz-technology-gadgets",
+      "quiz-world-geography-challenge-capitals-landmarks",
+      "quiz-music-through-the-decades",
+    ];
+    for (const id of frozenIds) assert.equal(shelvedIds.includes(id), true, id);
+  });
+
+  it("shows 'Brain Teasers & Logic Puzzles' exactly once, at 3241/5000", () => {
+    const matches = quizzes.filter((quiz) => quiz.title === "Brain Teasers & Logic Puzzles");
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0].id, "quiz-brain-teasers-logic-puzzles");
+    assert.equal(matches[0].stats.plays, 3241);
+    assert.equal(matches[0].stats.capacity, 5000);
+  });
+
+  it("shows 'Sports Trivia Challenge' as the generator template, not a 21st record", () => {
+    const matches = quizzes.filter((quiz) => quiz.title === "Sports Trivia Challenge");
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0].id, "quiz-11");
   });
 });

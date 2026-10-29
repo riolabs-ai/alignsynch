@@ -52,6 +52,9 @@ import { categories as tipCategoryTable, tips } from "../data/creator-tips-data"
 import { articlesData } from "../data/knowledge-base-data";
 import { categories as newsCategoryTable, newsData } from "../data/news-data";
 import { notifications } from "../data/notifications";
+import { browseQuizzes } from "../data/browse-quizzes";
+import { catalogueAliases, quizShelves, shelvedIds } from "../data/quiz-catalogue";
+import { quizAnalytics } from "../data/quiz-analytics";
 import { quizzes as quizRecords } from "../data/quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
@@ -131,11 +134,11 @@ for (const [label, table] of [
  * E1 — ids and slugs are unique
  * ------------------------------------------------------------------ */
 
-function assertUnique(
+function assertUnique<T extends { id: string; slug: string; kind?: string }>(
   code: string,
   label: string,
-  rows: ReadonlyArray<{ id: string; kind?: string; slug: string }>,
-  keyOf: (row: { id: string; kind?: string; slug: string }) => string,
+  rows: readonly T[],
+  keyOf: (row: T) => string,
 ) {
   const seen = new Map<string, string>();
   for (const row of rows) {
@@ -196,29 +199,74 @@ for (const quiz of quizzes) {
 }
 
 /* ------------------------------------------------------------------ *
- * E10 — the card shelves resolve, and nothing is orphaned
+ * E11 — the card shelves resolve against the one collection
  *
  * A shelf is the only authored thing left about a card grid: an ordered list of
  * quiz ids. A typo would render an empty carousel, so it fails here instead. The
- * reverse direction matters too: a catalogue record no shelf shows is a fixture
- * that exists only to satisfy its own type.
+ * reverse direction matters too: a card-only browse record no shelf shows is a
+ * fixture that exists only to satisfy its own type.
+ *
+ * The ids resolve against `data/quizzes.ts` — the one collection — not against a
+ * catalogue of its own. That is the point of the reconciliation: a shelf cannot be
+ * right about a quiz the collection does not hold.
  * ------------------------------------------------------------------ */
 
-const catalogueIds = new Set(quizCatalogue.map((quiz) => quiz.id));
-const shelved = new Set<string>();
+const collectionIds = new Set(quizzes.map((quiz) => quiz.id));
 for (const [shelf, ids] of Object.entries(quizShelves)) {
   for (const id of ids) {
-    shelved.add(id);
-    if (!catalogueIds.has(id)) err("E10", `shelf "${shelf}" references unknown quiz "${id}"`);
+    if (!collectionIds.has(id)) err("E11", `shelf "${shelf}" references unknown quiz "${id}"`);
   }
-  const missing = ids.filter((id) => !catalogueIds.has(id));
-  if (missing.length > 0) err("E10", `shelf "${shelf}" has ${missing.length} unresolvable id(s)`);
 }
-for (const quiz of quizCatalogue) {
-  if (!shelved.has(quiz.id)) warn("W5", `catalogue quiz "${quiz.id}" is on no shelf`);
+const shelved = new Set(shelvedIds);
+
+for (const quiz of browseQuizzes) {
+  if (!shelved.has(quiz.id)) warn("W5", `browse quiz "${quiz.id}" is on no shelf`);
   if (!zQuizAuthoringCard.safeParse(selectQuizAuthoringCard(quiz, () => undefined)).success) {
     err("E3", `quiz "${quiz.id}": selectQuizAuthoringCard() output is not a QuizAuthoringCard`);
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * E12 — one record per subject
+ *
+ * The failure mode D2 exists to remove, encoded so it cannot come back: the card
+ * grids held 7 cards under ids they invented while the migration held the same
+ * cards under the frozen §8 ids. E1 only sees ids, so both trees were "valid" and
+ * the collection would have shown two cards with one title.
+ *
+ * The key is the lifted title, normalised (`&` -> `and`, punctuation and case
+ * dropped). It is a *subject* key, not a join key: two records for one card never
+ * legitimately share one.
+ * ------------------------------------------------------------------ */
+
+const subjectKey = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+assertUnique("E12", "quiz subjects", quizzes, (row) => subjectKey(row.title));
+
+/** An alias is only evidence while it stays out of the collection: if one is ever
+ *  added back as a record, E12 above catches the duplicate title — this catches the
+ *  quieter case where the alias record's title was also edited. */
+for (const [alias, target] of Object.entries(catalogueAliases)) {
+  if (collectionIds.has(alias)) err("E12", `catalogue alias "${alias}" is also a record`);
+  if (!collectionIds.has(target))
+    err("E12", `catalogue alias "${alias}" points at missing "${target}"`);
+}
+
+/* ------------------------------------------------------------------ *
+ * E13 — every analytics key names a record
+ *
+ * Analytics is keyed by record id. A key that names no record is a snapshot of a
+ * quiz the collection does not have: the surface renders "no data" forever without
+ * failing anything. The card grids keyed `Sports Trivia Challenge` by an invented
+ * id exactly once, and that is the case this invariant exists for.
+ * ------------------------------------------------------------------ */
+
+for (const quizId of Object.keys(quizAnalytics)) {
+  if (!collectionIds.has(quizId)) err("E13", `analytics key "${quizId}" is not a record`);
 }
 
 /* ------------------------------------------------------------------ *
