@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { formatMetricValue, formatPercentValue } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { Check, CreditCard, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -92,11 +94,11 @@ export function SubscriptionSettings() {
                   ? "Free"
                   : currentPlan === "pro"
                     ? billingCycle === "monthly"
-                      ? "$9.99"
-                      : "$99.99"
+                      ? formatMetricValue(metric("plans.pro.monthly"))
+                      : formatMetricValue(metric("plans.pro.yearly"))
                     : billingCycle === "monthly"
-                      ? "$19.99"
-                      : "$199.99"}
+                      ? formatMetricValue(metric("plans.premium.monthly"))
+                      : formatMetricValue(metric("plans.premium.yearly"))}
               </p>
               {currentPlan !== "free" && (
                 <p className="text-sm text-muted-foreground">
@@ -120,7 +122,9 @@ export function SubscriptionSettings() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="annual" id="annual" />
-                  <Label htmlFor="annual">Annual (Save 16%)</Label>
+                  <Label htmlFor="annual">
+                    Annual (Save {formatPercentValue(metric("settings.annualDiscount").value)})
+                  </Label>
                 </div>
               </RadioGroup>
             </div>
@@ -133,7 +137,7 @@ export function SubscriptionSettings() {
                 <>
                   <li className="flex items-center text-sm">
                     <Check className="mr-2 h-4 w-4 text-primary" />
-                    Create up to 5 quizzes
+                    Create up to {formatMetricValue(metric("plans.free.quizLimit"))} quizzes
                   </li>
                   <li className="flex items-center text-sm">
                     <Check className="mr-2 h-4 w-4 text-primary" />
@@ -266,7 +270,7 @@ export function SubscriptionSettings() {
                 <p className="text-sm text-muted-foreground">April 1, 2023</p>
               </div>
               <div className="text-right">
-                <p className="font-medium">$9.99</p>
+                <p className="font-medium">{formatMetricValue(metric("plans.pro.monthly"))}</p>
                 <Badge variant="outline" className="ml-2">
                   Paid
                 </Badge>
@@ -279,7 +283,7 @@ export function SubscriptionSettings() {
                 <p className="text-sm text-muted-foreground">March 1, 2023</p>
               </div>
               <div className="text-right">
-                <p className="font-medium">$9.99</p>
+                <p className="font-medium">{formatMetricValue(metric("plans.pro.monthly"))}</p>
                 <Badge variant="outline" className="ml-2">
                   Paid
                 </Badge>
@@ -292,7 +296,7 @@ export function SubscriptionSettings() {
                 <p className="text-sm text-muted-foreground">February 1, 2023</p>
               </div>
               <div className="text-right">
-                <p className="font-medium">$9.99</p>
+                <p className="font-medium">{formatMetricValue(metric("plans.pro.monthly"))}</p>
                 <Badge variant="outline" className="ml-2">
                   Paid
                 </Badge>

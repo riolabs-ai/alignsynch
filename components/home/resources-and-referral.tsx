@@ -3,7 +3,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatWholeCurrency } from "@/content/metrics";
 import { media } from "@/data/media";
+import { metric } from "@/data/metrics";
 import {
   ArrowRight,
   ChevronLeft,
@@ -98,7 +100,9 @@ export function ResourcesAndReferral() {
                         Invite friends and earn bonus rewards!
                       </p>
                     </div>
-                    <Badge className="bg-amber-500 hover:bg-amber-600">Earn up to $10</Badge>
+                    <Badge className="bg-amber-500 hover:bg-amber-600">
+                      Earn up to {formatWholeCurrency(metric("affiliate.referralBonus").value)}
+                    </Badge>
                   </div>
 
                   <div className="flex-1 flex items-end h-full justify-between">

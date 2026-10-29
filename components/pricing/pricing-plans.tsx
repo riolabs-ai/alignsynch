@@ -13,6 +13,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatPercentValue } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { Check, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { JSX, memo, useCallback, useMemo, useState } from "react";
@@ -308,7 +310,7 @@ export function PricingPlans(): JSX.Element {
                 variant="outline"
                 className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
               >
-                Save 20%
+                Save {formatPercentValue(metric("pricing.annualDiscount").value)}
               </Badge>
             </div>
           </div>

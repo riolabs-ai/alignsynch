@@ -23,7 +23,9 @@ import { ArrowDown, ArrowUp, Award, Medal, Minus, Search, Trophy } from "lucide-
 import Image from "next/image";
 import { useState } from "react";
 import { Tournament } from "./tournament-detail";
+import { formatMetricValue, formatPercentValue } from "@/content/metrics";
 import { media } from "@/data/media";
+import { metric } from "@/data/metrics";
 
 interface TournamentLeaderboardProps {
   tournament: Tournament;
@@ -321,7 +323,10 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
                   <div className="font-medium">
                     Your Rank: <span className="text-purple-600 font-bold">#42</span>
                   </div>
-                  <div className="text-sm text-muted-foreground">Top 15% of participants</div>
+                  <div className="text-sm text-muted-foreground">
+                    Top {formatPercentValue(metric("tournament.you.percentile").value)} of
+                    participants
+                  </div>
                 </div>
               </div>
 
@@ -331,7 +336,9 @@ export function TournamentLeaderboard({ tournament }: TournamentLeaderboardProps
                   <div className="text-xs text-muted-foreground">Score</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">82%</div>
+                  <div className="text-2xl font-bold">
+                    {formatMetricValue(metric("tournament.you.accuracy"))}
+                  </div>
                   <div className="text-xs text-muted-foreground">Accuracy</div>
                 </div>
                 <div>

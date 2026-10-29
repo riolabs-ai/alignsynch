@@ -4,7 +4,9 @@ import type React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatCompactCount } from "@/content/metrics";
 import { media } from "@/data/media";
+import { metric } from "@/data/metrics";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle, Mail } from "lucide-react";
 import { useState } from "react";
@@ -147,7 +149,9 @@ export function NewsletterSection() {
             className="mt-8 flex flex-wrap justify-center gap-6"
           >
             <div className="flex flex-col items-center">
-              <p className="text-3xl font-bold text-white">10k+</p>
+              <p className="text-3xl font-bold text-white">
+                {formatCompactCount(metric("home.newsletterSubscribers").value)}+
+              </p>
               <p className="text-white/70 text-sm">Subscribers</p>
             </div>
             <div className="w-px h-12 bg-white/20 self-center"></div>
