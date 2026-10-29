@@ -7,17 +7,17 @@ fixtures that must satisfy it, and `pnpm data:check` fails the build when a fixt
 
 ## Commands (repo root, `pnpm` only — the lockfile is `pnpm-lock.yaml` v9)
 
-| Command                          | Verified             | Notes                                                                   |
-| -------------------------------- | -------------------- | ----------------------------------------------------------------------- |
-| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                |
-| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                          |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 145 `node:test` cases → validator; prints record counts           |
-| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 232 warnings, 12 infos on the current tree |
-| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 299 files; CI gate                                      |
-| `pnpm build`                     | exit 0, 56–76 s      | `next build`; 34 routes, 32 static pages                                |
-| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                           |
-| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                 |
-| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                     |
+| Command                          | Verified             | Notes                                                         |
+| -------------------------------- | -------------------- | ------------------------------------------------------------- |
+| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                      |
+| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 152 `node:test` cases → validator; prints record counts |
+| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 232 warnings, 12 infos           |
+| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 313 files; CI gate                            |
+| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 31 static pages                      |
+| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                 |
+| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                       |
+| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                           |
 
 Node must be **≥ 20.9** and the PATH is the only thing that decides which node you get:
 
@@ -40,6 +40,10 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
 - `scripts/data-check.ts` — the validator: per-record schema pass, then collection invariants
   E0–E17 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
   `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E17/W6.
+  E10 is the one that reads the UI tree: it extracts every literal `href`,
+  `router.push`/`replace`/`redirect` in `components/` + `app/` and every `public/` asset literal,
+  and fails on a route the manifest cannot match or a file `public/` does not have.
+  `scripts/ui-refs.ts` holds the pure extraction (no `fs`), so the cases test it directly.
 - `app/(mainlayout)/**` — every product page behind the header/sidebar shell; `app/(auth)/**` —
   login/register, no shell. Dynamic segments: `quiz/[id]/{play,discussion}`,
   `my-quizzes/[id]/{statistics}`, `categories/[slug]`, `news/[slug]`, `creator-tips/[slug]`,
@@ -74,12 +78,19 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
 - **`data/chat-data.ts` formats times at module scope** (`formatRelative(...)`), so server and
   client disagree and every page logs React error `#418` (hydration mismatch) in the console.
   Until that is fixed, feed ISO timestamps to client components and format at render time.
-- **`params` is a Promise in Next 16.** `app/(mainlayout)/my-quizzes/[id]/page.tsx` and
-  `.../statistics/page.tsx` read `params.id` synchronously; dev logs `params is a Promise and must
-  be unwrapped with await or React.use()` and the id arrives `undefined`. Fix while you are there.
-- **Known dead links:** `/dashboard`, `/signup` (sidebar, footer, categories CTA) and
-  `/testimonials/jessica.png` 404. Pre-existing, tracked as content/nav cleanup — do not "fix" by
-  adding routes.
+- **`params` is a Promise in Next 16.** Every dynamic route must take
+  `params: Promise<{ id: string }>` and unwrap it (`await params` in an `async` page, or
+  `use(params)`); a synchronous `params.id` logs `params is a Promise and must be unwrapped with
+  await or React.use()` and renders with `undefined`. The two `my-quizzes/[id]` pages that still
+  did this were fixed in issue #20 — `/my-quizzes/1/statistics` used to render
+  `href="/my-quizzes/undefined"`.
+- **A hardcoded `href` or asset path is checked, not trusted.** `data:check` E10 fails on an
+  `href` no route in `content/routes.ts` matches and on an asset literal with no file under
+  `public/` — that is how `/dashboard`, `/signup` and `/testimonials/jessica.png` 404ed for so
+  long. Legacy paths from the pre-P1 shell now 308 to the real route in `next.config.mjs`; never
+  add a second page to satisfy a link. 11 asset literals are still baselined as missing (chat
+  avatars, `easy-quiz-*.png`, `/quiz/q16.png`, `/wizard.png`, `/science-quiz-lab.png`) — the list
+  may only shrink.
 - **`public/category/*.webp` are placeholders:** all 23 files are the same 1536×1024 PNG stamped
   with its own dimensions. Category art is a content task, not a styling bug.
 - `pnpm data:check` prints exactly one warning, `[W2] published quiz

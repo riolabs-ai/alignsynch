@@ -284,4 +284,25 @@ describe("the quiz detail projection agrees with the card", () => {
     // The same quiz through the generic projection is the same card.
     assert.deepEqual(statsOf(detail), statsOf(quizCard(other, { now: NOW })));
   });
+
+  it("never hands the page template identity for a record that has none", () => {
+    // The detail page's rule (`components/quiz/quiz-details.tsx`): a field the record
+    // does not own is neutralised — `Unknown creator`, `—`, `/placeholder.svg` — never
+    // filled with the template's `MarvelFan2023`, `4.8` or `/quiz/q17.png`. That is
+    // only possible if this projection *omits* the field instead of defaulting it, so
+    // pin the omission across the whole collection. The counts are the census of the
+    // current fixtures (43/38/19 of 62); if a record gains an author or a cover, this
+    // assertion is where the change shows up.
+    let noAuthor = 0;
+    let noRating = 0;
+    let noCover = 0;
+    for (const quiz of quizzes) {
+      const card = quizDetailCard(quiz, NOW);
+      if (card.author === undefined) noAuthor += 1;
+      else assert.ok(card.author.name.length > 0, `${quiz.id} has an empty author name`);
+      if (card.stats.rating === undefined) noRating += 1;
+      if (card.cover === undefined) noCover += 1;
+    }
+    assert.deepEqual({ noAuthor, noRating, noCover }, { noAuthor: 43, noRating: 38, noCover: 19 });
+  });
 });

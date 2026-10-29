@@ -132,7 +132,7 @@ const mockComments = [
     author: {
       id: "user6",
       name: "Jessica Taylor",
-      avatar: "/testimonials/jessica.png",
+      avatar: "/avatars/mind.webp",
       role: "Tournament Moderator",
     },
     content:

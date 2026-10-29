@@ -158,6 +158,34 @@ categories CTA; `/testimonials/jessica.png` 404s; all 23 `public/category/*.webp
 read `params.id` synchronously (Next 16 requires awaiting `params`), so those pages render without
 an id.
 
+### 6.1 The three pre-existing defects, fixed (issue #20)
+
+Same pass, follow-up PR. The dead links were four, not two — `/earnings` and `/analytics` in
+`components/layout/sidebar-tooltip-fix.tsx` were dead too and no gate could see any of them, because
+`data:check` only proved links the _content model_ emits, never an `href` typed into a component.
+
+| defect                                                                             | fix                                                                                        | evidence                                                                                            |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `/dashboard`, `/earnings`, `/analytics` in the sidebar; `/dashboard` in the footer | point at `/dashboard/user`, `/dashboard/user?tab=wallet`, `/dashboard/user?tab=my-quizzes` | crawl: 0 pages render a legacy `href`                                                               |
+| `/signup` in the categories CTA                                                    | point at `/register`                                                                       | same                                                                                                |
+| `/testimonials/jessica.png` on the tournament pages                                | point at `/avatars/mind.webp` (no such file ever existed in `public/`)                     | crawl: 75 `<img>` URLs, 0 broken                                                                    |
+| `params.id` read synchronously in both `my-quizzes/[id]` pages                     | `async` + `await params`                                                                   | before: `href="/my-quizzes/undefined"` + the dev warning; after: `href="/my-quizzes/1"`, no warning |
+
+Regression guard: `data:check` gained **E10**. It extracts every literal `href`,
+`router.push`/`replace`/`redirect` and every `public/` asset literal under `components/` + `app/`
+(`scripts/ui-refs.ts`), resolves the routes against `content/routes.ts` and the assets against
+`public/`, and fails on either. Negative control on the real tree: re-adding
+`href="/signup"` + `/testimonials/jessica.png` in one component produced
+`FAIL 2 error(s)` with `file:line` for both, and nothing else. 6 new cases cover the extraction
+(34 total, up from 28). 11 asset literals that were already 404ing before this change (chat
+avatars, `easy-quiz-*.png`, `/quiz/q16.png`, `/wizard.png`, `/science-quiz-lab.png`) are frozen in
+`KNOWN_MISSING_ASSETS` — the list may only shrink; filing them is a content task.
+
+The three legacy paths from the pre-P1 shell (`/dashboard`, `/signup`, and the two dashboard tabs)
+308 to the real route in `next.config.mjs`, so a bookmark or cached markup does not land on a 404.
+A redirect is not a second page — `app/` + `content/routes.ts` stay the only source of routes,
+which is why this is not a violation of the earlier "do not fix by adding routes" note.
+
 ## 7. Repo ops
 
 **Origin is the source of truth.** GitHub owns the work; the kanban board is a dispatch

@@ -144,7 +144,7 @@ export function CategoriesCTA() {
               </p>
             </div>
             <div className="sm:ml-auto">
-              <Link href="/signup">
+              <Link href="/register">
                 <Button variant={"gradient"}>Join Now</Button>
               </Link>
             </div>

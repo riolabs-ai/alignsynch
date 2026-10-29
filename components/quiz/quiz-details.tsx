@@ -38,11 +38,14 @@ export interface QuizDetailModel {
  *
  * The boundary is deliberate: **engagement and identity** (title, cover, category,
  * difficulty, time limit, questions, rating, plays, seats, prize, prize badge,
- * author, summary) come from the record through the projection above. Everything the
- * template *invented* for a record — its `$5.00` prize, Requirements, Tags, related
- * cards, the creator's "42 quizzes" — is **hidden** for a record instead of shown,
- * because a page may not state content or numbers the model does not own; an absent
- * field prints nothing, the same rule the authoring card follows.
+ * author, summary) come from the record through the projection above. A field the
+ * record does not have is **neutralised or hidden**, never filled with the template's
+ * value: an absent author prints `Unknown creator` and an absent rating `—` (the
+ * `ExploreQuizList` convention), an absent cover falls to `/placeholder.svg`, and
+ * everything the template *invented* for a record — its `$5.00` prize, Requirements,
+ * Tags, related cards, the creator's "42 quizzes", a seat count for a quiz with no
+ * capacity — is hidden rather than shown. A page may not state content or numbers the
+ * model does not own.
  *
  * Still template copy for a record: the leaderboard rows and the reviews. The model
  * has no fields for either yet — that is P4 work, and it is listed in the follow-up
@@ -54,18 +57,21 @@ export interface QuizDetailModel {
  */
 interface DetailView {
   title: string;
-  image: string;
+  /** Absent when the record has no cover; the hero then renders the placeholder. */
+  image?: string;
   category: string;
   /** Capitalised for the badge variant switch (`"Medium"`, not `"medium"`). */
   difficulty: string;
   timeLimit: string;
   reward: string;
   players: number;
-  maxPlayers: number;
+  /** Absent when the record has no capacity — then there is no seat count to print. */
+  maxPlayers?: number;
   spotsLeft: number;
   almostFull: boolean;
   questionCount: number;
-  rating: number;
+  /** Absent when the record carries no rating. */
+  rating?: number;
   /** Only the template carries a rating count; the model does not. */
   ratingCount?: number;
   timeLeft?: string;
@@ -206,25 +212,27 @@ function modelView(detail: QuizDetailModel): DetailView {
   const { stats } = card;
   return {
     title: card.title,
-    image: card.cover?.src ?? quizData.image,
+    // Absent, not the template's cover: `/quiz/q17.png` is the mock's art and naming
+    // it here would claim a record carries an image it does not.
+    ...(card.cover === undefined ? {} : { image: card.cover.src }),
     category: card.categories[0]?.name ?? "Uncategorised",
     difficulty: cap(card.difficulty),
     timeLimit:
       card.timeLimitSeconds === 0 ? "No limit" : `${Math.round(card.timeLimitSeconds / 60)} min`,
     reward: stats.rewardCents === undefined ? "—" : formatCurrency(stats.rewardCents),
     players: stats.plays,
-    maxPlayers: stats.capacity ?? 0,
+    ...(stats.capacity === undefined ? {} : { maxPlayers: stats.capacity }),
     spotsLeft: stats.spotsLeft ?? 0,
     almostFull: stats.almostFull,
     questionCount,
-    rating: stats.rating ?? quizData.rating,
+    ...(stats.rating === undefined ? {} : { rating: stats.rating }),
     timeLeft:
       stats.limitedTime && stats.limitedTimeEndsAt !== undefined
         ? formatTimeRemaining(stats.limitedTimeEndsAt, clock)
         : undefined,
     featured: card.featured === true,
     ...(stats.badge === undefined ? {} : { badge: { label: stats.badge.label } }),
-    authorName: card.author?.name ?? quizData.creator.name,
+    authorName: card.author?.name ?? "Unknown creator",
     ...(card.author?.avatar === undefined ? {} : { authorAvatar: card.author.avatar.src }),
     summary: card.summary,
   };
@@ -251,7 +259,10 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
   };
 
   // Calculate progress percentage
-  const progressPercentage = view.maxPlayers === 0 ? 0 : (view.players / view.maxPlayers) * 100;
+  const progressPercentage =
+    view.maxPlayers === undefined || view.maxPlayers === 0
+      ? 0
+      : (view.players / view.maxPlayers) * 100;
 
   const handleReviewSubmit = (review: { rating: number; comment: string }) => {
     const newReview = {
@@ -316,7 +327,7 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 <span>
-                  {view.rating}
+                  {view.rating === undefined ? "—" : view.rating}
                   {view.ratingCount === undefined ? null : ` (${view.ratingCount} ratings)`}
                 </span>
               </div>
@@ -472,20 +483,22 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
           <div>
             <Card>
               <CardContent className="p-6 space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Spots filled</span>
-                    <span className="text-sm font-medium">
-                      {view.players}/{view.maxPlayers}
-                    </span>
+                {view.maxPlayers !== undefined && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Spots filled</span>
+                      <span className="text-sm font-medium">
+                        {view.players}/{view.maxPlayers}
+                      </span>
+                    </div>
+                    <Progress value={progressPercentage} className="h-2" />
+                    {view.almostFull && (
+                      <p className="text-xs font-medium text-destructive">
+                        Almost full! Only {view.spotsLeft} spots left
+                      </p>
+                    )}
                   </div>
-                  <Progress value={progressPercentage} className="h-2" />
-                  {view.almostFull && (
-                    <p className="text-xs font-medium text-destructive">
-                      Almost full! Only {view.spotsLeft} spots left
-                    </p>
-                  )}
-                </div>
+                )}
 
                 {/* The prize is the model's number, formatted — the whole point of P3:
                     this page cannot print a reward the card does not. */}
