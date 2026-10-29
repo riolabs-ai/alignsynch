@@ -498,7 +498,11 @@ function earliestInstant(...instants: Array<string | undefined>): string | undef
 }
 
 /**
- * Field-wise merge of a campaign into catalog stats (B-01 §3):
+ * Field-wise merge of a campaign into catalog stats (B-01 §3).
+ *
+ * The window is **not** consulted here — this is the pure merge. Callers that
+ * render must go through `selectQuizCard`, which merges only while
+ * `isPromotionActive` holds, so an expired campaign can never leak into a card.
  *
  * - `undefined` inherits the catalog value, `null` cancels;
  * - the countdown is `min(overlay, catalog, endsAt)` — a slot may shorten an
