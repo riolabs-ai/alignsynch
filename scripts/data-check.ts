@@ -87,6 +87,7 @@ import { COPY_LITERAL_MAX, copyProblems, measureRoute } from "./copy-refs";
 import { pageCopies } from "../data/pages";
 import { pageCopyBudget } from "../data/pages/budget";
 import { copiedFixtureText, moduleRecordArrays } from "./island-refs";
+import { imageCensus, imageProblems, nextImageTags } from "./image-refs";
 import {
   breakdownProblems,
   metricKeyProblems,
@@ -719,6 +720,50 @@ for (const missing of missingAssets) {
 }
 
 /* ------------------------------------------------------------------ *
+ * E27 — every <Image> has exactly one size source
+ *
+ * `next/image` validates its own props inside `if (process.env.NODE_ENV !== "production")`,
+ * so `next build` never reads the two rules: no `width`/`height` and no `fill` throws E451,
+ * and `fill` together with `width`/`height` throws E96 — in `pnpm dev` only. Five tags on
+ * `main` were exactly that, and every gate stayed green because no route rendered them:
+ * three sat behind tab state, one behind a `||` fallback and one behind a 2FA toggle. The
+ * `images.unoptimized: true` decision (issue #6) hides the same mistakes in production, so
+ * the failure mode is a landmine rather than a 500 a user can report.
+ *
+ * Two rules, one per shape, in `scripts/image-refs.ts`:
+ *
+ *   missing dimension   no `width`/`height`, no `fill`, and `src` is not a static import
+ *                       (a static import is a `StaticImageData` and carries its own size —
+ *                       `cover` is fine, `cover.src` is the plain string and is not)
+ *   fill and dimensions  `fill` wins in production, so the `width`/`height` beside it are
+ *                       dead code that throws in dev
+ *
+ * Scope is the whole UI tree, not just `components/` + `app/`: the card asks for `lib/` and
+ * `hooks/` too, and a tag added there tomorrow must be caught by the same run. The census is
+ * printed below on both paths, so "0 missing" is a measured number and not a claim.
+ * ------------------------------------------------------------------ */
+
+const IMAGE_ROOTS = ["app", "components", "lib", "hooks"];
+
+const imageSources = IMAGE_ROOTS.flatMap((root) =>
+  existsSync(join(process.cwd(), root)) ? walkSources(root) : [],
+);
+
+for (const problem of imageProblems(imageSources)) {
+  err("E27", problem.message);
+}
+
+if (imageSources.length === 0) {
+  err(
+    "E27",
+    "the next/image scan read 0 files: app/, components/, lib/ and hooks/ were not walked",
+  );
+}
+
+const imageTags = nextImageTags(imageSources);
+const imageMeasured = imageCensus(imageTags);
+
+/* ------------------------------------------------------------------ *
  * E17/E18/E19 — the media registry is the only way to address a file
  *
  * E10 proved a literal path was not a 404. It could not prove the *model* owned the
@@ -1345,7 +1390,7 @@ const counts = [
 
 /** Printed on both paths: a validator that only reports its coverage when it passes
  *  is telling you the same number either way. */
-const coverage = `${ROUTE_PATTERNS.length} routes match app/, ${unknownCategoryRefs} unknown category ids, ${deadLinks} dead links`;
+const coverage = `${ROUTE_PATTERNS.length} routes match app/, ${unknownCategoryRefs} unknown category ids, ${deadLinks} dead links, ${imageMeasured.tags} next/image tags (${imageMeasured.missingDimension + imageMeasured.fillWithDimension} with a dev-only dimension bug)`;
 
 if (warnings.length > 0) {
   // A fixture-wide gap (the catalogue is 40 card records with no questions) would
@@ -1390,6 +1435,9 @@ console.log(
 );
 console.log(
   `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
+);
+console.log(
+  `      ${imageMeasured.tags} next/image tags: ${imageMeasured.dimensioned} width+height, ${imageMeasured.fill} fill, ${imageMeasured.staticImport} static import, ${imageMeasured.fillWithDimension} fill+width/height, ${imageMeasured.missingDimension} with no size source (E27); ${imageMeasured.fill} fill tags, ${imageMeasured.fillWithSizes} of them with sizes`,
 );
 console.log(
   `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
