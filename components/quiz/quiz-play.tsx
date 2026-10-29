@@ -511,11 +511,12 @@ export function QuizPlay({ id }: { id: string }) {
               >
                 {/* Question image */}
                 {currentQuestion.image && (
-                  <div className="rounded-lg overflow-hidden">
+                  <div className="relative rounded-lg overflow-hidden">
                     <Image
                       src={currentQuestion.image || "/placeholder.svg"}
                       alt="Question illustration"
                       className="size-full object-center object-cover"
+                      fill
                     />
                   </div>
                 )}

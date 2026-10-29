@@ -229,11 +229,12 @@ export function QuizDetails({ id }: { id: string }) {
 
       {/* Quiz header */}
       <div className="relative rounded-xl overflow-hidden">
-        <div className="h-64 w-full">
+        <div className="relative h-64 w-full">
           <Image
             src={quizData.image || "/placeholder.svg"}
             alt={quizData.title}
             className="h-full w-full object-cover"
+            fill
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-end p-6">
             <div className="flex flex-wrap gap-2 mb-3">
