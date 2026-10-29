@@ -7,7 +7,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatPlayerCount, formatTimeRemaining } from "@/content/core";
+import type { PageCopySection } from "@/content/pages";
 import type { QuizBadgeType } from "@/content/quiz";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { Award, Clock, Crown, Flame, Star, TrendingUp } from "lucide-react";
 import Image from "next/image";
@@ -15,7 +17,15 @@ import Link from "next/link";
 import { useState } from "react";
 import { media } from "@/data/media";
 
-export function FeaturedQuizzes() {
+/** The band's curation tabs, in render order: the fixture owns the words, this owns the values. */
+const TABS = [
+  { id: "tab-all", value: "all" },
+  { id: "tab-hot", value: "hot" },
+  { id: "tab-trending", value: "trending" },
+  { id: "tab-editors", value: "editors" },
+] as const;
+
+export function FeaturedQuizzes({ copy }: { copy: PageCopySection }) {
   const [filter, setFilter] = useState<"all" | QuizBadgeType>("all");
 
   // Projected at render, never authored: `now` decides which windows are still open.
@@ -63,8 +73,8 @@ export function FeaturedQuizzes() {
     <section className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">Featured Quizzes</h2>
-          <p className="text-muted-foreground">Specially selected quizzes you don't want to miss</p>
+          <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
+          <p className="text-muted-foreground">{copy.body}</p>
         </div>
 
         <Tabs
@@ -74,10 +84,11 @@ export function FeaturedQuizzes() {
           className="w-full sm:w-auto"
         >
           <TabsList className="grid grid-cols-4 w-full sm:w-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="hot">Hot</TabsTrigger>
-            <TabsTrigger value="trending">Trending</TabsTrigger>
-            <TabsTrigger value="editors">Editor's</TabsTrigger>
+            {TABS.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {itemLabel(copy, tab.id)}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
       </div>
@@ -104,7 +115,7 @@ export function FeaturedQuizzes() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
                   <h3 className="text-white font-semibold line-clamp-1">{quiz.title}</h3>
                   <p className="text-white/80 text-sm">
-                    {quiz.categories[0]?.name ?? "Uncategorised"}
+                    {quiz.categories[0]?.name ?? itemLabel(copy, "empty-category")}
                   </p>
                 </div>
 
@@ -137,7 +148,9 @@ export function FeaturedQuizzes() {
                       alt={quiz.author?.name ?? "creator"}
                     />
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{quiz.author?.name ?? "Unknown creator"}</span>
+                      <span className="font-medium">
+                        {quiz.author?.name ?? itemLabel(copy, "unknown-creator")}
+                      </span>
                       {quiz.stats.rating !== undefined && (
                         <div className="flex items-center">
                           <Star className="h-4 w-4 text-yellow-500 mr-1 fill-current" />
@@ -148,7 +161,7 @@ export function FeaturedQuizzes() {
                   </div>
                   {quiz.stats.rewardCents !== undefined && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Reward</p>
+                      <p className="text-xs text-muted-foreground">{itemLabel(copy, "reward")}</p>
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium text-green-600">
                           {formatCurrency(quiz.stats.rewardCents)}
@@ -190,18 +203,20 @@ export function FeaturedQuizzes() {
                           ))}
                         </div>
                         <span className="text-sm font-medium">
-                          {formatPlayerCount(quiz.stats.plays)} players joined
+                          {formatPlayerCount(quiz.stats.plays)} {itemLabel(copy, "players-joined")}
                         </span>
                       </div>
                       {spotsLeft !== undefined && (
                         <div className="flex items-center justify-between">
                           {spotsLeft < 50 ? (
                             <p className="text-xs font-medium text-amber-600">
-                              Only {spotsLeft} spots left
+                              {fillLabel(itemLabel(copy, "spots-left-urgent"), {
+                                count: spotsLeft,
+                              })}
                             </p>
                           ) : (
                             <p className="text-xs text-muted-foreground">
-                              {spotsLeft} spots available
+                              {fillLabel(itemLabel(copy, "spots-available"), { count: spotsLeft })}
                             </p>
                           )}
                         </div>
@@ -213,7 +228,7 @@ export function FeaturedQuizzes() {
 
               <CardFooter className="p-4 pt-0">
                 <Button className="w-full" asChild>
-                  <Link href={quiz.href}>Play Now</Link>
+                  <Link href={quiz.href}>{itemLabel(copy, "play-now")}</Link>
                 </Button>
               </CardFooter>
             </Card>
