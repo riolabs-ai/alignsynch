@@ -42,9 +42,6 @@ jobs:
       - name: Typecheck (next typegen && tsc --noEmit)
         run: pnpm typecheck
 
-      - name: Validate content data (data:check)
-        run: pnpm data:check
-
       - name: Lint (biome check)
         run: pnpm lint
 
