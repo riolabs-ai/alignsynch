@@ -20,7 +20,8 @@ export type Contact = {
   name: string;
   avatar: string;
   status: "online" | "offline" | "away";
-  lastSeen?: string;
+  /** ISO instant, present iff `status === "offline"`. Formatted at render time, never in `data/`. */
+  lastSeenAt?: string;
 };
 
 export type Message = {

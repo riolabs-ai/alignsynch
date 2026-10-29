@@ -11,7 +11,22 @@ import { describe, it } from "node:test";
 import { zArticleCollection, zNewsArticle } from "../../content/article";
 import { zCategory, zCategories } from "../../content/category";
 import { zQuiz, zQuizCard, selectQuizCard } from "../../content/quiz";
-import { zContact, zConversation, zNotification, zMessage } from "../../content/social";
+import {
+  DEMO_NOW_ISO,
+  dayDelta,
+  formatClockTime,
+  formatDayHeading,
+  formatRelative,
+} from "../../content/core";
+import {
+  checkSocialInstants,
+  zContact,
+  zConversation,
+  zNotification,
+  zMessage,
+} from "../../content/social";
+import { contacts, conversations } from "../../data/chat-data";
+import { notifications } from "../../data/notifications";
 import { findDeadLinks, findMissingAssets } from "../ui-refs";
 
 const iso = "2025-05-15T00:00:00.000Z";
@@ -370,6 +385,78 @@ describe("ui-refs", () => {
       "}",
     ].join("\n");
     assert.equal(dead(source)[0].line, 4);
+  });
+});
+
+/* ---------------------------------------------------------------- *
+ * The fixture clock — relative labels are a pure function of the instant
+ *
+ * `formatRelative()` used to default to `new Date()`, so a label was one string during SSR
+ * and another at hydration (React #418 on every route, because the chat sidebar is in the
+ * shell). These cases pin the replacement: one clock, no wall clock, and fixtures that never
+ * land in the future of it.
+ * ---------------------------------------------------------------- */
+describe("fixture clock", () => {
+  it("formatRelative measures against DEMO_NOW_ISO, not the wall clock", () => {
+    const instant = "2026-10-29T11:55:00.000Z";
+    assert.equal(formatRelative(instant), formatRelative(instant, new Date(DEMO_NOW_ISO)));
+    assert.equal(formatRelative(instant), "5 minutes ago");
+  });
+
+  it("formatRelative still reads the past for every chat fixture instant", () => {
+    const instants = [
+      ...contacts.map((contact) => contact.lastSeenAt).filter((value) => value !== undefined),
+      ...conversations.flatMap((conversation) =>
+        conversation.messages.map((message) => message.sentAt),
+      ),
+    ];
+    for (const instant of instants) {
+      assert.doesNotMatch(formatRelative(instant), /^in /);
+    }
+  });
+
+  it("formatClockTime and formatDayHeading are UTC-pinned, so server and browser agree", () => {
+    assert.equal(formatClockTime("2026-10-29T11:55:00.000Z"), "11:55 AM");
+    assert.equal(formatClockTime("2026-10-28T00:05:00.000Z"), "12:05 AM");
+    assert.equal(formatDayHeading("2026-10-29T11:55:00.000Z"), "Today");
+    assert.equal(formatDayHeading("2026-10-28T23:00:00.000Z"), "Yesterday");
+    assert.equal(formatDayHeading("2026-10-27T12:00:00.000Z"), "Tuesday, October 27");
+    assert.equal(dayDelta("2026-10-27T12:00:00.000Z"), 2);
+  });
+
+  it("E10 accepts the shipped fixtures (nothing is in the future of the clock)", () => {
+    assert.deepEqual(
+      checkSocialInstants({ contacts, conversations, notifications }, DEMO_NOW_ISO),
+      [],
+    );
+  });
+
+  it("E10 rejects an instant after the clock — the `in 1 hour` regression", () => {
+    const issues = checkSocialInstants(
+      {
+        contacts,
+        conversations: [
+          {
+            id: "conv-1",
+            contactId: "contact-1",
+            messages: [
+              {
+                id: "msg-1-1",
+                senderId: "contact-1",
+                body: "hi",
+                sentAt: "2026-10-29T13:00:00.000Z",
+                status: "read",
+              },
+            ],
+          },
+        ],
+        notifications: [],
+      },
+      DEMO_NOW_ISO,
+    );
+    assert.equal(issues.length, 1);
+    assert.equal(issues[0].field, "sentAt");
+    assert.match(issues[0].reason, /after the fixture clock/);
   });
 });
 

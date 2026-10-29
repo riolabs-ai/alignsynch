@@ -41,11 +41,13 @@ import {
   checkContactRefs,
   checkConversationRefs,
   checkNotificationRefs,
+  checkSocialInstants,
   zContact,
   zConversation,
   zNotification,
   type RouteResolution,
 } from "../content/social";
+import { DEMO_NOW_ISO } from "../content/core";
 import { categories as quizCategoryRows } from "../data/categories";
 import { contacts as modelContacts, conversations as modelConversations } from "../data/chat-data";
 import { categories as tipCategoryTable, tips } from "../data/creator-tips-data";
@@ -605,6 +607,22 @@ for (const missing of missingAssets) {
 }
 
 /* ------------------------------------------------------------------ *
+ * E10 — social instants sit at or before the fixture clock
+ *
+ * The UI renders relative labels against `DEMO_NOW_ISO` (content/core.ts), so an instant
+ * dated after it renders `in 1 hour` — the P1 fixtures did. One clock, never the wall clock,
+ * is what makes those labels a pure function of their input; React #418 was the server and
+ * the browser reading two different clocks.
+ * ------------------------------------------------------------------ */
+
+for (const issue of checkSocialInstants(
+  { contacts, conversations, notifications: notificationRecords },
+  DEMO_NOW_ISO,
+)) {
+  err("E10", `social "${issue.id}" ${issue.field} ${issue.reason}`);
+}
+
+/* ------------------------------------------------------------------ *
  * report
  * ------------------------------------------------------------------ */
 
@@ -680,3 +698,4 @@ console.log(`      ${coverage}`);
 console.log(
   `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
 );
+console.log(`      0 social instants after the fixture clock ${DEMO_NOW_ISO}`);
