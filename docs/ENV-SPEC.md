@@ -30,7 +30,13 @@ i18n, and any eLearning/course schema.
   fails Next 16's `>=20.9.0` engine check. Put a node-24 bin dir first on `PATH`
   (`$HOME/.nvm/versions/node/v24.22.0/bin` or `~/.hermes/tools/node-*/bin`); `nvm use` works only
   in an interactive shell. Verified live: v18 → every Next command fails, v24.22.0 → all gates pass.
-  CI pins `node-version-file: .nvmrc` and `pnpm/action-setup@v6` at `12.16.1`.
+  CI pins `node-version-file: .nvmrc` and `pnpm/action-setup@v6` at `12.16.1`; `package.json` carries
+  the same pin as `"packageManager": "pnpm@12.16.1"`. All three must agree: `pnpm/action-setup`
+  hard-fails when its `version:` input differs from `packageManager`, and `--frozen-lockfile`
+  hard-fails when the pin is missing from the lockfile. pnpm 12 records that pin in a leading
+  **boot document** of `pnpm-lock.yaml` (a second YAML document before the project graph), so a
+  bump of the pin legitimately adds ~158 lines of `@pnpm/exe.*` platform entries and changes no
+  dependency — see <https://pnpm.io/lockfile>.
 - Config is written only via `hermes config set`; secrets only in `~/.hermes/.env`;
   `hermes doctor` is the pre-flight check before blaming code.
 
