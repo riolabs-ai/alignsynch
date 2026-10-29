@@ -8,12 +8,26 @@ Generated at `8929ec10` from `253` TS/TSX files under `components/` and `app/`
 and `103` files under `public/`. `lib/quizhub/` (the untracked template
 drop, issue #1) is not on disk in a clean checkout and is out of scope.
 
+**This page is a measurement, and the tree has moved since.** WU-12 deleted 14 of the files measured
+here — 3,101 lines, 0 insertions, 149 of the 2,614 nodes (184 with the 35 chrome nodes they carried)
+— in `195881b4` (PR #66), and kept one on purpose. The tables below are the `8929ec10` snapshot with
+that deletion taken out: rows that died with those files are gone, and each affected table states what
+it lost. Every path this page still names exists on `main`; re-check any of them with
+`git cat-file -e origin/main:<path>` before opening one, because the next WU card can delete it too.
+
 - **Full hit list:** [`docs/p2-inventory/hits.csv`](p2-inventory/hits.csv) — 2,614 rows,
   `tier,unit,file,line,kind,literal,should_come_from,fixture_carries,route,island`. Every hit in this
   page cites the same `file:line` the CSV carries, and `fixture_carries` answers "does a fixture
   already own this value?" per row: **26 yes**, **45 partial** (a fixture references the same asset
   path, so the component should have read it from the fixture), **2,092 no**, **451 n/a** (chrome and
   route metadata, out of scope).
+- **The CSV is frozen; this page is not.** `hits.csv` keeps all 2,614 `8929ec10` rows, including the
+  149 WU-12 rows whose files were deleted, because pruning it would make the 2,614 total and every
+  unit baseline on this page unreproducible — and a baseline you cannot reproduce is not a baseline.
+  **"Hits remaining" for any unit = its CSV rows minus the rows whose `file` is listed by
+  `git show --name-only 195881b4`** (149 rows, all WU-12). The tables here already apply that filter
+  and say so where it moves a number; a raw row count of the CSV will always read 2,614 while the
+  tree holds 2,430.
 - **Method:** TypeScript compiler AST, not grep. A hit is a _node_: a JSX text node, a JSX attribute
   value, a string literal, or a `metadata` field. One rendered sentence split by inline markup
   (`<span>Play</span> Quiz`) is two nodes, so counts are node counts, not sentence counts (W11).
@@ -28,6 +42,10 @@ records: players, scores, transactions, search results — carrying 134 of the 2
 strings** with no home at all (1,118 of them on editorial pages, the rest product microcopy). The
 media surface is small and sharp: **280 literal refs, 24 distinct paths** — 96 of them are the
 string `"/placeholder.svg"` used as a fallback.
+
+Those are the `8929ec10` numbers. WU-12 has since deleted five of the 29 islands and 34 of the 280
+media refs (see WU-12 under "P2 work units (ranked)" below), which is the one place this page reports
+the tree rather than the measurement.
 
 ## Summary by directory
 
@@ -66,6 +84,11 @@ string `"/placeholder.svg"` used as a fallback.
 schema already owns. `METRIC` = a rendered number the schema does not supply. `COPY` = page copy.
 `META` = route metadata. `CHROME` = framework microcopy (declared out of scope, W10).
 
+The `files` column counts the `8929ec10` tree; `hits` includes the nodes WU-12 deleted. It took 14
+files out of 9 of these rows (`categories`, `chat`, `dashboard`, `explore`, `home`, `layout`,
+`my-quizzes`, `quiz`, `ui`), which is 149 hits — so each of those rows is 149-in-part higher than the
+tree in front of you.
+
 ## What the schema already supplies — and what no fixture carries
 
 | tier   | hits | owned by                                               | verdict                                          |
@@ -78,11 +101,19 @@ schema already owns. `METRIC` = a rendered number the schema does not supply. `C
 | META   | 26   | nothing                                                | **declared out of scope** (D14, W7)              |
 | CHROME | 425  | n/a — framework microcopy                              | **declared out of scope** (W10)                  |
 
-### MOCK — 29 islands, 246 records, 134 media literals
+WU-12's commit took 20 MOCK, 14 MEDIA, 8 METRIC, 107 COPY and 35 CHROME nodes out of the measured
+tree, so the tree in front of you carries 114 MOCK, 132 MEDIA, 40 METRIC, 1,702 COPY and 390 CHROME —
+2,430 of the 2,614 nodes. The table above stays the `8929ec10` measurement so the other units'
+baselines do not move.
+
+### MOCK — 24 islands, 216 records, 114 media literals
 
 A module-level `const` whose initialiser is two or more object records. This is the sharpest class:
 the record is _stored in the component_, so no fixture swap can ever change the page, and
 `data:check` cannot see it (E0 validates `data/`, not `components/`).
+
+At `8929ec10` this was 29 islands, 246 records and 134 media literals. WU-12 deleted five of them
+with their files in `195881b4` (30 records, 20 media refs), which is why the table lists 24.
 
 | island (file:line)                                   | const              | records | media refs | distinct paths |
 | ---------------------------------------------------- | ------------------ | ------- | ---------- | -------------- |
@@ -93,22 +124,17 @@ the record is _stored in the component_, so no fixture swap can ever change the 
 | components/categories/categories-data.tsx:29         | categoriesData     | 14      | 0          | 0              |
 | components/explore/explore-categories.tsx:25         | categories         | 13      | 0          | 0              |
 | components/quiz/quiz-details.tsx:17                  | quizData           | 11      | 13         | 13             |
-| components/home/top-players.tsx:25                   | topPlayers         | 10      | 10         | 10             |
 | components/quiz/quiz-discustion.tsx:13               | mockQuizResult     | 10      | 3          | 3              |
 | components/home/live-winners.tsx:11                  | initialWinners     | 8       | 8          | 8              |
 | components/home/top-players-carousel.tsx:13          | topPlayers         | 8       | 8          | 8              |
 | components/my-quizzes/quiz-details.tsx:45            | quizData           | 8       | 6          | 6              |
 | components/daily-challenge/daily-stats.tsx:20        | performanceData    | 7       | 0          | 0              |
 | components/dashboard/earnings-chart.tsx:8            | data               | 6       | 0          | 0              |
-| components/chat/chat-window.tsx:26                   | contacts           | 5       | 5          | 5              |
-| components/chat/chat-window.tsx:74                   | initialMessages    | 5       | 0          | 0              |
 | components/daily-challenge/daily-history.tsx:7       | pastChallenges     | 5       | 0          | 0              |
 | components/daily-challenge/daily-quiz.tsx:19         | dailyQuizData      | 5       | 0          | 0              |
 | components/daily-challenge/daily-stats.tsx:30        | categoryData       | 5       | 0          | 0              |
 | components/dashboard/wallet-dashboard.tsx:44         | transactions       | 5       | 0          | 0              |
 | components/home/player-testimonials.tsx:16           | testimonials       | 5       | 0          | 0              |
-| components/home/quiz-creator-tips.tsx:20             | quizTips           | 5       | 0          | 0              |
-| components/home/top-players-alt.tsx:11               | topPlayers         | 5       | 5          | 5              |
 | components/quiz/quiz-discussion-page.tsx:30          | recentDiscussions  | 5       | 5          | 5              |
 | components/quiz/quiz-discussion-page.tsx:119         | popularDiscussions | 5       | 5          | 5              |
 | components/tournaments/tournament-discussion.tsx:40  | mockDiscussions    | 5       | 5          | 5              |
@@ -128,6 +154,11 @@ All 280 resolve to a real file, which is why E10 is green: E10 proves the path i
 it cannot prove the path is _addressed by the model_. 134 sit inside a mock
 island (they die with it); the other 146 are literal
 `src=`/`image:` values in JSX, and 96 of those are the same fallback string.
+
+WU-12 deleted 34 of these refs with its files in `195881b4` — 14 outside an island and 20 inside the
+five islands it removed — so the tree carries 246 (132 literal, 114 inside islands) and the fallback
+literal drops from 96 to 83. The path table is the `8929ec10` count and does not change: the files
+that died were not the only reference to any of these paths.
 
 | literal path                      | refs | role        |
 | --------------------------------- | ---- | ----------- |
@@ -166,15 +197,15 @@ Top files by literal media refs:
 | `components/quiz/quiz-discussion-page.tsx`           | 14             |
 | `components/tournaments/tournament-leaderboard.tsx`  | 12             |
 | `components/tournaments/tournament-discussion.tsx`   | 11             |
-| `components/home/top-players.tsx`                    | 10             |
 | `components/home/live-winners.tsx`                   | 9              |
-| `components/home/top-players-alt.tsx`                | 9              |
 | `components/home/top-players-carousel.tsx`           | 9              |
 | `components/my-quizzes/quiz-details.tsx`             | 9              |
-| `components/chat/chat-window.tsx`                    | 8              |
 | `components/tournaments/tournament-list.tsx`         | 7              |
 | `components/tournaments/tournament-testimonials.tsx` | 7              |
 | `app/(mainlayout)/profile/[username]/page.tsx`       | 6              |
+
+Three of the `8929ec10` top files (27 refs between them) were deleted by WU-12 and are not listed here,
+which is why the section total above is 246, not 280.
 
 The fallback is worth calling out on its own: `"/placeholder.svg"` appears 96 times as
 `cover?.src ?? "/placeholder.svg"`. It is one key (`fallback.cover` / `fallback.avatar`), not 96 decisions.
@@ -223,6 +254,8 @@ rendering `quizCategories` can.
 
 A number with a unit or a delta sign, in copy, that no fixture produces. 48 nodes; the
 largest cluster is the dashboard's month-over-month deltas and the daily-challenge reward table.
+WU-12 deleted 8 of them in `195881b4` — four in the dashboard stats island, three in the referral CTA,
+one in the create-quiz section — so the tree carries 40 and WU-4's baseline stays 48.
 
 | file:line                                                  | literal                                                | should come from |
 | ---------------------------------------------------------- | ------------------------------------------------------ | ---------------- |
@@ -252,10 +285,6 @@ largest cluster is the dashboard's month-over-month deltas and the daily-challen
 | `components/dashboard/dashboard-overview.tsx:47`           | `+118 from last month`                                 | `fixture field`  |
 | `components/dashboard/dashboard-overview.tsx:58`           | `+2.1% from last month`                                | `fixture field`  |
 | `components/dashboard/dashboard-overview.tsx:170`          | `You earned $2.50 from quiz plays`                     | `fixture field`  |
-| `components/dashboard/dashboard-stats.tsx:14`              | `+4 from last month`                                   | `fixture field`  |
-| `components/dashboard/dashboard-stats.tsx:25`              | `+118 from last month`                                 | `fixture field`  |
-| `components/dashboard/dashboard-stats.tsx:36`              | `+2.1% from last month`                                | `fixture field`  |
-| `components/dashboard/dashboard-stats.tsx:47`              | `+$42.50 from last month`                              | `fixture field`  |
 
 ### COPY — 1809 page-copy strings
 
@@ -290,9 +319,11 @@ Top COPY files:
 | `components/my-quizzes/quiz-details.tsx`             | 32   | /my-quizzes/[id]            |
 | `components/dashboard/affiliate-dashboard.tsx`       | 31   | /dashboard/user             |
 | `components/daily-challenge/completed-challenge.tsx` | 29   | /daily-challenge            |
-| `components/explore/explore-quizzes.tsx`             | 29   | (unrouted)                  |
 | `components/my-quizzes/my-quizzes.tsx`               | 29   | /my-quizzes                 |
 | `components/layout/header.tsx`                       | 26   | /                           |
+
+WU-12 deleted 107 of these 1,809 strings with its files (`195881b4`), 29 of them in a single unrouted
+explore component, so the tree carries 1,702 and every other unit's baseline is unchanged.
 
 ### META — 26 route metadata strings
 
@@ -359,10 +390,14 @@ work units assert, and the schema that must exist first.
 | noun                                         | identity                             | owner                             | currently               | hits          |
 | -------------------------------------------- | ------------------------------------ | --------------------------------- | ----------------------- | ------------- |
 | `MediaEntry`                                 | path-derived key (`category/animal`) | `data/media.ts` typed map         | 280 literals, 24 paths  | 280           |
-| `Player` / `LeaderboardRow`                  | username + avatar + score + window   | `data/players.ts`                 | 76 records in 6 islands | 107           |
+| `Player` / `LeaderboardRow`                  | username + avatar + score + window   | new `Player` fixture (WU-1)       | 76 records in 6 islands | 107           |
 | `DiscussionComment`, `Review`, `Testimonial` | id + author ref + body + instant     | new social rows                   | 8 islands               | see WU-2/WU-9 |
-| `PageCopy`                                   | route pattern                        | `content/pages.ts`                | no home                 | 1118          |
+| `PageCopy`                                   | route pattern                        | new route-copy module (WU-6)      | no home                 | 1118          |
 | `MetricSnapshot`                             | (owner, period)                      | `data/quiz-analytics.ts` widening | invented in JSX         | 48            |
+
+Neither new module is in the tree yet — WU-1 and WU-6 create them, and this card names no path for
+them on purpose: the names it used to print were guesses, and a doc that cites a file nobody has
+written is the failed lookup WU-12 was about.
 
 ## Invariants (proposed for P2; E = hard, W = declared deviation)
 
@@ -370,12 +405,12 @@ Each names the check that proves it, per the P1 convention in `docs/DATA-MODEL.m
 
 | code | invariant                                                                                                                    | proof                                                                           |
 | ---- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| E17  | no `components/**` or `app/**` file contains a literal `public/` asset path                                                  | `data:check` E17: `assetReferences()` over the UI tree returns 0 (today: 280)   |
+| E17  | no `components/**` or `app/**` file contains a literal `public/` asset path                                                  | `data:check` E17 returns 0 asset refs (246 today, 280 measured)                 |
 | E18  | registry ⇄ disk is a bijection — every `MediaEntry.src` is a file, every file under `public/images`+avatars has an entry     | `data:check` E18: two-way walk, both directions 0 orphans (P2b item 3)          |
 | E19  | every `ImageRef.src` in `data/` equals a `MediaEntry.src`                                                                    | `data:check` E19 over `data/*` (today 73 fixture paths, all literal)            |
 | E20  | no display literal equals a `Category.name`, `Quiz.title` or `badge.label`                                                   | `data:check` E20: DUP tier = 0 (today: 26)                                      |
-| E21  | no module-level record array in `components/**` (≥ 2 object elements)                                                        | `data:check` E21: 0 on search/chat/header; 17 copies elsewhere counted          |
-| E22  | no metric literal (digit + unit/delta) in a component                                                                        | `data:check` E22 (today: 48)                                                    |
+| E21  | no module-level record array in `components/**` (≥ 2 object elements)                                                        | `data:check` E21: island scan = 0 (24 after WU-12; 29 measured)                 |
+| E22  | no metric literal (digit + unit/delta) in a component                                                                        | `data:check` E22 (40 after WU-12; 48 measured)                                  |
 | E23  | every route in `content/routes.ts` has a `PageCopy` key; an editorial component renders no leaf literal longer than 24 chars | E23 count + a per-route literal budget, ratcheting down per work unit           |
 | W7   | route metadata `title`/`description` stays hardcoded (26 strings, 13 routes)                                                 | declared: D14, `docs/DATA-MODEL.md` out-of-scope                                |
 | W8   | product-surface microcopy stays hardcoded (691 strings)                                                                      | declared: chrome, not content — a vertical reuses the screens                   |
@@ -385,10 +420,10 @@ Each names the check that proves it, per the P1 convention in `docs/DATA-MODEL.m
 
 ## Strictness (for the two objects P2 introduces)
 
-| object                          | mode   | unknown key | note                                                                                               |
-| ------------------------------- | ------ | ----------- | -------------------------------------------------------------------------------------------------- |
-| `MediaEntry` (`data/media.ts`)  | strict | reject      | `{ src, alt, width, height, kind }`; key is path-derived, so the map is exhaustive by construction |
-| `PageCopy` (`content/pages.ts`) | strict | reject      | keyed by route pattern; `eyebrow?/heading/subtitle?/cta?` — never `labelOverride` on a record      |
+| object                         | mode   | unknown key | note                                                                                               |
+| ------------------------------ | ------ | ----------- | -------------------------------------------------------------------------------------------------- |
+| `MediaEntry` (`data/media.ts`) | strict | reject      | `{ src, alt, width, height, kind }`; key is path-derived, so the map is exhaustive by construction |
+| `PageCopy` (route-copy module) | strict | reject      | keyed by route pattern; `eyebrow?/heading/subtitle?/cta?` — never `labelOverride` on a record      |
 
 `ImageRef` does **not** change in P2 (decision D-P2-1): `src` stays a path and E19 pins it to the
 registry, so no fixture is rewritten. Switching `ImageRef` to `{ key, alt }` is a P3 change (the JSON
@@ -409,7 +444,7 @@ first and every later unit shrinks rather than grows the surface.
 
 | unit  | hits | files | MOCK | MEDIA | DUP | METRIC | COPY | scope                                                          |
 | ----- | ---- | ----- | ---- | ----- | --- | ------ | ---- | -------------------------------------------------------------- |
-| WU-12 | 157  | 14    | 20   | 16    | 0   | 8      | 113  | Dead components: delete files no route imports                 |
+| WU-12 | 8    | 1     | 0    | 2     | 0   | 0      | 6    | Dead components: 14 deleted in 195881b4, 1 kept for #41        |
 | WU-1  | 107  | 8     | 61   | 2     | 0   | 0      | 44   | People and leaderboard fixture (Player, LeaderboardRow)        |
 | WU-4  | 40   | 19    | 0    | 0     | 0   | 40     | 0    | Invented metrics and deltas → analytics fixture                |
 | WU-5  | 26   | 6     | 0    | 0     | 26  | 0      | 0    | Category, badge and difficulty literals → schema selectors     |
@@ -423,17 +458,28 @@ first and every later unit shrinks rather than grows the surface.
 | WU-11 | 248  | 15    | 8    | 33    | 0   | 0      | 207  | Tournament copy and mode data (needs the domain decision)      |
 | OUT   | 720  | 41    | 10   | 19    | 0   | 0      | 691  | Product-surface microcopy (settings, dashboard, profile, crea… |
 
-**One issue per unit** (all labelled `tech-debt` + `needs-validation`): #47 WU-12 · #48 WU-1 · #49 WU-4 · #50 WU-5 · #51 WU-2 · #52 WU-3 · #53 WU-6 · #54 WU-7 · #55 WU-8 · #56 WU-9 · #57 WU-10 · #58 WU-11. Tracking issue: #46.
+Every row is the `8929ec10` measurement except **WU-12**, which shows what is left after `195881b4`:
+149 of its 157 hits and 13 of its 14 hit-carrying files are gone, and the survivor is 8 hits on one
+file. The other rows are untouched on purpose — a card that wants "hits remaining" subtracts
+`git show --name-only 195881b4` from the CSV, not from this table.
+
+**One issue per unit** (all labelled `tech-debt` + `needs-validation`): #47 WU-12 (closed by #66) · #48 WU-1 · #49 WU-4 · #50 WU-5 · #51 WU-2 · #52 WU-3 · #53 WU-6 · #54 WU-7 · #55 WU-8 · #56 WU-9 · #57 WU-10 · #58 WU-11. Tracking issue: #46.
 
 ### Ranked list
 
-1. **WU-12 — delete the 15 components no route imports** (157 hits
-   disappear with them). Cheapest PR in the gate and it stops copy work on dead files. Verified by
-   import graph: none of these is reachable from any `app/**/page.tsx` — the only caveat is
-   `components/ui/sidebar.tsx`, a shadcn primitive whose one importer is `sidebar-tooltip-fix` (also
-   dead), so deleting the pair is one change.
+1. **WU-12 — dead components (landed: 14 deleted, 8 hits left).** The cheapest unit in the gate, and it
+   is done: PR #66 deleted 14 of the 15 files at `195881b4` — 3,101 lines, 0 insertions, 149 of these
+   157 hits — and #47 is closed. `git show --stat 195881b4` is the file list; it is not repeated here,
+   because a page that prints deleted paths is the page that sends the next worker to a 404.
 
-   `components/categories/category-card.tsx` · `components/chat/chat-window.tsx` · `components/dashboard/dashboard-stats.tsx` · `components/explore/explore-featured.tsx` · `components/explore/explore-quizzes.tsx` · `components/home/create-quiz-section.tsx` · `components/home/quiz-creator-tips.tsx` · `components/home/referral-program-cta.tsx` · `components/home/top-players-alt.tsx` · `components/home/top-players.tsx` · `components/layout/sidebar-tooltip-fix.tsx` · `components/my-quizzes/quiz-preview-modal.tsx` · `components/quiz/explanation.tsx` · `components/ui/breadcrumb.tsx` · `components/ui/sidebar.tsx`
+   One file survived on purpose: `components/explore/explore-featured.tsx` (8 hits — 6 COPY, 2 MEDIA).
+   It has no importer on `main`, but `components/explore/explore-quizzes-page.tsx` imports
+   `ExploreFeatured` on #41's branch, so deleting it would delete-conflict with a mergeable PR. That is
+   not dead work: it is 8 hits that belong to whichever explore card runs next — WU-8 is the closest.
+
+   The card's original caveat was wrong in a harmless direction: it claimed the shadcn `sidebar`
+   primitive was imported only by the tooltip-fix file, so the pair had to go together. The tooltip-fix
+   file imports `./sidebar-context`, not `./sidebar`, so both were independently dead and both went.
 
 2. **WU-1 — `Player` / `LeaderboardRow` fixture** (107 hits): the six
    leaderboard islands. Unblocks /leaderboard, /daily-challenge and the two home widgets.
@@ -453,6 +499,11 @@ first and every later unit shrinks rather than grows the surface.
    They are `PageCopy` work — E23 under WU-6 — and have no home until WU-6 lands `content/pages.ts`;
    moving them into a local `const copy = {…}` would be the same literal one indentation deeper and
    would collide with that schema.
+   E21 now binds the unit instead of describing it: `data:check` reports **0** module-scope record
+   arrays and **0** copied fixture rows on `components/search/**`, `components/chat/**` and the
+   header palette, and the declared exemption for `chat-window.tsx` went with the file (#47). The 17
+   quiz titles still written into `/profile`, `/quiz/*`, `/my-quizzes/*`, `/tournaments` and
+   `/daily-challenge` are printed as debt on every run, not allowed.
 7. **WU-6 — home copy** (78): establishes `PageCopy` and the E23 ratchet, and is the template
    for 8–12.
 8. **WU-7 — shell/auth/404** (126): the second `PageCopy` consumer; also renders the footer
@@ -466,14 +517,22 @@ first and every later unit shrinks rather than grows the surface.
 
 Representative hits per unit (full list in the CSV):
 
-**WU-12** · Dead components: delete files no route imports (157 hits, 14 files)
+**WU-12** · Dead components: landed, 8 hits remain on 1 file
 
-- `components/chat/chat-window.tsx:30` — `/avatars/alex.png` → `fixture in components (contacts)`
-- `components/home/top-players-alt.tsx:15` — `/avatars/alex.png` → `fixture in components (topPlayers)`
-- `components/home/top-players.tsx:30` — `/avatars/alex.png` → `fixture in components (topPlayers)`
 - `components/explore/explore-featured.tsx:102` — `/placeholder.svg` → `media key (public/placeholder.svg)`
-- `components/explore/explore-quizzes.tsx:204` — `/placeholder.svg` → `media key (public/placeholder.svg)`
-- `components/home/create-quiz-section.tsx:33` — `/quiz-ai-illustration.png` → `media key (public/quiz-ai-illustration.png)`
+- `components/explore/explore-featured.tsx:135` — `/placeholder.svg` → `media key (public/placeholder.svg)`
+- `components/explore/explore-featured.tsx:72` — `Featured Quizzes` → `route-keyed page copy`
+- `components/explore/explore-featured.tsx:185` — `Play Now` → `route-keyed page copy`
+- The other 149 (`COPY` 107, `MOCK` 20, `MEDIA` 14, `METRIC` 8) went with their files in `195881b4`.
+  Their rows are still in the CSV — that is the frozen baseline — but no path on this page points at
+  a file the commit deleted.
+
+**Why "157 hits / 14 files" and not 15 files.** The unit was scoped as 15 files; `hits.csv` shows 157
+WU-12 rows over 14 distinct files because the fifteenth, the `components/ui` `breadcrumb` primitive,
+carries 0 hits — an unimported shadcn primitive with no literal in it, invisible to a hit count and
+deleted in the same commit. So "14" never meant "14 files to delete": it meant "14 files with at least
+one hit", and the delete list was always 15. After `195881b4` the same arithmetic reads 8 hits over 1
+file, with 149 hits and all 14 files gone.
 
 **WU-1** · People and leaderboard fixture (Player, LeaderboardRow) (107 hits, 8 files)
 
@@ -594,3 +653,10 @@ The extractor walks `components/` and `app/` with the TypeScript compiler API (`
 classifies each node by the rules above, and writes `hits.csv`. It is attached to the card that
 produced this page; the rules are stated in "Summary by directory" and the W-items so a reviewer can
 re-derive any tier by hand from the CSV.
+
+That extractor is not in this repo, so **nobody can re-run it against the current tree from here** —
+which is why this page keeps the `8929ec10` measurement and states WU-12's deletion as an explicit
+delta instead of quietly rewriting totals it cannot recompute. To get a live "hits remaining" figure,
+filter the CSV: `grep -v` the paths from `git show --name-only 195881b4`, or read the same filter from
+the header note. When the extractor is finally checked in, regenerate the page rather than editing
+these numbers by hand.
