@@ -8,10 +8,10 @@ no environment variables to set.
 
 ## Prerequisites
 
-| Tool | Version      | Why                                                  |
-| ---- | ------------ | ---------------------------------------------------- |
-| Node | 24, `.nvmrc` | Next 16 requires ≥ 20.9; CI reads the same file      |
-| pnpm | 12.16.1      | `pnpm-lock.yaml`; the gate refuses a different major |
+| Tool | Version      | Why                                                             |
+| ---- | ------------ | --------------------------------------------------------------- |
+| Node | 24, `.nvmrc` | Next 16 requires ≥ 20.9; CI reads the same file                 |
+| pnpm | 12.16.1      | `packageManager` + lockfile pin; the gate refuses another major |
 
 `/usr/bin/node` is 18.19.1 on many machines and shadows a newer runtime on `PATH`. A shell on 18
 cannot build this tree, and the gate stops before running a single step:
@@ -20,8 +20,8 @@ cannot build this tree, and the gate stops before running a single step:
 ✗ runtime parity: .nvmrc pins Node 24, this shell has Node v18.19.1.
 ```
 
-`nvm use` reads `.nvmrc`; without nvm, put a Node 24 `bin` directory first on `PATH`. Check
-`node -v && pnpm -v` before anything else.
+`nvm use` reads `.nvmrc`, but only in an interactive shell; in a script or an agent shell, put a
+Node 24 `bin` directory first on `PATH`. Check `node -v && pnpm -v` before anything else.
 
 ## Install, dev, build
 
@@ -90,6 +90,7 @@ references a route or a file that does not exist.
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | [AGENTS.md](AGENTS.md)                                           | command table with verified results, conventions, pitfalls               |
 | [docs/ENV-SPEC.md](docs/ENV-SPEC.md)                             | environment, team, integrations, the P1–P4 stage gates and exit criteria |
+| [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)                   | how the orchestrating agent asks, queues work and recovers               |
 | [docs/GATE.md](docs/GATE.md)                                     | gate baseline, first-pass yield, required-check ruleset                  |
 | [docs/REPO-LAYERS.md](docs/REPO-LAYERS.md)                       | lane table, classifier rules, build semaphore                            |
 | [docs/DATA-MODEL.md](docs/DATA-MODEL.md)                         | the content model: entities, invariants, strictness                      |
