@@ -1,4 +1,5 @@
 import { TournamentPage } from "@/components/tournaments/tournament-page";
+import { shellPageCopy } from "@/data/pages/shell";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Tournaments() {
-  return <TournamentPage />;
+  return <TournamentPage shellCopy={shellPageCopy} />;
 }

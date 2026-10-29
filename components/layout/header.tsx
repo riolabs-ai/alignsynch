@@ -11,11 +11,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { formatMetricValue } from "@/content/metrics";
+import type { PageCopy } from "@/content/pages";
 import { recentMessages } from "@/data/chat-data";
 import { metric } from "@/data/metrics";
 import { notifications } from "@/data/notifications";
 import { searchIndex } from "@/data/searchdata";
 import { querySearchIndex } from "@/content/search";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import {
   Bell,
   FileQuestion,
@@ -45,7 +47,16 @@ import { Badge } from "../ui/badge";
 import { useSidebar } from "./sidebar-context";
 import { media } from "@/data/media";
 
-export function Header() {
+export function Header({ copy }: { copy: PageCopy }) {
+  // The shell's copy, resolved here rather than in each band: `data/pages/shell.ts`
+  // owns the words, this file owns which ids it renders. A renamed id is a red build
+  // (E23) and a blank header would be the alternative.
+  const searchCopy = sectionOf(copy, "search");
+  const accountCopy = sectionOf(copy, "account");
+  const themeCopy = sectionOf(copy, "theme");
+  const notificationsCopy = sectionOf(copy, "notifications");
+  const messagesCopy = sectionOf(copy, "messages");
+
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -144,7 +155,7 @@ export function Header() {
             <Input
               ref={searchInputRef}
               type="search"
-              placeholder="Search quizzes, categories, creators..."
+              placeholder={itemLabel(searchCopy, "placeholder")}
               className="w-full rounded-md border-0 bg-muted pl-8 focus-visible:ring-0 focus-visible:ring-offset-0"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -160,15 +171,19 @@ export function Header() {
                 {!searchQuery.trim() ? (
                   <div className="p-4 text-center text-muted-foreground">
                     <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Type to search for quizzes, categories, creators, and more...</p>
+                    <p>{itemLabel(searchCopy, "hint")}</p>
                   </div>
                 ) : (
                   <>
                     {Object.entries(searchResults).every(([_, items]) => items.length === 0) ? (
                       <div className="p-4 text-center text-muted-foreground">
                         <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No results found for "{searchQuery}"</p>
-                        <p className="text-sm mt-1">Try different keywords or check spelling</p>
+                        <p>
+                          {fillLabel(itemLabel(searchCopy, "empty-title"), {
+                            query: searchQuery,
+                          })}
+                        </p>
+                        <p className="text-sm mt-1">{itemLabel(searchCopy, "empty-hint")}</p>
                       </div>
                     ) : (
                       <>
@@ -177,7 +192,7 @@ export function Header() {
                           <div className="mb-4">
                             <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
                               <FileQuestion className="h-4 w-4" />
-                              <span>Quizzes</span>
+                              <span>{itemLabel(searchCopy, "group-quizzes")}</span>
                             </div>
                             <div className="mt-1">
                               {searchResults.quizzes.map((quiz) => (
@@ -215,7 +230,7 @@ export function Header() {
                           <div className="mb-4">
                             <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
                               <Tag className="h-4 w-4" />
-                              <span>Categories</span>
+                              <span>{itemLabel(searchCopy, "group-categories")}</span>
                             </div>
                             <div className="mt-1">
                               {searchResults.categories.map((category) => (
@@ -235,7 +250,9 @@ export function Header() {
                                     <p className="font-medium">{category.name}</p>
                                   </div>
                                   <Badge variant="outline" className="text-xs font-normal">
-                                    {category.count} quizzes
+                                    {fillLabel(itemLabel(searchCopy, "count-quizzes"), {
+                                      count: category.count,
+                                    })}
                                   </Badge>
                                 </Link>
                               ))}
@@ -248,7 +265,7 @@ export function Header() {
                           <div className="mb-4">
                             <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
                               <Users className="h-4 w-4" />
-                              <span>Creators</span>
+                              <span>{itemLabel(searchCopy, "group-creators")}</span>
                             </div>
                             <div className="mt-1">
                               {searchResults.creators.map((creator) => (
@@ -271,7 +288,9 @@ export function Header() {
                                     </p>
                                   </div>
                                   <Badge variant="outline" className="text-xs font-normal">
-                                    {creator.quizCount} quizzes
+                                    {fillLabel(itemLabel(searchCopy, "count-quizzes"), {
+                                      count: creator.quizCount,
+                                    })}
                                   </Badge>
                                 </Link>
                               ))}
@@ -284,7 +303,7 @@ export function Header() {
                           <div className="mb-2">
                             <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
                               <FileText className="h-4 w-4" />
-                              <span>Pages</span>
+                              <span>{itemLabel(searchCopy, "group-pages")}</span>
                             </div>
                             <div className="mt-1">
                               {searchResults.pages.map((page) => (
@@ -319,7 +338,7 @@ export function Header() {
                             }}
                           >
                             <Search className="h-4 w-4 mr-2" />
-                            View all results for "{searchQuery}"
+                            {fillLabel(itemLabel(searchCopy, "view-all"), { query: searchQuery })}
                           </Button>
                         </div>
                       </>
@@ -360,7 +379,7 @@ export function Header() {
             )}
           </Button>
 
-          <ThemeToggle />
+          <ThemeToggle label={itemLabel(themeCopy, "toggle")} />
 
           <Link
             href="/dashboard/user?tab=wallet"
@@ -377,7 +396,7 @@ export function Header() {
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={media["avatars.brain"].src} alt="User" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarFallback>{itemLabel(accountCopy, "initials")}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -386,14 +405,18 @@ export function Header() {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-16 w-16">
                     <AvatarImage src={media["avatars.brain"].src} alt="User" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarFallback>{itemLabel(accountCopy, "initials")}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-lg font-semibold">Jonathan Doe</h3>
-                    <p className="text-sm text-muted-foreground">@johndoe</p>
+                    <h3 className="text-lg font-semibold">
+                      {itemLabel(accountCopy, "display-name")}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {itemLabel(accountCopy, "display-handle")}
+                    </p>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Mail className="h-3 w-3" />
-                      <span>info@quizhub.com</span>
+                      <span>{itemLabel(accountCopy, "display-email")}</span>
                     </div>
                   </div>
                 </div>
@@ -408,8 +431,10 @@ export function Header() {
                       <User className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span>My Profile</span>
-                      <span className="text-xs text-muted-foreground">Account settings</span>
+                      <span>{itemLabel(accountCopy, "profile")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {itemLabel(accountCopy, "profile-hint")}
+                      </span>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -419,8 +444,10 @@ export function Header() {
                       <TrendingUp className="h-4 w-4 text-purple-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span>Dashboard</span>
-                      <span className="text-xs text-muted-foreground">Your activity and stats</span>
+                      <span>{itemLabel(accountCopy, "dashboard")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {itemLabel(accountCopy, "dashboard-hint")}
+                      </span>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -430,8 +457,10 @@ export function Header() {
                       <MessageCircleQuestion className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span>My Quizes</span>
-                      <span className="text-xs text-muted-foreground">Your created quizes</span>
+                      <span>{itemLabel(accountCopy, "quizzes")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {itemLabel(accountCopy, "quizzes-hint")}
+                      </span>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -442,8 +471,10 @@ export function Header() {
                       <Settings className="h-4 w-4 text-gray-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span>Settings</span>
-                      <span className="text-xs text-muted-foreground">Preferences</span>
+                      <span>{itemLabel(accountCopy, "settings")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {itemLabel(accountCopy, "settings-hint")}
+                      </span>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -454,8 +485,10 @@ export function Header() {
                       <Moon className="h-4 w-4 text-purple-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span>Dark Mode</span>
-                      <span className="text-xs text-muted-foreground">Toggle theme</span>
+                      <span>{itemLabel(accountCopy, "dark-mode")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {itemLabel(accountCopy, "dark-mode-hint")}
+                      </span>
                     </div>
                   </div>
                   <Switch
@@ -469,7 +502,7 @@ export function Header() {
                 <Button variant="destructive" className="w-full justify-center" asChild>
                   <Link href="/login" className="flex items-center gap-2">
                     <LogOut className="h-4 w-4" />
-                    <span>Log out</span>
+                    <span>{itemLabel(accountCopy, "logout")}</span>
                   </Link>
                 </Button>
               </div>
@@ -489,6 +522,7 @@ export function Header() {
 
       {/* Messages Drawer */}
       <ChatDrawer
+        copy={messagesCopy}
         setIsMessagesDrawerOpen={setIsMessagesDrawerOpen}
         isMessagesDrawerOpen={isMessagesDrawerOpen}
         handleMessageClick={handleMessageClick}
@@ -496,6 +530,7 @@ export function Header() {
 
       {/* Notifications Drawer */}
       <NotificationDrawer
+        copy={notificationsCopy}
         handleNotificationClick={handleNotificationClick}
         isNotificationsDrawerOpen={isNotificationsDrawerOpen}
         markAllNotificationsAsRead={markAllNotificationsAsRead}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Footer } from "@/components/layout/footer";
 import CreatorTipsPage from "@/components/creator-tips/creator-tips-page";
+import { shellPageCopy } from "@/data/pages/shell";
 
 export const metadata: Metadata = {
   title: "Quiz Creator Tips - Learn How to Create Better Quizzes",
@@ -12,7 +13,7 @@ export default function CreatorTips() {
   return (
     <>
       <CreatorTipsPage />
-      <Footer />
+      <Footer copy={shellPageCopy} />
     </>
   );
 }
