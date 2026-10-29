@@ -47,5 +47,11 @@ jobs:
       # `bash scripts/verify.sh` runs, in the same order, on the same pinned
       # runtime. A check that exists only in this file is a red push; a check that
       # exists only in the script is a red CI run. One definition, two callers.
+      #
+      # GATE_LANE=auto is the lane classifier (docs/REPO-LAYERS.md). On a
+      # depth-1 checkout there is no origin/main to diff against, so auto
+      # resolves to the code lane here: CI is the last gate and runs everything.
       - name: verify (bash scripts/verify.sh)
+        env:
+          GATE_LANE: auto
         run: bash scripts/verify.sh

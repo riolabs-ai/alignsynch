@@ -9,12 +9,12 @@ that `lint` or `format:check` failed was after the push. CI is ~55 s; the loop a
 
 ## What exists now
 
-| File                         | Role                                                                                                                          |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/verify.sh`          | the whole gate: `deps → typecheck → lint → format:check → data:check → test → build`, stops at the first failure and names it |
-| `.github/workflows/ci.yml`   | sets up pnpm + Node from `.nvmrc`, then runs `bash scripts/verify.sh`. No check steps of its own                              |
-| `scripts/git-hooks/pre-push` | execs `scripts/verify.sh`; no checks of its own                                                                               |
-| `scripts/install-hooks.sh`   | `git config core.hooksPath scripts/git-hooks` — versioned hooks, no stale copies                                              |
+| File                         | Role                                                                                                                                   |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/verify.sh`          | the gate: `deps → typecheck → lint → format:check → data:check → test → build`, depth by lane, stops at the first failure and names it |
+| `.github/workflows/ci.yml`   | sets up pnpm + Node from `.nvmrc`, then runs `bash scripts/verify.sh`. No check steps of its own                                       |
+| `scripts/git-hooks/pre-push` | execs `scripts/verify.sh`; no checks of its own                                                                                        |
+| `scripts/install-hooks.sh`   | `git config core.hooksPath scripts/git-hooks` — versioned hooks, no stale copies                                                       |
 
 `data:check` and `test` are conditional on `package.json` having that script. On `main`
 today neither exists (they arrive with the content-model stack), so the gate prints
@@ -27,6 +27,22 @@ not by documentation. A wrong runtime exits 1 before any step runs.
 Markdown is formatter-gated too: Biome 2 formats `.md`, so a hand-wrapped doc can fail
 `lint` before any code is touched. After editing `AGENTS.md` or `docs/`, run
 `pnpm format --write` (or `pnpm exec biome format --write <file>`) before the gate.
+
+## Lanes: the gate costs what the change costs
+
+`scripts/verify.sh` classifies the diff against `origin/main` and prints
+`lane=docs|content|config|code`. The lane picks **depth**, never the check context: a
+docs-only change runs `git diff --check` + relative links + biome (~2 s), a `content/**`
+change runs typecheck + `data:check` and **skips `next build`**, and only
+`app|components|lib|hooks` pays for the build. `GATE_LANE=full bash scripts/verify.sh`
+forces the full gate. CI still runs one job named `typecheck / lint / build`, and on CI
+`auto` resolves to the code lane because a depth-1 checkout has no `origin/main` to diff
+against.
+
+`next build` is capped at `QUIZHUB_BUILD_SLOTS` (default 2) concurrent builds by `flock`
+under `~/.cache/quizhub/`: eight workers compiling at once took load from ~6 to 39.5 and
+stretched this gate to 145 s. The layer table, the classifier rules and the lock are in
+**`docs/REPO-LAYERS.md`**.
 
 ## Baseline, measured 2026-10-29 (before the gate)
 

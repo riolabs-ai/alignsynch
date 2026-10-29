@@ -25,6 +25,7 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 
 | Command                          | Verified             | Notes                                                                                                      |
 | -------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/REPO-LAYERS.md)                                   |
 | `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                                                   |
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                             |
 | `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                              |
@@ -58,6 +59,14 @@ code): `deps (pnpm install --frozen-lockfile)` → `typecheck` (`next typegen &&
 `test` → `build` (`next build`). `data:check` and `test` run only when `package.json`
 defines that script; otherwise they are skipped with a visible `○ … skipped` line, so the
 same script is correct on `main` (no `data:check` yet) and on branches that carry it.
+
+The gate costs what the change costs: it prints `lane=docs|content|config|code` and drops
+the steps that cannot see a file in the diff — a `docs/`-only change is ~2 s, a
+`content/` change skips `next build`, and only `app/`, `components/`, `lib/` or `hooks/`
+pay for the build. A lane is depth, never a different check, and CI's job name is
+unchanged. Force the full gate with `GATE_LANE=full bash scripts/verify.sh` (after a
+dependency bump, a `tsconfig` change, or any diff you do not trust). Layer table,
+classifier and build semaphore: **`docs/REPO-LAYERS.md`**.
 
 CI (`.github/workflows/ci.yml`) runs **only** `bash scripts/verify.sh`. Never add a check
 step to the YAML — a check that lives only in CI is a guaranteed red push, and a check
