@@ -7,6 +7,8 @@ import { formatCurrency, formatPlayerCount } from "@/content/core";
 import { type RankTitle, rankTitleOf } from "@/content/people";
 import { avatarSrcOf, leaderboardEntries } from "@/lib/players";
 import cardCover from "@/public/card-cover.png";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { Award, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,13 +35,13 @@ const RANK_TITLE_VARIANTS: Record<RankTitle, BadgeProps["variant"]> = {
 /** A profile stat the fixture does not carry is a dash, never an invented zero. */
 const orDash = (value: string | undefined) => value ?? "—";
 
-export function TopPlayersCarousel() {
+export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
   return (
     <section className="space-y-4 px-4 xl:px-8 bg-indigo-50 dark:bg-slate-900 py-10">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Award className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold tracking-tight">Top Players</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="prev-player">
@@ -129,13 +131,13 @@ export function TopPlayersCarousel() {
                               {entry.rank}
                             </div>
                           </div>
-                          <p className="text-xs text-muted-foreground">Rank</p>
+                          <p className="text-xs text-muted-foreground">{itemLabel(copy, "rank")}</p>
                         </div>
                         <div className="space-y-1">
                           <p className="font-semibold text-foreground">
                             {orDash(stats?.wins.toString())}
                           </p>
-                          <p className="text-xs text-muted-foreground">Wins</p>
+                          <p className="text-xs text-muted-foreground">{itemLabel(copy, "wins")}</p>
                         </div>
                         <div className="space-y-1">
                           <p className="font-semibold text-green-600">
@@ -143,7 +145,9 @@ export function TopPlayersCarousel() {
                               ? "—"
                               : formatCurrency(stats.winningsCents, { trimZeroCents: true })}
                           </p>
-                          <p className="text-xs text-muted-foreground">Earned</p>
+                          <p className="text-xs text-muted-foreground">
+                            {itemLabel(copy, "earned")}
+                          </p>
                         </div>
                       </div>
 
@@ -152,7 +156,7 @@ export function TopPlayersCarousel() {
                         <div className="flex flex-col items-center bg-muted/80 rounded-lg p-2">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                             <Users className="h-3 w-3" />
-                            <span>Followers</span>
+                            <span>{itemLabel(copy, "followers")}</span>
                           </div>
                           <p className="font-semibold">
                             {orDash(
@@ -163,7 +167,7 @@ export function TopPlayersCarousel() {
                         <div className="flex flex-col items-center bg-muted/80 rounded-lg p-2">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                             <Users className="h-3 w-3" />
-                            <span>Following</span>
+                            <span>{itemLabel(copy, "following")}</span>
                           </div>
                           <p className="font-semibold">
                             {orDash(
@@ -182,9 +186,11 @@ export function TopPlayersCarousel() {
       </div>
 
       <div className="flex justify-center">
-        <Button variant="outline" asChild>
-          <Link href="/leaderboard">View Full Leaderboard</Link>
-        </Button>
+        {copy.cta && (
+          <Button variant="outline" asChild>
+            <Link href={copy.cta.href}>{copy.cta.label}</Link>
+          </Button>
+        )}
       </div>
     </section>
   );

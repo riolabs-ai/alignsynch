@@ -590,6 +590,57 @@ export function createPromotionResolver(
   };
 }
 
+/**
+ * The one campaign for **one slot** of a quiz (B-01). The slot-keyed sibling of
+ * `activePromotionFor`, and the one a shelf uses: an overlay authored for
+ * `explore-page/popular[1]` must not leak into `explore-featured/popular[1]`, and a
+ * quiz merchandised twice cannot be told apart without the slot.
+ *
+ * This is safe against A3 (one prize per quiz at a time) because E16 fails the build
+ * when two concurrent overlays of one quiz disagree on any engagement key, so
+ * whichever slot answers, the numbers agree.
+ */
+export function activePromotionForSlot(
+  quiz: Quiz,
+  promotions: readonly QuizPromotion[],
+  slot: string,
+  now: Date = new Date(),
+): QuizPromotion | undefined {
+  return promotions.find(
+    (promotion) =>
+      promotion.quizId === quiz.id &&
+      promotion.slot === slot &&
+      isPromotionActive(promotion, quiz, now),
+  );
+}
+
+/**
+ * Bind the collections once for a slot surface — a shelf, a merchandised grid —
+ * so every card at position *i* asks the same question with the same index:
+ * `resolve(quizId, slot, now)`. `now` stays a parameter (D9): the resolver carries
+ * no clock of its own.
+ *
+ * Indexed by `(quizId, slot)` so a 60-card page costs one lookup per card. A
+ * duplicate pair cannot shadow another here: E14 fails the build first, and E17
+ * rejects a pair whose slot no shelf renders.
+ */
+export function createSlotPromotionResolver(
+  quizzes: readonly Quiz[],
+  promotions: readonly QuizPromotion[],
+): (quizId: string, slot: string, now?: Date) => QuizPromotion | undefined {
+  const quizById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+  const bySlot = new Map<string, QuizPromotion>();
+  for (const promotion of promotions) {
+    bySlot.set(`${promotion.quizId}\u0000${promotion.slot}`, promotion);
+  }
+  return (quizId, slot, now = new Date()) => {
+    const quiz = quizById.get(quizId);
+    const promotion = bySlot.get(`${quizId}\u0000${slot}`);
+    if (quiz === undefined || promotion === undefined) return undefined;
+    return isPromotionActive(promotion, quiz, now) ? promotion : undefined;
+  };
+}
+
 function categoriesOf(
   quiz: Pick<Quiz, "categoryIds">,
   resolve?: CategoryNameResolver,

@@ -3,13 +3,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatCurrency, formatRelative } from "@/content/core";
+import type { PageCopySection } from "@/content/pages";
 import type { WinEventRow } from "@/content/people";
+import { itemLabel } from "@/lib/page-copy";
 import { avatarSrcOf } from "@/lib/players";
 import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 interface LiveWinnersProps {
+  /** The band's words, from the home `PageCopy` fixture (WU-6) — never a literal in this view. */
+  copy: PageCopySection;
   /**
    * The newest wins, already joined to their player and quiz title. The home page is a server
    * component and resolves them (`lib/win-feed.ts`), so this surface reads the fixture without
@@ -20,7 +24,7 @@ interface LiveWinnersProps {
   wins: WinEventRow[];
 }
 
-export function LiveWinners({ wins }: LiveWinnersProps) {
+export function LiveWinners({ copy, wins }: LiveWinnersProps) {
   return (
     <section className="space-y-4 bg-slate-50 dark:bg-slate-900 py-6 px-4 xl:px-8">
       <div className="flex items-center justify-between">
@@ -29,10 +33,10 @@ export function LiveWinners({ wins }: LiveWinnersProps) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
           </span>
-          <h2 className="text-2xl font-bold tracking-tight">Live Winners</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
         </div>
         <Badge variant="outline" className="bg-green-50 dark:bg-green-500">
-          {wins.length} recent winners
+          {wins.length} {itemLabel(copy, "recent-winners")}
         </Badge>
       </div>
 
@@ -74,11 +78,11 @@ export function LiveWinners({ wins }: LiveWinnersProps) {
                 <div className="mt-3 flex items-center gap-2">
                   <span className="text-xl">💰</span>
                   <p className="text-sm">
-                    Won{" "}
+                    {itemLabel(copy, "won")}{" "}
                     <span className="font-semibold text-green-600">
                       {formatCurrency(event.amountCents)}
                     </span>{" "}
-                    playing <span className="font-medium">"{quizTitle}"</span>
+                    {itemLabel(copy, "playing")} <span className="font-medium">"{quizTitle}"</span>
                   </p>
                 </div>
               </Card>

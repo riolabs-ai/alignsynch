@@ -15,6 +15,7 @@
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { createRequire } from "node:module";
 
 import { zArticleCollection, zKbArticle, zNewsArticle, zTip } from "../content/article";
 import {
@@ -31,9 +32,14 @@ import {
   zQuiz,
   zQuizAuthoringCard,
   zQuizCard,
+  zQuizPromotion,
   selectQuizAuthoringCard,
   selectQuizCard,
+  type Question,
+  type Quiz,
+  type QuizPromotion,
 } from "../content/quiz";
+import { zQuizComment, zQuizResult, zQuizReview } from "../content/quiz-result";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
 import { matchRoute, normalizePath } from "../content/route-manifest";
 import {
@@ -64,9 +70,16 @@ import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
 import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
 import { media } from "../data/media";
+import { quizComments } from "../data/quiz-comments";
+import { quizResults } from "../data/quiz-results";
+import { quizReviews } from "../data/quiz-reviews";
 import { leaderboards, players, winEvents } from "../data/players";
 import { promotionFindings } from "./data-check-promotions";
 import { peopleFindings } from "./data-check-people";
+import { COPY_LITERAL_MAX, copyProblems, measureRoute } from "./copy-refs";
+import { pageCopies } from "../data/pages";
+import { pageCopyBudget } from "../data/pages/budget";
+import { copiedFixtureText, moduleRecordArrays } from "./island-refs";
 import {
   danglingEntries,
   registryProblems,
@@ -94,6 +107,36 @@ const err = (code: string, message: string) =>
   diagnostics.push({ code, severity: "error", message });
 const warn = (code: string, message: string) =>
   diagnostics.push({ code, severity: "warn", message });
+
+const nodeRequire = createRequire(__filename);
+
+/**
+ * The generated fixtures (P3 bulk variation) are gitignored and present only after
+ * `pnpm gen`. When the source file exists, its compiled CommonJS module — produced by the
+ * same `tsc -p tsconfig.datacheck.json` that compiled this validator — is required and its
+ * exported array returned; when it is absent the generated set is simply empty. A present
+ * but unloadable module is an E20 error, never a silent skip.
+ */
+function loadGenerated<T>(label: string, exportName: string): readonly T[] {
+  const source = join(process.cwd(), "data", "generated", `${label}.ts`);
+  if (!existsSync(source)) return [];
+  let moduleValue: unknown;
+  try {
+    moduleValue = nodeRequire(join(__dirname, "..", "data", "generated", label));
+  } catch (cause) {
+    err(
+      "E20",
+      `data/generated/${label}.ts exists but its compiled module failed to load: ${String(cause)}`,
+    );
+    return [];
+  }
+  const value = (moduleValue as Record<string, unknown>)[exportName];
+  if (!Array.isArray(value)) {
+    err("E20", `data/generated/${label}.ts must export \`${exportName}\` as an array`);
+    return [];
+  }
+  return value as T[];
+}
 
 /* ------------------------------------------------------------------ *
  * E0 — per-record schema
@@ -154,6 +197,27 @@ for (const [label, table] of [
 }
 
 /* ------------------------------------------------------------------ *
+ * P3 — generated fixtures (bulk variation), validated when present
+ *
+ * `pnpm gen` writes `data/generated/quizzes.ts` + `promotions.ts`, which are
+ * gitignored. When the files exist the records are folded into every collection
+ * check below, so a generated record is held to exactly the same invariants as a
+ * hand-authored one; when they are absent `allQuizzes === quizzes` and this
+ * validator behaves as it did before P3.
+ * ------------------------------------------------------------------ */
+
+const generatedQuizRecords = loadGenerated<Quiz>("quizzes", "generatedQuizzes");
+const generatedPromotionRecords = loadGenerated<QuizPromotion>("promotions", "generatedPromotions");
+const generatedQuizzes = validateCollection("E0", "generated quiz", zQuiz, [
+  ...generatedQuizRecords,
+]);
+const generatedPromotions = validateCollection("E0", "generated promotion", zQuizPromotion, [
+  ...generatedPromotionRecords,
+]);
+const allQuizzes = [...quizzes, ...generatedQuizzes];
+const allPromotions = [...promotions, ...generatedPromotions];
+
+/* ------------------------------------------------------------------ *
  * E1 — ids and slugs are unique
  * ------------------------------------------------------------------ */
 
@@ -184,13 +248,13 @@ if (!articleCollection.success) {
 assertUnique(
   "E1",
   "content ids",
-  [...quizzes, ...news, ...tipRecords, ...kbRecords],
+  [...allQuizzes, ...news, ...tipRecords, ...kbRecords],
   (row) => row.id,
 );
 assertUnique(
   "E2",
   "content slugs",
-  [...quizzes, ...news, ...tipRecords, ...kbRecords],
+  [...allQuizzes, ...news, ...tipRecords, ...kbRecords],
   (row) => `${row.kind}/${row.slug}`,
 );
 assertUnique("E1", "category ids", categoryTable, (row) => row.id);
@@ -200,7 +264,7 @@ assertUnique("E1", "category ids", categoryTable, (row) => row.id);
  * ------------------------------------------------------------------ */
 
 const questionOwners = new Map<string, string>();
-for (const quiz of quizzes) {
+for (const quiz of allQuizzes) {
   for (const question of quiz.questions) {
     const owner = questionOwners.get(question.id);
     if (owner && owner !== quiz.id)
@@ -268,7 +332,7 @@ const subjectKey = (title: string) =>
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
-assertUnique("E12", "quiz subjects", quizzes, (row) => subjectKey(row.title));
+assertUnique("E12", "quiz subjects", allQuizzes, (row) => subjectKey(row.title));
 
 /** An alias is only evidence while it stays out of the collection: if one is ever
  *  added back as a record, E12 above catches the duplicate title — this catches the
@@ -293,12 +357,14 @@ for (const quizId of Object.keys(quizAnalytics)) {
 }
 
 /* ------------------------------------------------------------------ *
- * E14/E15/E16/W6 — the promotion overlays (B-01)
+ * E14/E15/E16/E17/W6 — the promotion overlays (B-01, P3)
  *
  * The collection rules a single overlay cannot see: the join and the identity
  * (E14), the window and the prize (E15), concurrent overlays agreeing field-wise
- * (E16), and a campaign staged outside the quiz's published life (W6, a warning —
- * preparing a campaign against a draft is legitimate).
+ * (E16), the slot actually being a place a shelf renders (E17 — the rule that
+ * stops a campaign from silently never running), and a campaign staged outside
+ * the quiz's published life (W6, a warning — preparing a campaign against a
+ * draft is legitimate).
  *
  * Issue #27 numbered these E11/E12/E13, which are already taken above (shelves,
  * one record per subject, analytics keys), so they continue the set. The checks
@@ -306,7 +372,7 @@ for (const quizId of Object.keys(quizAnalytics)) {
  * a negative case in `scripts/__tests__/promotion-invariants.test.ts`.
  * ------------------------------------------------------------------ */
 
-for (const finding of promotionFindings(promotions, quizzes)) {
+for (const finding of promotionFindings(allPromotions, allQuizzes)) {
   diagnostics.push({ code: finding.rule, severity: finding.severity, message: finding.message });
 }
 
@@ -315,7 +381,7 @@ for (const finding of promotionFindings(promotions, quizzes)) {
  * ------------------------------------------------------------------ */
 
 const scopeProblems = assertCategoryScopes(
-  [...quizzes, ...news, ...tipRecords, ...kbRecords],
+  [...allQuizzes, ...news, ...tipRecords, ...kbRecords],
   categoryTable,
 );
 for (const problem of scopeProblems) err("E4", problem);
@@ -713,6 +779,7 @@ function imageRefs(node: unknown, where: string, found: { where: string; src: st
 
 const fixtureImageRefs = [
   ...imageRefs(quizzes, "data/quizzes"),
+  ...imageRefs(generatedQuizzes, "data/generated/quizzes"),
   ...imageRefs(news, "data/news-data"),
   ...imageRefs(tipRecords, "data/creator-tips-data"),
   ...imageRefs(kbRecords, "data/knowledge-base-data"),
@@ -733,6 +800,238 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  * cover means adding the file (then `node scripts/gen-media.mjs`); inventing one here would
  * have made the registry describe a file that does not exist, which is what E18 forbids.
  */
+
+/* ------------------------------------------------------------------ *
+ * E23 — page copy lives in a fixture, and the budget only goes down
+ *
+ * The inventory found 1,809 page-copy strings with no home. A number in a document
+ * is not a gate, so this is the gate: for each route with a `PageCopy` fixture,
+ * attribute the files the route actually renders (its page module plus the import
+ * closure inside the directories the route declares), extract the literals they
+ * still write, and compare against the recorded budget.
+ *
+ * Two rules, because one cannot do the job:
+ *
+ *   leaf rule   a literal longer than COPY_LITERAL_MAX chars is a sentence, and a
+ *               sentence in a component is an error on its own — the diagnostic
+ *               names `file:line` and the fixture, so the fix is mechanical.
+ *   budget      the *count* may not rise, including short labels. That is what
+ *               makes the ratchet a ratchet: every later copy unit lowers one number
+ *               and cannot quietly re-add a label to buy headroom.
+ *
+ * Attribution is by reachability, not by directory listing: a file in `components/home/`
+ * that no page imports is not this route's copy, and counting it would make two cards
+ * fight over one number — deleting a dead component would look like a budget regression.
+ *
+ * The same pass proves the fixture is wired (reachable from the page module) and that
+ * every id a component asks for exists in the fixture — `sectionOf(copy, "x")` and
+ * `itemLabel(copy, "y")` throw at runtime, so a typo would otherwise be a blank band.
+ * ------------------------------------------------------------------ */
+
+const copySources: SourceFile[] = [...uiSources, ...walkSources("data")];
+
+for (const finding of copyProblems({
+  copies: pageCopies,
+  budget: pageCopyBudget,
+  sources: copySources,
+  routePatterns: ROUTE_PATTERNS,
+  resolves: (href) => resolveRoute(href).ok,
+})) {
+  err(finding.code, finding.message);
+}
+
+/** Measured per route, so the summary prints what the tree actually contains. */
+const copyMeasured = Object.entries(pageCopyBudget).map(([route, entry]) => ({
+  route,
+  budget: entry.budget,
+  measured: measureRoute(entry, copySources).literals.length,
+}));
+
+/* ------------------------------------------------------------------ *
+ * E24 — the quiz activity resolves against the quiz it names
+ *
+ * The quiz surface (detail page, review screen, discussions feed) reads three
+ * collections joined by id: results, comments, reviews. A dangling `quizId` does
+ * not throw — it renders an empty page, which is the failure mode that makes a
+ * fixture look finished while the page is blank. So the join is checked here.
+ *
+ *   * every `result.quizId` / `comment.quizId` / `review.quizId` names a `Quiz`;
+ *   * every `comment.questionId` names a question of THAT quiz, and a reply's
+ *     parent is a top-level comment on the same quiz (one level, like the UI);
+ *   * every answer in a sheet names a question of that quiz and, when the player
+ *     did not skip, an option of that question — an answer key pointing at a
+ *     renamed option is exactly the drift the option-id rule (D4) exists to stop;
+ *   * `score.total` never exceeds the quiz's question count, so a 10-answer result
+ *     cannot hang off a 5-question record;
+ *   * no instant is after the fixture clock — a card dated in the future renders
+ *     "in 2 days", the same defect E10 blocks for the social fixtures.
+ *
+ * Numbering: E20–E23 are reserved by `docs/P2-INVENTORY.md` (DUP / MOCK / METRIC /
+ * PageCopy), so the next free code is E24 rather than reusing a reserved one.
+ * ------------------------------------------------------------------ */
+
+const activityResults = validateCollection("E0", "quiz result", zQuizResult, [...quizResults]);
+const activityComments = validateCollection("E0", "quiz comment", zQuizComment, [...quizComments]);
+const activityReviews = validateCollection("E0", "quiz review", zQuizReview, [...quizReviews]);
+
+const recordById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+const questionIdsOf = new Map(
+  quizzes.map((quiz) => [
+    quiz.id,
+    new Map(quiz.questions.map((question) => [question.id, question])),
+  ]),
+);
+
+const uniqueIds = (code: string, label: string, rows: readonly { id: string }[]) => {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.id)) err(code, `${label}: duplicate id "${row.id}"`);
+    seen.add(row.id);
+  }
+};
+uniqueIds("E24", "quiz result", activityResults);
+uniqueIds("E24", "quiz comment", activityComments);
+uniqueIds("E24", "quiz review", activityReviews);
+
+for (const result of activityResults) {
+  const quiz = recordById.get(result.quizId);
+  if (quiz === undefined) {
+    err("E24", `result "${result.id}" references unknown quiz "${result.quizId}"`);
+    continue;
+  }
+  if (result.score.total > quiz.questions.length) {
+    err(
+      "E24",
+      `result "${result.id}" scores out of ${result.score.total}, but quiz "${quiz.id}" has ${quiz.questions.length} question(s)`,
+    );
+  }
+  const questions = questionIdsOf.get(quiz.id) ?? new Map<string, Question>();
+  for (const answer of result.answers ?? []) {
+    const question = questions.get(answer.questionId);
+    if (question === undefined) {
+      err(
+        "E24",
+        `result "${result.id}" answers "${answer.questionId}", which is not a question of "${quiz.id}"`,
+      );
+      continue;
+    }
+    if (
+      answer.selectedOptionId !== null &&
+      !question.options.some((option) => option.id === answer.selectedOptionId)
+    ) {
+      err(
+        "E24",
+        `result "${result.id}" selects option "${answer.selectedOptionId}" on "${question.id}" (options: ${question.options.map((option) => option.id).join(", ")})`,
+      );
+    }
+  }
+  if (new Date(result.completedAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `result "${result.id}" completed after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+const commentById = new Map(activityComments.map((comment) => [comment.id, comment]));
+for (const comment of activityComments) {
+  const quiz = recordById.get(comment.quizId);
+  if (quiz === undefined) {
+    err("E24", `comment "${comment.id}" references unknown quiz "${comment.quizId}"`);
+  } else if (comment.questionId !== undefined) {
+    const questions = questionIdsOf.get(quiz.id) ?? new Map<string, Question>();
+    if (!questions.has(comment.questionId)) {
+      err(
+        "E24",
+        `comment "${comment.id}" is about "${comment.questionId}", which is not a question of "${quiz.id}"`,
+      );
+    }
+  }
+  if (comment.parentId !== undefined) {
+    const parent = commentById.get(comment.parentId);
+    if (parent === undefined) {
+      err("E24", `comment "${comment.id}" replies to unknown comment "${comment.parentId}"`);
+    } else if (parent.quizId !== comment.quizId) {
+      err(
+        "E24",
+        `comment "${comment.id}" replies across quizzes ("${parent.quizId}" → "${comment.quizId}")`,
+      );
+    } else if (parent.parentId !== undefined) {
+      err("E24", `comment "${comment.id}" is a reply to a reply — threads are one level`);
+    }
+  }
+  if (new Date(comment.createdAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `comment "${comment.id}" created after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+for (const review of activityReviews) {
+  if (!recordById.has(review.quizId)) {
+    err("E24", `review "${review.id}" references unknown quiz "${review.quizId}"`);
+  }
+  if (new Date(review.createdAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `review "${review.id}" created after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * E21 — no component authors a search result or a chat message
+ *
+ * The P2 inventory found 68 literals in WU-3 alone: `components/search/search-results.tsx`
+ * carried 8 quizzes, 6 categories, 4 creators and 4 pages, and `components/chat/chat-window.tsx`
+ * carried 5 contacts and 6 messages. Not one of those rows existed in `data/`, so no fixture
+ * edit could reach them — the same failure the media registry (E17) closed for files.
+ *
+ * Two rules, because the defect has two shapes:
+ *
+ *   islands   a module-scope array of ≥ 2 record objects in `components/search/**` or
+ *             `components/chat/**`. Those are the two surfaces whose collections are derived
+ *             (`buildSearchIndex`, `data/chat-data.ts`), so an island there is a second
+ *             catalog by construction. The other feature directories still hold islands that
+ *             their own work unit removes; this check widens to all of `components/**` when
+ *             the last of them lands (E21 in docs/P2-INVENTORY.md is the whole-tree rule).
+ *   copies    a quiz title from the search index, or a chat message body from
+ *             `data/chat-data.ts`, written into one of the components that render them — as a
+ *             literal, a JSX text node or a comment. No baseline on these files: the count is
+ *             0 now, so every hit is a new copy.
+ *
+ * The scan itself is repo-wide and the remainder is *counted*, not ignored: 17 quiz titles are
+ * still written into `/profile`, `/quiz/*`, `/my-quizzes/*`, `/tournaments` and `/daily-challenge`
+ * components that their own units own. The summary line prints that number every run, so it
+ * ratchets down instead of disappearing.
+ * ------------------------------------------------------------------ */
+
+const E21_ISLAND_SURFACES = ["components/search/", "components/chat/"];
+
+/** The components that render search results or chat rows — the files E21 binds today. */
+const E21_COPY_SURFACES = [...E21_ISLAND_SURFACES, "components/layout/header.tsx"];
+
+const searchChatIslands = moduleRecordArrays(uiSources).filter((island) =>
+  E21_ISLAND_SURFACES.some((surface) => island.file.startsWith(surface)),
+);
+for (const island of searchChatIslands) {
+  err(
+    "E21",
+    `${island.file}:${island.line} declares the module-level array "${island.name}" (${island.records} records) — a collection belongs in data/ (or is derived in content/); import it and render it, never paste it`,
+  );
+}
+
+const fixtureText = [
+  ...searchIndex.quizzes.map((row) => row.title),
+  ...conversations.flatMap((conversation) =>
+    conversation.messages.map((message) => message.body ?? ""),
+  ),
+];
+const fixtureCopies = copiedFixtureText(uiSources, fixtureText);
+const ownedCopies = fixtureCopies.filter((copy) =>
+  E21_COPY_SURFACES.some((surface) => copy.file === surface || copy.file.startsWith(surface)),
+);
+for (const copy of ownedCopies) {
+  err(
+    "E21",
+    `${copy.file}:${copy.line} writes "${copy.value}", which is a fixture row — render it from data/searchdata.ts (buildSearchIndex) or data/chat-data.ts instead of copying it`,
+  );
+}
+
+/** Debt on surfaces another work unit owns: measured and printed, never silently allowed. */
+const e21DebtCopies = fixtureCopies.length - ownedCopies.length;
 
 /* ------------------------------------------------------------------ *
  * E24 — the people and leaderboard fixture resolves
@@ -805,7 +1104,7 @@ const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "war
  * literals. Both are already gated above (E4 scope, E5 route resolution); printing
  * the real numbers means the line can never congratulate a tree it did not check.
  */
-const unknownCategoryRefs = [...quizzes, ...news, ...tipRecords, ...kbRecords]
+const unknownCategoryRefs = [...allQuizzes, ...news, ...tipRecords, ...kbRecords]
   .flatMap((record) => record.categoryIds)
   .filter((categoryId) => !categoryIds.has(categoryId)).length;
 const deadLinks = notificationRecords.filter((record) => !resolveRoute(record.link).ok).length;
@@ -821,11 +1120,19 @@ const counts = [
   `${conversations.length} conversations`,
   `${notificationRecords.length} notifications`,
   `${promotions.length} promotions`,
+  `${activityResults.length} quiz results, ${activityComments.length} comments, ${activityReviews.length} reviews`,
   `${Object.keys(registry).length} media entries`,
+  `${Object.keys(pageCopies).length} page-copy routes`,
   `${playerRecords.length} players`,
   `${leaderboardRowCount} leaderboard rows`,
   `${winRecords.length} wins`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
+  ...(generatedQuizzes.length > 0 || generatedPromotions.length > 0
+    ? [
+        `${generatedQuizzes.length} generated quizzes`,
+        `${generatedPromotions.length} generated promotions`,
+      ]
+    : []),
 ].join(", ");
 
 /** Printed on both paths: a validator that only reports its coverage when it passes
@@ -871,6 +1178,15 @@ const assetRefs = assetReferences(uiSources);
 console.log(`PASS  ${counts}`);
 console.log(`      ${coverage}`);
 console.log(
+  `      ${copyMeasured.map((row) => `${row.route} ${row.measured}/${row.budget} page-copy literals`).join(", ")} (measured/budget, E23; a literal longer than ${COPY_LITERAL_MAX} chars is an error on its own)`,
+);
+console.log(
   `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
+);
+console.log(
+  `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
+);
+console.log(
+  `      ${e21DebtCopies} fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)`,
 );
 console.log(`      0 social instants after the fixture clock ${DEMO_NOW_ISO}`);
