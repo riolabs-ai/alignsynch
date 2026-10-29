@@ -26,11 +26,17 @@ node. That is why `content/` must never import React or Next.
 Today's output:
 
 ```
-PASS  42 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories,
-      5 contacts, 5 conversations, 6 notifications, 54 search rows
+PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories,
+      5 contacts, 5 conversations, 6 notifications, 74 search rows
       34 routes match app/, 0 unknown category ids, 0 dead links
-WARN  41  [W1] 5, [W2] 23, [W4] 13   (W3: 0)
+WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0)
 ```
+
+Repeated diagnostics are grouped by code and message template, so a gap that
+affects the whole collection prints as one line with a count instead of 98 lines.
+The 98 are real: 24 published records are card records with no questions, 42 carry
+no authored date, and 32 advertise a reward that never expires. See "D2 — the card
+grids read the model" and "Two collections, one winner".
 
 CI runs `pnpm data:check` as its own step, after typecheck and before build.
 
@@ -47,12 +53,14 @@ CI runs `pnpm data:check` as its own step, after typecheck and before build.
 | `content/social.ts`                              | `zContact`, `zMessage` (text XOR image), `zConversation`, `zNotification` + derivation helpers                                                                                                                                                     |
 | `content/route-manifest.ts`, `content/routes.ts` | the route table and the matcher that makes a dead link unrepresentable                                                                                                                                                                             |
 | `content/search.ts`                              | `buildSearchIndex()` — the search index is derived, never authored                                                                                                                                                                                 |
-| `data/quizzes.ts`                                | the whole quiz collection (42) plus `quizById` / `quizBySlug` — the only list a join may read                                                                                                                                                      |
+| `data/quizzes.ts`                                | the whole quiz collection (62) plus `quizById` / `quizBySlug` — the only list a join may read                                                                                                                                                      |
 | `data/authored-quizzes.ts`                       | the 16 card-only quizzes decision A authored (`quiz-migration.md` §10 — generated)                                                                                                                                                                 |
 | `data/created-quizzes.ts`                        | the 5 `CreatedQuiz` records (§7 — generated)                                                                                                                                                                                                       |
+| `data/browse-quizzes.ts`                         | the 20 card-only quizzes the D2 grids carried and the migration never did                                                                                                                                                                          |
+| `data/quiz-catalogue.ts`                         | curation only: 13 ordered shelf id lists + `catalogueAliases`; no `Quiz` records                                                                                                                                                                   |
 | `scripts/data-check.ts`                          | the validator: per-record schema pass, then the collection-level invariants                                                                                                                                                                        |
 | `scripts/__tests__/data-model.test.ts`           | 28 negative tests; one per drift class                                                                                                                                                                                                             |
-| `scripts/__tests__/quiz-collection.test.ts`      | 14 collection tests: the 42 records, the frozen slugs, the Science overlay case                                                                                                                                                                    |
+| `scripts/__tests__/quiz-collection.test.ts`      | the 62 records, the frozen slugs, the Science overlay case, one record per subject                                                                                                                                                                 |
 
 Every object in `content/` is `.strict()`: an unknown key is an error. That is the
 mechanism, not a style choice — a field added to a fixture without a schema entry
@@ -143,6 +151,11 @@ fixtures never had to make: **a date is not a time.** Precisely:
   drew the newest two rows as `"in 1 hour"` and `"in 22 minutes"`. `E9`-style enforcement
   is not available here (the anchor is a policy, not a schema), so this paragraph is the
   rule: author instants backwards from the migration instant, never forwards from it.
+  **The one exception is an expiry.** `data/quiz-catalogue`'s `limitedTimeEndsAt`
+  values are anchored at the same instant and deliberately point forward (12h, 24h,
+  36h, 48h after it), because a window that had already closed would render every
+  limited-time card as expired. A future _expiry_ is a countdown; a future
+  _presence_ or _creation_ instant is the D9 bug this paragraph forbids.
 - **The anchor ages.** These are static fixtures and `formatRelative` runs at render time,
   so today's `"10m ago"` reads `"3 weeks ago"` next month. That is the honest reading of a
   frozen snapshot; the alternative — computing `Date.now()` at module import — makes the
@@ -200,6 +213,134 @@ draft and a stored record cannot diverge. `components/quiz/quiz-play.tsx` reads
 (`PlayQuestion`), and renderer views are never named `Quiz` — `E9` now fails the
 build if one is.
 
+## D2 — the card grids read the model
+
+`selectQuizCard()` and `selectQuizAuthoringCard()` existed but no shipped component
+called them: the home, explore, category and my-quizzes grids each re-authored the
+same quizzes as card literals, with up to five different engagement snapshots for
+one quiz (`World Geography Challenge` was 285/300 on four surfaces and 42 plays on
+the dashboard). That is the rest of D2.
+
+**Direction, per surface** (written before the edits):
+
+| surface                                             | direction    | source                                                                                |
+| --------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------- |
+| home: featured, latest, by-difficulty               | model-backed | `data/quiz-catalogue.ts` shelves `homeFeatured`, `homeLatest`, `homeEasy/Medium/Hard` |
+| explore: featured, all quizzes, list, featured page | model-backed | shelves `exploreTrending/Popular/New`, `exploreAll`, `featuredTrending/Popular/New`   |
+| categories: detail page                             | model-backed | shelf `exploreAll` (the page's category filter is deferred, see below)                |
+| my-quizzes: grid + list                             | model-backed | shelf `myQuizzes` via `selectQuizAuthoringCard` + `data/quiz-analytics.ts`            |
+| dashboard: recent quizzes, my-quizzes dashboard     | model-backed | shelf `myQuizzes` via `selectQuizAuthoringCard`                                       |
+| my-quizzes / quiz detail pages                      | **deferred** | question-level surfaces, see `## Deferred`                                            |
+| profile: created quizzes                            | **deferred** | profile domain, see `## Deferred`                                                     |
+
+**What is authored now, and what is not.** A _shelf_ is an ordered list of quiz ids
+(curation: which quiz sits in which carousel). The card itself is always a
+projection — `lib/quiz-cards.ts` is the only place a component touches a card
+shape. `profile-created-quizzes.tsx`'s local `QuizCard` component was renamed
+`ProfileQuizCard` rather than reused; there is no second card type.
+
+**Field mapping** (card literal → model), applied to the 20 card records that became
+`data/browse-quizzes.ts` and to the 7 aliased ids that resolve to a record the
+migration already owned:
+
+| card literal                                      | model                                                                      | note                                                                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `id: 1..18`                                       | `id: "quiz-<slug>"`                                                        | D3; `slug` is the title, kebab-cased                                                                                   |
+| `title`                                           | `title`                                                                    | unchanged                                                                                                              |
+| —                                                 | `summary`                                                                  | **new**: required by the schema, never rendered on a card                                                              |
+| `image` / `img`                                   | `cover.src`                                                                | `alt` is the title                                                                                                     |
+| `category: "Mathematics"`                         | `categoryIds: ["math"]` + taxonomy label                                   | the fixture's free-text label is not a join key (D6/D7)                                                                |
+| `category: "Entertainment"` on the space quiz     | `["space"]`                                                                | the label contradicted the quiz                                                                                        |
+| `difficulty: "Medium"`                            | `difficulty: "medium"`                                                     | D5                                                                                                                     |
+| `createdBy` / `creatorAvatar`                     | `author.name` / `author.avatar`                                            | `PersonRef`, no invented ids (D17)                                                                                     |
+| `timeLimit: 15` (minutes)                         | `settings.timeLimitSeconds: 900`                                           | D1                                                                                                                     |
+| `status: "active" \| "draft" \| "completed"`      | `published \| draft \| archived`                                           | three vocabularies → one                                                                                               |
+| `players`                                         | `stats.plays`                                                              |                                                                                                                        |
+| `maxPlayers`                                      | `stats.capacity`                                                           |                                                                                                                        |
+| `spotsLeft`, `almostFull`                         | **derived** (`capacity - plays`, ratio ≤ 10%)                              | never authored again                                                                                                   |
+| `reward: "$5.00"` / `reward: 5`                   | `stats.rewardCents: 500`                                                   | one money unit                                                                                                         |
+| `rating`, `totalRatings`                          | `stats.rating`, `stats.ratingCount`                                        |                                                                                                                        |
+| `badge: { type, label }`                          | `stats.badge`                                                              | unchanged                                                                                                              |
+| `limitedTime: true, expiresIn: 172800`            | `stats.limitedTimeEndsAt: <instant>`                                       | **not** a stored duration: anchored at the demo epoch `2026-10-29T12:00Z` + the original duration (48h, 36h, 24h, 12h) |
+| `recentPlayers`                                   | `stats.recentPlayers`                                                      | `PersonRef[]`                                                                                                          |
+| `createdAt`, `lastUpdated`                        | `createdAt`, `stats.updatedAt`                                             |                                                                                                                        |
+| `stats.completionRate`, `averageScore`, `revenue` | `data/quiz-analytics.ts` (→ `QuizAnalytics`, incl. the new `revenueCents`) | engagement, not content (D11)                                                                                          |
+
+Two projection fields were added because cards render them and the projections did
+not carry them: `timeLimitSeconds` (all cards print "20 min") and, on the authoring
+card, `capacity` + `spotsLeft` (the seat bar). `QuizAnalytics.revenueCents` is the
+one content-model addition: authoring earnings sat next to `averageScore` in the
+fixture, and dropping them would have deleted a shipped metric.
+
+**Conflicts the consolidation forced** (one truth instead of five snapshots; the
+losing values are in `ledger.json` and were not invented):
+
+- `Science Quiz: Space Exploration`: 2,453/3,000 players, `$10.00`, "Entertainment",
+  no difficulty (home + featured pages) **vs** 178/500, `$7.50`, Science, Hard
+  (explore, category, my-quizzes). **Superseded by B-01:** the record keeps the
+  catalogue's 2,453/3,000 · `$10.00` · `MarvelFan`; 2,105/2,500 · `$7.50` ·
+  `CosmicMind` is a **per-slot promotion overlay** (`zQuizPromotion`), not a second
+  record. The card still shows those numbers where the slot carries the campaign.
+- `Literature: Classic Novels`: 1,298/1,500 vs 298/300 vs 300/300. The authoring
+  surface wins, which is also the only one that says `completed`.
+- `Math Puzzles & Problems`: 156 plays vs 0 (it is a draft with 0% completion and
+  `$0` revenue on the authoring surface). The draft wins.
+- `Music Through the Decades` 1,000 → 300 seats, `Technology & Gadgets` 1,000 → 250,
+  `Sports Trivia Challenge` 1,000 → 250 (the marketing cards overstated capacity).
+- Dashboard `plays` 42/28/15/8 → the collection's 285/178/412/0.
+- `Sports Trivia Challenge`'s slug collides with the generator template of the same
+  title, so the card folds onto that frozen record: `quiz-sports-trivia` is a
+  `catalogueAlias` for `quiz-11`, not an id of its own (E2 enforces the slug, E12
+  keeps the alias out of the collection).
+
+**Authoring that was unavoidable, and is recorded as such:** `summary` on every
+record (schema-required, never displayed); `difficulty` on the nine featured-page
+records that carried none; `competition`-free defaults for `timeLimitSeconds` on the
+13 marketing records that never stated a duration (`0` = no limit, the model's own
+encoding of "not stated").
+
+### Two collections, one winner
+
+`d2/card-projections` and `feat/b01-quiz-data` each landed a `Quiz[]` collection and
+neither tree could see the other. Merged, they are a red build (E1), not a drift, so
+one had to win per record. Measured on the two modules:
+
+| module                                                            | records |
+| ----------------------------------------------------------------- | ------- |
+| `data/quizzes.ts` (mock 20 + current 1 + created 5 + authored 16) | 42      |
+| the D2 catalogue that became `data/browse-quizzes.ts`             | 40      |
+| **ids in both** — the migration's record wins                     | 13      |
+| **same card, id invented by D2** — folded onto the frozen record  | 7       |
+| **genuinely new titles** — added                                  | 20      |
+| **final collection**                                              | **62**  |
+
+The seven folded ids are the interesting ones: six were the same title as an existing
+record (four of them with identical engagement numbers as well), and the seventh is
+`Sports Trivia Challenge`, which is the generator template `quiz-11` — D2 renamed the
+id to dodge the E2 slug collision rather than pointing at the template. They live in
+`catalogueAliases` instead of being records, so the evidence that the two trees
+spelled one subject two ways survives without forking the identity.
+
+| D2's id                                       | the frozen record                                   |
+| --------------------------------------------- | --------------------------------------------------- |
+| `quiz-brain-teasers-and-logic-puzzles`        | `quiz-brain-teasers-logic-puzzles`                  |
+| `quiz-famous-inventors-and-discoveries`       | `quiz-famous-inventors-discoveries`                 |
+| `quiz-mathematical-puzzles-and-brain-teasers` | `quiz-mathematical-puzzles-brain-teasers`           |
+| `quiz-world-geography-capitals-and-landmarks` | `quiz-world-geography-challenge-capitals-landmarks` |
+| `quiz-technology-and-gadgets`                 | `quiz-technology-gadgets`                           |
+| `quiz-music-through-decades`                  | `quiz-music-through-the-decades`                    |
+| `quiz-sports-trivia`                          | `quiz-11`                                           |
+
+`data/quiz-catalogue.ts` is curation only now — 13 ordered id lists plus the alias
+table, no records, resolving through `quizById`. `data/quiz-analytics.ts` followed the
+fold: the `Sports Trivia Challenge` snapshot is keyed `quiz-11`, because a key that
+names no record renders "no data" forever (E13).
+
+E11 and E12 keep the two halves honest: every shelf id resolves to a record in the one
+collection, every authoring-card projection parses as a `QuizAuthoringCard` (E3 covers
+the same for `QuizCard`), no two records share a normalised title, and no alias has
+come back as a record.
+
 ## Invariants `data:check` enforces
 
 Per-record (`E0`): every record parses against its schema, every object strict.
@@ -217,39 +358,44 @@ Collection-level:
 | `E8`        | every search row names a real quiz / category / curated page                                                                                                            |
 | `E9`        | `content/quiz.ts` exists and `types/quiz.ts` does not; no file under `components/`, `app/`, `lib/` declares its own `Quiz` (one `Quiz` type; positive control included) |
 | `E10`       | no `app/` page or layout exports a metadata function Next never reads (`Metadata`, `GenerateMetadata`, …); `categories/[slug]` must export `generateMetadata`           |
+| `E11`       | every shelf id resolves to a record in the one collection, and every `selectQuizAuthoringCard()` output parses as a `QuizAuthoringCard`                                 |
+| `E12`       | one record per subject: no two records share a normalised title, and no `catalogueAlias` has come back as a record                                                      |
+| `E13`       | every analytics key names a record — an authoring snapshot of a quiz the collection does not hold renders as "no data" forever, so it fails here instead                |
 
 Warnings are advisory and do not fail the build: `W1` published quiz with no
 questions, `W2` published quiz with no `publishedAt`, `W3` a renderable category with
-no quizzes, `W4` a reward with no limited-time window.
+no quizzes, `W4` a reward with no limited-time window, `W5` a browse record no shelf
+shows (dead card).
 
-### The warning census (41 warnings, measured)
+### The warning census (98 warnings, measured)
 
-| code | count | who                                                                                                                           |
-| ---- | ----- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `W1` | 5     | the 5 `CreatedQuiz` records: their content was never in the repo (a question _count_ was)                                     |
-| `W2` | 23    | every published record — no card, `CreatedQuiz` or generator template ever carried a publication instant                      |
-| `W4` | 13    | a prize with no window (`quiz-11` $3.00 and 12 authored quizzes); only 4 of the 17 rewarded records carry `limitedTimeEndsAt` |
-| `W3` | 0     | every renderable quiz category now has at least one quiz                                                                      |
+| code | count | who                                                                                                                     |
+| ---- | ----- | ----------------------------------------------------------------------------------------------------------------------- |
+| `W1` | 24    | the 5 `CreatedQuiz` records and the 19 browse card records: a card record carries an engagement snapshot, not questions |
+| `W2` | 42    | every published record — no card, `CreatedQuiz`, authored quiz or browse card ever carried a publication instant        |
+| `W4` | 32    | a prize with no window; only 4 of the 36 rewarded records carry `limitedTimeEndsAt`                                     |
+| `W3` | 0     | every renderable quiz category has at least one quiz                                                                    |
+| `W5` | 0     | every browse record is on at least one shelf                                                                            |
 
-These are the §10 debt figures of `quiz-migration.md` (W1 5 / W2 23 / W3-there 13),
-reproduced by the collection itself rather than by the harness. None is a defect to
-paper over: `publishedAt` and prize windows are content decisions, and `questions`
-for the 5 `CreatedQuiz` records does not exist to copy.
+These are the §10 debt figures of `quiz-migration.md`, reproduced by the collection
+itself rather than by the harness, plus the honest cost of the 20 browse cards d2
+contributed: no question, date or expiry was invented to silence a warning.
 
 ## Consequences worth knowing
 
-- **The search palette is honest now.** It indexes 22 quizzes, 14 categories, 3
-  creators and 15 pages (54 rows). Before the P1 model it listed 4 quizzes that did
+- **The search palette is honest now.** It indexes 42 quizzes, 14 categories, 3
+  creators and 15 pages (74 rows). Before the P1 model it listed 4 quizzes that did
   not exist (plus 8 more in an inline copy inside
   `components/search/search-results.tsx`) and creator counts of 87/34/56. Only
   `visibility: "public"` records enter it, so the 20 private generator templates stay
-  out; 22 of the 42 records are public.
+  out; 42 of the 62 records are public.
 - **Category tiles show derived counts.** 16 of the 25 quiz subjects now have at
   least one quiz, so 9 still show `0` — they are real, empty taxonomy rows, not a
   stored count drifting from the collection (which is what 113-vs-20 was).
-- **Authorship is content.** 17 records name an author: the 16 authored quizzes
-  (MarvelFan, GeoExplorer, …) and `quiz-11` (SportsNut). A merchandising overlay can
-  never carry one — `zQuizPromotion` has no `author` key (B-01 §A4).
+- **Authorship is content.** 19 records name an author: the 16 authored quizzes
+  (MarvelFan, GeoExplorer, …), `quiz-11` (SportsNut) and two of the browse cards.
+  A merchandising overlay can never carry one — `zQuizPromotion` has no `author`
+  key (B-01 §A4).
 - **Notification icons are a registry**, so a new icon is a one-line addition to
   `NOTIFICATION_ICON_KEYS` plus a case in `components/header/notification-icon.tsx`.
 
@@ -264,9 +410,10 @@ for the 5 `CreatedQuiz` records does not exist to copy.
 
 ## Deferred
 
-- **Authorship** — 17 of the 42 records name an `author`; the 20 generator templates and
-  the 5 `CreatedQuiz` records still do not, so search `creators[]` keeps `quizCount: 0`
-  until they are assigned. Assigning one is a content decision, not a migration one.
+- **Authorship** — 19 of the 62 records name an `author`; the 20 generator templates,
+  the 5 `CreatedQuiz` records and 18 browse cards still do not, so search `creators[]`
+  keeps `quizCount: 0` until they are assigned. Assigning one is a content decision,
+  not a migration one.
 - **`rewardCents`** lives in `QuizStats`; `Tournament` keeps `prizeCents`. If the two
   should share one shape, that is a tournament-model change.
 - **Taxonomy** — the quiz scope is A's 22 subjects corrected (`architechture` →
@@ -274,3 +421,22 @@ for the 5 `CreatedQuiz` records does not exist to copy.
   filename is still misspelled on disk (`public/category/architechture.webp`); the
   row points at the real file so the tile renders.
 - **Playable-quiz visibility** is assumed `public`; the fixture never said.
+- **Card detail pages** — `components/my-quizzes/quiz-details.tsx` and
+  `components/quiz/quiz-details.tsx` still hold authored data. They are not card
+  grids: they render a per-question table (`correctPercentage`, per-option
+  `isCorrect`) and a `recentPlayers` scoreboard, i.e. observed _results_, which the
+  content model does not own (D11). Their headers duplicate card fields, so they
+  become projections once a results/analytics record exists; their question tables
+  should then read `Question[]` from the same record. Deliberately out of D2.
+- **Profile created quizzes** — `components/profile/profile-created-quizzes.tsx`
+  renders `CreatedQuiz` from `lib/data/users.ts`, a field of the `User` record
+  (`createdQuizzes[]`), not a catalogue card. `zQuizAuthoringCard` was designed
+  from its shape (`mostMissedQuestion`, `highestScore`, `tournament`), but the
+  fixture is nested in the user domain. Its local `QuizCard` component was renamed
+  `ProfileQuizCard` so it stops colliding with the model's `QuizCard`; moving the
+  fixture onto the catalogue is a profile-model change, not a card projection.
+- **Category scoping on `categories/[slug]`** — the page projects
+  `shelfCards("exploreAll")` and ignores the slug, exactly as its authored array
+  did (that array was the same four records on every category route). Giving it a
+  per-category shelf, or a `selectQuizCardsByCategory()`, is the next step; until
+  then every category route lists the whole `exploreAll` shelf.

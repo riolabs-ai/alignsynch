@@ -27,7 +27,13 @@ import {
   categories as quizCategoryTable,
   categories as taxonomyTable,
 } from "../content/categories";
-import { zQuiz, zQuizCard, selectQuizCard } from "../content/quiz";
+import {
+  zQuiz,
+  zQuizAuthoringCard,
+  zQuizCard,
+  selectQuizAuthoringCard,
+  selectQuizCard,
+} from "../content/quiz";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
 import { matchRoute, normalizePath } from "../content/route-manifest";
 import {
@@ -46,6 +52,9 @@ import { categories as tipCategoryTable, tips } from "../data/creator-tips-data"
 import { articlesData } from "../data/knowledge-base-data";
 import { categories as newsCategoryTable, newsData } from "../data/news-data";
 import { notifications } from "../data/notifications";
+import { browseQuizzes } from "../data/browse-quizzes";
+import { catalogueAliases, quizShelves, shelvedIds } from "../data/quiz-catalogue";
+import { quizAnalytics } from "../data/quiz-analytics";
 import { quizzes as quizRecords } from "../data/quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
@@ -125,11 +134,11 @@ for (const [label, table] of [
  * E1 — ids and slugs are unique
  * ------------------------------------------------------------------ */
 
-function assertUnique(
+function assertUnique<T extends { id: string; slug: string; kind?: string }>(
   code: string,
   label: string,
-  rows: ReadonlyArray<{ id: string; kind?: string; slug: string }>,
-  keyOf: (row: { id: string; kind?: string; slug: string }) => string,
+  rows: readonly T[],
+  keyOf: (row: T) => string,
 ) {
   const seen = new Map<string, string>();
   for (const row of rows) {
@@ -187,6 +196,77 @@ for (const quiz of quizzes) {
   const card = selectQuizCard(quiz, () => undefined);
   if (!zQuizCard.safeParse(card).success)
     err("E3", `quiz "${quiz.id}": selectQuizCard() output is not a QuizCard`);
+}
+
+/* ------------------------------------------------------------------ *
+ * E11 — the card shelves resolve against the one collection
+ *
+ * A shelf is the only authored thing left about a card grid: an ordered list of
+ * quiz ids. A typo would render an empty carousel, so it fails here instead. The
+ * reverse direction matters too: a card-only browse record no shelf shows is a
+ * fixture that exists only to satisfy its own type.
+ *
+ * The ids resolve against `data/quizzes.ts` — the one collection — not against a
+ * catalogue of its own. That is the point of the reconciliation: a shelf cannot be
+ * right about a quiz the collection does not hold.
+ * ------------------------------------------------------------------ */
+
+const collectionIds = new Set(quizzes.map((quiz) => quiz.id));
+for (const [shelf, ids] of Object.entries(quizShelves)) {
+  for (const id of ids) {
+    if (!collectionIds.has(id)) err("E11", `shelf "${shelf}" references unknown quiz "${id}"`);
+  }
+}
+const shelved = new Set(shelvedIds);
+
+for (const quiz of browseQuizzes) {
+  if (!shelved.has(quiz.id)) warn("W5", `browse quiz "${quiz.id}" is on no shelf`);
+  if (!zQuizAuthoringCard.safeParse(selectQuizAuthoringCard(quiz, () => undefined)).success) {
+    err("E3", `quiz "${quiz.id}": selectQuizAuthoringCard() output is not a QuizAuthoringCard`);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * E12 — one record per subject
+ *
+ * The failure mode D2 exists to remove, encoded so it cannot come back: the card
+ * grids held 7 cards under ids they invented while the migration held the same
+ * cards under the frozen §8 ids. E1 only sees ids, so both trees were "valid" and
+ * the collection would have shown two cards with one title.
+ *
+ * The key is the lifted title, normalised (`&` -> `and`, punctuation and case
+ * dropped). It is a *subject* key, not a join key: two records for one card never
+ * legitimately share one.
+ * ------------------------------------------------------------------ */
+
+const subjectKey = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+assertUnique("E12", "quiz subjects", quizzes, (row) => subjectKey(row.title));
+
+/** An alias is only evidence while it stays out of the collection: if one is ever
+ *  added back as a record, E12 above catches the duplicate title — this catches the
+ *  quieter case where the alias record's title was also edited. */
+for (const [alias, target] of Object.entries(catalogueAliases)) {
+  if (collectionIds.has(alias)) err("E12", `catalogue alias "${alias}" is also a record`);
+  if (!collectionIds.has(target))
+    err("E12", `catalogue alias "${alias}" points at missing "${target}"`);
+}
+
+/* ------------------------------------------------------------------ *
+ * E13 — every analytics key names a record
+ *
+ * Analytics is keyed by record id. A key that names no record is a snapshot of a
+ * quiz the collection does not have: the surface renders "no data" forever without
+ * failing anything. The card grids keyed `Sports Trivia Challenge` by an invented
+ * id exactly once, and that is the case this invariant exists for.
+ * ------------------------------------------------------------------ */
+
+for (const quizId of Object.keys(quizAnalytics)) {
+  if (!collectionIds.has(quizId)) err("E13", `analytics key "${quizId}" is not a record`);
 }
 
 /* ------------------------------------------------------------------ *
@@ -339,8 +419,13 @@ if (!existsSync(join(process.cwd(), "content/quiz.ts"))) {
  * The same drift in one file: a component that declares its own `Quiz` looks like
  * the model but is hand-maintained against it (`components/quiz/quiz-play.tsx` did).
  * Renderer-local *views* stay legal — they just may not be called `Quiz`.
+ *
+ * The lookahead is load-bearing: a *declaration* is always followed by `{`, `=`, `<`
+ * or `extends`, while `import { type Quiz }` / `type Quiz,` inside an import list is
+ * a use of the model's type and must stay legal (`lib/quiz-cards.ts` re-exports it).
  */
-const QUIZ_DECLARATION = /^[ \t]*(?:export[ \t]+)?(?:interface|type)[ \t]+Quiz\b/m;
+const QUIZ_DECLARATION =
+  /^[ \t]*(?:export[ \t]+)?(?:interface|type)[ \t]+Quiz\b(?=[ \t]*(?:[={<]|extends\b))/m;
 
 function walkSourceFiles(dir: string): string[] {
   const found: string[] = [];
@@ -463,8 +548,29 @@ const counts = [
 const coverage = `${ROUTE_PATTERNS.length} routes match app/, ${unknownCategoryRefs} unknown category ids, ${deadLinks} dead links`;
 
 if (warnings.length > 0) {
+  // A fixture-wide gap (the catalogue is 40 card records with no questions) would
+  // otherwise print the same sentence 40 times and bury the individual findings.
+  // Group by code + message template, printing each distinct id when the group is
+  // small and a count when it is not.
+  const groups = new Map<string, Diagnostic[]>();
+  for (const warning of warnings) {
+    const template = warning.message.replace(/"[^"]*"/g, '"…"');
+    const key = `${warning.code}\u0000${template}`;
+    const group = groups.get(key);
+    if (group) group.push(warning);
+    else groups.set(key, [warning]);
+  }
   console.log(`WARN  ${warnings.length}`);
-  for (const warning of warnings) console.log(`  [${warning.code}] ${warning.message}`);
+  for (const group of groups.values()) {
+    if (group.length === 1) {
+      console.log(`  [${group[0].code}] ${group[0].message}`);
+      continue;
+    }
+    const ids = group.map((warning) => warning.message.match(/"([^"]*)"/)?.[1] ?? "?");
+    const shown = ids.length <= 3 ? ids.join(", ") : `${ids.slice(0, 3).join(", ")}, …`;
+    const template = group[0].message.replace(/"[^"]*"/g, '"<id>"');
+    console.log(`  [${group[0].code}] ×${group.length} ${template}  (${shown})`);
+  }
 }
 
 if (errors.length > 0) {

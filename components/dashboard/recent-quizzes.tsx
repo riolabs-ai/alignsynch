@@ -8,45 +8,31 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatRelative, type PublishStatus } from "@/content/core";
+import { shelfAuthoringCards } from "@/lib/quiz-cards";
 import Link from "next/link";
 
-// Sample data
-const recentQuizzes = [
-  {
-    id: 1,
-    title: "World Geography Challenge",
-    plays: 42,
-    date: "2 days ago",
-    status: "active",
-  },
-  {
-    id: 2,
-    title: "Science Quiz: Space Exploration",
-    plays: 28,
-    date: "5 days ago",
-    status: "active",
-  },
-  {
-    id: 3,
-    title: "History: Ancient Civilizations",
-    plays: 15,
-    date: "1 week ago",
-    status: "active",
-  },
-  {
-    id: 4,
-    title: "Math Puzzles & Problems",
-    plays: 8,
-    date: "2 weeks ago",
-    status: "draft",
-  },
-];
+const STATUS_LABEL: Record<PublishStatus, string> = {
+  published: "Active",
+  draft: "Draft",
+  archived: "Completed",
+};
 
 interface RecentQuizzesProps {
   compact?: boolean;
 }
 
 export function RecentQuizzes({ compact = false }: RecentQuizzesProps) {
+  // Projected from the catalogue: title, plays, creation instant and status all
+  // come from the record; the prose date is derived at render (D9).
+  const recentQuizzes = shelfAuthoringCards("myQuizzes")
+    .slice()
+    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
+    .slice(0, 4);
+
+  const created = (quiz: { createdAt?: string }) =>
+    quiz.createdAt ? formatRelative(quiz.createdAt) : "no date";
+
   if (compact) {
     return (
       <div className="space-y-4">
@@ -57,11 +43,14 @@ export function RecentQuizzes({ compact = false }: RecentQuizzesProps) {
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{quiz.plays} plays</span>
                 <span>•</span>
-                <span>{quiz.date}</span>
+                <span>{created(quiz)}</span>
               </div>
             </div>
-            <Badge variant={quiz.status === "active" ? "default" : "outline"} className="text-xs">
-              {quiz.status === "active" ? "Active" : "Draft"}
+            <Badge
+              variant={quiz.status === "published" ? "default" : "outline"}
+              className="text-xs"
+            >
+              {STATUS_LABEL[quiz.status]}
             </Badge>
           </div>
         ))}
@@ -87,11 +76,11 @@ export function RecentQuizzes({ compact = false }: RecentQuizzesProps) {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>{quiz.plays} plays</span>
                   <span>•</span>
-                  <span>{quiz.date}</span>
+                  <span>{created(quiz)}</span>
                 </div>
               </div>
-              <Badge variant={quiz.status === "active" ? "default" : "outline"}>
-                {quiz.status === "active" ? "Active" : "Draft"}
+              <Badge variant={quiz.status === "published" ? "default" : "outline"}>
+                {STATUS_LABEL[quiz.status]}
               </Badge>
             </div>
           ))}

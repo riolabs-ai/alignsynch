@@ -304,7 +304,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
               {sortedQuizzes.map((quiz) => (
-                <QuizCard
+                <ProfileQuizCard
                   key={quiz.id}
                   quiz={quiz}
                   onEdit={() => handleEditQuiz(quiz)}
@@ -336,7 +336,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               {sortedQuizzes
                 .filter((q) => !q.isTournament)
                 .map((quiz) => (
-                  <QuizCard
+                  <ProfileQuizCard
                     key={quiz.id}
                     quiz={quiz}
                     onEdit={() => handleEditQuiz(quiz)}
@@ -370,7 +370,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               {sortedQuizzes
                 .filter((q) => q.isTournament)
                 .map((quiz) => (
-                  <QuizCard
+                  <ProfileQuizCard
                     key={quiz.id}
                     quiz={quiz}
                     onEdit={() => handleEditQuiz(quiz)}
@@ -585,7 +585,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
   );
 }
 
-interface QuizCardProps {
+interface ProfileQuizCardProps {
   quiz: CreatedQuiz;
   onEdit: () => void;
   onPreview: () => void;
@@ -593,7 +593,7 @@ interface QuizCardProps {
   onDelete: () => void;
 }
 
-function QuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizCardProps) {
+function ProfileQuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: ProfileQuizCardProps) {
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video">
