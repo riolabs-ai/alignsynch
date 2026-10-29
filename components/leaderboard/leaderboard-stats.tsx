@@ -1,9 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { formatCount, progressPercentOf } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { CalendarDays, Medal, Trophy, Users } from "lucide-react";
 
 export function LeaderboardStats() {
+  const points = metric("leaderboard.season.points").value;
+  const target = metric("leaderboard.season.target").value;
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -45,15 +49,19 @@ export function LeaderboardStats() {
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Next Level</span>
-                <span>3,250 / 4,000 points</span>
+                <span>
+                  {formatCount(points)} / {formatCount(target)} points
+                </span>
               </div>
-              <Progress value={81.25} className="h-2" />
+              <Progress value={progressPercentOf(points, target)} className="h-2" />
               <div className="flex items-center justify-between text-xs">
                 <span className="flex items-center">
                   <Trophy className="mr-1 h-3 w-3 text-amber-500" />
                   Silver
                 </span>
-                <span className="text-muted-foreground">750 points to Gold</span>
+                <span className="text-muted-foreground">
+                  {formatCount(target - points)} points to Gold
+                </span>
               </div>
             </div>
           </div>

@@ -1,6 +1,8 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
+import { formatPercentValue } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { motion } from "framer-motion";
 import { Calculator, Calendar, DollarSign, Users } from "lucide-react";
 import { JSX, useEffect, useReducer } from "react";
@@ -19,6 +21,13 @@ type CalculatorAction =
   | { type: "SET_CONVERSION_RATE"; payload: number }
   | { type: "SET_AVERAGE_VALUE"; payload: number }
   | { type: "UPDATE_EARNINGS" };
+
+/**
+ * The programme's commission, read once from the fixture: the calculator's arithmetic (`rate`)
+ * and its copy (`pct`) are the same number, so they cannot drift apart.
+ */
+const commissionPct = metric("affiliate.maxCommission").value;
+const commissionRate = commissionPct / 100;
 
 // Initial state
 const initialState: CalculatorState = {
@@ -48,7 +57,7 @@ function calculatorReducer(state: CalculatorState, action: CalculatorAction): Ca
       return { ...state, averageValue: action.payload };
     case actionTypes.UPDATE_EARNINGS:
       const conversions = Math.round(state.referrals * (state.conversionRate / 100));
-      const monthly = conversions * state.averageValue * 0.3; // 30% commission
+      const monthly = conversions * state.averageValue * commissionRate; // share the programme pays
       return {
         ...state,
         monthlyEarnings: monthly,
@@ -183,7 +192,7 @@ export function ProfitCalculator(): JSX.Element {
                   <Calculator className="h-5 w-5 opacity-75" />
                 </div>
                 <CardDescription className="text-purple-100">
-                  Based on your audience and our 30% commission rate
+                  Based on your audience and our {formatPercentValue(commissionPct)} commission rate
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-3 xl:p-6">

@@ -2,9 +2,21 @@ import { EarningsChart } from "@/components/dashboard/earnings-chart";
 import { RecentQuizzes } from "@/components/dashboard/recent-quizzes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  formatDeltaWithPeriod,
+  formatMetricDelta,
+  formatMetricValue,
+  formatPeriodPhrase,
+} from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { BarChart3, Clock, DollarSign, Eye, TrendingUp, Trophy, Users } from "lucide-react";
 
 export function DashboardOverview() {
+  const balance = metric("dashboard.balance");
+  const quizzes = metric("dashboard.quizzes");
+  const players = metric("dashboard.players");
+  const completionRate = metric("dashboard.completionRate");
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -14,11 +26,11 @@ export function DashboardOverview() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$124.50</div>
+            <div className="text-2xl font-bold">{formatMetricValue(balance)}</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-              <span className="text-green-500">+12%</span>
-              <span className="ml-1">from last month</span>
+              <span className="text-green-500">{formatMetricDelta(balance)}</span>
+              <span className="ml-1">{formatPeriodPhrase(balance.period)}</span>
             </div>
             <Button variant="outline" size="sm" className="mt-3 w-full">
               Withdraw
@@ -32,8 +44,8 @@ export function DashboardOverview() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">+4 from last month</p>
+            <div className="text-2xl font-bold">{formatMetricValue(quizzes)}</div>
+            <p className="text-xs text-muted-foreground">{formatDeltaWithPeriod(quizzes)}</p>
           </CardContent>
         </Card>
 
@@ -43,8 +55,8 @@ export function DashboardOverview() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">573</div>
-            <p className="text-xs text-muted-foreground">+118 from last month</p>
+            <div className="text-2xl font-bold">{formatMetricValue(players)}</div>
+            <p className="text-xs text-muted-foreground">{formatDeltaWithPeriod(players)}</p>
           </CardContent>
         </Card>
 
@@ -54,8 +66,8 @@ export function DashboardOverview() {
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">78.3%</div>
-            <p className="text-xs text-muted-foreground">+2.1% from last month</p>
+            <div className="text-2xl font-bold">{formatMetricValue(completionRate)}</div>
+            <p className="text-xs text-muted-foreground">{formatDeltaWithPeriod(completionRate)}</p>
           </CardContent>
         </Card>
       </div>
@@ -95,21 +107,27 @@ export function DashboardOverview() {
                   <Users className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">Total Referrals</span>
                 </div>
-                <span className="font-medium">42</span>
+                <span className="font-medium">
+                  {formatMetricValue(metric("dashboard.affiliate.referrals"))}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">Commission Earned</span>
                 </div>
-                <span className="font-medium">$78.25</span>
+                <span className="font-medium">
+                  {formatMetricValue(metric("dashboard.affiliate.commissionEarned"))}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <TrendingUp className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">Conversion Rate</span>
                 </div>
-                <span className="font-medium">24.8%</span>
+                <span className="font-medium">
+                  {formatMetricValue(metric("dashboard.affiliate.conversionRate"))}
+                </span>
               </div>
               <Button variant="outline" size="sm" className="w-full">
                 View Affiliate Dashboard
@@ -130,14 +148,18 @@ export function DashboardOverview() {
                   <Eye className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">Total Views</span>
                 </div>
-                <span className="font-medium">2,845</span>
+                <span className="font-medium">
+                  {formatMetricValue(metric("dashboard.quizTotalViews"))}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">Avg. Completion Time</span>
                 </div>
-                <span className="font-medium">4m 12s</span>
+                <span className="font-medium">
+                  {formatMetricValue(metric("dashboard.quizAverageSeconds"))}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -167,7 +189,9 @@ export function DashboardOverview() {
               </div>
               <div className="border-l-2 border-green-500 pl-3">
                 <p className="text-sm font-medium">Earnings Received</p>
-                <p className="text-xs text-muted-foreground">You earned $2.50 from quiz plays</p>
+                <p className="text-xs text-muted-foreground">
+                  You earned {formatMetricValue(metric("dashboard.lastEarning"))} from quiz plays
+                </p>
                 <p className="text-xs text-muted-foreground">Yesterday</p>
               </div>
               <div className="border-l-2 border-blue-500 pl-3">

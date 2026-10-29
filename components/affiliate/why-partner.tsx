@@ -1,9 +1,16 @@
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  formatMetricValue,
+  formatPercentRange,
+  formatPercentValue,
+  formatWholeCurrency,
+} from "@/content/metrics";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock, DollarSign, Gift, LifeBuoy, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import { media } from "@/data/media";
+import { metric } from "@/data/metrics";
 
 export function WhyPartner() {
   const benefits = [
@@ -182,18 +189,33 @@ export function WhyPartner() {
                 <tbody>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
                     <td className="p-4 text-slate-600 dark:text-slate-400">Commission Rate</td>
-                    <td className="p-4 text-center font-medium">Up to 30%</td>
-                    <td className="p-4 text-center text-slate-600 dark:text-slate-400">10-20%</td>
+                    <td className="p-4 text-center font-medium">
+                      Up to {formatPercentValue(metric("affiliate.maxCommission").value)}
+                    </td>
+                    <td className="p-4 text-center text-slate-600 dark:text-slate-400">
+                      {formatPercentRange(
+                        metric("affiliate.comparison.commissionMin").value,
+                        metric("affiliate.comparison.commissionMax").value,
+                      )}
+                    </td>
                   </tr>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
                     <td className="p-4 text-slate-600 dark:text-slate-400">Cookie Duration</td>
-                    <td className="p-4 text-center font-medium">90 days</td>
-                    <td className="p-4 text-center text-slate-600 dark:text-slate-400">30 days</td>
+                    <td className="p-4 text-center font-medium">
+                      {formatMetricValue(metric("affiliate.cookieDays"))}
+                    </td>
+                    <td className="p-4 text-center text-slate-600 dark:text-slate-400">
+                      {formatMetricValue(metric("affiliate.comparison.cookieDays"))}
+                    </td>
                   </tr>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
                     <td className="p-4 text-slate-600 dark:text-slate-400">Minimum Payout</td>
-                    <td className="p-4 text-center font-medium">$50</td>
-                    <td className="p-4 text-center text-slate-600 dark:text-slate-400">$100</td>
+                    <td className="p-4 text-center font-medium">
+                      {formatWholeCurrency(metric("affiliate.minimumPayout").value)}
+                    </td>
+                    <td className="p-4 text-center text-slate-600 dark:text-slate-400">
+                      {formatWholeCurrency(metric("affiliate.comparison.minimumPayout").value)}
+                    </td>
                   </tr>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
                     <td className="p-4 text-slate-600 dark:text-slate-400">Dedicated Support</td>

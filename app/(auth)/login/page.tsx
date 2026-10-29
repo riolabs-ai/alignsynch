@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatCompactCount } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { BookOpen, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,7 +32,9 @@ export default function AuthPage() {
           <div className="grid grid-cols-2 gap-4 w-full max-w-md">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
               <Trophy className="w-8 h-8 mx-auto mb-2 text-yellow-400" />
-              <div className="text-2xl font-bold">10K+</div>
+              <div className="text-2xl font-bold">
+                {formatCompactCount(metric("platform.activePlayers").value, "upper")}+
+              </div>
               <div className="text-sm text-white/80">Active Players</div>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { QuizForPlay } from "@/content/quiz";
+import { formatPercentValue } from "@/content/metrics";
 import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
 import {
@@ -31,7 +32,10 @@ interface Answer {
  * The results screen reads the header of the play projection and nothing else.
  * Derived from `QuizForPlay` (`content/quiz.ts`) — never a second `Quiz` type.
  */
-type ResultsQuizHeader = Pick<QuizForPlay, "id" | "title" | "difficulty" | "categoryLabel">;
+type ResultsQuizHeader = Pick<
+  QuizForPlay,
+  "id" | "title" | "difficulty" | "categoryLabel" | "passingScore"
+>;
 interface Results {
   totalQuestions: number;
   correctAnswers: number;
@@ -319,7 +323,7 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
               </motion.div>
             )}
 
-            {score >= 70 && (
+            {score >= quiz.passingScore && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -331,7 +335,9 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
                 </div>
                 <div>
                   <div className="font-medium">Knowledge Master</div>
-                  <div className="text-sm text-muted-foreground">Scored over 70% on this quiz</div>
+                  <div className="text-sm text-muted-foreground">
+                    Scored over {formatPercentValue(quiz.passingScore)} on this quiz
+                  </div>
                 </div>
               </motion.div>
             )}

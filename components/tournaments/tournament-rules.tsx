@@ -7,6 +7,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCount } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { Tournament } from "./tournament-detail";
 
 interface TournamentRulesProps {
@@ -61,11 +63,28 @@ export function TournamentRules({ tournament }: TournamentRulesProps) {
             <AccordionTrigger>Scoring System</AccordionTrigger>
             <AccordionContent>
               <ul className="list-disc pl-5 space-y-2">
-                <li>Correct answers: 10 points</li>
-                <li>Bonus for speed: Up to 5 additional points based on answer speed</li>
-                <li>Incorrect answers: 0 points (no penalty)</li>
-                <li>Unanswered questions: 0 points</li>
-                <li>Streak bonus: 2 extra points for each consecutive correct answer (max 10)</li>
+                <li>
+                  Correct answers: {formatCount(metric("tournament.rules.correctPoints").value)}{" "}
+                  points
+                </li>
+                <li>
+                  Bonus for speed: Up to{" "}
+                  {formatCount(metric("tournament.rules.speedBonusPoints").value)} additional points
+                  based on answer speed
+                </li>
+                <li>
+                  Incorrect answers: {formatCount(metric("tournament.rules.incorrectPoints").value)}{" "}
+                  points (no penalty)
+                </li>
+                <li>
+                  Unanswered questions:{" "}
+                  {formatCount(metric("tournament.rules.unansweredPoints").value)} points
+                </li>
+                <li>
+                  Streak bonus: {formatCount(metric("tournament.rules.streakBonusPerAnswer").value)}{" "}
+                  extra points for each consecutive correct answer (max{" "}
+                  {formatCount(metric("tournament.rules.streakBonusMax").value)})
+                </li>
               </ul>
             </AccordionContent>
           </AccordionItem>

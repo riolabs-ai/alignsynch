@@ -2,6 +2,8 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { quizCategoryLabel } from "@/content/categories";
+import { formatMetricValue, formatDayCount } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { Calendar, Clock, Flame, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -86,7 +88,9 @@ export function DailyChallengeHeader() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Top Prize</p>
-              <p className="text-xl font-bold">500 Coins</p>
+              <p className="text-xl font-bold">
+                {formatMetricValue(metric("daily.challenge.topPrize"))} Coins
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -98,7 +102,9 @@ export function DailyChallengeHeader() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Your Streak</p>
-              <p className="text-xl font-bold">4 Days</p>
+              <p className="text-xl font-bold">
+                {formatDayCount(metric("daily.challenge.streak.days").value, "upper")}
+              </p>
             </div>
           </CardContent>
         </Card>

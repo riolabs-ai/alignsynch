@@ -21,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDeltaWithPeriod, formatMetricValue, formatPercentValue } from "@/content/metrics";
+import { earningSources, metric } from "@/data/metrics";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -32,6 +34,17 @@ import {
   Wallet,
 } from "lucide-react";
 import { Dispatch, SetStateAction, useState } from "react";
+
+/**
+ * The bar tone per earnings source. Presentation, so it stays in the component: the fixture
+ * carries the amount and the share, never a Tailwind class.
+ */
+const EARNING_BAR_TONE: Record<string, string> = {
+  "wallet.quizPlays": "bg-primary",
+  "wallet.affiliateCommissions": "bg-blue-500",
+  "wallet.premiumContent": "bg-green-500",
+};
+
 type Transaction = {
   id: number;
   type: string;
@@ -144,8 +157,12 @@ export function WalletDashboard() {
             <ArrowUpRight className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$42.50</div>
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
+            <div className="text-2xl font-bold">
+              {formatMetricValue(metric("wallet.thisMonth"))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {formatDeltaWithPeriod(metric("wallet.thisMonth"))}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -234,35 +251,23 @@ export function WalletDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-medium">Quiz Plays</p>
-                  <p className="text-sm font-medium">$78.25 (62.8%)</p>
+              {earningSources.map((source) => (
+                <div key={source.amount}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-medium">{source.label}</p>
+                    <p className="text-sm font-medium">
+                      {formatMetricValue(metric(source.amount))} (
+                      {formatPercentValue(source.sharePct)})
+                    </p>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`${EARNING_BAR_TONE[source.amount]} h-full`}
+                      style={{ width: `${source.sharePct}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="bg-primary h-full" style={{ width: "62.8%" }}></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-medium">Affiliate Commissions</p>
-                  <p className="text-sm font-medium">$32.50 (26.1%)</p>
-                </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full" style={{ width: "26.1%" }}></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm font-medium">Premium Content</p>
-                  <p className="text-sm font-medium">$13.75 (11.1%)</p>
-                </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="bg-green-500 h-full" style={{ width: "11.1%" }}></div>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -382,7 +387,9 @@ function WithdrawDialog({
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Minimum withdrawal: $10.00</p>
+              <p className="text-xs text-muted-foreground">
+                Minimum withdrawal: {formatMetricValue(metric("wallet.minimumWithdrawal"))}
+              </p>
             </div>
 
             <div className="grid gap-2">
