@@ -41,11 +41,13 @@ import {
   checkContactRefs,
   checkConversationRefs,
   checkNotificationRefs,
+  checkSocialInstants,
   zContact,
   zConversation,
   zNotification,
   type RouteResolution,
 } from "../content/social";
+import { DEMO_NOW_ISO } from "../content/core";
 import { categories as quizCategoryRows } from "../data/categories";
 import { contacts as modelContacts, conversations as modelConversations } from "../data/chat-data";
 import { categories as tipCategoryTable, tips } from "../data/creator-tips-data";
@@ -559,25 +561,6 @@ if (!METADATA_EXPORT.test(categoryRouteSource)) {
 
 const UI_ROOTS = ["components", "app"];
 
-/**
- * Asset references that were already 404ing when this check landed. Frozen, not
- * blessed: the list may only shrink. Carded as a follow-up to issue #20; the
- * fix is a path or a file, never a new entry here.
- */
-const KNOWN_MISSING_ASSETS = new Set([
-  "/avatars/chat-avatar-1.png",
-  "/avatars/chat-avatar-2.png",
-  "/avatars/chat-avatar-3.png",
-  "/avatars/chat-avatar-4.png",
-  "/avatars/chat-avatar-5.png",
-  "/easy-quiz-1.png",
-  "/easy-quiz-2.png",
-  "/easy-quiz-3.png",
-  "/quiz/q16.png",
-  "/science-quiz-lab.png",
-  "/wizard.png",
-]);
-
 function walkSources(root: string, dir = join(process.cwd(), root), files: SourceFile[] = []) {
   for (const entry of readdirSync(dir)) {
     if (entry === "node_modules" || entry === ".next" || entry === ".datacheck") continue;
@@ -619,11 +602,26 @@ const missingAssets = findMissingAssets(uiSources, (asset) =>
   existsSync(join(process.cwd(), "public", asset)),
 );
 for (const missing of missingAssets) {
-  if (KNOWN_MISSING_ASSETS.has(missing.value.split(/[?#]/)[0])) continue;
   err(
     "E10",
     `${missing.file}:${missing.line} references "${missing.value}", which is not in public/ — add the file or point at an existing one (a 404 image is invisible to every other gate)`,
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * E10 — social instants sit at or before the fixture clock
+ *
+ * The UI renders relative labels against `DEMO_NOW_ISO` (content/core.ts), so an instant
+ * dated after it renders `in 1 hour` — the P1 fixtures did. One clock, never the wall clock,
+ * is what makes those labels a pure function of their input; React #418 was the server and
+ * the browser reading two different clocks.
+ * ------------------------------------------------------------------ */
+
+for (const issue of checkSocialInstants(
+  { contacts, conversations, notifications: notificationRecords },
+  DEMO_NOW_ISO,
+)) {
+  err("E10", `social "${issue.id}" ${issue.field} ${issue.reason}`);
 }
 
 /* ------------------------------------------------------------------ *
@@ -700,5 +698,6 @@ const assetRefs = assetReferences(uiSources);
 console.log(`PASS  ${counts}`);
 console.log(`      ${coverage}`);
 console.log(
-  `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${KNOWN_MISSING_ASSETS.size} known-missing assets baselined)`,
+  `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
 );
+console.log(`      0 social instants after the fixture clock ${DEMO_NOW_ISO}`);

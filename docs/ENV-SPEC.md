@@ -73,9 +73,9 @@ role writes `AGENTS.md` except QA/Docs.
 ```bash
 pnpm install --frozen-lockfile                  # pnpm 12.16.1, lockfile v9
 pnpm typecheck                                  # next typegen && tsc --noEmit
-pnpm data:check                                 # content model + every fixture + E0–E9
+pnpm data:check                                 # content model + every fixture + E0–E10
 pnpm lint                                       # biome check (0 errors; warnings are baseline)
-pnpm format:check                               # biome format gate, 295 files
+pnpm format:check                               # biome format gate, 299 files
 pnpm build && pnpm start                        # production gate
 pnpm dev                                        # next dev --turbo, port 3000
 gh issue create|list|view ; gh pr create ; gh project list --owner riolabs-ai
@@ -108,6 +108,9 @@ WARN  1  [W2] published quiz "quiz-ultimate-world-history-trivia" has no publish
   `install` 0 · `typecheck` 0 (4–5 s) · `data:check` 0 (5–6 s) · `lint` 0 errors, 235 warnings,
   13 infos · `format:check` 0 (299 files) · `build` 0 (34 routes, 32 static pages) · `dev` 200 on
   all 34 routes.
+- The block above is the P1 snapshot at `ed3377c4`. After the `#418` fix (`t_2bfec493`) the same
+  command prints `33/33 node:test cases` and enforces `E0–E10` (E10: no social instant is after
+  the fixture clock).
 - Landed as PR #16 (`content/zod-model`); the migration is documented in
   `docs/p1-migration/MIGRATION.md` with a per-field `ledger.json`.
 
@@ -140,7 +143,7 @@ no quiz references them; tip categories likewise ("8 articles" → "1 article");
 (`"Apr 1, 2025"`); an author role and one missing news category badge now render; the
 `Architechture` → `Architecture` typo is fixed; the chat sidebar now formats fixture timestamps, and
 because several are fixed datetimes already in the future at build time it reads `in 1 hour` where
-`main` recorded `15h ago`.
+`main` recorded `15h ago` (both fixed after the pass — see below).
 
 **Fixed in this PR.** `next dev` returned 500 on `/`, `/categories`, `/quiz/[id]`,
 `/quiz/[id]/play`, `/my-quizzes/[id]` and `/statistics` with
@@ -148,9 +151,39 @@ because several are fixed datetimes already in the future at build time it reads
 `pnpm build` passed and CI never saw it. Five `next/image` call sites now use `fill` inside a
 `relative` parent; all 34 dev routes return 200 and production output is unchanged.
 
-**Open.** React `#418` (hydration mismatch) on **every** route, from `formatRelative()` being
-called at module scope in `data/chat-data.ts` — on `main` only `/chat` showed it. Tracked as a P1
-follow-up; it does not block the gates but it is a console error on every page.
+**Fixed after the pass — React `#418` on every route** (card `t_2bfec493`). Two clocks were in the
+render path. `data/chat-data.ts` called `formatRelative()` at module scope, so the drawer label was
+frozen at server-module load and recomputed at hydration — that is the error on all four routes
+below. The chat bubbles additionally called `toLocaleTimeString()` / `toLocaleDateString()`, a
+second, latent clock: they agreed here only because this machine's server and browser share a
+timezone, and they diverge the moment the server runs in UTC. Both are gone:
+
+- `data/` carries instants only — `lastSeenAt`, `lastMessageAt` — never a formatted string.
+- `content/core.ts` exports `DEMO_NOW_ISO` (`2026-10-29T12:00:00.000Z`), and every label
+  (`formatRelative`, `formatClockTime`, `formatDayHeading`, `formatWeekdayShort`, `formatMonthDay`,
+  `formatDateLong`, `formatDateTimeLong`) is a pure function of its ISO argument: UTC getters,
+  hand-formatted, no `toLocale*`, no `new Date()` clock. There is no clock in the render path, so
+  server and client cannot disagree.
+- **E10** in `pnpm data:check` fails when a contact, message or notification instant is after the
+  fixture clock — the reason the shell read `in 1 hour`. All fixtures sit at or before it, so the
+  drawer reads `5/10/15/30 minutes ago` and the days read `Today` / `Yesterday`.
+- Clock times now render in **UTC**, the zone the fixtures are authored in (`11:55 AM` for
+  `2026-10-29T11:55:00Z`). A pinned local zone would have re-introduced host-timezone dependence
+  through the ICU database; UTC is the one zone every runtime agrees on.
+- Verified on production builds of both trees, one headless-Chrome pass per route with the console
+  captured at load and after hydration (`--headless=new --enable-logging=stderr
+  --virtual-time-budget=10000 --dump-dom`):
+
+| route                              | base `99918770` | this branch |
+| ---------------------------------- | --------------- | ----------- |
+| `/`                                | `React #418`    | none        |
+| `/chat`                            | `React #418`    | none        |
+| `/news`                            | `React #418`    | none        |
+| `/quiz/quiz-ancient-civilizations` | `React #418`    | none        |
+
+The only console line left on `/news` and `/quiz/[id]` is Chrome's CSS-preload notice (INFO, and
+present on both trees). On `/chat` the server HTML and the hydrated DOM carry the same label set
+(`Today`, `5 minutes ago`, `10/15/30 minutes ago`) — the property `#418` was complaining about.
 
 **Pre-existing, not caused by P1:** `/dashboard` and `/signup` 404 from the sidebar, footer and
 categories CTA; `/testimonials/jessica.png` 404s; all 23 `public/category/*.webp` are the same
@@ -178,13 +211,43 @@ Regression guard: `data:check` gained **E10**. It extracts every literal `href`,
 `href="/signup"` + `/testimonials/jessica.png` in one component produced
 `FAIL 2 error(s)` with `file:line` for both, and nothing else. 6 new cases cover the extraction
 (34 total, up from 28). 11 asset literals that were already 404ing before this change (chat
-avatars, `easy-quiz-*.png`, `/quiz/q16.png`, `/wizard.png`, `/science-quiz-lab.png`) are frozen in
-`KNOWN_MISSING_ASSETS` — the list may only shrink; filing them is a content task.
+avatars, `easy-quiz-*.png`, `/quiz/q16.png`, `/wizard.png`, `/science-quiz-lab.png`) were frozen in
+`KNOWN_MISSING_ASSETS` — the list may only shrink; filing them is a content task, and §6.2 is that
+task done: the allowlist is gone and E10 has no baseline.
 
 The three legacy paths from the pre-P1 shell (`/dashboard`, `/signup`, and the two dashboard tabs)
 308 to the real route in `next.config.mjs`, so a bookmark or cached markup does not land on a 404.
 A redirect is not a second page — `app/` + `content/routes.ts` stay the only source of routes,
 which is why this is not a violation of the earlier "do not fix by adding routes" note.
+
+### 6.2 The 11 baselined asset references, fixed (#20 follow-up)
+
+E10 shipped with an 11-entry `KNOWN_MISSING_ASSETS` allowlist: asset literals that were already
+404ing on `main`, frozen only so the guard could land without a red tree. This pass deletes the
+allowlist and the filter that read it by pointing every reference at a file that exists. E10 now has
+no baseline — the footer reads `0 known-missing assets`, and a missing image fails the build the
+same way a dead link does.
+
+| reference (was)                              | file                                | now                           | why                                                                                                                      |
+| -------------------------------------------- | ----------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `/avatars/chat-avatar-1..5.png` (5 rows)     | `chat/chat-window.tsx`              | 5 existing `public/avatars/*` | the avatar library; five distinct files, no repeats inside one contact list                                              |
+| `/easy-quiz-1.png` (Culinary World Tour)     | `explore/featured-quizzes-page.tsx` | `/category/food.webp`         | the Food category's own art (`content/categories.ts`) — the card's category is Food                                      |
+| `/easy-quiz-2.png` (Artistic Masterpieces)   | `explore/featured-quizzes-page.tsx` | `/placeholder.svg`            | no art asset exists (the Art category carries an `iconKey`, not an image), so the card uses the component's own fallback |
+| `/easy-quiz-3.png` (Famous Inventors)        | `explore/featured-quizzes-page.tsx` | `/technology-quiz.png`        | closest existing illustration: inventions/technology                                                                     |
+| `/quiz/q16.png` (World History Through Time) | `home/quizzes-by-difficulty.tsx`    | `/quiz/q18.png`               | `public/quiz/` ships q1–q15, q17, q18 — q16 never existed; q18 was the one file in that set nothing referenced           |
+| `/wizard.png` (author avatar fallback)       | `news/news-article.tsx`             | `/avatars/wizard.webp`        | same name, correct directory                                                                                             |
+| `/science-quiz-lab.png` (Science Showdown)   | `tournaments/tournament-detail.tsx` | `/space-exploration-quiz.png` | what `tournament-list.tsx` already shows for `science-showdown`; the list card and the detail hero now agree             |
+
+Evidence: `pnpm data:check` exit 0 with `34` cases passing and the footer
+`109 hardcoded links + 478 asset refs resolve in components/ and app/ (0 known-missing assets)`;
+the five affected pages were crawled in `pnpm dev` with 0 broken `<img>` and 0 failed asset
+requests (`/chat`, `/explore/featured`, `/`, a news article, `/tournaments/science-showdown` and
+`/tournaments/global-championship`); `typecheck`, `lint` (235 warnings, unchanged), `format:check`
+and `build` all exit 0. Negative control: re-adding `/quiz/q16.png` — one of the eleven — in a probe
+component now fails with `[E10] components/__review_probe.tsx:6 references "/quiz/q16.png"`, which
+is what "no baseline" means. This is a path fix, not an art pass: every raster in `public/` is still
+a grey placeholder stamped with its own dimensions, so the images are honest about being
+placeholders — they just resolve now.
 
 ## 7. Repo ops
 

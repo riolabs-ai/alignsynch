@@ -15,8 +15,7 @@ export function handleMenuItemClick(callback: () => void) {
   };
 }
 
-// Function to format timestamps
-export function formatMessageTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
+// Time formatting lives in `content/core.ts` (`formatClockTime`, `formatDateTimeLong`,
+// `formatRelative`): those are UTC-pinned and measured against the fixture clock, so they
+// render identically on the server and in the browser. A local `toLocaleTimeString()` helper
+// here is how the chat produced React #418 — do not add one back.

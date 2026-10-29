@@ -160,6 +160,48 @@ export type ContentBase = z.infer<typeof zContentBase>;
  * Formatters — render-time only, so no prose is ever stored
  * ------------------------------------------------------------------ */
 
+/**
+ * The fixture clock — the one instant every relative label is measured against.
+ *
+ * All instants in `data/` are fixed ISO literals, so "now" has to be fixed too. A label
+ * computed from `new Date()` is rendered once by the server and recomputed at hydration; the
+ * two runs straddle the fixture timestamps and React throws error #418 (`text content does not
+ * match server-rendered HTML`) on every route that renders the shell. Passing the wall clock
+ * around does not help either — it only moves the disagreement from the module to the request.
+ *
+ * `DEMO_NOW_ISO` is later than every social fixture instant (E10 in `pnpm data:check` keeps it
+ * that way), so no label can read "in 1 hour" either. Every relative or calendar label below is
+ * therefore a pure function of its ISO argument: server and client agree by construction.
+ */
+export const DEMO_NOW_ISO = "2026-10-29T12:00:00.000Z";
+
+const MS_PER_DAY = 86_400_000;
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+const WEEKDAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+const pad2 = (value: number): string => String(value).padStart(2, "0");
+
 const CURRENCY = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const DATE = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
 
@@ -176,8 +218,75 @@ export function formatDate(iso: string): string {
   return DATE.format(new Date(iso));
 }
 
-/** Absolute instant -> "2 days ago". Replaces `date: "2 days ago"` fixtures. */
-export function formatRelative(iso: string, now: Date = new Date()): string {
+/**
+ * UTC calendar-day key, `2026-10-29`. The bucketing key for "group the messages of one day":
+ * a locale/timezone-derived key (`.toLocaleDateString()`) buckets differently on the server
+ * and in the browser, which changes the DOM shape and hydrates as a mismatch.
+ */
+export function formatDayKey(iso: string): string {
+  const date = new Date(iso);
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`;
+}
+
+/** Whole UTC calendar days from `iso` to `nowIso`: 0 = the same day, 1 = yesterday. */
+export function dayDelta(iso: string, nowIso: string = DEMO_NOW_ISO): number {
+  const dayOf = (value: string) => Date.parse(`${formatDayKey(value)}T00:00:00.000Z`);
+  return Math.round((dayOf(nowIso) - dayOf(iso)) / MS_PER_DAY);
+}
+
+/**
+ * `07:27 AM`. Hand-formatted from UTC getters rather than `toLocaleTimeString`: the host
+ * timezone changes the value and the ICU version changes the space before `AM`, either of
+ * which is a hydration mismatch. Chat times are authored in UTC, so they render in UTC.
+ */
+export function formatClockTime(iso: string): string {
+  const date = new Date(iso);
+  const hours = date.getUTCHours();
+  const hours12 = hours % 12 === 0 ? 12 : hours % 12;
+  return `${pad2(hours12)}:${pad2(date.getUTCMinutes())} ${hours < 12 ? "AM" : "PM"}`;
+}
+
+/** `Thu` */
+export function formatWeekdayShort(iso: string): string {
+  return WEEKDAY_NAMES[new Date(iso).getUTCDay()].slice(0, 3);
+}
+
+/** `Oct 29` */
+export function formatMonthDay(iso: string): string {
+  const date = new Date(iso);
+  return `${MONTH_NAMES[date.getUTCMonth()].slice(0, 3)} ${date.getUTCDate()}`;
+}
+
+/** `Thursday, October 29` */
+export function formatDateLong(iso: string): string {
+  const date = new Date(iso);
+  return `${WEEKDAY_NAMES[date.getUTCDay()]}, ${MONTH_NAMES[date.getUTCMonth()]} ${date.getUTCDate()}`;
+}
+
+/** `Thursday, October 29 at 07:27 AM` — the tooltip under a chat message. */
+export function formatDateTimeLong(iso: string): string {
+  return `${formatDateLong(iso)} at ${formatClockTime(iso)}`;
+}
+
+/**
+ * Absolute instant -> `Today` / `Yesterday` / `Thursday, October 29`, measured against the
+ * fixture clock instead of the wall clock.
+ */
+export function formatDayHeading(iso: string): string {
+  const delta = dayDelta(iso);
+  if (delta === 0) return "Today";
+  if (delta === 1) return "Yesterday";
+  return formatDateLong(iso);
+}
+
+/**
+ * Absolute instant -> "2 days ago". Replaces `date: "2 days ago"` fixtures.
+ *
+ * `now` defaults to the fixture clock, never to `new Date()`: see `DEMO_NOW_ISO`. Pass an
+ * explicit `now` only from a non-rendering caller (tests, a script) — never from a component
+ * that is server-rendered and then hydrated.
+ */
+export function formatRelative(iso: string, now: Date = new Date(DEMO_NOW_ISO)): string {
   const deltaSeconds = Math.round((new Date(iso).getTime() - now.getTime()) / 1000);
   const future = deltaSeconds > 0;
   const magnitude = Math.abs(deltaSeconds);

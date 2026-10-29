@@ -11,7 +11,7 @@ fixtures that must satisfy it, and `pnpm data:check` fails the build when a fixt
 | -------------------------------- | -------------------- | ------------------------------------------------------------- |
 | `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                      |
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 152 `node:test` cases → validator; prints record counts |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 157 `node:test` cases → validator; prints record counts |
 | `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 232 warnings, 12 infos           |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 313 files; CI gate                            |
 | `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 31 static pages                      |
@@ -75,9 +75,12 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
 - **`next/image` needs an intrinsic size.** Without `width`/`height` or `fill`, dev renders a 500:
   `Image with src "/category/animal.webp" is missing required "width" property.` `next build`
   still passes, so CI cannot see it. Use `fill` inside a `position: relative` parent.
-- **`data/chat-data.ts` formats times at module scope** (`formatRelative(...)`), so server and
-  client disagree and every page logs React error `#418` (hydration mismatch) in the console.
-  Until that is fixed, feed ISO timestamps to client components and format at render time.
+- **Never read a clock in a render path.** A label from `new Date()` or `toLocale*` is rendered
+  once by the server and re-rendered at hydration; the two disagree and every page logs React
+  `#418` (hydration mismatch). `content/core.ts` owns the fixture clock (`DEMO_NOW_ISO`) and every
+  label there is a pure function of the ISO instant — `data/` carries instants only, the UI calls
+  `formatRelative` / `formatClockTime` / `formatDayHeading`, and `data:check` E10 fails when a
+  social fixture is dated after the clock.
 - **`params` is a Promise in Next 16.** Every dynamic route must take
   `params: Promise<{ id: string }>` and unwrap it (`await params` in an `async` page, or
   `use(params)`); a synchronous `params.id` logs `params is a Promise and must be unwrapped with
@@ -88,9 +91,8 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
   `href` no route in `content/routes.ts` matches and on an asset literal with no file under
   `public/` — that is how `/dashboard`, `/signup` and `/testimonials/jessica.png` 404ed for so
   long. Legacy paths from the pre-P1 shell now 308 to the real route in `next.config.mjs`; never
-  add a second page to satisfy a link. 11 asset literals are still baselined as missing (chat
-  avatars, `easy-quiz-*.png`, `/quiz/q16.png`, `/wizard.png`, `/science-quiz-lab.png`) — the list
-  may only shrink.
+  add a second page to satisfy a link. There is no asset allowlist: E10 fails on any literal with
+  no file under `public/`, so a new missing image is a red build, exactly like a dead link.
 - **`public/category/*.webp` are placeholders:** all 23 files are the same 1536×1024 PNG stamped
   with its own dimensions. Category art is a content task, not a styling bug.
 - `pnpm data:check` prints exactly one warning, `[W2] published quiz

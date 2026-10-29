@@ -1,4 +1,5 @@
 import { recentMessages } from "@/data/chat-data";
+import { formatRelative } from "@/content/core";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { X } from "lucide-react";
 import Link from "next/link";
@@ -64,7 +65,9 @@ const ChatDrawer = ({
                 >
                   {message.sender}
                 </p>
-                <span className="text-xs text-muted-foreground">{message.time}</span>
+                <span className="text-xs text-muted-foreground">
+                  {formatRelative(message.lastMessageAt)}
+                </span>
               </div>
               <p
                 className={`text-sm truncate ${message.unread ? "text-foreground" : "text-muted-foreground"}`}

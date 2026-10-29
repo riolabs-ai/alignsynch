@@ -11,7 +11,6 @@
  */
 import type { Contact, Conversation } from "../content/social";
 import { deriveLastMessage, deriveUnread, selectRecentMessages } from "../content/social";
-import { formatRelative } from "../content/core";
 
 /** The stored records — what `data:check` validates. */
 export const contacts: readonly Contact[] = [
@@ -286,13 +285,19 @@ export const conversations: readonly Conversation[] = [
  * UI views. `unread`, `lastMessage` and the preview list are DERIVED here (they were
  * stored, and the stored copy disagreed with the messages on 3/5 avatars — D12).
  * Nothing below is authored: every field comes from a record above.
+ *
+ * Instants stay ISO. `data/` holds no formatted string and no clock reading — a relative
+ * label computed here would be baked in at module load (server) and again in the browser,
+ * and the two disagree at the first unit boundary (React error #418). The UI formats with
+ * `formatRelative()` / `formatDayHeading()` from `content/core.ts`, which measure against
+ * the fixture clock (`DEMO_NOW_ISO`), so every label is a pure function of the ISO value.
  */
 export const mockContacts = contacts.map((contact) => ({
   id: contact.id,
   name: contact.name,
   avatar: contact.avatar?.src ?? "",
   status: contact.status,
-  ...(contact.lastSeenAt ? { lastSeen: formatRelative(contact.lastSeenAt) } : {}),
+  ...(contact.lastSeenAt ? { lastSeenAt: contact.lastSeenAt } : {}),
 }));
 
 export const mockConversations = conversations.map((conversation) => ({
@@ -319,6 +324,6 @@ export const recentMessages = selectRecentMessages(conversations, contacts).map(
   sender: row.person.name,
   avatar: row.person.avatar?.src ?? "",
   content: row.lastMessage.body ?? "",
-  time: formatRelative(row.lastMessageAt),
+  lastMessageAt: row.lastMessageAt,
   unread: row.hasUnread,
 }));
