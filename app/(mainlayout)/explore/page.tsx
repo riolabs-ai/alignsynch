@@ -1,4 +1,5 @@
 import { ExploreQuizzesPage } from "@/components/explore/explore-quizzes-page";
+import { explorePageCopy } from "@/data/pages/explore";
 
 /**
  * Request-time, not static (P3b).
@@ -20,5 +21,5 @@ export const dynamic = "force-dynamic";
 export default function ExplorePage() {
   // One instant for the whole page: server render and hydration project the same
   // campaigns at the same clock (see `ExploreQuizzesPage`'s `now`).
-  return <ExploreQuizzesPage now={new Date().toISOString()} />;
+  return <ExploreQuizzesPage now={new Date().toISOString()} copy={explorePageCopy} />;
 }

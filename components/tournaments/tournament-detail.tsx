@@ -2,7 +2,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PageCopy } from "@/content/pages";
 import { media } from "@/data/media";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { pageItemOf, sectionOf } from "@/lib/page-copy";
 import { TournamentDiscussion } from "./tournament-discussion";
 import { TournamentHeader } from "./tournament-header";
 import { TournamentLeaderboard } from "./tournament-leaderboard";
@@ -10,6 +10,16 @@ import { TournamentOverview } from "./tournament-overview";
 import { TournamentPrizes } from "./tournament-prizes";
 import { TournamentRules } from "./tournament-rules";
 import { TournamentSchedule } from "./tournament-schedule";
+
+/** The tab strip, in render order: the fixture owns the words, this owns the values. */
+const TABS = [
+  { id: "tab-overview", value: "overview" },
+  { id: "tab-rules", value: "rules" },
+  { id: "tab-leaderboard", value: "leaderboard" },
+  { id: "tab-prizes", value: "prizes" },
+  { id: "tab-schedule", value: "schedule" },
+  { id: "tab-discussion", value: "discussion" },
+] as const;
 
 interface TournamentDetailProps {
   id: string;
@@ -69,20 +79,17 @@ export function TournamentDetail({ id, copy }: TournamentDetailProps) {
     eligibility: "All registered users",
   };
 
-  const hero = sectionOf(copy, "hero");
-
   return (
     <div className="container mx-auto">
-      <TournamentHeader tournament={tournament} copy={hero} />
+      <TournamentHeader tournament={tournament} copy={copy} />
 
       <Tabs defaultValue="overview" className="mt-8">
         <TabsList className="w-full flex overflow-x-auto  mb-8">
-          <TabsTrigger value="overview">{hero.heading}</TabsTrigger>
-          <TabsTrigger value="rules">{itemLabel(hero, "tab-rules")}</TabsTrigger>
-          <TabsTrigger value="leaderboard">{itemLabel(hero, "tab-leaderboard")}</TabsTrigger>
-          <TabsTrigger value="prizes">{itemLabel(hero, "tab-prizes")}</TabsTrigger>
-          <TabsTrigger value="schedule">{itemLabel(hero, "tab-schedule")}</TabsTrigger>
-          <TabsTrigger value="discussion">{itemLabel(hero, "tab-discussion")}</TabsTrigger>
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {pageItemOf(copy, tab.id).label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="overview">

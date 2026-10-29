@@ -109,3 +109,13 @@ and a `git add -A` can sweep the operator's unrelated change into a card's PR.
 Worktree cards spawn at `<repo>/.worktrees/<task-id>` on their own branch, which is real isolation.
 Before acting on any status, confirm with `git worktree list` and `git branch --show-current` that
 the **primary checkout is on `main`** — if it is on a card branch, a card is violating this rule.
+
+## 10. `AGENTS.md` is orchestrator-only
+
+`AGENTS.md` (and any agent-instruction file) is protected: a headless worker's edit is refused with
+`BLOCKED: write to protected agent-instruction file(s) … approval prompt timed out`. Silence is not
+consent, so the worker correctly blocks instead of retrying.
+
+Workers therefore **propose** instruction-file edits as a unified diff in a card comment and stop;
+the orchestrator applies them in an interactive session, formats the markdown, and lands the PR.
+Card `t_4988e8f6` burned a run discovering this — the same diff took one interactive edit.

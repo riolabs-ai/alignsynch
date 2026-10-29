@@ -144,10 +144,10 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
 
 /**
  * Attributes that are markup, not copy: they address a thing (href, src, id), name
- * a variant (variant, size, orientation), carry styling (any `*class*`, a `stroke*`
- * SVG attribute), a11y plumbing (`aria-*`), a test hook (`data-*`), or position a
- * layer (`align`). `alt` is excluded too, because alt text is `MediaEntry.alt`'s job
- * (E17–E19) — a literal alt is a media defect, not a copy one.
+ * a variant (variant, size, type), place a popover (`align`, `orientation`), carry
+ * styling (any `*class*`, a `stroke*` SVG attribute), a11y plumbing (`aria-*`) or a
+ * test hook (`data-*`). `alt` is excluded too, because alt text is `MediaEntry.alt`'s
+ * job (E17–E19) — a literal alt is a media defect, not a copy one.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
   "align",
@@ -239,7 +239,8 @@ export function leafLiterals(file: SourceFile): CopyLiteral[] {
  * ------------------------------------------------------------------ */
 
 const SECTION_REF = /\bsectionOf\(\s*[^,()]+,\s*"([^"]+)"\s*\)/g;
-const ITEM_REF = /\bitem(?:Of|Label|Value)\(\s*[^,()]+,\s*"([^"]+)"\s*\)/g;
+const ITEM_REF = /\bitem(?:Of|Label|Value|Body)\(\s*[^,()]+,\s*"([^"]+)"\s*\)/g;
+const PAGE_ITEM_REF = /\bpageItemOf\(\s*[^,()]+,\s*"([^"]+)"\s*\)/g;
 
 function referencesIn(
   files: readonly SourceFile[],
@@ -424,6 +425,17 @@ export function copyProblems(input: CopyCheckInput): CopyProblem[] {
       if (!itemIds.has(reference.id)) {
         fail(
           `${reference.where} asks for copy item "${reference.id}", which ${entry.fixture}.ts does not declare in any section — a typo renders nothing at runtime`,
+        );
+      }
+    }
+
+    // Page-level items are a different bag: `pageItemOf(copy, "x")` resolves against
+    // `items` on the route, never against a section's.
+    const pageItemIds = new Set((copy.items ?? []).map((item) => item.id));
+    for (const reference of referencesIn(attributedSources, PAGE_ITEM_REF)) {
+      if (!pageItemIds.has(reference.id)) {
+        fail(
+          `${reference.where} asks for page item "${reference.id}", which ${entry.fixture}.ts does not declare in \`items\` — a typo renders nothing at runtime`,
         );
       }
     }

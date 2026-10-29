@@ -3,15 +3,23 @@ import { CategoriesCTA } from "@/components/categories/categories-cta";
 import { CategoriesHowItWorks } from "@/components/categories/categories-how-it-works";
 import { Footer } from "@/components/layout/footer";
 import { Input } from "@/components/ui/input";
+import type { PageCopy } from "@/content/pages";
 import { categories } from "@/data/categories";
+import { fillLabel, pageItemOf, sectionOf } from "@/lib/page-copy";
 import { Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { media } from "@/data/media";
 
-export function CategoriesPage() {
+/**
+ * The `/categories` page. Its words are `data/pages/categories.ts`, resolved here and
+ * handed to the two bands below — the page owns which section each band gets, the
+ * fixture owns the strings, and the components own the markup.
+ */
+export function CategoriesPage({ copy }: { copy: PageCopy }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const empty = sectionOf(copy, "empty");
 
   // Filter categories based on search query
   const filteredCategories = categories.filter((category) =>
@@ -22,17 +30,15 @@ export function CategoriesPage() {
     <div>
       <div className="container mx-auto pb-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Quiz Categories</h1>
-          <p className="text-muted-foreground">
-            Browse all quiz categories and find quizzes that match your interests.
-          </p>
+          <h1 className="text-3xl font-bold mb-2">{copy.heading}</h1>
+          <p className="text-muted-foreground">{copy.subtitle}</p>
         </div>
 
         {/* Search bar */}
         <div className="relative max-w-md mb-8">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search categories..."
+            placeholder={pageItemOf(copy, "search-placeholder").label}
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -69,19 +75,19 @@ export function CategoriesPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
               <Search className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No categories found</h3>
+            <h3 className="text-xl font-semibold mb-2">{empty.heading}</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
-              We couldn't find any categories matching "{searchQuery}". Try a different search term.
+              {fillLabel(empty.body ?? "", { query: searchQuery })}
             </p>
           </div>
         )}
       </div>
 
       {/* Call to Action Section */}
-      <CategoriesCTA />
+      <CategoriesCTA copy={sectionOf(copy, "cta")} />
 
       {/* How It Works Section */}
-      <CategoriesHowItWorks />
+      <CategoriesHowItWorks copy={sectionOf(copy, "how-it-works")} />
 
       {/* Footer */}
       <Footer />

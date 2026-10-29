@@ -17,10 +17,12 @@
  *    (`zPageCopy.heading` is required) and no view renders it. Every *section* below
  *    is rendered — a fixture row with no consumer is drift, and that rule is bought
  *    at the top level only where the shape leaves no choice.
- *  - **Bands without a heading take their first label.** The hero card and the tab
- *    strip are one band with no title of its own, so section `hero` is named
- *    `Overview` — the default tab's words, which the view renders as the first
- *    `TabsTrigger`. Nothing is authored twice and nothing invented.
+ *  - **The hero card and the tab strip are page-level `items`, not a band.** Neither
+ *    has a heading of its own, and a band without a heading would have to invent one.
+ *    These are exactly the "strings a route renders that no band owns" the page-level
+ *    slot exists for (WU-8 added it to `content/pages.ts` while this branch was open),
+ *    and they are read with `pageItemOf(copy, id)`, which E23 checks against this
+ *    fixture like every other id.
  *  - **The rules card is flat.** `PageCopySection` has `items`, not nested sections,
  *    so the six accordion groups are a `GROUPS` const in the view (group id → the
  *    heading item and its bullets) while the words live here. That is the same
@@ -30,30 +32,27 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const tournamentDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Tournament Details",
+  items: [
+    { id: "tab-overview", label: "Overview" },
+    { id: "tab-rules", label: "Rules" },
+    { id: "tab-leaderboard", label: "Leaderboard" },
+    { id: "tab-prizes", label: "Prizes" },
+    { id: "tab-schedule", label: "Schedule" },
+    { id: "tab-discussion", label: "Discussion" },
+    { id: "participants", label: "{count} participants" },
+    { id: "prize-pool", label: "{prize} prize pool" },
+    { id: "register", label: "Register Now" },
+    { id: "learn-more", label: "Learn More" },
+    { id: "set-reminder", label: "Set Reminder" },
+    { id: "join-live", label: "Join Live" },
+    { id: "view-results", label: "View Results" },
+    { id: "organized-by", label: "Organized by" },
+    { id: "rounds", label: "Rounds" },
+    { id: "questions", label: "Questions" },
+    { id: "difficulty", label: "Difficulty" },
+    { id: "closes-in", label: "Registration closes in" },
+  ],
   sections: [
-    {
-      id: "hero",
-      heading: "Overview",
-      items: [
-        { id: "tab-rules", label: "Rules" },
-        { id: "tab-leaderboard", label: "Leaderboard" },
-        { id: "tab-prizes", label: "Prizes" },
-        { id: "tab-schedule", label: "Schedule" },
-        { id: "tab-discussion", label: "Discussion" },
-        { id: "participants", label: "{count} participants" },
-        { id: "prize-pool", label: "{prize} prize pool" },
-        { id: "register", label: "Register Now" },
-        { id: "learn-more", label: "Learn More" },
-        { id: "set-reminder", label: "Set Reminder" },
-        { id: "join-live", label: "Join Live" },
-        { id: "view-results", label: "View Results" },
-        { id: "organized-by", label: "Organized by" },
-        { id: "rounds", label: "Rounds" },
-        { id: "questions", label: "Questions" },
-        { id: "difficulty", label: "Difficulty" },
-        { id: "closes-in", label: "Registration closes in" },
-      ],
-    },
     {
       id: "about",
       heading: "About This Tournament",

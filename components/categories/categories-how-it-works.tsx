@@ -2,35 +2,39 @@
 import browse from "@/public/browse-category.png";
 import earnReward from "@/public/earn-reward.png";
 import takequiz from "@/public/take-quiz.png";
+import type { PageCopySection } from "@/content/pages";
+import { itemOf, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { Award, BookOpen, Search } from "lucide-react";
 import Image from "next/image";
 import { media } from "@/data/media";
-export function CategoriesHowItWorks() {
+
+/**
+ * The how-it-works band. It renders on `/` and on `/categories`, so it takes its
+ * section as a prop and both routes read the same fixture entry
+ * (`data/pages/categories.ts` owns it; the component lives in that surface's
+ * directory). The step order and each step's icon, tint and photo stay here — they are
+ * presentation, joined to the fixture by the item id.
+ */
+export function CategoriesHowItWorks({ copy }: { copy: PageCopySection }) {
   const steps = [
     {
+      item: itemOf(copy, "browse"),
       icon: <Search className="h-6 w-6 text-white" />,
-      title: "Browse Categories",
-      description: "Explore our diverse range of quiz categories to find topics interest you.",
-      image: media.placeholder.src,
       color: "from-purple-500 to-purple-600",
       delay: 0.3,
       img: browse,
     },
     {
+      item: itemOf(copy, "take"),
       icon: <BookOpen className="h-6 w-6 text-white" />,
-      title: "Take Quizzes",
-      description: "Challenge yourself with quizzes of varying difficulty levels and formats.",
-      image: media.placeholder.src,
       color: "from-indigo-500 to-indigo-600",
       delay: 0.5,
       img: takequiz,
     },
     {
+      item: itemOf(copy, "earn"),
       icon: <Award className="h-6 w-6 text-white" />,
-      title: "Earn Rewards",
-      description: "Collect points, badges, and climb the leaderboards as you complete quizzes.",
-      image: media.placeholder.src,
       color: "from-blue-500 to-blue-600",
       delay: 0.7,
       img: earnReward,
@@ -49,7 +53,7 @@ export function CategoriesHowItWorks() {
             className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-1.5 rounded-full mb-4"
           >
             <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-              Simple Process
+              {itemOf(copy, "eyebrow").label}
             </span>
           </motion.div>
 
@@ -60,7 +64,7 @@ export function CategoriesHowItWorks() {
             viewport={{ once: true }}
             className="text-3xl font-bold mb-4 text-slate-900 dark:text-white"
           >
-            How It Works
+            {copy.heading}
           </motion.h2>
 
           <motion.p
@@ -70,15 +74,14 @@ export function CategoriesHowItWorks() {
             viewport={{ once: true }}
             className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto"
           >
-            Getting started with our quiz platform is easy. Follow these simple steps to begin your
-            quiz journey.
+            {copy.body}
           </motion.p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {steps.map((step, index) => (
             <motion.div
-              key={index}
+              key={step.item.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: step.delay }}
@@ -91,7 +94,7 @@ export function CategoriesHowItWorks() {
                 <div className=" relative">
                   <Image
                     src={step.img || media.placeholder.src}
-                    alt={step.title}
+                    alt={step.item.label}
                     width={300}
                     height={200}
                     className="object-cover aspect-[16/10] w-full border-b object-center"
@@ -109,9 +112,9 @@ export function CategoriesHowItWorks() {
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
-                    {step.title}
+                    {step.item.label}
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-400">{step.description}</p>
+                  <p className="text-slate-600 dark:text-slate-400">{step.item.body}</p>
                 </div>
               </div>
             </motion.div>
@@ -125,14 +128,12 @@ export function CategoriesHowItWorks() {
           viewport={{ once: true }}
           className="mt-16 text-center"
         >
-          <p className="text-slate-600 dark:text-slate-400 mb-6">
-            Ready to start your quiz journey? Browse categories, find your interests, and begin
-            challenging yourself today!
-          </p>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">{itemOf(copy, "outro").label}</p>
           <div className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
             <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-              <span className="font-bold">2,500+</span> users online now
+              <span className="font-bold">{itemValue(copy, "users-online")}</span>{" "}
+              {itemOf(copy, "users-online").label}
             </span>
           </div>
         </motion.div>

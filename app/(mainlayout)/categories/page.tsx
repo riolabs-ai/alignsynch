@@ -1,4 +1,5 @@
 import { CategoriesPage } from "@/components/categories/categories-page";
+import { categoriesPageCopy } from "@/data/pages/categories";
 
 export const metadata = {
   title: "Quiz Categories | QuizHub",
@@ -6,5 +7,5 @@ export const metadata = {
 };
 
 export default function CategoriesRoute() {
-  return <CategoriesPage />;
+  return <CategoriesPage copy={categoriesPageCopy} />;
 }
