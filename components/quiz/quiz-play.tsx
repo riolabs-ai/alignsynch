@@ -7,7 +7,55 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Answer, currentQuiz, Quiz } from "@/data/currentQuiz";
+import { currentQuiz } from "@/data/currentQuiz";
+import { categoryName } from "@/content/categories";
+
+/**
+ * The play surface works on a PROJECTION of the content record, not on the record:
+ * `category` is a resolved label and `text`/`image` are the renderer's names.
+ * Built once from the model by `playableQuiz` below.
+ */
+interface PlayQuestion {
+  id: string;
+  text: string;
+  options: { id: string; text: string }[];
+  correctOptionId: string;
+  explanation?: string;
+  image?: string;
+}
+
+interface Quiz {
+  id: string;
+  title: string;
+  category: string;
+  difficulty: string;
+  timeLimit: number;
+  questions: PlayQuestion[];
+}
+
+const playableQuiz: Quiz = {
+  id: currentQuiz.id,
+  title: currentQuiz.title,
+  category: categoryName(currentQuiz.categoryIds[0] ?? "") ?? "",
+  difficulty: currentQuiz.difficulty,
+  timeLimit: currentQuiz.settings.timeLimitSeconds,
+  questions: currentQuiz.questions.map((question) => ({
+    id: question.id,
+    text: question.prompt,
+    options: question.options.map((option) => ({ id: option.id, text: option.text })),
+    correctOptionId: question.correctOptionId,
+    ...(question.explanation ? { explanation: question.explanation } : {}),
+    ...(question.media ? { image: question.media.src } : {}),
+  })),
+};
+
+/** One answered question, local to the play surface (UI state, not content). */
+interface Answer {
+  questionId: string;
+  selectedOptionId: string | null;
+  isCorrect: boolean;
+  timeSpent: number;
+}
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -189,7 +237,7 @@ export function QuizPlay({ id }: { id: string }) {
     const getQuiz = async () => {
       try {
         dispatch({ type: "SET_LOADING", payload: true });
-        dispatch({ type: "SET_QUIZ", payload: currentQuiz });
+        dispatch({ type: "SET_QUIZ", payload: playableQuiz });
       } catch (err) {
         dispatch({ type: "SET_ERROR", payload: "Failed to load quiz. Please try again later." });
       }

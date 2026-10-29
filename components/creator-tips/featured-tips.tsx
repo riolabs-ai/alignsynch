@@ -1,4 +1,4 @@
-import { getFeaturedTips } from "@/data/creator-tips-data";
+import { getFeaturedTips, tipCategoryName } from "@/data/creator-tips-data";
 import { ArrowRight, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,7 +23,7 @@ export default function FeaturedTips() {
           >
             <div className="aspect-video relative">
               <Image
-                src={tip.image || "/placeholder.svg"}
+                src={tip.cover?.src ?? "/placeholder.svg"}
                 alt={tip.title}
                 fill
                 className="object-cover"
@@ -33,14 +33,11 @@ export default function FeaturedTips() {
             <div className="p-6">
               <div className="flex items-center mb-3">
                 <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-                  {tip.category
-                    .split("-")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ")}
+                  {tipCategoryName(tip.categoryIds[0] ?? "")}
                 </span>
                 <div className="flex items-center ml-auto text-sm text-gray-500 dark:text-gray-200">
                   <Clock size={14} className="mr-1" />
-                  {tip.readTime} min read
+                  {tip.readMinutes} min read
                 </div>
               </div>
 
@@ -48,13 +45,13 @@ export default function FeaturedTips() {
                 {tip.title}
               </h3>
 
-              <p className="text-gray-600 dark:text-gray-100 mb-4">{tip.excerpt}</p>
+              <p className="text-gray-600 dark:text-gray-100 mb-4">{tip.summary}</p>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="w-8 h-8 rounded-full overflow-hidden mr-2">
                     <Image
-                      src={tip.author.avatar || "/placeholder.svg"}
+                      src={tip.author.avatar?.src ?? "/placeholder.svg"}
                       alt={tip.author.name}
                       width={32}
                       height={32}

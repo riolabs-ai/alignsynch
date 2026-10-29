@@ -1,0 +1,1972 @@
+{
+  "generatedAt": "2026-10-29T12:00:00.000Z",
+  "modules": {
+    "data/mock-quizzes": {
+      "records": [
+        {
+          "id": "quiz-1",
+          "slug": "introduction-to-world-history",
+          "fields": {
+            "id": {
+              "from": 1,
+              "to": "quiz-1"
+            },
+            "slug": {
+              "from": null,
+              "to": "introduction-to-world-history",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["history"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-1-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "0 -> \"a\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-2",
+          "slug": "space-exploration-fundamentals",
+          "fields": {
+            "id": {
+              "from": 2,
+              "to": "quiz-2"
+            },
+            "slug": {
+              "from": null,
+              "to": "space-exploration-fundamentals",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["space", "science"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-2-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-3",
+          "slug": "biology-basics",
+          "fields": {
+            "id": {
+              "from": 3,
+              "to": "quiz-3"
+            },
+            "slug": {
+              "from": null,
+              "to": "biology-basics",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["science"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-3-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-4",
+          "slug": "mathematics-challenge",
+          "fields": {
+            "id": {
+              "from": 4,
+              "to": "quiz-4"
+            },
+            "slug": {
+              "from": null,
+              "to": "mathematics-challenge",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["math"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-4-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-5",
+          "slug": "literature-classics",
+          "fields": {
+            "id": {
+              "from": 5,
+              "to": "quiz-5"
+            },
+            "slug": {
+              "from": null,
+              "to": "literature-classics",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["literature"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-5-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-6",
+          "slug": "geography-explorer",
+          "fields": {
+            "id": {
+              "from": 6,
+              "to": "quiz-6"
+            },
+            "slug": {
+              "from": null,
+              "to": "geography-explorer",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["geography"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-6-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "2 -> \"c\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-7",
+          "slug": "music-theory-basics",
+          "fields": {
+            "id": {
+              "from": 7,
+              "to": "quiz-7"
+            },
+            "slug": {
+              "from": null,
+              "to": "music-theory-basics",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["music"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-7-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-8",
+          "slug": "computer-science-fundamentals",
+          "fields": {
+            "id": {
+              "from": 8,
+              "to": "quiz-8"
+            },
+            "slug": {
+              "from": null,
+              "to": "computer-science-fundamentals",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["technology", "coding"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-8-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "0 -> \"a\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-9",
+          "slug": "art-history-essentials",
+          "fields": {
+            "id": {
+              "from": 9,
+              "to": "quiz-9"
+            },
+            "slug": {
+              "from": null,
+              "to": "art-history-essentials",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["art", "history"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-9-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-10",
+          "slug": "chemistry-101",
+          "fields": {
+            "id": {
+              "from": 10,
+              "to": "quiz-10"
+            },
+            "slug": {
+              "from": null,
+              "to": "chemistry-101",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["science"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-10-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "2 -> \"c\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-11",
+          "slug": "sports-trivia-challenge",
+          "fields": {
+            "id": {
+              "from": 11,
+              "to": "quiz-11"
+            },
+            "slug": {
+              "from": null,
+              "to": "sports-trivia-challenge",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["sports"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-11-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-12",
+          "slug": "movie-buff-challenge",
+          "fields": {
+            "id": {
+              "from": 12,
+              "to": "quiz-12"
+            },
+            "slug": {
+              "from": null,
+              "to": "movie-buff-challenge",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["movies"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-12-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-13",
+          "slug": "general-knowledge-mix",
+          "fields": {
+            "id": {
+              "from": 13,
+              "to": "quiz-13"
+            },
+            "slug": {
+              "from": null,
+              "to": "general-knowledge-mix",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["general-knowledge", "trivia"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-13-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "2 -> \"c\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-14",
+          "slug": "physics-fundamentals",
+          "fields": {
+            "id": {
+              "from": 14,
+              "to": "quiz-14"
+            },
+            "slug": {
+              "from": null,
+              "to": "physics-fundamentals",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["science"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-14-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-15",
+          "slug": "ancient-civilizations",
+          "fields": {
+            "id": {
+              "from": 15,
+              "to": "quiz-15"
+            },
+            "slug": {
+              "from": null,
+              "to": "ancient-civilizations",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["history"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-15-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-16",
+          "slug": "technology-trends",
+          "fields": {
+            "id": {
+              "from": 16,
+              "to": "quiz-16"
+            },
+            "slug": {
+              "from": null,
+              "to": "technology-trends",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["technology"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-16-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-17",
+          "slug": "famous-landmarks",
+          "fields": {
+            "id": {
+              "from": 17,
+              "to": "quiz-17"
+            },
+            "slug": {
+              "from": null,
+              "to": "famous-landmarks",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["geography"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-17-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-18",
+          "slug": "environmental-science",
+          "fields": {
+            "id": {
+              "from": 18,
+              "to": "quiz-18"
+            },
+            "slug": {
+              "from": null,
+              "to": "environmental-science",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["science"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-18-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-19",
+          "slug": "food-and-cuisine",
+          "fields": {
+            "id": {
+              "from": 19,
+              "to": "quiz-19"
+            },
+            "slug": {
+              "from": null,
+              "to": "food-and-cuisine",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["food"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-19-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "2 -> \"c\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        },
+        {
+          "id": "quiz-20",
+          "slug": "famous-inventions",
+          "fields": {
+            "id": {
+              "from": 20,
+              "to": "quiz-20"
+            },
+            "slug": {
+              "from": null,
+              "to": "famous-inventions",
+              "derivedFrom": "title"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": null,
+              "to": ["history", "technology"],
+              "derivedFrom": "tags via the alias map"
+            },
+            "questions[].id": {
+              "from": "1..5 per quiz (reused 20x)",
+              "to": "quiz-20-q1..q5"
+            },
+            "questions[].text": {
+              "from": "text",
+              "to": "prompt"
+            },
+            "questions[].correctAnswer": {
+              "from": "index",
+              "to": "correctOptionId",
+              "sample": "1 -> \"b\""
+            },
+            "settings.timeLimit": {
+              "from": 0,
+              "to": 0,
+              "reason": "the field was documented in MINUTES; the model stores seconds"
+            }
+          }
+        }
+      ],
+      "summary": "20 generator-template quizzes: numeric ids -> quiz-<n>, slug from title, description -> summary, tags -> categoryIds via the alias map, question ids namespaced per quiz, answer index -> option id, settings renamed (minutes -> seconds, 0 in every record so no value changed)."
+    },
+    "data/currentQuiz": {
+      "records": [
+        {
+          "id": "q1",
+          "fields": {
+            "id": {
+              "from": "q1",
+              "to": "quiz-ultimate-world-history-trivia",
+              "reason": "\"q1\" collided with a question id"
+            },
+            "difficulty": {
+              "from": "Medium",
+              "to": "medium",
+              "drift": "D5"
+            },
+            "category": {
+              "from": "History",
+              "to": ["history"],
+              "reason": "display name -> taxonomy id"
+            },
+            "image": {
+              "from": "/history-quiz.png",
+              "to": {
+                "src": "/history-quiz.png",
+                "alt": ""
+              },
+              "reason": "StaticImageData|string -> ImageRef"
+            },
+            "timeLimit": {
+              "from": 1200,
+              "to": 1200,
+              "reason": "already seconds"
+            },
+            "questions[].id": {
+              "from": "q1..q5",
+              "to": "quiz-ultimate-world-history-trivia-q1..q5"
+            },
+            "questions[].image": {
+              "from": "5 x StaticImageData",
+              "to": "media: ImageRef"
+            }
+          }
+        }
+      ],
+      "summary": "The one playable quiz: namespaced ids, difficulty lowercased, category name -> id, static images -> refs. All 5 question images and 5 explanations preserved."
+    },
+    "data/news-data": {
+      "records": [
+        {
+          "slug": "10-strategies-for-creating-engaging-quizzes",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-10-strategies-for-creating-engaging-quizzes",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "May 15, 2025",
+              "to": "2025-05-15T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Quiz Tips", "Tutorials"],
+              "to": ["news-quiz-tips", "news-tutorials"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news1.png)"
+            },
+            "body": {
+              "from": "content: 7 sections",
+              "to": "23 ContentBlocks"
+            },
+            "featured": {
+              "from": "absent",
+              "to": "absent"
+            }
+          }
+        },
+        {
+          "slug": "new-quiz-analytics-features",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-new-quiz-analytics-features",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "May 10, 2025",
+              "to": "2025-05-10T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Updates", "Tutorials"],
+              "to": ["news-platform-updates", "news-tutorials"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news2.png)"
+            },
+            "body": {
+              "from": "content: 6 sections",
+              "to": "20 ContentBlocks"
+            },
+            "featured": {
+              "from": "absent",
+              "to": "absent"
+            }
+          }
+        },
+        {
+          "slug": "quiz-maker-community-spotlight-may",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-quiz-maker-community-spotlight-may",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "May 5, 2025",
+              "to": "2025-05-05T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Community", "Success Stories"],
+              "to": ["news-community", "news-success-stories"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news3.png)"
+            },
+            "body": {
+              "from": "content: 6 sections",
+              "to": "20 ContentBlocks"
+            },
+            "featured": {
+              "from": true,
+              "to": "true"
+            }
+          }
+        },
+        {
+          "slug": "quiz-accessibility-guidelines",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-quiz-accessibility-guidelines",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "April 28, 2025",
+              "to": "2025-04-28T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Tutorials", "Quiz Tips"],
+              "to": ["news-tutorials", "news-quiz-tips"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news4.png)"
+            },
+            "body": {
+              "from": "content: 7 sections",
+              "to": "23 ContentBlocks"
+            },
+            "featured": {
+              "from": "absent",
+              "to": "absent"
+            }
+          }
+        },
+        {
+          "slug": "summer-quiz-championship-announcement",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-summer-quiz-championship-announcement",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "April 22, 2025",
+              "to": "2025-04-22T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Events", "Community"],
+              "to": ["news-events", "news-community"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news5.png)"
+            },
+            "body": {
+              "from": "content: 7 sections",
+              "to": "23 ContentBlocks"
+            },
+            "featured": {
+              "from": "absent",
+              "to": "absent"
+            }
+          }
+        },
+        {
+          "slug": "quiz-monetization-strategies-2025",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-quiz-monetization-strategies-2025",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "April 15, 2025",
+              "to": "2025-04-15T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Quiz Tips", "Industry News"],
+              "to": ["news-quiz-tips", "news-industry-news"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news6.png)"
+            },
+            "body": {
+              "from": "content: 8 sections",
+              "to": "27 ContentBlocks"
+            },
+            "featured": {
+              "from": "absent",
+              "to": "absent"
+            }
+          }
+        },
+        {
+          "slug": "ai-powered-quiz-creation-tools",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-ai-powered-quiz-creation-tools",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "April 8, 2025",
+              "to": "2025-04-08T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Platform Updates", "Industry News"],
+              "to": ["news-platform-updates", "news-industry-news"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news7.png)"
+            },
+            "body": {
+              "from": "content: 8 sections",
+              "to": "27 ContentBlocks"
+            },
+            "featured": {
+              "from": "absent",
+              "to": "absent"
+            }
+          }
+        },
+        {
+          "slug": "quiz-design-psychology",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-quiz-design-psychology",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "April 1, 2025",
+              "to": "2025-04-01T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Quiz Tips", "Tutorials"],
+              "to": ["news-quiz-tips", "news-tutorials"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news8.png)"
+            },
+            "body": {
+              "from": "content: 8 sections",
+              "to": "27 ContentBlocks"
+            },
+            "featured": {
+              "from": true,
+              "to": "true"
+            }
+          }
+        },
+        {
+          "slug": "quiz-trends-2025",
+          "fields": {
+            "id": {
+              "from": null,
+              "to": "news-quiz-trends-2025",
+              "derivedFrom": "slug"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "publishedAt": {
+              "from": "March 25, 2025",
+              "to": "2025-03-25T03:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "categoryIds": {
+              "from": ["Industry News"],
+              "to": ["news-industry-news"]
+            },
+            "cover": {
+              "from": "coverImage (StaticImageData)",
+              "to": "ImageRef(/news/news9.png)"
+            },
+            "body": {
+              "from": "content: 9 sections",
+              "to": "30 ContentBlocks"
+            },
+            "featured": {
+              "from": true,
+              "to": "true"
+            }
+          }
+        }
+      ],
+      "summary": "9 news articles: excerpt -> summary, prose date -> ISO instant, category NAMES -> taxonomy ids (the stray 8th name 'Updates' -> news-platform-updates), StaticImageData cover -> ImageRef, 3 section shapes -> one ContentBlock[]."
+    },
+    "data/creator-tips-data": {
+      "records": [
+        {
+          "id": "tip-1",
+          "fields": {
+            "id": {
+              "from": "1",
+              "to": "tip-1"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "question-writing",
+              "to": ["tip-question-writing"]
+            },
+            "cover": {
+              "from": "image (string path)",
+              "to": "ImageRef"
+            },
+            "publishedAt": {
+              "from": "2023-04-15",
+              "to": "2023-04-15T00:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: markdown, 1490 chars",
+              "to": "1 legacy markdown block (verbatim)"
+            },
+            "author": {
+              "from": "{name, avatar}",
+              "to": "PersonRef {name, avatar: ImageRef}"
+            }
+          }
+        },
+        {
+          "id": "tip-2",
+          "fields": {
+            "id": {
+              "from": "2",
+              "to": "tip-2"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "engagement",
+              "to": ["tip-engagement"]
+            },
+            "cover": {
+              "from": "image (string path)",
+              "to": "ImageRef"
+            },
+            "publishedAt": {
+              "from": "2023-05-22",
+              "to": "2023-05-22T00:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: markdown, 1099 chars",
+              "to": "1 legacy markdown block (verbatim)"
+            },
+            "author": {
+              "from": "{name, avatar}",
+              "to": "PersonRef {name, avatar: ImageRef}"
+            }
+          }
+        },
+        {
+          "id": "tip-3",
+          "fields": {
+            "id": {
+              "from": "3",
+              "to": "tip-3"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "monetization",
+              "to": ["tip-monetization"]
+            },
+            "cover": {
+              "from": "image (string path)",
+              "to": "ImageRef"
+            },
+            "publishedAt": {
+              "from": "2023-06-10",
+              "to": "2023-06-10T00:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: markdown, 1301 chars",
+              "to": "1 legacy markdown block (verbatim)"
+            },
+            "author": {
+              "from": "{name, avatar}",
+              "to": "PersonRef {name, avatar: ImageRef}"
+            }
+          }
+        },
+        {
+          "id": "tip-4",
+          "fields": {
+            "id": {
+              "from": "4",
+              "to": "tip-4"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "design",
+              "to": ["tip-design"]
+            },
+            "cover": {
+              "from": "image (string path)",
+              "to": "ImageRef"
+            },
+            "publishedAt": {
+              "from": "2023-07-05",
+              "to": "2023-07-05T00:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: markdown, 1390 chars",
+              "to": "1 legacy markdown block (verbatim)"
+            },
+            "author": {
+              "from": "{name, avatar}",
+              "to": "PersonRef {name, avatar: ImageRef}"
+            }
+          }
+        },
+        {
+          "id": "tip-5",
+          "fields": {
+            "id": {
+              "from": "5",
+              "to": "tip-5"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "promotion",
+              "to": ["tip-promotion"]
+            },
+            "cover": {
+              "from": "image (string path)",
+              "to": "ImageRef"
+            },
+            "publishedAt": {
+              "from": "2023-08-12",
+              "to": "2023-08-12T00:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: markdown, 1905 chars",
+              "to": "1 legacy markdown block (verbatim)"
+            },
+            "author": {
+              "from": "{name, avatar}",
+              "to": "PersonRef {name, avatar: ImageRef}"
+            }
+          }
+        },
+        {
+          "id": "tip-6",
+          "fields": {
+            "id": {
+              "from": "6",
+              "to": "tip-6"
+            },
+            "summary": {
+              "from": "excerpt",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "technical",
+              "to": ["tip-technical"]
+            },
+            "cover": {
+              "from": "image (string path)",
+              "to": "ImageRef"
+            },
+            "publishedAt": {
+              "from": "2023-09-18",
+              "to": "2023-09-18T00:00:00.000Z"
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: markdown, 1612 chars",
+              "to": "1 legacy markdown block (verbatim)"
+            },
+            "author": {
+              "from": "{name, avatar}",
+              "to": "PersonRef {name, avatar: ImageRef}"
+            }
+          }
+        }
+      ],
+      "summary": "6 tips: markdown body wrapped as a single LEGACY markdown block (verbatim, trimmed of leading/trailing blank lines), category -> tip-<slug> id, dates -> ISO."
+    },
+    "data/knowledge-base-data": {
+      "records": [
+        {
+          "id": "kb-getting-started",
+          "fields": {
+            "id": {
+              "from": "getting-started",
+              "to": "kb-getting-started"
+            },
+            "slug": {
+              "from": null,
+              "to": "getting-started",
+              "reason": "kb had no slug; the route is /support/articles/<id>"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "general",
+              "to": ["kb-general"]
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: 6 sections",
+              "to": "19 ContentBlocks"
+            },
+            "publishedAt": {
+              "from": "absent (0/8 have a date)",
+              "to": "absent",
+              "reason": "no epoch invented"
+            }
+          }
+        },
+        {
+          "id": "kb-account-setup",
+          "fields": {
+            "id": {
+              "from": "account-setup",
+              "to": "kb-account-setup"
+            },
+            "slug": {
+              "from": null,
+              "to": "account-setup",
+              "reason": "kb had no slug; the route is /support/articles/<id>"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "account",
+              "to": ["kb-account"]
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: 6 sections",
+              "to": "20 ContentBlocks"
+            },
+            "publishedAt": {
+              "from": "absent (0/8 have a date)",
+              "to": "absent",
+              "reason": "no epoch invented"
+            }
+          }
+        },
+        {
+          "id": "kb-subscription-management",
+          "fields": {
+            "id": {
+              "from": "subscription-management",
+              "to": "kb-subscription-management"
+            },
+            "slug": {
+              "from": null,
+              "to": "subscription-management",
+              "reason": "kb had no slug; the route is /support/articles/<id>"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "billing",
+              "to": ["kb-billing"]
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: 7 sections",
+              "to": "24 ContentBlocks"
+            },
+            "publishedAt": {
+              "from": "absent (0/8 have a date)",
+              "to": "absent",
+              "reason": "no epoch invented"
+            }
+          }
+        },
+        {
+          "id": "kb-quiz-creation-basics",
+          "fields": {
+            "id": {
+              "from": "quiz-creation-basics",
+              "to": "kb-quiz-creation-basics"
+            },
+            "slug": {
+              "from": null,
+              "to": "quiz-creation-basics",
+              "reason": "kb had no slug; the route is /support/articles/<id>"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "quiz-creation",
+              "to": ["kb-quiz-creation"]
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: 8 sections",
+              "to": "26 ContentBlocks"
+            },
+            "publishedAt": {
+              "from": "absent (0/8 have a date)",
+              "to": "absent",
+              "reason": "no epoch invented"
+            }
+          }
+        },
+        {
+          "id": "kb-tournament-creation",
+          "fields": {
+            "id": {
+              "from": "tournament-creation",
+              "to": "kb-tournament-creation"
+            },
+            "slug": {
+              "from": null,
+              "to": "tournament-creation",
+              "reason": "kb had no slug; the route is /support/articles/<id>"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "tournaments",
+              "to": ["kb-tournaments"]
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: 11 sections",
+              "to": "37 ContentBlocks"
+            },
+            "publishedAt": {
+              "from": "absent (0/8 have a date)",
+              "to": "absent",
+              "reason": "no epoch invented"
+            }
+          }
+        },
+        {
+          "id": "kb-privacy-settings",
+          "fields": {
+            "id": {
+              "from": "privacy-settings",
+              "to": "kb-privacy-settings"
+            },
+            "slug": {
+              "from": null,
+              "to": "privacy-settings",
+              "reason": "kb had no slug; the route is /support/articles/<id>"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "privacy",
+              "to": ["kb-privacy"]
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: 9 sections",
+              "to": "30 ContentBlocks"
+            },
+            "publishedAt": {
+              "from": "absent (0/8 have a date)",
+              "to": "absent",
+              "reason": "no epoch invented"
+            }
+          }
+        },
+        {
+          "id": "kb-troubleshooting-quiz-issues",
+          "fields": {
+            "id": {
+              "from": "troubleshooting-quiz-issues",
+              "to": "kb-troubleshooting-quiz-issues"
+            },
+            "slug": {
+              "from": null,
+              "to": "troubleshooting-quiz-issues",
+              "reason": "kb had no slug; the route is /support/articles/<id>"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "technical",
+              "to": ["kb-technical"]
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: 8 sections",
+              "to": "27 ContentBlocks"
+            },
+            "publishedAt": {
+              "from": "absent (0/8 have a date)",
+              "to": "absent",
+              "reason": "no epoch invented"
+            }
+          }
+        },
+        {
+          "id": "kb-community-guidelines",
+          "fields": {
+            "id": {
+              "from": "community-guidelines",
+              "to": "kb-community-guidelines"
+            },
+            "slug": {
+              "from": null,
+              "to": "community-guidelines",
+              "reason": "kb had no slug; the route is /support/articles/<id>"
+            },
+            "summary": {
+              "from": "description",
+              "to": "summary"
+            },
+            "categoryIds": {
+              "from": "general",
+              "to": ["kb-general"]
+            },
+            "readMinutes": {
+              "from": "readTime",
+              "to": "readMinutes"
+            },
+            "body": {
+              "from": "content: 9 sections",
+              "to": "29 ContentBlocks"
+            },
+            "publishedAt": {
+              "from": "absent (0/8 have a date)",
+              "to": "absent",
+              "reason": "no epoch invented"
+            }
+          }
+        }
+      ],
+      "summary": "8 kb articles: string category -> kb-<slug> id, 3 section shapes -> one ContentBlock[], no author/cover/date (the fixture had none)."
+    },
+    "data/chat-data": {
+      "records": [
+        {
+          "collection": "contacts",
+          "fields": {
+            "avatar: string": {
+              "from": "string path",
+              "to": "ImageRef"
+            },
+            "lastSeen": {
+              "from": [null, "2 hours ago", null, null, "yesterday"],
+              "to": [null, "2026-10-29T10:00:00.000Z", null, null, "2026-10-28T12:00:00.000Z"],
+              "reason": "prose -> absolute instant anchored at the frozen fixture clock"
+            }
+          }
+        },
+        {
+          "collection": "conversations",
+          "fields": {
+            "unread": {
+              "from": [2, 0, 1, 0, 3],
+              "to": "DERIVED (deriveUnread)"
+            },
+            "lastMessage": {
+              "from": "stored {text,timestamp}",
+              "to": "DERIVED (deriveLastMessage)"
+            },
+            "messages[].text": {
+              "from": "text",
+              "to": "body"
+            },
+            "messages[].timestamp": {
+              "from": "timestamp",
+              "to": "sentAt"
+            },
+            "messages[].image": {
+              "from": "1 string path",
+              "to": "ImageRef"
+            }
+          }
+        },
+        {
+          "collection": "recentMessages",
+          "fields": {
+            "<whole array>": {
+              "from": "5 hand-maintained preview rows (3/5 avatars disagreed with the contacts)",
+              "to": "DERIVED (selectRecentMessages)",
+              "drift": "D12"
+            }
+          }
+        }
+      ],
+      "summary": "5 contacts, 5 conversations: prose presence -> lastSeenAt instants, derived preview columns dropped, message text -> body, timestamp -> sentAt. The `recentMessages` array is deleted; the drawer derives it."
+    },
+    "data/notifications": {
+      "records": [
+        {
+          "id": "notif-1",
+          "fields": {
+            "description": {
+              "from": "description",
+              "to": "body"
+            },
+            "icon": {
+              "from": "<Trophy className=\"h-5 w-5 text-yellow-500\" />",
+              "to": "trophy",
+              "drift": "D10"
+            },
+            "time": {
+              "from": "10m ago",
+              "to": "2026-10-29T11:50:00.000Z",
+              "drift": "D9"
+            },
+            "link": {
+              "from": "/profile/achievements",
+              "to": "/profile/alexjohnson",
+              "reason": "target route does not exist (D13)",
+              "drift": "D13"
+            }
+          }
+        },
+        {
+          "id": "notif-2",
+          "fields": {
+            "description": {
+              "from": "description",
+              "to": "body"
+            },
+            "icon": {
+              "from": "<Users className=\"h-5 w-5 text-blue-500\" />",
+              "to": "users",
+              "drift": "D10"
+            },
+            "time": {
+              "from": "1h ago",
+              "to": "2026-10-29T11:00:00.000Z",
+              "drift": "D9"
+            },
+            "link": {
+              "from": "/profile/followers",
+              "to": "/profile/sarahwilliams",
+              "reason": "target route does not exist (D13)",
+              "drift": "D13"
+            }
+          }
+        },
+        {
+          "id": "notif-3",
+          "fields": {
+            "description": {
+              "from": "description",
+              "to": "body"
+            },
+            "icon": {
+              "from": "<Gift className=\"h-5 w-5 text-green-500\" />",
+              "to": "gift",
+              "drift": "D10"
+            },
+            "time": {
+              "from": "3h ago",
+              "to": "2026-10-29T09:00:00.000Z",
+              "drift": "D9"
+            },
+            "link": {
+              "from": "/earnings",
+              "to": "/affiliate",
+              "reason": "target route does not exist (D13)",
+              "drift": "D13"
+            }
+          }
+        },
+        {
+          "id": "notif-4",
+          "fields": {
+            "description": {
+              "from": "description",
+              "to": "body"
+            },
+            "icon": {
+              "from": "<Calendar className=\"h-5 w-5 text-purple-500\" />",
+              "to": "calendar",
+              "drift": "D10"
+            },
+            "time": {
+              "from": "5h ago",
+              "to": "2026-10-29T07:00:00.000Z",
+              "drift": "D9"
+            },
+            "link": {
+              "from": "/tournaments",
+              "to": "/tournaments"
+            }
+          }
+        },
+        {
+          "id": "notif-5",
+          "fields": {
+            "description": {
+              "from": "description",
+              "to": "body"
+            },
+            "icon": {
+              "from": "<AlertCircle className=\"h-5 w-5 text-red-500\" />",
+              "to": "alert-circle",
+              "drift": "D10"
+            },
+            "time": {
+              "from": "1d ago",
+              "to": "2026-10-28T12:00:00.000Z",
+              "drift": "D9"
+            },
+            "link": {
+              "from": "/create",
+              "to": "/create/editor",
+              "reason": "target route does not exist (D13)",
+              "drift": "D13"
+            }
+          }
+        },
+        {
+          "id": "notif-6",
+          "fields": {
+            "description": {
+              "from": "description",
+              "to": "body"
+            },
+            "icon": {
+              "from": "<Star className=\"h-5 w-5 text-amber-500\" />",
+              "to": "star",
+              "drift": "D10"
+            },
+            "time": {
+              "from": "2d ago",
+              "to": "2026-10-27T12:00:00.000Z",
+              "drift": "D9"
+            },
+            "link": {
+              "from": "/my-quizzes",
+              "to": "/my-quizzes"
+            }
+          }
+        }
+      ],
+      "summary": "6 notifications: JSX icon -> registry key, prose time -> ISO instant, description -> body, 4 links re-pointed at routes that actually exist."
+    },
+    "data/categories": {
+      "records": [],
+      "summary": "Deleted as a fixture. Its 22 rows were a third copy of the taxonomy (D15) with numeric ids and a stored `count`; `data/categories.ts` now re-exports the single table in content/categories.ts (25 quiz subjects). Module deleted: data/categories.tsx."
+    },
+    "data/searchdata": {
+      "records": [],
+      "summary": "Rewritten as a DERIVATION. The authored catalog (4 quizzes that exist nowhere, counts 42/38/65/29, creators 87/34/56) is deleted; `data/searchdata.ts` now builds the index from live quizzes + the category table + the route manifest (D18). Module deleted: data/searchdata.ts."
+    },
+    "data/tip-categories, data/news-categories": {
+      "records": [],
+      "summary": "The `categories` arrays in creator-tips-data and news-data were a fourth and fifth copy of the editorial vocabularies. They now re-export the tip/news rows of the single table with their counts DERIVED (D15)."
+    }
+  }
+}

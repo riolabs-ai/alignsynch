@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { articlesData } from "@/data/knowledge-base-data";
+import { categoryName } from "@/content/categories";
 import { ArrowRight, BookOpen, FileText, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -21,13 +22,13 @@ export function KnowledgeBase({ selectedCategory }: KnowledgeBaseProps) {
   const articles =
     selectedCategory === "all"
       ? articlesData
-      : articlesData.filter((article) => article.category === selectedCategory);
+      : articlesData.filter((article) => article.categoryIds.includes(`kb-${selectedCategory}`));
 
   // Filter articles based on search query
   const filteredArticles = articles.filter(
     (article) =>
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.description.toLowerCase().includes(searchQuery.toLowerCase()),
+      article.summary.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Get the category name for display
@@ -86,17 +87,16 @@ export function KnowledgeBase({ selectedCategory }: KnowledgeBaseProps) {
                       <div className="flex items-center">
                         <BookOpen className="h-4 w-4 mr-2 text-primary" />
                         <Badge variant="outline" className="text-xs">
-                          {article.category.charAt(0).toUpperCase() +
-                            article.category.slice(1).replace("-", " ")}
+                          {categoryName(article.categoryIds[0] ?? "")}
                         </Badge>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {article.readTime} min read
+                        {article.readMinutes} min read
                       </span>
                     </div>
                     <h3 className="font-medium text-left line-clamp-1 mb-2">{article.title}</h3>
                     <p className="text-sm line-clamp-1 text-muted-foreground text-left mb-4">
-                      {article.description}
+                      {article.summary}
                     </p>
                     <div className="flex items-center text-primary text-sm mt-auto">
                       <span>Read article</span>

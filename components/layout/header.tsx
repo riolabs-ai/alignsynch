@@ -65,7 +65,8 @@ export function Header() {
       quizzes: mockSearchData.quizzes
         .filter(
           (quiz) =>
-            quiz.title.toLowerCase().includes(query) || quiz.category.toLowerCase().includes(query),
+            quiz.title.toLowerCase().includes(query) ||
+            quiz.categoryIds.join(" ").toLowerCase().includes(query),
         )
         .slice(0, 4),
       categories: mockSearchData.categories
@@ -213,7 +214,7 @@ export function Header() {
                                     <p className="font-medium line-clamp-1">{quiz.title}</p>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge variant="outline" className="text-xs font-normal">
-                                        {quiz.category}
+                                        {quiz.categoryIds[0]}
                                       </Badge>
                                       <Badge variant="outline" className="text-xs font-normal">
                                         {quiz.difficulty}
@@ -251,7 +252,7 @@ export function Header() {
                                     <p className="font-medium">{category.name}</p>
                                   </div>
                                   <Badge variant="outline" className="text-xs font-normal">
-                                    {category.quizCount} quizzes
+                                    {category.count} quizzes
                                   </Badge>
                                 </Link>
                               ))}

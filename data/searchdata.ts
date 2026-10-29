@@ -1,47 +1,43 @@
-// Add mock search data
-export const mockSearchData = {
-  quizzes: [
-    { id: "q1", title: "World Geography Quiz", category: "Geography", difficulty: "Medium" },
-    {
-      id: "q2",
-      title: "Marvel Cinematic Universe Trivia",
-      category: "Entertainment",
-      difficulty: "Hard",
-    },
-    { id: "q3", title: "Basic Mathematics", category: "Education", difficulty: "Easy" },
-    {
-      id: "q4",
-      title: "History of Ancient Civilizations",
-      category: "History",
-      difficulty: "Medium",
-    },
-  ],
-  categories: [
-    { id: "c1", name: "Science", quizCount: 42 },
-    { id: "c2", name: "History", quizCount: 38 },
-    { id: "c3", name: "Entertainment", quizCount: 65 },
-    { id: "c4", name: "Sports", quizCount: 29 },
-  ],
-  creators: [
-    { id: "u1", username: "quizmaster", name: "Quiz Master", quizCount: 87 },
-    { id: "u2", username: "historyprof", name: "History Professor", quizCount: 34 },
-    { id: "u3", username: "scienceguru", name: "Science Guru", quizCount: 56 },
-  ],
-  pages: [
-    { id: "p1", title: "Home", path: "/" },
-    { id: "p2", title: "Today's Challenge", path: "/daily-challenge" },
-    { id: "p3", title: "Categories", path: "/categories" },
-    { id: "p4", title: "Quiz Battle", path: "/battle" },
-    { id: "p5", title: "News & Updates", path: "/news" },
-    { id: "p6", title: "Explore Quizzes", path: "/explore" },
-    { id: "p7", title: "Quiz Tournament", path: "/tournaments" },
-    { id: "p8", title: "Leaderboard", path: "/leaderboard" },
-    { id: "p9", title: "Quiz Creator Tips", path: "/creator-tips" },
-    { id: "p10", title: "Quiz Discussions", path: "/quiz-discussions" },
-    { id: "p11", title: "Create Quiz", path: "/create/editor" },
-    { id: "p12", title: "Ai Quiz Generator", path: "/create/generator" },
-    { id: "p13", title: "Affiliate Page", path: "/affiliate" },
-    { id: "p14", title: "Pricing Plan", path: "/pricing" },
-    { id: "p15", title: "Support", path: "/support" },
-  ],
-};
+/**
+ * Search — DERIVED, never authored (D18).
+ *
+ * The old module was an unrelated catalog: 4 quizzes (`q1`…`q4`) that existed in
+ * no collection, 4 categories whose `quizCount` (42/38/65/29) matched nothing,
+ * and 3 creators whose counts (87/34/56) matched no user. Every row below is
+ * copied from a real record or counted over real records:
+ *
+ *   quizzes[]     -> the public quizzes in data/, path = /quiz/<slug>
+ *   categories[]  -> the quiz-scoped taxonomy rows that have at least one quiz
+ *   creators[]    -> the user collection, quizCount = quizzes authored by that user
+ *   pages[]       -> the curated indexable routes in content/routes.ts
+ *
+ * Anything that does not resolve against the route manifest throws at import, so
+ * a dead link is a red build rather than a 404 in the palette.
+ */
+import { buildSearchIndex } from "../content/search";
+import { routeManifest } from "../content/routes";
+import { users } from "../lib/data/users";
+import { categories } from "./categories";
+import { currentQuiz } from "./currentQuiz";
+import { mockQuizzes } from "./mock-quizzes";
+
+/** Only `public` quizzes enter the index; the 20 generator templates are private drafts. */
+const searchableQuizzes = [...mockQuizzes, currentQuiz].map((quiz) => ({
+  id: quiz.id,
+  slug: quiz.slug,
+  title: quiz.title,
+  difficulty: quiz.difficulty,
+  categoryIds: quiz.categoryIds,
+  visibility: quiz.settings.visibility,
+  ...(quiz.author ? { author: { id: quiz.author.id } } : {}),
+}));
+
+export const searchIndex = buildSearchIndex(
+  searchableQuizzes,
+  categories,
+  users.map((user) => ({ id: user.id, username: user.username, name: user.name })),
+  routeManifest,
+);
+
+/** Kept under the old name so the header's command palette needs no rewrite. */
+export const mockSearchData = searchIndex;

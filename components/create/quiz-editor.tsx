@@ -41,20 +41,21 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Question, Quiz } from "@/types/quiz";
+import type { Quiz } from "@/content/quiz";
+import { toDraft, type QuestionDraft, type QuizDraft } from "./quiz-draft";
 import { ChevronDown, ChevronUp, Eye, PlusCircle, Save, Trash, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 interface QuizEditorProps {
-  initialQuizzes?: Quiz[];
+  initialQuizzes?: readonly Quiz[];
 }
 
 export function QuizEditor({ initialQuizzes = [] }: QuizEditorProps) {
   const [activeQuizIndex, setActiveQuizIndex] = useState(0);
-  const [quizzes, setQuizzes] = useState(
+  const [quizzes, setQuizzes] = useState<QuizDraft[]>(
     initialQuizzes.length > 0
-      ? initialQuizzes
+      ? initialQuizzes.map((quiz, index) => toDraft(quiz, index))
       : [
           {
             id: 1,
@@ -381,7 +382,7 @@ export function QuizEditor({ initialQuizzes = [] }: QuizEditorProps) {
           </div>
 
           <Accordion type="single" collapsible className="w-full">
-            {activeQuiz.questions.map((question: Question, questionIndex: number) => (
+            {activeQuiz.questions.map((question: QuestionDraft, questionIndex: number) => (
               <AccordionItem key={question.id} value={`question-${question.id}`}>
                 <AccordionTrigger className="hover:bg-muted/50 px-4 rounded-md">
                   <div className="flex items-center justify-between w-full pr-4">
