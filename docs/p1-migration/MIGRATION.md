@@ -438,18 +438,46 @@ instead of shipping a campaign that silently never runs. `/quiz/<id>` projects
 prints `formatCurrency(stats.rewardCents)`, so the detail page cannot advertise a prize the
 card does not (`$7.50` while the campaign runs, `$10.00` before and after).
 
-Two qualifications, stated because a green check is easy to over-read. **The explore page's
-slot has no live surface**: `explore-page/popular[1]` maps to `explorePopular`, which only
-`components/explore/explore-featured.tsx` renders, and nothing imports that component
-(`/explore` renders `ExploreQuizzesPage` → `ExploreQuizList` over `exploreAll`). The join,
-the campaign and `E17` are correct for the slot, but no page shows it —
-`explore-featured/popular[1]` is the one that renders on screen today. And the `featured`
-page is **request-time** on purpose (`export const dynamic = "force-dynamic"`): a static
-prerender would evaluate the card projection at build time, so the HTML a crawler or first
-paint receives would carry the catalog snapshot — or, for a build made inside the window,
-freeze the campaign numbers permanently. Everything else in the app is still statically
-prerendered and still formats countdowns at build time; that is the older D9 debt, not
-something this join introduced.
+Both slots now have a screen (P3b). `explore-featured/popular[1]` always did: `/explore/featured`
+renders `FeaturedQuizzesPage` over `featuredPopular`. `explore-page/popular[1]` did not — its
+shelf `explorePopular` was rendered only by `components/explore/explore-featured.tsx`, which
+nothing imported, so the campaign was correct in the model and invisible in the app. That card's
+three options were mount, re-point and retire; **mount** won on the evidence:
+
+- **Re-point has no target.** The only surface `/explore` shows is `homeFeatured` (its `Featured
+  Quizzes` block) and `exploreAll` (the filtered grid, reused by the category pages). `homeFeatured`
+  renders on `/` as well, and `slotShelves` names one shelf from one group only — the inverse map
+  throws at import if a second group claims it. `exploreAll` is a sorted/filtered grid, so a
+  position in it is not a stable place. There is no live position to name.
+- **Retire would delete authored evidence.** Deleting the three `explore*` shelves and the
+  `explore-page/*` slot groups rejects promo #1, and the C1 snapshot keys 18 authored card rows by
+  `explore-page/*` — `explore-page/popular[1]` among them, at 2105/2500 · $7.50. Without the
+  overlay that row projects the catalog numbers, so B-01's 31/31 claim loses the card it
+  reproduces: the committed snapshot says a merchandised Popular row _did_ exist on `/explore`.
+- **Mount restores the documented direction.** The D2 table above already assigns the explore
+  page's featured section to `exploreTrending/Popular/New`; the wiring kept `homeFeatured`'s
+  `FeaturedQuizzes` block instead, and three of its four cards were the same quizzes as the
+  Trending tab — one heading, one set of quizzes, twice.
+
+So `/explore` now renders `ExploreFeatured` in place of `<FeaturedQuizzes />`: the three curated
+`explore*` shelves behind Trending/Popular/New tabs, with the `View All Featured Quizzes` CTA to
+`/explore/featured`. The home page keeps its own `FeaturedQuizzes` block. The page is
+**request-time** for the same reason as the featured page — a static prerender would evaluate
+`explorePopular[1]` at build time — so `/explore` moves from the prerendered set to `ƒ` (manifest
+routes 30 → 29, hand-count 31 → 30 static pages of 34; it is the only route that changed). Both
+slot-bearing routes hand one server instant (`now`) to their client component, so server render
+and hydration project the same campaign at the same clock.
+
+One curation question is left open, deliberately, because it is not a campaign question.
+`exploreTrending/Popular/New` hold **three** ids each; the authored snapshot rows for
+`explore-page/*` are **six** per tab, and those 18 ids are exactly the `featuredTrending/Popular/New`
+lists. The mounted section therefore shows 3-card tabs, and authored positions `[3..5]` have no
+shelf position — the campaign at `[1]` renders either way, which is why it does not block.
+Whether `/explore` should show the authored six is a curation decision, routed as its own card —
+note that the initial commit's two tab components carry three cards per tab on `/explore` and six
+per tab on `/explore/featured`, the opposite of what the snapshot's labels imply, so the question
+covers both the shelves and the two components. The mounted surface is correct for what the
+shelves currently hold.
 
 The full C1 spec, the four product answers and the signed-off acceptance table live
 in `quiz-promotion-backlog.md` and `quiz-migration.md` §12.4 (harness documents,
