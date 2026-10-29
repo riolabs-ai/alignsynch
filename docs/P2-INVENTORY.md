@@ -445,12 +445,14 @@ first and every later unit shrinks rather than grows the surface.
    `quiz-discustion`, results and discussion pages read the existing fixture.
 6. **WU-3 — search and chat mocks** (68): delete `mockSearchData`, render
    `buildSearchIndex`; chat reads `data/chat-data.ts`.
-7. **WU-6 — home copy** (78) and 8. **WU-7 — shell/auth/404** (126)
-   establish `PageCopy` and the E23 ratchet; they are the template for 9–11.
-8. **WU-8 — categories + explore** (95).
-9. **WU-9 — marketing pages** (205): affiliate, pricing, news, support, creator-tips.
-10. **WU-10 — battle + daily-challenge** (176).
-11. **WU-11 — tournaments** (248): blocked on a decision, not on effort —
+7. **WU-6 — home copy** (78): establishes `PageCopy` and the E23 ratchet, and is the template
+   for 8–12.
+8. **WU-7 — shell/auth/404** (126): the second `PageCopy` consumer; also renders the footer
+   category column from `quizCategories`.
+9. **WU-8 — categories + explore** (95).
+10. **WU-9 — marketing pages** (205): affiliate, pricing, news, support, creator-tips.
+11. **WU-10 — battle + daily-challenge** (176).
+12. **WU-11 — tournaments** (248): blocked on a decision, not on effort —
     the domain is declared out of scope in `docs/DATA-MODEL.md`, so either the domain comes in first or
     tournament copy is a static `PageCopy` fixture with no tournament records.
 
