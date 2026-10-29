@@ -2,99 +2,29 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { formatCurrency, formatRelative } from "@/content/core";
 import type { PageCopySection } from "@/content/pages";
+import type { WinEventRow } from "@/content/people";
 import { itemLabel } from "@/lib/page-copy";
-import { formatDistanceToNow } from "date-fns";
+import { avatarSrcOf } from "@/lib/players";
 import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { media } from "@/data/media";
 
-// Sample live winners data
-const initialWinners = [
-  {
-    id: 1,
-    name: "Alex J.",
-    avatar: media["avatars.alex"].src,
-    amount: 5.75,
-    quiz: "Science Trivia",
-    timestamp: new Date("2025-05-20T10:58:00"), // Fixed date
-    isNew: true,
-    isHighValue: false,
-  },
-  {
-    id: 2,
-    name: "Sarah W.",
-    avatar: media["avatars.wizard"].src,
-    amount: 12.5,
-    quiz: "History Masters",
-    timestamp: new Date("2025-05-20T10:55:00"), // Fixed date
-    isNew: false,
-    isHighValue: true,
-  },
-  {
-    id: 3,
-    name: "Mike B.",
-    avatar: media["avatars.sarah"].src,
-    amount: 3.25,
-    quiz: "Pop Culture Quiz",
-    timestamp: new Date("2025-05-20T10:52:00"), // Fixed date
-    isNew: false,
-    isHighValue: false,
-  },
-  {
-    id: 4,
-    name: "Emily D.",
-    avatar: media["avatars.king"].src,
-    amount: 7.8,
-    quiz: "Geography Challenge",
-    timestamp: new Date("2025-05-20T10:48:00"), // Fixed date
-    isNew: false,
-    isHighValue: false,
-  },
-  {
-    id: 5,
-    name: "David W.",
-    avatar: media["avatars.champion"].src,
-    amount: 15.0,
-    quiz: "Math Wizards",
-    timestamp: new Date("2025-05-20T10:42:00"), // Fixed date
-    isNew: false,
-    isHighValue: true,
-  },
-  {
-    id: 6,
-    name: "Jessica T.",
-    avatar: media["avatars.mind"].src,
-    amount: 4.5,
-    quiz: "Movie Buffs",
-    timestamp: new Date("2025-05-20T10:35:00"), // Fixed date
-    isNew: false,
-    isHighValue: false,
-  },
-  {
-    id: 7,
-    name: "Ryan M.",
-    avatar: media["avatars.genious"].src,
-    amount: 9.25,
-    quiz: "Sports Trivia",
-    timestamp: new Date("2025-05-20T10:25:00"), // Fixed date
-    isNew: false,
-    isHighValue: false,
-  },
-  {
-    id: 8,
-    name: "Olivia A.",
-    avatar: media["avatars.brain"].src,
-    amount: 6.75,
-    quiz: "Music Masters",
-    timestamp: new Date("2025-05-21T10:15:00"), // Fixed date
-    isNew: false,
-    isHighValue: false,
-  },
-];
+interface LiveWinnersProps {
+  /** The band's words, from the home `PageCopy` fixture (WU-6) — never a literal in this view. */
+  copy: PageCopySection;
+  /**
+   * The newest wins, already joined to their player and quiz title. The home page is a server
+   * component and resolves them (`lib/win-feed.ts`), so this surface reads the fixture without
+   * shipping the quiz collection to the browser. What used to be here was an eight-record
+   * `initialWinners` array with its own avatars, invented quiz titles and a `new Date("2025-…")`
+   * per row — a third roster that no fixture could edit.
+   */
+  wins: WinEventRow[];
+}
 
-export function LiveWinners({ copy }: { copy: PageCopySection }) {
+export function LiveWinners({ copy, wins }: LiveWinnersProps) {
   return (
     <section className="space-y-4 bg-slate-50 dark:bg-slate-900 py-6 px-4 xl:px-8">
       <div className="flex items-center justify-between">
@@ -106,7 +36,7 @@ export function LiveWinners({ copy }: { copy: PageCopySection }) {
           <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
         </div>
         <Badge variant="outline" className="bg-green-50 dark:bg-green-500">
-          {initialWinners.length} {itemLabel(copy, "recent-winners")}
+          {wins.length} {itemLabel(copy, "recent-winners")}
         </Badge>
       </div>
 
@@ -119,12 +49,12 @@ export function LiveWinners({ copy }: { copy: PageCopySection }) {
           modules={[Navigation, Autoplay]}
           loop
         >
-          {initialWinners.map((winner) => (
-            <SwiperSlide key={winner.id} className="flex-shrink-0 max-w-[256px]">
+          {wins.map(({ event, player, quizTitle, highValue }) => (
+            <SwiperSlide key={event.id} className="flex-shrink-0 max-w-[256px]">
               <Card
-                className={`relative w-64 p-4 backdrop-blur-sm ${winner.isHighValue ? "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20" : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-900/20"} rounded-xl shadow-md hover:shadow-lg transition-all`}
+                className={`relative w-64 p-4 backdrop-blur-sm ${highValue ? "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20" : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-900/20"} rounded-xl shadow-md hover:shadow-lg transition-all`}
               >
-                {winner.isHighValue && (
+                {highValue && (
                   <div className="absolute top-4 right-2 animate-bounce">
                     <span className="text-2xl">🎉</span>
                   </div>
@@ -132,19 +62,17 @@ export function LiveWinners({ copy }: { copy: PageCopySection }) {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
                     <AvatarImage
-                      src={winner.avatar || media.placeholder.src}
+                      src={avatarSrcOf(player)}
                       className="object-cover object-center"
-                      alt={winner.name}
+                      alt={player.name}
                     />
-                    <AvatarFallback>{winner.name.substring(0, 2)}</AvatarFallback>
+                    <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div>
                     <h3 className="font-medium">
-                      <Link href={`/profile/${winner.id}`}>{winner.name}</Link>
+                      <Link href={`/profile/${player.handle}`}>{player.name}</Link>
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(winner.timestamp, { addSuffix: true })}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{formatRelative(event.at)}</p>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center gap-2">
@@ -152,10 +80,9 @@ export function LiveWinners({ copy }: { copy: PageCopySection }) {
                   <p className="text-sm">
                     {itemLabel(copy, "won")}{" "}
                     <span className="font-semibold text-green-600">
-                      ${winner.amount.toFixed(2)}
+                      {formatCurrency(event.amountCents)}
                     </span>{" "}
-                    {itemLabel(copy, "playing")}{" "}
-                    <span className="font-medium">"{winner.quiz}"</span>
+                    {itemLabel(copy, "playing")} <span className="font-medium">"{quizTitle}"</span>
                   </p>
                 </div>
               </Card>

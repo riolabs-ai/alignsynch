@@ -26,206 +26,16 @@ import { LeaderboardFilters } from "./leaderboard-filters";
 import { LeaderboardPodium } from "./leaderboard-podium";
 import { LeaderboardStats } from "./leaderboard-stats";
 import { LeaderboardTable } from "./leaderboard-table";
-import { media } from "@/data/media";
+import { leaderboardEntries } from "@/lib/players";
 
-// Sample leaderboard data
-export const leaderboardData = [
-  {
-    id: 1,
-    name: "Alex Johnson",
-    avatar: media["avatars.alex"].src,
-    score: 9850,
-    quizzes: 42,
-    rank: 1,
-    badge: "Diamond",
-    winStreak: 15,
-    lastActive: "Today",
-    country: "United States",
-    level: 78,
-  },
-  {
-    id: 2,
-    name: "Sarah Williams",
-    avatar: media["avatars.sarah"].src,
-    score: 8720,
-    quizzes: 38,
-    rank: 2,
-    badge: "Platinum",
-    winStreak: 8,
-    lastActive: "Today",
-    country: "Canada",
-    level: 65,
-  },
-  {
-    id: 3,
-    name: "Michael Brown",
-    avatar: media["avatars.wizard"].src,
-    score: 7640,
-    quizzes: 35,
-    rank: 3,
-    badge: "Gold",
-    winStreak: 6,
-    lastActive: "Yesterday",
-    country: "United Kingdom",
-    level: 59,
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    avatar: media["avatars.champion"].src,
-    score: 6980,
-    quizzes: 31,
-    rank: 4,
-    badge: "Gold",
-    winStreak: 4,
-    lastActive: "Today",
-    country: "Australia",
-    level: 52,
-  },
-  {
-    id: 5,
-    name: "David Wilson",
-    avatar: media["avatars.king"].src,
-    score: 6540,
-    quizzes: 29,
-    rank: 5,
-    badge: "Silver",
-    winStreak: 3,
-    lastActive: "2 days ago",
-    country: "Germany",
-    level: 48,
-  },
-  {
-    id: 6,
-    name: "Jessica Taylor",
-    avatar: media["avatars.mind"].src,
-    score: 5920,
-    quizzes: 27,
-    rank: 6,
-    badge: "Silver",
-    winStreak: 5,
-    lastActive: "Today",
-    country: "France",
-    level: 45,
-  },
-  {
-    id: 7,
-    name: "Ryan Martinez",
-    avatar: media["avatars.genious"].src,
-    score: 5480,
-    quizzes: 25,
-    rank: 7,
-    badge: "Bronze",
-    winStreak: 2,
-    lastActive: "Yesterday",
-    country: "Spain",
-    level: 41,
-  },
-  {
-    id: 8,
-    name: "Olivia Anderson",
-    avatar: media["avatars.brain"].src,
-    score: 5120,
-    quizzes: 23,
-    rank: 8,
-    badge: "Bronze",
-    winStreak: 0,
-    lastActive: "3 days ago",
-    country: "Italy",
-    level: 38,
-  },
-  {
-    id: 9,
-    name: "Daniel Thomas",
-    avatar: media["avatars.guru"].src,
-    score: 4780,
-    quizzes: 21,
-    rank: 9,
-    badge: "Bronze",
-    winStreak: 1,
-    lastActive: "Today",
-    country: "Japan",
-    level: 36,
-  },
-  {
-    id: 10,
-    name: "Sophia Garcia",
-    avatar: media["avatars.master"].src,
-    score: 4350,
-    quizzes: 19,
-    rank: 10,
-    badge: "Bronze",
-    winStreak: 2,
-    lastActive: "Yesterday",
-    country: "Brazil",
-    level: 33,
-  },
-  {
-    id: 11,
-    name: "James Miller",
-    avatar: media["abstract-geometric-shapes"].src,
-    score: 4120,
-    quizzes: 18,
-    rank: 11,
-    badge: "Bronze",
-    winStreak: 0,
-    lastActive: "4 days ago",
-    country: "Mexico",
-    level: 31,
-  },
-  {
-    id: 12,
-    name: "Emma Wilson",
-    avatar: media["abstract-geometric-shapes"].src,
-    score: 3980,
-    quizzes: 17,
-    rank: 12,
-    badge: "Bronze",
-    winStreak: 1,
-    lastActive: "Today",
-    country: "South Korea",
-    level: 30,
-  },
-  {
-    id: 13,
-    name: "Liam Harris",
-    avatar: media["abstract-geometric-shapes"].src,
-    score: 3750,
-    quizzes: 16,
-    rank: 13,
-    badge: "Bronze",
-    winStreak: 0,
-    lastActive: "Yesterday",
-    country: "India",
-    level: 28,
-  },
-  {
-    id: 14,
-    name: "Ava Martin",
-    avatar: media["abstract-geometric-shapes"].src,
-    score: 3620,
-    quizzes: 15,
-    rank: 14,
-    badge: "Bronze",
-    winStreak: 0,
-    lastActive: "5 days ago",
-    country: "Russia",
-    level: 27,
-  },
-  {
-    id: 15,
-    name: "Noah Thompson",
-    avatar: media["abstract-geometric-shapes"].src,
-    score: 3480,
-    quizzes: 14,
-    rank: 15,
-    badge: "Bronze",
-    winStreak: 2,
-    lastActive: "Today",
-    country: "China",
-    level: 26,
-  },
-];
+/**
+ * The three boards this page shows, projected once at import from `data/players.ts`.
+ * What used to live here was a 15-record array of names, avatars, scores and streaks — a
+ * second copy of the people model that no fixture could edit (WU-1).
+ */
+const globalBoard = leaderboardEntries("global");
+const scienceBoard = leaderboardEntries("science", 5);
+const trendingBoard = leaderboardEntries("trending", 5);
 
 export function LeaderboardPage() {
   const [timeFilter, setTimeFilter] = useState("all-time");
@@ -286,7 +96,7 @@ export function LeaderboardPage() {
                   categoryFilter={categoryFilter}
                   setCategoryFilter={setCategoryFilter}
                 />
-                <LeaderboardPodium leaderboardData={leaderboardData.slice(0, 3)} />
+                <LeaderboardPodium entries={globalBoard.slice(0, 3)} />
               </TabsContent>
               <TabsContent value="categories" className="pt-4">
                 <div className="mb-6 flex items-center justify-between">
@@ -296,7 +106,7 @@ export function LeaderboardPage() {
                     This Month
                   </Button>
                 </div>
-                <LeaderboardTable leaderboardData={leaderboardData.slice(0, 5)} />
+                <LeaderboardTable entries={scienceBoard} />
               </TabsContent>
               <TabsContent value="trending" className="pt-4">
                 <div className="mb-6 flex items-center justify-between">
@@ -306,9 +116,7 @@ export function LeaderboardPage() {
                     This Week
                   </Button>
                 </div>
-                <LeaderboardTable
-                  leaderboardData={[...leaderboardData].sort(() => Math.random() - 0.5).slice(0, 5)}
-                />
+                <LeaderboardTable entries={trendingBoard} />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -397,8 +205,8 @@ export function LeaderboardPage() {
 
           <div className="rounded-xl border bg-card shadow-sm">
             <LeaderboardTable
-              leaderboardData={leaderboardData.filter((user) =>
-                user.name.toLowerCase().includes(searchQuery.toLowerCase()),
+              entries={globalBoard.filter((entry) =>
+                entry.player.name.toLowerCase().includes(searchQuery.toLowerCase()),
               )}
               showPagination
               enhanced

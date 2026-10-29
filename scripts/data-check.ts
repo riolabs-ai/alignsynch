@@ -73,13 +73,16 @@ import { mockQuizzes } from "../data/mock-quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
+import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
 import { zMetricTable } from "../content/metrics";
 import { media } from "../data/media";
 import { affiliateTiers, earningSources, metricTable, streakRewards } from "../data/metrics";
 import { quizComments } from "../data/quiz-comments";
 import { quizResults } from "../data/quiz-results";
 import { quizReviews } from "../data/quiz-reviews";
+import { leaderboards, players, winEvents } from "../data/players";
 import { promotionFindings } from "./data-check-promotions";
+import { peopleFindings } from "./data-check-people";
 import { COPY_LITERAL_MAX, copyProblems, measureRoute } from "./copy-refs";
 import { pageCopies } from "../data/pages";
 import { pageCopyBudget } from "../data/pages/budget";
@@ -130,7 +133,8 @@ const nodeRequire = createRequire(__filename);
  * `pnpm gen`. When the source file exists, its compiled CommonJS module — produced by the
  * same `tsc -p tsconfig.datacheck.json` that compiled this validator — is required and its
  * exported array returned; when it is absent the generated set is simply empty. A present
- * but unloadable module is an E20 error, never a silent skip.
+ * but unloadable module is an E26 error, never a silent skip. (E20 is reserved for WU-5's
+ * DUP tier — `docs/P2-INVENTORY.md` — so the generator takes the next free code.)
  */
 function loadGenerated<T>(label: string, exportName: string): readonly T[] {
   const source = join(process.cwd(), "data", "generated", `${label}.ts`);
@@ -140,14 +144,14 @@ function loadGenerated<T>(label: string, exportName: string): readonly T[] {
     moduleValue = nodeRequire(join(__dirname, "..", "data", "generated", label));
   } catch (cause) {
     err(
-      "E20",
+      "E26",
       `data/generated/${label}.ts exists but its compiled module failed to load: ${String(cause)}`,
     );
     return [];
   }
   const value = (moduleValue as Record<string, unknown>)[exportName];
   if (!Array.isArray(value)) {
-    err("E20", `data/generated/${label}.ts must export \`${exportName}\` as an array`);
+    err("E26", `data/generated/${label}.ts must export \`${exportName}\` as an array`);
     return [];
   }
   return value as T[];
@@ -817,48 +821,6 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  */
 
 /* ------------------------------------------------------------------ *
- * E20 — no component types a label the model already owns
- *
- * E17/E18/E19 made a *file path* the registry's business. This is the same rule one
- * layer up: a category name, a quiz title and a badge label are the fixtures' business.
- * The shape it forbids is a whole node — `<span>Science</span>`, `label="Science"` —
- * because that is exactly the copy that drifts: rename the subject in
- * `content/categories.ts` and the page keeps saying the old name while typecheck, lint,
- * data:check and build all stay green (docs/P2-INVENTORY.md, DUP tier: 26 hits).
- *
- * The vocabulary is built from the model here, never from the component tree, so the
- * scan cannot agree with the code it is checking. Record-shaped literals inside a
- * component-level mock (`category: "Science"`) are E21's business, not this rule's.
- *
- * Quiz scope only, on purpose: the editorial categories (`news`/`tip`/`kb`) are ordinary
- * prose words — a chat settings tab called "Privacy" is not the `kb-privacy` category, and
- * "Tournaments" is a nav label in three places — so a whole-node rule over them reports
- * chrome, not a duplicated label. Their copy is the editorial work units' business.
- * ------------------------------------------------------------------ */
-
-const taxonomy = taxonomyVocabulary(
-  taxonomyEntries({
-    categories: quizSubjects,
-    quizzes: [
-      ...quizRecords,
-      ...browseQuizzes,
-      ...authoredQuizzes,
-      ...mockQuizzes,
-      ...createdQuizzes,
-      currentQuiz,
-    ],
-    badges: promotions,
-  }),
-);
-
-for (const literal of findTaxonomyLiterals(uiSources, taxonomy)) {
-  err(
-    "E20",
-    `${literal.file}:${literal.line} types the ${literal.kind} label "${literal.label}", which "${literal.owner}" already owns — render it from ${literal.from} instead of writing it again`,
-  );
-}
-
-/* ------------------------------------------------------------------ *
  * E22/E25 — a rendered number comes from a MetricSnapshot
  *
  * E10/E17 proved a *reference* resolves. A number was invisible to every check: `+4 from last
@@ -950,6 +912,48 @@ if (metricLiterals.length === 0 && Object.keys(metricTable).length === 0) {
   err(
     "E22",
     "the metric scan found 0 literals and data/metrics.ts holds 0 snapshots: the scan walked no sources or the fixture was not parsed",
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * E20 — no component types a label the model already owns
+ *
+ * E17/E18/E19 made a *file path* the registry's business. This is the same rule one
+ * layer up: a category name, a quiz title and a badge label are the fixtures' business.
+ * The shape it forbids is a whole node — `<span>Science</span>`, `label="Science"` —
+ * because that is exactly the copy that drifts: rename the subject in
+ * `content/categories.ts` and the page keeps saying the old name while typecheck, lint,
+ * data:check and build all stay green (docs/P2-INVENTORY.md, DUP tier: 26 hits).
+ *
+ * The vocabulary is built from the model here, never from the component tree, so the
+ * scan cannot agree with the code it is checking. Record-shaped literals inside a
+ * component-level mock (`category: "Science"`) are E21's business, not this rule's.
+ *
+ * Quiz scope only, on purpose: the editorial categories (`news`/`tip`/`kb`) are ordinary
+ * prose words — a chat settings tab called "Privacy" is not the `kb-privacy` category, and
+ * "Tournaments" is a nav label in three places — so a whole-node rule over them reports
+ * chrome, not a duplicated label. Their copy is the editorial work units' business.
+ * ------------------------------------------------------------------ */
+
+const taxonomy = taxonomyVocabulary(
+  taxonomyEntries({
+    categories: quizSubjects,
+    quizzes: [
+      ...quizRecords,
+      ...browseQuizzes,
+      ...authoredQuizzes,
+      ...mockQuizzes,
+      ...createdQuizzes,
+      currentQuiz,
+    ],
+    badges: promotions,
+  }),
+);
+
+for (const literal of findTaxonomyLiterals(uiSources, taxonomy)) {
+  err(
+    "E20",
+    `${literal.file}:${literal.line} types the ${literal.kind} label "${literal.label}", which "${literal.owner}" already owns — render it from ${literal.from} instead of writing it again`,
   );
 }
 
@@ -1186,6 +1190,49 @@ for (const copy of ownedCopies) {
 const e21DebtCopies = fixtureCopies.length - ownedCopies.length;
 
 /* ------------------------------------------------------------------ *
+ * E24 — the people and leaderboard fixture resolves
+ *
+ * Six surfaces (`/leaderboard` ×3, `/daily-challenge`, the two home widgets) each authored
+ * their own records: 107 literals in eight files, and no fixture could reach one of them.
+ * `content/people.ts` now owns `Player`, `LeaderboardRow` and `WinEvent`; this is the half a
+ * single record cannot prove — that a row's `playerId` is a player, that a win's `quizId` is
+ * a quiz, that a player's `avatarKey` is a registered **avatar** file, that a board's ranks
+ * match its positions, and that a board carrying movement is ordered by it. Every one of
+ * those failures renders a plausible page (a board one person short, a crown on the wrong
+ * head, a payout for a quiz nobody can play) which is why they are errors, not warnings.
+ *
+ * The per-record pass is E0 like every other collection; the rules themselves live in
+ * `scripts/data-check-people.ts` so `scripts/__tests__/people-invariants.test.ts` can violate
+ * each of them without a filesystem.
+ * ------------------------------------------------------------------ */
+
+const playerRecords = validateCollection("E0", "player", zPlayer, [...players]);
+const winRecords = validateCollection("E0", "win", zWinEvent, [...winEvents]);
+for (const [board, rows] of Object.entries(leaderboards)) {
+  validateCollection("E0", `leaderboard "${board}"`, zLeaderboardRow, [...rows]);
+}
+
+const leaderboardRowCount = Object.values(leaderboards).reduce(
+  (total, rows) => total + rows.length,
+  0,
+);
+
+for (const finding of peopleFindings({
+  players: playerRecords,
+  leaderboards,
+  wins: winRecords,
+  quizIds: new Set(quizzes.map((quiz) => quiz.id)),
+  media: {
+    entry: (key) => registry[key],
+    /** The registry addresses one file per key (E18); this is the file-exists half. */
+    fileExists: (src) => existsSync(join(process.cwd(), "public", assetOf(src))),
+  },
+  nowIso: DEMO_NOW_ISO,
+})) {
+  err(finding.rule, finding.message);
+}
+
+/* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock
  *
  * The UI renders relative labels against `DEMO_NOW_ISO` (content/core.ts), so an instant
@@ -1232,6 +1279,9 @@ const counts = [
   `${activityResults.length} quiz results, ${activityComments.length} comments, ${activityReviews.length} reviews`,
   `${Object.keys(registry).length} media entries`,
   `${Object.keys(pageCopies).length} page-copy routes`,
+  `${playerRecords.length} players`,
+  `${leaderboardRowCount} leaderboard rows`,
+  `${winRecords.length} wins`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
   ...(generatedQuizzes.length > 0 || generatedPromotions.length > 0
     ? [
