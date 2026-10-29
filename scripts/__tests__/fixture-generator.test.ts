@@ -3,21 +3,24 @@
  *
  * Written BEFORE the generator existed, so every case below failed on the tree that had
  * only hand-authored fixtures. The generator is the bulk-variation facility (P3): it emits
- * `data/generated/quizzes.ts` + `promotions.ts` from templates, and the two properties it
- * must guarantee above all else are
+ * `data/generated/quizzes.ts` from templates, and the properties it must guarantee above
+ * all else are
  *
- *   1. reproducibility — the same `--seed` and `--count` produce byte-identical files, and
- *   2. idempotency     — re-running without a seed change rewrites nothing (reports "unchanged").
+ *   1. reproducibility — the same `--seed` and `--count` produce byte-identical files,
+ *   2. idempotency     — re-running without a seed change rewrites nothing (reports "unchanged"),
+ *   3. quizzes only    — no `promotions.ts`. A promotion is addressed to a slot a shelf
+ *      renders (E17), and a generated quiz is in no shelf, so a generated campaign can only
+ *      fail the data gate; a leftover `promotions.ts` from an older clone is removed.
  *
  * These are exercised by shelling out to the real CLI into a throwaway directory, because a
  * test that re-implements the PRNG or the serializer proves nothing about the command a
- * developer actually runs. The validation half (`data:check` folding generated records into
+ * developer actually runs. The validation half (`data:check` folding generated quizzes into
  * E0–E19) is proven by the `pnpm data:check` run itself, not re-implemented here.
  */
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -56,13 +59,40 @@ describe("scripts/gen-fixtures.mjs", () => {
         sha256(readFileSync(join(first, "quizzes.ts"))),
         sha256(readFileSync(join(second, "quizzes.ts"))),
       );
-      assert.equal(
-        sha256(readFileSync(join(first, "promotions.ts"))),
-        sha256(readFileSync(join(second, "promotions.ts"))),
-      );
     } finally {
       rmSync(first, { recursive: true, force: true });
       rmSync(second, { recursive: true, force: true });
+    }
+  });
+
+  it("writes quizzes only — promotions are curated, never generated", () => {
+    const dir = mkdtempSync(join(tmpdir(), "gen-promos-"));
+    try {
+      const stdout = generateInto(dir, 20, 42);
+      assert.ok(existsSync(join(dir, "quizzes.ts")), "quizzes.ts should be written");
+      assert.ok(
+        !existsSync(join(dir, "promotions.ts")),
+        "promotions.ts must not be emitted: a generated quiz is in no shelf, so E17 has no slot to render its campaign",
+      );
+      assert.match(stdout, /wrote 20 quizzes/);
+      assert.doesNotMatch(stdout, /promotions to/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("removes a promotions.ts left behind by an older generator", () => {
+    const dir = mkdtempSync(join(tmpdir(), "gen-stale-promo-"));
+    try {
+      writeFileSync(join(dir, "promotions.ts"), "export const generatedPromotions = [];\n");
+      const stdout = run(["--count", "5", "--seed", "42", "--out", dir]);
+      assert.ok(
+        !existsSync(join(dir, "promotions.ts")),
+        "the stale file must be gone, or data:check E26 keeps failing on a file `pnpm gen` would never write",
+      );
+      assert.match(stdout, /removed .*promotions\.ts/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 
