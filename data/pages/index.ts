@@ -15,10 +15,12 @@
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { affiliatePageCopy } from "./affiliate";
+import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
 import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
+import { dailyChallengePageCopy } from "./daily-challenge";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
@@ -35,10 +37,12 @@ import { supportArticlePageCopy } from "./support-article";
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
   "/affiliate": affiliatePageCopy,
+  "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
   "/categories/[slug]": categoryDetailPageCopy,
   "/creator-tips": creatorTipsPageCopy,
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
+  "/daily-challenge": dailyChallengePageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
   "/login": loginPageCopy,
