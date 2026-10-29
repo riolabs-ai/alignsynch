@@ -150,6 +150,11 @@ process bug.
   silent extra.
 - Lint rules that still have violations on `main` are pinned to `warn` in `biome.jsonc`; flip each
   one to `error` as its violations are fixed instead of adding suppressions.
+- `pnpm gen` emits **quizzes only** into `data/generated/`, and `pnpm gen --count 20 --seed 42 &&
+  pnpm data:check` is a green gate. Promotions are curated (`data/promotions.ts`), never generated:
+  a campaign names a slot that `data/quiz-catalogue.ts` renders (E17), and a generated quiz is in
+  no shelf, so a generated one could never run — `data:check` E26 rejects a
+  `data/generated/promotions.ts` and `pnpm gen` deletes a leftover.
 
 ## Pitfalls
 

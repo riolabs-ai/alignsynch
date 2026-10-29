@@ -33,12 +33,10 @@ import {
   zQuiz,
   zQuizAuthoringCard,
   zQuizCard,
-  zQuizPromotion,
   selectQuizAuthoringCard,
   selectQuizCard,
   type Question,
   type Quiz,
-  type QuizPromotion,
 } from "../content/quiz";
 import { zQuizComment, zQuizResult, zQuizReview } from "../content/quiz-result";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
@@ -226,23 +224,32 @@ for (const [label, table] of [
 /* ------------------------------------------------------------------ *
  * P3 — generated fixtures (bulk variation), validated when present
  *
- * `pnpm gen` writes `data/generated/quizzes.ts` + `promotions.ts`, which are
- * gitignored. When the files exist the records are folded into every collection
- * check below, so a generated record is held to exactly the same invariants as a
- * hand-authored one; when they are absent `allQuizzes === quizzes` and this
- * validator behaves as it did before P3.
+ * `pnpm gen` writes `data/generated/quizzes.ts` — quizzes only — which is gitignored.
+ * When the file exists the records are folded into every collection check below, so a
+ * generated quiz is held to exactly the same invariants as a hand-authored one; when it
+ * is absent `allQuizzes === quizzes` and this validator behaves as it did before P3.
+ *
+ * `data/generated/promotions.ts` is **not** a fixture, and its presence is an E26 error
+ * rather than 7 E17 lines. A promotion names `(quizId, slot)` where the slot is a
+ * position `data/quiz-catalogue.ts` renders, and the shelves there are literal id lists,
+ * so a generated quiz (`quiz-gen-*`) is in no shelf: there is no slot at which its
+ * campaign could ever run, and a file of them can only fail E17. Campaigns are curated
+ * data (`data/promotions.ts`); the generator deletes a file an older clone left behind.
  * ------------------------------------------------------------------ */
 
 const generatedQuizRecords = loadGenerated<Quiz>("quizzes", "generatedQuizzes");
-const generatedPromotionRecords = loadGenerated<QuizPromotion>("promotions", "generatedPromotions");
 const generatedQuizzes = validateCollection("E0", "generated quiz", zQuiz, [
   ...generatedQuizRecords,
 ]);
-const generatedPromotions = validateCollection("E0", "generated promotion", zQuizPromotion, [
-  ...generatedPromotionRecords,
-]);
 const allQuizzes = [...quizzes, ...generatedQuizzes];
-const allPromotions = [...promotions, ...generatedPromotions];
+
+const generatedPromotionsSource = join(process.cwd(), "data", "generated", "promotions.ts");
+if (existsSync(generatedPromotionsSource)) {
+  err(
+    "E26",
+    "data/generated/promotions.ts exists, but promotions are curated data (data/promotions.ts) and are never generated: a promotion is addressed to a position a shelf renders (E17), and a generated quiz is in no shelf, so no slot could ever render its campaign — delete the file (`pnpm gen` removes it)",
+  );
+}
 
 /* ------------------------------------------------------------------ *
  * E1 — ids and slugs are unique
@@ -399,7 +406,7 @@ for (const quizId of Object.keys(quizAnalytics)) {
  * a negative case in `scripts/__tests__/promotion-invariants.test.ts`.
  * ------------------------------------------------------------------ */
 
-for (const finding of promotionFindings(allPromotions, allQuizzes)) {
+for (const finding of promotionFindings(promotions, allQuizzes)) {
   diagnostics.push({ code: finding.rule, severity: finding.severity, message: finding.message });
 }
 
@@ -1333,12 +1340,7 @@ const counts = [
   `${leaderboardRowCount} leaderboard rows`,
   `${winRecords.length} wins`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
-  ...(generatedQuizzes.length > 0 || generatedPromotions.length > 0
-    ? [
-        `${generatedQuizzes.length} generated quizzes`,
-        `${generatedPromotions.length} generated promotions`,
-      ]
-    : []),
+  ...(generatedQuizzes.length > 0 ? [`${generatedQuizzes.length} generated quizzes`] : []),
 ].join(", ");
 
 /** Printed on both paths: a validator that only reports its coverage when it passes
