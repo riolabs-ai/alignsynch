@@ -3,6 +3,7 @@ import { PricingFaq } from "@/components/pricing/pricing-faq";
 import { PricingCta } from "@/components/pricing/pricing-cta";
 import { Footer } from "@/components/layout/footer";
 import { pricingPageCopy } from "@/data/pages/pricing";
+import { shellPageCopy } from "@/data/pages/shell";
 import { sectionOf } from "@/lib/page-copy";
 
 /**
@@ -15,7 +16,7 @@ export default function PricingPage() {
       <PricingPlans copy={sectionOf(pricingPageCopy, "plans")} />
       <PricingFaq copy={sectionOf(pricingPageCopy, "faq")} />
       <PricingCta copy={sectionOf(pricingPageCopy, "cta")} />
-      <Footer />
+      <Footer copy={shellPageCopy} />
     </div>
   );
 }

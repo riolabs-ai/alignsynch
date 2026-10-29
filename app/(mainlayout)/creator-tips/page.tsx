@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/layout/footer";
 import CreatorTipsPage from "@/components/creator-tips/creator-tips-page";
 import { creatorTipsPageCopy } from "@/data/pages/creator-tips";
+import { shellPageCopy } from "@/data/pages/shell";
 import { sectionOf } from "@/lib/page-copy";
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export default function CreatorTips() {
         grid={sectionOf(creatorTipsPageCopy, "tips-grid")}
         cta={sectionOf(creatorTipsPageCopy, "cta")}
       />
-      <Footer />
+      <Footer copy={shellPageCopy} />
     </>
   );
 }

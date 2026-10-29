@@ -1,17 +1,21 @@
 import { recentMessages } from "@/data/chat-data";
 import { formatRelative } from "@/content/core";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { media } from "@/data/media";
 type Props = {
+  copy: PageCopySection;
   isMessagesDrawerOpen: boolean;
   setIsMessagesDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>;
   handleMessageClick: (conversationId: string) => void;
 };
 
 const ChatDrawer = ({
+  copy,
   setIsMessagesDrawerOpen,
   isMessagesDrawerOpen,
   handleMessageClick,
@@ -21,11 +25,11 @@ const ChatDrawer = ({
       className={`fixed top-0 right-0 z-50 h-full w-full sm:w-96 bg-background shadow-xl transition-transform duration-300 ease-in-out ${isMessagesDrawerOpen ? "translate-x-0" : "translate-x-full"}`}
     >
       <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="text-lg font-semibold">Recent Messages</h2>
+        <h2 className="text-lg font-semibold">{copy.heading}</h2>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link href="/chat" onClick={() => setIsMessagesDrawerOpen(false)}>
-              View All
+              {itemLabel(copy, "view-all")}
             </Link>
           </Button>
           <Button

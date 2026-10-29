@@ -1,46 +1,28 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, BookOpen, Brain, Home, Search, Star, Trophy, Zap } from "lucide-react";
+import { FloatingGlyphs } from "@/components/not-found/floating-glyphs";
+import { GoBackButton } from "@/components/not-found/go-back-button";
+import { notFoundPageCopy } from "@/data/pages/not-found";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { BookOpen, Brain, Home, Search, Trophy } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
+/**
+ * The 404. Not a route — Next renders this for any path that matches nothing, which is
+ * why `data/pages/budget.ts` keys its copy by the surface name `not-found` instead of a
+ * route pattern. The words come from `data/pages/not-found.ts`; the randomised glyphs are
+ * a client component of their own (`FloatingGlyphs`), so this module stays on the server
+ * and the fixture's zod never reaches the browser.
+ */
 export default function NotFound() {
-  const [floatingElements, setFloatingElements] = useState<
-    Array<{ id: number; x: number; y: number; delay: number }>
-  >([]);
-
-  useEffect(() => {
-    const elements = Array.from({ length: 8 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      delay: Math.random() * 2,
-    }));
-    setFloatingElements(elements);
-  }, []);
+  const message = sectionOf(notFoundPageCopy, "message");
+  const fact = sectionOf(notFoundPageCopy, "fact");
+  const actions = sectionOf(notFoundPageCopy, "actions");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Animated Background Elements */}
-      <div className="absolute inset-0">
-        {floatingElements.map((element) => (
-          <div
-            key={element.id}
-            className="absolute animate-pulse"
-            style={{
-              left: `${element.x}%`,
-              top: `${element.y}%`,
-              animationDelay: `${element.delay}s`,
-            }}
-          >
-            {element.id % 3 === 0 && <Brain className="w-6 h-6 text-purple-300 opacity-20" />}
-            {element.id % 3 === 1 && <Zap className="w-4 h-4 text-blue-300 opacity-20" />}
-            {element.id % 3 === 2 && <Star className="w-5 h-5 text-indigo-300 opacity-20" />}
-          </div>
-        ))}
-      </div>
+      <FloatingGlyphs />
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
@@ -63,24 +45,21 @@ export default function NotFound() {
           <Card className="bg-white/10 backdrop-blur-lg border-white/20 mb-8 xl:pt-6">
             <CardContent className="p-8">
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Oops! Quiz Not Found
+                {notFoundPageCopy.heading}
               </h2>
               <p className="text-lg text-gray-200 mb-6 leading-relaxed">
-                Looks like this page decided to play hide and seek! 🎯
+                {itemLabel(message, "line-1")}
                 <br />
-                {"Don't worry, even the best quiz masters get lost sometimes."}
+                {itemLabel(message, "line-2")}
               </p>
 
               {/* Fun Quiz Fact */}
               <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg p-4 mb-6 border border-white/10">
                 <div className="flex items-center justify-center mb-2">
                   <Trophy className="w-5 h-5 text-yellow-400 mr-2" />
-                  <span className="text-sm font-semibold text-yellow-400">Fun Quiz Fact</span>
+                  <span className="text-sm font-semibold text-yellow-400">{fact.heading}</span>
                 </div>
-                <p className="text-sm text-gray-200">
-                  The HTTP 404 error was named after room 404 at CERN, where the original web
-                  servers were located!
-                </p>
+                <p className="text-sm text-gray-200">{fact.body}</p>
               </div>
 
               {/* Action Buttons */}
@@ -88,42 +67,39 @@ export default function NotFound() {
                 <Link href="/">
                   <Button variant={"default"}>
                     <Home className="w-5 h-5 mr-2" />
-                    Back to Home
+                    {itemLabel(actions, "home")}
                   </Button>
                 </Link>
 
-                <Button variant="outline" onClick={() => window.history.back()}>
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Go Back
-                </Button>
+                <GoBackButton label={itemLabel(actions, "back")} />
               </div>
             </CardContent>
           </Card>
 
           {/* Search Suggestion */}
           <div className="text-center">
-            <p className="text-gray-300 mb-4">Looking for something specific?</p>
+            <p className="text-gray-300 mb-4">{itemLabel(actions, "prompt")}</p>
             <div className="flex justify-center space-x-4 text-sm">
               <Link
                 href="/explore"
                 className="text-purple-400 hover:text-purple-300 transition-colors flex items-center"
               >
                 <Search className="w-4 h-4 mr-1" />
-                Browse Quizzes
+                {itemLabel(actions, "browse")}
               </Link>
               <Link
                 href="/categories"
                 className="text-blue-400 hover:text-blue-300 transition-colors flex items-center"
               >
                 <Brain className="w-4 h-4 mr-1" />
-                Categories
+                {itemLabel(actions, "categories")}
               </Link>
               <Link
                 href="/leaderboard"
                 className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center"
               >
                 <Trophy className="w-4 h-4 mr-1" />
-                Leaderboard
+                {itemLabel(actions, "leaderboard")}
               </Link>
             </div>
           </div>
