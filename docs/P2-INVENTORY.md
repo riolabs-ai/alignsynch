@@ -374,7 +374,7 @@ Each names the check that proves it, per the P1 convention in `docs/DATA-MODEL.m
 | E18  | registry ⇄ disk is a bijection — every `MediaEntry.src` is a file, every file under `public/images`+avatars has an entry     | `data:check` E18: two-way walk, both directions 0 orphans (P2b item 3)          |
 | E19  | every `ImageRef.src` in `data/` equals a `MediaEntry.src`                                                                    | `data:check` E19 over `data/*` (today 73 fixture paths, all literal)            |
 | E20  | no display literal equals a `Category.name`, `Quiz.title` or `badge.label`                                                   | `data:check` E20: DUP tier = 0 (today: 26)                                      |
-| E21  | no module-level record array in `components/**` (≥ 2 object elements)                                                        | `data:check` E21: `island-refs.ts` binds `components/search`+`components/chat`+the palette; 17 copies in other units counted |
+| E21  | no module-level record array in `components/**` (≥ 2 object elements)                                                        | `data:check` E21: 0 on search/chat/header; 17 copies elsewhere counted          |
 | E22  | no metric literal (digit + unit/delta) in a component                                                                        | `data:check` E22 (today: 48)                                                    |
 | E23  | every route in `content/routes.ts` has a `PageCopy` key; an editorial component renders no leaf literal longer than 24 chars | E23 count + a per-route literal budget, ratcheting down per work unit           |
 | W7   | route metadata `title`/`description` stays hardcoded (26 strings, 13 routes)                                                 | declared: D14, `docs/DATA-MODEL.md` out-of-scope                                |
@@ -445,7 +445,7 @@ first and every later unit shrinks rather than grows the surface.
    `quiz-discustion`, results and discussion pages read the existing fixture.
 6. **WU-3 — search and chat mocks** (68): delete `mockSearchData`, render
    `buildSearchIndex`; chat reads `data/chat-data.ts`.
-   *Landed (#52):* `mockSearchData` and the inline catalog are gone. `/search` and the header
+   _Landed (#52):_ `mockSearchData` and the inline catalog are gone. `/search` and the header
    palette both render `querySearchIndex()` over `data/searchdata.ts` (42 quizzes, 14 categories,
    3 creators, 15 pages — all derived); the 7 media literals in the chat components went with the
    registry (#65), and the chat components already read `data/chat-data.ts`.
