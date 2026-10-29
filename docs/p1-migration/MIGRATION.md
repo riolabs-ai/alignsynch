@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 ## Run it
 
 ```bash
-pnpm data:check   # tsc (content + data + scripts) -> node:test (400 cases) -> validator
+pnpm data:check   # tsc (content + data + scripts) -> node:test (402 cases) -> validator
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm lint         # biome check (includes the formatter gate)
 pnpm build        # next build
@@ -38,7 +38,7 @@ PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts
       0 social instants after the fixture clock 2026-10-29T12:00:00.000Z
       0 metric literals in components/ and app/, 71 metric snapshots
 WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
-      400/400 node:test cases, 93 suites
+      402/402 node:test cases, 93 suites
 ```
 
 Repeated diagnostics are grouped by code and message template, so a gap that

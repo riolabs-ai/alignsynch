@@ -98,7 +98,7 @@ One `zod` schema is the single source of the content model: `content/` (15 modul
 shared primitives in `core.ts`, and the route manifest) defines every shape, `data/` holds nothing but
 fixtures, and every card is a projection (`selectQuizCard`) rather than an authored array.
 
-Evidence (`pnpm data:check`, re-run on node `v24.22.0` against `main` at `52dd8e49`; the block this
+Evidence (`pnpm data:check`, re-run on node `v24.22.0` against `main` at `320f463d`; the block this
 replaces was the `ed3377c4` snapshot, which is why it read 21 quizzes and 28 cases. Condensed — every
 number is verbatim from the run, the `ℹ`/`WARN`/`PASS` lines are gathered into one block for reading.
 Every P2 work unit moves these counts, so re-run against your `main` instead of copying them):
@@ -116,17 +116,17 @@ PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts
       0 social instants after the fixture clock 2026-10-29T12:00:00.000Z
       0 metric literals in components/ and app/, 71 metric snapshots (7 relative-instant and 40 duration labels declared out of E22 — see scripts/metric-refs.ts)
 WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
-      400/400 node:test cases, 93 suites, E0–E26 invariants
+      402/402 node:test cases, 93 suites, E0–E26 invariants
 ```
 
 - `types/quiz.ts` deleted; `data:check` E9 fails if it (or a stray `any` in `data/`) reappears.
 - Gate evidence, `GATE_LANE=full bash scripts/verify.sh` on node `v24.22.0` / pnpm `12.16.1`, run
   repeatedly during this pass. Every run was green and every count was identical: `deps` clean ·
   `typecheck` exit 0 · `lint` 0 errors, 201 warnings, 34 infos (375 files) · `format:check` (373 files) ·
-  `data:check` 400/400 cases in 93 suites · `build` 34 routes, 30 static pages. Wall time is not a
+  `data:check` 402/402 cases in 93 suites · `build` 34 routes, 30 static pages. Wall time is not a
   property of the tree here: as the load average moved over 6.5–20 the same gate took 51 s to 179 s,
   with `build` 36–76 s of it.
-- The block above is current, not a P1-era snapshot. The test count moved 28 → 33 → **400** as the
+- The block above is current, not a P1-era snapshot. The test count moved 28 → 33 → **402** as the
   P2 work units added suites, and the invariant set is `E0–E26`, of which `E14`–`E17` + `W6` are the
   promotion overlays and `E17`–`E19` are the media registry (see `MIGRATION.md`, which records the
   `E17` number being claimed twice).
