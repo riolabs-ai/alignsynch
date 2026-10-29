@@ -613,7 +613,18 @@ file. The other rows are untouched on purpose — a card that wants "hits remain
    category column from `quizCategories`.
 9. **WU-8 — categories + explore** (95).
 10. **WU-9 — marketing pages** (205): affiliate, pricing, news, support, creator-tips.
-11. **WU-10 — battle + daily-challenge** (176).
+11. **WU-10 — battle + daily-challenge** (176): **done**, landed as `e99d6deb` (PR #92; #57
+    closed). The mode data is a fixture, not copy: `content/battle.ts` + `data/battle-modes.ts` own
+    `BattleMode` and `battleRoundOptions`, and `content/daily-challenge.ts` +
+    `data/daily-challenge.ts` own the six `DailyChallengeReward` rows — so the mode list and the
+    badge set are records the page renders instead of literals it carries. The group mode's 3-10
+    roster moved onto that record as `playersMin`/`playersMax` and out of `data/metrics.ts`, where a
+    rendered metric had been holding a domain bound. The copy is `data/pages/battle.ts` and
+    `data/pages/daily-challenge.ts`, both routes at `budget: 0` in `data/pages/budget.ts`.
+    `data:check` E27 is the enforcement (`scripts/mode-invariants.ts`, negative cases in
+    `scripts/__tests__/battle-modes.test.ts`): a duplicated mode id, a missing one the page branches
+    on, a round default outside the options its selector renders, a `{placeholder}` the view cannot
+    fill, or a fixture nothing imports is a red build.
 12. **WU-11 — tournaments** (248): blocked on a decision, not on effort —
     the domain is declared out of scope in `docs/DATA-MODEL.md`, so either the domain comes in first or
     tournament copy is a static `PageCopy` fixture with no tournament records.
