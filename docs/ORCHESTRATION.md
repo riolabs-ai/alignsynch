@@ -1,7 +1,7 @@
 # Orchestration rules — how the orchestrator behaves
 
 Companion to `docs/ENV-SPEC.md` (which owns runtime, gates and repo ops). This file owns the
-*behaviour* of the orchestrating agent: how it asks, how it queues work, and how it recovers.
+_behaviour_ of the orchestrating agent: how it asks, how it queues work, and how it recovers.
 
 ## 1. Decisions go in a form, never in prose
 
@@ -9,7 +9,7 @@ Any time the operator must choose, answer, replay, or give an opinion, fire the 
 not a bulleted list in the message body.
 
 - recommended option **first**, at most four choices, every option carries its consequence
-- several *independent* questions in **one** call; dependent ones get their own call
+- several _independent_ questions in **one** call; dependent ones get their own call
 - `multi_select` only when the answers are genuinely additive
 - free text is always available — never force a choice where "something else" is plausible
 
@@ -41,13 +41,13 @@ per block; split multiples. A blocked card never merges anything while blocked.
 
 ## 3. Block kinds mean different things — say which
 
-| Kind | Meaning | Must contain |
-|---|---|---|
-| `needs_input` | the operator's call | a `❓ DECISION REQUIRED` block |
-| `capability` | hard wall, workaround applied | `NO ACTION NEEDED —` + the wall |
-| `transient` | flaky, will be retried | `NO ACTION NEEDED —` + retry state |
-| `dependency` | waiting on a parent | `NO ACTION NEEDED —` + parent id |
-| *superseded* | replaced by another card | **archive it**, never block it |
+| Kind          | Meaning                       | Must contain                       |
+| ------------- | ----------------------------- | ---------------------------------- |
+| `needs_input` | the operator's call           | a `❓ DECISION REQUIRED` block     |
+| `capability`  | hard wall, workaround applied | `NO ACTION NEEDED —` + the wall    |
+| `transient`   | flaky, will be retried        | `NO ACTION NEEDED —` + retry state |
+| `dependency`  | waiting on a parent           | `NO ACTION NEEDED —` + parent id   |
+| _superseded_  | replaced by another card      | **archive it**, never block it     |
 
 Never leave a `blocked` card with no question in it — `blocked` reads as "waiting on you".
 
@@ -77,7 +77,7 @@ so cards still read `running` with nothing behind them and the dispatcher report
 1. `systemctl --user is-active project-manager project-manager-proxy project-manager-refresh.timer hermes-dashboard`
    and check ports `9119`, `9120`, `9122`, `8317`, `9177`. All are `Restart=always` units now.
 2. For every card left `running`: `hermes kanban reclaim <id>`, then `hermes kanban dispatch`.
-   Do this *before* reading any status, or you will "continue" work no process is doing.
+   Do this _before_ reading any status, or you will "continue" work no process is doing.
 3. The dispatcher lives inside the gateway (60 s tick) and logs
    `kanban dispatcher [alignsynch]: spawned=N …` — use that line to confirm it is alive.
 4. Expect `crashed=N auto_blocked=N` on the first post-reboot tick: those are reboot kills, not real
