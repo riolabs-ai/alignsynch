@@ -1987,6 +1987,117 @@
       ],
       "summary": "6 notifications: JSX icon -> registry key, prose time -> ISO instant, description -> body, 4 links re-pointed at routes that actually exist."
     },
+    "data/quiz-catalogue": {
+      "records": [
+        {
+          "id": "quiz-science-quiz-space-exploration",
+          "fields": {
+            "stats.plays/stats.capacity": {
+              "from": [
+                "2453 / 3000 (home + featured page)",
+                "178 / 500 (explore, category, my-quizzes)"
+              ],
+              "to": "178 / 500",
+              "reason": "three shipped browse surfaces outvoted two marketing ones; neither number was averaged or invented"
+            },
+            "stats.rewardCents": {
+              "from": ["1000", "750"],
+              "to": 750,
+              "reason": "carried by the same snapshot that won the player count"
+            },
+            "categoryIds": {
+              "from": "Entertainment",
+              "to": ["space"],
+              "reason": "the free-text label contradicted the quiz"
+            },
+            "difficulty": {
+              "from": "absent (featured page)",
+              "to": "hard",
+              "reason": "schema requires one; the other snapshots said Hard"
+            },
+            "author.name": {
+              "from": "MarvelFan",
+              "to": "CosmicMind",
+              "reason": "the losing snapshot's creator"
+            }
+          }
+        },
+        {
+          "id": "quiz-literature-classic-novels",
+          "fields": {
+            "stats.plays/stats.capacity": {
+              "from": ["1298 / 1500 (home)", "298 / 300 (explore)", "300 / 300 (my-quizzes)"],
+              "to": "300 / 300",
+              "reason": "the authoring surface won, and it is the only one that says completed"
+            },
+            "status": {
+              "from": ["active", "completed"],
+              "to": "archived",
+              "reason": "completed -> archived (D4)"
+            }
+          }
+        },
+        {
+          "id": "quiz-math-puzzles-and-problems",
+          "fields": {
+            "stats.plays": {
+              "from": ["156 (explore)", "0 (my-quizzes)"],
+              "to": 0,
+              "reason": "the record is a draft with 0% completion and $0 revenue; a draft with 156 plays was the inconsistent side"
+            },
+            "status": {
+              "from": "active",
+              "to": "draft"
+            }
+          }
+        },
+        {
+          "id": "quiz-music-through-the-decades",
+          "fields": {
+            "stats.capacity": {
+              "from": 1000,
+              "to": 300,
+              "reason": "the marketing card overstated capacity; the authoring surface and the other browse cards said 300"
+            }
+          }
+        },
+        {
+          "id": "quiz-technology-and-gadgets",
+          "fields": {
+            "stats.capacity": {
+              "from": 1000,
+              "to": 250,
+              "reason": "same overstatement as Music Through the Decades"
+            }
+          }
+        },
+        {
+          "id": "quiz-sports-trivia",
+          "fields": {
+            "id": {
+              "from": "sports-trivia-challenge",
+              "to": "quiz-sports-trivia",
+              "reason": "the slug collides with the generator template of the same title (E2 enforces kind/slug uniqueness)"
+            },
+            "stats.capacity": {
+              "from": 1000,
+              "to": 250
+            }
+          }
+        },
+        {
+          "id": "quiz-world-geography-challenge",
+          "fields": {
+            "stats.plays": {
+              "from": ["285 (home, explore, category, my-quizzes)", "42 (dashboard)"],
+              "to": 285,
+              "reason": "the dashboard's Recent Quizzes rows were a fifth, older snapshot"
+            }
+          }
+        }
+      ],
+      "summary": "40 card records consolidated from the literals in eleven components. Ids became quiz-<slug>; players -> stats.plays, maxPlayers -> stats.capacity, reward string -> stats.rewardCents, limitedTime+expiresIn -> stats.limitedTimeEndsAt (an instant anchored at the demo epoch, never a stored duration), timeLimit minutes -> settings.timeLimitSeconds, createdBy/creatorAvatar -> author, status active/draft/completed -> published/draft/archived. Derived columns (spotsLeft, almostFull) are no longer stored. Authoring-only metrics (completionRate, averageScore, revenue) live in data/quiz-analytics.ts, not in the record. Fields the schema requires and no fixture carried (summary on all 40; difficulty on the 9 featured-page records; timeLimitSeconds on the 13 records that stated none) are authored in the module and listed above only where two sources disagreed."
+    },
     "data/categories": {
       "records": [],
       "summary": "Deleted as a fixture. Its 22 rows were a third copy of the taxonomy (D15) with numeric ids and a stored `count`; `data/categories.ts` now re-exports the single table in content/categories.ts (25 quiz subjects). Module deleted: data/categories.tsx."

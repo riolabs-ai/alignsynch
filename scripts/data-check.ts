@@ -27,7 +27,13 @@ import {
   categories as quizCategoryTable,
   categories as taxonomyTable,
 } from "../content/categories";
-import { zQuiz, zQuizCard, selectQuizCard } from "../content/quiz";
+import {
+  zQuiz,
+  zQuizAuthoringCard,
+  zQuizCard,
+  selectQuizAuthoringCard,
+  selectQuizCard,
+} from "../content/quiz";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
 import { matchRoute, normalizePath } from "../content/route-manifest";
 import {
@@ -190,6 +196,32 @@ for (const quiz of quizzes) {
 }
 
 /* ------------------------------------------------------------------ *
+ * E10 — the card shelves resolve, and nothing is orphaned
+ *
+ * A shelf is the only authored thing left about a card grid: an ordered list of
+ * quiz ids. A typo would render an empty carousel, so it fails here instead. The
+ * reverse direction matters too: a catalogue record no shelf shows is a fixture
+ * that exists only to satisfy its own type.
+ * ------------------------------------------------------------------ */
+
+const catalogueIds = new Set(quizCatalogue.map((quiz) => quiz.id));
+const shelved = new Set<string>();
+for (const [shelf, ids] of Object.entries(quizShelves)) {
+  for (const id of ids) {
+    shelved.add(id);
+    if (!catalogueIds.has(id)) err("E10", `shelf "${shelf}" references unknown quiz "${id}"`);
+  }
+  const missing = ids.filter((id) => !catalogueIds.has(id));
+  if (missing.length > 0) err("E10", `shelf "${shelf}" has ${missing.length} unresolvable id(s)`);
+}
+for (const quiz of quizCatalogue) {
+  if (!shelved.has(quiz.id)) warn("W5", `catalogue quiz "${quiz.id}" is on no shelf`);
+  if (!zQuizAuthoringCard.safeParse(selectQuizAuthoringCard(quiz, () => undefined)).success) {
+    err("E3", `quiz "${quiz.id}": selectQuizAuthoringCard() output is not a QuizAuthoringCard`);
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * E4 — category scope: a record may only point at its own vocabulary
  * ------------------------------------------------------------------ */
 
@@ -339,8 +371,13 @@ if (!existsSync(join(process.cwd(), "content/quiz.ts"))) {
  * The same drift in one file: a component that declares its own `Quiz` looks like
  * the model but is hand-maintained against it (`components/quiz/quiz-play.tsx` did).
  * Renderer-local *views* stay legal — they just may not be called `Quiz`.
+ *
+ * The lookahead is load-bearing: a *declaration* is always followed by `{`, `=`, `<`
+ * or `extends`, while `import { type Quiz }` / `type Quiz,` inside an import list is
+ * a use of the model's type and must stay legal (`lib/quiz-cards.ts` re-exports it).
  */
-const QUIZ_DECLARATION = /^[ \t]*(?:export[ \t]+)?(?:interface|type)[ \t]+Quiz\b/m;
+const QUIZ_DECLARATION =
+  /^[ \t]*(?:export[ \t]+)?(?:interface|type)[ \t]+Quiz\b(?=[ \t]*(?:[={<]|extends\b))/m;
 
 function walkSourceFiles(dir: string): string[] {
   const found: string[] = [];
@@ -463,8 +500,29 @@ const counts = [
 const coverage = `${ROUTE_PATTERNS.length} routes match app/, ${unknownCategoryRefs} unknown category ids, ${deadLinks} dead links`;
 
 if (warnings.length > 0) {
+  // A fixture-wide gap (the catalogue is 40 card records with no questions) would
+  // otherwise print the same sentence 40 times and bury the individual findings.
+  // Group by code + message template, printing each distinct id when the group is
+  // small and a count when it is not.
+  const groups = new Map<string, Diagnostic[]>();
+  for (const warning of warnings) {
+    const template = warning.message.replace(/"[^"]*"/g, '"…"');
+    const key = `${warning.code}\u0000${template}`;
+    const group = groups.get(key);
+    if (group) group.push(warning);
+    else groups.set(key, [warning]);
+  }
   console.log(`WARN  ${warnings.length}`);
-  for (const warning of warnings) console.log(`  [${warning.code}] ${warning.message}`);
+  for (const group of groups.values()) {
+    if (group.length === 1) {
+      console.log(`  [${group[0].code}] ${group[0].message}`);
+      continue;
+    }
+    const ids = group.map((warning) => warning.message.match(/"([^"]*)"/)?.[1] ?? "?");
+    const shown = ids.length <= 3 ? ids.join(", ") : `${ids.slice(0, 3).join(", ")}, …`;
+    const template = group[0].message.replace(/"[^"]*"/g, '"<id>"');
+    console.log(`  [${group[0].code}] ×${group.length} ${template}  (${shown})`);
+  }
 }
 
 if (errors.length > 0) {

@@ -327,6 +327,8 @@ export const zQuizCard = z
     author: zPersonRef.optional(),
     publishedAt: zIsoDateTime.optional(),
     featured: z.literal(true).optional(),
+    /** The card prints the duration ("20 min"); it lives on the record's settings. */
+    timeLimitSeconds: z.number().int().nonnegative(),
     stats: zQuizCardStats,
   })
   .strict();
@@ -344,6 +346,12 @@ export const zQuizAnalytics = z
     lowestScore: z.number().min(0).max(100).optional(),
     /** Was `averageScore` (top-level on CreatedQuiz). */
     averageScore: z.number().min(0).max(100).optional(),
+    /**
+     * Was `revenue: 1425.0` (dollars) on the my-quizzes cards. Authoring earnings,
+     * not the prize offered (`QuizStats.rewardCents`), so it is analytics, not
+     * content. Cents, like every other money value in the model.
+     */
+    revenueCents: z.number().int().nonnegative().optional(),
   })
   .strict();
 
@@ -382,6 +390,12 @@ export const zQuizAuthoringCard = z
     plays: z.number().int().nonnegative(),
     rating: z.number().min(0).max(5).optional(),
     questionCount: z.number().int().nonnegative(),
+    /** The my-quizzes list prints the duration next to the title. */
+    timeLimitSeconds: z.number().int().nonnegative(),
+    /** Was `maxPlayers`: the authoring card shows `plays / capacity` and a seat bar. */
+    capacity: z.number().int().positive().optional(),
+    /** `capacity - plays`, clamped at 0. Same derivation as the public card. */
+    spotsLeft: z.number().int().nonnegative().optional(),
     isTournament: z.boolean(),
     tournament: zTournamentRef.optional(),
     analytics: zQuizAnalytics.optional(),
@@ -643,6 +657,7 @@ export function selectQuizCard(
     ...(quiz.author ? { author: quiz.author } : {}),
     ...(quiz.publishedAt ? { publishedAt: quiz.publishedAt } : {}),
     ...(quiz.featured ? { featured: true as const } : {}),
+    timeLimitSeconds: quiz.settings.timeLimitSeconds,
     stats: {
       ...stats,
       spotsLeft: spotsLeftOf(stats),
@@ -676,6 +691,9 @@ export function selectQuizAuthoringCard(
     plays: quiz.stats.plays,
     ...(quiz.stats.rating !== undefined ? { rating: quiz.stats.rating } : {}),
     questionCount: quiz.questions.length,
+    timeLimitSeconds: quiz.settings.timeLimitSeconds,
+    ...(quiz.stats.capacity !== undefined ? { capacity: quiz.stats.capacity } : {}),
+    spotsLeft: spotsLeftOf(quiz.stats),
     isTournament: quiz.stats.isTournament,
     ...(tournament ? { tournament } : {}),
     ...(analytics ? { analytics } : {}),

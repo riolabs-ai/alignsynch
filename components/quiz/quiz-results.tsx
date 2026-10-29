@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { QuizForPlay } from "@/content/quiz";
 import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
 import {
@@ -19,7 +20,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { QuizForPlay } from "@/content/quiz";
 
 interface Answer {
   questionId: string;
@@ -32,7 +32,6 @@ interface Answer {
  * Derived from `QuizForPlay` (`content/quiz.ts`) — never a second `Quiz` type.
  */
 type ResultsQuizHeader = Pick<QuizForPlay, "id" | "title" | "difficulty" | "categoryLabel">;
-
 interface Results {
   totalQuestions: number;
   correctAnswers: number;
@@ -188,7 +187,7 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
               <Badge variant="outline" className="px-3 py-1 text-sm">
                 {quiz.categoryLabel}
               </Badge>
-              <Badge variant="outline" className="px-3 py-1 text-sm">
+              <Badge variant="outline" className="px-3 py-1 text-sm capitalize">
                 {quiz.difficulty}
               </Badge>
             </div>
