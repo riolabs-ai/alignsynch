@@ -33,6 +33,10 @@ next-env.d.ts
 # imports it. It is ignored so `git status` and `biome check` (vcs.useIgnoreFile)
 # agree with AGENTS.md instead of linting 8 MB of someone else's markup.
 /lib/quizhub/
+# per-card git worktrees (kanban --workspace worktree). They live inside the repo so
+# `git worktree list` resolves them, but they are never part of the tree.
+.worktrees/
+
 
 # P3 fixture generator output (gitignored; validated by data:check when present)
 data/generated/
