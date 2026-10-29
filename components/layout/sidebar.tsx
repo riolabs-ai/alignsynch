@@ -1,6 +1,8 @@
 "use client";
 import { useWindowSize } from "@/hooks/use-window";
 import { cn } from "@/lib/utils";
+import type { PageCopy } from "@/content/pages";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
   Award,
   BookOpen,
@@ -25,7 +27,15 @@ import { usePathname } from "next/navigation";
 import type React from "react";
 import { useSidebar } from "./sidebar-context";
 
-export function AppSidebar() {
+/**
+ * The sidebar. Every label resolves an id on `data/pages/shell.ts` (`itemLabel` against
+ * the `nav` section); the hrefs stay literal JSX attributes **on purpose** — `data:check`
+ * E10 extracts literal `href`s from the tree, so moving them into a const array would take
+ * 15 route references out of the link gate without failing anything. Words move into the
+ * fixture; destinations stay where the checker can see them.
+ */
+export function AppSidebar({ copy }: { copy: PageCopy }) {
+  const nav = sectionOf(copy, "nav");
   const pathname = usePathname();
 
   const { collapsed, setCollapsed } = useSidebar();
@@ -46,7 +56,7 @@ export function AppSidebar() {
       >
         <Link href="/" className="flex justify-center items-center gap-2">
           <BookOpen className="h-6 w-6 text-primary" />
-          {!collapsed && <span className="text-xl font-bold">QuizHub</span>}
+          {!collapsed && <span className="text-xl font-bold">{copy.heading}</span>}
         </Link>
         <button className="xl:hidden" onClick={() => setCollapsed(!collapsed)}>
           <X className="size-5" />
@@ -58,91 +68,91 @@ export function AppSidebar() {
           <NavItem
             href="/"
             icon={<Home className="size-5" />}
-            label="Home"
+            label={itemLabel(nav, "home")}
             active={isActive("/")}
           />
           <NavItem
             href="/daily-challenge"
             icon={<Trophy className="size-5" />}
-            label="Today's Challenge"
+            label={itemLabel(nav, "daily-challenge")}
             active={isActive("/daily-challenge")}
           />
           <NavItem
             href="/categories"
             icon={<BookOpen className="size-5" />}
-            label="Categories"
+            label={itemLabel(nav, "categories")}
             active={isActive("/categories")}
           />
           <NavItem
             href="/battle"
             icon={<Swords className="size-5" />}
-            label="Quiz Battle"
+            label={itemLabel(nav, "battle")}
             active={isActive("/battle")}
           />
           <NavItem
             href="/news"
             icon={<Newspaper className="size-5" />}
-            label="News & Updates"
+            label={itemLabel(nav, "news")}
             active={isActive("/news")}
           />
           <NavItem
             href="/explore"
             icon={<Compass className="size-5" />}
-            label="Explore Quizzes"
+            label={itemLabel(nav, "explore")}
             active={isActive("/explore")}
           />
           <NavItem
             href="/tournaments"
             icon={<Award className="size-5" />}
-            label="Quiz Tournament"
+            label={itemLabel(nav, "tournaments")}
             active={isActive("/tournaments")}
           />
           <NavItem
             href="/leaderboard"
             icon={<Medal className="size-5" />}
-            label="Leaderboard"
+            label={itemLabel(nav, "leaderboard")}
             active={isActive("/leaderboard")}
           />
           <NavItem
             href="/creator-tips"
             icon={<Lightbulb className="size-5" />}
-            label="Quiz Creator Tips"
+            label={itemLabel(nav, "creator-tips")}
             active={isActive("/creator-tips")}
           />
           <NavItem
             href="/quiz-discussions"
             icon={<FileQuestion className="size-5" />}
-            label="Quiz Discussions"
+            label={itemLabel(nav, "quiz-discussions")}
             active={isActive("/quiz-discussions")}
           />
           <NavItem
             href="/create/editor"
             icon={<PackagePlus className="size-5" />}
-            label="Create Quiz"
+            label={itemLabel(nav, "create-editor")}
             active={isActive("/create/editor")}
           />
           <NavItem
             href="/create/generator"
             icon={<Sparkles className="size-5" />}
-            label="Ai Quiz Generator"
+            label={itemLabel(nav, "create-generator")}
             active={isActive("/create/generator")}
           />
           <NavItem
             href="/affiliate"
             icon={<Users className="size-5" />}
-            label="Affiliate Page"
+            label={itemLabel(nav, "affiliate")}
             active={isActive("/affiliate")}
           />
           <NavItem
             href="/pricing"
             icon={<DollarSign className="size-5" />}
-            label="Pricing Plan"
+            label={itemLabel(nav, "pricing")}
             active={isActive("/pricing")}
           />
           <NavItem
             href="/support"
             icon={<LifeBuoy className="size-5" />}
-            label="Support"
+            label={itemLabel(nav, "support")}
             active={isActive("/support")}
           />
         </nav>
@@ -153,7 +163,7 @@ export function AppSidebar() {
           <NavItem
             href="#"
             icon={<LogOut className="size-5" />}
-            label="Logout"
+            label={itemLabel(nav, "logout")}
             active={isActive("#")}
           />
         </nav>

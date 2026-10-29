@@ -16,8 +16,13 @@ import { media } from "@/data/media";
  * The `/categories` page. Its words are `data/pages/categories.ts`, resolved here and
  * handed to the two bands below — the page owns which section each band gets, the
  * fixture owns the strings, and the components own the markup.
+ *
+ * `shellCopy` is the second fixture: this page renders the footer itself, and the
+ * footer's words belong to the shell (`data/pages/shell.ts`), not to `/categories`.
+ * Two props, not one, so a later unit can add page copy without the footer inheriting
+ * it — the page module is still the one that decides which fixture a band receives.
  */
-export function CategoriesPage({ copy }: { copy: PageCopy }) {
+export function CategoriesPage({ copy, shellCopy }: { copy: PageCopy; shellCopy: PageCopy }) {
   const [searchQuery, setSearchQuery] = useState("");
   const empty = sectionOf(copy, "empty");
 
@@ -90,7 +95,7 @@ export function CategoriesPage({ copy }: { copy: PageCopy }) {
       <CategoriesHowItWorks copy={sectionOf(copy, "how-it-works")} />
 
       {/* Footer */}
-      <Footer />
+      <Footer copy={shellCopy} />
     </div>
   );
 }

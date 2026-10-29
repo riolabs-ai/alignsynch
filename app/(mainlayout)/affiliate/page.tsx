@@ -8,6 +8,7 @@ import { ProgramFeatures } from "@/components/affiliate/program-features";
 import { SuccessStories } from "@/components/affiliate/success-stories";
 import { WhyPartner } from "@/components/affiliate/why-partner";
 import { Footer } from "@/components/layout/footer";
+import { shellPageCopy } from "@/data/pages/shell";
 
 export default function AffiliatePage() {
   return (
@@ -21,7 +22,7 @@ export default function AffiliatePage() {
       <AffiliateFAQ />
       <SuccessStories />
       <AffiliateCta />
-      <Footer />
+      <Footer copy={shellPageCopy} />
     </div>
   );
 }

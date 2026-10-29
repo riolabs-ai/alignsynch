@@ -1,18 +1,22 @@
 import { notifications } from "@/data/notifications";
 import type { Notification } from "@/content/social";
+import type { PageCopySection } from "@/content/pages";
 import { formatRelative } from "@/content/core";
+import { itemLabel } from "@/lib/page-copy";
 import { renderNotificationIcon } from "./notification-icon";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { Bell, Check, X } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 type Props = {
+  copy: PageCopySection;
   isNotificationsDrawerOpen: boolean;
   setIsNotificationsDrawerOpen: (isOpen: boolean) => void;
   handleNotificationClick: (notification: Notification) => void;
   markAllNotificationsAsRead: () => void;
 };
 const NotificationDrawer = ({
+  copy,
   handleNotificationClick,
   isNotificationsDrawerOpen,
   markAllNotificationsAsRead,
@@ -23,7 +27,7 @@ const NotificationDrawer = ({
       className={`fixed top-0 right-0 z-50 h-full w-full sm:w-96 bg-background shadow-xl transition-transform duration-300 ease-in-out ${isNotificationsDrawerOpen ? "translate-x-0" : "translate-x-full"}`}
     >
       <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="text-lg font-semibold">Notifications</h2>
+        <h2 className="text-lg font-semibold">{copy.heading}</h2>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -32,7 +36,7 @@ const NotificationDrawer = ({
             onClick={markAllNotificationsAsRead}
           >
             <Check className="h-4 w-4" />
-            <span>Mark all read</span>
+            <span>{itemLabel(copy, "mark-all")}</span>
           </Button>
           <Button
             variant="ghost"
@@ -50,15 +54,15 @@ const NotificationDrawer = ({
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">No notifications</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                You're all caught up! We'll notify you when something new happens.
-              </p>
+              <h3 className="text-lg font-medium">{itemLabel(copy, "empty-title")}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{itemLabel(copy, "empty-body")}</p>
             </div>
           ) : (
             <>
               <div className="px-3 py-2">
-                <h3 className="text-sm font-medium text-muted-foreground">New</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {itemLabel(copy, "new")}
+                </h3>
               </div>
               <div className="space-y-3">
                 {notifications
@@ -86,7 +90,9 @@ const NotificationDrawer = ({
               </div>
 
               <div className="px-3 py-2 mt-2">
-                <h3 className="text-sm font-medium text-muted-foreground">Earlier</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {itemLabel(copy, "earlier")}
+                </h3>
               </div>
               <div className="space-y-3">
                 {notifications
