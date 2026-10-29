@@ -178,13 +178,43 @@ Regression guard: `data:check` gained **E10**. It extracts every literal `href`,
 `href="/signup"` + `/testimonials/jessica.png` in one component produced
 `FAIL 2 error(s)` with `file:line` for both, and nothing else. 6 new cases cover the extraction
 (34 total, up from 28). 11 asset literals that were already 404ing before this change (chat
-avatars, `easy-quiz-*.png`, `/quiz/q16.png`, `/wizard.png`, `/science-quiz-lab.png`) are frozen in
-`KNOWN_MISSING_ASSETS` — the list may only shrink; filing them is a content task.
+avatars, `easy-quiz-*.png`, `/quiz/q16.png`, `/wizard.png`, `/science-quiz-lab.png`) were frozen in
+`KNOWN_MISSING_ASSETS` — the list may only shrink; filing them is a content task, and §6.2 is that
+task done: the allowlist is gone and E10 has no baseline.
 
 The three legacy paths from the pre-P1 shell (`/dashboard`, `/signup`, and the two dashboard tabs)
 308 to the real route in `next.config.mjs`, so a bookmark or cached markup does not land on a 404.
 A redirect is not a second page — `app/` + `content/routes.ts` stay the only source of routes,
 which is why this is not a violation of the earlier "do not fix by adding routes" note.
+
+### 6.2 The 11 baselined asset references, fixed (#20 follow-up)
+
+E10 shipped with an 11-entry `KNOWN_MISSING_ASSETS` allowlist: asset literals that were already
+404ing on `main`, frozen only so the guard could land without a red tree. This pass deletes the
+allowlist and the filter that read it by pointing every reference at a file that exists. E10 now has
+no baseline — the footer reads `0 known-missing assets`, and a missing image fails the build the
+same way a dead link does.
+
+| reference (was)                              | file                                | now                           | why                                                                                                                      |
+| -------------------------------------------- | ----------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `/avatars/chat-avatar-1..5.png` (5 rows)     | `chat/chat-window.tsx`              | 5 existing `public/avatars/*` | the avatar library; five distinct files, no repeats inside one contact list                                              |
+| `/easy-quiz-1.png` (Culinary World Tour)     | `explore/featured-quizzes-page.tsx` | `/category/food.webp`         | the Food category's own art (`content/categories.ts`) — the card's category is Food                                      |
+| `/easy-quiz-2.png` (Artistic Masterpieces)   | `explore/featured-quizzes-page.tsx` | `/placeholder.svg`            | no art asset exists (the Art category carries an `iconKey`, not an image), so the card uses the component's own fallback |
+| `/easy-quiz-3.png` (Famous Inventors)        | `explore/featured-quizzes-page.tsx` | `/technology-quiz.png`        | closest existing illustration: inventions/technology                                                                     |
+| `/quiz/q16.png` (World History Through Time) | `home/quizzes-by-difficulty.tsx`    | `/quiz/q18.png`               | `public/quiz/` ships q1–q15, q17, q18 — q16 never existed; q18 was the one file in that set nothing referenced           |
+| `/wizard.png` (author avatar fallback)       | `news/news-article.tsx`             | `/avatars/wizard.webp`        | same name, correct directory                                                                                             |
+| `/science-quiz-lab.png` (Science Showdown)   | `tournaments/tournament-detail.tsx` | `/space-exploration-quiz.png` | what `tournament-list.tsx` already shows for `science-showdown`; the list card and the detail hero now agree             |
+
+Evidence: `pnpm data:check` exit 0 with `34` cases passing and the footer
+`109 hardcoded links + 478 asset refs resolve in components/ and app/ (0 known-missing assets)`;
+the five affected pages were crawled in `pnpm dev` with 0 broken `<img>` and 0 failed asset
+requests (`/chat`, `/explore/featured`, `/`, a news article, `/tournaments/science-showdown` and
+`/tournaments/global-championship`); `typecheck`, `lint` (235 warnings, unchanged), `format:check`
+and `build` all exit 0. Negative control: re-adding `/quiz/q16.png` — one of the eleven — in a probe
+component now fails with `[E10] components/__review_probe.tsx:6 references "/quiz/q16.png"`, which
+is what "no baseline" means. This is a path fix, not an art pass: every raster in `public/` is still
+a grey placeholder stamped with its own dimensions, so the images are honest about being
+placeholders — they just resolve now.
 
 ## 7. Repo ops
 

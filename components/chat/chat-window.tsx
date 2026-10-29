@@ -27,7 +27,7 @@ const contacts = [
   {
     id: 1,
     name: "Emma Wilson",
-    avatar: "/avatars/chat-avatar-1.png",
+    avatar: "/avatars/alex.png",
     status: "online",
     lastMessage: "Are you ready for the science quiz?",
     unread: 2,
@@ -36,7 +36,7 @@ const contacts = [
   {
     id: 2,
     name: "Michael Chen",
-    avatar: "/avatars/chat-avatar-2.png",
+    avatar: "/avatars/master.png",
     status: "online",
     lastMessage: "I scored 95% on the history quiz!",
     unread: 0,
@@ -45,7 +45,7 @@ const contacts = [
   {
     id: 3,
     name: "Sophia Rodriguez",
-    avatar: "/avatars/chat-avatar-3.png",
+    avatar: "/avatars/sarah.webp",
     status: "offline",
     lastMessage: "Can you help me with the math questions?",
     unread: 0,
@@ -54,7 +54,7 @@ const contacts = [
   {
     id: 4,
     name: "James Johnson",
-    avatar: "/avatars/chat-avatar-4.png",
+    avatar: "/avatars/wizard.webp",
     status: "online",
     lastMessage: "Let's create a quiz together",
     unread: 0,
@@ -63,7 +63,7 @@ const contacts = [
   {
     id: 5,
     name: "Olivia Parker",
-    avatar: "/avatars/chat-avatar-5.png",
+    avatar: "/avatars/guru.png",
     status: "offline",
     lastMessage: "Thanks for the quiz tips!",
     unread: 0,

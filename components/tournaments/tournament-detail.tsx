@@ -41,7 +41,8 @@ export function TournamentDetail({ id }: TournamentDetailProps) {
       id === "global-championship"
         ? "Test your knowledge against the best quiz enthusiasts from around the world in this premier tournament with multiple rounds of challenging questions."
         : "Test your scientific knowledge across physics, chemistry, biology and more.",
-    image: id === "global-championship" ? "/placeholder.svg?key=85jbh" : "/science-quiz-lab.png",
+    image:
+      id === "global-championship" ? "/placeholder.svg?key=85jbh" : "/space-exploration-quiz.png",
     category: id === "global-championship" ? "general" : "science",
     status: id === "global-championship" ? "registration" : "registration",
     dates: id === "global-championship" ? "May 15 - June 10, 2023" : "June 1 - June 15, 2023",
