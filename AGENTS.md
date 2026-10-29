@@ -23,17 +23,17 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 
 ## Commands (repo root, `pnpm` only — the lockfile is `pnpm-lock.yaml` v9)
 
-| Command                          | Verified             | Notes                                                                   |
-| -------------------------------- | -------------------- | ----------------------------------------------------------------------- |
-| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                |
-| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                          |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 34 `node:test` cases → validator; prints record counts            |
-| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 235 warnings, 13 infos on the current tree |
-| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 299 files; CI gate                                      |
-| `pnpm build`                     | exit 0, 56–76 s      | `next build`; 34 routes, 32 static pages                                |
-| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                           |
-| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                 |
-| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                     |
+| Command                          | Verified             | Notes                                                         |
+| -------------------------------- | -------------------- | ------------------------------------------------------------- |
+| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                      |
+| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts |
+| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 231 warnings, 12 infos           |
+| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 316 files; CI gate                            |
+| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                      |
+| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                 |
+| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                       |
+| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                           |
 
 Node must be **≥ 20.9** and the PATH is the only thing that decides which node you get:
 
@@ -104,8 +104,10 @@ process bug.
   current quiz, categories). Card shapes are projections (`selectQuizCard`), never authored arrays;
   a per-slot campaign is an engagement-only overlay (`data/promotions.ts`), never a second record.
 - `scripts/data-check.ts` — the validator: per-record schema pass, then collection invariants
-  E0–E16 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
-  `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E16/W6.
+  E0–E17 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
+  `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E17/W6,
+  and `scripts/__tests__/explore-curation.test.ts` pins which authored tab block each explore
+  shelf owns (the 3-vs-6 decision in `docs/p1-migration/MIGRATION.md`).
   E10 is the one that reads the UI tree: it extracts every literal `href`,
   `router.push`/`replace`/`redirect` in `components/` + `app/` and every `public/` asset literal,
   and fails on a route the manifest cannot match or a file `public/` does not have.
@@ -147,6 +149,20 @@ process bug.
   label there is a pure function of the ISO instant — `data/` carries instants only, the UI calls
   `formatRelative` / `formatClockTime` / `formatDayHeading`, and `data:check` E10 fails when a
   social fixture is dated after the clock.
+- **A page that renders a slot must be request-time.** `shelfCards()` projects a campaign
+  against the instant it is given, so a static prerender evaluates the campaign window at
+  _build_ time: the HTML carries the catalog snapshot, or — for a build inside the window —
+  freezes the campaign numbers for good. `/explore` and `/explore/featured` are the two routes
+  that render shelves named by `data/quiz-catalogue.ts::slotShelves`, and both are
+  `export const dynamic = "force-dynamic"` and hand one server instant (`now`) down to the
+  client component. Adding a slot surface means making its route request-time in the same
+  change.
+- **A snapshot key is a harness label, not a shelf position.** `scripts/__tests__/fixtures/
+  card-records.ts` keys its rows `explore-page/*` and `explore-featured/*`, and those two groups
+  are the opposite way round from the pages that render them — the six-card tabs are
+  `/explore/featured`'s, the three-card block is `/explore`'s. `explore-page/popular[3]` is not
+  the fourth card of `/explore`. `explore-curation.test.ts` states the mapping and
+  `docs/p1-migration/MIGRATION.md` records the decision to keep `/explore` at three cards a tab.
 - **`params` is a Promise in Next 16.** Every dynamic route must take
   `params: Promise<{ id: string }>` and unwrap it (`await params` in an `async` page, or
   `use(params)`); a synchronous `params.id` logs `params is a Promise and must be unwrapped with
@@ -161,10 +177,11 @@ process bug.
   no file under `public/`, so a new missing image is a red build, exactly like a dead link.
 - **`public/category/*.webp` are placeholders:** all 23 files are the same 1536×1024 PNG stamped
   with its own dimensions. Category art is a content task, not a styling bug.
-- `pnpm data:check` prints exactly one warning, `[W2] published quiz
-  "quiz-ultimate-world-history-trivia" has no publishedAt`. Add a `publishedAt` or set `draft`;
-  do not invent a date to silence it.
-- 235 lint warnings are the current baseline. Compare counts, not vibes: a new warning is a
+- `pnpm data:check` prints **98** warnings and no errors on the current tree: `W1` 24 (a published
+  record with no questions), `W2` 42 (no `publishedAt`), `W4` 32 (a prize with no window); `W3`/`W5`
+  are 0. No date, question or window is invented to silence one — the census and the reason each
+  survives are in `docs/p1-migration/MIGRATION.md`.
+- 231 lint warnings / 12 infos are the current baseline. Compare counts, not vibes: a new warning is a
   regression even though `pnpm lint` exits 0.
 - Stop `pnpm dev` before `pnpm build` — both write `.next/` and a concurrent run corrupts it.
 

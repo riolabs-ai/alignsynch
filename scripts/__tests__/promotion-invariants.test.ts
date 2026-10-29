@@ -4,7 +4,9 @@
  *
  * Numbering: issue #27 called these E11/E12/E13, but those codes are already
  * taken on `main` (E11 card shelves, E12 one record per subject, E13 analytics
- * keys), so the promotion rules continue the set as **E14 / E15 / E16 / W6**.
+ * keys), so the promotion rules continue the set as **E14 / E15 / E16 / E17 / W6**
+ * (E17 — "the slot is a place a shelf renders" — arrived with P3, when the
+ * campaign was wired into the projections and a dead slot stopped being harmless).
  *
  * Written BEFORE the checks exist: every case below is a rule from B-01 §A2
  * (window), §A3 (one prize per quiz) and §A4 (no shadow identity). A rule that
@@ -216,6 +218,68 @@ describe("E16 — one quiz advertises one set of numbers", () => {
 });
 
 /* ================================================================== *
+ * E17 — the slot is a place a shelf actually renders
+ * ================================================================== */
+
+describe("E17 — a campaign on a slot nobody renders never runs", () => {
+  it("passes the authored pair: both slots resolve to their quiz", () => {
+    assert.deepEqual(byRule(promotions, "E17"), []);
+  });
+
+  it("reports a slot group no shelf produces", () => {
+    const findings = byRule([overlay({ slot: "explore-page/populr[1]" })], "E17");
+    assert.equal(findings.length, 1);
+    assert.match(findings[0].message, /populr/);
+    assert.match(findings[0].message, /never runs/);
+  });
+
+  it("reports a position the shelf does not have", () => {
+    // explorePopular renders 3 cards; position 3 is the fourth.
+    const findings = byRule([overlay({ slot: "explore-page/popular[3]" })], "E17");
+    assert.equal(findings.length, 1);
+    assert.match(findings[0].message, /explorePopular/);
+    assert.match(findings[0].message, /3 card/);
+  });
+
+  it("reports a real slot whose position renders a different quiz — the silent no-op", () => {
+    // The worst case: the slot exists, the quiz exists, the campaign simply never
+    // applies because curation puts another quiz at that position.
+    const findings = byRule(
+      [
+        overlay({
+          id: "promo-geography-wrong-slot",
+          quizId: "quiz-world-geography-challenge-capitals-landmarks",
+          slot: "explore-page/popular[1]",
+          plays: 1872,
+          capacity: 2000,
+          rewardCents: 500,
+        }),
+      ],
+      "E17",
+    );
+    assert.equal(findings.length, 1);
+    assert.match(findings[0].message, /renders "quiz-science-quiz-space-exploration"/);
+    assert.match(findings[0].message, /never run/);
+  });
+
+  it("reports a non-canonical index — `[01]` is not the slot a shelf produces", () => {
+    const findings = byRule([overlay({ slot: "explore-page/popular[01]" })], "E17");
+    assert.equal(findings.length, 1);
+    assert.match(findings[0].message, /never runs/);
+  });
+
+  it("is an error, not a warning — a campaign that cannot run fails the build", () => {
+    const findings = promotionFindings([overlay({ slot: "nowhere[0]" })], quizzes).filter(
+      (finding) => finding.rule === "E17",
+    );
+    assert.deepEqual(
+      findings.map((finding) => finding.severity),
+      ["error"],
+    );
+  });
+});
+
+/* ================================================================== *
  * W6 — a campaign staged outside the quiz's published life is a warning
  * ================================================================== */
 
@@ -257,13 +321,18 @@ describe("W6 — staging is allowed, silently applying is not", () => {
   });
 
   it("is a warning, not an error — it never fails the build", () => {
+    // Staged against a *shelved* quiz made draft, so E17 stays silent (the slot does
+    // render it) and W6 is the only finding: warn severity, build stays green.
+    const science = quizById("quiz-science-quiz-space-exploration");
+    if (science === undefined) throw new Error("the Science quiz should be a record");
+    const shelvedDraft: Quiz = { ...science, status: "draft" };
     const findings = promotionFindings(
-      [overlay({ id: "promo-draft", quizId: "quiz-1", rewardCents: undefined })],
-      quizzes,
+      [overlay({ id: "promo-draft", quizId: shelvedDraft.id, rewardCents: undefined })],
+      quizzes.map((quiz) => (quiz.id === shelvedDraft.id ? shelvedDraft : quiz)),
     );
     assert.deepEqual(
-      findings.map((finding) => finding.severity),
-      ["warn"],
+      findings.map((finding) => [finding.rule, finding.severity]),
+      [["W6", "warn"]],
     );
   });
 });
