@@ -69,7 +69,9 @@ import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
 import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
+import { zMetricTable } from "../content/metrics";
 import { media } from "../data/media";
+import { affiliateTiers, earningSources, metricTable, streakRewards } from "../data/metrics";
 import { quizComments } from "../data/quiz-comments";
 import { quizResults } from "../data/quiz-results";
 import { quizReviews } from "../data/quiz-reviews";
@@ -80,6 +82,16 @@ import { COPY_LITERAL_MAX, copyProblems, measureRoute } from "./copy-refs";
 import { pageCopies } from "../data/pages";
 import { pageCopyBudget } from "../data/pages/budget";
 import { copiedFixtureText, moduleRecordArrays } from "./island-refs";
+import {
+  breakdownProblems,
+  metricKeyProblems,
+  rangeProblems,
+  renderedTableKeys,
+  streakRewardProblems,
+  tierBandProblems,
+  unusedMetricKeys,
+} from "./metric-invariants";
+import { durationLabels, findMetricLiterals, relativeLabels } from "./metric-refs";
 import {
   danglingEntries,
   registryProblems,
@@ -802,6 +814,101 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  */
 
 /* ------------------------------------------------------------------ *
+ * E22/E25 — a rendered number comes from a MetricSnapshot
+ *
+ * E10/E17 proved a *reference* resolves. A number was invisible to every check: `+4 from last
+ * month`, `$124.50`, `Save 20%` resolve by definition, so 69 of them sat in JSX while
+ * `data/quiz-analytics.ts` carried per-quiz completion only (issue #49, WU-4). Two rules close
+ * that, and they are deliberately paired — a rule without a fixture is untestable, a fixture
+ * without a rule drifts:
+ *
+ *   E22  no metric literal in `components/**` or `app/**`. A rendered quantity (a percent, an
+ *        amount, a signed delta, a compressed count, a count with a unit) is the fixture's to
+ *        supply and `content/metrics.ts`'s to format. The scan is AST-based (`metric-refs.ts`),
+ *        so `{formatCurrency(cents)}` is invisible to it — that is the shape the fix takes.
+ *   E25  the fixture is honest: a key names `owner.name`, every key is rendered somewhere (a
+ *        snapshot nothing reads is drift), and the tables add up — a breakdown's cents equal
+ *        its total and its shares equal 100, tier bands tile without a gap, streak rewards
+ *        climb.
+ *
+ * The two classes E22 leaves out are counted, not hidden: relative instants (`2 hours ago`)
+ * belong to the fixture clock (`DEMO_NOW_ISO` + `formatRelative`) and durations (`Last 30
+ * days`, `5 seconds` from a picker) to the window/control that owns them. Both print on the
+ * pass line so the gap stays visible in every run instead of being discovered later.
+ * ------------------------------------------------------------------ */
+
+const metricLiterals = findMetricLiterals(uiSources);
+for (const literal of metricLiterals) {
+  err(
+    "E22",
+    `${literal.file}:${literal.line} renders "${literal.value}" — a metric literal (${literal.kind}). ` +
+      "The value belongs in `data/metrics.ts` as a MetricSnapshot and the string in " +
+      "`content/metrics.ts` (`formatMetricValue` / `formatMetricDelta` / `formatDeltaWithPeriod`)",
+  );
+}
+
+const parsedMetrics = zMetricTable.safeParse(metricTable);
+if (!parsedMetrics.success) {
+  for (const issue of parsedMetrics.error.issues) {
+    err("E25", `data/metrics.ts ${issue.path.join(".")}: ${issue.message}`);
+  }
+}
+
+for (const problem of metricKeyProblems(metricTable)) err("E25", problem);
+for (const problem of unusedMetricKeys(
+  metricTable,
+  uiSources,
+  renderedTableKeys(
+    [
+      { name: "affiliateTiers", keys: affiliateTiers.map((tier) => tier.rate) },
+      { name: "earningSources", keys: earningSources.map((source) => source.amount) },
+      { name: "streakRewards", keys: [] },
+    ],
+    uiSources,
+  ),
+)) {
+  err("E25", problem);
+}
+
+for (const problem of breakdownProblems(metricTable["dashboard.balance"]?.value ?? 0, [
+  ...earningSources.map((source) => ({
+    label: source.label,
+    amountCents: metricTable[source.amount]?.value ?? 0,
+    sharePct: source.sharePct,
+  })),
+])) {
+  err("E25", problem);
+}
+
+for (const problem of tierBandProblems(
+  affiliateTiers.map((tier) => ({
+    id: tier.id,
+    from: tier.from,
+    to: tier.to,
+    ratePct: metricTable[tier.rate]?.value ?? 0,
+  })),
+)) {
+  err("E25", problem);
+}
+
+for (const problem of streakRewardProblems(streakRewards)) err("E25", problem);
+
+for (const problem of rangeProblems(
+  "the group battle player range",
+  metricTable["battle.group.minPlayers"]?.value ?? 0,
+  metricTable["battle.group.maxPlayers"]?.value ?? 0,
+)) {
+  err("E25", problem);
+}
+
+if (metricLiterals.length === 0 && Object.keys(metricTable).length === 0) {
+  err(
+    "E22",
+    "the metric scan found 0 literals and data/metrics.ts holds 0 snapshots: the scan walked no sources or the fixture was not parsed",
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * E23 — page copy lives in a fixture, and the budget only goes down
  *
  * The inventory found 1,809 page-copy strings with no home. A number in a document
@@ -1190,3 +1297,6 @@ console.log(
   `      ${e21DebtCopies} fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)`,
 );
 console.log(`      0 social instants after the fixture clock ${DEMO_NOW_ISO}`);
+console.log(
+  `      ${metricLiterals.length} metric literals in components/ and app/, ${Object.keys(metricTable).length} metric snapshots (${relativeLabels(uiSources).length} relative-instant and ${durationLabels(uiSources).length} duration labels declared out of E22 — see scripts/metric-refs.ts)`,
+);

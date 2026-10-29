@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatCountRange, formatMetricValue, formatPercentValue } from "@/content/metrics";
 import { Copy, DollarSign, ExternalLink, LinkIcon, Share2, TrendingUp, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { media } from "@/data/media";
+import { affiliateTiers, currentAffiliateTier, metric } from "@/data/metrics";
 type Referral = {
   id: number;
   username: string;
@@ -147,7 +149,9 @@ export function AffiliateDashboard() {
                 <CardTitle className="text-sm">Commission Rate</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-2xl font-bold">20%</div>
+                <div className="text-2xl font-bold">
+                  {formatMetricValue(metric(currentAffiliateTier.rate))}
+                </div>
                 <p className="text-xs text-muted-foreground">Of all earnings from your referrals</p>
               </CardContent>
             </Card>
@@ -167,7 +171,9 @@ export function AffiliateDashboard() {
                 <CardTitle className="text-sm">Pending Commissions</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-2xl font-bold">$18.25</div>
+                <div className="text-2xl font-bold">
+                  {formatMetricValue(metric("affiliate.pendingCommissions"))}
+                </div>
                 <p className="text-xs text-muted-foreground">Will be added to your balance soon</p>
               </CardContent>
             </Card>
@@ -233,37 +239,26 @@ export function AffiliateDashboard() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <p className="font-medium">Basic Tier</p>
-                  <p className="text-sm text-muted-foreground">0-24 active referrals</p>
+              {affiliateTiers.map((tier, index) => (
+                <div
+                  key={tier.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{tier.label}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatCountRange(tier.from, tier.to)} active referrals
+                    </p>
+                  </div>
+                  {index === 0 ? (
+                    <Badge>{formatPercentValue(metric(tier.rate).value)} Commission</Badge>
+                  ) : (
+                    <Badge variant="outline">
+                      {formatPercentValue(metric(tier.rate).value)} Commission
+                    </Badge>
+                  )}
                 </div>
-                <Badge>20% Commission</Badge>
-              </div>
-
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <p className="font-medium">Silver Tier</p>
-                  <p className="text-sm text-muted-foreground">25-49 active referrals</p>
-                </div>
-                <Badge variant="outline">25% Commission</Badge>
-              </div>
-
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <p className="font-medium">Gold Tier</p>
-                  <p className="text-sm text-muted-foreground">50-99 active referrals</p>
-                </div>
-                <Badge variant="outline">30% Commission</Badge>
-              </div>
-
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <p className="font-medium">Platinum Tier</p>
-                  <p className="text-sm text-muted-foreground">100+ active referrals</p>
-                </div>
-                <Badge variant="outline">35% Commission</Badge>
-              </div>
+              ))}
             </div>
 
             <div className="flex justify-center">

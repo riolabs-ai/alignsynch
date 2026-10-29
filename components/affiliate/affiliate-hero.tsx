@@ -1,8 +1,21 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import {
+  formatCompactCount,
+  formatCompactCurrency,
+  formatMetricDelta,
+  formatMetricValue,
+  formatPercentValue,
+  progressPercentOf,
+} from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { ArrowRight, CheckCircle } from "lucide-react";
 
 export function AffiliateHero() {
+  const maxCommission = metric("affiliate.maxCommission");
+  const thisMonth = metric("affiliate.thisMonth");
+  const goalProgress = progressPercentOf(thisMonth.value, metric("affiliate.monthGoal").value);
+
   return (
     <section className="bg-slate-50 dark:bg-slate-900 sm:px-4 lg:px-8 py-10 md:py-16 xl:py-20">
       <div className="container px-4 mx-auto">
@@ -20,13 +33,14 @@ export function AffiliateHero() {
             </h1>
 
             <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
-              Join our affiliate program and earn up to 30% commission on every referral. Share
-              quality quiz content and get rewarded for every new user you bring.
+              Join our affiliate program and earn up to {formatPercentValue(maxCommission.value)}{" "}
+              commission on every referral. Share quality quiz content and get rewarded for every
+              new user you bring.
             </p>
 
             <div className="space-y-4 mb-8">
               {[
-                "Earn 30% commission on all referral purchases",
+                `Earn ${formatPercentValue(maxCommission.value)} commission on all referral purchases`,
                 "Get paid monthly with no minimum threshold",
                 "Access detailed analytics and performance tracking",
                 "Receive marketing materials and dedicated support",
@@ -53,15 +67,21 @@ export function AffiliateHero() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-md">
               <div className="text-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">30%</div>
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {formatMetricValue(maxCommission)}
+                </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">Commission</div>
               </div>
               <div className="text-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">10k+</div>
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {formatCompactCount(metric("affiliate.affiliates").value)}+
+                </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">Affiliates</div>
               </div>
               <div className="text-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">$1M+</div>
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {formatCompactCurrency(metric("affiliate.paidOut").value)}+
+                </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">Paid Out</div>
               </div>
             </div>
@@ -83,17 +103,21 @@ export function AffiliateHero() {
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">This Month</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">$1,240.50</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                      {formatMetricValue(thisMonth)}
+                    </p>
                   </div>
                   <div className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm px-2 py-1 rounded">
-                    +12.5%
+                    {formatMetricDelta(thisMonth)}
                   </div>
                 </div>
 
                 <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full mb-1">
                   <div className="h-2 bg-purple-600 dark:bg-purple-500 rounded-full w-3/4"></div>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">75% of monthly goal</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {formatPercentValue(goalProgress)} of monthly goal
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -130,7 +154,9 @@ export function AffiliateHero() {
                     </div>
                     <span className="text-slate-700 dark:text-slate-300">Commission Rate</span>
                   </div>
-                  <span className="font-semibold text-slate-900 dark:text-white">30%</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {formatMetricValue(maxCommission)}
+                  </span>
                 </div>
               </div>
             </div>

@@ -7,7 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowRight, CalendarDays, Clock, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { formatCount, formatMetricValue, formatWholeCurrency } from "@/content/metrics";
 import { media } from "@/data/media";
+import { metric } from "@/data/metrics";
 
 export function FeaturedTournament() {
   const router = useRouter();
@@ -42,11 +44,15 @@ export function FeaturedTournament() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span className="text-sm">1,248 participants</span>
+                  <span className="text-sm">
+                    {formatMetricValue(metric("tournament.featured.participants"))} participants
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Trophy className="h-4 w-4" />
-                  <span className="text-sm">$5,000 prize pool</span>
+                  <span className="text-sm">
+                    {formatWholeCurrency(metric("tournament.featured.prizePool").value)} prize pool
+                  </span>
                 </div>
               </div>
 
@@ -85,7 +91,8 @@ export function FeaturedTournament() {
                 </div>
 
                 <div className="text-xs text-gray-300">
-                  Top 100 participants advance to the final round
+                  Top {formatCount(metric("tournament.featured.advanceCount").value)} participants
+                  advance to the final round
                 </div>
               </div>
             </div>
