@@ -8,34 +8,35 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatTimeRemaining } from "@/content/core";
-import type { QuizCard } from "@/content/quiz";
+import { formatStopwatch } from "@/content/quiz-result";
+import { media } from "@/data/media";
+import type {
+  QuizDetailModel,
+  QuizLeaderboardRowModel,
+  QuizReviewRowModel,
+} from "@/lib/quiz-detail";
 import { ArrowLeft, Award, Bookmark, Clock, Share2, Star, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { media } from "@/data/media";
 
 /**
- * What the server hands this page: the record already projected.
+ * What the server hands this page: the record already projected
+ * (`lib/quiz-detail.ts::quizDetailModel`).
  *
- * `quizDetailCard()` (`lib/quiz-cards.ts`) is the **quiz-scoped** projection — the
- * record plus the one campaign live for that quiz (A3). It is computed on the server
- * at a single instant and passed down, so the prize on this page is the same number
- * the merchandised card prints: `$7.50` while the campaign runs, `$10.00` before it
- * starts and after it ends. `now` travels with the card because the countdown is
- * formatted from the same instant (`formatTimeRemaining`), never from a second clock —
- * a client component that reads `new Date()` at render is the D9/#418 drift.
- */
-export interface QuizDetailModel {
-  card: QuizCard;
-  questionCount: number;
-  /** The instant `card` was projected at, ISO-8601. */
-  now: string;
-}
-
-/**
- * The page's numbers, from whichever source it has.
+ * That projection is the **quiz-scoped** model — the record plus the one campaign
+ * live for that quiz (A3) plus the activity that names it: the leaderboard
+ * (`selectQuizLeaderboard` over `data/quiz-results.ts`, best percent first then
+ * fastest) and the reviews (`selectQuizReviews` over `data/quiz-reviews.ts`, newest
+ * first). It is computed on the server at a single instant and passed down, so the
+ * prize on this page is the same number the merchandised card prints: `$7.50` while
+ * the campaign runs, `$10.00` before it starts and after it ends. `now` travels with
+ * the model because the countdown is formatted from the same instant
+ * (`formatTimeRemaining`), never from a second clock — a client component that reads
+ * `new Date()` at render is the D9/#418 drift.
+ *
+ * The page's numbers, from whichever source it has:
  *
  * The boundary is deliberate: **engagement and identity** (title, cover, category,
  * difficulty, time limit, questions, rating, plays, seats, prize, prize badge,
@@ -48,40 +49,23 @@ export interface QuizDetailModel {
  * capacity — is hidden rather than shown. A page may not state content or numbers the
  * model does not own.
  *
- * **No leaderboard, no reviews, for a record.** `QuizStats` is aggregate engagement
- * (plays, rating, seats, prize) — the model has no participant rows and no review
- * records at all, so there is nothing true to print in those two tabs and a record's
- * page does not render them. Not a tab with an empty state, and not the template's
- * `ThorFan` / `MarvelFan` rows: an absent field prints nothing, the same rule as
- * `ratingCount` and the prize. Only `templateView` carries `leaderboard`/`reviews`,
- * which is why the tabs exist on `/quiz/<not-a-record>` and nowhere else. Giving the
- * model those fields is P4 work — it needs a `QuizLeaderboardEntry` / `QuizReview`
- * record behind it; authoring rows beside this component would be fabricated people
- * again, which is the defect this page just lost.
+ * **The leaderboard and the reviews are rows of the activity collections**, not
+ * fields of the record and not this component's literals: `content/quiz-result.ts`
+ * owns `QuizResult` / `QuizReview` / `QuizComment`, and `lib/quiz-detail.ts` selects
+ * the ones that name this quiz. So a record with attempts renders a populated
+ * Leaderboard tab, one with reviews a Reviews tab, and a record with neither renders
+ * neither — not a tab with an empty state, because an empty tab is still a claim that
+ * the quiz has a leaderboard. Nothing about those tabs is authored beside this
+ * component: swap a row in `data/quiz-results.ts` or `data/quiz-reviews.ts` and both
+ * change with no `.tsx` edit. (#41 printed `ThorFan` / `MarvelFan` here because the
+ * model genuinely had no participant records; `content/quiz-result.ts` is what gives
+ * it those collections, so the old rule is retired, not overridden.)
  *
  * `/quiz/<id>` for an id that is not a record (`/quiz/1`, the template's) keeps
- * rendering the template card, so the mock stays a visible fallback rather than a
- * silent second source of truth.
+ * rendering the template card — including the template's own leaderboard and review
+ * rows — so the mock stays a visible fallback rather than a silent second source of
+ * truth.
  */
-
-/** One leaderboard row, as the template authored it — there is no model record for this. */
-interface LeaderboardRow {
-  rank: number;
-  name: string;
-  avatar: string;
-  /** Percent correct, `0`–`100`. */
-  score: number;
-  /** `mm:ss`, the template's own literal. */
-  time: string;
-}
-
-/** One review, as the template authored it — same standing as `LeaderboardRow`. */
-interface ReviewRow {
-  name: string;
-  avatar: string;
-  rating: number;
-  comment: string;
-}
 
 interface DetailView {
   title: string;
@@ -124,17 +108,15 @@ interface DetailView {
   /** Template-only related cards — they name other records, so only the template has them. */
   related?: Array<{ id: number; title: string; image: string; difficulty: string }>;
   /**
-   * Template-only leaderboard. The model has no participant records, so a real
-   * record's page has no rows and does not render the tab — an empty tab is still a
-   * claim that the quiz has a leaderboard.
+   * The quiz's attempts, ranked — from `selectQuizLeaderboard` for a record, or the
+   * template's own five rows. Empty means the tab is not rendered at all.
    */
-  leaderboard?: LeaderboardRow[];
+  leaderboard?: QuizLeaderboardRowModel[];
   /**
-   * Template-only reviews, same rule: `QuizStats.rating` is an average, not a list of
-   * people who wrote something. A record's page renders no reviews tab, no
-   * "Write a Review" button and no `ReviewModal`.
+   * The quiz's reviews, newest first — from `selectQuizReviews` for a record, or the
+   * template's own three. Empty means no Reviews tab and no "Write a Review" button.
    */
-  reviews?: ReviewRow[];
+  reviews?: QuizReviewRowModel[];
 }
 
 /** Sample quiz data - in a real app, you would fetch this based on the ID */
@@ -162,43 +144,54 @@ const quizData = {
     lastUpdate: "2023-10-15",
   },
   tags: ["Marvel", "Superheroes", "Movies", "MCU", "Avengers"],
+  // The template's own rows, in the model's row shape: `percent` and `seconds` are
+  // data, the tab formats them (`formatStopwatch`). 12:45 = 765 s, 13:20 = 800 s, …
   leaderboard: [
-    { rank: 1, name: "ThorFan", avatar: media["avatars.wizard"].src, score: 98, time: "12:45" },
-    { rank: 2, name: "IronManRules", avatar: media["avatars.sarah"].src, score: 95, time: "13:20" },
+    { rank: 1, name: "ThorFan", avatar: media["avatars.wizard"].src, percent: 98, seconds: 765 },
+    {
+      rank: 2,
+      name: "IronManRules",
+      avatar: media["avatars.sarah"].src,
+      percent: 95,
+      seconds: 800,
+    },
     {
       rank: 3,
       name: "CaptainAmerica",
       avatar: media["avatars.king"].src,
-      score: 92,
-      time: "14:05",
+      percent: 92,
+      seconds: 845,
     },
     {
       rank: 4,
       name: "BlackWidow",
       avatar: media["avatars.champion"].src,
-      score: 90,
-      time: "15:30",
+      percent: 90,
+      seconds: 930,
     },
-    { rank: 5, name: "HulkSmash", avatar: media["avatars.mind"].src, score: 88, time: "16:15" },
+    { rank: 5, name: "HulkSmash", avatar: media["avatars.mind"].src, percent: 88, seconds: 975 },
   ],
   reviews: [
     {
+      id: "template-review-marvelfan",
       name: "MarvelFan",
       avatar: media["avatars.genious"].src,
       rating: 5,
-      comment: "Excellent quiz! Really tests your knowledge of the MCU.",
+      body: "Excellent quiz! Really tests your knowledge of the MCU.",
     },
     {
+      id: "template-review-quizlover",
       name: "QuizLover",
       avatar: media["avatars.brain"].src,
       rating: 4,
-      comment: "Good variety of questions, some were quite challenging.",
+      body: "Good variety of questions, some were quite challenging.",
     },
     {
+      id: "template-review-avenger",
       name: "Avenger",
       avatar: media["avatars.guru"].src,
       rating: 5,
-      comment: "Perfect for Marvel fans. I learned some new facts too!",
+      body: "Perfect for Marvel fans. I learned some new facts too!",
     },
   ],
   relatedQuizzes: [
@@ -253,8 +246,9 @@ const templateView: DetailView = {
   requirements: quizData.requirements,
   tags: quizData.tags,
   related: quizData.relatedQuizzes,
-  // The one place these two exist: the template is not a record, so its rows are the
-  // mock's own and no real page can inherit them (`modelView` omits both).
+  // The template's own rows: a page for an id that is not a record keeps the mock
+  // visible instead of printing nothing. `modelView()` fills the same two slots from
+  // the activity collections.
   leaderboard: quizData.leaderboard,
   reviews: quizData.reviews,
 };
@@ -271,7 +265,13 @@ const TAB_COLUMNS: Record<number, string> = {
   3: "grid-cols-3",
 };
 
-/** The record's numbers, at the instant it was projected. */
+/**
+ * The record's numbers, at the instant it was projected — plus the two activity tabs.
+ *
+ * `leaderboard` and `reviews` are passed straight through: `quizDetailModel()` already
+ * selected this quiz's rows, ranked them and reduced each to the fields the tab
+ * prints. An empty array here is the whole rule — the tab is not rendered.
+ */
 function modelView(detail: QuizDetailModel): DetailView {
   const { card, questionCount, now } = detail;
   const clock = new Date(now);
@@ -301,16 +301,21 @@ function modelView(detail: QuizDetailModel): DetailView {
     authorName: card.author?.name ?? "Unknown creator",
     ...(card.author?.avatar === undefined ? {} : { authorAvatar: card.author.avatar.src }),
     summary: card.summary,
+    leaderboard: detail.leaderboard,
+    reviews: detail.reviews,
   };
 }
 
 export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailModel }) {
   const view = detail === undefined ? templateView : modelView(detail);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [userReviews, setUserReviews] = useState<ReviewRow[]>(() => view.reviews ?? []);
+  const [userReviews, setUserReviews] = useState<QuizReviewRowModel[]>(() => view.reviews ?? []);
 
-  // A tab exists only where its content does: `modelView()` carries no leaderboard and
-  // no reviews, so `/quiz/<record>` renders one tab, not three with two empty panes.
+  // A tab exists only where its content does: a record with no attempt has an empty
+  // `leaderboard` and gets no Leaderboard tab, and one with no review gets no Reviews
+  // tab — not three tabs with two empty panes, and not the template's rows in their
+  // place. Which rows a record carries is `quizDetailModel()`'s answer, never this
+  // component's.
   const leaderboard = view.leaderboard ?? [];
   const reviews = view.reviews ?? [];
   const hasSummary = view.summary.trim().length > 0;
@@ -340,13 +345,19 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
       : (view.players / view.maxPlayers) * 100;
 
   const handleReviewSubmit = (review: { rating: number; comment: string }) => {
-    const newReview: ReviewRow = {
-      name: "You",
-      avatar: media["avatars.master"].src,
-      rating: review.rating,
-      comment: review.comment,
-    };
-    setUserReviews((previous) => [newReview, ...previous]);
+    // Client-only, deliberately: there is no `data/` write path and no API, so the
+    // submitted review is an optimistic row in this component's state and is gone on
+    // reload. It never pretends to be a record — `review-` ids are not fixture ids.
+    setUserReviews((previous) => [
+      {
+        id: `local-review-${previous.length + 1}`,
+        name: "You",
+        avatar: media["avatars.master"].src,
+        rating: review.rating,
+        body: review.comment,
+      },
+      ...previous,
+    ]);
   };
   const route = useRouter();
   const playNow = () => {
@@ -354,10 +365,10 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
   };
 
   /**
-   * The overview pane, free of the tab chrome. A record's page has only this pane, and
-   * one pane is not a tab bar: inside `Tabs` it would render a `role="tabpanel"` whose
-   * `aria-labelledby` names a tab that does not exist. So the body is defined once and
-   * rendered either as tab content or as plain content.
+   * The overview pane, free of the tab chrome. A record with no attempt and no review
+   * has only this pane, and one pane is not a tab bar: inside `Tabs` it would render a
+   * `role="tabpanel"` whose `aria-labelledby` names a tab that does not exist. So the
+   * body is defined once and rendered either as tab content or as plain content.
    */
   const overviewBody = (
     <>
@@ -518,8 +529,10 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
                             </Avatar>
                             <span>{player.name}</span>
                           </div>
-                          <div className="col-span-3 text-center">{player.score}%</div>
-                          <div className="col-span-3 text-center">{player.time}</div>
+                          <div className="col-span-3 text-center">{player.percent}%</div>
+                          <div className="col-span-3 text-center">
+                            {formatStopwatch(player.seconds)}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -533,8 +546,8 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
                       <Button onClick={() => setIsReviewModalOpen(true)}>Write a Review</Button>
                     </div>
 
-                    {userReviews.map((review, index) => (
-                      <Card key={index}>
+                    {userReviews.map((review) => (
+                      <Card key={review.id}>
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
                             <Avatar>
@@ -556,7 +569,7 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
                                   ))}
                                 </div>
                               </div>
-                              <p className="text-muted-foreground text-sm mt-1">{review.comment}</p>
+                              <p className="text-muted-foreground text-sm mt-1">{review.body}</p>
                             </div>
                           </div>
                         </CardContent>
@@ -683,9 +696,11 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
           </div>
         </div>
       </div>
-      {/* The review flow writes to a local array — it is the template's toy, so it is
-          mounted only where the template's reviews are. A record's page has no path to
-          "submit" a review that no model stores. */}
+      {/* The review flow writes to this component's state and nowhere else — there is no
+          API and no `data/` write path, and inventing one here would be a second source
+          of truth for other people's reviews. It is mounted wherever a Reviews tab is,
+          template or record, because the tab is what offers the button; what it cannot
+          do is persist. */}
       {reviews.length > 0 && (
         <ReviewModal
           isOpen={isReviewModalOpen}
