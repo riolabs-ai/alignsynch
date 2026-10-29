@@ -462,6 +462,37 @@
               "from": 0,
               "to": 0,
               "reason": "the field was documented in MINUTES; the model stores seconds"
+            },
+            "status": {
+              "from": "draft",
+              "to": "published",
+              "reason": "explore-page/new[2] and explore-featured/new[2] promote this title, so the card's snapshot is lifted onto the record (quiz-migration.md §5)"
+            },
+            "cover": {
+              "from": null,
+              "to": { "src": "/sports-trivia-quiz.png", "alt": "Sports Trivia Challenge" },
+              "derivedFrom": "the card's image"
+            },
+            "author": {
+              "from": null,
+              "to": {
+                "name": "SportsNut",
+                "avatar": { "src": "/avatars/guru.png", "alt": "SportsNut" }
+              },
+              "derivedFrom": "the card's createdBy / creatorAvatar"
+            },
+            "stats.plays": { "from": 0, "to": 124, "derivedFrom": "the card's players" },
+            "stats.capacity": { "from": null, "to": 1000, "derivedFrom": "the card's maxPlayers" },
+            "stats.rating": { "from": null, "to": 4.4, "derivedFrom": "the card's rating" },
+            "stats.badge": {
+              "from": null,
+              "to": { "type": "new", "label": "New ✨" },
+              "derivedFrom": "the card's badge"
+            },
+            "stats.rewardCents": {
+              "from": null,
+              "to": 300,
+              "derivedFrom": "the card's reward \"$3.00\""
             }
           }
         },
@@ -1967,6 +1998,10 @@
     "data/tip-categories, data/news-categories": {
       "records": [],
       "summary": "The `categories` arrays in creator-tips-data and news-data were a fourth and fifth copy of the editorial vocabularies. They now re-export the tip/news rows of the single table with their counts DERIVED (D15)."
+    },
+    "data/authored-quizzes, data/created-quizzes, data/quizzes": {
+      "records": [],
+      "summary": "The 21 records that were missing from data/: the 5 `CreatedQuiz` records (quiz-migration.md §7) and the 16 quizzes decision A authored (§10), plus `data/quizzes.ts` composing all 42 with `quizById`/`quizBySlug`. Field-for-field from the migration output (migrated/quizzes.json); ids and slugs are exactly the frozen ones of §8/§10 (E8), and no record is added for the second Science merchandising snapshot — that is the per-slot overlay B-01 reserves (E10/A4)."
     }
   }
 }
