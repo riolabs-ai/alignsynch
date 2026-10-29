@@ -5,7 +5,14 @@
  */
 import type { Quiz } from "../content/quiz";
 
-/** The 20 quiz-generator templates (settings.visibility: private, status: draft). */
+/**
+ * The 20 quiz-generator templates (settings.visibility: private).
+ *
+ * 19 are `draft`: a private generator template is not published content. The
+ * exception is `quiz-11` (`Sports Trivia Challenge`), which two explore card
+ * records promote — its status and engagement snapshot are lifted onto the
+ * record, so the card projects instead of orphaning (quiz-migration.md §5).
+ */
 export const mockQuizzes: readonly Quiz[] = [
   {
     id: "quiz-1",
@@ -1522,7 +1529,22 @@ export const mockQuizzes: readonly Quiz[] = [
     summary: "Test your knowledge of various sports, rules, and famous athletes.",
     categoryIds: ["sports"],
     tags: ["sports", "athletes", "games"],
-    status: "draft",
+    // Lifted onto this record by the card projection: explore-page/new[2] and
+    // explore-featured/new[2] both promote "Sports Trivia Challenge", so the record
+    // carries that card's snapshot (quiz-migration.md §5/§7). The template's
+    // settings are untouched — it is still a private template, not a public quiz.
+    cover: {
+      src: "/sports-trivia-quiz.png",
+      alt: "Sports Trivia Challenge",
+    },
+    author: {
+      name: "SportsNut",
+      avatar: {
+        src: "/avatars/guru.png",
+        alt: "SportsNut",
+      },
+    },
+    status: "published",
     difficulty: "easy",
     questions: [
       {
@@ -1660,7 +1682,14 @@ export const mockQuizzes: readonly Quiz[] = [
       visibility: "private",
     },
     stats: {
-      plays: 0,
+      plays: 124,
+      capacity: 1000,
+      rating: 4.4,
+      badge: {
+        type: "new",
+        label: "New ✨",
+      },
+      rewardCents: 300,
       isTournament: false,
       recentPlayers: [],
     },

@@ -43,11 +43,10 @@ import {
 import { categories as quizCategoryRows } from "../data/categories";
 import { contacts as modelContacts, conversations as modelConversations } from "../data/chat-data";
 import { categories as tipCategoryTable, tips } from "../data/creator-tips-data";
-import { currentQuiz } from "../data/currentQuiz";
 import { articlesData } from "../data/knowledge-base-data";
-import { mockQuizzes } from "../data/mock-quizzes";
 import { categories as newsCategoryTable, newsData } from "../data/news-data";
 import { notifications } from "../data/notifications";
+import { quizzes as quizRecords } from "../data/quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 
@@ -88,7 +87,7 @@ function validateCollection<T>(
   return kept;
 }
 
-const quizzes = validateCollection("E0", "quiz", zQuiz, [...mockQuizzes, currentQuiz]);
+const quizzes = validateCollection("E0", "quiz", zQuiz, [...quizRecords]);
 const news = validateCollection("E0", "news", zNewsArticle, [...newsData]);
 const tipRecords = validateCollection("E0", "tip", zTip, [...tips]);
 const kbRecords = validateCollection("E0", "kb", zKbArticle, [...articlesData]);
