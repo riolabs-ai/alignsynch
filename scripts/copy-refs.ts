@@ -169,8 +169,13 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * values are keywords in the SVG vocabulary. They were counted as copy until WU-7 put the
  * footer's icon set inside a budget, which is a false positive the ratchet cannot afford —
  * a component would have to move `evenodd` into a copy fixture to get green.
+ *
+ * `accept` is the same class of value: a file-picker MIME list
+ * (`image/*,.pdf,.doc,.docx,.txt`) that WU-9's contact form carries. A reader never sees
+ * it, and moving it into `PageCopy` would put a MIME string in an editor's fixture.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
+  "accept",
   "align",
   "alt",
   "asChild",

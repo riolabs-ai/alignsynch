@@ -1,4 +1,5 @@
 import { NewsPage } from "@/components/news/news-page";
+import { newsPageCopy } from "@/data/pages/news";
 
 export const metadata = {
   title: "Quiz News & Updates | QuizMaker",
@@ -6,5 +7,5 @@ export const metadata = {
 };
 
 export default function News() {
-  return <NewsPage />;
+  return <NewsPage copy={newsPageCopy} />;
 }

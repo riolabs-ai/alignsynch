@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { articlesData } from "@/data/knowledge-base-data";
 import { categoryName } from "@/content/categories";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, FileText, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -13,9 +15,11 @@ import type { SupportCategory } from "./support-page";
 
 interface KnowledgeBaseProps {
   selectedCategory: SupportCategory;
+  copy: PageCopySection;
+  categoryCopy: PageCopySection;
 }
 
-export function KnowledgeBase({ selectedCategory }: KnowledgeBaseProps) {
+export function KnowledgeBase({ selectedCategory, copy, categoryCopy }: KnowledgeBaseProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Get the appropriate articles based on the selected category
@@ -35,34 +39,36 @@ export function KnowledgeBase({ selectedCategory }: KnowledgeBaseProps) {
   const getCategoryName = () => {
     switch (selectedCategory) {
       case "all":
-        return "All Categories";
+        return itemLabel(categoryCopy, "all");
       case "account":
-        return "Account";
+        return itemLabel(categoryCopy, "account");
       case "billing":
-        return "Billing";
+        return itemLabel(categoryCopy, "billing");
       case "quiz-creation":
-        return "Quiz Creation";
+        return itemLabel(categoryCopy, "quiz-creation");
       case "tournaments":
-        return "Tournaments";
+        return itemLabel(categoryCopy, "tournaments");
       case "privacy":
-        return "Privacy";
+        return itemLabel(categoryCopy, "privacy");
       case "technical":
-        return "Technical Issues";
+        return itemLabel(categoryCopy, "technical");
       case "general":
-        return "General";
+        return itemLabel(categoryCopy, "general");
       default:
-        return "All Categories";
+        return itemLabel(categoryCopy, "all");
     }
   };
 
   return (
     <Card className="p-4 xl:p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h2 className="text-2xl font-bold">{getCategoryName()} Knowledge Base</h2>
+        <h2 className="text-2xl font-bold">
+          {getCategoryName()} {copy.heading}
+        </h2>
         <div className="relative w-full md:w-64 mt-4 md:mt-0">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search articles..."
+            placeholder={itemLabel(copy, "search-placeholder")}
             className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -91,7 +97,7 @@ export function KnowledgeBase({ selectedCategory }: KnowledgeBaseProps) {
                         </Badge>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {article.readMinutes} min read
+                        {article.readMinutes} {itemLabel(copy, "min-read")}
                       </span>
                     </div>
                     <h3 className="font-medium text-left line-clamp-1 mb-2">{article.title}</h3>
@@ -99,7 +105,7 @@ export function KnowledgeBase({ selectedCategory }: KnowledgeBaseProps) {
                       {article.summary}
                     </p>
                     <div className="flex items-center text-primary text-sm mt-auto">
-                      <span>Read article</span>
+                      <span>{itemLabel(copy, "read-article")}</span>
                       <ArrowRight className="ml-1 h-3 w-3" />
                     </div>
                   </Button>
@@ -111,7 +117,7 @@ export function KnowledgeBase({ selectedCategory }: KnowledgeBaseProps) {
       ) : (
         <div className="text-center py-8">
           <FileText className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
-          <p className="text-muted-foreground">No articles found matching your search.</p>
+          <p className="text-muted-foreground">{itemLabel(copy, "empty")}</p>
         </div>
       )}
     </Card>
