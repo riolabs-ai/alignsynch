@@ -177,6 +177,8 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                     <Image
                       src={testimonials[activeIndex].avatar || media.placeholder.src}
                       alt={testimonials[activeIndex].name}
+                      fill
+                      className="object-cover object-center"
                     />
                     <AvatarFallback>
                       {testimonials[activeIndex].name

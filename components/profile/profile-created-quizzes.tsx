@@ -599,8 +599,6 @@ function ProfileQuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: Pro
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video">
         <Image
-          width={600}
-          height={350}
           src={quiz.image || media.placeholder.src}
           alt={quiz.title}
           fill
@@ -736,8 +734,6 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
       <div className="flex flex-col sm:flex-row">
         <div className="relative h-40 w-full sm:h-auto sm:w-48">
           <Image
-            width={600}
-            height={350}
             src={quiz.image || media.placeholder.src}
             alt={quiz.title}
             fill

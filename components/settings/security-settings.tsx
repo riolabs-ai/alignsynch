@@ -105,7 +105,13 @@ export function SecuritySettings() {
               </ol>
               <div className="mt-4 flex justify-center">
                 <div className="bg-white p-4 rounded-lg">
-                  <Image src={media["qr-code-generic"].src} alt="QR Code" className="h-32 w-32" />
+                  <Image
+                    src={media["qr-code-generic"].src}
+                    alt="QR Code"
+                    width={media["qr-code-generic"].width}
+                    height={media["qr-code-generic"].height}
+                    className="h-32 w-32"
+                  />
                 </div>
               </div>
               <div className="mt-4 space-y-2">

@@ -124,8 +124,6 @@ function DashboardQuizRow({ quiz }: { quiz: QuizAuthoringCard }) {
     <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg">
       <div className="relative w-full md:w-24 h-24 rounded-md overflow-hidden">
         <Image
-          width={600}
-          height={350}
           src={quiz.cover?.src ?? media.placeholder.src}
           alt={quiz.cover?.alt || quiz.title}
           fill
