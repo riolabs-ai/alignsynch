@@ -11,8 +11,8 @@ fixtures that must satisfy it, and `pnpm data:check` fails the build when a fixt
 | -------------------------------- | -------------------- | ----------------------------------------------------------------------- |
 | `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                |
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                          |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 28 `node:test` cases → validator; prints record counts            |
-| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 235 warnings, 13 infos on the current tree |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 145 `node:test` cases → validator; prints record counts           |
+| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 232 warnings, 12 infos on the current tree |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 299 files; CI gate                                      |
 | `pnpm build`                     | exit 0, 56–76 s      | `next build`; 34 routes, 32 static pages                                |
 | `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                           |
@@ -38,8 +38,8 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
   current quiz, categories). Card shapes are projections (`selectQuizCard`), never authored arrays;
   a per-slot campaign is an engagement-only overlay (`data/promotions.ts`), never a second record.
 - `scripts/data-check.ts` — the validator: per-record schema pass, then collection invariants
-  E0–E16 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
-  `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E16/W6.
+  E0–E17 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
+  `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E17/W6.
 - `app/(mainlayout)/**` — every product page behind the header/sidebar shell; `app/(auth)/**` —
   login/register, no shell. Dynamic segments: `quiz/[id]/{play,discussion}`,
   `my-quizzes/[id]/{statistics}`, `categories/[slug]`, `news/[slug]`, `creator-tips/[slug]`,
