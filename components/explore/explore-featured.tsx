@@ -16,14 +16,33 @@ import { useState } from "react";
 
 type Tabs = "trending" | "popular" | "new";
 
-export function ExploreFeatured() {
+/**
+ * The `/explore` page's merchandised section — three curated shelves, one per tab.
+ *
+ * This is the surface the `explore-page/*` slots name: `explore-page/popular[1]` is
+ * "the second card of the Popular tab of `/explore`", and that card renders the
+ * B-01 campaign. Until this component had an importer the slot had no screen, so the
+ * campaign was correct in the model and invisible in the app (the gap P3b closed).
+ *
+ * `now` is the **server's** request instant, ISO-8601, and it is the only clock this
+ * section projects against: `/explore` is request-time (`force-dynamic` on
+ * `app/(mainlayout)/explore/page.tsx`), the client reuses the instant, and server
+ * render and hydration therefore project the same campaign at the same instant. A
+ * client component calling `new Date()` here instead would evaluate the campaign
+ * window — and the countdown chip — against the visitor's clock, a second clock
+ * (D9/#418).
+ */
+export function ExploreFeatured({ now }: { now: string }) {
   const [activeTab, setActiveTab] = useState<Tabs>("trending");
+  /** The same instant for the cards and the countdown chip. */
+  const clock = new Date(now);
 
-  // Each tab is a curated shelf; the cards come from `selectQuizCard` (D2).
+  // Each tab is a curated shelf; the cards come from `selectQuizCard` (D2), with the
+  // campaign for each position's slot merged in by `shelfCards()` (P3).
   const featuredQuizzes: Record<Tabs, QuizCard[]> = {
-    trending: shelfCards("exploreTrending"),
-    popular: shelfCards("explorePopular"),
-    new: shelfCards("exploreNew"),
+    trending: shelfCards("exploreTrending", clock),
+    popular: shelfCards("explorePopular", clock),
+    new: shelfCards("exploreNew", clock),
   };
 
   // Get badge icon based on type
@@ -122,7 +141,7 @@ export function ExploreFeatured() {
                 {quiz.stats.limitedTime && quiz.stats.limitedTimeEndsAt && (
                   <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
-                    {formatTimeRemaining(quiz.stats.limitedTimeEndsAt)}
+                    {formatTimeRemaining(quiz.stats.limitedTimeEndsAt, clock)}
                   </div>
                 )}
               </div>

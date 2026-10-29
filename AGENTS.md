@@ -14,7 +14,7 @@ fixtures that must satisfy it, and `pnpm data:check` fails the build when a fixt
 | `pnpm data:check`                | exit 0, 5–6 s        | tsc → 157 `node:test` cases → validator; prints record counts |
 | `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 232 warnings, 12 infos           |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 314 files; CI gate                            |
-| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 31 static pages                      |
+| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                      |
 | `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                 |
 | `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                       |
 | `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                           |
@@ -81,6 +81,14 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
   label there is a pure function of the ISO instant — `data/` carries instants only, the UI calls
   `formatRelative` / `formatClockTime` / `formatDayHeading`, and `data:check` E10 fails when a
   social fixture is dated after the clock.
+- **A page that renders a slot must be request-time.** `shelfCards()` projects a campaign
+  against the instant it is given, so a static prerender evaluates the campaign window at
+  _build_ time: the HTML carries the catalog snapshot, or — for a build inside the window —
+  freezes the campaign numbers for good. `/explore` and `/explore/featured` are the two routes
+  that render shelves named by `data/quiz-catalogue.ts::slotShelves`, and both are
+  `export const dynamic = "force-dynamic"` and hand one server instant (`now`) down to the
+  client component. Adding a slot surface means making its route request-time in the same
+  change.
 - **`params` is a Promise in Next 16.** Every dynamic route must take
   `params: Promise<{ id: string }>` and unwrap it (`await params` in an `async` page, or
   `use(params)`); a synchronous `params.id` logs `params is a Promise and must be unwrapped with
