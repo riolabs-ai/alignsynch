@@ -28,10 +28,10 @@ Today's output:
 ```
 PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts, 5 conversations,
       6 notifications, 2 promotions, 17 quiz results, 14 comments, 5 reviews, 99 media entries,
-      11 page-copy routes, 2 battle modes, 6 daily-challenge badges, 10 players, 50 leaderboard rows,
+      19 page-copy routes, 2 battle modes, 6 daily-challenge badges, 10 players, 50 leaderboard rows,
       8 wins, 74 search rows
       34 routes match app/, 0 unknown category ids, 0 dead links
-      / 0/0 page-copy literals, /battle 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /daily-challenge 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals, /login 0/0 page-copy literals, /register 0/0 page-copy literals, shell 0/0 page-copy literals, not-found 0/0 page-copy literals (measured/budget, E23)
+      / 0/0 page-copy literals, /battle 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /daily-challenge 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals, /login 0/0 page-copy literals, /register 0/0 page-copy literals, /affiliate 0/0 page-copy literals, /pricing 0/0 page-copy literals, /news 0/0 page-copy literals, /news/[slug] 0/0 page-copy literals, /support 0/0 page-copy literals, /support/articles/[id] 0/0 page-copy literals, /creator-tips 0/0 page-copy literals, /creator-tips/[slug] 0/0 page-copy literals, shell 0/0 page-copy literals, not-found 0/0 page-copy literals (measured/budget, E23)
       80 hardcoded links + 0 asset refs resolve in components/ and app/ (0 known-missing assets)
       0 module-scope record arrays on the search/chat surfaces + 0 fixture rows copied into a search/chat component
       11 fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)
