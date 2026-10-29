@@ -4,8 +4,10 @@ import type React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatCompactCount } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";
 import { media } from "@/data/media";
+import { metric } from "@/data/metrics";
 import { itemLabel, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle, Mail } from "lucide-react";
@@ -14,6 +16,18 @@ import { Fragment, useState } from "react";
 /** The band's two repeated rows, in render order: the fixture owns the words. */
 const PERKS = ["perk-insights", "perk-strategies", "perk-unsubscribe"] as const;
 const STATS = ["stat-subscribers", "stat-satisfaction", "stat-updates"] as const;
+
+/**
+ * A stat's value. The caption and the two display-only values come from the page-copy
+ * fixture; the subscriber count is a product quantity, so it is computed from
+ * `data/metrics.ts` (E22) instead of being re-authored twice — the fixture and the page
+ * would drift apart the day either changed.
+ */
+function statValue(copy: PageCopySection, id: (typeof STATS)[number]): string {
+  return id === "stat-subscribers"
+    ? `${formatCompactCount(metric("home.newsletterSubscribers").value)}+`
+    : itemValue(copy, id);
+}
 
 export function NewsletterSection({ copy }: { copy: PageCopySection }) {
   const [email, setEmail] = useState("");
@@ -143,7 +157,7 @@ export function NewsletterSection({ copy }: { copy: PageCopySection }) {
               <Fragment key={id}>
                 {index > 0 && <div className="w-px h-12 bg-white/20 self-center"></div>}
                 <div className="flex flex-col items-center">
-                  <p className="text-3xl font-bold text-white">{itemValue(copy, id)}</p>
+                  <p className="text-3xl font-bold text-white">{statValue(copy, id)}</p>
                   <p className="text-white/70 text-sm">{itemLabel(copy, id)}</p>
                 </div>
               </Fragment>

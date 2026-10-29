@@ -8,6 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { formatPercentValue } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { categories as categoryNames, newsData } from "@/data/news-data";
 import type { NewsArticle as NewsArticleContent } from "@/content/article";
 import { formatDate } from "@/content/core";
@@ -295,8 +297,8 @@ export function NewsArticle({ slug }: { slug: string }) {
                           <span className="text-xs text-muted-foreground">3 days ago</span>
                         </div>
                         <p className="text-sm mb-2">
-                          I've been using these strategies and my quiz engagement has increased by
-                          45%!
+                          I've been using these strategies and my quiz engagement has increased by{" "}
+                          {formatPercentValue(metric("news.testimonialEngagementLift").value)}!
                         </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <button className="text-muted-foreground hover:text-foreground flex items-center">

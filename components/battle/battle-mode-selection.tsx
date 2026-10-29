@@ -19,9 +19,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatCountRange } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { Clock, Globe, ListChecks, Lock, Swords, Trophy, Users } from "lucide-react";
 import { useState } from "react";
 import { BattleState } from "./battle-page";
+
+/** The group battle roster, from the fixture: the tab label and the description read one range. */
+const groupPlayerRange = formatCountRange(
+  metric("battle.group.minPlayers").value,
+  metric("battle.group.maxPlayers").value,
+);
 
 interface BattleModeSelectionProps {
   onModeSelect: (
@@ -71,7 +79,7 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
           </TabsTrigger>
           <TabsTrigger value="group" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            <span>Group Battle (3-10 players)</span>
+            <span>Group Battle ({groupPlayerRange} players)</span>
           </TabsTrigger>
         </TabsList>
 
@@ -203,7 +211,8 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
             <CardHeader>
               <CardTitle>Group Battle</CardTitle>
               <CardDescription>
-                Create or join a group battle with 3-10 players competing simultaneously.
+                Create or join a group battle with {groupPlayerRange} players competing
+                simultaneously.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
