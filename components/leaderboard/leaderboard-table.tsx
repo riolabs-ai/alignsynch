@@ -1,9 +1,11 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import type { LeaderboardEntry, PlayerTier } from "@/content/people";
+import { avatarSrcOf } from "@/lib/players";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
@@ -15,42 +17,38 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { LeaderboardItem } from "./leaderboard-podium";
-import { media } from "@/data/media";
 
 interface LeaderboardTableProps {
-  leaderboardData: LeaderboardItem[];
+  entries: LeaderboardEntry[];
   showPagination?: boolean;
   enhanced?: boolean;
 }
 
+/**
+ * Tier -> badge variant. A closed map, not a `switch` returning a bare string: `PlayerTier`
+ * is the schema's enum, so a sixth tier fails to compile here instead of rendering an
+ * unstyled badge.
+ */
+const TIER_VARIANTS: Record<PlayerTier, BadgeProps["variant"]> = {
+  Diamond: "success",
+  Platinum: "purple",
+  Gold: "yellow",
+  Silver: "blue",
+  Bronze: "outline",
+};
+
 export function LeaderboardTable({
-  leaderboardData,
+  entries,
   showPagination = false,
   enhanced = false,
 }: LeaderboardTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(leaderboardData.length / itemsPerPage);
+  const totalPages = Math.ceil(entries.length / itemsPerPage);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = leaderboardData.slice(startIndex, endIndex);
-
-  const getBadgeVariant = (badge: string) => {
-    switch (badge) {
-      case "Diamond":
-        return "success";
-      case "Platinum":
-        return "purple";
-      case "Gold":
-        return "yellow";
-      case "Silver":
-        return "blue";
-      default:
-        return "outline";
-    }
-  };
+  const currentData = entries.slice(startIndex, endIndex);
 
   const getProgressColor = (rank: number) => {
     if (rank === 1) return "bg-amber-500";
@@ -78,53 +76,60 @@ export function LeaderboardTable({
           <div className="col-span-2 text-right">Quizzes</div>
           <div className="col-span-2 text-right">Badge</div>
         </div>
-        {currentData.map((user) => (
+        {currentData.map((entry) => (
           <div
-            key={user.id}
-            className={`grid  grid-cols-10 md:grid-cols-12 gap-2 border-b ${enhanced ? "p-5 hover:bg-muted/10 transition-colors" : "p-4"} last:border-0 ${user.rank <= 3 ? "bg-muted/5" : ""}`}
+            key={entry.player.id}
+            className={`grid  grid-cols-10 md:grid-cols-12 gap-2 border-b ${enhanced ? "p-5 hover:bg-muted/10 transition-colors" : "p-4"} last:border-0 ${entry.rank <= 3 ? "bg-muted/5" : ""}`}
           >
             <div className="col-span-1 flex items-center font-medium">
-              {user.rank <= 3 ? (
+              {entry.rank <= 3 ? (
                 <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full ${user.rank === 1 ? "bg-amber-500" : user.rank === 2 ? "bg-gray-300" : user.rank === 3 ? "bg-amber-700" : ""} text-white`}
+                  className={`flex h-7 w-7 items-center justify-center rounded-full ${entry.rank === 1 ? "bg-amber-500" : entry.rank === 2 ? "bg-gray-300" : entry.rank === 3 ? "bg-amber-700" : ""} text-white`}
                 >
-                  {user.rank}
+                  {entry.rank}
                 </div>
               ) : (
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  {user.rank}
+                  {entry.rank}
                 </div>
               )}
             </div>
             <div className="col-span-3 flex items-center gap-3">
-              <Link
-                href={`/profile/${user.name.toLowerCase().replace(/\s+/g, "")}`}
-                className="block"
-              >
+              <Link href={`/profile/${entry.player.handle}`} className="block">
                 <Avatar
-                  className={`h-10 w-10 ${user.rank <= 3 ? "ring-2 ring-offset-2 " + (user.rank === 1 ? "ring-amber-500" : user.rank === 2 ? "ring-gray-300" : "ring-amber-700") : ""}`}
+                  className={`h-10 w-10 ${
+                    entry.rank <= 3
+                      ? `ring-2 ring-offset-2 ${
+                          entry.rank === 1
+                            ? "ring-amber-500"
+                            : entry.rank === 2
+                              ? "ring-gray-300"
+                              : "ring-amber-700"
+                        }`
+                      : ""
+                  }`}
                 >
                   <AvatarImage
                     className="object-cover object-center"
-                    src={user.avatar || media.placeholder.src}
-                    alt={user.name}
+                    src={avatarSrcOf(entry.player)}
+                    alt={entry.player.name}
                   />
-                  <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+                  <AvatarFallback>{entry.player.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
               </Link>
               <div>
                 <Link
-                  href={`/profile/${user.name.toLowerCase().replace(/\s+/g, "")}`}
+                  href={`/profile/${entry.player.handle}`}
                   className="font-medium hover:underline"
                 >
-                  {user.name}
+                  {entry.player.name}
                 </Link>
                 <div className="flex items-center text-xs text-muted-foreground">
-                  {user.country}
-                  {user.winStreak >= 3 && (
+                  {entry.player.country}
+                  {(entry.player.winStreak ?? 0) >= 3 && (
                     <div className="ml-2 flex items-center text-amber-500">
                       <Fire className="mr-1 h-3 w-3" />
-                      {user.winStreak} streak
+                      {entry.player.winStreak} streak
                     </div>
                   )}
                 </div>
@@ -132,12 +137,12 @@ export function LeaderboardTable({
             </div>
             <div className="col-span-2 flex items-center justify-end">
               <div className="text-right">
-                <div className="font-medium">{user.score.toLocaleString()}</div>
+                <div className="font-medium">{entry.score.toLocaleString()}</div>
                 {enhanced && (
                   <div className="mt-1 h-1.5 w-16">
                     <Progress
-                      value={100 * (user.score / 10000)}
-                      className={`h-1.5 ${getProgressColor(user.rank)}`}
+                      value={100 * (entry.score / 10000)}
+                      className={`h-1.5 ${getProgressColor(entry.rank)}`}
                     />
                   </div>
                 )}
@@ -146,13 +151,13 @@ export function LeaderboardTable({
             <div className="hidden items-center justify-end md:col-span-2 md:flex">
               <div className="flex items-center rounded-full bg-muted/80 px-2.5 py-1 text-xs font-medium">
                 <Star className="mr-1 h-3.5 w-3.5 text-amber-500" />
-                {user.level}
+                {entry.player.level}
               </div>
             </div>
             <div className="col-span-2 flex items-center justify-end">
               <div className="text-right">
-                <div className="font-medium">{user.quizzes}</div>
-                {enhanced && user.rank <= 5 && (
+                <div className="font-medium">{entry.quizzes}</div>
+                {enhanced && entry.rank <= 5 && (
                   <div className="mt-1 text-xs text-muted-foreground">
                     <TrendingUp className="mr-1 inline h-3 w-3 text-green-500" />
                     Active
@@ -161,12 +166,17 @@ export function LeaderboardTable({
               </div>
             </div>
             <div className="col-span-2 flex items-center justify-end">
-              <Badge variant={getBadgeVariant(user.badge)} className={enhanced ? "px-3 py-1" : ""}>
-                {(user.badge === "Diamond" ||
-                  user.badge === "Platinum" ||
-                  user.badge === "Gold") && <Trophy className="mr-1.5 h-3.5 w-3.5" />}
-                {user.badge}
-              </Badge>
+              {entry.player.tier !== undefined && (
+                <Badge
+                  variant={TIER_VARIANTS[entry.player.tier]}
+                  className={enhanced ? "px-3 py-1" : ""}
+                >
+                  {(entry.player.tier === "Diamond" ||
+                    entry.player.tier === "Platinum" ||
+                    entry.player.tier === "Gold") && <Trophy className="mr-1.5 h-3.5 w-3.5" />}
+                  {entry.player.tier}
+                </Badge>
+              )}
             </div>
           </div>
         ))}
@@ -175,8 +185,7 @@ export function LeaderboardTable({
       {showPagination && totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1}-{Math.min(endIndex, leaderboardData.length)} of{" "}
-            {leaderboardData.length} users
+            Showing {startIndex + 1}-{Math.min(endIndex, entries.length)} of {entries.length} users
           </div>
           <div className="flex items-center space-x-2">
             <Button

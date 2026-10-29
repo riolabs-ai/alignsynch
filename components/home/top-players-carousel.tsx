@@ -1,8 +1,11 @@
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatCurrency, formatPlayerCount } from "@/content/core";
+import { type RankTitle, rankTitleOf } from "@/content/people";
+import { avatarSrcOf, leaderboardEntries } from "@/lib/players";
 import cardCover from "@/public/card-cover.png";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
@@ -11,155 +14,28 @@ import Image from "next/image";
 import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { media } from "@/data/media";
-// Sample top players data
-const topPlayers = [
-  {
-    id: 1,
-    name: "Alex Johnson",
-    username: "alexmaster",
-    avatar: media["avatars.alex"].src,
-    country: "United States",
-    countryCode: "us",
-    rank: 1,
-    rankTitle: "Grandmaster",
-    totalWins: 42,
-    winAmount: 1250.75,
-    change: "up",
-    followers: 1248,
-    following: 356,
-  },
-  {
-    id: 2,
-    name: "Sarah Williams",
-    username: "quizwizard",
-    avatar: media["avatars.wizard"].src,
-    country: "Canada",
-    countryCode: "ca",
-    rank: 2,
-    rankTitle: "Master",
-    totalWins: 38,
-    winAmount: 980.5,
-    change: "up",
-    followers: 987,
-    following: 412,
-  },
-  {
-    id: 3,
-    name: "Michael Brown",
-    username: "brainiacsarah",
-    avatar: media["avatars.sarah"].src,
-    country: "United Kingdom",
-    countryCode: "gb",
-    rank: 3,
-    rankTitle: "Expert",
-    totalWins: 35,
-    winAmount: 875.25,
-    change: "same",
-    followers: 756,
-    following: 289,
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    username: "triviaking",
-    avatar: media["avatars.king"].src,
-    country: "Australia",
-    countryCode: "au",
-    rank: 4,
-    rankTitle: "Pro",
-    totalWins: 31,
-    winAmount: 720.8,
-    change: "down",
-    followers: 645,
-    following: 178,
-  },
-  {
-    id: 5,
-    name: "David Wilson",
-    username: "quizchampion",
-    avatar: media["avatars.champion"].src,
-    country: "Germany",
-    countryCode: "de",
-    rank: 5,
-    rankTitle: "Pro",
-    totalWins: 29,
-    winAmount: 695.4,
-    change: "up",
-    followers: 532,
-    following: 245,
-  },
-  {
-    id: 6,
-    name: "Jessica Taylor",
-    username: "mindmaster",
-    avatar: media["avatars.mind"].src,
-    country: "France",
-    countryCode: "fr",
-    rank: 6,
-    rankTitle: "Elite",
-    totalWins: 27,
-    winAmount: 650.2,
-    change: "same",
-    followers: 487,
-    following: 312,
-  },
-  {
-    id: 7,
-    name: "Ryan Martinez",
-    username: "quizgenius",
-    avatar: media["avatars.genious"].src,
-    country: "Spain",
-    countryCode: "es",
-    rank: 7,
-    rankTitle: "Advanced",
-    totalWins: 25,
-    winAmount: 620.75,
-    change: "up",
-    followers: 423,
-    following: 198,
-  },
-  {
-    id: 8,
-    name: "Olivia Anderson",
-    username: "brainpower",
-    avatar: media["avatars.brain"].src,
-    country: "Italy",
-    countryCode: "it",
-    rank: 8,
-    rankTitle: "Advanced",
-    totalWins: 23,
-    winAmount: 580.3,
-    change: "down",
-    followers: 378,
-    following: 267,
-  },
-];
+
+/**
+ * The global board's top eight, projected from `data/players.ts`. The eight-record
+ * `topPlayers` array that used to live here carried its own names, avatars, follower counts
+ * and a `rankTitle` per row — a copy of the leaderboard that disagreed with it (WU-1).
+ */
+const TOP_PLAYERS = leaderboardEntries("global", 8);
+
+/** Rank title -> badge variant. `rankTitleOf` owns the threshold; this owns the colour. */
+const RANK_TITLE_VARIANTS: Record<RankTitle, BadgeProps["variant"]> = {
+  Grandmaster: "purple",
+  Master: "blue",
+  Expert: "yellow",
+  Pro: "success",
+  Elite: "default",
+  Advanced: "outline",
+};
+
+/** A profile stat the fixture does not carry is a dash, never an invented zero. */
+const orDash = (value: string | undefined) => value ?? "—";
 
 export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
-  // Get badge color based on rank title
-  const getBadgeVariant = (rankTitle: string) => {
-    switch (rankTitle) {
-      case "Grandmaster":
-        return "purple";
-      case "Master":
-        return "blue";
-      case "Expert":
-        return "yellow";
-      case "Pro":
-        return "success";
-      case "Elite":
-        return "default";
-      default:
-        return "outline";
-    }
-  };
-
-  // Format number with k for thousands
-  const formatNumber = (num: number) => {
-    return num >= 1000 ? `${(num / 1000).toFixed(1)}k` : num;
-  };
-
   return (
     <section className="space-y-4 px-4 xl:px-8 bg-indigo-50 dark:bg-slate-900 py-10">
       <div className="flex items-center justify-between">
@@ -185,102 +61,127 @@ export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
           modules={[Navigation, Autoplay]}
           loop
         >
-          {topPlayers.map((player) => (
-            <SwiperSlide key={player.id} className="max-w-[340px]">
-              <Card className="overflow-hidden h-full shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="!p-0">
-                  <div className="relative">
-                    <Image
-                      src={cardCover}
-                      className="w-full object-cover size-full"
-                      alt="cover img"
-                    />
-                    {/* Avatar */}
-                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">
-                      <Avatar className="h-20 w-20 border-4 border-white shadow-md bg-background">
-                        <AvatarImage
-                          src={player.avatar || media.placeholder.src}
-                          className="object-cover object-center"
-                          alt={player.name}
-                        />
-                        <AvatarFallback>{player.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                    </div>
-
-                    {/* Badge */}
-                    <Badge
-                      variant={getBadgeVariant(player.rankTitle) as any}
-                      className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full"
-                    >
-                      {player.rankTitle}
-                    </Badge>
-                  </div>
-
-                  <div className="pt-14 px-4 pb-4 text-center">
-                    {/* Name */}
-                    <h3 className="font-semibold text-base text-foreground">
-                      <Link href={`/profile/${player.username}`} className="hover:underline">
-                        {player.name}
-                      </Link>
-                    </h3>
-
-                    {/* Country */}
-                    <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-4 mt-1">
+          {TOP_PLAYERS.map((entry) => {
+            const { player } = entry;
+            const rankTitle = rankTitleOf(entry.rank);
+            const stats = player.stats;
+            return (
+              <SwiperSlide key={player.id} className="max-w-[340px]">
+                <Card className="overflow-hidden h-full shadow-md hover:shadow-lg transition-shadow">
+                  <CardContent className="!p-0">
+                    <div className="relative">
                       <Image
-                        width={16}
-                        height={12}
-                        unoptimized
-                        src={`https://flagcdn.com/16x12/${player.countryCode}.png`}
-                        alt={player.country}
-                        className="h-3"
+                        src={cardCover}
+                        className="w-full object-cover size-full"
+                        alt="cover img"
                       />
-                      <span>{player.country}</span>
+                      {/* Avatar */}
+                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">
+                        <Avatar className="h-20 w-20 border-4 border-white shadow-md bg-background">
+                          <AvatarImage
+                            src={avatarSrcOf(player)}
+                            className="object-cover object-center"
+                            alt={player.name}
+                          />
+                          <AvatarFallback>
+                            {player.name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+
+                      {/* Badge */}
+                      {rankTitle !== undefined && (
+                        <Badge
+                          variant={RANK_TITLE_VARIANTS[rankTitle]}
+                          className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full"
+                        >
+                          {rankTitle}
+                        </Badge>
+                      )}
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 text-center mb-5">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center">
-                          <div className="h-6 w-6 rounded-full bg-muted text-xs font-semibold flex items-center justify-center">
-                            {player.rank}
+                    <div className="pt-14 px-4 pb-4 text-center">
+                      {/* Name */}
+                      <h3 className="font-semibold text-base text-foreground">
+                        <Link href={`/profile/${player.handle}`} className="hover:underline">
+                          {player.name}
+                        </Link>
+                      </h3>
+
+                      {/* Country */}
+                      <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-4 mt-1">
+                        {player.countryCode !== undefined && (
+                          <Image
+                            width={16}
+                            height={12}
+                            unoptimized
+                            src={`https://flagcdn.com/16x12/${player.countryCode}.png`}
+                            alt={player.country ?? player.name}
+                            className="h-3"
+                          />
+                        )}
+                        <span>{player.country}</span>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-3 gap-4 text-center mb-5">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center">
+                            <div className="h-6 w-6 rounded-full bg-muted text-xs font-semibold flex items-center justify-center">
+                              {entry.rank}
+                            </div>
                           </div>
+                          <p className="text-xs text-muted-foreground">{itemLabel(copy, "rank")}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground">{itemLabel(copy, "rank")}</p>
+                        <div className="space-y-1">
+                          <p className="font-semibold text-foreground">
+                            {orDash(stats?.wins.toString())}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{itemLabel(copy, "wins")}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="font-semibold text-green-600">
+                            {stats === undefined
+                              ? "—"
+                              : formatCurrency(stats.winningsCents, { trimZeroCents: true })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {itemLabel(copy, "earned")}
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <p className="font-semibold text-foreground">{player.totalWins}</p>
-                        <p className="text-xs text-muted-foreground">{itemLabel(copy, "wins")}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="font-semibold text-green-600">
-                          ${player.winAmount.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{itemLabel(copy, "earned")}</p>
-                      </div>
-                    </div>
 
-                    {/* Follower & Following */}
-                    <div className="grid grid-cols-2 gap-3 text-center">
-                      <div className="flex flex-col items-center bg-muted/80 rounded-lg p-2">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                          <Users className="h-3 w-3" />
-                          <span>{itemLabel(copy, "followers")}</span>
+                      {/* Follower & Following */}
+                      <div className="grid grid-cols-2 gap-3 text-center">
+                        <div className="flex flex-col items-center bg-muted/80 rounded-lg p-2">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                            <Users className="h-3 w-3" />
+                            <span>{itemLabel(copy, "followers")}</span>
+                          </div>
+                          <p className="font-semibold">
+                            {orDash(
+                              stats === undefined ? undefined : formatPlayerCount(stats.followers),
+                            )}
+                          </p>
                         </div>
-                        <p className="font-semibold">{formatNumber(player.followers)}</p>
-                      </div>
-                      <div className="flex flex-col items-center bg-muted/80 rounded-lg p-2">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                          <Users className="h-3 w-3" />
-                          <span>{itemLabel(copy, "following")}</span>
+                        <div className="flex flex-col items-center bg-muted/80 rounded-lg p-2">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                            <Users className="h-3 w-3" />
+                            <span>{itemLabel(copy, "following")}</span>
+                          </div>
+                          <p className="font-semibold">
+                            {orDash(
+                              stats === undefined ? undefined : formatPlayerCount(stats.following),
+                            )}
+                          </p>
                         </div>
-                        <p className="font-semibold">{formatNumber(player.following)}</p>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </SwiperSlide>
-          ))}
+                  </CardContent>
+                </Card>
+              </SwiperSlide>
+            );
+          })}
         </Swiper>
       </div>
 

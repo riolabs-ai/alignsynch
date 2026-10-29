@@ -12,6 +12,7 @@ import { TopPlayersCarousel } from "@/components/home/top-players-carousel";
 import { Footer } from "@/components/layout/footer";
 import { homePageCopy } from "@/data/pages/home";
 import { sectionOf } from "@/lib/page-copy";
+import { winFeed } from "@/lib/win-feed";
 import "swiper/swiper-bundle.css";
 
 /**
@@ -28,7 +29,7 @@ export default function Home() {
       <FeaturedQuizzes copy={sectionOf(homePageCopy, "featured-quizzes")} />
       <TopPlayersCarousel copy={sectionOf(homePageCopy, "top-players")} />
       <QuizzesByDifficulty copy={sectionOf(homePageCopy, "by-difficulty")} />
-      <LiveWinners copy={sectionOf(homePageCopy, "live-winners")} />
+      <LiveWinners copy={sectionOf(homePageCopy, "live-winners")} wins={winFeed(8)} />
       <CategoriesHowItWorks />
       <PlayerTestimonials copy={sectionOf(homePageCopy, "success-stories")} />
       <ResourcesAndReferral
