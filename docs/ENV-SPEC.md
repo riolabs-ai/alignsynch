@@ -119,12 +119,11 @@ WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
 
 - `types/quiz.ts` deleted; `data:check` E9 fails if it (or a stray `any` in `data/`) reappears.
 - Gate evidence, `GATE_LANE=full bash scripts/verify.sh` on node `v24.22.0` / pnpm `12.16.1`, run
-  twice during this pass while `main` sat at `4f857adb`: green both times, 70 s at load average 7.59
-  and 51 s at load 6.47 (`build` 46.3 s → 36.3 s). Every count was identical across the two runs:
-  `deps` clean · `typecheck` exit 0 · `lint` 0 errors, 205 warnings, 36 infos (351 files) ·
+  repeatedly during this pass while `main` sat at `4f857adb`. Every run was green and every count was
+  identical: `deps` clean · `typecheck` exit 0 · `lint` 0 errors, 205 warnings, 36 infos (351 files) ·
   `format:check` (349 files) · `data:check` 374/374 cases in 87 suites · `build` 34 routes, 30 static
-  pages. Timings move with contention — read the shape (the build is two thirds of the gate), not the
-  second.
+  pages. Wall time is not a property of the tree here: as the load average moved over 6.5–11.9 the same
+  gate took 51 s, 70 s and 101 s, with `build` 36–76 s of it.
 - The block above is current, not a P1-era snapshot. The test count moved 28 → 33 → **374** as the
   P2 work units added suites, and the invariant set is `E0–E26`, of which `E14`–`E17` + `W6` are the
   promotion overlays and `E17`–`E19` are the media registry (see `MIGRATION.md`, which records the

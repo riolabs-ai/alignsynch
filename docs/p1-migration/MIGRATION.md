@@ -398,7 +398,7 @@ the media registry then numbered its _"no component writes an asset path"_ rule 
 `[E17]` for a slot nobody renders, `scripts/data-check.ts` emits `[E17]` for a component that writes
 `"/hero-bg.jpg"`. A single code therefore names two unrelated failures, so read the message and not
 the number. Promotion set: `E14`–`E16` + `W6`, plus the `E17` slot guard. Media set: `E17`–`E19`.
-Renumbering is a code change with no documentation in it, so it is filed on its own rather than
+Renumbering is a code change with no documentation in it, so it is tracked on its own card rather than
 smuggled into a docs pass.
 
 ### The warning census (98 warnings, measured)
