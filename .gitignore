@@ -28,3 +28,5 @@ next-env.d.ts
 # data:check build output (generated)
 .datacheck/
 .migration/
+# P3 fixture generator output (gitignored; validated by data:check when present)
+data/generated/
