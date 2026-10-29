@@ -136,6 +136,16 @@ describe("leafLiterals", () => {
     assert.deepEqual(literals, []);
   });
 
+  it("ignores the attributes that place a popover, not write copy", () => {
+    const literals = leafLiterals(
+      file(
+        "components/home/x.tsx",
+        `<DropdownMenuContent align="end"><ScrollBar orientation="horizontal" /></DropdownMenuContent>`,
+      ),
+    );
+    assert.deepEqual(literals, []);
+  });
+
   it("ignores glyph-only segments — `$`, a quote mark, an emoji are not copy", () => {
     const literals = leafLiterals(file("components/home/x.tsx", `<p>$<span>{"x"}</span>💰</p>`));
     assert.deepEqual(literals, []);
@@ -310,6 +320,52 @@ export const x = sectionOf(homePageCopy, "latest-quizes");
     ];
     const found = messages({ sources });
     assert.match(found.join("\n"), /asks for copy item "play-now"/);
+  });
+
+  it("carries an item body and page-level items through the parser", () => {
+    const parsed = copyOf({
+      heading: "Categories",
+      items: [{ id: "search-placeholder", label: "Search categories..." }],
+      sections: [
+        {
+          id: "cta",
+          heading: "Ready?",
+          items: [{ id: "compete", label: "Compete & Win", body: "Join tournaments and climb." }],
+        },
+      ],
+    });
+    assert.equal(parsed.items?.[0]?.id, "search-placeholder");
+    assert.equal(parsed.sections?.[0]?.items?.[0]?.body, "Join tournaments and climb.");
+  });
+
+  it("rejects an unknown key on an item — strict, like every other object", () => {
+    assert.throws(() =>
+      copyOf({
+        heading: "Categories",
+        sections: [{ id: "cta", heading: "Ready?", items: [{ id: "x", label: "X", extra: 1 }] }],
+      }),
+    );
+  });
+
+  it("fails when a component asks for a page item the fixture does not carry", () => {
+    const sources = [
+      ...TREE,
+      file("components/home/band.tsx", `export const p = pageItemOf(copy, "search-placeholder");`),
+    ];
+    const found = messages({ sources });
+    assert.match(found.join("\n"), /asks for page item "search-placeholder"/);
+  });
+
+  it("resolves a page item the fixture declares", () => {
+    const sources = [
+      ...TREE,
+      file("components/home/band.tsx", `export const p = pageItemOf(copy, "search-placeholder");`),
+    ];
+    const withItems = copyOf({
+      ...HOME,
+      items: [{ id: "search-placeholder", label: "Search categories..." }],
+    });
+    assert.deepEqual(messages({ sources, copies: { "/": withItems } }), []);
   });
 
   it("fails on a duplicate section id or a duplicate item id", () => {

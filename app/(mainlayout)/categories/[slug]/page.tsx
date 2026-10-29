@@ -1,5 +1,6 @@
 import { categoriesData } from "@/components/categories/categories-data";
 import { CategoryDetailPage } from "@/components/categories/category-detail-page";
+import { categoryDetailPageCopy } from "@/data/pages/category-detail";
 import type { Metadata } from "next";
 import { use } from "react";
 
@@ -32,5 +33,5 @@ export default function CategoryRoute({ params }: { params: Promise<{ slug: stri
   const { slug } = use(params);
   const category = categoriesData.find((cat) => cat.slug === slug);
 
-  return <CategoryDetailPage categoryName={category} />;
+  return <CategoryDetailPage categoryName={category} copy={categoryDetailPageCopy} />;
 }

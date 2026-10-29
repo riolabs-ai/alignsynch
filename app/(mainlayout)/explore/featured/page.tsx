@@ -1,4 +1,5 @@
 import { FeaturedQuizzesPage } from "@/components/explore/featured-quizzes-page";
+import { exploreFeaturedPageCopy } from "@/data/pages/explore-featured";
 
 /**
  * Request-time, not static (P3).
@@ -17,5 +18,5 @@ export const dynamic = "force-dynamic";
 export default function FeaturedPage() {
   // One instant for the whole page: server render and hydration project the same
   // campaigns at the same clock (see `FeaturedQuizzesPage`'s `now`).
-  return <FeaturedQuizzesPage now={new Date().toISOString()} />;
+  return <FeaturedQuizzesPage now={new Date().toISOString()} copy={exploreFeaturedPageCopy} />;
 }
