@@ -137,6 +137,7 @@ export function QuizDetails({ id }: { id: string }) {
             src={quizData.image || "/placeholder.svg"}
             alt={quizData.title}
             className="w-full h-full object-cover"
+            fill
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4 md:p-6">
             <div className="flex flex-wrap gap-2 mb-3">

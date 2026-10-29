@@ -50,6 +50,7 @@ export function CategoriesPage() {
                 className="size-full object-cover object-center absolute inset-0"
                 src={image?.src ?? "/placeholder.svg"}
                 alt=""
+                fill
               />
               <div className="absolute top-2 right-2 bg-white/40 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs font-medium">
                 {count}

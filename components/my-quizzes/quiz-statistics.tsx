@@ -360,8 +360,6 @@ export function QuizStatistics({ id }: { id: string }) {
         <div className="flex flex-col md:flex-row">
           <div className="relative h-48 w-full md:h-auto md:w-64">
             <Image
-              width={600}
-              height={350}
               src={quiz.image || "/placeholder.svg"}
               alt={quiz.title}
               fill
