@@ -141,7 +141,7 @@ The `base` model mis-hears proper nouns ("Neuphonic" → "pneumonic"). That is a
 a config bug: raise `stt.local.model` (`small` / `medium`) for memos dense in product names, and
 never "correct" a transcript into something the speaker did not say.
 
-### Xiaomi: TTS yes (as a command provider), ASR no (not through `stt`)
+### Xiaomi: TTS yes (as a command provider), ASR not through `stt` today
 
 `tts.providers.xiaomi` is wired in `~/.hermes/config.yaml` against `XIAOMI_BASE_URL`
 (`https://token-plan-sgp.xiaomimimo.com/v1`) and backed by `~/.hermes/scripts/xiaomi_tts.py`; select
@@ -162,12 +162,20 @@ not a Python plugin provider — the config layer docs call that the supported p
 - **Quota:** the text models on this gateway are `mimo-v2.6-flash` / `mimo-v2.6-pro`; TTS/ASR are the
   `mimo-v2.5-*` family (`-tts`, `-tts-voiceclone`, `-tts-voicedesign`, `-asr`). There is no v2.7.
   Spikes stay at a handful of short calls; that is the whole budget.
-- **ASR is not reachable through `stt`:** `mimo-v2.5-asr` exists on `/v1/models`, but cloud STT
-  providers in Hermes take no `base_url` override and `xiaomi` is not a built-in STT name — an
-  unknown `stt.provider` fails as provider-not-registered. Routing through Xiaomi would mean
-  declaring `stt.providers.<name>: {type: command}` (same registry as TTS, still zero Python) or a
-  plugin `TranscriptionProvider`. Neither is planned: local faster-whisper is the offline answer and
-  the ops constraint is that audio does not leave the machine.
+- **ASR has no route through `stt` today — and the reason is not "no base URL":** `mimo-v2.5-asr`
+  is on `/v1/models`, but `xiaomi` is not a registered STT provider name. Unknown names pass
+  through the explicit resolver untouched, so `stt.provider: xiaomi` fails as
+  _provider-not-registered_. The OpenAI-compatible providers **do** accept a base URL —
+  `stt.openai.base_url` is read and honoured (`_direct_openai_credentials`), and
+  `stt.deepinfra.base_url`, `stt.xai.base_url` / `XAI_STT_BASE_URL`,
+  `stt.elevenlabs.base_url` / `ELEVENLABS_STT_BASE_URL` exist too. So the untested route is
+  `stt.provider: openai` + `stt.openai.base_url: https://token-plan-sgp.xiaomimimo.com/v1` +
+  `stt.openai.model: mimo-v2.5-asr`. **Untested, not impossible:** it was left alone because it
+  spends ASR quota outside this spike's budget, and for a non-OpenAI-shaped API the zero-Python
+  alternative is `stt.providers.<name>: {type: command}` (same registry as TTS) or
+  `HERMES_LOCAL_STT_COMMAND`; a plugin `TranscriptionProvider` is the heavier option. Neither is
+  planned: local faster-whisper is the offline answer and the ops constraint is that audio does
+  not leave the machine.
 
 ## Docs
 
