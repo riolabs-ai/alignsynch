@@ -567,6 +567,19 @@ file. The other rows are untouched on purpose — a card that wants "hits remain
    `quiz-discustion`, results and discussion pages read the existing fixture.
 6. **WU-3 — search and chat mocks** (68): delete `mockSearchData`, render
    `buildSearchIndex`; chat reads `data/chat-data.ts`.
+   _Landed (#52):_ `mockSearchData` and the inline catalog are gone. `/search` and the header
+   palette both render `querySearchIndex()` over `data/searchdata.ts` (42 quizzes, 14 categories,
+   3 creators, 15 pages — all derived); the 7 media literals in the chat components went with the
+   registry (#65), and the chat components already read `data/chat-data.ts`.
+   The remaining 61 hits are UI copy strings (37 on the search page, 24 in the chat components).
+   They are `PageCopy` work — E23 under WU-6, which has now landed `content/pages.ts`; until a copy
+   unit takes them, moving them into a local `const copy = {…}` would be the same literal one
+   indentation deeper and would collide with that schema.
+   E21 now binds the unit instead of describing it: `data:check` reports **0** module-scope record
+   arrays and **0** copied fixture rows on `components/search/**`, `components/chat/**` and the
+   header palette, and the declared exemption for `chat-window.tsx` went with the file (#47). The 17
+   quiz titles still written into `/profile`, `/quiz/*`, `/my-quizzes/*`, `/tournaments` and
+   `/daily-challenge` are printed as debt on every run, not allowed.
 7. **WU-6 — home copy** (78): **done.** Established `PageCopy` (`content/pages.ts`), the readers,
    `data/pages/home.ts` and the E23 ratchet; `/` measures 0 leaf literals of a recorded budget of 0,
    and renders identically to the pre-migration page (DOM-equal, hero screenshot pixel-identical).
