@@ -15,8 +15,12 @@
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { affiliatePageCopy } from "./affiliate";
+import { categoriesPageCopy } from "./categories";
+import { categoryDetailPageCopy } from "./category-detail";
 import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
+import { exploreFeaturedPageCopy } from "./explore-featured";
+import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
 import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
@@ -27,8 +31,12 @@ import { supportArticlePageCopy } from "./support-article";
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
   "/affiliate": affiliatePageCopy,
+  "/categories": categoriesPageCopy,
+  "/categories/[slug]": categoryDetailPageCopy,
   "/creator-tips": creatorTipsPageCopy,
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
+  "/explore": explorePageCopy,
+  "/explore/featured": exploreFeaturedPageCopy,
   "/news": newsPageCopy,
   "/news/[slug]": newsArticlePageCopy,
   "/pricing": pricingPageCopy,

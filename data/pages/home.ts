@@ -105,6 +105,42 @@ export const homePageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /*
+       * The how-it-works band also renders on `/categories`, and each route owns its own
+       * words: E23 attributes a component to every route that renders it and resolves the
+       * ids it asks for against *that* route's fixture, so one shared string in one
+       * fixture cannot satisfy both. The duplication is deliberate — it is also what lets
+       * the two pages say different things later without a gate change.
+       */
+      id: "how-it-works",
+      heading: "How It Works",
+      body: "Getting started with our quiz platform is easy. Follow these simple steps to begin your quiz journey.",
+      items: [
+        { id: "eyebrow", label: "Simple Process" },
+        {
+          id: "browse",
+          label: "Browse Categories",
+          body: "Explore our diverse range of quiz categories to find topics interest you.",
+        },
+        {
+          id: "take",
+          label: "Take Quizzes",
+          body: "Challenge yourself with quizzes of varying difficulty levels and formats.",
+        },
+        {
+          id: "earn",
+          label: "Earn Rewards",
+          body: "Collect points, badges, and climb the leaderboards as you complete quizzes.",
+        },
+        {
+          id: "outro",
+          label:
+            "Ready to start your quiz journey? Browse categories, find your interests, and begin challenging yourself today!",
+        },
+        { id: "users-online", label: "users online now", value: "2,500+" },
+      ],
+    },
+    {
       id: "success-stories",
       heading: "Success Stories",
       body: "Hear from our community of quiz creators and players who are earning rewards and building their audience",

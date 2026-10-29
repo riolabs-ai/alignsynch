@@ -7,7 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatPlayerCount, formatTimeRemaining } from "@/content/core";
+import type { PageCopySection } from "@/content/pages";
 import type { QuizBadgeType, QuizCard } from "@/content/quiz";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { Award, ChevronRight, Clock, Flame, Star, TrendingUp, Users } from "lucide-react";
 import Image from "next/image";
@@ -33,10 +35,17 @@ type Tabs = "trending" | "popular" | "new";
  * window — and the countdown chip — against the visitor's clock, a second clock
  * (D9/#418).
  */
-export function ExploreFeatured({ now }: { now: string }) {
+export function ExploreFeatured({ now, copy }: { now: string; copy: PageCopySection }) {
   const [activeTab, setActiveTab] = useState<Tabs>("trending");
   /** The same instant for the cards and the countdown chip. */
   const clock = new Date(now);
+
+  /** One shelf per tab; the label is the fixture's, keyed by the tab value. */
+  const tabs = [
+    { value: "trending", item: itemLabel(copy, "tab-trending") },
+    { value: "popular", item: itemLabel(copy, "tab-popular") },
+    { value: "new", item: itemLabel(copy, "tab-new") },
+  ] as const;
 
   // Each tab is a curated shelf; the cards come from `selectQuizCard` (D2), with the
   // campaign for each position's slot merged in by `shelfCards()` (P3).
@@ -89,8 +98,8 @@ export function ExploreFeatured({ now }: { now: string }) {
     <section className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Featured Quizzes</h2>
-          <p className="text-muted-foreground">Specially selected quizzes you don't want to miss</p>
+          <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
+          <p className="text-muted-foreground">{copy.body}</p>
         </div>
 
         <Tabs
@@ -99,9 +108,11 @@ export function ExploreFeatured({ now }: { now: string }) {
           onValueChange={(value) => setActiveTab(value as Tabs)}
         >
           <TabsList>
-            <TabsTrigger value="trending">Trending</TabsTrigger>
-            <TabsTrigger value="popular">Popular</TabsTrigger>
-            <TabsTrigger value="new">New</TabsTrigger>
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.item}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
       </div>
@@ -128,7 +139,7 @@ export function ExploreFeatured({ now }: { now: string }) {
                   <h3 className="text-white font-semibold line-clamp-2">{quiz.title}</h3>
                   <div className="flex items-center justify-between mt-2">
                     <p className="text-white/80 text-sm">
-                      {quiz.categories[0]?.name ?? "Uncategorised"}
+                      {quiz.categories[0]?.name ?? itemLabel(copy, "uncategorised")}
                     </p>
                     {badge && (
                       <Badge variant={getBadgeVariant(badge.type)} className="flex items-center">
@@ -153,12 +164,12 @@ export function ExploreFeatured({ now }: { now: string }) {
                     <Avatar className="h-6 w-6">
                       <AvatarImage
                         src={quiz.author?.avatar?.src ?? media.placeholder.src}
-                        alt={quiz.author?.name ?? "creator"}
+                        alt={quiz.author?.name ?? itemLabel(copy, "creator-avatar")}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">
-                      {quiz.author?.name ?? "Unknown creator"}
+                      {quiz.author?.name ?? itemLabel(copy, "unknown-creator")}
                     </span>
                   </div>
                   {quiz.stats.rating !== undefined && (
@@ -172,7 +183,9 @@ export function ExploreFeatured({ now }: { now: string }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-sm">{formatPlayerCount(quiz.stats.plays)} players</span>
+                    <span className="text-sm">
+                      {formatPlayerCount(quiz.stats.plays)} {itemLabel(copy, "players")}
+                    </span>
                   </div>
                   {quiz.stats.rewardCents !== undefined && (
                     <span className="font-medium text-green-600">
@@ -184,8 +197,8 @@ export function ExploreFeatured({ now }: { now: string }) {
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
                     {quiz.stats.spotsLeft === undefined
-                      ? "Seats not announced"
-                      : `${quiz.stats.spotsLeft} spots left`}
+                      ? itemLabel(copy, "seats-unannounced")
+                      : fillLabel(itemLabel(copy, "spots-left"), { count: quiz.stats.spotsLeft })}
                   </p>
                   <CircularProgress
                     value={progress}
@@ -202,7 +215,7 @@ export function ExploreFeatured({ now }: { now: string }) {
                 </div>
 
                 <Button className="w-full" asChild>
-                  <Link href={quiz.href}>Play Now</Link>
+                  <Link href={quiz.href}>{itemLabel(copy, "play-now")}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -213,7 +226,7 @@ export function ExploreFeatured({ now }: { now: string }) {
       <div className="flex justify-center">
         <Button variant="outline" className="gap-1" asChild>
           <Link href="/explore/featured">
-            View All Featured Quizzes
+            {itemLabel(copy, "view-all")}
             <ChevronRight className="h-4 w-4" />
           </Link>
         </Button>
