@@ -88,9 +88,8 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
   `href` no route in `content/routes.ts` matches and on an asset literal with no file under
   `public/` — that is how `/dashboard`, `/signup` and `/testimonials/jessica.png` 404ed for so
   long. Legacy paths from the pre-P1 shell now 308 to the real route in `next.config.mjs`; never
-  add a second page to satisfy a link. 11 asset literals are still baselined as missing (chat
-  avatars, `easy-quiz-*.png`, `/quiz/q16.png`, `/wizard.png`, `/science-quiz-lab.png`) — the list
-  may only shrink.
+  add a second page to satisfy a link. There is no asset allowlist: E10 fails on any literal with
+  no file under `public/`, so a new missing image is a red build, exactly like a dead link.
 - **`public/category/*.webp` are placeholders:** all 23 files are the same 1536×1024 PNG stamped
   with its own dimensions. Category art is a content task, not a styling bug.
 - `pnpm data:check` prints exactly one warning, `[W2] published quiz

@@ -104,7 +104,7 @@ export function NewsArticle({ slug }: { slug: string }) {
           <div className="flex items-center space-x-4">
             <Avatar>
               <AvatarImage
-                src={article.author.avatar?.src ?? "/wizard.png"}
+                src={article.author.avatar?.src ?? "/avatars/wizard.webp"}
                 alt={article.author.name}
               />
               <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
