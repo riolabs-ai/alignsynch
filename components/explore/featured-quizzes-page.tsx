@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatPlayerCount, formatTimeRemaining } from "@/content/core";
+import type { PageCopy } from "@/content/pages";
 import type { QuizBadgeType, QuizCard } from "@/content/quiz";
+import { fillLabel, pageItemOf } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { Award, ChevronLeft, Clock, Filter, Flame, Star, TrendingUp, Users } from "lucide-react";
 import Image from "next/image";
@@ -50,7 +52,7 @@ function shelves(now: Date): Record<Tabs, QuizCard[]> {
  * same instant. A client component that called `new Date()` here instead would evaluate
  * the campaign window against the visitor's clock — a second clock, the D9/#418 class.
  */
-export function FeaturedQuizzesPage({ now }: { now: string }) {
+export function FeaturedQuizzesPage({ now, copy }: { now: string; copy: PageCopy }) {
   const [activeTab, setActiveTab] = useState<Tabs>("trending");
   const [sortBy, setSortBy] = useState<string>("popular");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -118,23 +120,25 @@ export function FeaturedQuizzesPage({ now }: { now: string }) {
               <ChevronLeft className="h-5 w-5" />
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold">Featured Quizzes</h1>
+          <h1 className="text-2xl font-bold">{copy.heading}</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground hidden sm:inline">Sort by:</span>
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              {pageItemOf(copy, "sort-label").label}
+            </span>
           </div>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder={pageItemOf(copy, "sort-placeholder").label} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="popular">Most Popular</SelectItem>
-              <SelectItem value="newest">Newest First</SelectItem>
-              <SelectItem value="highest">Highest Reward</SelectItem>
-              <SelectItem value="rating">Top Rated</SelectItem>
+              <SelectItem value="popular">{pageItemOf(copy, "sort-popular").label}</SelectItem>
+              <SelectItem value="newest">{pageItemOf(copy, "sort-newest").label}</SelectItem>
+              <SelectItem value="highest">{pageItemOf(copy, "sort-reward").label}</SelectItem>
+              <SelectItem value="rating">{pageItemOf(copy, "sort-rating").label}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -151,19 +155,19 @@ export function FeaturedQuizzesPage({ now }: { now: string }) {
       >
         <TabsList className="w-full justify-start mb-6">
           <TabsTrigger value="trending" className="flex-1 sm:flex-none">
-            Trending
+            {pageItemOf(copy, "tab-trending").label}
             <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">
               {featuredQuizzes.trending.length}
             </span>
           </TabsTrigger>
           <TabsTrigger value="popular" className="flex-1 sm:flex-none">
-            Popular
+            {pageItemOf(copy, "tab-popular").label}
             <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">
               {featuredQuizzes.popular.length}
             </span>
           </TabsTrigger>
           <TabsTrigger value="new" className="flex-1 sm:flex-none">
-            New
+            {pageItemOf(copy, "tab-new").label}
             <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium">
               {featuredQuizzes.new.length}
             </span>
@@ -194,7 +198,7 @@ export function FeaturedQuizzesPage({ now }: { now: string }) {
                   <h3 className="text-white font-semibold line-clamp-2">{quiz.title}</h3>
                   <div className="flex items-center justify-between mt-2">
                     <p className="text-white/80 text-sm">
-                      {quiz.categories[0]?.name ?? "Uncategorised"}
+                      {quiz.categories[0]?.name ?? pageItemOf(copy, "uncategorised").label}
                     </p>
                     {badge && (
                       <Badge variant={getBadgeVariant(badge.type)} className="flex items-center">
@@ -219,12 +223,12 @@ export function FeaturedQuizzesPage({ now }: { now: string }) {
                     <Avatar className="h-6 w-6">
                       <AvatarImage
                         src={quiz.author?.avatar?.src ?? media.placeholder.src}
-                        alt={quiz.author?.name ?? "creator"}
+                        alt={quiz.author?.name ?? pageItemOf(copy, "creator-avatar").label}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">
-                      {quiz.author?.name ?? "Unknown creator"}
+                      {quiz.author?.name ?? pageItemOf(copy, "unknown-creator").label}
                     </span>
                   </div>
                   {quiz.stats.rating !== undefined && (
@@ -238,7 +242,9 @@ export function FeaturedQuizzesPage({ now }: { now: string }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-sm">{formatPlayerCount(quiz.stats.plays)} players</span>
+                    <span className="text-sm">
+                      {formatPlayerCount(quiz.stats.plays)} {pageItemOf(copy, "players").label}
+                    </span>
                   </div>
                   {quiz.stats.rewardCents !== undefined && (
                     <span className="font-medium text-green-600">
@@ -250,8 +256,10 @@ export function FeaturedQuizzesPage({ now }: { now: string }) {
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
                     {quiz.stats.spotsLeft === undefined
-                      ? "Seats not announced"
-                      : `${quiz.stats.spotsLeft} spots left`}
+                      ? pageItemOf(copy, "seats-unannounced").label
+                      : fillLabel(pageItemOf(copy, "spots-left").label, {
+                          count: quiz.stats.spotsLeft,
+                        })}
                   </p>
                   <CircularProgress
                     value={progress}
@@ -268,7 +276,7 @@ export function FeaturedQuizzesPage({ now }: { now: string }) {
                 </div>
 
                 <Button className="w-full" asChild>
-                  <Link href={quiz.href}>Play Now</Link>
+                  <Link href={quiz.href}>{pageItemOf(copy, "play-now").label}</Link>
                 </Button>
               </CardContent>
             </Card>

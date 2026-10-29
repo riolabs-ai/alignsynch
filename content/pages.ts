@@ -22,11 +22,17 @@
  *
  * `items` is the field that keeps the shape from turning into a junk drawer: a
  * section's *repeated* strings (tab labels, stat captions, an inline "N players
- * joined", an empty state) are an ordered list of `{ id, label, value? }`. The
- * fixture owns the wording, the view owns which ids it renders and in what order,
+ * joined", an empty state) are an ordered list of `{ id, label, value?, body? }`.
+ * The fixture owns the wording, the view owns which ids it renders and in what order,
  * and both sides meet on the id — `data:check` E23 fails when a component asks for
  * an id the fixture does not carry. An unfilled `{count}` placeholder in a `label`
  * is left visible on purpose: it shows in the page instead of vanishing.
+ *
+ * `items` also exists at the *page* level, for the strings a route renders that no
+ * band owns: a search field's placeholder, the "Most Popular"/"Newest" options of a
+ * sort menu, the "Play Now" on every card in a wall of cards. Before that slot
+ * existed the choice was a second field on `sections` that rendered nowhere or the
+ * literal staying in the component, and both are worse than a bag keyed by id.
  *
  * Never a `labelOverride` on a record (a `Quiz` does not carry its own page copy),
  * and never JSX in a fixture: this module has no React import, which is what lets
@@ -55,9 +61,16 @@ export const zPageCopyLink = z
 export type PageCopyLink = z.infer<typeof zPageCopyLink>;
 
 /**
- * One repeated string inside a section. `value` is for the pairs that render as
- * value-over-caption (a stat): `{ id: "stat-subscribers", label: "Subscribers",
- * value: "10k+" }`. A single label is a pair whose `value` is omitted.
+ * One repeated string inside a section (or a page). `value` is for the pairs that
+ * render as value-over-caption (a stat): `{ id: "stat-subscribers",
+ * label: "Subscribers", value: "10k+" }`. A single label is a pair whose `value` is
+ * omitted.
+ *
+ * `body` is for the repeated things that carry a *paragraph* as well as a title — a
+ * card in a three-up grid ("Compete & Win" over "Join tournaments, climb the
+ * leaderboards, …"). It is a separate field rather than a second `label` because the
+ * two render in different type and a reader asking for the description must not get
+ * the heading back; `itemBody()` is the reader.
  *
  * `label` may carry `{placeholders}` for numbers the view supplies
  * (`"Only {count} spots left"`); `fillLabel` in `lib/page-copy.ts` is the one way
@@ -68,6 +81,7 @@ export const zPageCopyItem = z
     id: zId,
     label: z.string().min(1),
     value: z.string().min(1).optional(),
+    body: z.string().min(1).optional(),
   })
   .strict();
 
@@ -98,6 +112,8 @@ export const zPageCopy = z
     subtitle: z.string().min(1).optional(),
     cta: zPageCopyLink.optional(),
     secondaryCta: zPageCopyLink.optional(),
+    /** Strings the route renders that no band owns — see the module comment. */
+    items: z.array(zPageCopyItem).optional(),
     sections: z.array(zPageCopySection).optional(),
   })
   .strict();

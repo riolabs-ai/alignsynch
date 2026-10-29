@@ -1,6 +1,8 @@
 "use client";
 
 import { Separator } from "@/components/ui/separator";
+import type { PageCopy } from "@/content/pages";
+import { sectionOf } from "@/lib/page-copy";
 import { useEffect, useState } from "react";
 import { ExploreCategories } from "./explore-categories";
 import { ExploreFeatured } from "./explore-featured";
@@ -20,7 +22,7 @@ import { ExploreQuizList } from "./explore-quiz-list";
  * as the Trending tab, so rendering both here repeated one heading and one set of
  * quizzes.
  */
-export function ExploreQuizzesPage({ now }: { now: string }) {
+export function ExploreQuizzesPage({ now, copy }: { now: string; copy: PageCopy }) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -42,6 +44,7 @@ export function ExploreQuizzesPage({ now }: { now: string }) {
         setSearchQuery={setSearchQuery}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        copy={sectionOf(copy, "header")}
       />
 
       <ExploreCategories
@@ -51,13 +54,17 @@ export function ExploreQuizzesPage({ now }: { now: string }) {
 
       {selectedCategory === "all" && (
         <>
-          <ExploreFeatured now={now} />
+          <ExploreFeatured now={now} copy={sectionOf(copy, "featured")} />
           <Separator className="my-8" />
         </>
       )}
 
       <div className="flex flex-col md:flex-row gap-6">
-        <ExploreFilters activeFilters={activeFilters} setActiveFilters={setActiveFilters} />
+        <ExploreFilters
+          activeFilters={activeFilters}
+          setActiveFilters={setActiveFilters}
+          copy={sectionOf(copy, "filters")}
+        />
 
         <div className="flex-1">
           <ExploreQuizList
@@ -65,6 +72,7 @@ export function ExploreQuizzesPage({ now }: { now: string }) {
             searchQuery={searchQuery}
             viewMode={viewMode}
             filters={activeFilters}
+            copy={copy}
           />
         </div>
       </div>

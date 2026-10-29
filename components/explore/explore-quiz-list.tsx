@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatPlayerCount, type Difficulty } from "@/content/core";
+import type { PageCopy } from "@/content/pages";
+import { fillLabel, pageItemOf } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { Clock, DollarSign, Users } from "lucide-react";
 
@@ -37,6 +39,7 @@ interface ExploreQuizListProps {
     sortBy: string;
     timeRange: string;
   };
+  copy: PageCopy;
 }
 
 export function ExploreQuizList({
@@ -44,6 +47,7 @@ export function ExploreQuizList({
   searchQuery,
   viewMode,
   filters,
+  copy,
 }: ExploreQuizListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -134,14 +138,14 @@ export function ExploreQuizList({
         <div className="rounded-full bg-muted p-6 mb-4">
           <Users className="h-10 w-10 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">No quizzes found</h3>
+        <h3 className="text-xl font-semibold mb-2">{pageItemOf(copy, "empty-heading").label}</h3>
         <p className="text-muted-foreground max-w-md mb-6">
           {searchQuery
-            ? `No quizzes match your search "${searchQuery}". Try a different search term or filter.`
-            : "No quizzes found with the selected filters. Try adjusting your filters."}
+            ? fillLabel(pageItemOf(copy, "empty-search").label, { query: searchQuery })
+            : pageItemOf(copy, "empty-filters").label}
         </p>
         <Button variant="outline" onClick={() => window.location.reload()}>
-          Reset Filters
+          {pageItemOf(copy, "reset-filters").label}
         </Button>
       </div>
     );
@@ -151,8 +155,11 @@ export function ExploreQuizList({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {startIndex + 1}-{Math.min(endIndex, filteredQuizzes.length)} of{" "}
-          {filteredQuizzes.length} quizzes
+          {fillLabel(pageItemOf(copy, "showing").label, {
+            start: startIndex + 1,
+            end: Math.min(endIndex, filteredQuizzes.length),
+            total: filteredQuizzes.length,
+          })}
         </p>
       </div>
 
@@ -184,7 +191,9 @@ export function ExploreQuizList({
                       </Badge>
                       <div className="flex items-center gap-1 text-white text-sm">
                         <Clock className="h-3.5 w-3.5" />
-                        <span>{minutes(quiz)} min</span>
+                        <span>
+                          {minutes(quiz)} {pageItemOf(copy, "minutes").label}
+                        </span>
                       </div>
                     </div>
                     <h3 className="text-white font-semibold line-clamp-2">{quiz.title}</h3>
@@ -199,16 +208,16 @@ export function ExploreQuizList({
                     <Avatar className="h-6 w-6">
                       <AvatarImage
                         src={quiz.author?.avatar?.src ?? media.placeholder.src}
-                        alt={quiz.author?.name ?? "creator"}
+                        alt={quiz.author?.name ?? pageItemOf(copy, "creator-avatar").label}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">
-                      {quiz.author?.name ?? "Unknown creator"}
+                      {quiz.author?.name ?? pageItemOf(copy, "unknown-creator").label}
                     </span>
                   </div>
                   <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
-                    {quiz.categories[0]?.name ?? "Uncategorised"}
+                    {quiz.categories[0]?.name ?? pageItemOf(copy, "uncategorised").label}
                   </Badge>
                 </div>
 
@@ -242,11 +251,15 @@ export function ExploreQuizList({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                       <Users className="h-3.5 w-3.5" />
-                      <span>{formatPlayerCount(quiz.stats.plays)} players</span>
+                      <span>
+                        {formatPlayerCount(quiz.stats.plays)} {pageItemOf(copy, "players").label}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-600 dark:text-slate-400 text-sm">
-                        {quiz.stats.spotsLeft ?? 0} spots left
+                        {fillLabel(pageItemOf(copy, "spots-left").label, {
+                          count: quiz.stats.spotsLeft ?? 0,
+                        })}
                       </span>
                       <CircularProgress
                         value={progress(quiz)}
@@ -265,7 +278,9 @@ export function ExploreQuizList({
 
                   {(quiz.stats.spotsLeft ?? 0) <= 20 && (
                     <p className="text-xs font-medium text-destructive">
-                      Almost full! Only {quiz.stats.spotsLeft ?? 0} spots left
+                      {fillLabel(pageItemOf(copy, "spots-left-urgent").label, {
+                        count: quiz.stats.spotsLeft ?? 0,
+                      })}
                     </p>
                   )}
                 </div>
@@ -273,7 +288,7 @@ export function ExploreQuizList({
 
               <CardFooter className="px-4 pb-4 pt-0">
                 <Button className="w-full" asChild>
-                  <Link href={quiz.href}>Play Now</Link>
+                  <Link href={quiz.href}>{pageItemOf(copy, "play-now").label}</Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -311,11 +326,13 @@ export function ExploreQuizList({
                 <div className="flex flex-1 flex-col p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
-                      {quiz.categories[0]?.name ?? "Uncategorised"}
+                      {quiz.categories[0]?.name ?? pageItemOf(copy, "uncategorised").label}
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Clock className="h-3.5 w-3.5" />
-                      <span>{minutes(quiz)} min</span>
+                      <span>
+                        {minutes(quiz)} {pageItemOf(copy, "minutes").label}
+                      </span>
                     </div>
                   </div>
 
@@ -325,12 +342,13 @@ export function ExploreQuizList({
                     <Avatar className="h-6 w-6">
                       <AvatarImage
                         src={quiz.author?.avatar?.src ?? media.placeholder.src}
-                        alt={quiz.author?.name ?? "creator"}
+                        alt={quiz.author?.name ?? pageItemOf(copy, "creator-avatar").label}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">
-                      by {quiz.author?.name ?? "Unknown creator"}
+                      {pageItemOf(copy, "by").label}{" "}
+                      {quiz.author?.name ?? pageItemOf(copy, "unknown-creator").label}
                     </span>
                     <div className="flex items-center gap-1 ml-2">
                       <svg
@@ -353,11 +371,15 @@ export function ExploreQuizList({
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                         <Users className="h-3.5 w-3.5" />
-                        <span>{formatPlayerCount(quiz.stats.plays)} players</span>
+                        <span>
+                          {formatPlayerCount(quiz.stats.plays)} {pageItemOf(copy, "players").label}
+                        </span>
                       </div>
                       <span className="text-slate-600 dark:text-slate-400 mx-2">•</span>
                       <span className="text-slate-600 dark:text-slate-400">
-                        {quiz.stats.spotsLeft ?? 0} spots left
+                        {fillLabel(pageItemOf(copy, "spots-left").label, {
+                          count: quiz.stats.spotsLeft ?? 0,
+                        })}
                       </span>
                       <CircularProgress
                         value={progress(quiz)}
@@ -381,7 +403,7 @@ export function ExploreQuizList({
                           : formatCurrency(quiz.stats.rewardCents)}
                       </div>
                       <Button asChild>
-                        <Link href={quiz.href}>Play Now</Link>
+                        <Link href={quiz.href}>{pageItemOf(copy, "play-now").label}</Link>
                       </Button>
                     </div>
                   </div>
@@ -404,7 +426,7 @@ export function ExploreQuizList({
                 disabled={currentPage === 1}
                 className="mr-1"
               >
-                Previous
+                {pageItemOf(copy, "previous").label}
               </Button>
 
               {Array.from({ length: totalPages }).map((_, index) => (
@@ -425,7 +447,7 @@ export function ExploreQuizList({
                 disabled={currentPage === totalPages}
                 className="ml-1"
               >
-                Next
+                {pageItemOf(copy, "next").label}
               </Button>
             </PaginationContent>
           </Pagination>
