@@ -129,18 +129,19 @@ manager and Node version; a command change belongs in both.
 - **P2 — media and content templatization: closing.** Every rendered string and media reference
   should come from the schema; the remaining work is ranked in
   [docs/P2-INVENTORY.md](docs/P2-INVENTORY.md).
-- **P3 — bulk generation: next.** The generator exists and is reproducible:
+- **P3 — bulk generation: complete.** One command emits template variants of a quiz and the gate
+  stays green on them; the same seed rewrites byte-identical files:
 
   ```bash
-  pnpm gen --count 20 --seed 42   # writes data/generated/{quizzes,promotions}.ts, gitignored
+  pnpm gen --count 20 --seed 42 && pnpm data:check   # exit 0 — 62 fixtures + 20 generated
   ```
 
-  The same seed rewrites byte-identical files. It is not yet green against the collection
-  invariants: `pnpm data:check` reads `data/generated/` when it exists and fails `E17`, because the
-  generated promotions are placed on curated explore slots that the curation map renders with
-  different quizzes — 7 errors at `--count 20 --seed 42`. Until that is settled, remove
-  `data/generated/` before running the gate.
-- **P4 — multi-usecase: after P3.** A second vertical config, opened only once P3 passes.
+  It emits **quizzes only**. A promotion names a slot that a shelf in `data/quiz-catalogue.ts`
+  renders (`E17`), and a generated quiz is in no shelf, so a generated campaign could never run;
+  the overlays stay curated in `data/promotions.ts`. `data:check` rejects a
+  `data/generated/promotions.ts` that reappears (`E26`), and `pnpm gen` deletes one left by an
+  older clone, so `data/generated/` is always safe to leave on disk.
+- **P4 — multi-usecase: after P3.** A second vertical config, opened now that P3 passes.
 
 Stage-by-stage definitions of done are §5 of [docs/ENV-SPEC.md](docs/ENV-SPEC.md); the CI gate
 itself is documented in [docs/GATE.md](docs/GATE.md) and

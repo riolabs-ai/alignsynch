@@ -552,9 +552,11 @@ file. The other rows are untouched on purpose — a card that wants "hits remain
    because a page that prints deleted paths is the page that sends the next worker to a 404.
 
    One file survived on purpose: `components/explore/explore-featured.tsx` (8 hits — 6 COPY, 2 MEDIA).
-   It has no importer on `main`, but `components/explore/explore-quizzes-page.tsx` imports
-   `ExploreFeatured` on #41's branch, so deleting it would delete-conflict with a mergeable PR. That is
-   not dead work: it is 8 hits that belong to whichever explore card runs next — WU-8 is the closest.
+   It had no importer on `main`, only `components/explore/explore-quizzes-page.tsx` importing
+   `ExploreFeatured` on #41's branch, so deleting it would have delete-conflicted with a mergeable PR.
+   That was not dead work: it was 8 hits for whichever explore card ran next, and WU-8 took them — the
+   component reads `data/pages/explore-featured.ts` at `budget: 0` and `explore-quizzes-page.tsx`
+   imports it on `main`.
 
    The card's original caveat was wrong in a harmless direction: it claimed the shadcn `sidebar`
    primitive was imported only by the tooltip-fix file, so the pair had to go together. The tooltip-fix
@@ -609,10 +611,33 @@ file. The other rows are untouched on purpose — a card that wants "hits remain
 7. **WU-6 — home copy** (78): **done.** Established `PageCopy` (`content/pages.ts`), the readers,
    `data/pages/home.ts` and the E23 ratchet; `/` measures 0 leaf literals of a recorded budget of 0,
    and renders identically to the pre-migration page (DOM-equal, hero screenshot pixel-identical).
-8. **WU-7 — shell/auth/404** (126): the second `PageCopy` consumer; also renders the footer
-   category column from `quizCategories`.
-9. **WU-8 — categories + explore** (95).
-10. **WU-9 — marketing pages** (205): affiliate, pricing, news, support, creator-tips.
+8. **WU-7 — shell/auth/404** (126): **done**, landed as `d1758067` (PR #96; #54 closed). Four
+   fixtures — `data/pages/{shell,login,register,not-found}.ts` — needed one shape extension, the
+   budget's `mounts`: the header and sidebar hang off `app/(mainlayout)/layout.tsx`, but the footer is
+   rendered by the pages, so `components/layout/footer.tsx` is a second entry module of the same
+   `shell` fixture. That footer's subject column is projected from `quizCategories` (the rows flagged
+   `featured`) rather than re-typing five slugs. All four surfaces sit at `budget: 0`, and `shell` /
+   `not-found` are declared in `NON_ROUTE_COPY_SURFACES` — E23 fails when either drops out of the
+   table, so the chrome and the 404 cannot fall back out of the gate.
+9. **WU-8 — categories + explore** (95): **done**, landed as `4f857adb` (PR #88; #55 closed). Four
+   fixtures — `data/pages/{categories,category-detail,explore,explore-featured}.ts` — cover
+   `/categories`, `/categories/[slug]`, `/explore` and `/explore/featured`, every row at
+   `budget: 0`. `/` gained the how-it-works band's own copy in `data/pages/home.ts` in the same
+   commit, because that band now renders on two routes and E23 resolves an id against the fixture of
+   the route that renders it. The same commit took the 8-hit
+   `components/explore/explore-featured.tsx` survivor from item 1 to 0: it reads
+   `data/pages/explore-featured.ts` and `components/explore/explore-quizzes-page.tsx` imports it, so
+   no explore card is waiting on those strings any more.
+10. **WU-9 — marketing pages** (205): **done**, landed as `52dd8e49` (PR #94; #56 closed). Eight
+    fixtures under `data/pages/` — `affiliate`, `pricing`, `news`, `news-article`, `support`,
+    `support-article`, `creator-tips`, `creator-tips-detail` — carry the eight marketing surfaces
+    (`/affiliate`, `/pricing`, `/news`, `/news/[slug]`, `/support`, `/support/articles/[id]`,
+    `/creator-tips`, `/creator-tips/[slug]`), each row at `budget: 0`: 184 strings across 30
+    components left the JSX for them. Numbers stayed computed — `{percent}`, `{step}`, `{earnings}`
+    and `{count}` are `fillLabel` placeholders over `metric()`, not spelled copy — and the rows whose
+    shape is not copy yet (the affiliate testimonials, the news comment thread and author box,
+    support-faq's 35 inline FAQ pairs) stayed where they are for a `Testimonial` /
+    `DiscussionComment` / `Faq` fixture.
 11. **WU-10 — battle + daily-challenge** (176): **done**, landed as `e99d6deb` (PR #92; #57
     closed). The mode data is a fixture, not copy: `content/battle.ts` + `data/battle-modes.ts` own
     `BattleMode` and `battleRoundOptions`, and `content/daily-challenge.ts` +
