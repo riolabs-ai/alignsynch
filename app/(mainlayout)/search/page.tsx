@@ -1,4 +1,5 @@
 import { SearchResults } from "@/components/search/search-results";
+import { searchIndex } from "@/data/searchdata";
 
 export const metadata = {
   title: "Search Results | QuizMaker",
@@ -12,5 +13,7 @@ export default async function SearchPage({
 }) {
   const { q } = await searchParams;
 
-  return <SearchResults query={q ?? ""} />;
+  // The index is built here (server) and handed to the client component as data: the page
+  // never imports the fixtures into the browser bundle, and the component owns no catalog.
+  return <SearchResults query={q ?? ""} index={searchIndex} />;
 }

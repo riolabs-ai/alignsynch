@@ -10,7 +10,7 @@
  *
  *   1. a **delta is computed** — `previous` + `value`, never an authored `+4` — so a change
  *      against a period with no snapshot cannot be rendered at all (`deltaOf` returns
- *      `undefined` when `previous` is absent, and E24 rejects a delta mode without one);
+ *      `undefined` when `previous` is absent, and E25 rejects a delta mode without one);
  *   2. a **value has a unit** — `percent`, `currency` (integer cents, like every other money
  *      value in this model), `count`, `coins`, `xp`, `players`, `days` — so the formatter,
  *      not the JSX author, decides the shape;

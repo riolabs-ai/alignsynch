@@ -14,7 +14,8 @@ import { formatMetricValue } from "@/content/metrics";
 import { recentMessages } from "@/data/chat-data";
 import { metric } from "@/data/metrics";
 import { notifications } from "@/data/notifications";
-import { mockSearchData } from "@/data/searchdata";
+import { searchIndex } from "@/data/searchdata";
+import { querySearchIndex } from "@/content/search";
 import {
   Bell,
   FileQuestion,
@@ -58,34 +59,15 @@ export function Header() {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const searchResultsRef = React.useRef<HTMLDivElement>(null);
 
-  // Add search filter function
-  const getFilteredResults = () => {
-    if (!searchQuery.trim()) return { quizzes: [], categories: [], creators: [], pages: [] };
-
-    const query = searchQuery.toLowerCase().trim();
-
-    return {
-      quizzes: mockSearchData.quizzes
-        .filter(
-          (quiz) =>
-            quiz.title.toLowerCase().includes(query) ||
-            quiz.categoryIds.join(" ").toLowerCase().includes(query),
-        )
-        .slice(0, 4),
-      categories: mockSearchData.categories
-        .filter((category) => category.name.toLowerCase().includes(query))
-        .slice(0, 3),
-      creators: mockSearchData.creators
-        .filter(
-          (creator) =>
-            creator.name.toLowerCase().includes(query) ||
-            creator.username.toLowerCase().includes(query),
-        )
-        .slice(0, 3),
-      pages: mockSearchData.pages
-        .filter((page) => page.title.toLowerCase().includes(query))
-        .slice(0, 3),
-    };
+  // The palette reads the same derived index the /search page renders, through the same
+  // projection (`querySearchIndex`), so a palette hit and a result row can never disagree.
+  // Slices only: the dropdown shows the top few, and "View all" sends the query to /search.
+  const paletteResults = querySearchIndex(searchIndex, { text: searchQuery });
+  const searchResults = {
+    quizzes: paletteResults.quizzes.slice(0, 4),
+    categories: paletteResults.categories.slice(0, 3),
+    creators: paletteResults.creators.slice(0, 3),
+    pages: paletteResults.pages.slice(0, 3),
   };
 
   // Add click outside handler to close search results
@@ -182,9 +164,7 @@ export function Header() {
                   </div>
                 ) : (
                   <>
-                    {Object.entries(getFilteredResults()).every(
-                      ([_, items]) => items.length === 0,
-                    ) ? (
+                    {Object.entries(searchResults).every(([_, items]) => items.length === 0) ? (
                       <div className="p-4 text-center text-muted-foreground">
                         <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p>No results found for "{searchQuery}"</p>
@@ -193,17 +173,17 @@ export function Header() {
                     ) : (
                       <>
                         {/* Quizzes */}
-                        {getFilteredResults().quizzes.length > 0 && (
+                        {searchResults.quizzes.length > 0 && (
                           <div className="mb-4">
                             <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
                               <FileQuestion className="h-4 w-4" />
                               <span>Quizzes</span>
                             </div>
                             <div className="mt-1">
-                              {getFilteredResults().quizzes.map((quiz) => (
+                              {searchResults.quizzes.map((quiz) => (
                                 <Link
                                   key={quiz.id}
-                                  href={`/quiz/${quiz.id}`}
+                                  href={quiz.path}
                                   className="flex items-start gap-3 p-2 hover:bg-muted rounded-md transition-colors"
                                   onClick={() => {
                                     setIsSearchFocused(false);
@@ -217,7 +197,7 @@ export function Header() {
                                     <p className="font-medium line-clamp-1">{quiz.title}</p>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge variant="outline" className="text-xs font-normal">
-                                        {quiz.categoryIds[0]}
+                                        {quiz.categoryNames[0]}
                                       </Badge>
                                       <Badge variant="outline" className="text-xs font-normal">
                                         {quiz.difficulty}
@@ -231,17 +211,17 @@ export function Header() {
                         )}
 
                         {/* Categories */}
-                        {getFilteredResults().categories.length > 0 && (
+                        {searchResults.categories.length > 0 && (
                           <div className="mb-4">
                             <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
                               <Tag className="h-4 w-4" />
                               <span>Categories</span>
                             </div>
                             <div className="mt-1">
-                              {getFilteredResults().categories.map((category) => (
+                              {searchResults.categories.map((category) => (
                                 <Link
                                   key={category.id}
-                                  href={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
+                                  href={category.path}
                                   className="flex items-center gap-3 p-2 hover:bg-muted rounded-md transition-colors"
                                   onClick={() => {
                                     setIsSearchFocused(false);
@@ -264,14 +244,14 @@ export function Header() {
                         )}
 
                         {/* Creators */}
-                        {getFilteredResults().creators.length > 0 && (
+                        {searchResults.creators.length > 0 && (
                           <div className="mb-4">
                             <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
                               <Users className="h-4 w-4" />
                               <span>Creators</span>
                             </div>
                             <div className="mt-1">
-                              {getFilteredResults().creators.map((creator) => (
+                              {searchResults.creators.map((creator) => (
                                 <Link
                                   key={creator.id}
                                   href={`/profile/${creator.username}`}
@@ -300,14 +280,14 @@ export function Header() {
                         )}
 
                         {/* Pages */}
-                        {getFilteredResults().pages.length > 0 && (
+                        {searchResults.pages.length > 0 && (
                           <div className="mb-2">
                             <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
                               <FileText className="h-4 w-4" />
                               <span>Pages</span>
                             </div>
                             <div className="mt-1">
-                              {getFilteredResults().pages.map((page) => (
+                              {searchResults.pages.map((page) => (
                                 <Link
                                   key={page.id}
                                   href={page.path}

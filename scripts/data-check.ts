@@ -33,7 +33,9 @@ import {
   zQuizCard,
   selectQuizAuthoringCard,
   selectQuizCard,
+  type Question,
 } from "../content/quiz";
+import { zQuizComment, zQuizResult, zQuizReview } from "../content/quiz-result";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
 import { matchRoute, normalizePath } from "../content/route-manifest";
 import {
@@ -65,7 +67,11 @@ import { zMediaRegistry } from "../content/media";
 import { zMetricTable } from "../content/metrics";
 import { media } from "../data/media";
 import { affiliateTiers, earningSources, metricTable, streakRewards } from "../data/metrics";
+import { quizComments } from "../data/quiz-comments";
+import { quizResults } from "../data/quiz-results";
+import { quizReviews } from "../data/quiz-reviews";
 import { promotionFindings } from "./data-check-promotions";
+import { copiedFixtureText, moduleRecordArrays } from "./island-refs";
 import {
   breakdownProblems,
   metricKeyProblems,
@@ -746,7 +752,7 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  */
 
 /* ------------------------------------------------------------------ *
- * E22/E24 — a rendered number comes from a MetricSnapshot
+ * E22/E25 — a rendered number comes from a MetricSnapshot
  *
  * E10/E17 proved a *reference* resolves. A number was invisible to every check: `+4 from last
  * month`, `$124.50`, `Save 20%` resolve by definition, so 69 of them sat in JSX while
@@ -758,7 +764,7 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  *        amount, a signed delta, a compressed count, a count with a unit) is the fixture's to
  *        supply and `content/metrics.ts`'s to format. The scan is AST-based (`metric-refs.ts`),
  *        so `{formatCurrency(cents)}` is invisible to it — that is the shape the fix takes.
- *   E24  the fixture is honest: a key names `owner.name`, every key is rendered somewhere (a
+ *   E25  the fixture is honest: a key names `owner.name`, every key is rendered somewhere (a
  *        snapshot nothing reads is drift), and the tables add up — a breakdown's cents equal
  *        its total and its shares equal 100, tier bands tile without a gap, streak rewards
  *        climb.
@@ -782,11 +788,11 @@ for (const literal of metricLiterals) {
 const parsedMetrics = zMetricTable.safeParse(metricTable);
 if (!parsedMetrics.success) {
   for (const issue of parsedMetrics.error.issues) {
-    err("E24", `data/metrics.ts ${issue.path.join(".")}: ${issue.message}`);
+    err("E25", `data/metrics.ts ${issue.path.join(".")}: ${issue.message}`);
   }
 }
 
-for (const problem of metricKeyProblems(metricTable)) err("E24", problem);
+for (const problem of metricKeyProblems(metricTable)) err("E25", problem);
 for (const problem of unusedMetricKeys(
   metricTable,
   uiSources,
@@ -799,7 +805,7 @@ for (const problem of unusedMetricKeys(
     uiSources,
   ),
 )) {
-  err("E24", problem);
+  err("E25", problem);
 }
 
 for (const problem of breakdownProblems(metricTable["dashboard.balance"]?.value ?? 0, [
@@ -809,7 +815,7 @@ for (const problem of breakdownProblems(metricTable["dashboard.balance"]?.value 
     sharePct: source.sharePct,
   })),
 ])) {
-  err("E24", problem);
+  err("E25", problem);
 }
 
 for (const problem of tierBandProblems(
@@ -820,17 +826,17 @@ for (const problem of tierBandProblems(
     ratePct: metricTable[tier.rate]?.value ?? 0,
   })),
 )) {
-  err("E24", problem);
+  err("E25", problem);
 }
 
-for (const problem of streakRewardProblems(streakRewards)) err("E24", problem);
+for (const problem of streakRewardProblems(streakRewards)) err("E25", problem);
 
 for (const problem of rangeProblems(
   "the group battle player range",
   metricTable["battle.group.minPlayers"]?.value ?? 0,
   metricTable["battle.group.maxPlayers"]?.value ?? 0,
 )) {
-  err("E24", problem);
+  err("E25", problem);
 }
 
 if (metricLiterals.length === 0 && Object.keys(metricTable).length === 0) {
@@ -839,6 +845,192 @@ if (metricLiterals.length === 0 && Object.keys(metricTable).length === 0) {
     "the metric scan found 0 literals and data/metrics.ts holds 0 snapshots: the scan walked no sources or the fixture was not parsed",
   );
 }
+
+/* ------------------------------------------------------------------ *
+ * E24 — the quiz activity resolves against the quiz it names
+ *
+ * The quiz surface (detail page, review screen, discussions feed) reads three
+ * collections joined by id: results, comments, reviews. A dangling `quizId` does
+ * not throw — it renders an empty page, which is the failure mode that makes a
+ * fixture look finished while the page is blank. So the join is checked here.
+ *
+ *   * every `result.quizId` / `comment.quizId` / `review.quizId` names a `Quiz`;
+ *   * every `comment.questionId` names a question of THAT quiz, and a reply's
+ *     parent is a top-level comment on the same quiz (one level, like the UI);
+ *   * every answer in a sheet names a question of that quiz and, when the player
+ *     did not skip, an option of that question — an answer key pointing at a
+ *     renamed option is exactly the drift the option-id rule (D4) exists to stop;
+ *   * `score.total` never exceeds the quiz's question count, so a 10-answer result
+ *     cannot hang off a 5-question record;
+ *   * no instant is after the fixture clock — a card dated in the future renders
+ *     "in 2 days", the same defect E10 blocks for the social fixtures.
+ *
+ * Numbering: E20–E23 are reserved by `docs/P2-INVENTORY.md` (DUP / MOCK / METRIC /
+ * PageCopy), so the next free code is E24 rather than reusing a reserved one.
+ * ------------------------------------------------------------------ */
+
+const activityResults = validateCollection("E0", "quiz result", zQuizResult, [...quizResults]);
+const activityComments = validateCollection("E0", "quiz comment", zQuizComment, [...quizComments]);
+const activityReviews = validateCollection("E0", "quiz review", zQuizReview, [...quizReviews]);
+
+const recordById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+const questionIdsOf = new Map(
+  quizzes.map((quiz) => [
+    quiz.id,
+    new Map(quiz.questions.map((question) => [question.id, question])),
+  ]),
+);
+
+const uniqueIds = (code: string, label: string, rows: readonly { id: string }[]) => {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.id)) err(code, `${label}: duplicate id "${row.id}"`);
+    seen.add(row.id);
+  }
+};
+uniqueIds("E24", "quiz result", activityResults);
+uniqueIds("E24", "quiz comment", activityComments);
+uniqueIds("E24", "quiz review", activityReviews);
+
+for (const result of activityResults) {
+  const quiz = recordById.get(result.quizId);
+  if (quiz === undefined) {
+    err("E24", `result "${result.id}" references unknown quiz "${result.quizId}"`);
+    continue;
+  }
+  if (result.score.total > quiz.questions.length) {
+    err(
+      "E24",
+      `result "${result.id}" scores out of ${result.score.total}, but quiz "${quiz.id}" has ${quiz.questions.length} question(s)`,
+    );
+  }
+  const questions = questionIdsOf.get(quiz.id) ?? new Map<string, Question>();
+  for (const answer of result.answers ?? []) {
+    const question = questions.get(answer.questionId);
+    if (question === undefined) {
+      err(
+        "E24",
+        `result "${result.id}" answers "${answer.questionId}", which is not a question of "${quiz.id}"`,
+      );
+      continue;
+    }
+    if (
+      answer.selectedOptionId !== null &&
+      !question.options.some((option) => option.id === answer.selectedOptionId)
+    ) {
+      err(
+        "E24",
+        `result "${result.id}" selects option "${answer.selectedOptionId}" on "${question.id}" (options: ${question.options.map((option) => option.id).join(", ")})`,
+      );
+    }
+  }
+  if (new Date(result.completedAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `result "${result.id}" completed after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+const commentById = new Map(activityComments.map((comment) => [comment.id, comment]));
+for (const comment of activityComments) {
+  const quiz = recordById.get(comment.quizId);
+  if (quiz === undefined) {
+    err("E24", `comment "${comment.id}" references unknown quiz "${comment.quizId}"`);
+  } else if (comment.questionId !== undefined) {
+    const questions = questionIdsOf.get(quiz.id) ?? new Map<string, Question>();
+    if (!questions.has(comment.questionId)) {
+      err(
+        "E24",
+        `comment "${comment.id}" is about "${comment.questionId}", which is not a question of "${quiz.id}"`,
+      );
+    }
+  }
+  if (comment.parentId !== undefined) {
+    const parent = commentById.get(comment.parentId);
+    if (parent === undefined) {
+      err("E24", `comment "${comment.id}" replies to unknown comment "${comment.parentId}"`);
+    } else if (parent.quizId !== comment.quizId) {
+      err(
+        "E24",
+        `comment "${comment.id}" replies across quizzes ("${parent.quizId}" → "${comment.quizId}")`,
+      );
+    } else if (parent.parentId !== undefined) {
+      err("E24", `comment "${comment.id}" is a reply to a reply — threads are one level`);
+    }
+  }
+  if (new Date(comment.createdAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `comment "${comment.id}" created after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+for (const review of activityReviews) {
+  if (!recordById.has(review.quizId)) {
+    err("E24", `review "${review.id}" references unknown quiz "${review.quizId}"`);
+  }
+  if (new Date(review.createdAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `review "${review.id}" created after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * E21 — no component authors a search result or a chat message
+ *
+ * The P2 inventory found 68 literals in WU-3 alone: `components/search/search-results.tsx`
+ * carried 8 quizzes, 6 categories, 4 creators and 4 pages, and `components/chat/chat-window.tsx`
+ * carried 5 contacts and 6 messages. Not one of those rows existed in `data/`, so no fixture
+ * edit could reach them — the same failure the media registry (E17) closed for files.
+ *
+ * Two rules, because the defect has two shapes:
+ *
+ *   islands   a module-scope array of ≥ 2 record objects in `components/search/**` or
+ *             `components/chat/**`. Those are the two surfaces whose collections are derived
+ *             (`buildSearchIndex`, `data/chat-data.ts`), so an island there is a second
+ *             catalog by construction. The other feature directories still hold islands that
+ *             their own work unit removes; this check widens to all of `components/**` when
+ *             the last of them lands (E21 in docs/P2-INVENTORY.md is the whole-tree rule).
+ *   copies    a quiz title from the search index, or a chat message body from
+ *             `data/chat-data.ts`, written into one of the components that render them — as a
+ *             literal, a JSX text node or a comment. No baseline on these files: the count is
+ *             0 now, so every hit is a new copy.
+ *
+ * The scan itself is repo-wide and the remainder is *counted*, not ignored: 17 quiz titles are
+ * still written into `/profile`, `/quiz/*`, `/my-quizzes/*`, `/tournaments` and `/daily-challenge`
+ * components that their own units own. The summary line prints that number every run, so it
+ * ratchets down instead of disappearing.
+ * ------------------------------------------------------------------ */
+
+const E21_ISLAND_SURFACES = ["components/search/", "components/chat/"];
+
+/** The components that render search results or chat rows — the files E21 binds today. */
+const E21_COPY_SURFACES = [...E21_ISLAND_SURFACES, "components/layout/header.tsx"];
+
+const searchChatIslands = moduleRecordArrays(uiSources).filter((island) =>
+  E21_ISLAND_SURFACES.some((surface) => island.file.startsWith(surface)),
+);
+for (const island of searchChatIslands) {
+  err(
+    "E21",
+    `${island.file}:${island.line} declares the module-level array "${island.name}" (${island.records} records) — a collection belongs in data/ (or is derived in content/); import it and render it, never paste it`,
+  );
+}
+
+const fixtureText = [
+  ...searchIndex.quizzes.map((row) => row.title),
+  ...conversations.flatMap((conversation) =>
+    conversation.messages.map((message) => message.body ?? ""),
+  ),
+];
+const fixtureCopies = copiedFixtureText(uiSources, fixtureText);
+const ownedCopies = fixtureCopies.filter((copy) =>
+  E21_COPY_SURFACES.some((surface) => copy.file === surface || copy.file.startsWith(surface)),
+);
+for (const copy of ownedCopies) {
+  err(
+    "E21",
+    `${copy.file}:${copy.line} writes "${copy.value}", which is a fixture row — render it from data/searchdata.ts (buildSearchIndex) or data/chat-data.ts instead of copying it`,
+  );
+}
+
+/** Debt on surfaces another work unit owns: measured and printed, never silently allowed. */
+const e21DebtCopies = fixtureCopies.length - ownedCopies.length;
 
 /* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock
@@ -884,6 +1076,7 @@ const counts = [
   `${conversations.length} conversations`,
   `${notificationRecords.length} notifications`,
   `${promotions.length} promotions`,
+  `${activityResults.length} quiz results, ${activityComments.length} comments, ${activityReviews.length} reviews`,
   `${Object.keys(registry).length} media entries`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
 ].join(", ");
@@ -932,6 +1125,12 @@ console.log(`PASS  ${counts}`);
 console.log(`      ${coverage}`);
 console.log(
   `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
+);
+console.log(
+  `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
+);
+console.log(
+  `      ${e21DebtCopies} fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)`,
 );
 console.log(`      0 social instants after the fixture clock ${DEMO_NOW_ISO}`);
 console.log(

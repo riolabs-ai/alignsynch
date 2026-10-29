@@ -1,5 +1,5 @@
 /**
- * metric-invariants — the rules a fixture full of numbers has to keep (E24).
+ * metric-invariants — the rules a fixture full of numbers has to keep (E25).
  *
  * `content/metrics.ts` proves one snapshot is well-formed. It cannot see the three things a
  * *table* of them gets wrong, and all three shipped in the P1 tree as typed JSX:

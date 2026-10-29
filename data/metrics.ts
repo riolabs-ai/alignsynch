@@ -6,7 +6,7 @@
  * component now reads the snapshot and calls a formatter from `content/metrics.ts`, so the
  * rendered string is a function of this file.
  *
- * Three rules the fixture obeys, enforced by E24 in `scripts/data-check.ts`:
+ * Three rules the fixture obeys, enforced by E25 in `scripts/data-check.ts`:
  *
  *   1. **a key is `owner.name`** — the owner is the surface or programme, the name is what it
  *      measures. A key nothing renders is an error: an unused snapshot is data that drifts
@@ -72,7 +72,7 @@ export const metrics = {
   "wallet.minimumWithdrawal": { unit: "currency", value: 1_000, period: "allTime" },
   /**
    * The breakdown rows below must sum to the balance (`dashboard.balance`), which is the
-   * total the page implies; there is no separate authored total to drift from it (E24).
+   * total the page implies; there is no separate authored total to drift from it (E25).
    */
   "wallet.quizPlays": { unit: "currency", value: 7_825, period: "allTime" },
   "wallet.affiliateCommissions": { unit: "currency", value: 3_250, period: "allTime" },
@@ -219,7 +219,7 @@ export const currentAffiliateTier: AffiliateTier = affiliateTiers[0];
 export interface EarningSource {
   label: string;
   amount: MetricKey;
-  /** The share the bar and the label render. Checked against `amount / earningsTotal` (E24). */
+  /** The share the bar and the label render. Checked against `amount / earningsTotal` (E25). */
   sharePct: number;
 }
 
