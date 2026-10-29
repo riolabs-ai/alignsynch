@@ -1,4 +1,5 @@
 import { TournamentPage } from "@/components/tournaments/tournament-page";
+import { shellPageCopy } from "@/data/pages/shell";
 import { tournamentsPageCopy } from "@/data/pages/tournaments";
 import type { Metadata } from "next";
 
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
  * the components' own mock rows and this module only hands the fixture down.
  */
 export default function Tournaments() {
-  return <TournamentPage copy={tournamentsPageCopy} />;
+  return <TournamentPage copy={tournamentsPageCopy} shellCopy={shellPageCopy} />;
 }

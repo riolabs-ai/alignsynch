@@ -1,10 +1,12 @@
 import { getFeaturedTips, tipCategoryName } from "@/data/creator-tips-data";
+import type { PageCopySection } from "@/content/pages";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowRight, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { media } from "@/data/media";
 
-export default function FeaturedTips() {
+export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
   const featuredTips = getFeaturedTips();
 
   if (featuredTips.length === 0) {
@@ -13,7 +15,7 @@ export default function FeaturedTips() {
 
   return (
     <div className="mb-12">
-      <h2 className="text-2xl font-bold mb-6">Featured Tips</h2>
+      <h2 className="text-2xl font-bold mb-6">{copy.heading}</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 xxl:grid-cols-4 gap-6">
         {featuredTips.map((tip) => (
@@ -38,7 +40,7 @@ export default function FeaturedTips() {
                 </span>
                 <div className="flex items-center ml-auto text-sm text-gray-500 dark:text-gray-200">
                   <Clock size={14} className="mr-1" />
-                  {tip.readMinutes} min read
+                  {fillLabel(itemLabel(copy, "read-minutes"), { count: tip.readMinutes })}
                 </div>
               </div>
 
@@ -63,7 +65,7 @@ export default function FeaturedTips() {
                 </div>
 
                 <span className="text-purple-600 group-hover:translate-x-1 transition-transform flex items-center">
-                  Read more <ArrowRight size={16} className="ml-1" />
+                  {itemLabel(copy, "read-more")} <ArrowRight size={16} className="ml-1" />
                 </span>
               </div>
             </div>

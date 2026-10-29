@@ -12,6 +12,9 @@
  *                     imports is not that route's copy, so it is not in the
  *                     closure and not counted. A directory-listing budget would
  *                     make deleting a dead component a budget regression.
+ *                     A surface may have more than one entry module (`mounts`): the
+ *                     shell's header and sidebar hang off the layout, its footer off
+ *                     the pages, and both halves are one fixture.
  *   leafLiterals()    the strings a component still writes itself: JSX text nodes
  *                     and string attribute values, minus the technical attributes
  *                     that are markup (className, href, alt, variant, …) and minus
@@ -31,7 +34,13 @@ import ts from "typescript";
 
 /** Relative, not `@/`: `data:check` compiles this file to `.datacheck/` and runs it
  *  under plain node, which does not read `tsconfig.json` paths. */
-import type { PageCopy, PageCopyBudget, PageCopyTable } from "../content/pages";
+import {
+  NON_ROUTE_COPY_SURFACES,
+  isNonRouteCopySurface,
+  type PageCopy,
+  type PageCopyBudget,
+  type PageCopyTable,
+} from "../content/pages";
 
 export interface SourceFile {
   /** Repo-relative path, reported verbatim in diagnostics. */
@@ -144,18 +153,40 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
 
 /**
  * Attributes that are markup, not copy: they address a thing (href, src, id), name
- * a variant (variant, size, type), place a popover (`align`, `orientation`), carry
- * styling (any `*class*`, a `stroke*` SVG attribute), a11y plumbing (`aria-*`) or a
- * test hook (`data-*`). `alt` is excluded too, because alt text is `MediaEntry.alt`'s
- * job (E17–E19) — a literal alt is a media defect, not a copy one.
+ * a variant (variant, size, type), place a popover (`align`, `orientation`), or carry
+ * styling (any `*class*`), a11y plumbing (`aria-*`) or a test hook (`data-*`). `alt`
+ * is excluded too, because alt text is `MediaEntry.alt`'s job (E17–E19) — a literal
+ * alt is a media defect, not a copy one.
+ *
+ * `dataKey` and `align` are the same class in JSX-prop spelling: a recharts `dataKey`
+ * names a field of the row it charts (`dataKey="score"` is `data-score`, not a word), and
+ * a Radix `align` is where a popover sits (`align="end"`). Both were being counted as
+ * copy on the battle and daily-challenge surfaces until WU-10, which is why the list is
+ * explicit about them rather than leaving it to the next reader to re-discover.
+ *
+ * The SVG presentation attributes are here for the same reason: `fillRule="evenodd"`,
+ * `preserveAspectRatio="none"` and `strokeLinecap="round"` are drawing instructions whose
+ * values are keywords in the SVG vocabulary. They were counted as copy until WU-7 put the
+ * footer's icon set inside a budget, which is a false positive the ratchet cannot afford —
+ * a component would have to move `evenodd` into a copy fixture to get green.
+ *
+ * `accept` is the same class of value: a file-picker MIME list
+ * (`image/*,.pdf,.doc,.docx,.txt`) that WU-9's contact form carries. A reader never sees
+ * it, and moving it into `PageCopy` would put a MIME string in an editor's fixture.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
+  "accept",
   "align",
   "alt",
   "asChild",
+  "clipRule",
   "color",
+  "dataKey",
   "defaultValue",
+  "dominantBaseline",
   "fill",
+  "fillRule",
+  "gradientUnits",
   "height",
   "href",
   "htmlFor",
@@ -163,15 +194,19 @@ const TECHNICAL_ATTRIBUTES = new Set([
   "key",
   "name",
   "orientation",
+  "patternUnits",
+  "preserveAspectRatio",
   "rel",
   "role",
   "size",
   "src",
+  "stopColor",
   "stroke",
   "strokeLinecap",
   "strokeLinejoin",
   "strokeWidth",
   "target",
+  "textAnchor",
   "type",
   "unoptimized",
   "value",
@@ -270,13 +305,39 @@ export interface CopyCheckInput {
   resolves: (href: string) => boolean;
 }
 
-/** The files attributed to a route: its page module plus the closure inside its own dirs. */
-export function attributedFiles(
-  entry: { page: string; dirs: readonly string[] },
-  sources: readonly SourceFile[],
-): string[] {
-  const closure = importClosure(entry.page, sources);
-  return closure.filter((path) => entry.dirs.some((dir) => path.startsWith(`${dir}/`)));
+/** A surface's entry modules: the one Next renders, plus any additional mounts. */
+interface SurfaceEntry {
+  page: string;
+  mounts?: readonly string[];
+  dirs: readonly string[];
+}
+
+function entryModules(entry: SurfaceEntry): string[] {
+  return [entry.page, ...(entry.mounts ?? [])];
+}
+
+/**
+ * The files attributed to a surface: every entry module's import closure, restricted
+ * to the surface's own dirs, deduplicated in discovery order.
+ *
+ * A surface normally has one entry module (the page Next renders). `mounts` exist for
+ * the one case that has more than one: the shell's header and sidebar hang off
+ * `app/(mainlayout)/layout.tsx`, but the footer is rendered by the pages themselves, so
+ * its module is a second mount of the same fixture. Unioning the closures keeps
+ * attribution reachability-based — a footer nothing imports is still not counted.
+ */
+export function attributedFiles(entry: SurfaceEntry, sources: readonly SourceFile[]): string[] {
+  const seen = new Set<string>();
+  const found: string[] = [];
+  for (const module of entryModules(entry)) {
+    for (const path of importClosure(module, sources)) {
+      if (!entry.dirs.some((dir) => path.startsWith(`${dir}/`))) continue;
+      if (seen.has(path)) continue;
+      seen.add(path);
+      found.push(path);
+    }
+  }
+  return found;
 }
 
 /** Every `href` a copy emits, so a link that moved out of JSX is still checked. */
@@ -308,9 +369,18 @@ export function copyProblems(input: CopyCheckInput): CopyProblem[] {
   if (!("/" in copies)) {
     fail('no PageCopy fixture for "/" — the ratchet has nothing to prove');
   }
+  // …and on a table that quietly leaves the shell out: the 404 and the chrome are
+  // rendered by every route, so no route budget can stand in for them.
+  for (const surface of NON_ROUTE_COPY_SURFACES) {
+    if (!(surface in copies)) {
+      fail(
+        `no PageCopy fixture for the "${surface}" surface — it is not a route, so no route budget covers it; add data/pages/${surface}.ts`,
+      );
+    }
+  }
 
   for (const [route, copy] of Object.entries(copies)) {
-    if (!routePatterns.includes(route)) {
+    if (!routePatterns.includes(route) && !isNonRouteCopySurface(route)) {
       fail(
         `data/pages: "${route}" is not a route in content/routes.ts — copy is keyed by the route pattern the manifest owns`,
       );
@@ -359,6 +429,30 @@ export function copyProblems(input: CopyCheckInput): CopyProblem[] {
       continue;
     }
 
+    const modules = entryModules(entry);
+    const missingMount = modules.find((module) => !byPath.has(module));
+    if (missingMount) {
+      fail(
+        `data/pages/budget.ts: "${route}" mounts "${missingMount}", which is not a source file — the surface was renamed or deleted`,
+      );
+      continue;
+    }
+
+    // An empty `dirs` is legal only for a surface that renders no component of its own.
+    // Otherwise it is an exemption: the entry module is counted, every component it
+    // renders is not, and a literal added there is invisible to the budget forever.
+    if (entry.dirs.length === 0) {
+      const exempted = modules
+        .flatMap((module) => importClosure(module, sources))
+        .find((path) => path.startsWith("components/"));
+      if (exempted) {
+        fail(
+          `data/pages/budget.ts: "${route}" declares no dirs, but "${entry.page}" imports "${exempted}" — a surface that renders components may not exempt them from the ratchet; name the directory in "dirs"`,
+        );
+        continue;
+      }
+    }
+
     const missingDir = entry.dirs.find(
       (dir) => !sources.some((file) => file.path.startsWith(`${dir}/`)),
     );
@@ -368,24 +462,29 @@ export function copyProblems(input: CopyCheckInput): CopyProblem[] {
       );
     }
 
-    const closure = importClosure(entry.page, sources);
-    if (!closure.some((path) => path === entry.fixture || path.startsWith(`${entry.fixture}.`))) {
+    const closures = modules.flatMap((module) => importClosure(module, sources));
+    if (!closures.some((path) => path === entry.fixture || path.startsWith(`${entry.fixture}.`))) {
       fail(
         `data/pages/budget.ts: "${route}" names fixture "${entry.fixture}", which "${entry.page}" never imports — copy written and not wired changes nothing`,
       );
     }
 
     const attributed = attributedFiles(entry, sources).filter((path) => byPath.has(path));
-    if (attributed.length === 0) {
+    if (entry.dirs.length > 0 && attributed.length === 0) {
       fail(
         `data/pages/budget.ts: "${route}" attributes no files — "${entry.page}" imports nothing under ${entry.dirs.join(", ")}, so a budget of ${entry.budget} proves nothing`,
       );
       continue;
     }
 
-    // The page module is part of the surface: it is where `sectionOf(copy, "id")` is
-    // called, so a typo there has to be seen even though `app/` is not a component dir.
-    const attributedSources = [page, ...attributed.map((path) => byPath.get(path))]
+    // The entry modules are part of the surface: they are where `sectionOf(copy, "id")`
+    // is called, so a typo there has to be seen even though `app/` is not a component
+    // dir. A surface with no dirs of its own (one that renders no component) is the module
+    // alone, and its budget is that module's literals.
+    const attributedSources = [
+      ...modules.map((module) => byPath.get(module)),
+      ...attributed.map((path) => byPath.get(path)),
+    ]
       .filter((file): file is SourceFile => file !== undefined)
       .filter((file, index, all) => all.findIndex((other) => other.path === file.path) === index);
 
@@ -444,19 +543,22 @@ export function copyProblems(input: CopyCheckInput): CopyProblem[] {
   return problems;
 }
 
-/** What a route measures right now, for the report line and for recording a new budget. */
+/** What a surface measures right now, for the report line and for recording a new budget. */
 export function measureRoute(
-  entry: { page: string; dirs: readonly string[] },
+  entry: SurfaceEntry,
   sources: readonly SourceFile[],
 ): { files: string[]; literals: CopyLiteral[] } {
   const byPath = new Map(sources.map((file) => [file.path, file]));
-  const page = byPath.get(entry.page);
+  const modules = entryModules(entry).filter((module) => byPath.has(module));
   const files = attributedFiles(entry, sources).filter((path) => byPath.has(path));
-  const surface = page
-    ? [page, ...files.map((path) => byPath.get(path))]
-    : files.map((p) => byPath.get(p));
+  const surface = [
+    ...modules.map((module) => byPath.get(module)),
+    ...files.map((path) => byPath.get(path)),
+  ]
+    .filter((file): file is SourceFile => file !== undefined)
+    .filter((file, index, all) => all.findIndex((other) => other.path === file.path) === index);
   return {
-    files: page ? [entry.page, ...files] : files,
-    literals: surface.flatMap((file) => (file ? leafLiterals(file) : [])),
+    files: [...modules, ...files.filter((path) => !modules.includes(path))],
+    literals: surface.flatMap((file) => leafLiterals(file)),
   };
 }

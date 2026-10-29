@@ -5,7 +5,12 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
-export function ThemeToggle() {
+/**
+ * The theme switch. Its `sr-only` label is copy, so it is a prop from the shell
+ * fixture (`data/pages/shell.ts`) — a toggle rendered without a name is the a11y defect
+ * E23's leaf rule would otherwise wave through, because `aria-*` values are markup.
+ */
+export function ThemeToggle({ label }: { label: string }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -18,7 +23,7 @@ export function ThemeToggle() {
     return (
       <Button variant="outline" size="icon" className="opacity-0">
         <Sun className="h-5 w-5" />
-        <span className="sr-only">Toggle theme</span>
+        <span className="sr-only">{label}</span>
       </Button>
     );
   }
@@ -31,7 +36,7 @@ export function ThemeToggle() {
       aria-label="Toggle theme"
     >
       {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-      <span className="sr-only">Toggle theme</span>
+      <span className="sr-only">{label}</span>
     </Button>
   );
 }

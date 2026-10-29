@@ -6,52 +6,43 @@ import {
   formatPercentValue,
   formatWholeCurrency,
 } from "@/content/metrics";
+import type { PageCopySection } from "@/content/pages";
+import { media } from "@/data/media";
+import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock, DollarSign, Gift, LifeBuoy, TrendingUp } from "lucide-react";
 import Image from "next/image";
-import { media } from "@/data/media";
-import { metric } from "@/data/metrics";
 
-export function WhyPartner() {
-  const benefits = [
-    {
-      icon: <DollarSign className="h-6 w-6 text-green-600 dark:text-green-500" />,
-      title: "High Commission Rates",
-      description:
-        "Earn up to 30% commission on all referred subscriptions, with lifetime tracking for recurring revenue.",
-    },
-    {
-      icon: <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-500" />,
-      title: "Strong Conversion Rates",
-      description:
-        "Our optimized landing pages and product quality ensure high conversion rates for your referrals.",
-    },
-    {
-      icon: <Clock className="h-6 w-6 text-purple-600 dark:text-purple-500" />,
-      title: "Fast Payouts",
-      description:
-        "Get paid reliably every month with low minimum thresholds and multiple payout options.",
-    },
-    {
-      icon: <LifeBuoy className="h-6 w-6 text-indigo-600 dark:text-indigo-500" />,
-      title: "Dedicated Support",
-      description:
-        "Access to a dedicated affiliate manager and priority support to help maximize your earnings.",
-    },
-    {
-      icon: <Gift className="h-6 w-6 text-pink-600 dark:text-pink-500" />,
-      title: "Exclusive Promotions",
-      description:
-        "Get access to special offers and promotional materials to boost your conversion rates.",
-    },
-    {
-      icon: <CheckCircle className="h-6 w-6 text-teal-600 dark:text-teal-500" />,
-      title: "Easy Integration",
-      description:
-        "Simple tracking links, API access, and ready-to-use marketing materials for seamless promotion.",
-    },
-  ];
+/** Which benefit card renders where; the words are `itemLabel`/`itemValue` of the same id. */
+const BENEFITS = [
+  {
+    id: "high-commission-rates",
+    icon: <DollarSign className="h-6 w-6 text-green-600 dark:text-green-500" />,
+  },
+  {
+    id: "strong-conversion-rates",
+    icon: <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-500" />,
+  },
+  {
+    id: "fast-payouts",
+    icon: <Clock className="h-6 w-6 text-purple-600 dark:text-purple-500" />,
+  },
+  {
+    id: "dedicated-support",
+    icon: <LifeBuoy className="h-6 w-6 text-indigo-600 dark:text-indigo-500" />,
+  },
+  {
+    id: "exclusive-promotions",
+    icon: <Gift className="h-6 w-6 text-pink-600 dark:text-pink-500" />,
+  },
+  {
+    id: "easy-integration",
+    icon: <CheckCircle className="h-6 w-6 text-teal-600 dark:text-teal-500" />,
+  },
+] as const;
 
+export function WhyPartner({ copy }: { copy: PageCopySection }) {
   const testimonials = [
     {
       quote:
@@ -79,18 +70,17 @@ export function WhyPartner() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Partner With Us?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{copy.heading}</h2>
             <div className="w-24 h-1 bg-gradient-to-r from-green-600 to-teal-600 mx-auto mb-6"></div>
             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-              Join thousands of successful affiliates who are earning substantial income by
-              promoting QuizHub{" "}
+              {copy.body}
             </p>
           </motion.div>
         </div>
 
         {/* Benefits Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {benefits.map((benefit, index) => (
+          {BENEFITS.map((benefit, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -103,8 +93,10 @@ export function WhyPartner() {
                   <div className="rounded-full bg-slate-100 dark:bg-slate-800 p-3 w-14 h-14 flex items-center justify-center mb-4">
                     {benefit.icon}
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400">{benefit.description}</p>
+                  <h3 className="text-xl font-bold mb-2">{itemLabel(copy, benefit.id)}</h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    {itemValue(copy, benefit.id)}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -119,7 +111,9 @@ export function WhyPartner() {
           viewport={{ once: true }}
         >
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-4 md:p-8 xl:p-12">
-            <h3 className="text-2xl font-bold mb-8 text-center">Success Stories</h3>
+            <h3 className="text-2xl font-bold mb-8 text-center">
+              {itemLabel(copy, "stories-heading")}
+            </h3>
 
             <div className="grid md:grid-cols-2 gap-8">
               {testimonials.map((testimonial, index) => (
@@ -151,7 +145,7 @@ export function WhyPartner() {
 
             <div className="mt-10 text-center">
               <div className="inline-flex items-center gap-2 bg-slate-900 dark:bg-slate-800 text-white px-6 py-3 rounded-full font-medium">
-                <span>Join our successful partners today</span>
+                <span>{itemLabel(copy, "join-partners")}</span>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
@@ -175,22 +169,32 @@ export function WhyPartner() {
         >
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
             <div className="p-6 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-              <h3 className="text-xl font-bold">How We Compare</h3>
+              <h3 className="text-xl font-bold">{itemLabel(copy, "compare-heading")}</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800">
-                    <th className="text-left p-4 font-medium">Feature</th>
-                    <th className="text-center p-4 font-medium">QuizHub Affiliate</th>
-                    <th className="text-center p-4 font-medium">Other Programs</th>
+                    <th className="text-left p-4 font-medium">
+                      {itemLabel(copy, "compare-feature-column")}
+                    </th>
+                    <th className="text-center p-4 font-medium">
+                      {itemLabel(copy, "compare-quizhub-column")}
+                    </th>
+                    <th className="text-center p-4 font-medium">
+                      {itemLabel(copy, "compare-others-column")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="p-4 text-slate-600 dark:text-slate-400">Commission Rate</td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "row-commission-rate")}
+                    </td>
                     <td className="p-4 text-center font-medium">
-                      Up to {formatPercentValue(metric("affiliate.maxCommission").value)}
+                      {fillLabel(itemLabel(copy, "row-commission-quizhub"), {
+                        percent: formatPercentValue(metric("affiliate.maxCommission").value),
+                      })}
                     </td>
                     <td className="p-4 text-center text-slate-600 dark:text-slate-400">
                       {formatPercentRange(
@@ -200,7 +204,9 @@ export function WhyPartner() {
                     </td>
                   </tr>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="p-4 text-slate-600 dark:text-slate-400">Cookie Duration</td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "row-cookie-duration")}
+                    </td>
                     <td className="p-4 text-center font-medium">
                       {formatMetricValue(metric("affiliate.cookieDays"))}
                     </td>
@@ -209,7 +215,9 @@ export function WhyPartner() {
                     </td>
                   </tr>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="p-4 text-slate-600 dark:text-slate-400">Minimum Payout</td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "row-minimum-payout")}
+                    </td>
                     <td className="p-4 text-center font-medium">
                       {formatWholeCurrency(metric("affiliate.minimumPayout").value)}
                     </td>
@@ -218,7 +226,9 @@ export function WhyPartner() {
                     </td>
                   </tr>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="p-4 text-slate-600 dark:text-slate-400">Dedicated Support</td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "row-dedicated-support")}
+                    </td>
                     <td className="p-4 text-center font-medium">
                       <svg
                         className="w-6 h-6 mx-auto text-green-600"
@@ -251,7 +261,9 @@ export function WhyPartner() {
                     </td>
                   </tr>
                   <tr className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="p-4 text-slate-600 dark:text-slate-400">Marketing Materials</td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "row-marketing-materials")}
+                    </td>
                     <td className="p-4 text-center font-medium">
                       <svg
                         className="w-6 h-6 mx-auto text-green-600"
@@ -267,7 +279,9 @@ export function WhyPartner() {
                         />
                       </svg>
                     </td>
-                    <td className="p-4 text-center text-slate-600 dark:text-slate-400">Limited</td>
+                    <td className="p-4 text-center text-slate-600 dark:text-slate-400">
+                      {itemLabel(copy, "row-marketing-others")}
+                    </td>
                   </tr>
                 </tbody>
               </table>

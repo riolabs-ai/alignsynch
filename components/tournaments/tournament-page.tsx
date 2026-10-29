@@ -18,8 +18,12 @@ import { TournamentTestimonials } from "./tournament-testimonials";
  * The catalogue band (`all-tournaments`) is one section shared by the filter row, the
  * category chips and the list — they are one band, and three components reading one
  * section beats three sections whose order the fixture cannot express.
+ *
+ * `shellCopy` is the shell fixture (`data/pages/shell.ts`), not this page's own copy:
+ * the tournaments page renders the footer itself, and the footer's words belong to the
+ * chrome. WU-11 adds the page copy as its own prop and hands it to the bands above.
  */
-export function TournamentPage({ copy }: { copy: PageCopy }) {
+export function TournamentPage({ copy, shellCopy }: { copy: PageCopy; shellCopy: PageCopy }) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const catalogue = sectionOf(copy, "all-tournaments");
@@ -66,7 +70,7 @@ export function TournamentPage({ copy }: { copy: PageCopy }) {
       </div>
 
       {/* Add the Footer */}
-      <Footer />
+      <Footer copy={shellCopy} />
     </>
   );
 }

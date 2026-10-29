@@ -11,6 +11,7 @@ import { ResourcesAndReferral } from "@/components/home/resources-and-referral";
 import { TopPlayersCarousel } from "@/components/home/top-players-carousel";
 import { Footer } from "@/components/layout/footer";
 import { homePageCopy } from "@/data/pages/home";
+import { shellPageCopy } from "@/data/pages/shell";
 import { sectionOf } from "@/lib/page-copy";
 import { winFeed } from "@/lib/win-feed";
 import "swiper/swiper-bundle.css";
@@ -37,7 +38,7 @@ export default function Home() {
         tips={sectionOf(homePageCopy, "creator-tips")}
       />
       <NewsletterSection copy={sectionOf(homePageCopy, "newsletter")} />
-      <Footer />
+      <Footer copy={shellPageCopy} />
     </div>
   );
 }
