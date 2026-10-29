@@ -20,6 +20,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import type { PageCopySection } from "@/content/pages";
+import { media } from "@/data/media";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import {
   Filter,
   Flag,
@@ -31,11 +34,26 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { useState } from "react";
-import { media } from "@/data/media";
 
 interface TournamentDiscussionProps {
   tournamentId: string;
+  copy: PageCopySection;
 }
+
+// The three sort orders, in menu order: the fixture owns the words, this owns the values.
+const SORTS = [
+  { id: "sort-recent", value: "recent" },
+  { id: "sort-popular", value: "popular" },
+  { id: "sort-replies", value: "most-replies" },
+] as const;
+
+// The discussion tabs, in render order — same split as `SORTS`.
+const TABS = [
+  { id: "tab-all", value: "all" },
+  { id: "tab-strategy", value: "strategy" },
+  { id: "tab-questions", value: "questions" },
+  { id: "tab-technical", value: "technical" },
+] as const;
 
 // Mock data for discussions
 const mockDiscussions = [
@@ -172,7 +190,7 @@ const mockComments = [
   },
 ];
 
-export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps) {
+export function TournamentDiscussion({ tournamentId, copy }: TournamentDiscussionProps) {
   const [activeDiscussion, setActiveDiscussion] = useState<string | null>(null);
   const [filter, setFilter] = useState("recent");
   const [searchQuery, setSearchQuery] = useState("");
@@ -211,12 +229,12 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
             onClick={() => setActiveDiscussion(null)}
             className="flex items-center gap-2"
           >
-            ← Back to discussions
+            {itemLabel(copy, "back")}
           </Button>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="flex items-center gap-1">
               <Flag className="h-4 w-4" />
-              Report
+              {itemLabel(copy, "report")}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -225,9 +243,9 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Bookmark</DropdownMenuItem>
-                <DropdownMenuItem>Share</DropdownMenuItem>
-                <DropdownMenuItem>Subscribe to updates</DropdownMenuItem>
+                <DropdownMenuItem>{itemLabel(copy, "bookmark")}</DropdownMenuItem>
+                <DropdownMenuItem>{itemLabel(copy, "share")}</DropdownMenuItem>
+                <DropdownMenuItem>{itemLabel(copy, "subscribe")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -275,7 +293,7 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                   <path d="M4.93 19.07l1.41-1.41" />
                   <path d="M17.66 17.3l1.41-1.41" />
                 </svg>
-                Pinned
+                {itemLabel(copy, "pinned")}
               </Badge>
             )}
           </div>
@@ -301,13 +319,15 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
             </Button>
             <Button variant="ghost" size="sm" className="flex items-center gap-1">
               <MessageCircle className="h-4 w-4" />
-              <span>{discussion.replies} replies</span>
+              <span>
+                {fillLabel(itemLabel(copy, "replies-count"), { count: discussion.replies })}
+              </span>
             </Button>
           </div>
         </div>
 
         <div className="space-y-6">
-          <h3 className="text-xl font-semibold">Replies</h3>
+          <h3 className="text-xl font-semibold">{itemLabel(copy, "replies-heading")}</h3>
 
           {mockComments.map((comment) => (
             <div key={comment.id} className="bg-card rounded-lg p-5 shadow-sm">
@@ -351,25 +371,25 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                   <ThumbsDown className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                  Reply
+                  {itemLabel(copy, "reply")}
                 </Button>
               </div>
             </div>
           ))}
 
           <div className="bg-muted/30 rounded-lg p-5">
-            <h4 className="font-medium mb-3">Add your reply</h4>
+            <h4 className="font-medium mb-3">{itemLabel(copy, "add-reply")}</h4>
             <Textarea
-              placeholder="Share your thoughts or questions..."
+              placeholder={itemLabel(copy, "reply-placeholder")}
               className="mb-3 min-h-[100px]"
               value={newCommentText}
               onChange={(e) => setNewCommentText(e.target.value)}
             />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setNewCommentText("")}>
-                Cancel
+                {itemLabel(copy, "cancel")}
               </Button>
-              <Button>Post Reply</Button>
+              <Button>{itemLabel(copy, "post-reply")}</Button>
             </div>
           </div>
         </div>
@@ -381,53 +401,50 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-semibold">Tournament Discussion</h2>
+        <h2 className="text-2xl font-semibold">{copy.heading}</h2>
         <Dialog open={newPostOpen} onOpenChange={setNewPostOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
-              New Discussion
+              {itemLabel(copy, "new-discussion")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
-              <DialogTitle>Create New Discussion</DialogTitle>
-              <DialogDescription>
-                Start a new discussion topic related to the Global Knowledge Championship.
-              </DialogDescription>
+              <DialogTitle>{itemLabel(copy, "dialog-title")}</DialogTitle>
+              <DialogDescription>{itemLabel(copy, "dialog-body")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <label htmlFor="title" className="text-sm font-medium">
-                  Title
+                  {itemLabel(copy, "title-label")}
                 </label>
-                <Input id="title" placeholder="Enter a clear, specific title for your discussion" />
+                <Input id="title" placeholder={itemLabel(copy, "title-placeholder")} />
               </div>
               <div className="space-y-2">
                 <label htmlFor="content" className="text-sm font-medium">
-                  Content
+                  {itemLabel(copy, "content-label")}
                 </label>
                 <Textarea
                   id="content"
-                  placeholder="Share your thoughts, questions, or insights..."
+                  placeholder={itemLabel(copy, "content-placeholder")}
                   className="min-h-[150px]"
                 />
               </div>
               <div className="space-y-2">
                 <label htmlFor="tags" className="text-sm font-medium">
-                  Tags (optional)
+                  {itemLabel(copy, "tags-label")}
                 </label>
-                <Input
-                  id="tags"
-                  placeholder="Add tags separated by commas (e.g., strategy, rules, round-1)"
-                />
+                <Input id="tags" placeholder={itemLabel(copy, "tags-placeholder")} />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setNewPostOpen(false)}>
-                Cancel
+                {itemLabel(copy, "cancel")}
               </Button>
-              <Button onClick={() => setNewPostOpen(false)}>Post Discussion</Button>
+              <Button onClick={() => setNewPostOpen(false)}>
+                {itemLabel(copy, "post-discussion")}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -437,7 +454,7 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
         <div className="relative w-full sm:w-[300px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search discussions..."
+            placeholder={itemLabel(copy, "search-placeholder")}
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -448,19 +465,15 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                {filter === "recent"
-                  ? "Most Recent"
-                  : filter === "popular"
-                    ? "Most Popular"
-                    : "Most Replies"}
+                {itemLabel(copy, SORTS.find((sort) => sort.value === filter)?.id ?? "sort-recent")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setFilter("recent")}>Most Recent</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("popular")}>Most Popular</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("most-replies")}>
-                Most Replies
-              </DropdownMenuItem>
+              {SORTS.map((sort) => (
+                <DropdownMenuItem key={sort.value} onClick={() => setFilter(sort.value)}>
+                  {itemLabel(copy, sort.id)}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -468,10 +481,11 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="strategy">Strategy</TabsTrigger>
-          <TabsTrigger value="questions">Questions</TabsTrigger>
-          <TabsTrigger value="technical">Technical</TabsTrigger>
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {itemLabel(copy, tab.id)}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
@@ -519,7 +533,7 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                       <path d="M4.93 19.07l1.41-1.41" />
                       <path d="M17.66 17.3l1.41-1.41" />
                     </svg>
-                    Pinned
+                    {itemLabel(copy, "pinned")}
                   </Badge>
                 )}
               </div>
@@ -544,18 +558,20 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="h-3.5 w-3.5" />
-                  <span>{discussion.replies} replies</span>
+                  <span>
+                    {fillLabel(itemLabel(copy, "replies-count"), { count: discussion.replies })}
+                  </span>
                 </div>
               </div>
             </div>
           ))
         ) : (
           <div className="bg-muted/50 rounded-lg p-8 text-center">
-            <h3 className="text-xl font-medium mb-2">No discussions found</h3>
+            <h3 className="text-xl font-medium mb-2">{itemLabel(copy, "empty-heading")}</h3>
             <p className="text-muted-foreground mb-4">
               {searchQuery
-                ? `No discussions match "${searchQuery}"`
-                : "Be the first to start a discussion about this tournament!"}
+                ? fillLabel(itemLabel(copy, "empty-search"), { query: searchQuery })
+                : itemLabel(copy, "empty-first")}
             </p>
             <Button
               onClick={() => {
@@ -563,7 +579,7 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                 setNewPostOpen(true);
               }}
             >
-              Start a New Discussion
+              {itemLabel(copy, "start-new")}
             </Button>
           </div>
         )}
@@ -571,7 +587,7 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
 
       <div className="flex justify-center">
         <Button variant="outline" className="w-full sm:w-auto">
-          Load More Discussions
+          {itemLabel(copy, "load-more")}
         </Button>
       </div>
     </div>

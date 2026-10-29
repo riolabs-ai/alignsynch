@@ -33,6 +33,8 @@ import { registerPageCopy } from "./register";
 import { shellPageCopy } from "./shell";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
+import { tournamentDetailPageCopy } from "./tournament-detail";
+import { tournamentsPageCopy } from "./tournaments";
 
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
@@ -52,6 +54,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/register": registerPageCopy,
   "/support": supportPageCopy,
   "/support/articles/[id]": supportArticlePageCopy,
+  "/tournaments": tournamentsPageCopy,
+  "/tournaments/[id]": tournamentDetailPageCopy,
   shell: shellPageCopy,
   "not-found": notFoundPageCopy,
 });

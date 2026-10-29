@@ -2,16 +2,19 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { PageCopy } from "@/content/pages";
+import { media } from "@/data/media";
+import { fillLabel, pageItemOf } from "@/lib/page-copy";
 import { CalendarDays, Clock, Share2, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import { Tournament } from "./tournament-detail";
-import { media } from "@/data/media";
 
 interface TournamentHeaderProps {
   tournament: Tournament;
+  copy: PageCopy;
 }
 
-export function TournamentHeader({ tournament }: TournamentHeaderProps) {
+export function TournamentHeader({ tournament, copy }: TournamentHeaderProps) {
   // Status badge color mapping
   const statusColors: Record<string, string> = {
     registration: "bg-green-500 hover:bg-green-600",
@@ -65,36 +68,46 @@ export function TournamentHeader({ tournament }: TournamentHeaderProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                <span className="text-sm">{tournament.participants} participants</span>
+                <span className="text-sm">
+                  {fillLabel(pageItemOf(copy, "participants").label, {
+                    count: tournament.participants,
+                  })}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
-                <span className="text-sm">{tournament.prize} prize pool</span>
+                <span className="text-sm">
+                  {fillLabel(pageItemOf(copy, "prize-pool").label, { prize: tournament.prize })}
+                </span>
               </div>
             </div>
 
             {tournament.status === "registration" && (
               <div className="flex gap-4">
-                <Button className="bg-white text-purple-900 hover:bg-gray-100">Register Now</Button>
+                <Button className="bg-white text-purple-900 hover:bg-gray-100">
+                  {pageItemOf(copy, "register").label}
+                </Button>
                 <Button variant="outline" className="border-white/30 hover:bg-white/10">
-                  Learn More
+                  {pageItemOf(copy, "learn-more").label}
                 </Button>
               </div>
             )}
 
             {tournament.status === "upcoming" && (
               <Button variant="outline" className="border-white/30 hover:bg-white/10">
-                Set Reminder
+                {pageItemOf(copy, "set-reminder").label}
               </Button>
             )}
 
             {tournament.status === "ongoing" && (
-              <Button className="bg-amber-500 hover:bg-amber-600 text-white">Join Live</Button>
+              <Button className="bg-amber-500 hover:bg-amber-600 text-white">
+                {pageItemOf(copy, "join-live").label}
+              </Button>
             )}
 
             {tournament.status === "completed" && (
               <Button variant="outline" className="border-white/30 hover:bg-white/10">
-                View Results
+                {pageItemOf(copy, "view-results").label}
               </Button>
             )}
           </div>
@@ -102,28 +115,30 @@ export function TournamentHeader({ tournament }: TournamentHeaderProps) {
           <div className="flex flex-col justify-center">
             <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Organized by</span>
+                <span className="text-sm font-medium">
+                  {pageItemOf(copy, "organized-by").label}
+                </span>
                 <span className="text-sm font-bold">{tournament.organizer}</span>
               </div>
 
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="bg-white/10 rounded p-2 text-center">
                   <div className="text-2xl font-bold">{tournament.rounds}</div>
-                  <div className="text-xs">Rounds</div>
+                  <div className="text-xs">{pageItemOf(copy, "rounds").label}</div>
                 </div>
                 <div className="bg-white/10 rounded p-2 text-center">
                   <div className="text-2xl font-bold">{tournament.questionsPerRound}</div>
-                  <div className="text-xs">Questions</div>
+                  <div className="text-xs">{pageItemOf(copy, "questions").label}</div>
                 </div>
                 <div className="bg-white/10 rounded p-2 text-center">
                   <div className="text-2xl font-bold">{tournament.difficulty}</div>
-                  <div className="text-xs">Difficulty</div>
+                  <div className="text-xs">{pageItemOf(copy, "difficulty").label}</div>
                 </div>
               </div>
 
               {tournament.status === "registration" && (
                 <div className="flex items-center justify-between text-sm">
-                  <span>Registration closes in</span>
+                  <span>{pageItemOf(copy, "closes-in").label}</span>
                   <div className="flex items-center text-amber-300">
                     <Clock className="h-4 w-4 mr-1" />
                     <span className="font-bold">{tournament.registrationEnds}</span>

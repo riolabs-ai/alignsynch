@@ -1,5 +1,8 @@
 "use client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { PageCopy } from "@/content/pages";
+import { media } from "@/data/media";
+import { pageItemOf, sectionOf } from "@/lib/page-copy";
 import { TournamentDiscussion } from "./tournament-discussion";
 import { TournamentHeader } from "./tournament-header";
 import { TournamentLeaderboard } from "./tournament-leaderboard";
@@ -7,10 +10,20 @@ import { TournamentOverview } from "./tournament-overview";
 import { TournamentPrizes } from "./tournament-prizes";
 import { TournamentRules } from "./tournament-rules";
 import { TournamentSchedule } from "./tournament-schedule";
-import { media } from "@/data/media";
+
+/** The tab strip, in render order: the fixture owns the words, this owns the values. */
+const TABS = [
+  { id: "tab-overview", value: "overview" },
+  { id: "tab-rules", value: "rules" },
+  { id: "tab-leaderboard", value: "leaderboard" },
+  { id: "tab-prizes", value: "prizes" },
+  { id: "tab-schedule", value: "schedule" },
+  { id: "tab-discussion", value: "discussion" },
+] as const;
 
 interface TournamentDetailProps {
   id: string;
+  copy: PageCopy;
 }
 export type Tournament = {
   id: string;
@@ -31,7 +44,14 @@ export type Tournament = {
   format: string;
   eligibility: string;
 };
-export function TournamentDetail({ id }: TournamentDetailProps) {
+
+/**
+ * The detail route's body. The record below is the mock object it has always been —
+ * WU-11 moved the route's *words* into `data/pages/tournament-detail.ts` and left the
+ * tournament domain alone (no entity, no bracket, no standings: P4). The tab labels
+ * are the `hero` section's: its heading is the default tab, its items the other five.
+ */
+export function TournamentDetail({ id, copy }: TournamentDetailProps) {
   // In a real app, you would fetch the tournament data based on the ID
   // For now, we'll use mock data
 
@@ -61,40 +81,39 @@ export function TournamentDetail({ id }: TournamentDetailProps) {
 
   return (
     <div className="container mx-auto">
-      <TournamentHeader tournament={tournament} />
+      <TournamentHeader tournament={tournament} copy={copy} />
 
       <Tabs defaultValue="overview" className="mt-8">
         <TabsList className="w-full flex overflow-x-auto  mb-8">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="rules">Rules</TabsTrigger>
-          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-          <TabsTrigger value="prizes">Prizes</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          <TabsTrigger value="discussion">Discussion</TabsTrigger>
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {pageItemOf(copy, tab.id).label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="overview">
-          <TournamentOverview tournament={tournament} />
+          <TournamentOverview tournament={tournament} copy={copy} />
         </TabsContent>
 
         <TabsContent value="rules">
-          <TournamentRules tournament={tournament} />
+          <TournamentRules tournament={tournament} copy={sectionOf(copy, "rules")} />
         </TabsContent>
 
         <TabsContent value="leaderboard">
-          <TournamentLeaderboard tournament={tournament} />
+          <TournamentLeaderboard tournament={tournament} copy={sectionOf(copy, "leaderboard")} />
         </TabsContent>
 
         <TabsContent value="prizes">
-          <TournamentPrizes tournament={tournament} />
+          <TournamentPrizes tournament={tournament} copy={sectionOf(copy, "prizes")} />
         </TabsContent>
 
         <TabsContent value="schedule">
-          <TournamentSchedule />
+          <TournamentSchedule copy={sectionOf(copy, "schedule")} />
         </TabsContent>
 
         <TabsContent value="discussion">
-          <TournamentDiscussion tournamentId={tournament.id} />
+          <TournamentDiscussion tournamentId={tournament.id} copy={sectionOf(copy, "discussion")} />
         </TabsContent>
       </Tabs>
     </div>

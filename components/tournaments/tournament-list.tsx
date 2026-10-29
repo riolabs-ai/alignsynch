@@ -4,22 +4,27 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
+import type { PageCopySection } from "@/content/pages";
+import { media } from "@/data/media";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowRight, CalendarDays, Clock, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { media } from "@/data/media";
 
 interface TournamentListProps {
   activeCategory: string;
   activeFilter: string;
+  copy: PageCopySection;
 }
 
-export function TournamentList({ activeCategory, activeFilter }: TournamentListProps) {
+export function TournamentList({ activeCategory, activeFilter, copy }: TournamentListProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
 
   // Mock tournament data - in a real app, this would come from an API
+  // A record list, not copy: the tournament domain is P4 (WU-11 moved the words,
+  // not the rows), so these stay exactly as they were.
   const tournaments = [
     {
       id: "science-showdown",
@@ -131,8 +136,8 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
       {filteredTournaments.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-5xl mb-4">🏆</div>
-          <h3 className="text-xl font-medium mb-2">No tournaments found</h3>
-          <p className="text-muted-foreground">Try changing your category or filter selection</p>
+          <h3 className="text-xl font-medium mb-2">{itemLabel(copy, "empty-heading")}</h3>
+          <p className="text-muted-foreground">{itemLabel(copy, "empty-body")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -169,11 +174,17 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{tournament.participants} participants</span>
+                    <span>
+                      {fillLabel(itemLabel(copy, "list-participants"), {
+                        count: tournament.participants,
+                      })}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Trophy className="h-4 w-4 text-muted-foreground" />
-                    <span>{tournament.prize} prize</span>
+                    <span>
+                      {fillLabel(itemLabel(copy, "list-prize"), { prize: tournament.prize })}
+                    </span>
                   </div>
                 </div>
 
@@ -182,7 +193,11 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
                     {tournament.status === "registration" && (
                       <div className="flex items-center text-sm">
                         <Clock className="h-4 w-4 mr-1 text-amber-500" />
-                        <span>Closes in {tournament.registrationEnds}</span>
+                        <span>
+                          {fillLabel(itemLabel(copy, "list-closes-in"), {
+                            days: tournament.registrationEnds,
+                          })}
+                        </span>
                       </div>
                     )}
                     <Button
@@ -190,7 +205,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
                       className="ml-auto"
                       size="sm"
                     >
-                      View Details <ArrowRight className="ml-1 h-4 w-4" />
+                      {itemLabel(copy, "view-details")} <ArrowRight className="ml-1 h-4 w-4" />
                     </Button>
                   </div>
                 )}
@@ -202,7 +217,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
                     className="w-full"
                     size="sm"
                   >
-                    View Results <ArrowRight className="ml-1 h-4 w-4" />
+                    {itemLabel(copy, "view-results")} <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 )}
               </CardContent>

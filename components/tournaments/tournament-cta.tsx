@@ -1,8 +1,19 @@
 import { Button } from "@/components/ui/button";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight, Award, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 
-export function TournamentCta() {
+/**
+ * The CTA band. Its `<h2>` is split by inline markup — `Join the ultimate` is the
+ * section heading and `quiz competition!` is the accented item — because flattening
+ * the two would delete the `<span>` and its colour, which is a rendering change.
+ *
+ * The two destinations stay literal `href`s: they address a mock tournament detail by
+ * a name that is not a record id, so they are E10's (a route pattern E10 can match),
+ * not E23's (a link E23 can resolve). See the fixture's header.
+ */
+export function TournamentCta({ copy }: { copy: PageCopySection }) {
   return (
     <section className="my-10 xl:my-20">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 shadow-xl">
@@ -16,17 +27,15 @@ export function TournamentCta() {
         <div className="relative grid md:grid-cols-2 gap-8 p-8 md:p-12 items-center">
           <div className="space-y-6">
             <div className="inline-block rounded-lg bg-white/10 backdrop-blur-sm px-4 py-2 text-white font-medium text-sm">
-              Ready for the challenge?
+              {itemLabel(copy, "badge")}
             </div>
 
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-              Join the ultimate <span className="text-yellow-200">quiz competition!</span>
+              {copy.heading}{" "}
+              <span className="text-yellow-200">{itemLabel(copy, "heading-accent")}</span>
             </h2>
 
-            <p className="text-indigo-100 text-lg max-w-md">
-              Compete with players from around the world, showcase your knowledge, and win amazing
-              prizes in our tournaments.
-            </p>
+            <p className="text-indigo-100 text-lg max-w-md">{copy.body}</p>
 
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
@@ -35,9 +44,7 @@ export function TournamentCta() {
                     <Trophy className="h-4 w-4 text-yellow-200" />
                   </div>
                 </div>
-                <p className="text-indigo-100">
-                  Win exclusive prizes and climb the global leaderboard
-                </p>
+                <p className="text-indigo-100">{itemLabel(copy, "perk-prizes")}</p>
               </div>
 
               <div className="flex items-start space-x-3">
@@ -46,7 +53,7 @@ export function TournamentCta() {
                     <Users className="h-4 w-4 text-yellow-200" />
                   </div>
                 </div>
-                <p className="text-indigo-100">Connect with a community of quiz enthusiasts</p>
+                <p className="text-indigo-100">{itemLabel(copy, "perk-community")}</p>
               </div>
 
               <div className="flex items-start space-x-3">
@@ -55,19 +62,19 @@ export function TournamentCta() {
                     <Award className="h-4 w-4 text-yellow-200" />
                   </div>
                 </div>
-                <p className="text-indigo-100">Earn special badges and achievements</p>
+                <p className="text-indigo-100">{itemLabel(copy, "perk-badges")}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-4 pt-2">
               <Button asChild size="lg" className="bg-white text-indigo-600 hover:bg-indigo-50">
                 <Link href="/tournaments/register">
-                  Register Now <ArrowRight className="ml-2 h-4 w-4" />
+                  {itemLabel(copy, "register-now")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
 
               <Button asChild size="lg" variant={"secondary"}>
-                <Link href="/tournaments/create">Host a Tournament</Link>
+                <Link href="/tournaments/create">{itemLabel(copy, "host-tournament")}</Link>
               </Button>
             </div>
           </div>
