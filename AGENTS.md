@@ -74,9 +74,10 @@ process bug.
 
 Cards that depend on another card's output branch from that branch and open the PR against
 it, so the stack stays linear. Do not rebase or reorder someone else's open PR to get your
-own branch moving; land the parent first. `main` branch protection is not yet configured
-(see `docs/GATE.md`), so "CI is green" is currently a human convention, not an enforced
-gate.
+own branch moving; land the parent first. `main` requires the `typecheck / lint / build`
+check through a repository **ruleset** (strict: branch must be up to date), so a red or stale
+head cannot merge — see `docs/GATE.md` for the evidence and for why the classic
+`/branches/main/protection` endpoint returns 404 and must not be trusted.
 
 ## Numbers
 

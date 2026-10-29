@@ -82,37 +82,46 @@ time. The 90 s ceiling is met on a 7-core host; a slower machine is the case to 
 | deliberately misformatted file               | stopped at `lint`, exit 1 — `biome check` includes the formatter, so `format:check` is an explicit backstop that `lint` normally pre-empts |
 | `.nvmrc` flipped to `20` while on Node 24    | preflight exit 1, `✗ runtime parity`, zero steps run                                                                                       |
 
-## Not done: branch protection (needs a repo admin)
+## Required checks: enforced by a ruleset, and the 404 that hid it
 
-There is **no** branch protection on `main` today:
+`main` **is** protected and the check **is** required — but not by classic branch protection.
+The endpoint everyone reaches for answers 404, which reads as "nothing configured":
 
 ```
-gh api repos/riolabs-ai/alignsynch/branches/main/protection   -> 404 (not configured)
-gh api repos/riolabs-ai/alignsynch --jq .permissions
-  -> {"admin":false,"maintain":false,"pull":true,"push":true,"triage":true}
+gh api repos/riolabs-ai/alignsynch/branches/main/protection   -> 404 Not Found
 ```
 
-The account that built this gate can push but cannot configure protection, so
-"required status checks" cannot be enabled from here, and a deliberate red probe PR cannot
-prove enforcement — an unprotected branch merges red happily. What _is_ proven is that the
-check itself fails when the tree is broken (negative controls above) and that CI's only
-step is that check.
-
-An admin should run, once:
+The rules live in a repository **ruleset** (`target: branch`, `conditions: ~DEFAULT_BRANCH`,
+`enforcement: active`), which that endpoint does not report at all:
 
 ```bash
-gh api -X PUT repos/riolabs-ai/alignsynch/branches/main/protection \
-  -F required_status_checks.strict=true \
-  -F 'required_status_checks.contexts[]=typecheck / lint / build' \
-  -F enforce_admins=false \
-  -F required_pull_request_reviews= \
-  -F restrictions=
+gh api repos/riolabs-ai/alignsynch/rules/branches/main
+#   required_status_checks -> context "typecheck / lint / build", integration_id 15368,
+#                             strict_required_status_checks_policy: true
+#   plus deletion and non_fast_forward (no force-push, no branch delete)
 ```
 
-`typecheck / lint / build` is the existing job name and is kept stable on purpose: required
-checks match on that string, so renaming the job silently drops the requirement. Prove the
-requirement with a deliberately failing probe PR against `main` and close it unmerged — a
-protection rule that has never rejected anything is a rumour.
+`integration_id 15368` is the GitHub Actions app, which is the app that emits this job's
+check-run — the context alone would not be enough if an unrelated app ever published a check
+with the same name. Strict policy means the branch must also be up to date with `main` before
+merging, so a stale branch re-runs the gate instead of merging on an old head.
+
+Two consequences worth keeping:
+
+- **The job name is load-bearing.** Required checks match on `typecheck / lint / build`, so
+  renaming the job silently drops the requirement while everything still looks green. That is
+  why the job keeps its old name even though the step list now lives in `scripts/verify.sh`.
+- **Proven, not assumed.** PR #19 (`opstest/required-check-probe`) was a deliberate red probe:
+  broken type, `typecheck / lint / build` → `failure` (app 15368), closed unmerged. A rule that
+  has never rejected anything is a rumour; this one has.
+
+Re-verify enforcement (needs a repo admin to _change_, but anyone can read it):
+
+```bash
+gh api repos/riolabs-ai/alignsynch/rules/branches/main \
+  --jq '.[] | select(.type=="required_status_checks") | .parameters.required_status_checks'
+gh api repos/riolabs-ai/alignsynch/rulesets/26115314 --jq '{name,enforcement,conditions}' 
+```
 
 ## Re-measuring
 
