@@ -90,11 +90,16 @@ export type PageCopyItem = z.infer<typeof zPageCopyItem>;
 /**
  * A band of the page. `id` is the handle `sectionOf()` resolves — kebab-case and
  * stable across a rename of the heading, because the view joins on it.
+ *
+ * `heading` is optional because not every band is headed: a nav column, an avatar
+ * menu and a search palette are lists of `items` with no title above them. Requiring
+ * a heading there forces the fixture to invent one the view must not render, which
+ * is the junk-drawer failure `items` exists to prevent (WU-7).
  */
 export const zPageCopySection = z
   .object({
     id: zId,
-    heading: z.string().min(1),
+    heading: z.string().min(1).optional(),
     body: z.string().min(1).optional(),
     cta: zPageCopyLink.optional(),
     secondaryCta: zPageCopyLink.optional(),
@@ -121,26 +126,56 @@ export const zPageCopy = z
 export type PageCopy = z.infer<typeof zPageCopy>;
 
 /**
- * The routes that have copy, keyed by the route pattern (`/`, `/pricing`,
+ * The routes that have copy, keyed by the surface id (`/`, `/pricing`,
  * `/news/[slug]`). A record, not an array — the key *is* the join.
+ *
+ * A surface id is a route pattern, or one of `NON_ROUTE_COPY_SURFACES` below: the
+ * shell (header, sidebar, footer) and Next's `not-found.tsx` are copy with no route
+ * of their own, and they are rendered on every page, so they cannot be attributed to
+ * one. E23 holds both halves: a route-pattern key must resolve in
+ * `content/routes.ts`, and every named surface must carry copy and a budget, so
+ * neither can be quietly dropped from the gate.
  */
 export const zPageCopyTable = z.record(z.string().min(1), zPageCopy);
 
 export type PageCopyTable = z.infer<typeof zPageCopyTable>;
 
 /**
- * Where a route's copy lives and how many literals may remain inside it.
+ * Copy surfaces that are not routes. `shell` is the `(mainlayout)` chrome, mounted by
+ * `app/(mainlayout)/layout.tsx` (header, sidebar) and by the pages that render the
+ * footer; `not-found` is `app/not-found.tsx`, which Next renders for any path that
+ * matches nothing. Named on purpose: an unnamed key is a typo, and a surface that is
+ * neither a route nor one of these would silently skip the ratchet.
+ */
+export const NON_ROUTE_COPY_SURFACES = ["shell", "not-found"] as const;
+
+export type NonRouteCopySurface = (typeof NON_ROUTE_COPY_SURFACES)[number];
+
+/** Is this key a declared non-route surface rather than a route pattern? */
+export function isNonRouteCopySurface(key: string): key is NonRouteCopySurface {
+  return (NON_ROUTE_COPY_SURFACES as readonly string[]).includes(key);
+}
+
+/**
+ * Where a surface's copy lives and how many literals may remain inside it.
  *
- * `page` is the route module the attribution walks from (the file Next renders),
- * `dirs` are the directories whose *reachable* files are attributed to the route,
- * and `fixture` must be reachable from `page` — the proof the copy is wired in, not
- * written and forgotten. `budget` is the number of leaf literals E23 tolerates; it
- * is measured, recorded, and only ever lowered by a later work unit.
+ * `page` is the module the attribution walks from — the file Next renders: a
+ * `page.tsx` for a route, a `layout.tsx` for the shell, or a special file such as
+ * `app/not-found.tsx`. `mounts` are further modules that mount the same copy, for a
+ * surface that is not rendered by one module: the footer is mounted by the pages
+ * that render it, not by the layout the header and sidebar hang off, and its strings
+ * belong to the same fixture. `dirs` are the directories whose *reachable* files are
+ * attributed to the surface — empty only for a surface that renders no component of its
+ * own, and `copy-refs.ts` fails an empty `dirs` whose module imports one. `fixture` must
+ * be reachable from `page` or a mount: the proof the
+ * copy is wired in, not written and forgotten. `budget` is the number of leaf
+ * literals E23 tolerates; it is measured, recorded, and only ever lowered.
  */
 export const zPageCopyBudgetEntry = z
   .object({
     page: z.string().min(1),
-    dirs: z.array(z.string().min(1)).min(1),
+    mounts: z.array(z.string().min(1)).optional(),
+    dirs: z.array(z.string().min(1)),
     fixture: z.string().min(1),
     budget: z.number().int().min(0),
   })
