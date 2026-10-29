@@ -1,8 +1,22 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { quizCategoryLabel } from "@/content/categories";
 import { Calendar, CheckCircle, Clock, HelpCircle, Target, Trophy, Users } from "lucide-react";
 import { Tournament } from "./tournament-detail";
+
+/**
+ * The subjects a tournament spans. Slugs, not labels: `quizCategories` owns the text, and
+ * the mock `Tournament` record only carries one `category` string (WU-11), so the list is
+ * declared here until the domain does.
+ */
+const TOURNAMENT_SUBJECTS = [
+  "general-knowledge",
+  "science",
+  "history",
+  "geography",
+  "sports",
+] as const;
 
 interface TournamentOverviewProps {
   tournament: Tournament;
@@ -147,26 +161,12 @@ export function TournamentOverview({ tournament }: TournamentOverviewProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>General Knowledge</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Science & Technology</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>History & Geography</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Entertainment & Pop Culture</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Sports & Leisure</span>
-              </div>
+              {TOURNAMENT_SUBJECTS.map((slug) => (
+                <div key={slug} className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>{quizCategoryLabel(slug)}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

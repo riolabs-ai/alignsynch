@@ -26,6 +26,7 @@ import {
 import {
   categories as quizCategoryTable,
   categories as taxonomyTable,
+  quizCategories as quizSubjects,
 } from "../content/categories";
 import {
   zQuiz,
@@ -59,6 +60,10 @@ import { catalogueAliases, quizShelves, shelvedIds } from "../data/quiz-catalogu
 import { quizAnalytics } from "../data/quiz-analytics";
 import { promotions } from "../data/promotions";
 import { quizzes as quizRecords } from "../data/quizzes";
+import { authoredQuizzes } from "../data/authored-quizzes";
+import { createdQuizzes } from "../data/created-quizzes";
+import { currentQuiz } from "../data/currentQuiz";
+import { mockQuizzes } from "../data/mock-quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
@@ -78,6 +83,7 @@ import {
   navigationReferences,
   type SourceFile,
 } from "./ui-refs";
+import { findTaxonomyLiterals, taxonomyEntries, taxonomyVocabulary } from "./taxonomy-refs";
 
 type Severity = "error" | "warn";
 interface Diagnostic {
@@ -730,6 +736,48 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  * cover means adding the file (then `node scripts/gen-media.mjs`); inventing one here would
  * have made the registry describe a file that does not exist, which is what E18 forbids.
  */
+
+/* ------------------------------------------------------------------ *
+ * E20 — no component types a label the model already owns
+ *
+ * E17/E18/E19 made a *file path* the registry's business. This is the same rule one
+ * layer up: a category name, a quiz title and a badge label are the fixtures' business.
+ * The shape it forbids is a whole node — `<span>Science</span>`, `label="Science"` —
+ * because that is exactly the copy that drifts: rename the subject in
+ * `content/categories.ts` and the page keeps saying the old name while typecheck, lint,
+ * data:check and build all stay green (docs/P2-INVENTORY.md, DUP tier: 26 hits).
+ *
+ * The vocabulary is built from the model here, never from the component tree, so the
+ * scan cannot agree with the code it is checking. Record-shaped literals inside a
+ * component-level mock (`category: "Science"`) are E21's business, not this rule's.
+ *
+ * Quiz scope only, on purpose: the editorial categories (`news`/`tip`/`kb`) are ordinary
+ * prose words — a chat settings tab called "Privacy" is not the `kb-privacy` category, and
+ * "Tournaments" is a nav label in three places — so a whole-node rule over them reports
+ * chrome, not a duplicated label. Their copy is the editorial work units' business.
+ * ------------------------------------------------------------------ */
+
+const taxonomy = taxonomyVocabulary(
+  taxonomyEntries({
+    categories: quizSubjects,
+    quizzes: [
+      ...quizRecords,
+      ...browseQuizzes,
+      ...authoredQuizzes,
+      ...mockQuizzes,
+      ...createdQuizzes,
+      currentQuiz,
+    ],
+    badges: promotions,
+  }),
+);
+
+for (const literal of findTaxonomyLiterals(uiSources, taxonomy)) {
+  err(
+    "E20",
+    `${literal.file}:${literal.line} types the ${literal.kind} label "${literal.label}", which "${literal.owner}" already owns — render it from ${literal.from} instead of writing it again`,
+  );
+}
 
 /* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock

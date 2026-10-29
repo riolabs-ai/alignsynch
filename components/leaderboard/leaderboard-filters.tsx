@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { categoryName, quizCategoryLabel } from "@/content/categories";
 import { Calendar, ChevronDown } from "lucide-react";
 
 interface LeaderboardFiltersProps {
@@ -15,6 +16,12 @@ interface LeaderboardFiltersProps {
   categoryFilter: string;
   setCategoryFilter: (filter: string) => void;
 }
+
+/**
+ * The subjects the board can be split by. Slugs, not labels: `quizCategories` owns the
+ * text. `all` is the parent's starting sentinel, not a subject.
+ */
+const LEADERBOARD_SUBJECTS = ["science", "history", "math", "literature", "sports"] as const;
 
 export function LeaderboardFilters({
   timeFilter,
@@ -53,7 +60,7 @@ export function LeaderboardFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm">
-            {categoryFilter === "all" ? "All Categories" : categoryFilter}
+            {categoryFilter === "all" ? "All Categories" : categoryName(categoryFilter)}
             <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -61,15 +68,11 @@ export function LeaderboardFilters({
           <DropdownMenuItem onClick={() => setCategoryFilter("all")}>
             All Categories
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setCategoryFilter("Science")}>Science</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setCategoryFilter("History")}>History</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setCategoryFilter("Mathematics")}>
-            Mathematics
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setCategoryFilter("Literature")}>
-            Literature
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setCategoryFilter("Sports")}>Sports</DropdownMenuItem>
+          {LEADERBOARD_SUBJECTS.map((slug) => (
+            <DropdownMenuItem key={slug} onClick={() => setCategoryFilter(slug)}>
+              {quizCategoryLabel(slug)}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

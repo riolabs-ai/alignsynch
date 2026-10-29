@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { quizCategoryLabel } from "@/content/categories";
+import { DIFFICULTIES, type Difficulty, difficultyLabel, isDifficulty } from "@/content/core";
 import {
   Card,
   CardContent,
@@ -31,11 +33,18 @@ interface BattleModeSelectionProps {
   ) => void;
 }
 
+/**
+ * The subjects a battle can be fought over. Slugs, not labels: the taxonomy owns the text
+ * (`quizCategoryLabel`), so renaming a subject in `content/categories.ts` moves here for
+ * free. `random` is a control, not a subject, and stays a plain option value.
+ */
+const BATTLE_SUBJECTS = ["science", "history", "geography", "sports"] as const;
+
 export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) {
   const [activeTab, setActiveTab] = useState<"1v1" | "group">("1v1");
   const [battleType, setBattleType] = useState<"public" | "private">("public");
   const [category, setCategory] = useState<string>("random");
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [timePerQuestion, setTimePerQuestion] = useState<number>(10);
   const [totalQuestions, setTotalQuestions] = useState<number>(10);
   const [roomCode, setRoomCode] = useState<string>("");
@@ -128,11 +137,11 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="random">Random</SelectItem>
-                      <SelectItem value="science">Science</SelectItem>
-                      <SelectItem value="history">History</SelectItem>
-                      <SelectItem value="geography">Geography</SelectItem>
-                      <SelectItem value="entertainment">Entertainment</SelectItem>
-                      <SelectItem value="sports">Sports</SelectItem>
+                      {BATTLE_SUBJECTS.map((slug) => (
+                        <SelectItem key={slug} value={slug}>
+                          {quizCategoryLabel(slug)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -141,15 +150,19 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
                   <Label htmlFor="difficulty">Difficulty</Label>
                   <Select
                     value={difficulty}
-                    onValueChange={(value) => setDifficulty(value as "easy" | "medium" | "hard")}
+                    onValueChange={(value) => {
+                      if (isDifficulty(value)) setDifficulty(value);
+                    }}
                   >
                     <SelectTrigger id="difficulty">
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="easy">Easy</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="hard">Hard</SelectItem>
+                      {DIFFICULTIES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {difficultyLabel(value)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -250,11 +263,11 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="random">Random</SelectItem>
-                      <SelectItem value="science">Science</SelectItem>
-                      <SelectItem value="history">History</SelectItem>
-                      <SelectItem value="geography">Geography</SelectItem>
-                      <SelectItem value="entertainment">Entertainment</SelectItem>
-                      <SelectItem value="sports">Sports</SelectItem>
+                      {BATTLE_SUBJECTS.map((slug) => (
+                        <SelectItem key={slug} value={slug}>
+                          {quizCategoryLabel(slug)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -263,15 +276,19 @@ export function BattleModeSelection({ onModeSelect }: BattleModeSelectionProps) 
                   <Label htmlFor="difficulty-group">Difficulty</Label>
                   <Select
                     value={difficulty}
-                    onValueChange={(value) => setDifficulty(value as "easy" | "medium" | "hard")}
+                    onValueChange={(value) => {
+                      if (isDifficulty(value)) setDifficulty(value);
+                    }}
                   >
                     <SelectTrigger id="difficulty-group">
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="easy">Easy</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="hard">Hard</SelectItem>
+                      {DIFFICULTIES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {difficultyLabel(value)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
