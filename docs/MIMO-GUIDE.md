@@ -12,10 +12,10 @@ Closes #37.
 
 Two independent billing modes with independent credentials, which cannot be mixed [10][11][7]:
 
-| Mode | OpenAI-compatible base URL | Key format |
-|---|---|---|
-| Pay-as-you-go | `https://api.xiaomimimo.com/v1` | `sk-xxxxx` [10] |
-| Token Plan | `https://token-plan-cn.xiaomimimo.com/v1` (China), `https://token-plan-sgp.xiaomimimo.com/v1` (Singapore), `https://token-plan-ams.xiaomimimo.com/v1` (Europe) [11] | `tp-xxxxx` individual, `ttp-xxxxx` team [11] |
+| Mode          | OpenAI-compatible base URL                                                                                                                                          | Key format                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Pay-as-you-go | `https://api.xiaomimimo.com/v1`                                                                                                                                     | `sk-xxxxx` [10]                              |
+| Token Plan    | `https://token-plan-cn.xiaomimimo.com/v1` (China), `https://token-plan-sgp.xiaomimimo.com/v1` (Singapore), `https://token-plan-ams.xiaomimimo.com/v1` (Europe) [11] | `tp-xxxxx` individual, `ttp-xxxxx` team [11] |
 
 > "The API Key for the Token Plan (`tp-xxxxx` or `ttp-xxxxx`) and the API Key for pay-as-you-go API calls (`sk-xxxxx`) are independent of each other and cannot be used interchangeably." [11] Mixing them is a documented 401 cause ("API Key that mixes Token Plan and Pay-as-you-go API") [7]. Anthropic-compatible endpoints exist per cluster (`…/anthropic`) [10][11]; a batch host exists for pay-as-you-go (`batch-api-cn`) [10]. Token Plan keys die with the subscription ("The API Key of the Token Plan is only valid during the subscription period") [11].
 
@@ -38,7 +38,7 @@ Two independent billing modes with independent credentials, which cannot be mixe
 - In thinking mode the v2.6 models "do not support customizing the `temperature` and `top_p` parameters. Even if these parameters are passed in, the actual effective values will be forcibly set by the model to its recommended default values of `1.0` and `0.95`" [1][5].
 - `max_completion_tokens` "limits the total length of thinking content and the final answer" — thinking eats the output budget [3].
 - Response field `reasoning_content` (message and streaming delta) holds "The reasoning contents of the assistant message, before the final answer" [1].
-- Multi-turn tool calls in thinking mode: the model returns `reasoning_content` alongside `tool_calls`, and the docs say historical `reasoning_content` **must** be passed back in later rounds "otherwise the API will return a 400 error" [3]; the error-code page lists the same rule under 400 - Invalid Format [7]. Missing history "may result in decreased instruction following and increased hallucinations" [3]. *Divergence: we could not reproduce the 400 — see quirk Q6.*[15]
+- Multi-turn tool calls in thinking mode: the model returns `reasoning_content` alongside `tool_calls`, and the docs say historical `reasoning_content` **must** be passed back in later rounds "otherwise the API will return a 400 error" [3]; the error-code page lists the same rule under 400 - Invalid Format [7]. Missing history "may result in decreased instruction following and increased hallucinations" [3]. _Divergence: we could not reproduce the 400 — see quirk Q6._[15]
 
 ### 1.4 Tool calling and streaming
 
@@ -62,45 +62,45 @@ Two independent billing modes with independent credentials, which cannot be mixe
 
 `scripts/mimo-probe.py` (stdlib `urllib`, no dependencies) recorded 49 calls across 14 probe groups into `scripts/mimo-probe-results.jsonl`.[15] Selected lines:
 
-| Probe | Evidence line (abridged from the run) | Verdict |
-|---|---|---|
-| p01 thinking-on max_tokens sweep | `max_tokens=8 status=200 empty_content=True finish=length usage.completion_tokens=8 reasoning_tokens=11` | thinking eats the budget; content vanishes first |
-| p01 | `max_tokens=16 … content_len=2 finish=stop` | first non-empty answer at 16 for a 2-token reply |
-| p01 | `max_tokens=2 … completion_tokens=2 reasoning_tokens=4` | `reasoning_tokens` can exceed `max_tokens` |
-| p02 thinking-off sweep | `max_tokens=1 status=200 content_len=2 finish=length` | no floor with thinking disabled |
-| p03 streaming | `status=200 ttft=2.13s total=2.80s chunks=8 delta_reasoning_content=True delta_content=True usage_in_stream=True` | reasoning deltas first, usage in stream |
-| p03 non-stream baseline | `latency=3.37s … reasoning_len=65` | non-stream slightly slower on this task |
-| p04 shape | `message_keys=['content','reasoning_content','role','tool_calls']` | `reasoning_content` is a sibling of `content` |
-| p04 fabricated tool turn without `reasoning_content` | `status=200` | documented 400 not enforced (Q6) |
-| p05 real round-trip | turn1 `finish=tool_calls tool_calls=1 turn1_args={"location":"Tokyo"}`; turn2 `finish=stop content_len=75` | tool round-trip works end to end |
-| p05 strictness | real history replayed **without** `reasoning_content`: `status=200 content_len=75` | 400 rule unenforced on this gateway |
-| p06 parallel tools | `tool_calls_in_one_turn=4 names=['get_weather','get_time','get_weather','get_time']` | multiple tool calls per turn work |
-| p07 vision | `status=200 … image_tokens=1024 prompt_tokens=1040` | URL vision works; image tokens reported |
-| p08 ~1.1M-token prompt | `status=200 prompt_tokens=1048570 completion_tokens=0 finish=length empty_content=True` | no 400 — input silently clipped to the window (Q1) |
-| p09 repeated 4.8k-token prefix | call1 `cached_tokens=0`; call2 `cached_tokens=4736` of `prompt_tokens=4815` | prompt cache works, no minimum ≥ 4.8k |
-| p10 concurrency | `wall=2.97s statuses={200: 10} lat_min=2.20s lat_max=2.96s any_429=False` | 10 parallel calls all fine |
-| p11 bad model id | `400 {"code":"400","message":"Unsupported model mimo-v9-does-not-exist"}` | model checked first |
-| p11 oversized cap | `400 … "max_tokens is too large: 200000. This model supports at most 131072 completion tokens…"` | `max_tokens` accepted as the documented `max_completion_tokens` alias |
-| p11 `GET /models` (token-plan host) | `status=200` | health check works here |
-| p12 ultraspeed | `400 {"code":"400","message":"Not supported model mimo-v2.6-pro-ultraspeed"}` | not served on the token-plan SGP cluster (Q5) |
-| p13 headers | `response_headers={"X-MiFE-Upstream-Status": "200"}` | no rate-limit/quota/billing headers exposed |
-| p14 pay-as-you-go host with `tp-` key | `GET /models 401`, `POST chat 401 {"message":"Invalid API Key"}` | the plugin-default host rejects token-plan keys (Q7) |
+| Probe                                                | Evidence line (abridged from the run)                                                                             | Verdict                                                               |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| p01 thinking-on max_tokens sweep                     | `max_tokens=8 status=200 empty_content=True finish=length usage.completion_tokens=8 reasoning_tokens=11`          | thinking eats the budget; content vanishes first                      |
+| p01                                                  | `max_tokens=16 … content_len=2 finish=stop`                                                                       | first non-empty answer at 16 for a 2-token reply                      |
+| p01                                                  | `max_tokens=2 … completion_tokens=2 reasoning_tokens=4`                                                           | `reasoning_tokens` can exceed `max_tokens`                            |
+| p02 thinking-off sweep                               | `max_tokens=1 status=200 content_len=2 finish=length`                                                             | no floor with thinking disabled                                       |
+| p03 streaming                                        | `status=200 ttft=2.13s total=2.80s chunks=8 delta_reasoning_content=True delta_content=True usage_in_stream=True` | reasoning deltas first, usage in stream                               |
+| p03 non-stream baseline                              | `latency=3.37s … reasoning_len=65`                                                                                | non-stream slightly slower on this task                               |
+| p04 shape                                            | `message_keys=['content','reasoning_content','role','tool_calls']`                                                | `reasoning_content` is a sibling of `content`                         |
+| p04 fabricated tool turn without `reasoning_content` | `status=200`                                                                                                      | documented 400 not enforced (Q6)                                      |
+| p05 real round-trip                                  | turn1 `finish=tool_calls tool_calls=1 turn1_args={"location":"Tokyo"}`; turn2 `finish=stop content_len=75`        | tool round-trip works end to end                                      |
+| p05 strictness                                       | real history replayed **without** `reasoning_content`: `status=200 content_len=75`                                | 400 rule unenforced on this gateway                                   |
+| p06 parallel tools                                   | `tool_calls_in_one_turn=4 names=['get_weather','get_time','get_weather','get_time']`                              | multiple tool calls per turn work                                     |
+| p07 vision                                           | `status=200 … image_tokens=1024 prompt_tokens=1040`                                                               | URL vision works; image tokens reported                               |
+| p08 ~1.1M-token prompt                               | `status=200 prompt_tokens=1048570 completion_tokens=0 finish=length empty_content=True`                           | no 400 — input silently clipped to the window (Q1)                    |
+| p09 repeated 4.8k-token prefix                       | call1 `cached_tokens=0`; call2 `cached_tokens=4736` of `prompt_tokens=4815`                                       | prompt cache works, no minimum ≥ 4.8k                                 |
+| p10 concurrency                                      | `wall=2.97s statuses={200: 10} lat_min=2.20s lat_max=2.96s any_429=False`                                         | 10 parallel calls all fine                                            |
+| p11 bad model id                                     | `400 {"code":"400","message":"Unsupported model mimo-v9-does-not-exist"}`                                         | model checked first                                                   |
+| p11 oversized cap                                    | `400 … "max_tokens is too large: 200000. This model supports at most 131072 completion tokens…"`                  | `max_tokens` accepted as the documented `max_completion_tokens` alias |
+| p11 `GET /models` (token-plan host)                  | `status=200`                                                                                                      | health check works here                                               |
+| p12 ultraspeed                                       | `400 {"code":"400","message":"Not supported model mimo-v2.6-pro-ultraspeed"}`                                     | not served on the token-plan SGP cluster (Q5)                         |
+| p13 headers                                          | `response_headers={"X-MiFE-Upstream-Status": "200"}`                                                              | no rate-limit/quota/billing headers exposed                           |
+| p14 pay-as-you-go host with `tp-` key                | `GET /models 401`, `POST chat 401 {"message":"Invalid API Key"}`                                                  | the plugin-default host rejects token-plan keys (Q7)                  |
 
 ---
 
 ## 3. Quirks table (symptom → cause → rule)
 
-| # | Symptom | Cause | Rule to code |
-|---|---|---|---|
-| Q1 | A prompt near/over 1M tokens returns 200 with `finish=length`, `completion_tokens=0`, and a *silently shortened* answer window (`prompt_tokens=1048570`, no error) | The gateway clips input to the context window instead of rejecting it (p08); docs say context window is 1M [9] | Never rely on an over-limit 400. Size prompts explicitly and check `usage.prompt_tokens` against the intended size; a `completion_tokens=0` + `finish=length` reply is a context blow-out, not an outage |
-| Q2 | 200 OK but **empty content** at small `max_tokens` (we measured empty at 8 and below; first content at 16 for a 2-token answer) | Thinking is on by default [1][3] and "thinking content and the final answer" share `max_completion_tokens` [3]; reasoning consumes it all (p01) | With thinking enabled never send `max_tokens` under ~1024 (that leaves real answer room); for small budgets send `"thinking": {"type": "disabled"}` (p02 works at 1) |
-| Q3 | `usage.completion_tokens_details.reasoning_tokens` is **larger** than `max_tokens` (11 > 8 at `max_tokens=8`, p01) | Reasoning accounting is not clamped by the request cap the way visible content is (p01) | Do not validate budgets against `reasoning_tokens`; treat it as telemetry, and don't promise "≤ N tokens" while thinking is on |
-| Q4 | `temperature`/`top_p` settings have no effect in thinking mode | Forced to `1.0`/`0.95` server-side [1][5] | Don't send sampling params for thinking calls; if you need determinism, disable thinking [1] |
-| Q5 | `mimo-v2.6-pro-ultraspeed` → 400 `Not supported model` | Not served on the token-plan SGP cluster; docs say its rate quota is "Reserved quota (contact us)" [6][9] (p12) | Don't put `ultraspeed` in any model list for token-plan hosts; keep it out of fallback chains |
-| Q6 | Docs promise a 400 when `reasoning_content` is missing on tool-call turns [3][7]; we measured 200 with and without it (p04, p05) | Enforcement gap (or scope we didn't reproduce) on the token-plan SGP gateway | Still echo `reasoning_content` back (docs warn of degraded instruction-following [3] and the rule may be enforced elsewhere), but code retries around a 400 for it defensively — don't *depend* on the 400 as a validator |
-| Q7 | 401 `Invalid API Key` from `api.xiaomimimo.com` even with a valid token-plan key | Host/key-type pairing: `tp-` keys only authenticate on the token-plan cluster hosts [11][7] (p14) | Pin `XIAOMI_BASE_URL` to the cluster host that matches the key format; the plugin default host is wrong for token-plan |
-| Q8 | `GET /models` 401s (why Hermes disables its health check) | True on the pay-as-you-go host (p14, and the plugin comment at `__init__.py:9`); but it returns **200** on the token-plan host with a `tp-` key (p11) | Health checks are usable when the base URL is a token-plan host; keep them off otherwise |
-| Q9 | `reasoning_tokens`, `cached_tokens` are the only accounting surfaces | No rate-limit/quota/billing headers on responses (p13); quota exhaustion surfaces as 429 [7] | Budget from `usage` JSON plus the Token Plan credit table [12], and treat 429 as "slow down **or** plan exhausted" [7] |
+| #   | Symptom                                                                                                                                                            | Cause                                                                                                                                                 | Rule to code                                                                                                                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q1  | A prompt near/over 1M tokens returns 200 with `finish=length`, `completion_tokens=0`, and a _silently shortened_ answer window (`prompt_tokens=1048570`, no error) | The gateway clips input to the context window instead of rejecting it (p08); docs say context window is 1M [9]                                        | Never rely on an over-limit 400. Size prompts explicitly and check `usage.prompt_tokens` against the intended size; a `completion_tokens=0` + `finish=length` reply is a context blow-out, not an outage                  |
+| Q2  | 200 OK but **empty content** at small `max_tokens` (we measured empty at 8 and below; first content at 16 for a 2-token answer)                                    | Thinking is on by default [1][3] and "thinking content and the final answer" share `max_completion_tokens` [3]; reasoning consumes it all (p01)       | With thinking enabled never send `max_tokens` under ~1024 (that leaves real answer room); for small budgets send `"thinking": {"type": "disabled"}` (p02 works at 1)                                                      |
+| Q3  | `usage.completion_tokens_details.reasoning_tokens` is **larger** than `max_tokens` (11 > 8 at `max_tokens=8`, p01)                                                 | Reasoning accounting is not clamped by the request cap the way visible content is (p01)                                                               | Do not validate budgets against `reasoning_tokens`; treat it as telemetry, and don't promise "≤ N tokens" while thinking is on                                                                                            |
+| Q4  | `temperature`/`top_p` settings have no effect in thinking mode                                                                                                     | Forced to `1.0`/`0.95` server-side [1][5]                                                                                                             | Don't send sampling params for thinking calls; if you need determinism, disable thinking [1]                                                                                                                              |
+| Q5  | `mimo-v2.6-pro-ultraspeed` → 400 `Not supported model`                                                                                                             | Not served on the token-plan SGP cluster; docs say its rate quota is "Reserved quota (contact us)" [6][9] (p12)                                       | Don't put `ultraspeed` in any model list for token-plan hosts; keep it out of fallback chains                                                                                                                             |
+| Q6  | Docs promise a 400 when `reasoning_content` is missing on tool-call turns [3][7]; we measured 200 with and without it (p04, p05)                                   | Enforcement gap (or scope we didn't reproduce) on the token-plan SGP gateway                                                                          | Still echo `reasoning_content` back (docs warn of degraded instruction-following [3] and the rule may be enforced elsewhere), but code retries around a 400 for it defensively — don't _depend_ on the 400 as a validator |
+| Q7  | 401 `Invalid API Key` from `api.xiaomimimo.com` even with a valid token-plan key                                                                                   | Host/key-type pairing: `tp-` keys only authenticate on the token-plan cluster hosts [11][7] (p14)                                                     | Pin `XIAOMI_BASE_URL` to the cluster host that matches the key format; the plugin default host is wrong for token-plan                                                                                                    |
+| Q8  | `GET /models` 401s (why Hermes disables its health check)                                                                                                          | True on the pay-as-you-go host (p14, and the plugin comment at `__init__.py:9`); but it returns **200** on the token-plan host with a `tp-` key (p11) | Health checks are usable when the base URL is a token-plan host; keep them off otherwise                                                                                                                                  |
+| Q9  | `reasoning_tokens`, `cached_tokens` are the only accounting surfaces                                                                                               | No rate-limit/quota/billing headers on responses (p13); quota exhaustion surfaces as 429 [7]                                                          | Budget from `usage` JSON plus the Token Plan credit table [12], and treat 429 as "slow down **or** plan exhausted" [7]                                                                                                    |
 
 ---
 
@@ -149,42 +149,42 @@ Hermes-side facts (this repo's harness), with file:line. Xiaomi's own Hermes Age
 ## Sources
 
 [1] https://mimo.mi.com/docs/en-US/api/chat/openai-api — MiMo OpenAI Chat Completions API compatibility
-    > "An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens."
-    > "Up to 4 sequences where the API will stop generating further tokens."
-    > "The reasoning contents of the assistant message, before the final answer."
-    > "This parameter is used to control whether the model enables the chain of thought."
+> "An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens."
+> "Up to 4 sequences where the API will stop generating further tokens."
+> "The reasoning contents of the assistant message, before the final answer."
+> "This parameter is used to control whether the model enables the chain of thought."
 [2] https://mimo.mi.com/docs/en-US/api/chat/responses — MiMo OpenAI Responses API compatibility
-    > "`none` disables thinking; Every other level enables thinking with identical behavior"
+> "`none` disables thinking; Every other level enables thinking with identical behavior"
 [3] https://mimo.mi.com/docs/en-US/quick-start/usage-guide/text-generation/deep-thinking — MiMo Deep Thinking
-    > "`max_completion_tokens` limits the total length of thinking content and the final answer."
-    > "In deep thinking, `mimo-v2.6-flash`, `mimo-v2.6-pro`, `mimo-v2.6-pro-ultraspeed` models do not support custom `temperature` and `top_p` parameters."
+> "`max_completion_tokens` limits the total length of thinking content and the final answer."
+> "In deep thinking, `mimo-v2.6-flash`, `mimo-v2.6-pro`, `mimo-v2.6-pro-ultraspeed` models do not support custom `temperature` and `top_p` parameters."
 [4] https://mimo.mi.com/docs/en-US/quick-start/usage-guide/multimodal-understanding/image-understanding — MiMo Image Understanding
-    > "The file size of a single image cannot exceed 50 MB."
-    > "Image Formats: JPEG, PNG, GIF, WebP, BMP."
+> "The file size of a single image cannot exceed 50 MB."
+> "Image Formats: JPEG, PNG, GIF, WebP, BMP."
 [5] https://mimo.mi.com/docs/en-US/api/guidance/model-hyperparameters — MiMo Model Hyperparameters
-    > "In thinking mode, the `mimo-v2.6-flash`, `mimo-v2.6-pro`, `mimo-v2.6-pro-ultraspeed` models do not support customizing the `temperature` and `top_p` parameters."
+> "In thinking mode, the `mimo-v2.6-flash`, `mimo-v2.6-pro`, `mimo-v2.6-pro-ultraspeed` models do not support customizing the `temperature` and `top_p` parameters."
 [6] https://mimo.mi.com/docs/en-US/api/guidance/rate-limit — MiMo Rate Limit
-    > "The platform sets a model concurrency limit for each account."
-    > "The maximum number of requests initiated per minute."
+> "The platform sets a model concurrency limit for each account."
+> "The maximum number of requests initiated per minute."
 [7] https://mimo.mi.com/docs/en-US/api/guidance/error-codes — MiMo Error Codes
-    > "API Key that mixes Token Plan and Pay-as-you-go API"
-    > "Requests are too frequent, or the quota of Token Plan has been exhausted"
+> "API Key that mixes Token Plan and Pay-as-you-go API"
+> "Requests are too frequent, or the quota of Token Plan has been exhausted"
 [8] https://mimo.mi.com/docs/en-US/api/model/list-models — MiMo List Models
-    > "The model identifier, which can be referenced in the API endpoints."
+> "The model identifier, which can be referenced in the API endpoints."
 [9] https://mimo.mi.com/docs/en-US/quick-start/summary/model — MiMo Models overview
-    > "were officially deprecated at 10:00 (Beijing time) on October 21,2026"
-    > "Context Window: 1M"
+> "were officially deprecated at 10:00 (Beijing time) on October 21,2026"
+> "Context Window: 1M"
 [10] https://mimo.mi.com/docs/en-US/quick-start/summary/first-api-call — MiMo First API call (billing modes)
-    > "Charged based on actual usage, suitable for light use"
-    > "Fixed subscription fee, with limited calls based on the package"
+> "Charged based on actual usage, suitable for light use"
+> "Fixed subscription fee, with limited calls based on the package"
 [11] https://mimo.mi.com/docs/en-US/tokenplan/Token%20Plan/quick-access — MiMo Token Plan Quick Access
-    > "The API Key of the Token Plan is only valid during the subscription period, and you need to renew the subscription to continue using it after it expires."
-    > "are independent of each other and cannot be used interchangeably"
+> "The API Key of the Token Plan is only valid during the subscription period, and you need to renew the subscription to continue using it after it expires."
+> "are independent of each other and cannot be used interchangeably"
 [12] https://mimo.mi.com/docs/en-US/quick-start/faq/token-plan/Usage&Quota — MiMo Token Plan Usage & Quota
-    > "the Credit consumption coefficient will be 0.8 times when using the model during off-peak hours (Beijing time 00:00-08:00, i. e. UTC 16:00-24:00)."
+> "the Credit consumption coefficient will be 0.8 times when using the model during off-peak hours (Beijing time 00:00-08:00, i. e. UTC 16:00-24:00)."
 [13] https://mimo.mi.com/docs/en-US/tokenplan/integration/hermes-agent — MiMo Token Plan Hermes Agent integration
-    > "Edit `~/.hermes/.env` file, replace `XIAOMI_API_KEY` and `XIAOMI_BASE_URL` with Token Plan credentials"
+> "Edit `~/.hermes/.env` file, replace `XIAOMI_API_KEY` and `XIAOMI_BASE_URL` with Token Plan credentials"
 [14] https://mimo.mi.com/docs/en-US/updates/deprecate — MiMo Model Deprecation
-    > "Deprecation Time: The time when the name of the old model expires. After this time, requests using the name of the old model version will receive an error message."
+> "Deprecation Time: The time when the name of the old model expires. After this time, requests using the name of the old model version will receive an error message."
 [15] file:///home/jadenblack/.hermes/kanban/boards/alignsynch/workspaces/t_c1266576/alignsynch/scripts/mimo-probe-results.jsonl — mimo-probe.py measured results (49 calls, 2026-10-29)
-    > ""probe": "p10", "label": "summary", "wall_s": 2.966, "statuses": {"200": 10}, "lat_min": 2.2021263150963932, "lat_max": 2.956114921020344, "any_429": false"
+> ""probe": "p10", "label": "summary", "wall_s": 2.966, "statuses": {"200": 10}, "lat_min": 2.2021263150963932, "lat_max": 2.956114921020344, "any_429": false"
