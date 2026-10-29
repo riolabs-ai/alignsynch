@@ -94,7 +94,7 @@ binary) and is never exercised by `scripts/verify.sh`, which runs `next build` a
 `next start` plus an image fetch — so it would fail as a 500 on every image while the gate stayed
 green.
 
-It also cannot pay off yet: 21 of the 57 `<Image>` tags use `fill` and none passes `sizes`, so
+It also cannot pay off yet: 22 of the 57 `<Image>` tags use `fill` and none passes `sizes`, so
 optimized output falls back to `sizes="100vw"` with a `w=3840` candidate for a ~340 px tile.
 `fill` tags need `sizes` before the flag can come off.
 
