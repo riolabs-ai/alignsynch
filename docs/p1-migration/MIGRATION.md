@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 ## Run it
 
 ```bash
-pnpm data:check   # tsc (content + data + scripts) -> node:test (402 cases) -> validator
+pnpm data:check   # tsc (content + data + scripts) -> node:test (437 cases) -> validator
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm lint         # biome check (includes the formatter gate)
 pnpm build        # next build
@@ -28,17 +28,21 @@ Today's output:
 ```
 PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts, 5 conversations,
       6 notifications, 2 promotions, 17 quiz results, 14 comments, 5 reviews, 99 media entries,
-      19 page-copy routes, 2 battle modes, 6 daily-challenge badges, 10 players, 50 leaderboard rows,
+      21 page-copy routes, 2 battle modes, 6 daily-challenge badges, 10 players, 50 leaderboard rows,
       8 wins, 74 search rows
-      34 routes match app/, 0 unknown category ids, 0 dead links
-      / 0/0 page-copy literals, /battle 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /daily-challenge 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals, /login 0/0 page-copy literals, /register 0/0 page-copy literals, /affiliate 0/0 page-copy literals, /pricing 0/0 page-copy literals, /news 0/0 page-copy literals, /news/[slug] 0/0 page-copy literals, /support 0/0 page-copy literals, /support/articles/[id] 0/0 page-copy literals, /creator-tips 0/0 page-copy literals, /creator-tips/[slug] 0/0 page-copy literals, shell 0/0 page-copy literals, not-found 0/0 page-copy literals (measured/budget, E23)
-      80 hardcoded links + 0 asset refs resolve in components/ and app/ (0 known-missing assets)
+      34 routes match app/, 0 unknown category ids, 0 dead links, 57 next/image tags (0 with a
+      dev-only dimension bug)
+      / 0/0 page-copy literals, /battle 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /daily-challenge 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals, /login 0/0 page-copy literals, /register 0/0 page-copy literals, /affiliate 0/0 page-copy literals, /pricing 0/0 page-copy literals, /news 0/0 page-copy literals, /news/[slug] 0/0 page-copy literals, /support 0/0 page-copy literals, /support/articles/[id] 0/0 page-copy literals, /creator-tips 0/0 page-copy literals, /creator-tips/[slug] 0/0 page-copy literals, shell 0/0 page-copy literals, not-found 0/0 page-copy literals, /tournaments 0/0 page-copy literals, /tournaments/[id] 0/0 page-copy literals (measured/budget, E23; a literal longer than 24 chars is an error on its own)
+      78 hardcoded links + 0 asset refs resolve in components/ and app/ (0 known-missing assets)
+      57 next/image tags: 34 width+height, 22 fill, 1 static import, 0 fill+width/height, 0 with no
+      size source (E29); 22 fill tags, 0 of them with sizes
       0 module-scope record arrays on the search/chat surfaces + 0 fixture rows copied into a search/chat component
-      11 fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)
+      10 fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)
       0 social instants after the fixture clock 2026-10-29T12:00:00.000Z
-      0 metric literals in components/ and app/, 71 metric snapshots
+      0 metric literals in components/ and app/, 69 metric snapshots (5 relative-instant and 24
+      duration labels declared out of E22 — see scripts/metric-refs.ts)
 WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
-      402/402 node:test cases, 93 suites
+      437/437 node:test cases, 102 suites
 ```
 
 Repeated diagnostics are grouped by code and message template, so a gap that
@@ -377,7 +381,8 @@ Collection-level:
 | `E14`       | every `promotions[].quizId` resolves to a record; `id` and `(quizId, slot)` are unique; no content key parses (`strict()` rejects `title`, `author`, `slug`, …)                                               |
 | `E15`       | `endsAt > startsAt` when present; a slot window never extends the catalog window; a `rewardCents` that differs from the catalog is bounded by it, and `0` is rejected                                         |
 | `E16`       | overlays that are live at the same time for one quiz agree field-wise on every engagement key they both set (sequential campaigns may differ)                                                                 |
-| `E17`       | every `promotions[].slot` parses canonically, indexes a position a shelf actually produces, and that position renders the quiz the overlay names (a slot nobody renders fails the build, not silently no-ops) |
+| `E28`       | every `promotions[].slot` parses canonically, indexes a position a shelf actually produces, and that position renders the quiz the overlay names (a slot nobody renders fails the build, not silently no-ops) |
+| `E17–E19`   | the media registry: no `components/**` or `app/**` file writes a `public/` asset path, registry ⇄ disk is a bijection, and every fixture `ImageRef.src` equals a registry `src`                               |
 
 Warnings are advisory and do not fail the build: `W1` published quiz with no
 questions, `W2` published quiz with no `publishedAt`, `W3` a renderable category with
@@ -385,22 +390,31 @@ no quizzes, `W4` a reward with no limited-time window, `W5` a browse record no s
 shows (dead card), `W6` a campaign staged outside the quiz's published life
 (`startsAt` before `publishedAt`, or a target that is not `published`).
 
-**Two codes that mean more than one thing — check which document you are reading.** Issue #27 asked for
+**Codes that mean different things in different documents — check which document you are reading.** Issue #27 asked for
 `E11`/`E12`/`E13`, but all three were already taken here (card shelves, one record per subject, analytics
-keys), so the promotion rules shipped as `E14`–`E17` above. Separately, the C1 harness documents
+keys), so the promotion rules shipped as `E14`–`E16` + `E28` above. Separately, the C1 harness documents
 (`quiz-migration.md`, `quiz-invariants.md`) use `W4` for _"two card records disagreeing about one quiz"_ —
 which B-01 took to **0** — while this validator's `W4` is _"a reward with no limited-time window"_ and stays
 **32**. An overlay can never change a catalog window, so B-01 does not move this `W4` and does not claim to.
 
-**`E17` is now claimed twice, and that is a defect rather than a style choice.** The promotion rules
-shipped as `E14`/`E15`/`E16` + `W6` (PR #39); the slot-render guard was added under `E17` (PR #41);
-the media registry then numbered its _"no component writes an asset path"_ rule `E17` as well (PR
-#65, merged earlier the same afternoon). Both blocks are live: `scripts/data-check-promotions.ts` emits
-`[E17]` for a slot nobody renders, `scripts/data-check.ts` emits `[E17]` for a component that writes
-`"/hero-bg.jpg"`. A single code therefore names two unrelated failures, so read the message and not
-the number. Promotion set: `E14`–`E16` + `W6`, plus the `E17` slot guard. Media set: `E17`–`E19`.
-Renumbering is a code change with no documentation in it, so it is tracked on its own card rather than
-smuggled into a docs pass.
+**`E17` was claimed twice for a day, and the number is honest again.** The promotion rules shipped as
+`E14`/`E15`/`E16` + `W6` (PR #39); the slot-render guard was added under `E17` (PR #41); the media
+registry had already taken `E17`–`E19` for _"no component writes an asset path"_ (PR #65). Both blocks
+were live in one run, so `[E17]` named two unrelated failures — a slot no shelf renders, and a component
+writing `"/hero-bg.jpg"` — and a log line could not say which. Issue #103 renumbered the slot guard to
+**`E28`**, the next free code: the media set is a contiguous `E17`–`E19` referenced by this table, by
+`docs/P2-INVENTORY.md` and by PR #65, while the promotion guard is a single code and the later claim.
+Promotion set: `E14`–`E16` + `W6`, plus the `E28` slot guard. Media set: `E17`–`E19`, unchanged.
+`scripts/rule-codes.ts` now mints every code exactly once, under one owner, and
+`scripts/__tests__/rule-codes.test.ts` fails when a second rule emits a code another owner declared —
+which is the check the `E17` collision never had.
+
+**The same defect was on `main` a second time, and the registry caught it on its first run.** `E27` was
+the battle-mode rule (`scripts/mode-invariants.ts`, WU-10) and, from PR #99, the `next/image` size rule
+in `scripts/data-check.ts`: two unrelated failures, one number, one run. The image rule moved to **`E29`**
+— the later claim yields, exactly as the slot guard did — and its header, both emit sites, the census
+line and the `README` reference followed. A guard that only documents the first incident would have
+shipped this one with it.
 
 ### The warning census (98 warnings, measured)
 
@@ -468,7 +482,7 @@ not a silent near-miss), and the inverse map throws at import if two slots name 
 `lib/quiz-cards.ts::shelfCards()` asks for each position's slot and passes the resolved
 promotion into `selectQuizCard()`, so a merchandised card renders the campaign and every
 other shelf (`homeFeatured`, `exploreAll`, …) stays the catalog projection — a campaign is a
-_place_, not a property of the record. `E17` is the join's guard: a slot that names a shelf
+_place_, not a property of the record. `E28` is the join's guard: a slot that names a shelf
 or index nobody renders, or a position that renders a different quiz, fails `data:check`
 instead of shipping a campaign that silently never runs. `/quiz/<id>` projects
 `quizDetailCard()` — the **quiz-scoped** campaign (A3) — on the server at one instant and
@@ -517,21 +531,21 @@ B-01 number:
   that named a file `public/` never held (`/easy-quiz-1.png`–`/easy-quiz-3.png`, `/history-quiz.png`,
   `/quiz/q16.png`) were retired rather than invented: `cover` is optional, so each record kept its
   identity and lost a reference that was already a 404.
-- **The invariant numbering is two sets sharing a code.** `E14`–`E16` + `W6` are the collection rules
-  one overlay cannot see; the `E17` slot guard arrived with the join; `E17`–`E19` are the media
-  registry. One code, two rules — recorded above, renumbered separately.
+- **The invariant numbering is two sets, and no code is shared.** `E14`–`E16` + `W6` are the collection
+  rules one overlay cannot see; the slot guard that arrived with the join is `E28`; `E17`–`E19` are the
+  media registry. The slot guard was numbered `E17` until issue #103 collided it with the media rule —
+  recorded above, and now enforced by `scripts/rule-codes.ts`.
 
 Still P3:
 
 1. **Re-anchor the campaign window.** The overlay is bounded by a 2025 catalog window, so at
    `DEMO_NOW_ISO` both slots project the catalog (see the table above). Until a campaign covers the
    render instant, no shipped page renders a live campaign: the overlay is exercised only inside
-   `data:check`, where `promotion-fixtures.test.ts` projects it at `FIXTURE_NOW` and `E17` guards its
+   `data:check`, where `promotion-fixtures.test.ts` projects it at `FIXTURE_NOW` and `E28` guards its
    slot.
 2. **`ImageRef.src` → `{ key }`.** The fixture still holds a path (`D-P2-1`); the JSON manifest the
    registry becomes is a P3 change (`ENV-SPEC` §8). `E19` keeps the path honest until then.
-3. **Renumber the duplicate `E17`** — code, filed on its own.
-4. **A second campaign, and the content overrides that stay impossible.** One subject is
+3. **A second campaign, and the content overrides that stay impossible.** One subject is
    merchandised. `author` and label overrides are rejected by the `strict()` schema (`A4`), so the
    `CosmicMind` disagreement is a content decision, never a table.
 
@@ -573,7 +587,7 @@ it equals, the prefix relation, and the exact set of authored keys that name no 
 fails that suite, so this decision has to be restated wherever it would change.
 
 If curation later decides `/explore` should show six, the change is: copy the `featured*` lists into
-`exploreTrending/Popular/New` (13 shelves / 68 authored positions → the same 13 / 77), move E17's
+`exploreTrending/Popular/New` (13 shelves / 68 authored positions → the same 13 / 77), move E28's
 out-of-range case in `promotion-invariants.test.ts` from `explore-page/popular[3]` to `[6]` together
 with its `3 card` message assertion, and rewrite this paragraph and that suite. No snapshot row
 changes either way — the labels are the harness's, and the campaign's position is index 1 in both.

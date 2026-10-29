@@ -151,7 +151,7 @@ export type QuizShelf = keyof typeof quizShelves;
  * is written down once, here, as data rather than guessed in two places.
  *
  * That join is what makes a campaign reachable: `lib/quiz-cards.ts` asks this table
- * for the slot of a shelf position, and `data:check` **E17** fails the build when
+ * for the slot of a shelf position, and `data:check` **E28** fails the build when
  * `promotions[].slot` names a group this table does not produce, an index no shelf
  * has, or a position that renders a different quiz. Without it an overlay is a
  * campaign that silently never runs — the one failure mode a promotion has.

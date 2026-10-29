@@ -9,7 +9,7 @@
  *   1. reproducibility — the same `--seed` and `--count` produce byte-identical files,
  *   2. idempotency     — re-running without a seed change rewrites nothing (reports "unchanged"),
  *   3. quizzes only    — no `promotions.ts`. A promotion is addressed to a slot a shelf
- *      renders (E17), and a generated quiz is in no shelf, so a generated campaign can only
+ *      renders (E28), and a generated quiz is in no shelf, so a generated campaign can only
  *      fail the data gate; a leftover `promotions.ts` from an older clone is removed.
  *
  * These are exercised by shelling out to the real CLI into a throwaway directory, because a
@@ -72,7 +72,7 @@ describe("scripts/gen-fixtures.mjs", () => {
       assert.ok(existsSync(join(dir, "quizzes.ts")), "quizzes.ts should be written");
       assert.ok(
         !existsSync(join(dir, "promotions.ts")),
-        "promotions.ts must not be emitted: a generated quiz is in no shelf, so E17 has no slot to render its campaign",
+        "promotions.ts must not be emitted: a generated quiz is in no shelf, so E28 has no slot to render its campaign",
       );
       assert.match(stdout, /wrote 20 quizzes/);
       assert.doesNotMatch(stdout, /promotions to/);
