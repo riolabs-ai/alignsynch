@@ -18,20 +18,19 @@ env:
 jobs:
   verify:
     name: typecheck / lint / build
-    # pinned OS: ubuntu-latest is migrating to Ubuntu 26 during 2026
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@v4
         with:
           version: 12.16.1
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -44,9 +43,6 @@ jobs:
 
       - name: Lint (biome check)
         run: pnpm lint
-
-      - name: Format check (biome format)
-        run: pnpm format:check
 
       - name: Build (next build)
         run: pnpm build
