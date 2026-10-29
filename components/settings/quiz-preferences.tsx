@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { quizCategoryLabel } from "@/content/categories";
+import { DIFFICULTIES, type Difficulty, difficultyLabel, isDifficulty } from "@/content/core";
 import { Brain, Clock, Globe, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -45,7 +46,7 @@ export function QuizPreferences() {
   const [isLoading, setIsLoading] = useState(false);
   const [preferences, setPreferences] = useState({
     defaultTimeLimit: 30,
-    defaultDifficulty: "medium",
+    defaultDifficulty: "medium" as Difficulty,
     autoSave: true,
     showTimer: true,
     showHints: true,
@@ -137,15 +138,21 @@ export function QuizPreferences() {
             </div>
             <Select
               value={preferences.defaultDifficulty}
-              onValueChange={(value) => handleSelectChange("defaultDifficulty", value)}
+              onValueChange={(value) => {
+                // The Select hands back a string; the enum decides whether it is a difficulty,
+                // so the preference can never hold a value the schema does not define.
+                if (isDifficulty(value)) handleSelectChange("defaultDifficulty", value);
+              }}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select difficulty" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="easy">Easy</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="hard">Hard</SelectItem>
+                {DIFFICULTIES.map((difficulty) => (
+                  <SelectItem key={difficulty} value={difficulty}>
+                    {difficultyLabel(difficulty)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
