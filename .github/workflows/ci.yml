@@ -45,5 +45,8 @@ jobs:
       - name: Lint (biome check)
         run: pnpm lint
 
+      - name: Format check (biome format)
+        run: pnpm format:check
+
       - name: Build (next build)
         run: pnpm build
