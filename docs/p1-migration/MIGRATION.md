@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 ## Run it
 
 ```bash
-pnpm data:check   # tsc (content + data + scripts) -> node:test (171 cases) -> validator
+pnpm data:check   # tsc (content + data + scripts) -> node:test (402 cases) -> validator
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm lint         # biome check (includes the formatter gate)
 pnpm build        # next build
@@ -26,17 +26,28 @@ node. That is why `content/` must never import React or Next.
 Today's output:
 
 ```
-PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories,
-      5 contacts, 5 conversations, 6 notifications, 74 search rows
+PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts, 5 conversations,
+      6 notifications, 2 promotions, 17 quiz results, 14 comments, 5 reviews, 99 media entries,
+      19 page-copy routes, 2 battle modes, 6 daily-challenge badges, 10 players, 50 leaderboard rows,
+      8 wins, 74 search rows
       34 routes match app/, 0 unknown category ids, 0 dead links
-WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0)
+      / 0/0 page-copy literals, /battle 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /daily-challenge 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals, /login 0/0 page-copy literals, /register 0/0 page-copy literals, /affiliate 0/0 page-copy literals, /pricing 0/0 page-copy literals, /news 0/0 page-copy literals, /news/[slug] 0/0 page-copy literals, /support 0/0 page-copy literals, /support/articles/[id] 0/0 page-copy literals, /creator-tips 0/0 page-copy literals, /creator-tips/[slug] 0/0 page-copy literals, shell 0/0 page-copy literals, not-found 0/0 page-copy literals (measured/budget, E23)
+      80 hardcoded links + 0 asset refs resolve in components/ and app/ (0 known-missing assets)
+      0 module-scope record arrays on the search/chat surfaces + 0 fixture rows copied into a search/chat component
+      11 fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)
+      0 social instants after the fixture clock 2026-10-29T12:00:00.000Z
+      0 metric literals in components/ and app/, 71 metric snapshots
+WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
+      402/402 node:test cases, 93 suites
 ```
 
 Repeated diagnostics are grouped by code and message template, so a gap that
 affects the whole collection prints as one line with a count instead of 98 lines.
 The 98 are real: 24 published records are card records with no questions, 42 carry
 no authored date, and 32 advertise a reward that never expires. See "D2 — the card
-grids read the model" and "Two collections, one winner".
+grids read the model" and "Two collections, one winner". `W6` — a campaign staged
+outside its quiz's published life — is **0**, which is what two promotion records
+authored against a settled published window should read.
 
 CI runs `pnpm data:check` as its own step, after typecheck and before build.
 
@@ -68,7 +79,7 @@ fails `data:check` by name.
 
 ## What the migration changed
 
-### The eight things that were actually wrong
+### The eighteen things that were actually wrong
 
 | drift                           | before                                                                                                              | now                                                                                                                                                                          |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -194,7 +205,7 @@ Three things about the port that are easy to miss:
    popular` is a per-slot overlay (`zQuizPromotion`, B-01); the record keeps the
    catalog's `2453/3000 · $10.00 · 4.9 · hot · 2025-01-03T00:00:00.000Z` and
    `author: MarvelFan`, not the overlays' `CosmicMind`. A second record for the same
-   subject would fail E10 and fork the identity (A4).
+   subject would fail `E12` and fork the identity (A4).
 3. **Two deliberate deviations from the harness output** are kept in `data/currentQuiz`:
    its `tags` facets (`history`, `world events`) survive, and its images keep
    `alt: ""`. The harness dropped the tags and wrote alt strings from the prompts.
@@ -381,6 +392,16 @@ keys), so the promotion rules shipped as `E14`–`E17` above. Separately, the C1
 which B-01 took to **0** — while this validator's `W4` is _"a reward with no limited-time window"_ and stays
 **32**. An overlay can never change a catalog window, so B-01 does not move this `W4` and does not claim to.
 
+**`E17` is now claimed twice, and that is a defect rather than a style choice.** The promotion rules
+shipped as `E14`/`E15`/`E16` + `W6` (PR #39); the slot-render guard was added under `E17` (PR #41);
+the media registry then numbered its _"no component writes an asset path"_ rule `E17` as well (PR
+#65, merged earlier the same afternoon). Both blocks are live: `scripts/data-check-promotions.ts` emits
+`[E17]` for a slot nobody renders, `scripts/data-check.ts` emits `[E17]` for a component that writes
+`"/hero-bg.jpg"`. A single code therefore names two unrelated failures, so read the message and not
+the number. Promotion set: `E14`–`E16` + `W6`, plus the `E17` slot guard. Media set: `E17`–`E19`.
+Renumbering is a code change with no documentation in it, so it is tracked on its own card rather than
+smuggled into a docs pass.
+
 ### The warning census (98 warnings, measured)
 
 | code | count | who                                                                                                                     |
@@ -390,6 +411,7 @@ which B-01 took to **0** — while this validator's `W4` is _"a reward with no l
 | `W4` | 32    | a prize with no window; only 4 of the 36 rewarded records carry `limitedTimeEndsAt`                                     |
 | `W3` | 0     | every renderable quiz category has at least one quiz                                                                    |
 | `W5` | 0     | every browse record is on at least one shelf                                                                            |
+| `W6` | 0     | every promotion is staged inside its quiz's published life                                                              |
 
 These are the §10 debt figures of `quiz-migration.md`, reproduced by the collection
 itself rather than by the harness, plus the honest cost of the 20 browse cards d2
@@ -421,6 +443,21 @@ countdown)` **and** the quiz is `published` and past `publishedAt`; outside the 
 the card equals the catalog projection field for field. Concurrent overlays of one quiz
 must agree (`E16`), and the seat rule is re-checked **after** the merge (a merged
 `plays > capacity` throws rather than rendering a negative `spotsLeft`).
+
+**The window has already closed at the render clock, so the campaign is inert in the app.** The
+overlay carries no `endsAt` and is bounded by the catalog's `2025-01-03T00:00:00.000Z`, while every
+page renders at `DEMO_NOW_ISO` = `2026-10-29T12:00:00.000Z`. Projecting the record through
+`selectQuizCard()` at three instants says exactly that:
+
+```
+2025-01-01T00:00:00.000Z  2105/2500  $7.50  4.8  popular
+2025-01-02T12:00:00.000Z  2105/2500  $7.50  4.8  popular
+2026-10-29T12:00:00.000Z  2453/3000  $10.00 4.9  hot
+```
+
+So **31/31 is a claim about the harness instant**. The join and both screens are wired correctly, and
+both currently render the catalog numbers: the fidelity is real, the campaign is not live. Moving the
+window is a data change with a rendered-output proof attached (see "still P3" below), not a code fix.
 
 How it reaches a page (P3). Overlays are keyed by **slot string**, shelves by **name**, and
 neither derives from the other, so the join is written down once as data:
@@ -467,6 +504,36 @@ So `/explore` now renders `ExploreFeatured` in place of `<FeaturedQuizzes />`: t
 routes 30 → 29, hand-count 31 → 30 static pages of 34; it is the only route that changed). Both
 slot-bearing routes hand one server instant (`now`) to their client component, so server render
 and hydration project the same campaign at the same clock.
+
+**What landed, and what is still P3.** The join and both screens are in the tree — `shelfCards()`
+passes each position's campaign into `selectQuizCard()` (PR #41), `/explore` mounts `ExploreFeatured`,
+`/quiz/<id>` projects `quizDetailCard()`. Two later changes touch this section without moving a single
+B-01 number:
+
+- **The media registry (PR #65) moved a card's _file_ into the model, not its _numbers_.** Every
+  `cover`/`avatar` a fixture carries is an `ImageRef` whose `src` must equal a registry `src` (`E19`);
+  the registry is `data/media.ts` — 99 entries generated from the filesystem by
+  `scripts/gen-media.mjs`, so key ↔ file is a bijection by construction (`E18`). Five fixture covers
+  that named a file `public/` never held (`/easy-quiz-1.png`–`/easy-quiz-3.png`, `/history-quiz.png`,
+  `/quiz/q16.png`) were retired rather than invented: `cover` is optional, so each record kept its
+  identity and lost a reference that was already a 404.
+- **The invariant numbering is two sets sharing a code.** `E14`–`E16` + `W6` are the collection rules
+  one overlay cannot see; the `E17` slot guard arrived with the join; `E17`–`E19` are the media
+  registry. One code, two rules — recorded above, renumbered separately.
+
+Still P3:
+
+1. **Re-anchor the campaign window.** The overlay is bounded by a 2025 catalog window, so at
+   `DEMO_NOW_ISO` both slots project the catalog (see the table above). Until a campaign covers the
+   render instant, no shipped page renders a live campaign: the overlay is exercised only inside
+   `data:check`, where `promotion-fixtures.test.ts` projects it at `FIXTURE_NOW` and `E17` guards its
+   slot.
+2. **`ImageRef.src` → `{ key }`.** The fixture still holds a path (`D-P2-1`); the JSON manifest the
+   registry becomes is a P3 change (`ENV-SPEC` §8). `E19` keeps the path honest until then.
+3. **Renumber the duplicate `E17`** — code, filed on its own.
+4. **A second campaign, and the content overrides that stay impossible.** One subject is
+   merchandised. `author` and label overrides are rejected by the `strict()` schema (`A4`), so the
+   `CosmicMind` disagreement is a content decision, never a table.
 
 ### The 3-vs-6 curation question, decided: `/explore` keeps three cards per tab
 
