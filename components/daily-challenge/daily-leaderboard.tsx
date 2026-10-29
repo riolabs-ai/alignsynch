@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { LeaderboardBoardId, LeaderboardEntry } from "@/content/people";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { avatarSrcOf, leaderboardEntries } from "@/lib/players";
 import { Award, Medal, Trophy } from "lucide-react";
 import Link from "next/link";
@@ -13,6 +15,9 @@ import { useState } from "react";
  * The three tabs are three boards of the one people fixture — the same ten players, three
  * windows. Before this, the component carried a 30-record object of its own: a second roster
  * (`QuizMaster`, `BrainGenius`, …) that existed on no other surface, with its own avatars.
+ *
+ * The tab *labels* are the fixture's (`tab-today`/`tab-week`/`tab-all-time`); the ids here
+ * are the board keys and the tab values — markup, not copy.
  */
 const TAB_BOARDS = {
   today: "daily-today",
@@ -22,13 +27,20 @@ const TAB_BOARDS = {
 
 type DailyTab = keyof typeof TAB_BOARDS;
 
+/** The copy item each tab renders its label from. */
+const TAB_LABELS: Record<DailyTab, string> = {
+  today: "tab-today",
+  week: "tab-week",
+  allTime: "tab-all-time",
+};
+
 const BOARDS: Record<DailyTab, LeaderboardEntry[]> = {
   today: leaderboardEntries(TAB_BOARDS.today),
   week: leaderboardEntries(TAB_BOARDS.week),
   allTime: leaderboardEntries(TAB_BOARDS.allTime),
 };
 
-export function DailyLeaderboard() {
+export function DailyLeaderboard({ copy }: { copy: PageCopySection }) {
   const [activeTab, setActiveTab] = useState<DailyTab>("today");
 
   const formatTime = (seconds: number) => {
@@ -47,15 +59,15 @@ export function DailyLeaderboard() {
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2 px-2 md:px-4">
-        <CardTitle className="text-xl">Leaderboard</CardTitle>
+        <CardTitle className="text-xl">{copy.heading}</CardTitle>
       </CardHeader>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DailyTab)}>
         <div className="px-2 md:px-4">
           <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="allTime">All Time</TabsTrigger>
+            <TabsTrigger value="today">{itemLabel(copy, TAB_LABELS.today)}</TabsTrigger>
+            <TabsTrigger value="week">{itemLabel(copy, TAB_LABELS.week)}</TabsTrigger>
+            <TabsTrigger value="allTime">{itemLabel(copy, TAB_LABELS.allTime)}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -94,7 +106,9 @@ export function DailyLeaderboard() {
                   <div className="flex items-center space-x-4">
                     <div className="text-sm">
                       <span className="font-medium">{entry.score}</span>
-                      <span className="text-muted-foreground text-xs ml-1">pts</span>
+                      <span className="text-muted-foreground text-xs ml-1">
+                        {itemLabel(copy, "pts")}
+                      </span>
                     </div>
 
                     <div className="text-xs text-muted-foreground">

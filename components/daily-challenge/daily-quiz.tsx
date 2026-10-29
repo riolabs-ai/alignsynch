@@ -12,6 +12,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import type { PageCopySection } from "@/content/pages";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -59,6 +61,8 @@ export const dailyQuizData = {
 };
 
 interface DailyQuizProps {
+  /** The card's words, from `data/pages/daily-challenge.ts` (WU-10) — never a literal here. */
+  copy: PageCopySection;
   onComplete: (result: {
     score: number;
     totalQuestions: number;
@@ -68,7 +72,7 @@ interface DailyQuizProps {
   }) => void;
 }
 
-export function DailyQuiz({ onComplete }: DailyQuizProps) {
+export function DailyQuiz({ copy, onComplete }: DailyQuizProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -155,9 +159,16 @@ export function DailyQuiz({ onComplete }: DailyQuizProps) {
           <Progress value={progress} className="h-2" />
           <div className="flex justify-between mt-1 text-xs text-muted-foreground">
             <span>
-              Question {currentQuestion + 1} of {dailyQuizData.questions.length}
+              {fillLabel(itemLabel(copy, "progress"), {
+                current: currentQuestion + 1,
+                total: dailyQuizData.questions.length,
+              })}
             </span>
-            <span>{Math.round(progress)}% Complete</span>
+            <span>
+              {fillLabel(itemLabel(copy, "percent-complete"), {
+                value: Math.round(progress),
+              })}
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -189,7 +200,7 @@ export function DailyQuiz({ onComplete }: DailyQuizProps) {
 
       <CardFooter className="flex justify-between pt-4">
         <Button variant="outline" onClick={handlePrevious} disabled={currentQuestion === 0}>
-          Previous
+          {itemLabel(copy, "previous")}
         </Button>
 
         <div className="flex space-x-2">
@@ -199,11 +210,11 @@ export function DailyQuiz({ onComplete }: DailyQuizProps) {
               disabled={!canSubmit || isSubmitting}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isSubmitting ? "Submitting..." : "Submit Challenge"}
+              {isSubmitting ? itemLabel(copy, "submitting") : itemLabel(copy, "submit")}
             </Button>
           ) : (
             <Button onClick={handleNext} disabled={!selectedAnswers[currentQuestion]}>
-              Next Question
+              {itemLabel(copy, "next")}
             </Button>
           )}
         </div>
@@ -212,14 +223,14 @@ export function DailyQuiz({ onComplete }: DailyQuizProps) {
       {isLastQuestion && !canSubmit && (
         <div className="px-6 pb-4 flex items-center text-amber-600 text-sm">
           <AlertCircle className="h-4 w-4 mr-2" />
-          <span>Please answer all questions before submitting</span>
+          <span>{itemLabel(copy, "answer-all")}</span>
         </div>
       )}
 
       {isLastQuestion && canSubmit && !isSubmitting && (
         <div className="px-6 pb-4 flex items-center text-green-600 text-sm">
           <CheckCircle2 className="h-4 w-4 mr-2" />
-          <span>All questions answered! You can submit your challenge.</span>
+          <span>{itemLabel(copy, "all-answered")}</span>
         </div>
       )}
     </Card>
