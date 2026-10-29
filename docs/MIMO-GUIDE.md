@@ -146,45 +146,19 @@ Hermes-side facts (this repo's harness), with file:line. Xiaomi's own Hermes Age
 - Token-plan credit accounting in response payloads (p13 shows only token counts; credits are visible on the console progress bar [12]).
 - Web-search plugin params (`max_keyword` [1,50], `limit` [1,50]) [1] — documented, not probed.
 
-## Sources
-
+Sources:
 [1] https://mimo.mi.com/docs/en-US/api/chat/openai-api — MiMo OpenAI Chat Completions API compatibility
-> "An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens."
-> "Up to 4 sequences where the API will stop generating further tokens."
-> "The reasoning contents of the assistant message, before the final answer."
-> "This parameter is used to control whether the model enables the chain of thought."
-> [2] https://mimo.mi.com/docs/en-US/api/chat/responses — MiMo OpenAI Responses API compatibility
-> "`none` disables thinking; Every other level enables thinking with identical behavior"
-> [3] https://mimo.mi.com/docs/en-US/quick-start/usage-guide/text-generation/deep-thinking — MiMo Deep Thinking
-> "`max_completion_tokens` limits the total length of thinking content and the final answer."
-> "In deep thinking, `mimo-v2.6-flash`, `mimo-v2.6-pro`, `mimo-v2.6-pro-ultraspeed` models do not support custom `temperature` and `top_p` parameters."
-> [4] https://mimo.mi.com/docs/en-US/quick-start/usage-guide/multimodal-understanding/image-understanding — MiMo Image Understanding
-> "The file size of a single image cannot exceed 50 MB."
-> "Image Formats: JPEG, PNG, GIF, WebP, BMP."
-> [5] https://mimo.mi.com/docs/en-US/api/guidance/model-hyperparameters — MiMo Model Hyperparameters
-> "In thinking mode, the `mimo-v2.6-flash`, `mimo-v2.6-pro`, `mimo-v2.6-pro-ultraspeed` models do not support customizing the `temperature` and `top_p` parameters."
-> [6] https://mimo.mi.com/docs/en-US/api/guidance/rate-limit — MiMo Rate Limit
-> "The platform sets a model concurrency limit for each account."
-> "The maximum number of requests initiated per minute."
-> [7] https://mimo.mi.com/docs/en-US/api/guidance/error-codes — MiMo Error Codes
-> "API Key that mixes Token Plan and Pay-as-you-go API"
-> "Requests are too frequent, or the quota of Token Plan has been exhausted"
-> [8] https://mimo.mi.com/docs/en-US/api/model/list-models — MiMo List Models
-> "The model identifier, which can be referenced in the API endpoints."
-> [9] https://mimo.mi.com/docs/en-US/quick-start/summary/model — MiMo Models overview
-> "were officially deprecated at 10:00 (Beijing time) on October 21,2026"
-> "Context Window: 1M"
-> [10] https://mimo.mi.com/docs/en-US/quick-start/summary/first-api-call — MiMo First API call (billing modes)
-> "Charged based on actual usage, suitable for light use"
-> "Fixed subscription fee, with limited calls based on the package"
-> [11] https://mimo.mi.com/docs/en-US/tokenplan/Token%20Plan/quick-access — MiMo Token Plan Quick Access
-> "The API Key of the Token Plan is only valid during the subscription period, and you need to renew the subscription to continue using it after it expires."
-> "are independent of each other and cannot be used interchangeably"
-> [12] https://mimo.mi.com/docs/en-US/quick-start/faq/token-plan/Usage&Quota — MiMo Token Plan Usage & Quota
-> "the Credit consumption coefficient will be 0.8 times when using the model during off-peak hours (Beijing time 00:00-08:00, i. e. UTC 16:00-24:00)."
-> [13] https://mimo.mi.com/docs/en-US/tokenplan/integration/hermes-agent — MiMo Token Plan Hermes Agent integration
-> "Edit `~/.hermes/.env` file, replace `XIAOMI_API_KEY` and `XIAOMI_BASE_URL` with Token Plan credentials"
-> [14] https://mimo.mi.com/docs/en-US/updates/deprecate — MiMo Model Deprecation
-> "Deprecation Time: The time when the name of the old model expires. After this time, requests using the name of the old model version will receive an error message."
-> [15] file:///home/jadenblack/.hermes/kanban/boards/alignsynch/workspaces/t_c1266576/alignsynch/scripts/mimo-probe-results.jsonl — mimo-probe.py measured results (49 calls, 2026-10-29)
-> ""probe": "p10", "label": "summary", "wall_s": 2.966, "statuses": {"200": 10}, "lat_min": 2.2021263150963932, "lat_max": 2.956114921020344, "any_429": false"
+[2] https://mimo.mi.com/docs/en-US/api/chat/responses — MiMo OpenAI Responses API compatibility
+[3] https://mimo.mi.com/docs/en-US/quick-start/usage-guide/text-generation/deep-thinking — MiMo Deep Thinking
+[4] https://mimo.mi.com/docs/en-US/quick-start/usage-guide/multimodal-understanding/image-understanding — MiMo Image Understanding
+[5] https://mimo.mi.com/docs/en-US/api/guidance/model-hyperparameters — MiMo Model Hyperparameters
+[6] https://mimo.mi.com/docs/en-US/api/guidance/rate-limit — MiMo Rate Limit
+[7] https://mimo.mi.com/docs/en-US/api/guidance/error-codes — MiMo Error Codes
+[8] https://mimo.mi.com/docs/en-US/api/model/list-models — MiMo List Models
+[9] https://mimo.mi.com/docs/en-US/quick-start/summary/model — MiMo Models overview
+[10] https://mimo.mi.com/docs/en-US/quick-start/summary/first-api-call — MiMo First API call (billing modes)
+[11] https://mimo.mi.com/docs/en-US/tokenplan/Token%20Plan/quick-access — MiMo Token Plan Quick Access
+[12] https://mimo.mi.com/docs/en-US/quick-start/faq/token-plan/Usage&Quota — MiMo Token Plan Usage & Quota
+[13] https://mimo.mi.com/docs/en-US/tokenplan/integration/hermes-agent — MiMo Token Plan Hermes Agent integration
+[14] https://mimo.mi.com/docs/en-US/updates/deprecate — MiMo Model Deprecation
+[15] file:///home/jadenblack/.hermes/kanban/boards/alignsynch/workspaces/t_c1266576/alignsynch/scripts/mimo-probe-results.jsonl — mimo-probe.py measured results (49 calls, 2026-10-29)
