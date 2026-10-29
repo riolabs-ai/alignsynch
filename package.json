@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
+    "data:check": "tsc -p tsconfig.datacheck.json && node --test .datacheck/scripts/__tests__/data-model.test.js && node .datacheck/scripts/data-check.js",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write .",

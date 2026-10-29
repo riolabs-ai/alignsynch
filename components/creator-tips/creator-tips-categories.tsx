@@ -1,19 +1,12 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import type { Category } from "@/content/category";
 import type { LucideIcon } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  count: number;
-}
-
 interface CreatorTipsCategoriesProps {
-  categories: Category[];
+  categories: readonly (Category & { count: number })[];
   selectedCategory: string | null;
   onSelectCategory: (categoryId: string | null) => void;
 }
@@ -36,7 +29,7 @@ export default function CreatorTipsCategories({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((category) => {
-          const Icon = getIconComponent(category.icon);
+          const Icon = getIconComponent(category.iconKey ?? "settings");
           const isSelected = selectedCategory === category.id;
 
           return (

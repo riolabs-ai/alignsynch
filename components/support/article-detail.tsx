@@ -4,7 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { articlesData, KnowledgeBaseArticle } from "@/data/knowledge-base-data";
+import { articlesData } from "@/data/knowledge-base-data";
+import type { KbArticle } from "@/content/article";
+import { categoryName } from "@/content/categories";
+import { ContentBlocks } from "@/components/content/content-blocks";
 import {
   ArrowRight,
   Bookmark,
@@ -24,10 +27,10 @@ interface ArticleDetailProps {
 }
 
 export function ArticleDetail({ articleId }: ArticleDetailProps) {
-  const [article, setArticle] = useState<KnowledgeBaseArticle>();
+  const [article, setArticle] = useState<KbArticle>();
   const [loading, setLoading] = useState(true);
   const [helpful, setHelpful] = useState<boolean | null>(null);
-  const [relatedArticles, setRelatedArticles] = useState<KnowledgeBaseArticle[]>([]);
+  const [relatedArticles, setRelatedArticles] = useState<KbArticle[]>([]);
 
   useEffect(() => {
     // Simulate fetching article data
@@ -42,7 +45,11 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
 
         // Get related articles from the same category
         const related = articlesData
-          .filter((a) => a.category === foundArticle.category && a.id !== articleId)
+          .filter(
+            (a) =>
+              a.id !== articleId &&
+              a.categoryIds.some((id) => foundArticle.categoryIds.includes(id)),
+          )
           .slice(0, 3);
 
         setRelatedArticles(related);
@@ -86,20 +93,6 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
     );
   }
 
-  const getCategoryName = (categorySlug: string) => {
-    const categories: Record<string, string> = {
-      account: "Account",
-      billing: "Billing",
-      "quiz-creation": "Quiz Creation",
-      tournaments: "Tournaments",
-      privacy: "Privacy",
-      technical: "Technical Issues",
-      general: "General",
-    };
-
-    return categories[categorySlug] || categorySlug;
-  };
-
   return (
     <div className="container max-w-4xl mx-auto py-4 ">
       {/* Breadcrumb */}
@@ -126,46 +119,23 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
         <div className="mb-8">
           <div className="flex items-center mb-3">
             <Badge variant="outline" className="mr-2">
-              {getCategoryName(article.category)}
+              {categoryName(article.categoryIds[0] ?? "")}
             </Badge>
             <div className="flex items-center text-muted-foreground text-sm">
               <Clock className="h-3 w-3 mr-1" />
-              <span>{article.readTime} min read</span>
+              <span>{article.readMinutes} min read</span>
             </div>
           </div>
 
           <h1 className="text-3xl font-bold mb-4">{article.title}</h1>
-          <p className="text-muted-foreground">{article.description}</p>
+          <p className="text-muted-foreground">{article.summary}</p>
         </div>
 
         <Separator className="my-6" />
 
         {/* Article content */}
         <div className="prose max-w-none">
-          {article.content.map((section, index) => (
-            <div key={index} className="mb-8">
-              {section.heading && <h2 className="text-xl font-semibold mb-4">{section.heading}</h2>}
-              {section.paragraphs.map((paragraph: string, pIndex: number) => (
-                <p key={pIndex} className="mb-4">
-                  {paragraph}
-                </p>
-              ))}
-              {section.list && (
-                <ul className="my-4 space-y-2">
-                  {section.list.map((item: string, lIndex: number) => (
-                    <li key={lIndex} className="ml-6 list-disc">
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {section.note && (
-                <div className="bg-muted p-4 rounded-md my-4 text-sm">
-                  <strong>Note:</strong> {section.note}
-                </div>
-              )}
-            </div>
-          ))}
+          <ContentBlocks blocks={article.body} headingClass="text-xl font-semibold mb-4" />
         </div>
 
         <Separator className="my-6" />
@@ -240,12 +210,12 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
                   <div className="flex items-center mb-2">
                     <BookOpen className="h-4 w-4 mr-2 text-primary" />
                     <Badge variant="outline" className="text-xs">
-                      {getCategoryName(relatedArticle.category)}
+                      {categoryName(relatedArticle.categoryIds[0] ?? "")}
                     </Badge>
                   </div>
                   <h3 className="font-medium mb-2">{relatedArticle.title}</h3>
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {relatedArticle.description}
+                    {relatedArticle.summary}
                   </p>
                   <div className="flex items-center text-primary text-sm">
                     <span>Read article</span>

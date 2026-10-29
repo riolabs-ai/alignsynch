@@ -6,10 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { categories, newsData } from "@/data/news-data";
+import { formatDate } from "@/content/core";
 import { Calendar, ChevronRight, Clock, Filter, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+
+/** Taxonomy id -> display name. The badge labels come from the table, not the record. */
+const categoryName = (id: string) => categories.find((category) => category.id === id)?.name ?? id;
 
 export function NewsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,8 +24,9 @@ export function NewsPage() {
   const filteredArticles = newsData.filter((article) => {
     const matchesSearch =
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === "all" || article.categories.includes(activeCategory);
+      article.summary.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      activeCategory === "all" || article.categoryIds.includes(activeCategory);
     return matchesSearch && matchesCategory;
   });
 
@@ -60,7 +65,7 @@ export function NewsPage() {
               <Card key={article.slug} className="overflow-hidden">
                 <div className="relative h-44 xl:h-60 w-full">
                   <Image
-                    src={article.coverImage || "/placeholder.svg"}
+                    src={article.cover?.src ?? "/placeholder.svg"}
                     alt={article.title}
                     fill
                     className="object-cover aspect-video"
@@ -75,11 +80,11 @@ export function NewsPage() {
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                     <div className="flex items-center">
                       <Calendar className="mr-1 h-3 w-3" />
-                      <span>{article.date}</span>
+                      <span>{article.publishedAt ? formatDate(article.publishedAt) : ""}</span>
                     </div>
                     <div className="flex items-center">
                       <Clock className="mr-1 h-3 w-3" />
-                      <span>{article.readTime} min read</span>
+                      <span>{article.readMinutes} min read</span>
                     </div>
                   </div>
                   <Link href={`/news/${article.slug}`} className="hover:underline">
@@ -87,13 +92,13 @@ export function NewsPage() {
                   </Link>
                 </CardHeader>
                 <CardContent className="p-4 !pt-0">
-                  <p className="text-muted-foreground">{article.excerpt}</p>
+                  <p className="text-muted-foreground">{article.summary}</p>
                 </CardContent>
                 <CardFooter className="p-4 !pt-0 flex justify-between">
                   <div className="flex flex-wrap gap-2">
-                    {article.categories.slice(0, 2).map((category) => (
-                      <Badge key={category} variant="outline" className="text-xs">
-                        {category}
+                    {article.categoryIds.slice(0, 2).map((categoryId) => (
+                      <Badge key={categoryId} variant="outline" className="text-xs">
+                        {categoryName(categoryId)}
                       </Badge>
                     ))}
                   </div>
@@ -121,8 +126,8 @@ export function NewsPage() {
           <TabsList className="overflow-x-auto w-full justify-start">
             <TabsTrigger value="all">All</TabsTrigger>
             {categories.map((category) => (
-              <TabsTrigger key={category} value={category}>
-                {category}
+              <TabsTrigger key={category.id} value={category.id}>
+                {category.name}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -134,7 +139,7 @@ export function NewsPage() {
               <Card key={article.slug}>
                 <div className="relative h-44 xl:h-60 w-full">
                   <Image
-                    src={article.coverImage || "/placeholder.svg"}
+                    src={article.cover?.src ?? "/placeholder.svg"}
                     alt={article.title}
                     fill
                     className="object-cover"
@@ -144,11 +149,11 @@ export function NewsPage() {
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                     <div className="flex items-center">
                       <Calendar className="mr-1 h-3 w-3" />
-                      <span>{article.date}</span>
+                      <span>{article.publishedAt ? formatDate(article.publishedAt) : ""}</span>
                     </div>
                     <div className="flex items-center">
                       <Clock className="mr-1 h-3 w-3" />
-                      <span>{article.readTime} min read</span>
+                      <span>{article.readMinutes} min read</span>
                     </div>
                   </div>
                   <Link href={`/news/${article.slug}`} className="hover:underline">
@@ -156,13 +161,13 @@ export function NewsPage() {
                   </Link>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                  <p className="text-muted-foreground text-sm line-clamp-2">{article.excerpt}</p>
+                  <p className="text-muted-foreground text-sm line-clamp-2">{article.summary}</p>
                 </CardContent>
                 <CardFooter className="p-4 pt-0 flex justify-between">
                   <div className="flex flex-wrap gap-2">
-                    {article.categories.slice(0, 2).map((category) => (
-                      <Badge key={category} variant="outline" className="text-xs">
-                        {category}
+                    {article.categoryIds.slice(0, 2).map((categoryId) => (
+                      <Badge key={categoryId} variant="outline" className="text-xs">
+                        {categoryName(categoryId)}
                       </Badge>
                     ))}
                   </div>

@@ -8,7 +8,9 @@ import { Copy, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-type Quiz = {
+/** A hand-authored sample row on this dashboard (numeric id, stored plays/rating/date).
+ *  Named apart from the model's `Quiz` on purpose — `E9` enforces that. */
+type DashboardQuizRow = {
   id: number;
   title: string;
   category: string;
@@ -19,7 +21,7 @@ type Quiz = {
   image: string;
 };
 // Sample data
-const quizzes: Quiz[] = [
+const quizzes: DashboardQuizRow[] = [
   {
     id: 1,
     title: "World Geography Challenge",
@@ -164,7 +166,7 @@ export function MyQuizzesDashboard() {
   );
 }
 
-function QuizCard({ quiz }: { quiz: Quiz }) {
+function QuizCard({ quiz }: { quiz: DashboardQuizRow }) {
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg">
       <div className="relative w-full md:w-24 h-24 rounded-md overflow-hidden">

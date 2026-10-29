@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { mockQuizzes } from "@/data/mock-quizzes";
-import { Quiz } from "@/types/quiz";
+import type { Quiz } from "@/content/quiz";
 import { Sparkles } from "lucide-react";
 import { useState } from "react";
 import { QuizEditor } from "./quiz-editor";
@@ -44,18 +44,13 @@ export function QuizGenerator() {
       // Update the topic of the selected quizzes based on user input
       const customizedQuizzes = selected.map((quiz, index) => ({
         ...quiz,
-        id: index + 1,
+        id: `quiz-generated-${index + 1}`,
+        slug: `generated-${index + 1}`,
         title: `${topic} - ${quiz.title}`,
         tags: [...quiz.tags, topic.toLowerCase()],
-        settings: {
-          timeLimit: 0,
-          randomizeQuestions: false,
-          showExplanations: true,
-          passingScore: 70,
-          visibility: "private",
-          allowRetakes: true,
-          questionTimer: 0,
-        },
+        // The generated quiz is a draft of the chosen topic, so it keeps the
+        // template's own settings; only the timer is reset.
+        settings: { ...quiz.settings, timeLimitSeconds: 0 },
       }));
 
       setGeneratedQuizzes(customizedQuizzes);
@@ -161,7 +156,7 @@ export function QuizGenerator() {
                         <h5 className="font-medium">{quiz.title}</h5>
                         <Badge variant="outline">{quiz.difficulty}</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{quiz.description}</p>
+                      <p className="text-sm text-muted-foreground">{quiz.summary}</p>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {quiz.tags.map((tag: string) => (
                           <Badge key={tag} variant="default" className="text-xs">

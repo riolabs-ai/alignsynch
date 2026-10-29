@@ -1,4 +1,7 @@
-import { Notification, notifications } from "@/data/notifications";
+import { notifications } from "@/data/notifications";
+import type { Notification } from "@/content/social";
+import { formatRelative } from "@/content/core";
+import { renderNotificationIcon } from "./notification-icon";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { Bell, Check, X } from "lucide-react";
 import { Badge } from "../ui/badge";
@@ -67,16 +70,16 @@ const NotificationDrawer = ({
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                        {notification.icon}
+                        {renderNotificationIcon(notification.iconKey)}
                       </div>
                       <div className="flex-1 space-y-1 overflow-hidden">
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{notification.title}</p>
                           <Badge variant="outline" className="text-xs font-normal">
-                            {notification.time}
+                            {formatRelative(notification.createdAt)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{notification.description}</p>
+                        <p className="text-sm text-muted-foreground">{notification.body}</p>
                       </div>
                     </div>
                   ))}
@@ -95,16 +98,16 @@ const NotificationDrawer = ({
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                        {notification.icon}
+                        {renderNotificationIcon(notification.iconKey)}
                       </div>
                       <div className="flex-1 space-y-1 overflow-hidden">
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{notification.title}</p>
                           <Badge variant="outline" className="text-xs font-normal">
-                            {notification.time}
+                            {formatRelative(notification.createdAt)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{notification.description}</p>
+                        <p className="text-sm text-muted-foreground">{notification.body}</p>
                       </div>
                     </div>
                   ))}

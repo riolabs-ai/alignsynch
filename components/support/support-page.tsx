@@ -1,5 +1,6 @@
 "use client";
 
+import type { SupportCategory } from "@/content/article";
 import { useState } from "react";
 import { ContactForm } from "./contact-form";
 import { KnowledgeBase } from "./knowledge-base";
@@ -7,15 +8,9 @@ import { SupportCategories } from "./support-categories";
 import { SupportFAQ } from "./support-faq";
 import { SupportHeader } from "./support-header";
 
-export type SupportCategory =
-  | "all"
-  | "account"
-  | "billing"
-  | "quiz-creation"
-  | "tournaments"
-  | "privacy"
-  | "technical"
-  | "general";
+/** Re-exported from the content model — a second hand-written copy of this
+ * union was drift D16. */
+export type { SupportCategory } from "@/content/article";
 
 export function SupportPage() {
   const [activeTab, setActiveTab] = useState<"faq" | "contact" | "knowledge">("faq");

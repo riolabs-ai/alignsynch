@@ -1,6 +1,6 @@
 "use client";
 
-import type { Tip } from "@/data/creator-tips-data";
+import { tipCategoryName, type Tip } from "@/data/creator-tips-data";
 import { Bookmark, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,7 +17,7 @@ export default function TipCard({ tip }: TipCardProps) {
     >
       <div className="aspect-video relative">
         <Image
-          src={tip.image || "/placeholder.svg"}
+          src={tip.cover?.src ?? "/placeholder.svg"}
           alt={tip.title}
           fill
           className="object-cover"
@@ -27,14 +27,11 @@ export default function TipCard({ tip }: TipCardProps) {
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex items-center mb-3">
           <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-            {tip.category
-              .split("-")
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(" ")}
+            {tipCategoryName(tip.categoryIds[0] ?? "")}
           </span>
           <div className="flex items-center ml-auto text-sm text-gray-500">
             <Clock size={14} className="mr-1" />
-            {tip.readTime} min
+            {tip.readMinutes} min
           </div>
         </div>
 
@@ -42,13 +39,13 @@ export default function TipCard({ tip }: TipCardProps) {
           {tip.title}
         </h3>
 
-        <p className="text-gray-600 dark:text-gray-100 text-sm mb-4 flex-grow">{tip.excerpt}</p>
+        <p className="text-gray-600 dark:text-gray-100 text-sm mb-4 flex-grow">{tip.summary}</p>
 
         <div className="flex items-center mt-auto pt-3 border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center">
             <div className="w-6 h-6 rounded-full overflow-hidden mr-2">
               <Image
-                src={tip.author.avatar || "/placeholder.svg"}
+                src={tip.author.avatar?.src ?? "/placeholder.svg"}
                 alt={tip.author.name}
                 width={24}
                 height={24}
