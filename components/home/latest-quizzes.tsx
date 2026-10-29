@@ -4,12 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Difficulty } from "@/content/core";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import Image from "next/image";
 import Link from "next/link";
 import { media } from "@/data/media";
 
-export function LatestQuizzes() {
+export function LatestQuizzes({ copy }: { copy: PageCopySection }) {
   // Projected from the catalogue, never authored here (D2).
   const quizzes = shelfCards("homeLatest");
 
@@ -29,7 +31,7 @@ export function LatestQuizzes() {
 
   return (
     <section className="space-y-6 bg-indigo-50 py-10 px-4 xl:px-8 dark:bg-slate-900">
-      <h2 className="text-2xl font-bold tracking-tight">Latest Quizzes</h2>
+      <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4">
         {quizzes.map((quiz) => (
@@ -63,11 +65,11 @@ export function LatestQuizzes() {
 
             <CardContent className="p-4 xl:pt-6 flex justify-between items-center">
               <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
-                {quiz.categories[0]?.name ?? "Uncategorised"}
+                {quiz.categories[0]?.name ?? itemLabel(copy, "empty-category")}
               </Badge>
 
               <Button size="sm" asChild>
-                <Link href={quiz.href}>Play Now</Link>
+                <Link href={quiz.href}>{itemLabel(copy, "play-now")}</Link>
               </Button>
             </CardContent>
           </Card>
@@ -75,9 +77,11 @@ export function LatestQuizzes() {
       </div>
 
       <div className="flex justify-center">
-        <Button variant="outline" asChild>
-          <Link href="/explore">View All Quizzes</Link>
-        </Button>
+        {copy.cta && (
+          <Button variant="outline" asChild>
+            <Link href={copy.cta.href}>{copy.cta.label}</Link>
+          </Button>
+        )}
       </div>
     </section>
   );

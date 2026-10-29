@@ -1,5 +1,6 @@
 "use client";
 import { categories } from "@/data/categories";
+import type { PageCopySection } from "@/content/pages";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,11 +8,11 @@ import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Button } from "../ui/button";
 import { media } from "@/data/media";
-export function CategoriesSlider() {
+export function CategoriesSlider({ copy }: { copy: PageCopySection }) {
   return (
     <section className="space-y-4">
       <div className="flex justify-between items-center gap-3">
-        <h2 className="text-2xl font-bold tracking-tight">Quiz Categories</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
         <div className="flex items-center gap-4">
           <Button className="prev-category" variant={"outline"} size={"icon"}>
             <ChevronLeft />
