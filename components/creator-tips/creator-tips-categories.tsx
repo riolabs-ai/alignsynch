@@ -1,7 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import type { PageCopySection } from "@/content/pages";
 import type { Category } from "@/content/category";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import type { LucideIcon } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 
@@ -9,12 +11,14 @@ interface CreatorTipsCategoriesProps {
   categories: readonly (Category & { count: number })[];
   selectedCategory: string | null;
   onSelectCategory: (categoryId: string | null) => void;
+  copy: PageCopySection;
 }
 
 export default function CreatorTipsCategories({
   categories,
   selectedCategory,
   onSelectCategory,
+  copy,
 }: CreatorTipsCategoriesProps) {
   // Dynamically get the icon component
   const getIconComponent = (iconName: string): LucideIcon => {
@@ -25,7 +29,7 @@ export default function CreatorTipsCategories({
 
   return (
     <div className="mb-12">
-      <h2 className="text-2xl font-bold mb-6 text-center">Browse by Category</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">{copy.heading}</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((category) => {
@@ -59,7 +63,7 @@ export default function CreatorTipsCategories({
                   {category.description}
                 </p>
                 <span className="text-xs text-purple-600 mt-2 inline-block">
-                  {category.count} articles
+                  {fillLabel(itemLabel(copy, "article-count"), { count: category.count })}
                 </span>
               </div>
             </button>
@@ -73,7 +77,7 @@ export default function CreatorTipsCategories({
           className="mt-4 text-sm text-purple-600 hover:text-purple-800 flex items-center mx-auto"
         >
           <LucideIcons.X size={16} className="mr-1" />
-          Clear filter
+          {itemLabel(copy, "clear-filter")}
         </button>
       )}
     </div>

@@ -1,34 +1,30 @@
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
+import type { PageCopySection } from "@/content/pages";
+import { media } from "@/data/media";
+import { itemLabel, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { Award, BookOpen, Globe, Users } from "lucide-react";
 import Image from "next/image";
-import { media } from "@/data/media";
 
-export function AboutQuizHub() {
-  const stats = [
-    {
-      icon: <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      value: "2M+",
-      label: "Active Users",
-    },
-    {
-      icon: <Award className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
-      value: "10M+",
-      label: "Quizzes Taken",
-    },
-    {
-      icon: <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
-      value: "150+",
-      label: "Countries",
-    },
-    {
-      icon: <BookOpen className="h-5 w-5 text-green-600 dark:text-green-400" />,
-      value: "500K+",
-      label: "Quizzes Created",
-    },
-  ];
+/** Which stat card renders where; the caption and the figure are the fixture's pair. */
+const STATS = [
+  {
+    id: "stat-active-users",
+    icon: <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+  {
+    id: "stat-quizzes-taken",
+    icon: <Award className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
+  },
+  { id: "stat-countries", icon: <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" /> },
+  {
+    id: "stat-quizzes-created",
+    icon: <BookOpen className="h-5 w-5 text-green-600 dark:text-green-400" />,
+  },
+] as const;
 
+export function AboutQuizHub({ copy }: { copy: PageCopySection }) {
   return (
     <section className="py-10 xl:py-20 sm:px-4 xl:px-8 bg-slate-50 dark:bg-slate-800 overflow-hidden">
       <div className="container px-4 mx-auto">
@@ -39,11 +35,10 @@ export function AboutQuizHub() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">About QuizHub </h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{copy.heading}</h2>
             <div className="w-24 h-1 bg-gradient-to-r from-purple-600 to-indigo-600 mx-auto mb-6"></div>
             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-              The leading platform revolutionizing how people create, share, and experience quizzes
-              worldwide
+              {copy.body}
             </p>
           </motion.div>
         </div>
@@ -80,33 +75,26 @@ export function AboutQuizHub() {
             className="space-y-8"
           >
             <div>
-              <h3 className="text-2xl font-bold mb-4">Our Story</h3>
+              <h3 className="text-2xl font-bold mb-4">{itemLabel(copy, "our-story")}</h3>
               <p className="text-slate-600 dark:text-slate-400 mb-4">
-                Founded in 2018, QuizHub began with a simple mission: to transform learning into an
-                engaging, interactive experience. What started as a small project has grown into a
-                global platform used by educators, businesses, and quiz enthusiasts in over 150
-                countries.
+                {itemLabel(copy, "story-origin")}
               </p>
               <p className="text-slate-600 dark:text-slate-400">
-                Our platform combines cutting-edge technology with user-friendly design to make quiz
-                creation and participation accessible to everyone. With AI-powered tools and a
-                vibrant community, we're redefining how knowledge is shared and tested online.
+                {itemLabel(copy, "story-platform")}
               </p>
             </div>
 
             <div>
-              <h3 className="text-2xl font-bold mb-4">Our Mission</h3>
+              <h3 className="text-2xl font-bold mb-4">{itemLabel(copy, "our-mission")}</h3>
               <div className="p-5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
                 <p className="italic text-slate-600 dark:text-slate-400">
-                  "To empower people worldwide to create, share, and experience knowledge in the
-                  most engaging way possible, making learning fun, accessible, and rewarding for
-                  everyone."
+                  {itemLabel(copy, "mission-statement")}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {stats.map((stat, index) => (
+              {STATS.map((stat, index) => (
                 <Card key={index} className="border border-slate-200 dark:border-slate-700">
                   <CardContent className="p-6 xl:pt-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -114,10 +102,10 @@ export function AboutQuizHub() {
                         {stat.icon}
                       </div>
                       <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                        {stat.label}
+                        {itemLabel(copy, stat.id)}
                       </span>
                     </div>
-                    <div className="text-3xl font-bold">{stat.value}</div>
+                    <div className="text-3xl font-bold">{itemValue(copy, stat.id)}</div>
                   </CardContent>
                 </Card>
               ))}

@@ -7,6 +7,8 @@ import { Pagination } from "@/components/ui/pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { categories, newsData } from "@/data/news-data";
 import { formatDate } from "@/content/core";
+import type { PageCopy } from "@/content/pages";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { Calendar, ChevronRight, Clock, Filter, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,7 +18,8 @@ import { media } from "@/data/media";
 /** Taxonomy id -> display name. The badge labels come from the table, not the record. */
 const categoryName = (id: string) => categories.find((category) => category.id === id)?.name ?? id;
 
-export function NewsPage() {
+export function NewsPage({ copy }: { copy: PageCopy }) {
+  const list = sectionOf(copy, "article-list");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
 
@@ -35,17 +38,15 @@ export function NewsPage() {
     <div className="container mx-auto">
       <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Quiz News & Updates</h1>
-          <p className="text-muted-foreground mt-1">
-            Stay updated with the latest quiz trends, updates, and community news
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{copy.heading}</h1>
+          <p className="text-muted-foreground mt-1">{copy.subtitle}</p>
         </div>
         <div className="flex items-center space-x-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search articles..."
+              placeholder={itemLabel(list, "search-placeholder")}
               className="pl-8 w-full md:w-[260px]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -60,7 +61,7 @@ export function NewsPage() {
       {/* Featured Articles */}
       {searchQuery === "" && activeCategory === "all" && (
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Featured Articles</h2>
+          <h2 className="text-2xl font-bold mb-6">{list.heading}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4 gap-6">
             {featuredArticles.map((article) => (
               <Card key={article.slug} className="overflow-hidden">
@@ -73,7 +74,7 @@ export function NewsPage() {
                   />
                   <div className="absolute top-2 right-2">
                     <Badge variant="secondary" className="bg-primary text-primary-foreground">
-                      Featured
+                      {itemLabel(list, "featured-badge")}
                     </Badge>
                   </div>
                 </div>
@@ -85,7 +86,9 @@ export function NewsPage() {
                     </div>
                     <div className="flex items-center">
                       <Clock className="mr-1 h-3 w-3" />
-                      <span>{article.readMinutes} min read</span>
+                      <span>
+                        {article.readMinutes} {itemLabel(list, "min-read")}
+                      </span>
                     </div>
                   </div>
                   <Link href={`/news/${article.slug}`} className="hover:underline">
@@ -107,7 +110,7 @@ export function NewsPage() {
                     href={`/news/${article.slug}`}
                     className="text-primary text-sm font-medium flex items-center"
                   >
-                    Read more <ChevronRight className="ml-1 h-3 w-3" />
+                    {itemLabel(list, "read-more")} <ChevronRight className="ml-1 h-3 w-3" />
                   </Link>
                 </CardFooter>
               </Card>
@@ -125,7 +128,7 @@ export function NewsPage() {
       >
         <div className="border-b">
           <TabsList className="overflow-x-auto w-full justify-start">
-            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="all">{itemLabel(list, "tab-all")}</TabsTrigger>
             {categories.map((category) => (
               <TabsTrigger key={category.id} value={category.id}>
                 {category.name}
@@ -154,7 +157,9 @@ export function NewsPage() {
                     </div>
                     <div className="flex items-center">
                       <Clock className="mr-1 h-3 w-3" />
-                      <span>{article.readMinutes} min read</span>
+                      <span>
+                        {article.readMinutes} {itemLabel(list, "min-read")}
+                      </span>
                     </div>
                   </div>
                   <Link href={`/news/${article.slug}`} className="hover:underline">
@@ -176,7 +181,7 @@ export function NewsPage() {
                     href={`/news/${article.slug}`}
                     className="text-primary text-sm font-medium flex items-center"
                   >
-                    Read more <ChevronRight className="ml-1 h-3 w-3" />
+                    {itemLabel(list, "read-more")} <ChevronRight className="ml-1 h-3 w-3" />
                   </Link>
                 </CardFooter>
               </Card>
@@ -185,10 +190,8 @@ export function NewsPage() {
 
           {filteredArticles.length === 0 && (
             <div className="text-center py-12">
-              <h3 className="text-xl font-medium mb-2">No articles found</h3>
-              <p className="text-muted-foreground">
-                Try adjusting your search or filter to find what you're looking for.
-              </p>
+              <h3 className="text-xl font-medium mb-2">{itemLabel(list, "empty-heading")}</h3>
+              <p className="text-muted-foreground">{itemLabel(list, "empty-body")}</p>
             </div>
           )}
         </TabsContent>

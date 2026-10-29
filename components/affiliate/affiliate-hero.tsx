@@ -8,13 +8,26 @@ import {
   formatPercentValue,
   progressPercentOf,
 } from "@/content/metrics";
+import type { PageCopy } from "@/content/pages";
 import { metric } from "@/data/metrics";
+import { fillLabel, headingLines, itemLabel, sectionOf } from "@/lib/page-copy";
 import { ArrowRight, CheckCircle } from "lucide-react";
 
-export function AffiliateHero() {
+/** Which benefit lines the hero renders, in order. The words are in the fixture. */
+const BENEFIT_IDS = [
+  "benefit-earn-commission",
+  "benefit-monthly-payout",
+  "benefit-analytics",
+  "benefit-marketing",
+] as const;
+
+export function AffiliateHero({ copy }: { copy: PageCopy }) {
   const maxCommission = metric("affiliate.maxCommission");
   const thisMonth = metric("affiliate.thisMonth");
   const goalProgress = progressPercentOf(thisMonth.value, metric("affiliate.monthGoal").value);
+  const commissionPct = formatPercentValue(maxCommission.value);
+  const hero = sectionOf(copy, "affiliate-hero");
+  const [headingLead, headingAccent] = headingLines(copy.heading);
 
   return (
     <section className="bg-slate-50 dark:bg-slate-900 sm:px-4 lg:px-8 py-10 md:py-16 xl:py-20">
@@ -24,44 +37,39 @@ export function AffiliateHero() {
           <div className="max-w-xl mx-auto lg:mx-0">
             <div className="inline-flex items-center px-3 py-1 mb-6 text-sm font-medium rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
               <span className="flex h-2 w-2 rounded-full bg-purple-600 dark:bg-purple-400 mr-2"></span>
-              Affiliate Program
+              {copy.eyebrow}
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-slate-900 dark:text-white">
-              Turn Your Audience Into{" "}
-              <span className="text-purple-600 dark:text-purple-400">Revenue</span>
+              {headingLead}{" "}
+              <span className="text-purple-600 dark:text-purple-400">{headingAccent}</span>
             </h1>
 
             <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
-              Join our affiliate program and earn up to {formatPercentValue(maxCommission.value)}{" "}
-              commission on every referral. Share quality quiz content and get rewarded for every
-              new user you bring.
+              {fillLabel(copy.subtitle ?? "", { percent: commissionPct })}
             </p>
 
             <div className="space-y-4 mb-8">
-              {[
-                `Earn ${formatPercentValue(maxCommission.value)} commission on all referral purchases`,
-                "Get paid monthly with no minimum threshold",
-                "Access detailed analytics and performance tracking",
-                "Receive marketing materials and dedicated support",
-              ].map((benefit, index) => (
+              {BENEFIT_IDS.map((id, index) => (
                 <div key={index} className="flex items-start">
                   <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 mr-3 flex-shrink-0" />
-                  <p className="text-slate-700 dark:text-slate-300">{benefit}</p>
+                  <p className="text-slate-700 dark:text-slate-300">
+                    {fillLabel(itemLabel(hero, id), { percent: commissionPct })}
+                  </p>
                 </div>
               ))}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
               <Button variant={"gradient"}>
-                Become an Affiliate
+                {itemLabel(hero, "become-affiliate")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 className="border-slate-300 dark:border-slate-700 flex items-center gap-2 px-6 text-base"
               >
-                Learn More
+                {itemLabel(hero, "learn-more")}
               </Button>
             </div>
 
@@ -70,19 +78,25 @@ export function AffiliateHero() {
                 <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                   {formatMetricValue(maxCommission)}
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Commission</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  {itemLabel(hero, "stat-commission")}
+                </div>
               </div>
               <div className="text-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
                 <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                   {formatCompactCount(metric("affiliate.affiliates").value)}+
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Affiliates</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  {itemLabel(hero, "stat-affiliates")}
+                </div>
               </div>
               <div className="text-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
                 <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                   {formatCompactCurrency(metric("affiliate.paidOut").value)}+
                 </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Paid Out</div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  {itemLabel(hero, "stat-paid-out")}
+                </div>
               </div>
             </div>
           </div>
@@ -92,17 +106,17 @@ export function AffiliateHero() {
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-3 sm:p-6 md:p-8 border border-slate-200 dark:border-slate-700">
               <div className="mb-6">
                 <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">
-                  Affiliate Dashboard
+                  {hero.heading}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-300 text-sm">
-                  Track your performance and earnings in real-time
-                </p>
+                <p className="text-slate-600 dark:text-slate-300 text-sm">{hero.body}</p>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mb-6">
                 <div className="flex justify-between items-center mb-4">
                   <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">This Month</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {itemLabel(hero, "this-month")}
+                    </p>
                     <p className="text-2xl font-bold text-slate-900 dark:text-white">
                       {formatMetricValue(thisMonth)}
                     </p>
@@ -116,7 +130,9 @@ export function AffiliateHero() {
                   <div className="h-2 bg-purple-600 dark:bg-purple-500 rounded-full w-3/4"></div>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {formatPercentValue(goalProgress)} of monthly goal
+                  {fillLabel(itemLabel(hero, "monthly-goal-progress"), {
+                    percent: formatPercentValue(goalProgress),
+                  })}
                 </p>
               </div>
 
@@ -128,7 +144,9 @@ export function AffiliateHero() {
                         1
                       </span>
                     </div>
-                    <span className="text-slate-700 dark:text-slate-300">New Signups</span>
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {itemLabel(hero, "new-signups")}
+                    </span>
                   </div>
                   <span className="font-semibold text-slate-900 dark:text-white">42</span>
                 </div>
@@ -140,7 +158,9 @@ export function AffiliateHero() {
                         2
                       </span>
                     </div>
-                    <span className="text-slate-700 dark:text-slate-300">Conversions</span>
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {itemLabel(hero, "conversions")}
+                    </span>
                   </div>
                   <span className="font-semibold text-slate-900 dark:text-white">18</span>
                 </div>
@@ -152,7 +172,9 @@ export function AffiliateHero() {
                         3
                       </span>
                     </div>
-                    <span className="text-slate-700 dark:text-slate-300">Commission Rate</span>
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {itemLabel(hero, "commission-rate")}
+                    </span>
                   </div>
                   <span className="font-semibold text-slate-900 dark:text-white">
                     {formatMetricValue(maxCommission)}

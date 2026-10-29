@@ -13,11 +13,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import type { PageCopySection } from "@/content/pages";
 import { formatPercentValue } from "@/content/metrics";
 import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Check, HelpCircle } from "lucide-react";
 import Link from "next/link";
-import { JSX, memo, useCallback, useMemo, useState } from "react";
+import { type JSX, memo, useCallback, useMemo, useState } from "react";
 
 // Type definitions
 type BillingCycle = "monthly" | "yearly";
@@ -43,11 +45,13 @@ interface FeatureListProps {
 
 interface LimitationsListProps {
   limitations: string[];
+  copy: PageCopySection;
 }
 
 interface PricingCardProps {
   plan: Plan;
   billingCycle: BillingCycle;
+  copy: PageCopySection;
 }
 
 interface CardContentData {
@@ -173,14 +177,14 @@ const FeatureList = memo<FeatureListProps>(({ features }) => {
 FeatureList.displayName = "FeatureList";
 
 // Memoized limitations list component
-const LimitationsList = memo<LimitationsListProps>(({ limitations }) => {
+const LimitationsList = memo<LimitationsListProps>(({ limitations, copy }) => {
   if (limitations.length === 0) return null;
 
   return useMemo(
     () => (
       <div className="mt-6">
         <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
-          LIMITATIONS:
+          {itemLabel(copy, "limitations")}
         </h4>
         <ul className="space-y-3">
           {limitations.map((limitation: string) => (
@@ -192,34 +196,37 @@ const LimitationsList = memo<LimitationsListProps>(({ limitations }) => {
         </ul>
       </div>
     ),
-    [limitations],
+    [limitations, copy],
   );
 });
 
 LimitationsList.displayName = "LimitationsList";
 
 // Memoized pricing card component
-const PricingCard = memo<PricingCardProps>(({ plan, billingCycle }) => {
+const PricingCard = memo<PricingCardProps>(({ plan, billingCycle, copy }) => {
   const cardContent: CardContentData = useMemo(() => {
     const cardClassName: string = `relative flex flex-col border-2 ${plan.popular ? "border-purple-400 dark:border-purple-500 shadow-lg" : "border-slate-200 dark:border-slate-800"}`;
 
     const buttonClassName: string = `w-full ${plan.popular ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0" : ""}`;
 
-    const priceDisplay: string = billingCycle === "monthly" ? "mo" : "mo, billed yearly";
+    const priceDisplay: string =
+      billingCycle === "monthly"
+        ? itemLabel(copy, "price-per-month")
+        : itemLabel(copy, "price-per-month-yearly");
 
     return {
       cardClassName,
       buttonClassName,
       priceDisplay,
     };
-  }, [plan.popular, billingCycle]);
+  }, [plan.popular, billingCycle, copy]);
 
   return (
     <Card key={plan.name} className={cardContent.cardClassName}>
       {plan.popular && (
         <div className="absolute -top-4 left-0 right-0 flex justify-center">
           <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-3 py-1 text-white border-0">
-            Most Popular
+            {itemLabel(copy, "most-popular")}
           </Badge>
         </div>
       )}
@@ -240,10 +247,10 @@ const PricingCard = memo<PricingCardProps>(({ plan, billingCycle }) => {
 
         <div className="space-y-4">
           <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            WHAT&apos;S INCLUDED:
+            {itemLabel(copy, "whats-included")}
           </h4>
           <FeatureList features={plan.features} />
-          <LimitationsList limitations={plan.limitations} />
+          <LimitationsList limitations={plan.limitations} copy={copy} />
         </div>
       </CardContent>
       <CardFooter>
@@ -260,7 +267,7 @@ const PricingCard = memo<PricingCardProps>(({ plan, billingCycle }) => {
 
 PricingCard.displayName = "PricingCard";
 
-export function PricingPlans(): JSX.Element {
+export function PricingPlans({ copy }: { copy: PageCopySection }): JSX.Element {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
 
   // Memoized billing toggle handler
@@ -271,9 +278,9 @@ export function PricingPlans(): JSX.Element {
   // Memoized pricing cards
   const pricingCards = useMemo((): JSX.Element[] => {
     return PLANS_DATA.map((plan: Plan) => (
-      <PricingCard key={plan.name} plan={plan} billingCycle={billingCycle} />
+      <PricingCard key={plan.name} plan={plan} billingCycle={billingCycle} copy={copy} />
     ));
-  }, [billingCycle]);
+  }, [billingCycle, copy]);
 
   // Memoized label classes
   const labelClasses: LabelClasses = useMemo(
@@ -288,14 +295,14 @@ export function PricingPlans(): JSX.Element {
     <section className="py-10 xl:py-20">
       <div className="container px-4 mx-auto">
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Simple, Transparent Pricing</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">{copy.heading}</h1>
           <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Choose the perfect plan for your quiz creation and learning needs
+            {copy.body}
           </p>
 
           <div className="flex items-center justify-center mt-8 gap-3">
             <Label htmlFor="billing-toggle" className={labelClasses.monthly}>
-              Monthly
+              {itemLabel(copy, "monthly")}
             </Label>
             <Switch
               id="billing-toggle"
@@ -304,13 +311,15 @@ export function PricingPlans(): JSX.Element {
             />
             <div className="flex items-center gap-1.5">
               <Label htmlFor="billing-toggle" className={labelClasses.yearly}>
-                Yearly
+                {itemLabel(copy, "yearly")}
               </Label>
               <Badge
                 variant="outline"
                 className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
               >
-                Save {formatPercentValue(metric("pricing.annualDiscount").value)}
+                {fillLabel(itemLabel(copy, "save-badge"), {
+                  percent: formatPercentValue(metric("pricing.annualDiscount").value),
+                })}
               </Badge>
             </div>
           </div>
@@ -326,17 +335,14 @@ export function PricingPlans(): JSX.Element {
                   <HelpCircle className="h-5 w-5 text-slate-500" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="max-w-xs">
-                    Contact our sales team for custom pricing options tailored to your
-                    organization&apos;s specific needs.
-                  </p>
+                  <p className="max-w-xs">{itemLabel(copy, "custom-plan-tooltip")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <span className="text-sm">
-              Need a custom plan?{" "}
+              {itemLabel(copy, "custom-plan")}{" "}
               <Link href="#" className="text-purple-600 hover:text-purple-700 font-medium">
-                Contact us
+                {itemLabel(copy, "custom-plan-link")}
               </Link>
             </span>
           </div>

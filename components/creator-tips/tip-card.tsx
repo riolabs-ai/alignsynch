@@ -1,6 +1,8 @@
 "use client";
 
 import { tipCategoryName, type Tip } from "@/data/creator-tips-data";
+import type { PageCopySection } from "@/content/pages";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Bookmark, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,9 +10,10 @@ import { media } from "@/data/media";
 
 interface TipCardProps {
   tip: Tip;
+  copy: PageCopySection;
 }
 
-export default function TipCard({ tip }: TipCardProps) {
+export default function TipCard({ tip, copy }: TipCardProps) {
   return (
     <Link
       href={`/creator-tips/${tip.slug}`}
@@ -32,7 +35,7 @@ export default function TipCard({ tip }: TipCardProps) {
           </span>
           <div className="flex items-center ml-auto text-sm text-gray-500">
             <Clock size={14} className="mr-1" />
-            {tip.readMinutes} min
+            {fillLabel(itemLabel(copy, "read-minutes"), { count: tip.readMinutes })}
           </div>
         </div>
 
