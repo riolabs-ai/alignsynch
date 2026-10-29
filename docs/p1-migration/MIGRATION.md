@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 ## Run it
 
 ```bash
-pnpm data:check   # tsc (content + data + scripts) -> node:test (134 cases) -> validator
+pnpm data:check   # tsc (content + data + scripts) -> node:test (171 cases) -> validator
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm lint         # biome check (includes the formatter gate)
 pnpm build        # next build
@@ -349,23 +349,24 @@ Per-record (`E0`): every record parses against its schema, every object strict.
 
 Collection-level:
 
-| code        | invariant                                                                                                                                                               |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `E1` / `E2` | ids unique across all four kinds; `kind/slug` unique (a slug is URL identity)                                                                                           |
-| `E3`        | question ids unique across quizzes; every `selectQuizCard()` output parses as a `QuizCard` (a published quiz with no questions is `W1`, not an error)                   |
-| `E4`        | a record may only reference categories in its own scope; every `data/categories` row is in the table with a non-negative derived count                                  |
-| `E5`        | contact refs resolve; notification `link` matches a real route and `iconKey` is in the registry                                                                         |
-| `E6`        | conversation → contact refs resolve                                                                                                                                     |
-| `E7`        | `content/routes.ts` and the `app/` tree agree in both directions (34 routes)                                                                                            |
-| `E8`        | every search row names a real quiz / category / curated page                                                                                                            |
-| `E9`        | `content/quiz.ts` exists and `types/quiz.ts` does not; no file under `components/`, `app/`, `lib/` declares its own `Quiz` (one `Quiz` type; positive control included) |
-| `E10`       | no `app/` page or layout exports a metadata function Next never reads (`Metadata`, `GenerateMetadata`, …); `categories/[slug]` must export `generateMetadata`           |
-| `E11`       | every shelf id resolves to a record in the one collection, and every `selectQuizAuthoringCard()` output parses as a `QuizAuthoringCard`                                 |
-| `E12`       | one record per subject: no two records share a normalised title, and no `catalogueAlias` has come back as a record                                                      |
-| `E13`       | every analytics key names a record — an authoring snapshot of a quiz the collection does not hold renders as "no data" forever, so it fails here instead                |
-| `E14`       | every `promotions[].quizId` resolves to a record; `id` and `(quizId, slot)` are unique; no content key parses (`strict()` rejects `title`, `author`, `slug`, …)         |
-| `E15`       | `endsAt > startsAt` when present; a slot window never extends the catalog window; a `rewardCents` that differs from the catalog is bounded by it, and `0` is rejected   |
-| `E16`       | overlays that are live at the same time for one quiz agree field-wise on every engagement key they both set (sequential campaigns may differ)                           |
+| code        | invariant                                                                                                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `E1` / `E2` | ids unique across all four kinds; `kind/slug` unique (a slug is URL identity)                                                                                                                                 |
+| `E3`        | question ids unique across quizzes; every `selectQuizCard()` output parses as a `QuizCard` (a published quiz with no questions is `W1`, not an error)                                                         |
+| `E4`        | a record may only reference categories in its own scope; every `data/categories` row is in the table with a non-negative derived count                                                                        |
+| `E5`        | contact refs resolve; notification `link` matches a real route and `iconKey` is in the registry                                                                                                               |
+| `E6`        | conversation → contact refs resolve                                                                                                                                                                           |
+| `E7`        | `content/routes.ts` and the `app/` tree agree in both directions (34 routes)                                                                                                                                  |
+| `E8`        | every search row names a real quiz / category / curated page                                                                                                                                                  |
+| `E9`        | `content/quiz.ts` exists and `types/quiz.ts` does not; no file under `components/`, `app/`, `lib/` declares its own `Quiz` (one `Quiz` type; positive control included)                                       |
+| `E10`       | no `app/` page or layout exports a metadata function Next never reads (`Metadata`, `GenerateMetadata`, …); `categories/[slug]` must export `generateMetadata`                                                 |
+| `E11`       | every shelf id resolves to a record in the one collection, and every `selectQuizAuthoringCard()` output parses as a `QuizAuthoringCard`                                                                       |
+| `E12`       | one record per subject: no two records share a normalised title, and no `catalogueAlias` has come back as a record                                                                                            |
+| `E13`       | every analytics key names a record — an authoring snapshot of a quiz the collection does not hold renders as "no data" forever, so it fails here instead                                                      |
+| `E14`       | every `promotions[].quizId` resolves to a record; `id` and `(quizId, slot)` are unique; no content key parses (`strict()` rejects `title`, `author`, `slug`, …)                                               |
+| `E15`       | `endsAt > startsAt` when present; a slot window never extends the catalog window; a `rewardCents` that differs from the catalog is bounded by it, and `0` is rejected                                         |
+| `E16`       | overlays that are live at the same time for one quiz agree field-wise on every engagement key they both set (sequential campaigns may differ)                                                                 |
+| `E17`       | every `promotions[].slot` parses canonically, indexes a position a shelf actually produces, and that position renders the quiz the overlay names (a slot nobody renders fails the build, not silently no-ops) |
 
 Warnings are advisory and do not fail the build: `W1` published quiz with no
 questions, `W2` published quiz with no `publishedAt`, `W3` a renderable category with
@@ -375,7 +376,7 @@ shows (dead card), `W6` a campaign staged outside the quiz's published life
 
 **Two codes that mean more than one thing — check which document you are reading.** Issue #27 asked for
 `E11`/`E12`/`E13`, but all three were already taken here (card shelves, one record per subject, analytics
-keys), so the promotion rules shipped as `E14`–`E16` above. Separately, the C1 harness documents
+keys), so the promotion rules shipped as `E14`–`E17` above. Separately, the C1 harness documents
 (`quiz-migration.md`, `quiz-invariants.md`) use `W4` for _"two card records disagreeing about one quiz"_ —
 which B-01 took to **0** — while this validator's `W4` is _"a reward with no limited-time window"_ and stays
 **32**. An overlay can never change a catalog window, so B-01 does not move this `W4` and does not claim to.
@@ -421,14 +422,94 @@ the card equals the catalog projection field for field. Concurrent overlays of o
 must agree (`E16`), and the seat rule is re-checked **after** the merge (a merged
 `plays > capacity` throws rather than rendering a negative `spotsLeft`).
 
-Two things this does **not** do, stated because a green check is easy to over-read:
-the card shelves (`data/quiz-catalogue.ts` → `lib/quiz-cards.ts`) call
-`selectQuizCard(quiz, categoryName, now)` and pass **no** promotion, so the explore
-**pages** still render the catalog snapshot for those two slots — the wiring is a
-follow-up, and it needs a slot-to-shelf mapping first (shelves are keyed
-`homeFeatured`/`explore…`, overlays by `explore-page/popular[1]`). And
-`components/quiz/quiz-details.tsx:24` still hardcodes `reward: "$5.00"`, so the
-detail page can disagree with a card's reward regardless of B-01.
+How it reaches a page (P3). Overlays are keyed by **slot string**, shelves by **name**, and
+neither derives from the other, so the join is written down once as data:
+`data/quiz-catalogue.ts::slotShelves` maps a slot group (`explore-page/popular`) to the shelf
+that renders it (`explorePopular`). `slotForPosition(shelf, index)` is its inverse;
+`parseSlot()` accepts the canonical `group/popular[<n>]` form only (so `[01]` is a mismatch,
+not a silent near-miss), and the inverse map throws at import if two slots name one shelf.
+`lib/quiz-cards.ts::shelfCards()` asks for each position's slot and passes the resolved
+promotion into `selectQuizCard()`, so a merchandised card renders the campaign and every
+other shelf (`homeFeatured`, `exploreAll`, …) stays the catalog projection — a campaign is a
+_place_, not a property of the record. `E17` is the join's guard: a slot that names a shelf
+or index nobody renders, or a position that renders a different quiz, fails `data:check`
+instead of shipping a campaign that silently never runs. `/quiz/<id>` projects
+`quizDetailCard()` — the **quiz-scoped** campaign (A3) — on the server at one instant and
+prints `formatCurrency(stats.rewardCents)`, so the detail page cannot advertise a prize the
+card does not (`$7.50` while the campaign runs, `$10.00` before and after).
+
+Both slots now have a screen (P3b). `explore-featured/popular[1]` always did: `/explore/featured`
+renders `FeaturedQuizzesPage` over `featuredPopular`. `explore-page/popular[1]` did not — its
+shelf `explorePopular` was rendered only by `components/explore/explore-featured.tsx`, which
+nothing imported, so the campaign was correct in the model and invisible in the app. That card's
+three options were mount, re-point and retire; **mount** won on the evidence:
+
+- **Re-point has no target.** The only surface `/explore` shows is `homeFeatured` (its `Featured
+  Quizzes` block) and `exploreAll` (the filtered grid, reused by the category pages). `homeFeatured`
+  renders on `/` as well, and `slotShelves` names one shelf from one group only — the inverse map
+  throws at import if a second group claims it. `exploreAll` is a sorted/filtered grid, so a
+  position in it is not a stable place. There is no live position to name.
+- **Retire would delete authored evidence.** Deleting the three `explore*` shelves and the
+  `explore-page/*` slot groups rejects promo #1, and the C1 snapshot keys 18 authored card rows by
+  `explore-page/*` — `explore-page/popular[1]` among them, at 2105/2500 · $7.50. Without the
+  overlay that row projects the catalog numbers, so B-01's 31/31 claim loses the card it
+  reproduces: the committed snapshot says a merchandised Popular row _did_ exist on `/explore`.
+- **Mount restores the documented direction.** The D2 table above already assigns the explore
+  page's featured section to `exploreTrending/Popular/New`; the wiring kept `homeFeatured`'s
+  `FeaturedQuizzes` block instead, and three of its four cards were the same quizzes as the
+  Trending tab — one heading, one set of quizzes, twice.
+
+So `/explore` now renders `ExploreFeatured` in place of `<FeaturedQuizzes />`: the three curated
+`explore*` shelves behind Trending/Popular/New tabs, with the `View All Featured Quizzes` CTA to
+`/explore/featured`. The home page keeps its own `FeaturedQuizzes` block. The page is
+**request-time** for the same reason as the featured page — a static prerender would evaluate
+`explorePopular[1]` at build time — so `/explore` moves from the prerendered set to `ƒ` (manifest
+routes 30 → 29, hand-count 31 → 30 static pages of 34; it is the only route that changed). Both
+slot-bearing routes hand one server instant (`now`) to their client component, so server render
+and hydration project the same campaign at the same clock.
+
+### The 3-vs-6 curation question, decided: `/explore` keeps three cards per tab
+
+`exploreTrending/Popular/New` hold **three** ids each; the authored snapshot carries **six** rows
+per `explore-page/*` tab. Measured against the template the components were ported from, by quiz id
+and order, the six are not `/explore`'s:
+
+| authored rows           | equals (id and order)          | authored in                                    | the template mounted it on                  |
+| ----------------------- | ------------------------------ | ---------------------------------------------- | ------------------------------------------- |
+| `explore-page/*`, 18    | `featuredTrending/Popular/New` | `components/explore/featured-quizzes-page.tsx` | `/explore/featured`                         |
+| `explore-featured/*`, 9 | `exploreTrending/Popular/New`  | `components/explore/explore-featured.tsx`      | **no page** — nothing imported it           |
+| `home/*`, 4 (no tabs)   | `homeFeatured`                 | `components/home/featured-quizzes.tsx`         | `/` **and** `/explore`'s merchandising slot |
+
+So the two `explore` groups run the opposite way from the pages in their names: the group called
+`explore-page` is the featured page's six-card tabs, and the group called `explore-featured` is the
+three-card block that now renders on `/explore` (P3b). `/explore` never had an authored six to
+restore — before P3b its merchandising slot was the flat four-card block, which the snapshot files
+under `home/*` because the harness keyed that shared component by its home page. The group names are
+therefore neither pure page names nor pure slot names, and a key does not mean "a shelf renders this
+position": `explore-page/popular[3]` is a harness label, not the fourth card of `/explore`.
+
+**Decision: keep the three-card teaser.** Three reasons, in the order that decides it:
+
+- **The six already have their page.** Extending the shelves would render the same 18 ids in the same
+  order on `/explore` and `/explore/featured`, and turn the section's `View All Featured Quizzes` link
+  into a pointer at a duplicate of itself.
+- **No authored card is orphaned.** `explore*` is a strict prefix of the authored `explore-page/*` run
+  in every tab, so rows `[0..2]` render on `/explore` and `[3..5]` render on `/explore/featured` as
+  `featured*`: every authored row has a screen, and no row has two on the same page.
+- **The campaign does not notice.** `popular[1]` is index 1 of all three lists, so both labelings
+  render 2105/2500 · $7.50 · 4.8 · `popular`; B-01's 31/31 projects each row through
+  `selectQuizCard` — never through a shelf index — so it holds byte-identically.
+
+`scripts/__tests__/explore-curation.test.ts` pins the measurement: each group's ids against the shelf
+it equals, the prefix relation, and the exact set of authored keys that name no rendered position
+(`explore-page/{trending,popular,new}[3..5]`, nine rows). A shelf that grows or a row that is re-keyed
+fails that suite, so this decision has to be restated wherever it would change.
+
+If curation later decides `/explore` should show six, the change is: copy the `featured*` lists into
+`exploreTrending/Popular/New` (13 shelves / 68 authored positions → the same 13 / 77), move E17's
+out-of-range case in `promotion-invariants.test.ts` from `explore-page/popular[3]` to `[6]` together
+with its `3 card` message assertion, and rewrite this paragraph and that suite. No snapshot row
+changes either way — the labels are the harness's, and the campaign's position is index 1 in both.
 
 The full C1 spec, the four product answers and the signed-off acceptance table live
 in `quiz-promotion-backlog.md` and `quiz-migration.md` §12.4 (harness documents,

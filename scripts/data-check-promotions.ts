@@ -19,6 +19,10 @@
  *         bounded, and the derived bound is the earliest declared one.
  *   E16 — one quiz advertises one set of numbers: overlays that are live at the same
  *         time agree on every engagement key they both set.
+ *   E17 — the slot is a place a shelf actually renders: `promotions[].slot` parses
+ *         against `slotShelves` (`data/quiz-catalogue.ts`), its index exists on that
+ *         shelf, and that position renders the quiz the overlay names. A campaign on
+ *         a slot nobody renders never runs, and nothing else would notice.
  *   W6  — a campaign staged outside the quiz's published life warns; staging against
  *         a draft is legitimate, so it must not fail the build.
  *
@@ -32,8 +36,9 @@ import {
   type QuizPromotion,
   type QuizStats,
 } from "../content/quiz";
+import { parseSlot, quizShelves, slotShelves } from "../data/quiz-catalogue";
 
-export type PromotionRule = "E14" | "E15" | "E16" | "W6";
+export type PromotionRule = "E14" | "E15" | "E16" | "E17" | "W6";
 
 export interface PromotionFinding {
   rule: PromotionRule;
@@ -274,6 +279,38 @@ export function promotionFindings(
           }
         }
       }
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * E17 — the slot is a place a shelf actually renders
+   * ---------------------------------------------------------------- */
+
+  const knownGroups = Object.keys(slotShelves).join(", ");
+  for (const [index, promotion] of parsed.entries()) {
+    const label = labelOf(promotion, index);
+    const address = parseSlot(promotion.slot);
+    if (address === undefined) {
+      error(
+        "E17",
+        `${label}: slot "${promotion.slot}" is not a slot any shelf renders — expected \`<page>/<section>[<index>]\` from: ${knownGroups}. A campaign on a slot nobody renders silently never runs`,
+      );
+      continue;
+    }
+    const shelf = quizShelves[address.shelf];
+    if (address.index >= shelf.length) {
+      error(
+        "E17",
+        `${label}: slot "${promotion.slot}" addresses position ${address.index} of shelf "${address.shelf}", which renders ${shelf.length} card(s) — the campaign would never run`,
+      );
+      continue;
+    }
+    const rendered = shelf[address.index];
+    if (rendered !== promotion.quizId) {
+      error(
+        "E17",
+        `${label}: slot "${promotion.slot}" renders "${rendered}", not "${promotion.quizId}" — the campaign would never run (curation and the campaign disagree about this position)`,
+      );
     }
   }
 

@@ -19,9 +19,23 @@
  */
 export const FIXTURE_NOW = "2025-01-01T00:00:00.000Z";
 
-/** One authored card, in the model's terms. */
+/**
+ * One authored card, in the model's terms.
+ *
+ * `key` is the **migration harness's label** for the card's authored position, not a claim
+ * that a shelf renders that position. The two `explore*` groups are the template's two tab
+ * blocks, and they are the opposite way round from the pages that render them: the 18
+ * `explore-page/*` rows are six per tab and equal `featuredTrending/Popular/New` (the tabs of
+ * `featured-quizzes-page.tsx`, mounted on `/explore/featured`), while the nine
+ * `explore-featured/*` rows are three per tab and equal `exploreTrending/Popular/New` (the
+ * tabs of `explore-featured.tsx`, mounted on `/explore`). So `explore-page/*[3..5]` names no
+ * rendered card, and `/explore`'s three-card tabs are a strict prefix of the authored six
+ * rather than a shelf that lost three cards. The decision, the measurement behind it and what
+ * would have to change to show six are in `docs/p1-migration/MIGRATION.md`; the mapping is
+ * pinned by `scripts/__tests__/explore-curation.test.ts`.
+ */
 export interface CardRecordSnapshot {
-  /** The merchandising slot the card was authored in (`explore-page/popular[1]`). */
+  /** The harness's label for the authored position (`explore-page/popular[1]`). */
   key: string;
   quizId: string;
   title: string;
