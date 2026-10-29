@@ -83,7 +83,7 @@ export const homePageCopy: PageCopy = zPageCopy.parse({
         { id: "players", label: "players" },
         { id: "start-quiz", label: "Start Quiz" },
         { id: "spots-left-urgent", label: "Only {count} spots left!" },
-        { id: "spots-left", label: "{count} spots left" },
+        { id: "spots-left", label: "Only {count} spots left" },
         { id: "spots-available", label: "{count} spots available" },
         { id: "empty-category", label: "Uncategorised" },
         { id: "unknown-creator", label: "Unknown creator" },

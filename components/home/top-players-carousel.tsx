@@ -193,7 +193,7 @@ export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
                     <Image
                       src={cardCover}
                       className="w-full object-cover size-full"
-                      alt={media["card-cover"].alt}
+                      alt="cover img"
                     />
                     {/* Avatar */}
                     <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">

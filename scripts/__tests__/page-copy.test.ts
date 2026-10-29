@@ -209,7 +209,7 @@ describe("resolveSpecifier / importClosure", () => {
       sources,
     );
     assert.deepEqual(attributed, ["components/home/band.tsx"]);
-    // The dead component is in the directory but not in the closure: WU-12 deletes it.
+    // In the directory, but not in the closure: attribution is reachability, not listing.
     assert.equal(
       measureRoute({ page: "app/page.tsx", dirs: ["components/home"] }, sources).literals.length,
       0,

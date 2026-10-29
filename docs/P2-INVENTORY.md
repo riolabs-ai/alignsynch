@@ -412,16 +412,19 @@ are `scripts/__tests__/page-copy.test.ts` (22 cases).
 1. **leaf rule** — a JSX text node or string attribute value longer than 24 chars in an attributed
    file is an error on its own, and the message names `file:line` and the fixture to move it to.
    Technical attributes are not copy (`className`, `href`, `alt`, `variant`, `aria-*`; `alt` belongs
-   to `MediaEntry.alt`), and a glyph-only segment (`$`, `"`, an emoji) is not a string.
+   to `MediaEntry.alt`), and a glyph-only segment (`$`, `"`, an emoji) is not a string. A copy unit
+   does **not** change `alt` text on the way through: `/`'s cards keep the literal `alt="cover img"`
+   because migrating copy must leave the rendered page identical — adopting a registry alt is
+   E17–E19's decision, not a side effect of moving a heading.
 2. **budget** — the _count_ of leaf literals in the route's surface may not exceed the recorded
    number, short labels included. `/` is recorded at **0**; a unit lowers a budget and raising one is
    a reviewable diff, never a re-baseline.
 
 **Attribution is by reachability, not by directory.** The surface is the route's page module plus the
 import closure inside the directories the route declares (`dirs`). That is what keeps two cards from
-fighting: `components/home/` still holds five components no page imports (WU-12 deletes them), and
-their 113 copy strings are in nobody's budget. The same pass proves the fixture is reachable from the
-page module — copy written and not wired changes nothing.
+fighting: WU-12 deleted the fourteen components no page imported, and a budget that counted a
+directory instead of a graph would have made every deletion a budget regression. The same pass proves
+the fixture is reachable from the page module — copy written and not wired changes nothing.
 
 **Migrating a route (the five steps a later unit repeats)**
 
@@ -432,9 +435,9 @@ page module — copy written and not wired changes nothing.
    on the sentences first (24-char rule) and then on the count.
 4. Move each string into the fixture, pass the section down from the page, and replace the literal
    with `copy.heading` / `itemLabel(copy, "id")` / `fillLabel(...)`.
-5. Repeat until the route measures 0. If a band is rendered by two routes (`FeaturedQuizzes` is on
-   `/` and `/explore`), the _page_ decides which fixture's section it passes; `/explore` reads the
-   home fixture's `featured-quizzes` section today and WU-9 gives it its own.
+5. Repeat until the route measures 0. If two routes render one band, the _page_ decides which
+   fixture's section that component receives — never the component itself, or the copy inverts the
+   dependency.
 
 ## Invariants (proposed for P2; E = hard, W = declared deviation)
 

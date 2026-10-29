@@ -754,9 +754,9 @@ for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", p
  *               makes the ratchet a ratchet: every later copy unit lowers one number
  *               and cannot quietly re-add a label to buy headroom.
  *
- * Attribution is by reachability, not by directory listing: `components/home/` still
- * holds five components no page imports (WU-12 deletes them), and counting their 113
- * copy strings here would make two cards fight over one number.
+ * Attribution is by reachability, not by directory listing: a file in `components/home/`
+ * that no page imports is not this route's copy, and counting it would make two cards
+ * fight over one number — deleting a dead component would look like a budget regression.
  *
  * The same pass proves the fixture is wired (reachable from the page module) and that
  * every id a component asks for exists in the fixture — `sectionOf(copy, "x")` and

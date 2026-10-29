@@ -8,10 +8,10 @@
  * tested without a tree:
  *
  *   importClosure()   which modules a route's page really renders. Attribution is
- *                     by *reachability*, not by directory: the five dead home
- *                     components carry 62 copy strings but no page imports them,
- *                     so they are not in the closure and not counted (WU-12
- *                     deletes them; a budget that counted them would fight that).
+ *                     by *reachability*, not by directory: a component no page
+ *                     imports is not that route's copy, so it is not in the
+ *                     closure and not counted. A directory-listing budget would
+ *                     make deleting a dead component a budget regression.
  *   leafLiterals()    the strings a component still writes itself: JSX text nodes
  *                     and string attribute values, minus the technical attributes
  *                     that are markup (className, href, alt, variant, …) and minus

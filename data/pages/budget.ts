@@ -6,16 +6,16 @@
  *
  *   page      the route module the attribution walks from (the `page.tsx` Next renders)
  *   dirs      the directories whose *reachable* files are attributed to the route.
- *             Reachability matters: `components/home/` still holds five components
- *             no page imports (WU-12 deletes them), and their literals are not this
- *             route's — the import closure excludes them, so the two cards never
- *             fight over the same number.
+ *             Reachability matters: a component nobody imports is not this route's
+ *             copy, and counting it would make two cards fight over one number.
+ *             WU-12 deleted the fourteen unimported components, which is exactly
+ *             why attribution asks the import graph instead of listing a directory.
  *   fixture   must be reachable from `page`; that is the proof the copy is wired in
  *   budget    leaf literals still tolerated. **Measured, then recorded.** A unit
  *             lowers it; raising it is a reviewable diff (the check compares the
  *             tree against this number, it never re-baselines itself).
  *
- * `"//"` measured 87 literals before WU-6 and 0 after — every string the page's own
+ * `"/"` measured 87 literals before WU-6 and 0 after — every string the page's own
  * components rendered now lives in `data/pages/home.ts`. The budget stays 0: the
  * next literal added to `components/home/**` that a page renders is a red build.
  */
