@@ -560,17 +560,37 @@ file. The other rows are untouched on purpose — a card that wants "hits remain
    primitive was imported only by the tooltip-fix file, so the pair had to go together. The tooltip-fix
    file imports `./sidebar-context`, not `./sidebar`, so both were independently dead and both went.
 
-2. **WU-1 — `Player` / `LeaderboardRow` fixture** (107 hits): the six
-   leaderboard islands. Unblocks /leaderboard, /daily-challenge and the two home widgets.
-3. **WU-4 — metrics** (40): widen `QuizAnalytics` (or add a
-   `MetricSnapshot`) so `+4 from last month` is computed, not typed.
+2. **WU-1 — `Player` / `LeaderboardRow` fixture** (107 hits): **done**, landed as `6d21585`
+   (PR #77; #48 closed). `content/people.ts` owns the three records — `Player`,
+   `LeaderboardRow`, `WinEvent` — and `data/players.ts` carries ten players, six boards
+   (50 rows) and eight prize events. The six islands read it through `lib/players.ts`
+   (`leaderboardEntries`, `avatarSrcOf`) and `lib/win-feed.ts` (`winFeed`) instead of their own
+   arrays. `data:check` E24 is the enforcement: a row's `playerId` must resolve, an avatar key
+   must name a registered avatar whose file exists, a board's `rank` must equal its position,
+   and a board carrying `delta` must be ordered by it. E17 keeps the 63 avatar paths out of the
+   components.
+3. **WU-4 — metrics** (40): **done**, landed as `a50da84` (PR #80; #49 closed). Every rendered
+   quantity is now a `MetricSnapshot` in `data/metrics.ts` (value, previous, period, unit) and
+   `content/metrics.ts` turns it into the string, so `+4 from last month` is computed from two
+   values, not typed. `data:check` E22 is the enforcement — 0 metric literals in `components/`
+   and `app/`, 71 snapshots — and E25 keeps the fixture honest: a key names its `owner.name`,
+   every key is rendered, and the breakdowns, tier bands and streak rewards add up.
 4. **WU-5 — taxonomy literals** (26): **done**, landed as `e613237` (PR #73; #50 closed). The schema
    layer it added is `content/categories.ts::quizCategoryLabel(slug)` — a slug in, the table's `name`
    out — plus `content/core.ts::{DIFFICULTIES,DIFFICULTY_LABELS,difficultyLabel,isDifficulty}` for the
    difficulty enum and a narrowing guard. `data:check` E20 is the enforcement: it fails a component
    that types a label one of those records already owns, and the tree measures 0.
-5. **WU-2 — quiz surface mocks** (117): `quiz-details`, `my-quizzes/quiz-details`,
-   `quiz-discustion`, results and discussion pages read the existing fixture.
+5. **WU-2 — quiz surface mocks** (117): **done**, landed as `6aa431d` (PR #76; #51 closed).
+   `content/quiz-result.ts` owns `QuizResult`, `QuizComment` and `QuizReview`, and
+   `data/quiz-results.ts`, `data/quiz-comments.ts` and `data/quiz-reviews.ts` carry 17 results,
+   14 comments and 5 reviews joined to records that exist. The detail, review, authoring and
+   discussion surfaces read them through the `select*` projections (`selectQuizResults`,
+   `selectQuizReviews`, `selectCommentThreads`, `selectQuizDiscussions`, …) instead of
+   `quizData`, `mockQuizResult` and the three discussion arrays. `data:check` E24 is the
+   enforcement: every `quizId` resolves, a `questionId` names a question of that quiz, a
+   `selectedOptionId` names an option of that question, a reply stays one level deep on its own
+   quiz, and no instant is after the fixture clock. The detail page's own leaderboard and
+   reviews came from `lib/quiz-detail.ts::quizDetailModel` in `61d6056` (PR #83).
 6. **WU-3 — search and chat mocks** (68): delete `mockSearchData`, render
    `buildSearchIndex`; chat reads `data/chat-data.ts`.
    _Landed (#52):_ `mockSearchData` and the inline catalog are gone. `/search` and the header
