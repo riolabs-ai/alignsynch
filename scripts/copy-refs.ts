@@ -147,8 +147,15 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * a variant (variant, size, type), or carry styling (any `*class*`), a11y plumbing
  * (`aria-*`) or a test hook (`data-*`). `alt` is excluded too, because alt text is
  * `MediaEntry.alt`'s job (E17–E19) — a literal alt is a media defect, not a copy one.
+ *
+ * The same rule covers the values a renderer reads and a reader does not: `accept`
+ * names file types for the picker, `strokeLinecap`/`strokeLinejoin` name an SVG cap
+ * (`"round"`). They are words only by accident — moving them into `PageCopy` would
+ * put `image/*,.pdf,.doc,.docx,.txt` in an editor's fixture, which is the opposite of
+ * what this unit is for.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
+  "accept",
   "alt",
   "asChild",
   "color",
@@ -165,6 +172,8 @@ const TECHNICAL_ATTRIBUTES = new Set([
   "size",
   "src",
   "stroke",
+  "strokeLinecap",
+  "strokeLinejoin",
   "strokeWidth",
   "target",
   "type",

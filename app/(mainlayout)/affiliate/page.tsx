@@ -8,19 +8,21 @@ import { ProgramFeatures } from "@/components/affiliate/program-features";
 import { SuccessStories } from "@/components/affiliate/success-stories";
 import { WhyPartner } from "@/components/affiliate/why-partner";
 import { Footer } from "@/components/layout/footer";
+import { affiliatePageCopy } from "@/data/pages/affiliate";
+import { sectionOf } from "@/lib/page-copy";
 
 export default function AffiliatePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-900">
-      <AffiliateHero />
-      <HowToStart />
-      <ProfitCalculator />
-      <ProgramFeatures />
-      <AboutQuizHub />
-      <WhyPartner />
-      <AffiliateFAQ />
-      <SuccessStories />
-      <AffiliateCta />
+      <AffiliateHero copy={affiliatePageCopy} />
+      <HowToStart copy={sectionOf(affiliatePageCopy, "how-to-start")} />
+      <ProfitCalculator copy={sectionOf(affiliatePageCopy, "profit-calculator")} />
+      <ProgramFeatures copy={sectionOf(affiliatePageCopy, "program-features")} />
+      <AboutQuizHub copy={sectionOf(affiliatePageCopy, "about-quizhub")} />
+      <WhyPartner copy={sectionOf(affiliatePageCopy, "why-partner")} />
+      <AffiliateFAQ copy={sectionOf(affiliatePageCopy, "affiliate-faq")} />
+      <SuccessStories copy={sectionOf(affiliatePageCopy, "success-stories")} />
+      <AffiliateCta copy={sectionOf(affiliatePageCopy, "affiliate-cta")} />
       <Footer />
     </div>
   );

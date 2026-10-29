@@ -5,10 +5,33 @@
  * `/news/[slug]`), which is what makes "every route has copy" a checkable
  * statement instead of a hope (E23). WU-7…WU-11 add one entry per unit; nothing
  * else in the repo has to change.
+ *
+ * WU-9 (#56) added the marketing surfaces: the affiliate programme, pricing, the
+ * news index and its article reader, the support centre and its article reader,
+ * and creator tips in both its list and detail shapes. Each *route* owns copy even
+ * where two routes share one component directory — `/news` and `/news/[slug]` both
+ * render out of `components/news/`, and the page decides which fixture's section a
+ * component receives, never the component itself.
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
+import { affiliatePageCopy } from "./affiliate";
+import { creatorTipsPageCopy } from "./creator-tips";
+import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
 import { homePageCopy } from "./home";
+import { newsPageCopy } from "./news";
+import { newsArticlePageCopy } from "./news-article";
+import { pricingPageCopy } from "./pricing";
+import { supportPageCopy } from "./support";
+import { supportArticlePageCopy } from "./support-article";
 
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
+  "/affiliate": affiliatePageCopy,
+  "/creator-tips": creatorTipsPageCopy,
+  "/creator-tips/[slug]": creatorTipsDetailPageCopy,
+  "/news": newsPageCopy,
+  "/news/[slug]": newsArticlePageCopy,
+  "/pricing": pricingPageCopy,
+  "/support": supportPageCopy,
+  "/support/articles/[id]": supportArticlePageCopy,
 });

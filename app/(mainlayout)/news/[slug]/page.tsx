@@ -1,4 +1,5 @@
 import { NewsArticle } from "@/components/news/news-article";
+import { newsArticlePageCopy } from "@/data/pages/news-article";
 import { use } from "react";
 
 export const metadata = {
@@ -8,5 +9,5 @@ export const metadata = {
 
 export default function NewsArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
-  return <NewsArticle slug={slug} />;
+  return <NewsArticle slug={slug} copy={newsArticlePageCopy} />;
 }

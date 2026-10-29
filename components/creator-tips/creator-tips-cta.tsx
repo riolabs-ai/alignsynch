@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight, Lightbulb, Sparkles, Target } from "lucide-react";
 import Link from "next/link";
 
-export default function CreatorTipsCta() {
+export default function CreatorTipsCta({ copy }: { copy: PageCopySection }) {
   return (
     <section className="my-20">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl">
@@ -16,17 +18,14 @@ export default function CreatorTipsCta() {
         <div className="relative grid md:grid-cols-2 gap-8 p-8 md:p-12 items-center">
           <div className="space-y-6">
             <div className="inline-block rounded-lg bg-white/10 backdrop-blur-sm px-4 py-2 text-white font-medium text-sm">
-              Ready to apply what you've learned?
+              {itemLabel(copy, "eyebrow")}
             </div>
 
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-              Create your own engaging quiz <span className="text-purple-200">today!</span>
+              {copy.heading} <span className="text-purple-200">{itemLabel(copy, "today")}</span>
             </h2>
 
-            <p className="text-purple-100 text-lg max-w-md">
-              Put these tips into practice and start creating quizzes that engage your audience and
-              showcase your expertise.
-            </p>
+            <p className="text-purple-100 text-lg max-w-md">{copy.body}</p>
 
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
@@ -35,9 +34,7 @@ export default function CreatorTipsCta() {
                     <Sparkles className="h-4 w-4 text-purple-100" />
                   </div>
                 </div>
-                <p className="text-purple-100">
-                  Create interactive quizzes with multiple question types
-                </p>
+                <p className="text-purple-100">{itemLabel(copy, "perk-question-types")}</p>
               </div>
 
               <div className="flex items-start space-x-3">
@@ -46,9 +43,7 @@ export default function CreatorTipsCta() {
                     <Target className="h-4 w-4 text-purple-100" />
                   </div>
                 </div>
-                <p className="text-purple-100">
-                  Reach your target audience and grow your community
-                </p>
+                <p className="text-purple-100">{itemLabel(copy, "perk-audience")}</p>
               </div>
 
               <div className="flex items-start space-x-3">
@@ -57,20 +52,24 @@ export default function CreatorTipsCta() {
                     <Lightbulb className="h-4 w-4 text-purple-100" />
                   </div>
                 </div>
-                <p className="text-purple-100">Monetize your knowledge and earn rewards</p>
+                <p className="text-purple-100">{itemLabel(copy, "perk-monetize")}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-4 pt-2">
-              <Button asChild size="lg" className="bg-white text-purple-600 hover:bg-purple-50">
-                <Link href="/create/editor">
-                  Create a Quiz <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+              {copy.cta && (
+                <Button asChild size="lg" className="bg-white text-purple-600 hover:bg-purple-50">
+                  <Link href={copy.cta.href}>
+                    {copy.cta.label} <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
 
-              <Button asChild size="lg" variant="outline">
-                <Link href="/explore">Explore Examples</Link>
-              </Button>
+              {copy.secondaryCta && (
+                <Button asChild size="lg" variant="outline">
+                  <Link href={copy.secondaryCta.href}>{copy.secondaryCta.label}</Link>
+                </Button>
+              )}
             </div>
           </div>
 
