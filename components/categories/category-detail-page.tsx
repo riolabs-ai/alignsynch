@@ -16,8 +16,16 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Clock, DollarSign, Filter, Search, SortAsc, Target, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { formatCurrency, formatPlayerCount, type Difficulty } from "@/content/core";
+import {
+  DIFFICULTIES,
+  formatCurrency,
+  formatPlayerCount,
+  difficultyLabel,
+  type Difficulty,
+} from "@/content/core";
+import type { PageCopy } from "@/content/pages";
 import type { QuizCard } from "@/content/quiz";
+import { fillLabel, itemLabel, pageItemOf, sectionOf } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { useEffect, useState } from "react";
 import { media } from "@/data/media";
@@ -31,9 +39,19 @@ const progress = (quiz: QuizCard) =>
     : (quiz.stats.plays / quiz.stats.capacity) * 100;
 interface CategoryDetailPageProps {
   categoryName?: CategoryType;
+  copy: PageCopy;
 }
 
-export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
+/**
+ * One category's quiz wall. The words are `data/pages/category-detail.ts`; the page
+ * module resolves the fixture and passes it as `copy`, so no sentence in this file is
+ * authored here (E23).
+ *
+ * Difficulty labels come from `content/core.ts` (`difficultyLabel`), not from the
+ * fixture: the enum owns that text (WU-5), and writing "Easy" here — or in a fixture —
+ * is the duplicate E20 is about.
+ */
+export function CategoryDetailPage({ categoryName, copy }: CategoryDetailPageProps) {
   // Projected from the catalogue; the grid never authors a card (D2).
   const quizzes = shelfCards("exploreAll");
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,6 +60,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
   const [difficulty, setDifficulty] = useState("all");
   const [category, setCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const empty = sectionOf(copy, "empty");
 
   // Filter and sort quizzes whenever dependencies change
   useEffect(() => {
@@ -137,7 +156,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/categories">
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Categories
+              {pageItemOf(copy, "back").label}
             </Link>
           </Button>
         </div>
@@ -148,13 +167,13 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
               <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white bg-indigo-500">
                 <Target />
               </div>
-              <h1 className="text-3xl font-bold"> Quizzes</h1>
+              <h1 className="text-3xl font-bold"> {copy.heading}</h1>
             </div>
-            <p className="text-muted-foreground mt-2 max-w-2xl">Browse quizzes in this category.</p>
+            <p className="text-muted-foreground mt-2 max-w-2xl">{copy.subtitle}</p>
           </div>
 
           <Button asChild>
-            <Link href="/create/editor">Create Quiz</Link>
+            <Link href="/create/editor">{pageItemOf(copy, "create-quiz").label}</Link>
           </Button>
         </div>
       </div>
@@ -164,7 +183,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder={`Search quizzes...`}
+            placeholder={pageItemOf(copy, "search-placeholder").label}
             className="pl-10"
             value={searchQuery}
             onChange={handleSearchChange}
@@ -176,19 +195,21 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <SortAsc className="h-4 w-4" />
-                Sort
+                {pageItemOf(copy, "sort").label}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleSortChange("popular")}>
-                Most Popular
+                {pageItemOf(copy, "sort-popular").label}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleSortChange("rating")}>
-                Highest Rated
+                {pageItemOf(copy, "sort-rating").label}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSortChange("newest")}>Newest</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortChange("newest")}>
+                {pageItemOf(copy, "sort-newest").label}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleSortChange("reward")}>
-                Highest Reward
+                {pageItemOf(copy, "sort-reward").label}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -197,22 +218,18 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Filter className="h-4 w-4" />
-                Difficulty
+                {pageItemOf(copy, "difficulty").label}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleDifficultyChange("all")}>
-                All Difficulties
+                {pageItemOf(copy, "difficulty-all").label}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDifficultyChange("easy")}>
-                Easy
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDifficultyChange("medium")}>
-                Medium
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDifficultyChange("hard")}>
-                Hard
-              </DropdownMenuItem>
+              {DIFFICULTIES.map((level) => (
+                <DropdownMenuItem key={level} onClick={() => handleDifficultyChange(level)}>
+                  {difficultyLabel(level)}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -246,7 +263,9 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                       </Badge>
                       <div className="flex items-center gap-1 text-white text-sm">
                         <Clock className="h-3.5 w-3.5" />
-                        <span>{minutes(quiz)} min</span>
+                        <span>
+                          {minutes(quiz)} {pageItemOf(copy, "minutes").label}
+                        </span>
                       </div>
                     </div>
                     <h3 className="text-white font-semibold line-clamp-2">{quiz.title}</h3>
@@ -261,16 +280,16 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                     <Avatar className="h-6 w-6">
                       <AvatarImage
                         src={quiz.author?.avatar?.src ?? media.placeholder.src}
-                        alt={quiz.author?.name ?? "creator"}
+                        alt={quiz.author?.name ?? pageItemOf(copy, "creator-avatar").label}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm text-muted-foreground">
-                      {quiz.author?.name ?? "Unknown creator"}
+                      {quiz.author?.name ?? pageItemOf(copy, "unknown-creator").label}
                     </span>
                   </div>
                   <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
-                    {quiz.categories[0]?.name ?? "Uncategorised"}
+                    {quiz.categories[0]?.name ?? pageItemOf(copy, "uncategorised").label}
                   </Badge>
                 </div>
 
@@ -304,11 +323,15 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                       <Users className="h-3.5 w-3.5" />
-                      <span>{formatPlayerCount(quiz.stats.plays)} players</span>
+                      <span>
+                        {formatPlayerCount(quiz.stats.plays)} {pageItemOf(copy, "players").label}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-600 dark:text-slate-400 text-sm">
-                        {quiz.stats.spotsLeft ?? 0} spots left
+                        {fillLabel(pageItemOf(copy, "spots-left").label, {
+                          count: quiz.stats.spotsLeft ?? 0,
+                        })}
                       </span>
                       <CircularProgress
                         value={progress(quiz)}
@@ -327,7 +350,9 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
 
                   {(quiz.stats.spotsLeft ?? 0) <= 20 && (
                     <p className="text-xs font-medium text-destructive">
-                      Almost full! Only {quiz.stats.spotsLeft ?? 0} spots left
+                      {fillLabel(pageItemOf(copy, "spots-left-urgent").label, {
+                        count: quiz.stats.spotsLeft ?? 0,
+                      })}
                     </p>
                   )}
                 </div>
@@ -335,7 +360,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
 
               <CardFooter className="px-4 pb-4 pt-0">
                 <Button className="w-full" asChild>
-                  <Link href={`${quiz.href}/play`}>Play Now</Link>
+                  <Link href={`${quiz.href}/play`}>{pageItemOf(copy, "play-now").label}</Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -346,11 +371,11 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
           <div className="rounded-full bg-muted p-6 mb-4">
             <Search className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold mb-2">No quizzes found</h3>
+          <h3 className="text-xl font-semibold mb-2">{empty.heading}</h3>
           <p className="text-muted-foreground max-w-md mb-6">
             {searchQuery
-              ? `No quizzes match your search "${searchQuery}". Try a different search term or filter.`
-              : "No quizzes found with the selected filters. Try adjusting your filters."}
+              ? fillLabel(itemLabel(empty, "empty-search"), { query: searchQuery })
+              : itemLabel(empty, "empty-filters")}
           </p>
           <Button
             variant="outline"
@@ -360,7 +385,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
               setSortBy("popular");
             }}
           >
-            Reset Filters
+            {pageItemOf(copy, "reset-filters").label}
           </Button>
         </div>
       )}
