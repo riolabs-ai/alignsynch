@@ -5,12 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import type { PageCopySection } from "@/content/pages";
+import { media } from "@/data/media";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { AlertCircle, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useEffect, useReducer } from "react";
 import { BattleState } from "./battle-page";
-import { media } from "@/data/media";
 
 interface ActiveBattleProps {
+  copy: PageCopySection;
   battleState: BattleState;
   onBattleComplete: ({ score, correctAnswers }: { score: number; correctAnswers: number }) => void;
 }
@@ -151,7 +154,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
   }
 };
 
-export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProps) {
+export function ActiveBattle({ copy, battleState, onBattleComplete }: ActiveBattleProps) {
   const [state, dispatch] = useReducer(gameReducer, battleState, createInitialState);
 
   // Mock questions
@@ -292,11 +295,16 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
           <div className="text-sm font-medium">
-            Question {state.currentQuestion + 1} of {questions.length}
+            {fillLabel(itemLabel(copy, "progress"), {
+              current: state.currentQuestion + 1,
+              total: questions.length,
+            })}
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-orange-500" />
-            <span className="font-bold">{state.timeLeft}s</span>
+            <span className="font-bold">
+              {fillLabel(itemLabel(copy, "seconds"), { value: state.timeLeft })}
+            </span>
           </div>
         </div>
         <Progress value={progress} className="h-2" />
@@ -304,7 +312,7 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
 
       {battleState.mode === "group" && (
         <div className="mb-6">
-          <h3 className="text-sm font-medium mb-2">Live Rankings</h3>
+          <h3 className="text-sm font-medium mb-2">{itemLabel(copy, "live-rankings")}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
             {state.playerRankings.slice(0, 5).map((player, index) => (
               <div
@@ -323,7 +331,9 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
                 <div className="mt-1 text-xs font-medium truncate w-full text-center">
                   {player.name}
                 </div>
-                <div className="text-xs text-muted-foreground">{player.score} pts</div>
+                <div className="text-xs text-muted-foreground">
+                  {player.score} {itemLabel(copy, "pts")}
+                </div>
               </div>
             ))}
           </div>
@@ -364,7 +374,7 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <div>
-            <div className="text-sm text-muted-foreground">Score</div>
+            <div className="text-sm text-muted-foreground">{itemLabel(copy, "score")}</div>
             <div className="font-bold text-xl">{state.score}</div>
           </div>
           {state.streak > 1 && (
@@ -372,7 +382,7 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
               variant="outline"
               className="bg-orange-500/10 text-orange-500 border-orange-500/20"
             >
-              {state.streak}x Streak!
+              {fillLabel(itemLabel(copy, "streak"), { count: state.streak })}
             </Badge>
           )}
         </div>
@@ -381,7 +391,7 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
           onClick={() => handleAnswerSubmit(state.selectedAnswer)}
           disabled={state.selectedAnswer === null || state.showFeedback}
         >
-          Submit Answer
+          {itemLabel(copy, "submit")}
         </Button>
       </div>
 
@@ -392,13 +402,20 @@ export function ActiveBattle({ battleState, onBattleComplete }: ActiveBattleProp
           {state.isCorrect ? (
             <>
               <CheckCircle className="h-5 w-5" />
-              <span>Correct! {state.streak > 1 ? `${state.streak}x streak bonus!` : ""}</span>
+              <span>
+                {itemLabel(copy, "correct")}
+                {state.streak > 1
+                  ? ` ${fillLabel(itemLabel(copy, "streak-bonus"), { count: state.streak })}`
+                  : ""}
+              </span>
             </>
           ) : (
             <>
               <AlertCircle className="h-5 w-5" />
               <span>
-                Incorrect! The correct answer was {currentQ.options[currentQ.correctAnswer]}
+                {fillLabel(itemLabel(copy, "incorrect"), {
+                  answer: currentQ.options[currentQ.correctAnswer],
+                })}
               </span>
             </>
           )}

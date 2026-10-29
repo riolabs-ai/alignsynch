@@ -147,11 +147,19 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * a variant (variant, size, type), or carry styling (any `*class*`), a11y plumbing
  * (`aria-*`) or a test hook (`data-*`). `alt` is excluded too, because alt text is
  * `MediaEntry.alt`'s job (E17–E19) — a literal alt is a media defect, not a copy one.
+ *
+ * `dataKey` and `align` are the same class in JSX-prop spelling: a recharts `dataKey`
+ * names a field of the row it charts (`dataKey="score"` is `data-score`, not a word), and
+ * a Radix `align` is where a popover sits (`align="end"`). Both were being counted as
+ * copy on the battle and daily-challenge surfaces until WU-10, which is why the list is
+ * explicit about them rather than leaving them to the next reader to re-discover.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
+  "align",
   "alt",
   "asChild",
   "color",
+  "dataKey",
   "defaultValue",
   "fill",
   "height",

@@ -28,4 +28,16 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/home",
     budget: 0,
   },
+  "/battle": {
+    page: "app/(mainlayout)/battle/page.tsx",
+    dirs: ["components/battle"],
+    fixture: "data/pages/battle",
+    budget: 0,
+  },
+  "/daily-challenge": {
+    page: "app/(mainlayout)/daily-challenge/page.tsx",
+    dirs: ["components/daily-challenge"],
+    fixture: "data/pages/daily-challenge",
+    budget: 0,
+  },
 });

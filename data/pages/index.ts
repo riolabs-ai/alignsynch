@@ -7,8 +7,12 @@
  * else in the repo has to change.
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
+import { battlePageCopy } from "./battle";
+import { dailyChallengePageCopy } from "./daily-challenge";
 import { homePageCopy } from "./home";
 
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
+  "/battle": battlePageCopy,
+  "/daily-challenge": dailyChallengePageCopy,
 });

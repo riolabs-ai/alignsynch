@@ -141,6 +141,18 @@ describe("leafLiterals", () => {
     assert.deepEqual(literals, []);
   });
 
+  it("ignores `dataKey` and `align` — a charted field and a popover edge are not copy", () => {
+    const literals = leafLiterals(
+      file(
+        "components/home/x.tsx",
+        `<Bar name="Your Score" dataKey="score" />
+<PopoverContent align="end" />`,
+      ),
+    );
+    // `name` is markup too; `align` and `dataKey` are the two this case exists for.
+    assert.deepEqual(literals, []);
+  });
+
   it("does not extract a string literal inside an expression (inventory parity)", () => {
     const literals = leafLiterals(
       file("components/home/x.tsx", `<p>{name ?? "Uncategorised"}</p>`),
