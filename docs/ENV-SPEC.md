@@ -98,33 +98,35 @@ One `zod` schema is the single source of the content model: `content/` (15 modul
 shared primitives in `core.ts`, and the route manifest) defines every shape, `data/` holds nothing but
 fixtures, and every card is a projection (`selectQuizCard`) rather than an authored array.
 
-Evidence (`pnpm data:check`, re-run on node `v24.22.0` at `4f857adb`; the block this replaces was the
-`ed3377c4` snapshot, which is why it read 21 quizzes and 28 cases. Condensed — every number is verbatim
-from the run, the `ℹ`/`WARN`/`PASS` lines are gathered into one block for reading):
+Evidence (`pnpm data:check`, re-run on node `v24.22.0` against `main` at `e99d6deb`; the block this
+replaces was the `ed3377c4` snapshot, which is why it read 21 quizzes and 28 cases. Condensed — every
+number is verbatim from the run, the `ℹ`/`WARN`/`PASS` lines are gathered into one block for reading.
+Every P2 work unit moves these counts, so re-run against your `main` instead of copying them):
 
 ```
 PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts, 5 conversations,
       6 notifications, 2 promotions, 17 quiz results, 14 comments, 5 reviews, 99 media entries,
-      9 page-copy routes, 10 players, 50 leaderboard rows, 8 wins, 74 search rows
+      11 page-copy routes, 2 battle modes, 6 daily-challenge badges, 10 players, 50 leaderboard rows,
+      8 wins, 74 search rows
       34 routes match app/, 0 unknown category ids, 0 dead links
-      / 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals, /login 0/0 page-copy literals, /register 0/0 page-copy literals, shell 0/0 page-copy literals, not-found 0/0 page-copy literals (measured/budget, E23; a literal longer than 24 chars is an error on its own)
+      / 0/0 page-copy literals, /battle 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /daily-challenge 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals, /login 0/0 page-copy literals, /register 0/0 page-copy literals, shell 0/0 page-copy literals, not-found 0/0 page-copy literals (measured/budget, E23; a literal longer than 24 chars is an error on its own)
       80 hardcoded links + 0 asset refs resolve in components/ and app/ (0 known-missing assets)
       0 module-scope record arrays on the search/chat surfaces + 0 fixture rows copied into a search/chat component
       11 fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)
       0 social instants after the fixture clock 2026-10-29T12:00:00.000Z
       0 metric literals in components/ and app/, 71 metric snapshots (7 relative-instant and 40 duration labels declared out of E22 — see scripts/metric-refs.ts)
 WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
-      383/383 node:test cases, 88 suites, E0–E26 invariants
+      400/400 node:test cases, 93 suites, E0–E26 invariants
 ```
 
 - `types/quiz.ts` deleted; `data:check` E9 fails if it (or a stray `any` in `data/`) reappears.
 - Gate evidence, `GATE_LANE=full bash scripts/verify.sh` on node `v24.22.0` / pnpm `12.16.1`, run
   repeatedly during this pass. Every run was green and every count was identical: `deps` clean ·
-  `typecheck` exit 0 · `lint` 0 errors, 205 warnings, 36 infos (359 files) · `format:check` (357 files) ·
-  `data:check` 383/383 cases in 88 suites · `build` 34 routes, 30 static pages. Wall time is not a
-  property of the tree here: as the load average moved over 6.5–16 the same gate took 51 s to 179 s,
+  `typecheck` exit 0 · `lint` 0 errors, 205 warnings, 34 infos (367 files) · `format:check` (365 files) ·
+  `data:check` 400/400 cases in 93 suites · `build` 34 routes, 30 static pages. Wall time is not a
+  property of the tree here: as the load average moved over 6.5–20 the same gate took 51 s to 179 s,
   with `build` 36–76 s of it.
-- The block above is current, not a P1-era snapshot. The test count moved 28 → 33 → **383** as the
+- The block above is current, not a P1-era snapshot. The test count moved 28 → 33 → **400** as the
   P2 work units added suites, and the invariant set is `E0–E26`, of which `E14`–`E17` + `W6` are the
   promotion overlays and `E17`–`E19` are the media registry (see `MIGRATION.md`, which records the
   `E17` number being claimed twice).
@@ -135,11 +137,12 @@ WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
 shows comes from the schema; media is addressed by registry key, not by literal `/public` path.
 _Exit:_ swapping one fixture file changes a rendered page with no `.tsx` edit — **proven** by PR #65,
 where a `data/authored-quizzes.ts`-only swap moved `/` and `/explore` with 0 `.tsx` edits. What
-remains is the copy half: #54 (shell, auth and 404) has landed, #56 (marketing pages), #57 (battle +
-daily-challenge) and #58 (tournaments) have not — and the gates say so. `E21` still counts 11 fixture
-titles written into components, while `E23` holds **9** entries at 0/0 literals (`/`, `/categories`,
-`/categories/[slug]`, `/explore`, `/explore/featured`, `/login`, `/register`, plus the `shell` and
-`not-found` surfaces): their copy moved into `data/pages`, the rest has not.
+remains is the copy half: #54 (shell, auth and 404) and #57 (battle + daily-challenge) have landed,
+#56 (marketing pages) and #58 (tournaments) have not — and the gates say so. `E21` still counts 11
+fixture titles written into components, while `E23` holds **11** entries at 0/0 literals (`/`,
+`/battle`, `/categories`, `/categories/[slug]`, `/daily-challenge`, `/explore`, `/explore/featured`,
+`/login`, `/register`, plus the `shell` and `not-found` surfaces): their copy moved into `data/pages`,
+the rest has not.
 
 **P3 — bulk generation / variation.** A generator emits N variants from templates and
 validates them with the same schema. _Exit:_ `pnpm gen -- --count 20 --seed 42`
