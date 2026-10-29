@@ -4,77 +4,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { PublishStatus } from "@/content/core";
+import type { QuizAuthoringCard } from "@/content/quiz";
+import { shelfAuthoringCards } from "@/lib/quiz-cards";
 import { Copy, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-type Quiz = {
-  id: number;
-  title: string;
-  category: string;
-  plays: number;
-  rating: number;
-  date: string;
-  status: string;
-  image: string;
+
+const STATUS_LABEL: Record<PublishStatus, string> = {
+  published: "Active",
+  draft: "Draft",
+  archived: "Completed",
 };
-// Sample data
-const quizzes: Quiz[] = [
-  {
-    id: 1,
-    title: "World Geography Challenge",
-    category: "Geography",
-    plays: 42,
-    rating: 4.7,
-    date: "2023-05-15",
-    status: "active",
-    image: "/world-map-quiz.png",
-  },
-  {
-    id: 2,
-    title: "Science Quiz: Space Exploration",
-    category: "Science",
-    plays: 28,
-    rating: 4.5,
-    date: "2023-05-10",
-    status: "active",
-    image: "/space-exploration-quiz.png",
-  },
-  {
-    id: 3,
-    title: "History: Ancient Civilizations",
-    category: "History",
-    plays: 15,
-    rating: 4.2,
-    date: "2023-05-03",
-    status: "active",
-    image: "/ancient-civilizations-quiz.png",
-  },
-  {
-    id: 4,
-    title: "Math Puzzles & Problems",
-    category: "Mathematics",
-    plays: 8,
-    rating: 3.9,
-    date: "2023-04-28",
-    status: "draft",
-    image: "/math-puzzles-quiz.png",
-  },
-  {
-    id: 5,
-    title: "Literature: Classic Novels",
-    category: "Literature",
-    plays: 0,
-    rating: 0,
-    date: "2023-04-25",
-    status: "draft",
-    image: "/classic-novels-quiz.png",
-  },
-];
 
 export function MyQuizzesDashboard() {
-  const [activeQuizzes, setActiveQuizzes] = useState(quizzes.filter((q) => q.status === "active"));
-  const [draftQuizzes, setDraftQuizzes] = useState(quizzes.filter((q) => q.status === "draft"));
+  // Projected from the catalogue + analytics; the dashboard authors no card (D2).
+  const quizzes = shelfAuthoringCards("myQuizzes");
+  const activeQuizzes = quizzes.filter((quiz) => quiz.status === "published");
+  const draftQuizzes = quizzes.filter((quiz) => quiz.status === "draft");
+  const ratedQuizzes = quizzes.filter((quiz) => quiz.rating !== undefined);
 
   return (
     <div className="space-y-6">
@@ -117,10 +65,12 @@ export function MyQuizzesDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {(
-                quizzes.reduce((sum, quiz) => sum + quiz.rating, 0) /
-                quizzes.filter((q) => q.rating > 0).length
-              ).toFixed(1)}
+              {ratedQuizzes.length === 0
+                ? "—"
+                : (
+                    ratedQuizzes.reduce((sum, quiz) => sum + (quiz.rating ?? 0), 0) /
+                    ratedQuizzes.length
+                  ).toFixed(1)}
             </div>
             <p className="text-xs text-muted-foreground">Out of 5.0</p>
           </CardContent>
@@ -142,19 +92,19 @@ export function MyQuizzesDashboard() {
 
             <TabsContent value="all" className="space-y-4 ">
               {quizzes.map((quiz) => (
-                <QuizCard key={quiz.id} quiz={quiz} />
+                <DashboardQuizRow key={quiz.id} quiz={quiz} />
               ))}
             </TabsContent>
 
             <TabsContent value="active" className="space-y-4 ">
               {activeQuizzes.map((quiz) => (
-                <QuizCard key={quiz.id} quiz={quiz} />
+                <DashboardQuizRow key={quiz.id} quiz={quiz} />
               ))}
             </TabsContent>
 
             <TabsContent value="draft" className="space-y-4 ">
               {draftQuizzes.map((quiz) => (
-                <QuizCard key={quiz.id} quiz={quiz} />
+                <DashboardQuizRow key={quiz.id} quiz={quiz} />
               ))}
             </TabsContent>
           </Tabs>
@@ -164,15 +114,19 @@ export function MyQuizzesDashboard() {
   );
 }
 
-function QuizCard({ quiz }: { quiz: Quiz }) {
+/**
+ * Was a local `QuizCard` with its own prop type — the same name as the model's
+ * `QuizCard` but a different shape. It is a row over the authoring projection now.
+ */
+function DashboardQuizRow({ quiz }: { quiz: QuizAuthoringCard }) {
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg">
       <div className="relative w-full md:w-24 h-24 rounded-md overflow-hidden">
         <Image
           width={600}
           height={350}
-          src={quiz.image || "/placeholder.svg"}
-          alt={quiz.title}
+          src={quiz.cover?.src ?? "/placeholder.svg"}
+          alt={quiz.cover?.alt || quiz.title}
           fill
           className="object-cover"
         />
@@ -183,10 +137,10 @@ function QuizCard({ quiz }: { quiz: Quiz }) {
           <div>
             <h3 className="font-medium truncate">{quiz.title}</h3>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>{quiz.category}</span>
+              <span>{quiz.categories[0]?.name ?? "Uncategorised"}</span>
               <span>•</span>
               <span>{quiz.plays} plays</span>
-              {quiz.rating > 0 && (
+              {quiz.rating !== undefined && (
                 <>
                   <span>•</span>
                   <span>{quiz.rating.toFixed(1)} rating</span>
@@ -195,8 +149,8 @@ function QuizCard({ quiz }: { quiz: Quiz }) {
             </div>
           </div>
           <div>
-            <Badge variant={quiz.status === "active" ? "default" : "outline"}>
-              {quiz.status === "active" ? "Active" : "Draft"}
+            <Badge variant={quiz.status === "published" ? "default" : "outline"}>
+              {STATUS_LABEL[quiz.status]}
             </Badge>
           </div>
         </div>

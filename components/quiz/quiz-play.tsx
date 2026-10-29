@@ -7,47 +7,16 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { currentQuiz } from "@/data/currentQuiz";
 import { categoryName } from "@/content/categories";
+import { selectQuizForPlay, type QuizForPlay } from "@/content/quiz";
+import { currentQuiz } from "@/data/currentQuiz";
 
 /**
- * The play surface works on a PROJECTION of the content record, not on the record:
- * `category` is a resolved label and `text`/`image` are the renderer's names.
- * Built once from the model by `playableQuiz` below.
+ * The play surface reads `selectQuizForPlay()` directly: `categoryLabel` is resolved
+ * from the taxonomy and questions keep the model's `prompt`/`media` names, so there
+ * is no second `Quiz` shape here (D1/D2).
  */
-interface PlayQuestion {
-  id: string;
-  text: string;
-  options: { id: string; text: string }[];
-  correctOptionId: string;
-  explanation?: string;
-  image?: string;
-}
-
-interface Quiz {
-  id: string;
-  title: string;
-  category: string;
-  difficulty: string;
-  timeLimit: number;
-  questions: PlayQuestion[];
-}
-
-const playableQuiz: Quiz = {
-  id: currentQuiz.id,
-  title: currentQuiz.title,
-  category: categoryName(currentQuiz.categoryIds[0] ?? "") ?? "",
-  difficulty: currentQuiz.difficulty,
-  timeLimit: currentQuiz.settings.timeLimitSeconds,
-  questions: currentQuiz.questions.map((question) => ({
-    id: question.id,
-    text: question.prompt,
-    options: question.options.map((option) => ({ id: option.id, text: option.text })),
-    correctOptionId: question.correctOptionId,
-    ...(question.explanation ? { explanation: question.explanation } : {}),
-    ...(question.media ? { image: question.media.src } : {}),
-  })),
-};
+const playableQuiz: QuizForPlay = selectQuizForPlay(currentQuiz, categoryName);
 
 /** One answered question, local to the play surface (UI state, not content). */
 interface Answer {
@@ -64,7 +33,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 
 // Types for the quiz state
 interface QuizState {
-  quiz: Quiz | null;
+  quiz: QuizForPlay | null;
   loading: boolean;
   error: string | null;
   currentQuestionIndex: number;
@@ -84,7 +53,7 @@ interface QuizState {
 type QuizAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
-  | { type: "SET_QUIZ"; payload: Quiz }
+  | { type: "SET_QUIZ"; payload: QuizForPlay }
   | { type: "SET_CURRENT_QUESTION_INDEX"; payload: number }
   | { type: "SET_DIRECTION"; payload: number }
   | { type: "SET_QUIZ_START_TIME"; payload: number }
@@ -134,7 +103,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         quiz: action.payload,
-        timeRemaining: action.payload.timeLimit,
+        timeRemaining: action.payload.timeLimitSeconds,
         loading: false,
       };
 
@@ -374,7 +343,7 @@ export function QuizPlay({ id }: { id: string }) {
   const handleRestartQuiz = () => {
     dispatch({
       type: "RESTART_QUIZ",
-      payload: { timeLimit: state.quiz?.timeLimit || null },
+      payload: { timeLimit: state.quiz?.timeLimitSeconds || null },
     });
   };
 
@@ -459,7 +428,7 @@ export function QuizPlay({ id }: { id: string }) {
     <div className="container mx-auto py-4 px-4 md:py-8 max-w-4xl">
       <QuizHeader
         title={state.quiz.title}
-        category={state.quiz.category}
+        category={state.quiz.categoryLabel}
         difficulty={state.quiz.difficulty}
         isReviewMode={state.isReviewMode}
       />
@@ -512,10 +481,10 @@ export function QuizPlay({ id }: { id: string }) {
                 className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6"
               >
                 {/* Question image */}
-                {currentQuestion.image && (
+                {currentQuestion.media && (
                   <div className="rounded-lg overflow-hidden">
                     <Image
-                      src={currentQuestion.image || "/placeholder.svg"}
+                      src={currentQuestion.media.src}
                       alt="Question illustration"
                       className="size-full object-center object-cover"
                     />

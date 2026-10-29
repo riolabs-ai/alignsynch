@@ -1987,6 +1987,117 @@
       ],
       "summary": "6 notifications: JSX icon -> registry key, prose time -> ISO instant, description -> body, 4 links re-pointed at routes that actually exist."
     },
+    "data/quiz-catalogue": {
+      "records": [
+        {
+          "id": "quiz-science-quiz-space-exploration",
+          "fields": {
+            "stats.plays/stats.capacity": {
+              "from": [
+                "2453 / 3000 (home + featured page)",
+                "178 / 500 (explore, category, my-quizzes)"
+              ],
+              "to": "178 / 500",
+              "reason": "three shipped browse surfaces outvoted two marketing ones; neither number was averaged or invented"
+            },
+            "stats.rewardCents": {
+              "from": ["1000", "750"],
+              "to": 750,
+              "reason": "carried by the same snapshot that won the player count"
+            },
+            "categoryIds": {
+              "from": "Entertainment",
+              "to": ["space"],
+              "reason": "the free-text label contradicted the quiz"
+            },
+            "difficulty": {
+              "from": "absent (featured page)",
+              "to": "hard",
+              "reason": "schema requires one; the other snapshots said Hard"
+            },
+            "author.name": {
+              "from": "MarvelFan",
+              "to": "CosmicMind",
+              "reason": "the losing snapshot's creator"
+            }
+          }
+        },
+        {
+          "id": "quiz-literature-classic-novels",
+          "fields": {
+            "stats.plays/stats.capacity": {
+              "from": ["1298 / 1500 (home)", "298 / 300 (explore)", "300 / 300 (my-quizzes)"],
+              "to": "300 / 300",
+              "reason": "the authoring surface won, and it is the only one that says completed"
+            },
+            "status": {
+              "from": ["active", "completed"],
+              "to": "archived",
+              "reason": "completed -> archived (D4)"
+            }
+          }
+        },
+        {
+          "id": "quiz-math-puzzles-and-problems",
+          "fields": {
+            "stats.plays": {
+              "from": ["156 (explore)", "0 (my-quizzes)"],
+              "to": 0,
+              "reason": "the record is a draft with 0% completion and $0 revenue; a draft with 156 plays was the inconsistent side"
+            },
+            "status": {
+              "from": "active",
+              "to": "draft"
+            }
+          }
+        },
+        {
+          "id": "quiz-music-through-the-decades",
+          "fields": {
+            "stats.capacity": {
+              "from": 1000,
+              "to": 300,
+              "reason": "the marketing card overstated capacity; the authoring surface and the other browse cards said 300"
+            }
+          }
+        },
+        {
+          "id": "quiz-technology-and-gadgets",
+          "fields": {
+            "stats.capacity": {
+              "from": 1000,
+              "to": 250,
+              "reason": "same overstatement as Music Through the Decades"
+            }
+          }
+        },
+        {
+          "id": "quiz-sports-trivia",
+          "fields": {
+            "id": {
+              "from": "sports-trivia-challenge",
+              "to": "quiz-sports-trivia",
+              "reason": "the slug collides with the generator template of the same title (E2 enforces kind/slug uniqueness)"
+            },
+            "stats.capacity": {
+              "from": 1000,
+              "to": 250
+            }
+          }
+        },
+        {
+          "id": "quiz-world-geography-challenge",
+          "fields": {
+            "stats.plays": {
+              "from": ["285 (home, explore, category, my-quizzes)", "42 (dashboard)"],
+              "to": 285,
+              "reason": "the dashboard's Recent Quizzes rows were a fifth, older snapshot"
+            }
+          }
+        }
+      ],
+      "summary": "40 card records consolidated from the literals in eleven components. Ids became quiz-<slug>; players -> stats.plays, maxPlayers -> stats.capacity, reward string -> stats.rewardCents, limitedTime+expiresIn -> stats.limitedTimeEndsAt (an instant anchored at the demo epoch, never a stored duration), timeLimit minutes -> settings.timeLimitSeconds, createdBy/creatorAvatar -> author, status active/draft/completed -> published/draft/archived. Derived columns (spotsLeft, almostFull) are no longer stored. Authoring-only metrics (completionRate, averageScore, revenue) live in data/quiz-analytics.ts, not in the record. Fields the schema requires and no fixture carried (summary on all 40; difficulty on the 9 featured-page records; timeLimitSeconds on the 13 records that stated none) are authored in the module and listed above only where two sources disagreed."
+    },
     "data/categories": {
       "records": [],
       "summary": "Deleted as a fixture. Its 22 rows were a third copy of the taxonomy (D15) with numeric ids and a stored `count`; `data/categories.ts` now re-exports the single table in content/categories.ts (25 quiz subjects). Module deleted: data/categories.tsx."
@@ -2001,7 +2112,116 @@
     },
     "data/authored-quizzes, data/created-quizzes, data/quizzes": {
       "records": [],
-      "summary": "The 21 records that were missing from data/: the 5 `CreatedQuiz` records (quiz-migration.md §7) and the 16 quizzes decision A authored (§10), plus `data/quizzes.ts` composing all 42 with `quizById`/`quizBySlug`. Field-for-field from the migration output (migrated/quizzes.json); ids and slugs are exactly the frozen ones of §8/§10 (E8), and no record is added for the second Science merchandising snapshot — that is the per-slot overlay B-01 reserves (E10/A4)."
+      "summary": "The 21 records that were missing from data/: the 5 `CreatedQuiz` records (quiz-migration.md §7) and the 16 quizzes decision A authored (§10), plus `data/quizzes.ts` composing all 42 with `quizById`/`quizBySlug`. Field-for-field from the migration output (migrated/quizzes.json); ids and slugs are exactly the frozen ones of §8/§10 (E8), and no record is added for the second Science merchandising snapshot — that is the per-slot overlay B-01 reserves (E11/A4)."
+    },
+    "data/quiz-catalogue → data/quizzes (reconciliation)": {
+      "records": [
+        {
+          "id": "quiz-science-quiz-space-exploration",
+          "d2": {
+            "stats.plays/stats.capacity": "178 / 500",
+            "stats.rewardCents": 750,
+            "author.name": "CosmicMind"
+          },
+          "canonical": {
+            "stats.plays/stats.capacity": "2453 / 3000",
+            "stats.rewardCents": 1000,
+            "stats.rating": 4.9,
+            "stats.badge": "hot",
+            "stats.limitedTimeEndsAt": "2025-01-03T00:00:00.000Z",
+            "author.name": "MarvelFan"
+          },
+          "winner": "the migration record (§5/§10)",
+          "reason": "§5 unions the card snapshots; d2 took one card literal. The 178/500 · $7.50 · 4.8 · popular variant is the per-slot overlay (zQuizPromotion, B-01), never a record."
+        },
+        {
+          "id": "quiz-history-through-the-ages",
+          "d2": { "stats.plays/stats.capacity": "25 / 50", "stats.rewardCents": 500 },
+          "canonical": { "stats.plays": 1532, "status": "published", "questions": 0 },
+          "winner": "the migration record (§7 CreatedQuiz)",
+          "reason": "the CreatedQuiz record is the quiz; the 25/50 card is one surface's snapshot of it."
+        },
+        {
+          "id": "quiz-literature-classic-novels",
+          "d2": { "stats.plays/stats.capacity": "300 / 300", "status": "archived" },
+          "canonical": {
+            "stats.plays/stats.capacity": "1298 / 1500",
+            "stats.rewardCents": 500,
+            "stats.rating": 4.9,
+            "stats.badge": "topRated",
+            "author.name": "BookWorm",
+            "status": "published"
+          },
+          "winner": "the migration record (§5/§10)",
+          "reason": "d2 preferred the authoring surface (300/300, completed -> archived); the migration's authored record is canonical for the id."
+        },
+        {
+          "id": "quiz-world-geography-challenge",
+          "d2": { "stats.plays/stats.capacity": "285 / 300", "stats.rewardCents": 500 },
+          "canonical": { "stats.plays": 1245, "status": "published", "questions": 0 },
+          "winner": "the migration record (§7 CreatedQuiz)",
+          "reason": "285/300 is what four cards showed; the record is the quiz."
+        },
+        {
+          "id": "quiz-music-through-the-decades",
+          "d2": { "id": "quiz-music-through-decades", "stats.plays/stats.capacity": "5 / 50" },
+          "canonical": {
+            "id": "quiz-music-through-the-decades",
+            "stats.plays/stats.capacity": "210 / 1000",
+            "stats.rating": 4.5,
+            "stats.rewardCents": 550,
+            "stats.badge": "new"
+          },
+          "winner": "the migration record (§10)",
+          "reason": "`Music Through Decades` is the same title with `the` elided and a 5/50 snapshot; one card is one record (E11)."
+        },
+        {
+          "id": "quiz-technology-gadgets",
+          "d2": { "id": "quiz-technology-and-gadgets", "stats.capacity": 250, "stats.rating": 4.8 },
+          "canonical": {
+            "id": "quiz-technology-gadgets",
+            "stats.plays": 175,
+            "stats.capacity": 1000,
+            "stats.rating": 4.6,
+            "stats.rewardCents": 700,
+            "stats.badge": "new"
+          },
+          "winner": "the migration record (§10)",
+          "reason": "d2's narrower capacity was the authoring surface's seat bar; the record's stat is §5's."
+        },
+        {
+          "id": "quiz-11",
+          "d2": {
+            "id": "quiz-sports-trivia",
+            "stats.plays/stats.capacity": "124 / 250",
+            "stats.rating": 4.5
+          },
+          "canonical": {
+            "id": "quiz-11",
+            "slug": "sports-trivia-challenge",
+            "stats.plays/stats.capacity": "124 / 1000",
+            "stats.rating": 4.4,
+            "stats.badge": "new",
+            "stats.rewardCents": 300,
+            "author.name": "SportsNut"
+          },
+          "winner": "quiz-11, the generator template (§5 join)",
+          "reason": "`Sports Trivia Challenge` already had a record; d2 renamed its id to dodge the E2 slug collision, which creates a second record for one card. E8 freezes `sports-trivia-challenge` anyway."
+        }
+      ],
+      "added": {
+        "data/browse-quizzes.ts": "20 records — the d2 ids that no migration fixture defines (Geography Starters, Philosophy & Ethics, Advanced Quantum Physics, …). Taken verbatim from data/quiz-catalogue.ts, no engagement value re-authored."
+      },
+      "folded": {
+        "quiz-brain-teasers-and-logic-puzzles": "quiz-brain-teasers-logic-puzzles",
+        "quiz-famous-inventors-and-discoveries": "quiz-famous-inventors-discoveries",
+        "quiz-mathematical-puzzles-and-brain-teasers": "quiz-mathematical-puzzles-brain-teasers",
+        "quiz-sports-trivia": "quiz-11",
+        "quiz-technology-and-gadgets": "quiz-technology-gadgets",
+        "quiz-world-geography-capitals-and-landmarks": "quiz-world-geography-challenge-capitals-landmarks",
+        "quiz-music-through-decades": "quiz-music-through-the-decades"
+      },
+      "summary": "Two collections, one winner. d2's data/quiz-catalogue.ts (40 records) and the migration's data/quizzes.ts (42) shared 13 ids and 7 more cards under ids d2 invented; 20 ids were genuinely new. The 40 became 20: 13 lost to the identical migration record, 7 folded onto the frozen §8 id they duplicate (same title, and in six cases the same engagement numbers), and the remaining 20 moved into data/browse-quizzes.ts. Final collection: 62. d2's own conflict rulings above are unchanged and still describe its tree; this row is the reconciliation that overrides five of them, with the canonical value named per conflict. data/quiz-catalogue.ts is now a shelf/ordering view with no records of its own and holds the alias table that E10/E11 police. E1/E2 stay clean; the new E11 fails the build if two records ever share a normalised title again."
     }
   }
 }
