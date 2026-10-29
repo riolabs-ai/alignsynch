@@ -1,8 +1,10 @@
 import { recentMessages } from "@/data/chat-data";
+import { formatRelative } from "@/content/core";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import { media } from "@/data/media";
 type Props = {
   isMessagesDrawerOpen: boolean;
   setIsMessagesDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -48,7 +50,7 @@ const ChatDrawer = ({
               <Avatar className="size-10">
                 <AvatarImage
                   className="size-10 rounded-full object-cover object-center"
-                  src={message.avatar || "/placeholder.svg"}
+                  src={message.avatar || media.placeholder.src}
                   alt={message.sender}
                 />
                 <AvatarFallback>{message.sender.charAt(0)}</AvatarFallback>
@@ -64,7 +66,9 @@ const ChatDrawer = ({
                 >
                   {message.sender}
                 </p>
-                <span className="text-xs text-muted-foreground">{message.time}</span>
+                <span className="text-xs text-muted-foreground">
+                  {formatRelative(message.lastMessageAt)}
+                </span>
               </div>
               <p
                 className={`text-sm truncate ${message.unread ? "text-foreground" : "text-muted-foreground"}`}

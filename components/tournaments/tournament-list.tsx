@@ -8,6 +8,7 @@ import { ArrowRight, CalendarDays, Clock, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 interface TournamentListProps {
   activeCategory: string;
@@ -24,7 +25,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
       id: "science-showdown",
       title: "Science Showdown",
       description: "Test your scientific knowledge across physics, chemistry, biology and more.",
-      image: "/space-exploration-quiz.png", // Fixed image path to use an existing image
+      image: media["space-exploration-quiz"].src, // Fixed image path to use an existing image
       category: "science",
       status: "registration",
       dates: "June 1 - June 15, 2023",
@@ -37,7 +38,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
       id: "history-heroes",
       title: "History Heroes",
       description: "Journey through time and test your knowledge of historical events and figures.",
-      image: "/ancient-civilizations-quiz.png", // Using existing history quiz image
+      image: media["ancient-civilizations-quiz"].src, // Using existing history quiz image
       category: "history",
       status: "upcoming",
       dates: "June 5 - June 20, 2023",
@@ -50,7 +51,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
       id: "pop-culture-party",
       title: "Pop Culture Party",
       description: "From movies to music, test your knowledge of all things entertainment.",
-      image: "/space-exploration-quiz.png", // Using existing entertainment quiz image
+      image: media["space-exploration-quiz"].src, // Using existing entertainment quiz image
       category: "entertainment",
       status: "ongoing",
       dates: "May 20 - June 5, 2023",
@@ -63,7 +64,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
       id: "geography-genius",
       title: "Geography Genius",
       description: "Navigate through countries, capitals, landmarks and geographical wonders.",
-      image: "/world-map-quiz.png", // Using existing geography quiz image
+      image: media["world-map-quiz"].src, // Using existing geography quiz image
       category: "geography",
       status: "upcoming",
       dates: "June 10 - June 25, 2023",
@@ -77,7 +78,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
       title: "Sports Spectacular",
       description:
         "From football to Olympics, test your knowledge of sporting events and athletes.",
-      image: "/sports-trivia-quiz.png", // Using existing sports quiz image
+      image: media["sports-trivia-quiz"].src, // Using existing sports quiz image
       category: "sports",
       status: "registration",
       dates: "June 15 - July 1, 2023",
@@ -91,7 +92,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
       title: "Tech Titans",
       description:
         "Challenge yourself with questions about technology, coding, and digital innovation.",
-      image: "/technology-quiz.png", // Using existing technology quiz image
+      image: media["technology-quiz"].src, // Using existing technology quiz image
       category: "technology",
       status: "completed",
       dates: "May 1 - May 15, 2023",
@@ -139,10 +140,7 @@ export function TournamentList({ activeCategory, activeFilter }: TournamentListP
             <Card key={tournament.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="relative h-48">
                 <Image
-                  src={
-                    tournament.image ||
-                    "/placeholder.svg?height=200&width=400&text=Tournament+Image"
-                  }
+                  src={tournament.image || media.placeholder.src}
                   alt={tournament.title}
                   fill
                   className="object-cover"

@@ -1,6 +1,6 @@
 "use client";
 
-import { categories, searchTips, tips } from "@/data/creator-tips-data";
+import { searchTips, tipCategoryRows, tips } from "@/data/creator-tips-data";
 import { useState } from "react";
 import CreatorTipsCategories from "./creator-tips-categories";
 import CreatorTipsCta from "./creator-tips-cta";
@@ -15,7 +15,7 @@ export default function CreatorTipsPage() {
   const filteredTips = searchQuery
     ? searchTips(searchQuery)
     : selectedCategory
-      ? tips.filter((tip) => tip.category === selectedCategory)
+      ? tips.filter((tip) => tip.categoryIds.includes(selectedCategory ?? ""))
       : tips;
 
   const handleSearch = (query: string) => {
@@ -33,7 +33,7 @@ export default function CreatorTipsPage() {
       <CreatorTipsHero onSearch={handleSearch} />
 
       <CreatorTipsCategories
-        categories={categories}
+        categories={tipCategoryRows}
         selectedCategory={selectedCategory}
         onSelectCategory={handleCategorySelect}
       />

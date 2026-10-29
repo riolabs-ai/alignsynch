@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy, DollarSign, ExternalLink, LinkIcon, Share2, TrendingUp, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { media } from "@/data/media";
 type Referral = {
   id: number;
   username: string;
@@ -25,7 +26,7 @@ const referrals: Referral[] = [
     date: "2023-05-15",
     status: "active",
     earnings: 12.5,
-    avatar: "/avatars/alex.png",
+    avatar: media["avatars.alex"].src,
   },
   {
     id: 2,
@@ -34,7 +35,7 @@ const referrals: Referral[] = [
     date: "2023-05-10",
     status: "active",
     earnings: 8.75,
-    avatar: "/avatars/sarah.webp",
+    avatar: media["avatars.sarah"].src,
   },
   {
     id: 3,
@@ -43,7 +44,7 @@ const referrals: Referral[] = [
     date: "2023-05-03",
     status: "inactive",
     earnings: 5.25,
-    avatar: "/avatars/brain.png",
+    avatar: media["avatars.brain"].src,
   },
   {
     id: 4,
@@ -52,7 +53,7 @@ const referrals: Referral[] = [
     date: "2023-04-28",
     status: "active",
     earnings: 6.0,
-    avatar: "/avatars/guru.png",
+    avatar: media["avatars.guru"].src,
   },
 ];
 
@@ -286,7 +287,7 @@ function ReferralCard({ referral }: { referral: Referral }) {
       <div className="flex items-center gap-3">
         <div className="relative w-10 h-10 rounded-full overflow-hidden">
           <Image
-            src={referral.avatar || "/placeholder.svg"}
+            src={referral.avatar || media.placeholder.src}
             alt={referral.name}
             fill
             className="object-cover"

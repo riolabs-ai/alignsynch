@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarDays, Clock, Share2, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import { Tournament } from "./tournament-detail";
+import { media } from "@/data/media";
 
 interface TournamentHeaderProps {
   tournament: Tournament;
@@ -31,7 +32,7 @@ export function TournamentHeader({ tournament }: TournamentHeaderProps) {
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-indigo-900/90 z-10 rounded-lg" />
       <Image
-        src={"/abstract-geometric-shapes.png"}
+        src={media["abstract-geometric-shapes"].src}
         alt={tournament.title}
         width={1200}
         height={400}

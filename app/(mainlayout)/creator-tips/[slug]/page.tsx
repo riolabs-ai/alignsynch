@@ -11,12 +11,15 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function GenerateMetadata({
+export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = use(params);
+  // Was `GenerateMetadata` (capital G), which Next never reads — the same dead
+  // export as D14 on the category route. The `use()` call is gone with it:
+  // `use` is a hook and cannot run in a plain async function.
+  const { slug } = await params;
   const tip = getTipBySlug(slug);
 
   if (!tip) {
@@ -28,7 +31,7 @@ export async function GenerateMetadata({
 
   return {
     title: `${tip.title} - Quiz Creator Tips`,
-    description: tip.excerpt,
+    description: tip.summary,
   };
 }
 

@@ -16,137 +16,28 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Clock, DollarSign, Filter, Search, SortAsc, Target, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { formatCurrency, formatPlayerCount, type Difficulty } from "@/content/core";
+import type { QuizCard } from "@/content/quiz";
+import { shelfCards } from "@/lib/quiz-cards";
 import { useEffect, useState } from "react";
-interface Quiz {
-  id: number;
-  title: string;
-  image: string;
-  category: string;
-  difficulty: string;
-  timeLimit: number;
-  reward: string;
-  players: number;
-  maxPlayers: number;
-  spotsLeft: number;
-  almostFull: boolean;
-  createdBy: string;
-  creatorAvatar: string;
-  rating: number;
-  totalRatings: number;
-}
+import { media } from "@/data/media";
+
+/** The card prints minutes; the model stores seconds. */
+const minutes = (quiz: QuizCard) => Math.round(quiz.timeLimitSeconds / 60);
+
+const progress = (quiz: QuizCard) =>
+  quiz.stats.capacity === undefined || quiz.stats.capacity === 0
+    ? 0
+    : (quiz.stats.plays / quiz.stats.capacity) * 100;
 interface CategoryDetailPageProps {
   categoryName?: CategoryType;
 }
 
-// Sample quiz data for the category
-const quizzes = [
-  {
-    id: 1,
-    title: "World Geography Challenge",
-    image: "/world-map-quiz.png",
-    category: "Geography",
-    difficulty: "Medium",
-    timeLimit: 15,
-    reward: "$5.00",
-    players: 285,
-    maxPlayers: 300,
-    spotsLeft: 15,
-    almostFull: true,
-    createdBy: "GeoExplorer",
-    creatorAvatar: "/avatars/alex.png",
-    rating: 4.8,
-    totalRatings: 124,
-  },
-  {
-    id: 2,
-    title: "Science Quiz: Space Exploration",
-    image: "/space-exploration-quiz.png",
-    category: "Science",
-    difficulty: "Hard",
-    timeLimit: 20,
-    reward: "$7.50",
-    players: 178,
-    maxPlayers: 500,
-    spotsLeft: 322,
-    almostFull: false,
-    createdBy: "CosmicMind",
-    creatorAvatar: "/avatars/wizard.webp",
-    rating: 4.9,
-    totalRatings: 89,
-  },
-  {
-    id: 3,
-    title: "History: Ancient Civilizations",
-    image: "/ancient-civilizations-quiz.png",
-    category: "History",
-    difficulty: "Medium",
-    timeLimit: 15,
-    reward: "$5.00",
-    players: 412,
-    maxPlayers: 450,
-    spotsLeft: 38,
-    almostFull: true,
-    createdBy: "HistoryBuff",
-    creatorAvatar: "/avatars/sarah.webp",
-    rating: 4.7,
-    totalRatings: 156,
-  },
-  {
-    id: 4,
-    title: "Math Puzzles & Problems",
-    image: "/math-puzzles-quiz.png",
-    category: "Mathematics",
-    difficulty: "Hard",
-    timeLimit: 25,
-    reward: "$8.00",
-    players: 156,
-    maxPlayers: 300,
-    spotsLeft: 144,
-    almostFull: false,
-    createdBy: "MathGenius",
-    creatorAvatar: "/avatars/king.webp",
-    rating: 4.6,
-    totalRatings: 78,
-  },
-  {
-    id: 5,
-    title: "Literature: Classic Novels",
-    image: "/classic-novels-quiz.png",
-    category: "Literature",
-    difficulty: "Medium",
-    timeLimit: 15,
-    reward: "$5.00",
-    players: 298,
-    maxPlayers: 300,
-    spotsLeft: 2,
-    almostFull: true,
-    createdBy: "BookWorm",
-    creatorAvatar: "/avatars/champion.png",
-    rating: 4.9,
-    totalRatings: 112,
-  },
-  {
-    id: 6,
-    title: "Sports Trivia Challenge",
-    image: "/sports-trivia-quiz.png",
-    category: "Sports",
-    difficulty: "Easy",
-    timeLimit: 10,
-    reward: "$3.00",
-    players: 124,
-    maxPlayers: 250,
-    spotsLeft: 126,
-    almostFull: false,
-    createdBy: "SportsNut",
-    creatorAvatar: "/avatars/brain.png",
-    rating: 4.5,
-    totalRatings: 67,
-  },
-];
-
 export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
+  // Projected from the catalogue; the grid never authors a card (D2).
+  const quizzes = shelfCards("exploreAll");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>(quizzes);
+  const [filteredQuizzes, setFilteredQuizzes] = useState<QuizCard[]>(quizzes);
   const [sortBy, setSortBy] = useState("popular");
   const [difficulty, setDifficulty] = useState("all");
   const [category, setCategory] = useState("all");
@@ -161,18 +52,21 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (quiz) =>
-          quiz.title.toLowerCase().includes(query) || quiz.category.toLowerCase().includes(query),
+          quiz.title.toLowerCase().includes(query) ||
+          (quiz.categories[0]?.name ?? "").toLowerCase().includes(query),
       );
     }
 
     // Filter by difficulty
     if (difficulty !== "all") {
-      result = result.filter((quiz) => quiz.difficulty.toLowerCase() === difficulty.toLowerCase());
+      result = result.filter((quiz) => quiz.difficulty === difficulty.toLowerCase());
     }
 
     // Filter by category
     if (category !== "all") {
-      result = result.filter((quiz) => quiz.category.toLowerCase() === category.toLowerCase());
+      result = result.filter(
+        (quiz) => (quiz.categories[0]?.name ?? "").toLowerCase() === category.toLowerCase(),
+      );
     }
 
     // Sort quizzes
@@ -183,24 +77,25 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
   }, [searchQuery, difficulty, category, sortBy]);
 
   // Function to sort quizzes
-  const sortQuizzes = (quizzes: Quiz[], sortMethod: string): Quiz[] => {
+  const sortQuizzes = (quizzes: QuizCard[], sortMethod: string): QuizCard[] => {
     return [...quizzes].sort((a, b) => {
       switch (sortMethod) {
         case "popular":
-          return b.players - a.players;
+          return b.stats.plays - a.stats.plays;
         case "rating":
-          return b.rating - a.rating;
+          return (b.stats.rating ?? 0) - (a.stats.rating ?? 0);
         case "newest":
-          return b.id - a.id;
+          return (b.publishedAt ?? b.title).localeCompare(a.publishedAt ?? a.title);
         case "reward":
-          return parseFloat(b.reward.replace("$", "")) - parseFloat(a.reward.replace("$", ""));
-        case "difficulty":
+          return (b.stats.rewardCents ?? 0) - (a.stats.rewardCents ?? 0);
+        case "difficulty": {
           // Sort by difficulty: Hard > Medium > Easy
-          const difficultyOrder = { Hard: 3, Medium: 2, Easy: 1 };
+          const difficultyOrder = { hard: 3, medium: 2, easy: 1 };
           return (
             (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0) -
             (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0)
           );
+        }
         default:
           return 0;
       }
@@ -208,13 +103,13 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
   };
 
   // Get difficulty badge variant
-  const getDifficultyVariant = (difficulty: string) => {
+  const getDifficultyVariant = (difficulty: Difficulty) => {
     switch (difficulty) {
-      case "Easy":
+      case "easy":
         return "success";
-      case "Medium":
+      case "medium":
         return "yellow";
-      case "Hard":
+      case "hard":
         return "destructive";
       default:
         return "default";
@@ -233,10 +128,6 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
 
   const handleSortChange = (newSortBy: string) => {
     setSortBy(newSortBy);
-  };
-  // Calculate progress percentage
-  const calculateProgress = (players: number, maxPlayers: number) => {
-    return (players / maxPlayers) * 100;
   };
   return (
     <div className="container mx-auto ">
@@ -340,8 +231,8 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                 <Image
                   width={1000}
                   height={500}
-                  src={quiz.image || "/placeholder.svg"}
-                  alt={quiz.title}
+                  src={quiz.cover?.src ?? media.placeholder.src}
+                  alt={quiz.cover?.alt || quiz.title}
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
@@ -355,7 +246,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                       </Badge>
                       <div className="flex items-center gap-1 text-white text-sm">
                         <Clock className="h-3.5 w-3.5" />
-                        <span>{quiz.timeLimit} min</span>
+                        <span>{minutes(quiz)} min</span>
                       </div>
                     </div>
                     <h3 className="text-white font-semibold line-clamp-2">{quiz.title}</h3>
@@ -369,15 +260,17 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.creatorAvatar || "/placeholder.svg"}
-                        alt={quiz.createdBy}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
+                        alt={quiz.author?.name ?? "creator"}
                       />
-                      <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
+                      <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm text-muted-foreground">{quiz.createdBy}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {quiz.author?.name ?? "Unknown creator"}
+                    </span>
                   </div>
                   <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
-                    {quiz.category}
+                    {quiz.categories[0]?.name ?? "Uncategorised"}
                   </Badge>
                 </div>
 
@@ -392,13 +285,17 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                       <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                     </svg>
                     <span className="text-sm font-medium">
-                      {quiz.rating}{" "}
-                      <span className="text-muted-foreground">({quiz.totalRatings})</span>
+                      {quiz.stats.rating?.toFixed(1) ?? "—"}{" "}
+                      <span className="text-muted-foreground">({quiz.stats.ratingCount ?? 0})</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-green-600 font-medium">
                     <DollarSign className="h-4 w-4" />
-                    <span>{quiz.reward}</span>
+                    <span>
+                      {quiz.stats.rewardCents === undefined
+                        ? "—"
+                        : formatCurrency(quiz.stats.rewardCents)}
+                    </span>
                   </div>
                 </div>
 
@@ -407,20 +304,20 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                       <Users className="h-3.5 w-3.5" />
-                      <span>{quiz.players} players</span>
+                      <span>{formatPlayerCount(quiz.stats.plays)} players</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-600 dark:text-slate-400 text-sm">
-                        {quiz.spotsLeft} spots left
+                        {quiz.stats.spotsLeft ?? 0} spots left
                       </span>
                       <CircularProgress
-                        value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                        value={progress(quiz)}
                         size={36}
                         strokeWidth={3}
                         color={
-                          quiz.spotsLeft <= 20
+                          (quiz.stats.spotsLeft ?? 0) <= 20
                             ? "hsl(var(--destructive))"
-                            : quiz.spotsLeft <= 50
+                            : (quiz.stats.spotsLeft ?? 0) <= 50
                               ? "hsl(var(--warning))"
                               : "hsl(var(--primary))"
                         }
@@ -428,9 +325,9 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                     </div>
                   </div>
 
-                  {quiz.spotsLeft <= 20 && (
+                  {(quiz.stats.spotsLeft ?? 0) <= 20 && (
                     <p className="text-xs font-medium text-destructive">
-                      Almost full! Only {quiz.spotsLeft} spots left
+                      Almost full! Only {quiz.stats.spotsLeft ?? 0} spots left
                     </p>
                   )}
                 </div>
@@ -438,7 +335,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
 
               <CardFooter className="px-4 pb-4 pt-0">
                 <Button className="w-full" asChild>
-                  <Link href={`/quiz/${quiz.id}/play`}>Play Now</Link>
+                  <Link href={`${quiz.href}/play`}>Play Now</Link>
                 </Button>
               </CardFooter>
             </Card>

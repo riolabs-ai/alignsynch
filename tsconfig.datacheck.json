@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "outDir": ".datacheck",
+    "rootDir": ".",
+    "incremental": false,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "plugins": []
+  },
+  "include": [
+    "content/**/*.ts",
+    "data/**/*.ts",
+    "scripts/data-check*",
+    "scripts/ui-refs.ts",
+    "scripts/media-refs.ts",
+    "scripts/__tests__/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".next", ".datacheck"]
+}

@@ -27,187 +27,18 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, DollarSign, Filter, Grid3X3, List, Search, Users } from "lucide-react";
 import Image from "next/image";
+import { formatCurrency, formatPlayerCount, type Difficulty } from "@/content/core";
+import { shelfCards } from "@/lib/quiz-cards";
 import { useState } from "react";
+import { media } from "@/data/media";
 
-// Sample quiz data
-const quizzes = [
-  {
-    id: 1,
-    title: "World Geography Challenge",
-    image: "/world-map-quiz.png",
-    category: "Geography",
-    difficulty: "Medium",
-    timeLimit: 15,
-    reward: "$5.00",
-    players: 285,
-    maxPlayers: 300,
-    spotsLeft: 15,
-    almostFull: true,
-    createdBy: "GeoExplorer",
-    creatorAvatar: "/avatars/alex.png",
-    rating: 4.8,
-    totalRatings: 124,
-    recentPlayers: [
-      { name: "Alex J.", avatar: "/avatars/alex.png" },
-      { name: "Sarah W.", avatar: "/avatars/wizard.webp" },
-      { name: "Mike B.", avatar: "/avatars/sarah.webp" },
-    ],
-  },
-  {
-    id: 2,
-    title: "Science Quiz: Space Exploration",
-    image: "/space-exploration-quiz.png",
-    category: "Science",
-    difficulty: "Hard",
-    timeLimit: 20,
-    reward: "$7.50",
-    players: 178,
-    maxPlayers: 500,
-    spotsLeft: 322,
-    almostFull: false,
-    createdBy: "CosmicMind",
-    creatorAvatar: "/avatars/wizard.webp",
-    rating: 4.9,
-    totalRatings: 89,
-    recentPlayers: [
-      { name: "Emily D.", avatar: "/avatars/king.webp" },
-      { name: "David W.", avatar: "/avatars/champion.png" },
-      { name: "Jessica T.", avatar: "/avatars/mind.webp" },
-    ],
-  },
-  {
-    id: 3,
-    title: "History: Ancient Civilizations",
-    image: "/ancient-civilizations-quiz.png",
-    category: "History",
-    difficulty: "Medium",
-    timeLimit: 15,
-    reward: "$5.00",
-    players: 412,
-    maxPlayers: 450,
-    spotsLeft: 38,
-    almostFull: true,
-    createdBy: "HistoryBuff",
-    creatorAvatar: "/avatars/sarah.webp",
-    rating: 4.7,
-    totalRatings: 156,
-    recentPlayers: [
-      { name: "Ryan M.", avatar: "/avatars/genious.png" },
-      { name: "Olivia A.", avatar: "/avatars/brain.png" },
-      { name: "James K.", avatar: "/avatars/alex.png" },
-    ],
-  },
-  {
-    id: 4,
-    title: "Math Puzzles & Problems",
-    image: "/math-puzzles-quiz.png",
-    category: "Mathematics",
-    difficulty: "Hard",
-    timeLimit: 25,
-    reward: "$8.00",
-    players: 156,
-    maxPlayers: 300,
-    spotsLeft: 144,
-    almostFull: false,
-    createdBy: "MathGenius",
-    creatorAvatar: "/avatars/king.webp",
-    rating: 4.6,
-    totalRatings: 78,
-    recentPlayers: [
-      { name: "Sophia L.", avatar: "/avatars/wizard.webp" },
-      { name: "Noah P.", avatar: "/avatars/sarah.webp" },
-      { name: "Emma R.", avatar: "/avatars/king.webp" },
-    ],
-  },
-  {
-    id: 5,
-    title: "Literature: Classic Novels",
-    image: "/classic-novels-quiz.png",
-    category: "Literature",
-    difficulty: "Medium",
-    timeLimit: 15,
-    reward: "$5.00",
-    players: 298,
-    maxPlayers: 300,
-    spotsLeft: 2,
-    almostFull: true,
-    createdBy: "BookWorm",
-    creatorAvatar: "/avatars/champion.png",
-    rating: 4.9,
-    totalRatings: 112,
-    recentPlayers: [
-      { name: "William T.", avatar: "/avatars/champion.png" },
-      { name: "Ava M.", avatar: "/avatars/mind.webp" },
-      { name: "Liam S.", avatar: "/avatars/genious.png" },
-    ],
-  },
-  {
-    id: 6,
-    title: "Sports Trivia Challenge",
-    image: "/sports-trivia-quiz.png",
-    category: "Sports",
-    difficulty: "Easy",
-    timeLimit: 10,
-    reward: "$3.00",
-    players: 124,
-    maxPlayers: 250,
-    spotsLeft: 126,
-    almostFull: false,
-    createdBy: "SportsNut",
-    creatorAvatar: "/avatars/brain.png",
-    rating: 4.5,
-    totalRatings: 67,
-    recentPlayers: [
-      { name: "Mia J.", avatar: "/avatars/brain.png" },
-      { name: "Lucas P.", avatar: "/avatars/alex.png" },
-      { name: "Isabella K.", avatar: "/avatars/wizard.webp" },
-    ],
-  },
-  {
-    id: 7,
-    title: "Music Through the Decades",
-    image: "/music-quiz.png",
-    category: "Music",
-    difficulty: "Medium",
-    timeLimit: 15,
-    reward: "$5.50",
-    players: 210,
-    maxPlayers: 300,
-    spotsLeft: 90,
-    almostFull: false,
-    createdBy: "MusicMaestro",
-    creatorAvatar: "/avatars/genious.png",
-    rating: 4.7,
-    totalRatings: 94,
-    recentPlayers: [
-      { name: "Oliver B.", avatar: "/avatars/brain.png" },
-      { name: "Charlotte D.", avatar: "/avatars/alex.png" },
-      { name: "Henry F.", avatar: "/avatars/wizard.webp" },
-    ],
-  },
-  {
-    id: 8,
-    title: "Technology & Gadgets",
-    image: "/technology-quiz.png",
-    category: "Technology",
-    difficulty: "Hard",
-    timeLimit: 20,
-    reward: "$7.00",
-    players: 175,
-    maxPlayers: 250,
-    spotsLeft: 75,
-    almostFull: false,
-    createdBy: "TechGuru",
-    creatorAvatar: "/avatars/mind.webp",
-    rating: 4.8,
-    totalRatings: 82,
-    recentPlayers: [
-      { name: "Amelia H.", avatar: "/avatars/champion.png" },
-      { name: "Theodore J.", avatar: "/avatars/mind.webp" },
-      { name: "Violet L.", avatar: "/avatars/genious.png" },
-    ],
-  },
-];
+/** The card prints minutes; the model stores seconds. */
+const minutes = (quiz: { timeLimitSeconds: number }) => Math.round(quiz.timeLimitSeconds / 60);
+
+const progress = (quiz: { stats: { plays: number; capacity?: number } }) =>
+  quiz.stats.capacity === undefined || quiz.stats.capacity === 0
+    ? 0
+    : (quiz.stats.plays / quiz.stats.capacity) * 100;
 
 // Categories
 const categories = [
@@ -226,31 +57,23 @@ const categories = [
 ];
 
 export function ExploreQuizzes() {
+  // Projected from the catalogue; the grid never authors a card (D2).
+  const quizzes = shelfCards("exploreAll");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Get difficulty badge variant
-  const getDifficultyVariant = (difficulty: string) => {
+  const getDifficultyVariant = (difficulty: Difficulty) => {
     switch (difficulty) {
-      case "Easy":
+      case "easy":
         return "success";
-      case "Medium":
+      case "medium":
         return "warning";
-      case "Hard":
+      case "hard":
         return "destructive";
       default:
         return "default";
     }
-  };
-
-  // Format player count
-  const formatPlayerCount = (count: number) => {
-    return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : count;
-  };
-
-  // Calculate progress percentage
-  const calculateProgress = (players: number, maxPlayers: number) => {
-    return (players / maxPlayers) * 100;
   };
 
   return (
@@ -379,8 +202,8 @@ export function ExploreQuizzes() {
                 <Image
                   width={1000}
                   height={600}
-                  src={quiz.image || "/placeholder.svg"}
-                  alt={quiz.title}
+                  src={quiz.cover?.src ?? media.placeholder.src}
+                  alt={quiz.cover?.alt || quiz.title}
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
@@ -394,7 +217,7 @@ export function ExploreQuizzes() {
                       </Badge>
                       <div className="flex items-center gap-1 text-white text-sm">
                         <Clock className="h-3.5 w-3.5" />
-                        <span>{quiz.timeLimit} min</span>
+                        <span>{minutes(quiz)} min</span>
                       </div>
                     </div>
                     <h3 className="text-white font-semibold line-clamp-2">{quiz.title}</h3>
@@ -408,15 +231,17 @@ export function ExploreQuizzes() {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.creatorAvatar || "/placeholder.svg"}
-                        alt={quiz.createdBy}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
+                        alt={quiz.author?.name ?? "creator"}
                       />
-                      <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
+                      <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm text-muted-foreground">{quiz.createdBy}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {quiz.author?.name ?? "Unknown creator"}
+                    </span>
                   </div>
                   <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
-                    {quiz.category}
+                    {quiz.categories[0]?.name ?? "Uncategorised"}
                   </Badge>
                 </div>
 
@@ -431,13 +256,17 @@ export function ExploreQuizzes() {
                       <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                     </svg>
                     <span className="text-sm font-medium">
-                      {quiz.rating}{" "}
-                      <span className="text-muted-foreground">({quiz.totalRatings})</span>
+                      {quiz.stats.rating?.toFixed(1) ?? "—"}{" "}
+                      <span className="text-muted-foreground">({quiz.stats.ratingCount ?? 0})</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-green-600 font-medium">
                     <DollarSign className="h-4 w-4" />
-                    <span>{quiz.reward}</span>
+                    <span>
+                      {quiz.stats.rewardCents === undefined
+                        ? "—"
+                        : formatCurrency(quiz.stats.rewardCents)}
+                    </span>
                   </div>
                 </div>
 
@@ -446,20 +275,20 @@ export function ExploreQuizzes() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                       <Users className="h-3.5 w-3.5" />
-                      <span>{formatPlayerCount(quiz.players)} players</span>
+                      <span>{formatPlayerCount(quiz.stats.plays)} players</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-600 dark:text-slate-400 text-sm">
-                        {quiz.spotsLeft} spots left
+                        {quiz.stats.spotsLeft ?? 0} spots left
                       </span>
                       <CircularProgress
-                        value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                        value={progress(quiz)}
                         size={36}
                         strokeWidth={3}
                         color={
-                          quiz.spotsLeft <= 20
+                          (quiz.stats.spotsLeft ?? 0) <= 20
                             ? "hsl(var(--destructive))"
-                            : quiz.spotsLeft <= 50
+                            : (quiz.stats.spotsLeft ?? 0) <= 50
                               ? "hsl(var(--warning))"
                               : "hsl(var(--primary))"
                         }
@@ -467,9 +296,9 @@ export function ExploreQuizzes() {
                     </div>
                   </div>
 
-                  {quiz.spotsLeft <= 20 && (
+                  {(quiz.stats.spotsLeft ?? 0) <= 20 && (
                     <p className="text-xs font-medium text-destructive">
-                      Almost full! Only {quiz.spotsLeft} spots left
+                      Almost full! Only {quiz.stats.spotsLeft ?? 0} spots left
                     </p>
                   )}
                 </div>
@@ -497,8 +326,8 @@ export function ExploreQuizzes() {
                   <Image
                     width={600}
                     height={350}
-                    src={quiz.image || "/placeholder.svg"}
-                    alt={quiz.title}
+                    src={quiz.cover?.src ?? media.placeholder.src}
+                    alt={quiz.cover?.alt || quiz.title}
                     className="h-full w-full object-cover"
                   />
                   <Badge
@@ -513,11 +342,11 @@ export function ExploreQuizzes() {
                 <div className="flex flex-1 flex-col p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
-                      {quiz.category}
+                      {quiz.categories[0]?.name ?? "Uncategorised"}
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Clock className="h-3.5 w-3.5" />
-                      <span>{quiz.timeLimit} min</span>
+                      <span>{minutes(quiz)} min</span>
                     </div>
                   </div>
 
@@ -526,12 +355,14 @@ export function ExploreQuizzes() {
                   <div className="flex items-center gap-2 mb-4">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.creatorAvatar || "/placeholder.svg"}
-                        alt={quiz.createdBy}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
+                        alt={quiz.author?.name ?? "creator"}
                       />
-                      <AvatarFallback>{quiz.createdBy.substring(0, 2)}</AvatarFallback>
+                      <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm text-muted-foreground">by {quiz.createdBy}</span>
+                    <span className="text-sm text-muted-foreground">
+                      by {quiz.author?.name ?? "Unknown creator"}
+                    </span>
                     <div className="flex items-center gap-1 ml-2">
                       <svg
                         className="h-4 w-4 text-yellow-400 fill-current"
@@ -541,8 +372,10 @@ export function ExploreQuizzes() {
                         <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                       </svg>
                       <span className="text-sm font-medium">
-                        {quiz.rating}{" "}
-                        <span className="text-muted-foreground">({quiz.totalRatings})</span>
+                        {quiz.stats.rating?.toFixed(1) ?? "—"}{" "}
+                        <span className="text-muted-foreground">
+                          ({quiz.stats.ratingCount ?? 0})
+                        </span>
                       </span>
                     </div>
                   </div>
@@ -551,20 +384,20 @@ export function ExploreQuizzes() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                         <Users className="h-3.5 w-3.5" />
-                        <span>{formatPlayerCount(quiz.players)} players</span>
+                        <span>{formatPlayerCount(quiz.stats.plays)} players</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-slate-600 dark:text-slate-400">
-                          {quiz.spotsLeft} spots left
+                          {quiz.stats.spotsLeft ?? 0} spots left
                         </span>
                         <CircularProgress
-                          value={calculateProgress(quiz.players, quiz.maxPlayers)}
+                          value={progress(quiz)}
                           size={36}
                           strokeWidth={3}
                           color={
-                            quiz.spotsLeft <= 20
+                            (quiz.stats.spotsLeft ?? 0) <= 20
                               ? "hsl(var(--destructive))"
-                              : quiz.spotsLeft <= 50
+                              : (quiz.stats.spotsLeft ?? 0) <= 50
                                 ? "hsl(var(--warning))"
                                 : "hsl(var(--primary))"
                           }
@@ -573,13 +406,13 @@ export function ExploreQuizzes() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      {quiz.spotsLeft <= 20 ? (
+                      {(quiz.stats.spotsLeft ?? 0) <= 20 ? (
                         <p className="text-xs font-medium text-destructive">
-                          Almost full! Only {quiz.spotsLeft} spots left
+                          Almost full! Only {quiz.stats.spotsLeft ?? 0} spots left
                         </p>
                       ) : (
                         <p className="text-xs text-muted-foreground">
-                          {quiz.spotsLeft} spots available
+                          {quiz.stats.spotsLeft ?? 0} spots available
                         </p>
                       )}
 
@@ -595,7 +428,7 @@ export function ExploreQuizzes() {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Showing 8 of 48 quizzes</p>
+        <p className="text-sm text-muted-foreground">Showing {quizzes.length} quizzes</p>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled>
             Previous

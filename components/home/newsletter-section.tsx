@@ -4,6 +4,7 @@ import type React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { media } from "@/data/media";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle, Mail } from "lucide-react";
 import { useState } from "react";
@@ -32,7 +33,7 @@ export function NewsletterSection() {
       <div
         className="absolute inset-0 z-0"
         style={{
-          backgroundImage: "url('/newsletter-bg.png')",
+          backgroundImage: `url(${media["newsletter-bg"].src})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

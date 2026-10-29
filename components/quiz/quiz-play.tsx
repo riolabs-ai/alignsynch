@@ -7,7 +7,24 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Answer, currentQuiz, Quiz } from "@/data/currentQuiz";
+import { categoryName } from "@/content/categories";
+import { selectQuizForPlay, type QuizForPlay } from "@/content/quiz";
+import { currentQuiz } from "@/data/currentQuiz";
+
+/**
+ * The play surface reads `selectQuizForPlay()` directly: `categoryLabel` is resolved
+ * from the taxonomy and questions keep the model's `prompt`/`media` names, so there
+ * is no second `Quiz` shape here (D1/D2).
+ */
+const playableQuiz: QuizForPlay = selectQuizForPlay(currentQuiz, categoryName);
+
+/** One answered question, local to the play surface (UI state, not content). */
+interface Answer {
+  questionId: string;
+  selectedOptionId: string | null;
+  isCorrect: boolean;
+  timeSpent: number;
+}
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -16,7 +33,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 
 // Types for the quiz state
 interface QuizState {
-  quiz: Quiz | null;
+  quiz: QuizForPlay | null;
   loading: boolean;
   error: string | null;
   currentQuestionIndex: number;
@@ -36,7 +53,7 @@ interface QuizState {
 type QuizAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
-  | { type: "SET_QUIZ"; payload: Quiz }
+  | { type: "SET_QUIZ"; payload: QuizForPlay }
   | { type: "SET_CURRENT_QUESTION_INDEX"; payload: number }
   | { type: "SET_DIRECTION"; payload: number }
   | { type: "SET_QUIZ_START_TIME"; payload: number }
@@ -86,7 +103,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         quiz: action.payload,
-        timeRemaining: action.payload.timeLimit,
+        timeRemaining: action.payload.timeLimitSeconds,
         loading: false,
       };
 
@@ -189,7 +206,7 @@ export function QuizPlay({ id }: { id: string }) {
     const getQuiz = async () => {
       try {
         dispatch({ type: "SET_LOADING", payload: true });
-        dispatch({ type: "SET_QUIZ", payload: currentQuiz });
+        dispatch({ type: "SET_QUIZ", payload: playableQuiz });
       } catch (err) {
         dispatch({ type: "SET_ERROR", payload: "Failed to load quiz. Please try again later." });
       }
@@ -326,7 +343,7 @@ export function QuizPlay({ id }: { id: string }) {
   const handleRestartQuiz = () => {
     dispatch({
       type: "RESTART_QUIZ",
-      payload: { timeLimit: state.quiz?.timeLimit || null },
+      payload: { timeLimit: state.quiz?.timeLimitSeconds || null },
     });
   };
 
@@ -411,7 +428,7 @@ export function QuizPlay({ id }: { id: string }) {
     <div className="container mx-auto py-4 px-4 md:py-8 max-w-4xl">
       <QuizHeader
         title={state.quiz.title}
-        category={state.quiz.category}
+        category={state.quiz.categoryLabel}
         difficulty={state.quiz.difficulty}
         isReviewMode={state.isReviewMode}
       />
@@ -464,12 +481,13 @@ export function QuizPlay({ id }: { id: string }) {
                 className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6"
               >
                 {/* Question image */}
-                {currentQuestion.image && (
-                  <div className="rounded-lg overflow-hidden">
+                {currentQuestion.media && (
+                  <div className="relative rounded-lg overflow-hidden">
                     <Image
-                      src={currentQuestion.image || "/placeholder.svg"}
+                      src={currentQuestion.media.src}
                       alt="Question illustration"
                       className="size-full object-center object-cover"
+                      fill
                     />
                   </div>
                 )}

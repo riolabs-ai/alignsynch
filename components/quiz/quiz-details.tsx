@@ -12,12 +12,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 // Sample quiz data - in a real app, you would fetch this based on the ID
+/** One rendered review row. `avatar` is a `string` on purpose: a review may point at any
+ *  registry key, and the literal union `quizData.reviews` infers would reject that. */
+type Review = {
+  name: string;
+  avatar: string;
+  rating: number;
+  comment: string;
+};
+
 const quizData = {
   id: "1",
   title: "Space Exploration Quiz",
-  image: "/quiz/q17.png",
+  image: media["quiz.q17"].src,
   category: "Science & Technology",
   difficulty: "Medium",
   timeLimit: 20,
@@ -33,35 +43,47 @@ const quizData = {
   requirements: "Basic knowledge of Marvel movies and TV shows. No specific preparation needed.",
   creator: {
     name: "MarvelFan2023",
-    avatar: "/avatars/alex.png",
+    avatar: media["avatars.alex"].src,
     level: "Expert Quiz Creator",
     quizzes: 42,
     lastUpdate: "2023-10-15",
   },
   tags: ["Marvel", "Superheroes", "Movies", "MCU", "Avengers"],
   leaderboard: [
-    { rank: 1, name: "ThorFan", avatar: "/avatars/wizard.webp", score: 98, time: "12:45" },
-    { rank: 2, name: "IronManRules", avatar: "/avatars/sarah.webp", score: 95, time: "13:20" },
-    { rank: 3, name: "CaptainAmerica", avatar: "/avatars/king.webp", score: 92, time: "14:05" },
-    { rank: 4, name: "BlackWidow", avatar: "/avatars/champion.png", score: 90, time: "15:30" },
-    { rank: 5, name: "HulkSmash", avatar: "/avatars/mind.webp", score: 88, time: "16:15" },
+    { rank: 1, name: "ThorFan", avatar: media["avatars.wizard"].src, score: 98, time: "12:45" },
+    { rank: 2, name: "IronManRules", avatar: media["avatars.sarah"].src, score: 95, time: "13:20" },
+    {
+      rank: 3,
+      name: "CaptainAmerica",
+      avatar: media["avatars.king"].src,
+      score: 92,
+      time: "14:05",
+    },
+    {
+      rank: 4,
+      name: "BlackWidow",
+      avatar: media["avatars.champion"].src,
+      score: 90,
+      time: "15:30",
+    },
+    { rank: 5, name: "HulkSmash", avatar: media["avatars.mind"].src, score: 88, time: "16:15" },
   ],
   reviews: [
     {
       name: "MarvelFan",
-      avatar: "/avatars/genious.png",
+      avatar: media["avatars.genious"].src,
       rating: 5,
       comment: "Excellent quiz! Really tests your knowledge of the MCU.",
     },
     {
       name: "QuizLover",
-      avatar: "/avatars/brain.png",
+      avatar: media["avatars.brain"].src,
       rating: 4,
       comment: "Good variety of questions, some were quite challenging.",
     },
     {
       name: "Avenger",
-      avatar: "/avatars/guru.png",
+      avatar: media["avatars.guru"].src,
       rating: 5,
       comment: "Perfect for Marvel fans. I learned some new facts too!",
     },
@@ -70,19 +92,19 @@ const quizData = {
     {
       id: 2,
       title: "DC Extended Universe Quiz",
-      image: "/world-landmarks.png",
+      image: media["world-landmarks"].src,
       difficulty: "Hard",
     },
     {
       id: 3,
       title: "Star Wars Saga Trivia",
-      image: "/brain-teasers-puzzles.png",
+      image: media["brain-teasers-puzzles"].src,
       difficulty: "Medium",
     },
     {
       id: 4,
       title: "Harry Potter Wizarding World",
-      image: "/history-mysteries.png",
+      image: media["history-mysteries"].src,
       difficulty: "Easy",
     },
   ],
@@ -91,7 +113,7 @@ const quizData = {
 export function QuizDetails({ id }: { id: string }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [userReviews, setUserReviews] = useState(quizData.reviews);
+  const [userReviews, setUserReviews] = useState<Review[]>(quizData.reviews);
 
   const getDifficultyVariant = (difficulty: string) => {
     switch (difficulty) {
@@ -112,7 +134,7 @@ export function QuizDetails({ id }: { id: string }) {
   const handleReviewSubmit = (review: { rating: number; comment: string }) => {
     const newReview = {
       name: "You",
-      avatar: "/avatars/master.png",
+      avatar: media["avatars.master"].src,
       rating: review.rating,
       comment: review.comment,
     };
@@ -134,9 +156,10 @@ export function QuizDetails({ id }: { id: string }) {
 
         <div className="relative h-64 md:h-80 rounded-xl overflow-hidden mb-6">
           <Image
-            src={quizData.image || "/placeholder.svg"}
+            src={quizData.image || media.placeholder.src}
             alt={quizData.title}
             className="w-full h-full object-cover"
+            fill
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4 md:p-6">
             <div className="flex flex-wrap gap-2 mb-3">
@@ -216,7 +239,7 @@ export function QuizDetails({ id }: { id: string }) {
                           <Image
                             width={600}
                             height={350}
-                            src={quiz.image || "/placeholder.svg"}
+                            src={quiz.image || media.placeholder.src}
                             alt={quiz.title}
                             className="w-full h-full object-cover"
                           />
@@ -252,7 +275,7 @@ export function QuizDetails({ id }: { id: string }) {
                       <div className="col-span-5 flex items-center gap-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage
-                            src={player.avatar || "/placeholder.svg"}
+                            src={player.avatar || media.placeholder.src}
                             alt={player.name}
                           />
                           <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
@@ -287,7 +310,7 @@ export function QuizDetails({ id }: { id: string }) {
                         <div className="flex items-start gap-3">
                           <Avatar>
                             <AvatarImage
-                              src={review.avatar || "/placeholder.svg"}
+                              src={review.avatar || media.placeholder.src}
                               alt={review.name}
                             />
                             <AvatarFallback>{review.name.substring(0, 2)}</AvatarFallback>
@@ -356,7 +379,7 @@ export function QuizDetails({ id }: { id: string }) {
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage
-                        src={quizData.creator.avatar || "/placeholder.svg"}
+                        src={quizData.creator.avatar || media.placeholder.src}
                         alt={quizData.creator.name}
                       />
                       <AvatarFallback>{quizData.creator.name.substring(0, 2)}</AvatarFallback>

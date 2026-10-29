@@ -6,44 +6,87 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Award, Medal, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 // Mock data for the leaderboard
 const leaderboardData = {
   today: [
-    { id: 1, username: "QuizMaster", score: 100, time: 67, avatar: "/avatars/wizard.webp" },
-    { id: 2, username: "BrainGenius", score: 100, time: 82, avatar: "/avatars/genious.png" },
-    { id: 3, username: "KnowledgeKing", score: 80, time: 63, avatar: "/avatars/king.webp" },
-    { id: 4, username: "QuizChampion", score: 80, time: 91, avatar: "/avatars/champion.png" },
-    { id: 5, username: "MindGuru", score: 80, time: 104, avatar: "/avatars/guru.png" },
-    { id: 6, username: "BrainMaster", score: 60, time: 75, avatar: "/avatars/brain.png" },
-    { id: 7, username: "QuizWhiz", score: 60, time: 88, avatar: "/avatars/mind.webp" },
-    { id: 8, username: "TriviaExpert", score: 60, time: 95, avatar: "/avatars/master.png" },
-    { id: 9, username: "KnowledgeSeeker", score: 40, time: 72, avatar: "/avatars/alex.png" },
-    { id: 10, username: "QuizNinja", score: 40, time: 86, avatar: "/avatars/sarah.webp" },
+    { id: 1, username: "QuizMaster", score: 100, time: 67, avatar: media["avatars.wizard"].src },
+    { id: 2, username: "BrainGenius", score: 100, time: 82, avatar: media["avatars.genious"].src },
+    { id: 3, username: "KnowledgeKing", score: 80, time: 63, avatar: media["avatars.king"].src },
+    { id: 4, username: "QuizChampion", score: 80, time: 91, avatar: media["avatars.champion"].src },
+    { id: 5, username: "MindGuru", score: 80, time: 104, avatar: media["avatars.guru"].src },
+    { id: 6, username: "BrainMaster", score: 60, time: 75, avatar: media["avatars.brain"].src },
+    { id: 7, username: "QuizWhiz", score: 60, time: 88, avatar: media["avatars.mind"].src },
+    { id: 8, username: "TriviaExpert", score: 60, time: 95, avatar: media["avatars.master"].src },
+    { id: 9, username: "KnowledgeSeeker", score: 40, time: 72, avatar: media["avatars.alex"].src },
+    { id: 10, username: "QuizNinja", score: 40, time: 86, avatar: media["avatars.sarah"].src },
   ],
   week: [
-    { id: 2, username: "BrainGenius", score: 680, time: 582, avatar: "/avatars/genious.png" },
-    { id: 1, username: "QuizMaster", score: 640, time: 567, avatar: "/avatars/wizard.webp" },
-    { id: 5, username: "MindGuru", score: 620, time: 604, avatar: "/avatars/guru.png" },
-    { id: 3, username: "KnowledgeKing", score: 580, time: 563, avatar: "/avatars/king.webp" },
-    { id: 4, username: "QuizChampion", score: 560, time: 591, avatar: "/avatars/champion.png" },
-    { id: 8, username: "TriviaExpert", score: 520, time: 595, avatar: "/avatars/master.png" },
-    { id: 7, username: "QuizWhiz", score: 500, time: 588, avatar: "/avatars/mind.webp" },
-    { id: 6, username: "BrainMaster", score: 480, time: 575, avatar: "/avatars/brain.png" },
-    { id: 10, username: "QuizNinja", score: 440, time: 586, avatar: "/avatars/sarah.webp" },
-    { id: 9, username: "KnowledgeSeeker", score: 400, time: 572, avatar: "/avatars/alex.png" },
+    { id: 2, username: "BrainGenius", score: 680, time: 582, avatar: media["avatars.genious"].src },
+    { id: 1, username: "QuizMaster", score: 640, time: 567, avatar: media["avatars.wizard"].src },
+    { id: 5, username: "MindGuru", score: 620, time: 604, avatar: media["avatars.guru"].src },
+    { id: 3, username: "KnowledgeKing", score: 580, time: 563, avatar: media["avatars.king"].src },
+    {
+      id: 4,
+      username: "QuizChampion",
+      score: 560,
+      time: 591,
+      avatar: media["avatars.champion"].src,
+    },
+    { id: 8, username: "TriviaExpert", score: 520, time: 595, avatar: media["avatars.master"].src },
+    { id: 7, username: "QuizWhiz", score: 500, time: 588, avatar: media["avatars.mind"].src },
+    { id: 6, username: "BrainMaster", score: 480, time: 575, avatar: media["avatars.brain"].src },
+    { id: 10, username: "QuizNinja", score: 440, time: 586, avatar: media["avatars.sarah"].src },
+    {
+      id: 9,
+      username: "KnowledgeSeeker",
+      score: 400,
+      time: 572,
+      avatar: media["avatars.alex"].src,
+    },
   ],
   allTime: [
-    { id: 1, username: "QuizMaster", score: 9840, time: 8567, avatar: "/avatars/wizard.webp" },
-    { id: 2, username: "BrainGenius", score: 9680, time: 8582, avatar: "/avatars/genious.png" },
-    { id: 3, username: "KnowledgeKing", score: 9580, time: 8563, avatar: "/avatars/king.webp" },
-    { id: 5, username: "MindGuru", score: 9320, time: 8604, avatar: "/avatars/guru.png" },
-    { id: 4, username: "QuizChampion", score: 9160, time: 8591, avatar: "/avatars/champion.png" },
-    { id: 8, username: "TriviaExpert", score: 8920, time: 8595, avatar: "/avatars/master.png" },
-    { id: 6, username: "BrainMaster", score: 8780, time: 8575, avatar: "/avatars/brain.png" },
-    { id: 7, username: "QuizWhiz", score: 8500, time: 8588, avatar: "/avatars/mind.webp" },
-    { id: 10, username: "QuizNinja", score: 8240, time: 8586, avatar: "/avatars/sarah.webp" },
-    { id: 9, username: "KnowledgeSeeker", score: 8000, time: 8572, avatar: "/avatars/alex.png" },
+    { id: 1, username: "QuizMaster", score: 9840, time: 8567, avatar: media["avatars.wizard"].src },
+    {
+      id: 2,
+      username: "BrainGenius",
+      score: 9680,
+      time: 8582,
+      avatar: media["avatars.genious"].src,
+    },
+    {
+      id: 3,
+      username: "KnowledgeKing",
+      score: 9580,
+      time: 8563,
+      avatar: media["avatars.king"].src,
+    },
+    { id: 5, username: "MindGuru", score: 9320, time: 8604, avatar: media["avatars.guru"].src },
+    {
+      id: 4,
+      username: "QuizChampion",
+      score: 9160,
+      time: 8591,
+      avatar: media["avatars.champion"].src,
+    },
+    {
+      id: 8,
+      username: "TriviaExpert",
+      score: 8920,
+      time: 8595,
+      avatar: media["avatars.master"].src,
+    },
+    { id: 6, username: "BrainMaster", score: 8780, time: 8575, avatar: media["avatars.brain"].src },
+    { id: 7, username: "QuizWhiz", score: 8500, time: 8588, avatar: media["avatars.mind"].src },
+    { id: 10, username: "QuizNinja", score: 8240, time: 8586, avatar: media["avatars.sarah"].src },
+    {
+      id: 9,
+      username: "KnowledgeSeeker",
+      score: 8000,
+      time: 8572,
+      avatar: media["avatars.alex"].src,
+    },
   ],
 };
 
@@ -109,7 +152,7 @@ export function DailyLeaderboard() {
                     </div>
 
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.username} />
+                      <AvatarImage src={user.avatar || media.placeholder.src} alt={user.username} />
                       <AvatarFallback>{user.username.substring(0, 2)}</AvatarFallback>
                     </Avatar>
 

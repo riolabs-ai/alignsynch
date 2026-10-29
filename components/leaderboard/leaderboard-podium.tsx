@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Medal, Star } from "lucide-react";
+import { media } from "@/data/media";
 export type LeaderboardItem = {
   id: number;
   name: string;
@@ -39,7 +40,7 @@ export function LeaderboardPodium({ leaderboardData }: LeaderboardPodiumProps) {
               <div className="relative mb-2">
                 <Avatar className={`${avatarSizes[i]} ring-2 ring-offset-2 ${borderColors[i]}`}>
                   <AvatarImage
-                    src={user.avatar || "/placeholder.svg"}
+                    src={user.avatar || media.placeholder.src}
                     className="object-cover object-center"
                     alt={user.name}
                   />

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { ImageIcon, Mic, PaperclipIcon, Send, Smile, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "../ui/input";
+import { media } from "@/data/media";
 
 interface ChatInputProps {
   onSendMessage: (text: string) => void;
@@ -52,7 +53,7 @@ export function ChatInput({ onSendMessage, onSendImage }: ChatInputProps) {
     if (file) {
       // In a real app, you would upload the file to a server
       // For this demo, we'll use a placeholder image
-      const imageUrl = "/placeholder.svg?height=300&width=400";
+      const imageUrl = media.placeholder.src;
       onSendImage(imageUrl);
 
       // Reset the file input

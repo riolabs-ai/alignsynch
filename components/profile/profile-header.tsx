@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Flag, MessageSquare, Star, UserCheck, UserPlus } from "lucide-react";
+import { media } from "@/data/media";
 
 interface ProfileHeaderProps {
   user: User;
@@ -29,7 +30,7 @@ export function ProfileHeader({
     <div className="rounded-xl bg-gradient-to-r from-purple-100 to-blue-100 p-6 shadow-sm dark:from-purple-950/30 dark:to-blue-950/30">
       <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
         <Avatar className="h-24 w-24 border-4 border-background">
-          <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+          <AvatarImage src={user.avatar || media.placeholder.src} alt={user.name} />
           <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
         </Avatar>
 

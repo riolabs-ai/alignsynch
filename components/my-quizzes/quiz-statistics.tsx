@@ -49,6 +49,7 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
+import { media } from "@/data/media";
 
 // Mock data for the quiz
 const getQuizData = (id: string) => {
@@ -82,7 +83,7 @@ const getQuizData = (id: string) => {
     id,
     title: "World Geography Challenge",
     description: "Test your knowledge of world geography with this challenging quiz!",
-    image: "/world-map-quiz.png",
+    image: media["world-map-quiz"].src,
     category: "Geography",
     difficulty: "medium",
     questions: 20,
@@ -360,9 +361,7 @@ export function QuizStatistics({ id }: { id: string }) {
         <div className="flex flex-col md:flex-row">
           <div className="relative h-48 w-full md:h-auto md:w-64">
             <Image
-              width={600}
-              height={350}
-              src={quiz.image || "/placeholder.svg"}
+              src={quiz.image || media.placeholder.src}
               alt={quiz.title}
               fill
               className="object-cover md:rounded-l-lg"

@@ -20,7 +20,8 @@ export type Contact = {
   name: string;
   avatar: string;
   status: "online" | "offline" | "away";
-  lastSeen?: string;
+  /** ISO instant, present iff `status === "offline"`. Formatted at render time, never in `data/`. */
+  lastSeenAt?: string;
 };
 
 export type Message = {
@@ -44,8 +45,8 @@ export type Conversation = {
 };
 
 export function ChatPage() {
-  const [contacts, setContacts] = useState(mockContacts);
-  const [conversations, setConversations] = useState(mockConversations);
+  const [contacts, setContacts] = useState<Contact[]>(mockContacts);
+  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
     conversations.length > 0 ? conversations[0].id : null,
   );
@@ -174,6 +175,7 @@ export function ChatPage() {
       contactId,
       messages: [],
       unread: 0,
+      lastMessage: { text: "", timestamp: new Date().toISOString() },
     };
 
     // Add the new conversation to the list

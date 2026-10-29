@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { UserCheck, UserPlus, Users } from "lucide-react";
+import { media } from "@/data/media";
 
 interface ProfileFollowersProps {
   userId: string;
@@ -65,7 +66,7 @@ export function ProfileFollowers({ userId }: ProfileFollowersProps) {
             <div key={follower.id} className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarImage src={follower.avatar || "/placeholder.svg"} alt={follower.name} />
+                  <AvatarImage src={follower.avatar || media.placeholder.src} alt={follower.name} />
                   <AvatarFallback>{follower.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>

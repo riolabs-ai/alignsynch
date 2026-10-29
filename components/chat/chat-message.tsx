@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { Message } from "./chat-page";
+import { formatClockTime, formatDateTimeLong } from "@/content/core";
 import { Check, CheckCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { media } from "@/data/media";
 
 interface ChatMessageProps {
   message: Message;
@@ -19,18 +21,11 @@ export function ChatMessage({ message, isOwn, contactName, contactAvatar }: Chat
   const [imageError, setImageError] = useState(false);
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return formatClockTime(timestamp);
   };
 
   const formatFullTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString([], {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTimeLong(timestamp);
   };
 
   const renderStatus = (status: string) => {
@@ -52,7 +47,7 @@ export function ChatMessage({ message, isOwn, contactName, contactAvatar }: Chat
         <div className="flex-shrink-0">
           <div className="relative w-7 h-7">
             <Image
-              src={imageError ? "/placeholder.svg?height=28&width=28" : contactAvatar}
+              src={imageError ? media.placeholder.src : contactAvatar}
               alt={contactName}
               width={28}
               height={28}
@@ -88,7 +83,7 @@ export function ChatMessage({ message, isOwn, contactName, contactAvatar }: Chat
                       <span className="text-xs">Loading image...</span>
                     </div>
                     <Image
-                      src={message.image || "/placeholder.svg"}
+                      src={message.image || media.placeholder.src}
                       alt="Shared image"
                       width={300}
                       height={200}

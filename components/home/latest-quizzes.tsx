@@ -3,50 +3,24 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import type { Difficulty } from "@/content/core";
+import { shelfCards } from "@/lib/quiz-cards";
 import Image from "next/image";
 import Link from "next/link";
-
-// Sample quiz data
-const quizzes = [
-  {
-    id: 1,
-    title: "World Geography Challenge",
-    image: "/world-map-quiz.png",
-    category: "Geography",
-    difficulty: "Medium",
-  },
-  {
-    id: 2,
-    title: "Science Quiz: Space Exploration",
-    image: "/space-exploration-quiz.png",
-    category: "Science",
-    difficulty: "Hard",
-  },
-  {
-    id: 3,
-    title: "History: Ancient Civilizations",
-    image: "/ancient-civilizations-quiz.png",
-    category: "History",
-    difficulty: "Medium",
-  },
-  {
-    id: 4,
-    title: "Mathematical Puzzles",
-    image: "/quiz/q9.png",
-    category: "Mathematics",
-    difficulty: "Hard",
-  },
-];
+import { media } from "@/data/media";
 
 export function LatestQuizzes() {
+  // Projected from the catalogue, never authored here (D2).
+  const quizzes = shelfCards("homeLatest");
+
   // Get difficulty badge variant
-  const getDifficultyVariant = (difficulty: string) => {
+  const getDifficultyVariant = (difficulty: Difficulty) => {
     switch (difficulty) {
-      case "Easy":
+      case "easy":
         return "success";
-      case "Medium":
+      case "medium":
         return "yellow";
-      case "Hard":
+      case "hard":
         return "destructive";
       default:
         return "default";
@@ -68,14 +42,17 @@ export function LatestQuizzes() {
               <Image
                 width={600}
                 height={350}
-                src={quiz.image || "/placeholder.svg"}
-                alt={quiz.title}
+                src={quiz.cover?.src ?? media.placeholder.src}
+                alt={quiz.cover?.alt || quiz.title}
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                 <div className="w-full">
                   <div className="flex justify-between items-center mb-2">
-                    <Badge variant={getDifficultyVariant(quiz.difficulty)} className="font-medium">
+                    <Badge
+                      variant={getDifficultyVariant(quiz.difficulty)}
+                      className="font-medium capitalize"
+                    >
                       {quiz.difficulty}
                     </Badge>
                   </div>
@@ -86,11 +63,11 @@ export function LatestQuizzes() {
 
             <CardContent className="p-4 xl:pt-6 flex justify-between items-center">
               <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
-                {quiz.category}
+                {quiz.categories[0]?.name ?? "Uncategorised"}
               </Badge>
 
               <Button size="sm" asChild>
-                <Link href={`/quiz/${quiz.id}`}>Play Now</Link>
+                <Link href={quiz.href}>Play Now</Link>
               </Button>
             </CardContent>
           </Card>

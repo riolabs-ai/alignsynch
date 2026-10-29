@@ -1,14 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { type Tip, getRelatedTips } from "@/data/creator-tips-data";
+import { type Tip, getRelatedTips, tipCategoryName } from "@/data/creator-tips-data";
+import { ContentBlocks } from "@/components/content/content-blocks";
+import { formatDate } from "@/content/core";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Bookmark, Clock, Share2, ThumbsUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import Markdown from "react-markdown";
 import RelatedTips from "./related-tips";
+import { media } from "@/data/media";
 interface TipDetailProps {
   tip: Tip;
 }
@@ -47,22 +49,19 @@ export default function TipDetail({ tip }: TipDetailProps) {
         <header className="mb-8">
           <div className="flex items-center mb-4">
             <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-500 text-white">
-              {tip.category
-                .split("-")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" ")}
+              {tipCategoryName(tip.categoryIds[0] ?? "")}
             </span>
             <div className="flex items-center ml-4 text-sm text-gray-500 dark:text-gray-200">
               <Clock size={14} className="mr-1" />
-              {tip.readTime} min read
+              {tip.readMinutes} min read
             </div>
           </div>
 
           <h1 className="text-2xl md:text-3xl xl:text-4xl font-bold mb-4">{tip.title}</h1>
 
-          <p className="text-xl text-gray-600 dark:text-gray-50 mb-6">{tip.excerpt}</p>
+          <p className="text-xl text-gray-600 dark:text-gray-50 mb-6">{tip.summary}</p>
           <Image
-            src={tip.image || "/placeholder.svg"}
+            src={tip.cover?.src ?? media.placeholder.src}
             alt={tip.title}
             width={1000}
             height={300}
@@ -72,7 +71,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                 <Image
-                  src={tip.author.avatar || "/placeholder.svg"}
+                  src={tip.author.avatar?.src ?? media.placeholder.src}
                   alt={tip.author.name}
                   width={40}
                   height={40}
@@ -81,7 +80,9 @@ export default function TipDetail({ tip }: TipDetailProps) {
               </div>
               <div>
                 <div className="font-medium">{tip.author.name}</div>
-                <div className="text-sm text-gray-500">{tip.date}</div>
+                <div className="text-sm text-gray-500">
+                  {tip.publishedAt ? formatDate(tip.publishedAt) : ""}
+                </div>
               </div>
             </div>
 
@@ -121,24 +122,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
         </header>
 
         <div className="prose prose-purple max-w-none mb-12">
-          <Markdown
-            components={{
-              h1: ({ node, ...props }) => <h1 className="text-4xl font-bold mb-6" {...props} />,
-              h2: ({ node, ...props }) => <h2 className="text-3xl font-bold mb-5" {...props} />,
-              h3: ({ node, ...props }) => <h3 className="text-2xl font-bold mb-4" {...props} />,
-              h4: ({ node, ...props }) => <h4 className="text-xl font-bold mb-3" {...props} />,
-              h5: ({ node, ...props }) => <h5 className="text-lg font-bold mb-2" {...props} />,
-              h6: ({ node, ...props }) => <h6 className="text-base font-bold mb-2" {...props} />,
-              p: ({ node, ...props }) => (
-                <p className="text-base mb-4 leading-relaxed" {...props} />
-              ),
-              a: ({ node, ...props }) => (
-                <a className="text-purple-600 hover:text-purple-700 mb-3 block" {...props} />
-              ),
-            }}
-          >
-            {tip.content}
-          </Markdown>
+          <ContentBlocks blocks={tip.body} />
         </div>
       </article>
 

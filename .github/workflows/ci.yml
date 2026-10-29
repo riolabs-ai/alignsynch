@@ -4,10 +4,17 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The merge queue tests a `gh-readonly-queue/...` ref and reports the required
+  # check against merge_group, which is a separate event from push/pull_request.
+  # Without this trigger the queue waits on `typecheck / lint / build` forever.
+  merge_group:
 
 concurrency:
+  # merge_group refs are distinct per queue entry, so groups never cross-cancel.
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a merge_group run: the queue reads a cancelled check as a failure
+  # and drops the PR. push and pull_request keep the previous cancel-on-supersede.
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 permissions:
   contents: read

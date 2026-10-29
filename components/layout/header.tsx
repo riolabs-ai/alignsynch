@@ -40,6 +40,7 @@ import NotificationDrawer from "../header/NotificationDrawer";
 import { ThemeToggle } from "../header/ThemeToggle";
 import { Badge } from "../ui/badge";
 import { useSidebar } from "./sidebar-context";
+import { media } from "@/data/media";
 
 export function Header() {
   const pathname = usePathname();
@@ -65,7 +66,8 @@ export function Header() {
       quizzes: mockSearchData.quizzes
         .filter(
           (quiz) =>
-            quiz.title.toLowerCase().includes(query) || quiz.category.toLowerCase().includes(query),
+            quiz.title.toLowerCase().includes(query) ||
+            quiz.categoryIds.join(" ").toLowerCase().includes(query),
         )
         .slice(0, 4),
       categories: mockSearchData.categories
@@ -213,7 +215,7 @@ export function Header() {
                                     <p className="font-medium line-clamp-1">{quiz.title}</p>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge variant="outline" className="text-xs font-normal">
-                                        {quiz.category}
+                                        {quiz.categoryIds[0]}
                                       </Badge>
                                       <Badge variant="outline" className="text-xs font-normal">
                                         {quiz.difficulty}
@@ -251,7 +253,7 @@ export function Header() {
                                     <p className="font-medium">{category.name}</p>
                                   </div>
                                   <Badge variant="outline" className="text-xs font-normal">
-                                    {category.quizCount} quizzes
+                                    {category.count} quizzes
                                   </Badge>
                                 </Link>
                               ))}
@@ -390,7 +392,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatars/brain.png" alt="User" />
+                  <AvatarImage src={media["avatars.brain"].src} alt="User" />
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
               </Button>
@@ -399,7 +401,7 @@ export function Header() {
               <div className="flex flex-col space-y-2 p-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src="/avatars/brain.png" alt="User" />
+                    <AvatarImage src={media["avatars.brain"].src} alt="User" />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
                   <div>

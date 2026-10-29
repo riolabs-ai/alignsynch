@@ -44,6 +44,7 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 interface ProfileCreatedQuizzesProps {
   user: User;
@@ -304,7 +305,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
               {sortedQuizzes.map((quiz) => (
-                <QuizCard
+                <ProfileQuizCard
                   key={quiz.id}
                   quiz={quiz}
                   onEdit={() => handleEditQuiz(quiz)}
@@ -336,7 +337,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               {sortedQuizzes
                 .filter((q) => !q.isTournament)
                 .map((quiz) => (
-                  <QuizCard
+                  <ProfileQuizCard
                     key={quiz.id}
                     quiz={quiz}
                     onEdit={() => handleEditQuiz(quiz)}
@@ -370,7 +371,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               {sortedQuizzes
                 .filter((q) => q.isTournament)
                 .map((quiz) => (
-                  <QuizCard
+                  <ProfileQuizCard
                     key={quiz.id}
                     quiz={quiz}
                     onEdit={() => handleEditQuiz(quiz)}
@@ -446,7 +447,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
             <div className="max-h-[70vh] overflow-y-auto">
               <div className="relative aspect-video w-full">
                 <Image
-                  src={previewQuiz.image || "/placeholder.svg"}
+                  src={previewQuiz.image || media.placeholder.src}
                   alt={previewQuiz.title}
                   fill
                   className="rounded-md object-cover"
@@ -585,7 +586,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
   );
 }
 
-interface QuizCardProps {
+interface ProfileQuizCardProps {
   quiz: CreatedQuiz;
   onEdit: () => void;
   onPreview: () => void;
@@ -593,14 +594,14 @@ interface QuizCardProps {
   onDelete: () => void;
 }
 
-function QuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizCardProps) {
+function ProfileQuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: ProfileQuizCardProps) {
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video">
         <Image
           width={600}
           height={350}
-          src={quiz.image || "/placeholder.svg"}
+          src={quiz.image || media.placeholder.src}
           alt={quiz.title}
           fill
           className="object-cover"
@@ -737,7 +738,7 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
           <Image
             width={600}
             height={350}
-            src={quiz.image || "/placeholder.svg"}
+            src={quiz.image || media.placeholder.src}
             alt={quiz.title}
             fill
             className="object-cover sm:rounded-l-lg"

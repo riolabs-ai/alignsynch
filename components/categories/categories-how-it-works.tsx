@@ -5,13 +5,14 @@ import takequiz from "@/public/take-quiz.png";
 import { motion } from "framer-motion";
 import { Award, BookOpen, Search } from "lucide-react";
 import Image from "next/image";
+import { media } from "@/data/media";
 export function CategoriesHowItWorks() {
   const steps = [
     {
       icon: <Search className="h-6 w-6 text-white" />,
       title: "Browse Categories",
       description: "Explore our diverse range of quiz categories to find topics interest you.",
-      image: "/placeholder.svg?height=200&width=300",
+      image: media.placeholder.src,
       color: "from-purple-500 to-purple-600",
       delay: 0.3,
       img: browse,
@@ -20,7 +21,7 @@ export function CategoriesHowItWorks() {
       icon: <BookOpen className="h-6 w-6 text-white" />,
       title: "Take Quizzes",
       description: "Challenge yourself with quizzes of varying difficulty levels and formats.",
-      image: "/placeholder.svg?height=200&width=300",
+      image: media.placeholder.src,
       color: "from-indigo-500 to-indigo-600",
       delay: 0.5,
       img: takequiz,
@@ -29,7 +30,7 @@ export function CategoriesHowItWorks() {
       icon: <Award className="h-6 w-6 text-white" />,
       title: "Earn Rewards",
       description: "Collect points, badges, and climb the leaderboards as you complete quizzes.",
-      image: "/placeholder.svg?height=200&width=300",
+      image: media.placeholder.src,
       color: "from-blue-500 to-blue-600",
       delay: 0.7,
       img: earnReward,
@@ -89,7 +90,7 @@ export function CategoriesHowItWorks() {
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className=" relative">
                   <Image
-                    src={step.img || "/placeholder.svg"}
+                    src={step.img || media.placeholder.src}
                     alt={step.title}
                     width={300}
                     height={200}

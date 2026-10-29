@@ -12,10 +12,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import {
+  dayDelta,
+  formatClockTime,
+  formatMonthDay,
+  formatRelative,
+  formatWeekdayShort,
+} from "@/content/core";
 import { Plus, Search } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import type { Contact, Conversation } from "./chat-page";
+import { media } from "@/data/media";
 
 interface ChatSidebarProps {
   contacts: Contact[];
@@ -70,20 +78,18 @@ export function ChatSidebar({
     }
   };
 
+  /**
+   * Same three tiers as before (clock / "Yesterday" / weekday / "Mon D"), but measured against
+   * the fixture clock in UTC instead of the host clock: `toLocaleTimeString()` resolves the
+   * runtime's timezone and locale, so the same instant rendered once on a UTC server and once in
+   * a visitor's browser came out as two different strings.
+   */
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) {
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } else if (diffInDays === 1) {
-      return "Yesterday";
-    } else if (diffInDays < 7) {
-      return date.toLocaleDateString([], { weekday: "short" });
-    } else {
-      return date.toLocaleDateString([], { month: "short", day: "numeric" });
-    }
+    const days = dayDelta(timestamp);
+    if (days === 0) return formatClockTime(timestamp);
+    if (days === 1) return "Yesterday";
+    if (days < 7) return formatWeekdayShort(timestamp);
+    return formatMonthDay(timestamp);
   };
 
   const handleNewConversation = (contactId: string) => {
@@ -154,11 +160,7 @@ export function ChatSidebar({
                 >
                   <div className="relative flex-shrink-0">
                     <Image
-                      src={
-                        imageErrors[contact.id]
-                          ? "/placeholder.svg?height=48&width=48"
-                          : contact.avatar
-                      }
+                      src={imageErrors[contact.id] ? media.placeholder.src : contact.avatar}
                       alt={contact.name}
                       width={48}
                       height={48}
@@ -263,11 +265,7 @@ export function ChatSidebar({
                   >
                     <div className="relative">
                       <Image
-                        src={
-                          imageErrors[contact.id]
-                            ? "/placeholder.svg?height=40&width=40"
-                            : contact.avatar
-                        }
+                        src={imageErrors[contact.id] ? media.placeholder.src : contact.avatar}
                         alt={contact.name}
                         width={40}
                         height={40}
@@ -286,8 +284,8 @@ export function ChatSidebar({
                       <p className="text-xs text-muted-foreground">
                         {contact.status === "online"
                           ? "Online"
-                          : contact.lastSeen
-                            ? `Last seen ${contact.lastSeen}`
+                          : contact.lastSeenAt
+                            ? `Last seen ${formatRelative(contact.lastSeenAt)}`
                             : "Offline"}
                       </p>
                     </div>

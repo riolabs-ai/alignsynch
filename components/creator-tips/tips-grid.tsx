@@ -3,7 +3,7 @@ import { FileQuestion } from "lucide-react";
 import TipCard from "./tip-card";
 
 interface TipsGridProps {
-  tips: Tip[];
+  tips: readonly Tip[];
   searchQuery: string;
   selectedCategory: string | null;
 }

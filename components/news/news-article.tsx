@@ -8,7 +8,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Article, newsData } from "@/data/news-data";
+import { categories as categoryNames, newsData } from "@/data/news-data";
+import type { NewsArticle as NewsArticleContent } from "@/content/article";
+import { formatDate } from "@/content/core";
+import { ContentBlocks } from "@/components/content/content-blocks";
 import {
   Bookmark,
   Calendar,
@@ -28,11 +31,12 @@ import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { media } from "@/data/media";
 
 export function NewsArticle({ slug }: { slug: string }) {
   const router = useRouter();
-  const [article, setArticle] = useState<Article>();
-  const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
+  const [article, setArticle] = useState<NewsArticleContent>();
+  const [relatedArticles, setRelatedArticles] = useState<NewsArticleContent[]>([]);
   const [comment, setComment] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -50,7 +54,7 @@ export function NewsArticle({ slug }: { slug: string }) {
       const related = newsData
         .filter(
           (a) =>
-            a.slug !== slug && a.categories.some((cat) => currentArticle.categories.includes(cat)),
+            a.slug !== slug && a.categoryIds.some((id) => currentArticle.categoryIds.includes(id)),
         )
         .slice(0, 3);
       setRelatedArticles(related);
@@ -86,9 +90,9 @@ export function NewsArticle({ slug }: { slug: string }) {
         </Button>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {article.categories.map((category: string) => (
-            <Badge key={category} variant="outline">
-              {category}
+          {article.categoryIds.map((categoryId) => (
+            <Badge key={categoryId} variant="outline">
+              {categoryNames.find((category) => category.id === categoryId)?.name ?? categoryId}
             </Badge>
           ))}
         </div>
@@ -100,7 +104,10 @@ export function NewsArticle({ slug }: { slug: string }) {
         <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <div className="flex items-center space-x-4">
             <Avatar>
-              <AvatarImage src={article.author.avatar || "/wizard.png"} alt={article.author.name} />
+              <AvatarImage
+                src={article.author.avatar?.src ?? media["avatars.wizard"].src}
+                alt={article.author.name}
+              />
               <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
@@ -108,11 +115,11 @@ export function NewsArticle({ slug }: { slug: string }) {
               <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <Calendar className="mr-1 h-3 w-3" />
-                  <span>{article.date}</span>
+                  <span>{article.publishedAt ? formatDate(article.publishedAt) : ""}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="mr-1 h-3 w-3" />
-                  <span>{article.readTime} min read</span>
+                  <span>{article.readMinutes} min read</span>
                 </div>
               </div>
             </div>
@@ -158,7 +165,7 @@ export function NewsArticle({ slug }: { slug: string }) {
       {/* Featured Image */}
       <div className="relative h-[300px] md:h-[400px] w-full mb-8 rounded-lg overflow-hidden">
         <Image
-          src={article.coverImage || "/placeholder.svg"}
+          src={article.cover?.src ?? media.placeholder.src}
           alt={article.title}
           fill
           className="object-cover"
@@ -169,44 +176,9 @@ export function NewsArticle({ slug }: { slug: string }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="prose max-w-none">
-            <p className="text-lg font-medium mb-4">{article.excerpt}</p>
+            <p className="text-lg font-medium mb-4">{article.summary}</p>
 
-            {article.content.map(
-              (
-                section: {
-                  heading?: string;
-                  paragraphs: string[];
-                  image?: string;
-                  imageAlt?: string;
-                  imageCaption?: string;
-                },
-                index: number,
-              ) => (
-                <div key={index} className="mb-6">
-                  {section.heading && (
-                    <h2 className="text-2xl font-bold mb-4">{section.heading}</h2>
-                  )}
-                  {section.paragraphs.map((paragraph: string, pIndex: number) => (
-                    <p key={pIndex} className="mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
-                  {section.image && (
-                    <div className="relative h-[250px] w-full my-6 rounded-lg overflow-hidden">
-                      <Image
-                        src={section.image || "/placeholder.svg"}
-                        alt={section.imageAlt || "Article image"}
-                        fill
-                        className="object-cover"
-                      />
-                      {section.imageCaption && (
-                        <p className="text-sm text-muted-foreground mt-2">{section.imageCaption}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ),
-            )}
+            <ContentBlocks blocks={article.body} />
           </div>
 
           <Separator className="my-8" />
@@ -282,10 +254,7 @@ export function NewsArticle({ slug }: { slug: string }) {
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex space-x-4">
                       <Avatar>
-                        <AvatarImage
-                          src={`/abstract-geometric-shapes.png?height=40&width=40&query=user${i}`}
-                          alt="User"
-                        />
+                        <AvatarImage src={media["abstract-geometric-shapes"].src} alt="User" />
                         <AvatarFallback>U{i}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -317,10 +286,7 @@ export function NewsArticle({ slug }: { slug: string }) {
                   {[3, 1, 2].map((i) => (
                     <div key={i} className="flex space-x-4">
                       <Avatar>
-                        <AvatarImage
-                          src={`/abstract-geometric-shapes.png?height=40&width=40&query=user${i}`}
-                          alt="User"
-                        />
+                        <AvatarImage src={media["abstract-geometric-shapes"].src} alt="User" />
                         <AvatarFallback>U{i}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -360,7 +326,7 @@ export function NewsArticle({ slug }: { slug: string }) {
               <div className="flex items-center space-x-4 mb-4">
                 <Avatar className="h-12 w-12">
                   <AvatarImage
-                    src={article.author.avatar || "/placeholder.svg"}
+                    src={article.author.avatar?.src ?? media.placeholder.src}
                     alt={article.author.name}
                   />
                   <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
@@ -386,7 +352,7 @@ export function NewsArticle({ slug }: { slug: string }) {
                   <div className="flex">
                     <div className="relative h-24 w-24">
                       <Image
-                        src={related.coverImage || "/placeholder.svg"}
+                        src={related.cover?.src ?? media.placeholder.src}
                         alt={related.title}
                         fill
                         className="object-cover"
@@ -397,9 +363,9 @@ export function NewsArticle({ slug }: { slug: string }) {
                         <h4 className="font-medium line-clamp-2">{related.title}</h4>
                       </Link>
                       <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-2">
-                        <span>{related.date}</span>
+                        <span>{related.publishedAt ? formatDate(related.publishedAt) : ""}</span>
                         <span>•</span>
-                        <span>{related.readTime} min read</span>
+                        <span>{related.readMinutes} min read</span>
                       </div>
                     </div>
                   </div>

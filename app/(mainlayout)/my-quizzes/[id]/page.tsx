@@ -1,5 +1,6 @@
 import { QuizDetails } from "@/components/my-quizzes/quiz-details";
 
-export default function QuizDetailsPage({ params }: { params: { id: string } }) {
-  return <QuizDetails id={params.id} />;
+export default async function QuizDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <QuizDetails id={id} />;
 }

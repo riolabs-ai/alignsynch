@@ -2,7 +2,7 @@ import type { Tip } from "@/data/creator-tips-data";
 import TipCard from "./tip-card";
 
 interface RelatedTipsProps {
-  tips: Tip[];
+  tips: readonly Tip[];
 }
 
 export default function RelatedTips({ tips }: RelatedTipsProps) {

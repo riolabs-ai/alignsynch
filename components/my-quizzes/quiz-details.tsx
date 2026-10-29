@@ -40,12 +40,13 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 // Sample quiz data
 const quizData = {
   id: "1",
   title: "World Geography Challenge",
-  image: "/world-map-quiz.png",
+  image: media["world-map-quiz"].src,
   category: "Geography",
   difficulty: "Medium",
   status: "active",
@@ -103,31 +104,31 @@ const quizData = {
   recentPlayers: [
     {
       name: "Alex Johnson",
-      avatar: "/avatars/alex.png",
+      avatar: media["avatars.alex"].src,
       score: 85,
       date: "2023-12-10T14:30:00Z",
     },
     {
       name: "Sarah Williams",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
       score: 92,
       date: "2023-12-09T16:45:00Z",
     },
     {
       name: "Michael Brown",
-      avatar: "/avatars/sarah.webp",
+      avatar: media["avatars.sarah"].src,
       score: 78,
       date: "2023-12-08T11:20:00Z",
     },
     {
       name: "Emily Davis",
-      avatar: "/avatars/king.webp",
+      avatar: media["avatars.king"].src,
       score: 88,
       date: "2023-12-07T09:15:00Z",
     },
     {
       name: "David Wilson",
-      avatar: "/avatars/champion.png",
+      avatar: media["avatars.champion"].src,
       score: 95,
       date: "2023-12-06T17:30:00Z",
     },
@@ -229,11 +230,12 @@ export function QuizDetails({ id }: { id: string }) {
 
       {/* Quiz header */}
       <div className="relative rounded-xl overflow-hidden">
-        <div className="h-64 w-full">
+        <div className="relative h-64 w-full">
           <Image
-            src={quizData.image || "/placeholder.svg"}
+            src={quizData.image || media.placeholder.src}
             alt={quizData.title}
             className="h-full w-full object-cover"
+            fill
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-end p-6">
             <div className="flex flex-wrap gap-2 mb-3">
@@ -335,7 +337,7 @@ export function QuizDetails({ id }: { id: string }) {
                           </div>
                           <Avatar className="h-10 w-10">
                             <AvatarImage
-                              src={player.avatar || "/placeholder.svg"}
+                              src={player.avatar || media.placeholder.src}
                               alt={player.name}
                             />
                             <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
@@ -426,7 +428,7 @@ export function QuizDetails({ id }: { id: string }) {
                             <div className="flex items-center gap-2">
                               <Avatar className="h-8 w-8">
                                 <AvatarImage
-                                  src={player.avatar || "/placeholder.svg"}
+                                  src={player.avatar || media.placeholder.src}
                                   alt={player.name}
                                 />
                                 <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>

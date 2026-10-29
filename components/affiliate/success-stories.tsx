@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 export function SuccessStories() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -11,7 +12,7 @@ export function SuccessStories() {
     {
       name: "Sarah Johnson",
       role: "Content Creator",
-      image: "/avatars/wizard.webp",
+      image: media["avatars.wizard"].src,
       quote:
         "I've been promoting QuizHub  to my audience for 6 months now and the results have been incredible. The 30% commission is one of the best in the industry, and the recurring revenue has added a reliable income stream to my business.",
       earnings: "$2,450/month",
@@ -20,7 +21,7 @@ export function SuccessStories() {
     {
       name: "Michael Chen",
       role: "Education Blogger",
-      image: "/avatars/sarah.webp",
+      image: media["avatars.sarah"].src,
       quote:
         "What I love about QuizHub 's affiliate program is how easy they make it to promote. The marketing materials are top-notch, and my audience loves the product. I'm earning more with QuizHub  than with any other affiliate program I've tried.",
       earnings: "$1,875/month",
@@ -29,7 +30,7 @@ export function SuccessStories() {
     {
       name: "Jessica Williams",
       role: "YouTube Educator",
-      image: "/avatars/king.webp",
+      image: media["avatars.king"].src,
       quote:
         "As someone who creates educational content, QuizHub  was a natural fit for my audience. The affiliate dashboard makes it easy to track my performance, and the team is always responsive when I have questions. Highly recommended!",
       earnings: "$3,200/month",
@@ -63,14 +64,14 @@ export function SuccessStories() {
                 <div className="relative w-32 h-32">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full" />
                   <Image
-                    src={stories[currentIndex].image || "/placeholder.svg"}
+                    src={stories[currentIndex].image || media.placeholder.src}
                     alt={stories[currentIndex].name}
                     width={128}
                     height={128}
                     className="rounded-full object-cover border-4 border-white dark:border-slate-700"
                     onError={(e) => {
                       // Fallback to a default avatar if image fails to load
-                      e.currentTarget.src = "/placeholder.svg";
+                      e.currentTarget.src = media.placeholder.src;
                     }}
                   />
                 </div>

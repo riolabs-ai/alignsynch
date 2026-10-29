@@ -5,8 +5,12 @@ export const metadata = {
   description: "Search for quizzes, categories, creators, and more on QuizMaker.",
 };
 
-export default function SearchPage({ searchParams }: { searchParams: { q: string } }) {
-  const query = searchParams.q || "";
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
 
-  return <SearchResults query={query} />;
+  return <SearchResults query={q ?? ""} />;
 }
