@@ -31,6 +31,7 @@ import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { media } from "@/data/media";
 
 export function NewsArticle({ slug }: { slug: string }) {
   const router = useRouter();
@@ -104,7 +105,7 @@ export function NewsArticle({ slug }: { slug: string }) {
           <div className="flex items-center space-x-4">
             <Avatar>
               <AvatarImage
-                src={article.author.avatar?.src ?? "/avatars/wizard.webp"}
+                src={article.author.avatar?.src ?? media["avatars.wizard"].src}
                 alt={article.author.name}
               />
               <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
@@ -164,7 +165,7 @@ export function NewsArticle({ slug }: { slug: string }) {
       {/* Featured Image */}
       <div className="relative h-[300px] md:h-[400px] w-full mb-8 rounded-lg overflow-hidden">
         <Image
-          src={article.cover?.src ?? "/placeholder.svg"}
+          src={article.cover?.src ?? media.placeholder.src}
           alt={article.title}
           fill
           className="object-cover"
@@ -253,10 +254,7 @@ export function NewsArticle({ slug }: { slug: string }) {
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex space-x-4">
                       <Avatar>
-                        <AvatarImage
-                          src={`/abstract-geometric-shapes.png?height=40&width=40&query=user${i}`}
-                          alt="User"
-                        />
+                        <AvatarImage src={media["abstract-geometric-shapes"].src} alt="User" />
                         <AvatarFallback>U{i}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -288,10 +286,7 @@ export function NewsArticle({ slug }: { slug: string }) {
                   {[3, 1, 2].map((i) => (
                     <div key={i} className="flex space-x-4">
                       <Avatar>
-                        <AvatarImage
-                          src={`/abstract-geometric-shapes.png?height=40&width=40&query=user${i}`}
-                          alt="User"
-                        />
+                        <AvatarImage src={media["abstract-geometric-shapes"].src} alt="User" />
                         <AvatarFallback>U{i}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -331,7 +326,7 @@ export function NewsArticle({ slug }: { slug: string }) {
               <div className="flex items-center space-x-4 mb-4">
                 <Avatar className="h-12 w-12">
                   <AvatarImage
-                    src={article.author.avatar?.src ?? "/placeholder.svg"}
+                    src={article.author.avatar?.src ?? media.placeholder.src}
                     alt={article.author.name}
                   />
                   <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
@@ -357,7 +352,7 @@ export function NewsArticle({ slug }: { slug: string }) {
                   <div className="flex">
                     <div className="relative h-24 w-24">
                       <Image
-                        src={related.cover?.src ?? "/placeholder.svg"}
+                        src={related.cover?.src ?? media.placeholder.src}
                         alt={related.title}
                         fill
                         className="object-cover"

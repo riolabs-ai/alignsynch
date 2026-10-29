@@ -18,6 +18,7 @@ import { AlertTriangle, Loader2, LogOut, Shield } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
+import { media } from "@/data/media";
 
 export function SecuritySettings() {
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +105,7 @@ export function SecuritySettings() {
               </ol>
               <div className="mt-4 flex justify-center">
                 <div className="bg-white p-4 rounded-lg">
-                  <Image src="/qr-code-generic.png" alt="QR Code" className="h-32 w-32" />
+                  <Image src={media["qr-code-generic"].src} alt="QR Code" className="h-32 w-32" />
                 </div>
               </div>
               <div className="mt-4 space-y-2">

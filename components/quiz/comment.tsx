@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ChevronUp, Flag, MessageSquare, Send, ThumbsUp } from "lucide-react";
 import { useState } from "react";
+import { media } from "@/data/media";
 type Reply = {
   id: string;
   user: {
@@ -57,7 +58,7 @@ export function Comment({ comment }: CommentProps) {
       user: {
         id: "current-user",
         name: "You",
-        avatar: "/avatars/master.png",
+        avatar: media["avatars.master"].src,
       },
       text: replyText,
       timestamp: new Date().toISOString(),
@@ -74,7 +75,7 @@ export function Comment({ comment }: CommentProps) {
     <div className="border rounded-md p-4">
       <div className="flex items-start gap-3">
         <Avatar>
-          <AvatarImage src={comment.user.avatar || "/placeholder.svg"} alt={comment.user.name} />
+          <AvatarImage src={comment.user.avatar || media.placeholder.src} alt={comment.user.name} />
           <AvatarFallback>{comment.user.name.substring(0, 2)}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
@@ -163,7 +164,7 @@ export function Comment({ comment }: CommentProps) {
                 <div key={reply.id} className="flex items-start gap-3">
                   <Avatar className="h-7 w-7">
                     <AvatarImage
-                      src={reply.user.avatar || "/placeholder.svg"}
+                      src={reply.user.avatar || media.placeholder.src}
                       alt={reply.user.name}
                     />
                     <AvatarFallback>{reply.user.name.substring(0, 2)}</AvatarFallback>

@@ -29,6 +29,7 @@ import { Award, ChevronLeft, Clock, Filter, Flame, Star, TrendingUp, Users } fro
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 type Tabs = "trending" | "popular" | "new";
 
@@ -174,7 +175,7 @@ export function FeaturedQuizzesPage() {
                 <Image
                   width={600}
                   height={350}
-                  src={quiz.cover?.src ?? "/placeholder.svg"}
+                  src={quiz.cover?.src ?? media.placeholder.src}
                   alt={quiz.cover?.alt || quiz.title}
                   className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -207,7 +208,7 @@ export function FeaturedQuizzesPage() {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.author?.avatar?.src ?? "/placeholder.svg"}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
                         alt={quiz.author?.name ?? "creator"}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>

@@ -15,6 +15,7 @@ import { useState } from "react";
 import { Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Progress } from "../ui/progress";
+import { media } from "@/data/media";
 
 /** Each ladder is the curated shelf for that tab, projected (D2). */
 function ladders(): Record<"easy" | "medium" | "hard", QuizCard[]> {
@@ -113,7 +114,7 @@ export function QuizzesByDifficulty() {
                     <Image
                       width={600}
                       height={350}
-                      src={quiz.cover?.src ?? "/placeholder.svg"}
+                      src={quiz.cover?.src ?? media.placeholder.src}
                       alt={quiz.cover?.alt || quiz.title}
                       className="h-40 w-full object-cover"
                     />
@@ -123,7 +124,7 @@ export function QuizzesByDifficulty() {
                     <div className="flex bg-gradient-to-b from-transparent to-black justify-between items-center gap-2 absolute px-3 pb-3 bottom-0 left-0 right-0">
                       <div className="flex items-center gap-3">
                         <Image
-                          src={quiz.author?.avatar?.src ?? "/avatars/alex.png"}
+                          src={quiz.author?.avatar?.src ?? media["avatars.alex"].src}
                           width={36}
                           height={36}
                           className="size-9 object-cover object-center rounded-full"
@@ -197,7 +198,7 @@ export function QuizzesByDifficulty() {
                       <Image
                         width={600}
                         height={350}
-                        src={quiz.cover?.src ?? "/placeholder.svg"}
+                        src={quiz.cover?.src ?? media.placeholder.src}
                         alt={quiz.cover?.alt || quiz.title}
                         className="h-40 w-full object-cover"
                       />
@@ -261,7 +262,7 @@ export function QuizzesByDifficulty() {
                       <Image
                         width={600}
                         height={350}
-                        src={quiz.cover?.src ?? "/placeholder.svg"}
+                        src={quiz.cover?.src ?? media.placeholder.src}
                         alt={quiz.cover?.alt || quiz.title}
                         className="h-40 w-full object-cover"
                       />

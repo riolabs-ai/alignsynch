@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Flag, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 interface ExplanationProps {
   explanation: {
@@ -58,7 +59,7 @@ export function Explanation({ explanation }: ExplanationProps) {
         <div className="flex items-start gap-3">
           <Avatar>
             <AvatarImage
-              src={explanation.user.avatar || "/placeholder.svg"}
+              src={explanation.user.avatar || media.placeholder.src}
               alt={explanation.user.name}
             />
             <AvatarFallback>{explanation.user.name.substring(0, 2)}</AvatarFallback>

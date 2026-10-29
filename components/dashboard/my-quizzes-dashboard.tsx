@@ -10,6 +10,7 @@ import { shelfAuthoringCards } from "@/lib/quiz-cards";
 import { Copy, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { media } from "@/data/media";
 
 const STATUS_LABEL: Record<PublishStatus, string> = {
   published: "Active",
@@ -125,7 +126,7 @@ function DashboardQuizRow({ quiz }: { quiz: QuizAuthoringCard }) {
         <Image
           width={600}
           height={350}
-          src={quiz.cover?.src ?? "/placeholder.svg"}
+          src={quiz.cover?.src ?? media.placeholder.src}
           alt={quiz.cover?.alt || quiz.title}
           fill
           className="object-cover"

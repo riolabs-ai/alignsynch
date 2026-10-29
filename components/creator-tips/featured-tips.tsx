@@ -2,6 +2,7 @@ import { getFeaturedTips, tipCategoryName } from "@/data/creator-tips-data";
 import { ArrowRight, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { media } from "@/data/media";
 
 export default function FeaturedTips() {
   const featuredTips = getFeaturedTips();
@@ -23,7 +24,7 @@ export default function FeaturedTips() {
           >
             <div className="aspect-video relative">
               <Image
-                src={tip.cover?.src ?? "/placeholder.svg"}
+                src={tip.cover?.src ?? media.placeholder.src}
                 alt={tip.title}
                 fill
                 className="object-cover"
@@ -51,7 +52,7 @@ export default function FeaturedTips() {
                 <div className="flex items-center">
                   <div className="w-8 h-8 rounded-full overflow-hidden mr-2">
                     <Image
-                      src={tip.author.avatar?.src ?? "/placeholder.svg"}
+                      src={tip.author.avatar?.src ?? media.placeholder.src}
                       alt={tip.author.name}
                       width={32}
                       height={32}

@@ -11,6 +11,7 @@ import avatarSarah from "@/public/avatars/sarah.webp";
 import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 // Sample testimonial data
 const testimonials = [
@@ -169,10 +170,7 @@ export function PlayerTestimonials() {
                 <div className="flex justify-center mb-6">
                   <Avatar className="h-24 w-24 border-4 border-white dark:border-slate-800 shadow-md">
                     <Image
-                      src={
-                        testimonials[activeIndex].avatar ||
-                        `/placeholder.svg?height=96&width=96&query=person ${testimonials[activeIndex].name}`
-                      }
+                      src={testimonials[activeIndex].avatar || media.placeholder.src}
                       alt={testimonials[activeIndex].name}
                     />
                     <AvatarFallback>

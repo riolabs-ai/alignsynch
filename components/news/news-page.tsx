@@ -11,6 +11,7 @@ import { Calendar, ChevronRight, Clock, Filter, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 /** Taxonomy id -> display name. The badge labels come from the table, not the record. */
 const categoryName = (id: string) => categories.find((category) => category.id === id)?.name ?? id;
@@ -65,7 +66,7 @@ export function NewsPage() {
               <Card key={article.slug} className="overflow-hidden">
                 <div className="relative h-44 xl:h-60 w-full">
                   <Image
-                    src={article.cover?.src ?? "/placeholder.svg"}
+                    src={article.cover?.src ?? media.placeholder.src}
                     alt={article.title}
                     fill
                     className="object-cover aspect-video"
@@ -139,7 +140,7 @@ export function NewsPage() {
               <Card key={article.slug}>
                 <div className="relative h-44 xl:h-60 w-full">
                   <Image
-                    src={article.cover?.src ?? "/placeholder.svg"}
+                    src={article.cover?.src ?? media.placeholder.src}
                     alt={article.title}
                     fill
                     className="object-cover"

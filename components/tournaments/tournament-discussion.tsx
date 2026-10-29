@@ -31,6 +31,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 interface TournamentDiscussionProps {
   tournamentId: string;
@@ -44,7 +45,7 @@ const mockDiscussions = [
     author: {
       id: "user1",
       name: "Alex Johnson",
-      avatar: "/avatars/alex.png",
+      avatar: media["avatars.alex"].src,
       role: "Tournament Finalist",
     },
     content:
@@ -61,7 +62,7 @@ const mockDiscussions = [
     author: {
       id: "user2",
       name: "Sarah Williams",
-      avatar: "/avatars/sarah.webp",
+      avatar: media["avatars.sarah"].src,
       role: "Participant",
     },
     content:
@@ -78,7 +79,7 @@ const mockDiscussions = [
     author: {
       id: "user3",
       name: "Michael Chen",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
       role: "Participant",
     },
     content:
@@ -95,7 +96,7 @@ const mockDiscussions = [
     author: {
       id: "user4",
       name: "Emily Rodriguez",
-      avatar: "/avatars/guru.png",
+      avatar: media["avatars.guru"].src,
       role: "Participant",
     },
     content:
@@ -112,7 +113,7 @@ const mockDiscussions = [
     author: {
       id: "user5",
       name: "David Kim",
-      avatar: "/avatars/master.png",
+      avatar: media["avatars.master"].src,
       role: "Participant",
     },
     content:
@@ -132,7 +133,7 @@ const mockComments = [
     author: {
       id: "user6",
       name: "Jessica Taylor",
-      avatar: "/avatars/mind.webp",
+      avatar: media["avatars.mind"].src,
       role: "Tournament Moderator",
     },
     content:
@@ -146,7 +147,7 @@ const mockComments = [
     author: {
       id: "user7",
       name: "Robert Chen",
-      avatar: "/avatars/brain.png",
+      avatar: media["avatars.brain"].src,
       role: "Previous Champion",
     },
     content:
@@ -160,7 +161,7 @@ const mockComments = [
     author: {
       id: "user8",
       name: "Sophia Martinez",
-      avatar: "/avatars/genious.png",
+      avatar: media["avatars.genious"].src,
       role: "Participant",
     },
     content:
@@ -237,7 +238,7 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border-2 border-primary/20">
                 <AvatarImage
-                  src={discussion.author.avatar || "/placeholder.svg"}
+                  src={discussion.author.avatar || media.placeholder.src}
                   alt={discussion.author.name}
                 />
                 <AvatarFallback>{discussion.author.name.charAt(0)}</AvatarFallback>
@@ -316,7 +317,7 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                     className={`h-9 w-9 ${comment.isOfficial ? "border-2 border-primary" : ""}`}
                   >
                     <AvatarImage
-                      src={comment.author.avatar || "/placeholder.svg"}
+                      src={comment.author.avatar || media.placeholder.src}
                       alt={comment.author.name}
                     />
                     <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
@@ -486,7 +487,7 @@ export function TournamentDiscussion({ tournamentId }: TournamentDiscussionProps
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
                     <AvatarImage
-                      src={discussion.author.avatar || "/placeholder.svg"}
+                      src={discussion.author.avatar || media.placeholder.src}
                       alt={discussion.author.name}
                     />
                     <AvatarFallback>{discussion.author.name.charAt(0)}</AvatarFallback>

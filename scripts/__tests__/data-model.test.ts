@@ -386,6 +386,42 @@ describe("ui-refs", () => {
     ].join("\n");
     assert.equal(dead(source)[0].line, 4);
   });
+
+  it("sees a background image written as url() inside a class or style string", () => {
+    // Tailwind's arbitrary value and an inline style both carry a real file path, and
+    // neither is a whole-string literal: `bg-[url('/hero-bg.jpg')]` does not start with `/`,
+    // so the plain literal scan reads it as a class list and misses the asset entirely.
+    // Three real backgrounds were invisible to E10/E17 that way.
+    const source = [
+      "<section className=\"bg-[url('/hero-bg.jpg')] bg-cover\" />",
+      "<div style={{ backgroundImage: \"url('/newsletter-bg.png')\" }} />",
+      '<div style={{ backgroundImage: "url(/refer-bg.png)" }} />',
+    ].join("\n");
+    // The fake `exists` below knows only the avatar and the placeholder, so all three
+    // backgrounds are reported — which is also proof the extraction found them.
+    const found = missing(source);
+    assert.deepEqual(
+      found.map((reference) => reference.value),
+      ["/hero-bg.jpg", "/newsletter-bg.png", "/refer-bg.png"],
+    );
+    assert.deepEqual(
+      found.map((reference) => reference.line),
+      [1, 2, 3],
+    );
+  });
+
+  it("sees a static template literal, but not an interpolated one", () => {
+    // A path in backticks with no `${}` is as literal as a quoted string; one with an
+    // interpolation is dynamic by design and stays with the runtime.
+    const dollar = String.fromCharCode(36);
+    const source = ["const a = `/hero-bg.jpg`;", `const b = \`/quiz/${dollar}{id}.png\`;`].join(
+      "\n",
+    );
+    assert.deepEqual(
+      missing(source).map((reference) => reference.value),
+      ["/hero-bg.jpg"],
+    );
+  });
 });
 
 /* ---------------------------------------------------------------- *

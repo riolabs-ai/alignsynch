@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { media } from "@/data/media";
 
 type Testimonial = {
   id: number;
@@ -20,7 +21,7 @@ export function TournamentTestimonials() {
     {
       id: 1,
       name: "Alex Johnson",
-      avatar: "/avatars/alex.png",
+      avatar: media["avatars.alex"].src,
       role: "History Enthusiast",
       rating: 5,
       text: "The World History Tournament was incredibly well-organized! The questions were challenging but fair, and the live competition format kept me on the edge of my seat. I learned so much while having fun.",
@@ -29,7 +30,7 @@ export function TournamentTestimonials() {
     {
       id: 2,
       name: "Sarah Williams",
-      avatar: "/avatars/sarah.webp",
+      avatar: media["avatars.sarah"].src,
       role: "Science Teacher",
       rating: 5,
       text: "As a science teacher, I was impressed by the depth and accuracy of questions in the Science Spectacular tournament. My students and I participated together, and it became a wonderful learning experience for all of us.",
@@ -38,7 +39,7 @@ export function TournamentTestimonials() {
     {
       id: 3,
       name: "Michael Chen",
-      avatar: "/avatars/wizard.webp",
+      avatar: media["avatars.wizard"].src,
       role: "Quiz Champion",
       rating: 4,
       text: "I've participated in dozens of online quiz competitions, and this platform offers the best tournament experience by far. The real-time scoring and global competition make every round exciting!",
@@ -47,7 +48,7 @@ export function TournamentTestimonials() {
     {
       id: 4,
       name: "Emily Rodriguez",
-      avatar: "/avatars/guru.png",
+      avatar: media["avatars.guru"].src,
       role: "Literature Lover",
       rating: 5,
       text: "The Classic Literature tournament exceeded my expectations. The questions were thoughtfully crafted and covered a wide range of works. I connected with other book lovers and even won some amazing prizes!",
@@ -56,7 +57,7 @@ export function TournamentTestimonials() {
     {
       id: 5,
       name: "David Kim",
-      avatar: "/avatars/king.webp",
+      avatar: media["avatars.king"].src,
       role: "Math Enthusiast",
       rating: 4,
       text: "The Math & Logic tournament was both challenging and rewarding. The timed rounds really tested my problem-solving abilities under pressure. The community is supportive and the prizes were great!",
@@ -65,7 +66,7 @@ export function TournamentTestimonials() {
     {
       id: 6,
       name: "Jessica Taylor",
-      avatar: "/avatars/mind.webp",
+      avatar: media["avatars.mind"].src,
       role: "Trivia Buff",
       rating: 5,
       text: "I love how the tournaments are structured with qualifying rounds and finals. It gives everyone a fair chance while still rewarding skill and knowledge. The Pop Culture tournament was my favorite so far!",
@@ -139,7 +140,7 @@ export function TournamentTestimonials() {
                   <div className="flex items-center mb-6">
                     <div className="mr-4">
                       <Image
-                        src={testimonial.avatar || "/placeholder.svg"}
+                        src={testimonial.avatar || media.placeholder.src}
                         width={48}
                         height={48}
                         alt={testimonial.name}

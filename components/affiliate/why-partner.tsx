@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock, DollarSign, Gift, LifeBuoy, TrendingUp } from "lucide-react";
 import Image from "next/image";
+import { media } from "@/data/media";
 
 export function WhyPartner() {
   const benefits = [
@@ -50,14 +51,14 @@ export function WhyPartner() {
         "I've been part of many affiliate programs, but QuizHub 's stands out with its high commission rates and reliable tracking. I've earned over $5,000 monthly since joining.",
       author: "Sarah Johnson",
       role: "Educational Content Creator",
-      image: "/avatars/sarah.webp",
+      image: media["avatars.sarah"].src,
     },
     {
       quote:
         "The conversion rates are incredible. The product sells itself, and the affiliate team provides amazing support whenever I need help optimizing my campaigns.",
       author: "Michael Chen",
       role: "Digital Marketing Specialist",
-      image: "/avatars/alex.png",
+      image: media["avatars.alex"].src,
     },
   ];
 
@@ -124,7 +125,7 @@ export function WhyPartner() {
                       <Image
                         width={48}
                         height={48}
-                        src={testimonial.image || "/placeholder.svg"}
+                        src={testimonial.image || media.placeholder.src}
                         alt={testimonial.author}
                         className="w-full h-full object-cover"
                       />

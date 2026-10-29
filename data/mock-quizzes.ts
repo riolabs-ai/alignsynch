@@ -4,6 +4,7 @@
  * comes from the schema, so a field can never drift from the model.
  */
 import type { Quiz } from "../content/quiz";
+import { media } from "./media";
 
 /**
  * The 20 quiz-generator templates (settings.visibility: private).
@@ -1534,13 +1535,13 @@ export const mockQuizzes: readonly Quiz[] = [
     // carries that card's snapshot (quiz-migration.md §5/§7). The template's
     // settings are untouched — it is still a private template, not a public quiz.
     cover: {
-      src: "/sports-trivia-quiz.png",
+      src: media["sports-trivia-quiz"].src,
       alt: "Sports Trivia Challenge",
     },
     author: {
       name: "SportsNut",
       avatar: {
-        src: "/avatars/guru.png",
+        src: media["avatars.guru"].src,
         alt: "SportsNut",
       },
     },

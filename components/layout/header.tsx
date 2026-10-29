@@ -40,6 +40,7 @@ import NotificationDrawer from "../header/NotificationDrawer";
 import { ThemeToggle } from "../header/ThemeToggle";
 import { Badge } from "../ui/badge";
 import { useSidebar } from "./sidebar-context";
+import { media } from "@/data/media";
 
 export function Header() {
   const pathname = usePathname();
@@ -391,7 +392,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatars/brain.png" alt="User" />
+                  <AvatarImage src={media["avatars.brain"].src} alt="User" />
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
               </Button>
@@ -400,7 +401,7 @@ export function Header() {
               <div className="flex flex-col space-y-2 p-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src="/avatars/brain.png" alt="User" />
+                    <AvatarImage src={media["avatars.brain"].src} alt="User" />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
                   <div>
