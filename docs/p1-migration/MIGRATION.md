@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 ## Run it
 
 ```bash
-pnpm data:check   # tsc (content + data + scripts) -> node:test (28 cases) -> validator
+pnpm data:check   # tsc (content + data + scripts) -> node:test (75 cases) -> validator
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm lint         # biome check (includes the formatter gate)
 pnpm build        # next build
@@ -26,10 +26,10 @@ node. That is why `content/` must never import React or Next.
 Today's output:
 
 ```
-PASS  21 quizzes, 105 questions, 9 news, 6 tips, 8 kb, 45 categories,
-      5 contacts, 5 conversations, 6 notifications, 20 search rows
+PASS  42 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories,
+      5 contacts, 5 conversations, 6 notifications, 54 search rows
       34 routes match app/, 0 unknown category ids, 0 dead links
-WARN  1  [W2] published quiz "quiz-ultimate-world-history-trivia" has no publishedAt
+WARN  41  [W1] 5, [W2] 23, [W4] 13   (W3: 0)
 ```
 
 CI runs `pnpm data:check` as its own step, after typecheck and before build.
@@ -47,8 +47,12 @@ CI runs `pnpm data:check` as its own step, after typecheck and before build.
 | `content/social.ts`                              | `zContact`, `zMessage` (text XOR image), `zConversation`, `zNotification` + derivation helpers                                           |
 | `content/route-manifest.ts`, `content/routes.ts` | the route table and the matcher that makes a dead link unrepresentable                                                                   |
 | `content/search.ts`                              | `buildSearchIndex()` — the search index is derived, never authored                                                                       |
+| `data/quizzes.ts`                                | the whole quiz collection (42) plus `quizById` / `quizBySlug` — the only list a join may read                                            |
+| `data/authored-quizzes.ts`                       | the 16 card-only quizzes decision A authored (`quiz-migration.md` §10 — generated)                                                       |
+| `data/created-quizzes.ts`                        | the 5 `CreatedQuiz` records (§7 — generated)                                                                                             |
 | `scripts/data-check.ts`                          | the validator: per-record schema pass, then the collection-level invariants                                                              |
 | `scripts/__tests__/data-model.test.ts`           | 28 negative tests; one per drift class                                                                                                   |
+| `scripts/__tests__/quiz-collection.test.ts`      | 14 collection tests: the 42 records, the frozen slugs, the Science overlay case                                                          |
 
 Every object in `content/` is `.strict()`: an unknown key is an error. That is the
 mechanism, not a style choice — a field added to a fixture without a schema entry
@@ -66,7 +70,7 @@ fails `data:check` by name.
 | D4 answer key                   | `correctAnswer: number` (index into `options`)                                                                      | `correctOptionId: "a"…"f"`, validated to name an existing option; 100/100 answers preserved                   |
 | D5 difficulty                   | `"Medium"`, `"medium"`, `"medium "`                                                                                 | `zDifficulty` = `easy \| medium \| hard`                                                                      |
 | D6 three category vocabularies  | 22 quiz subjects, 14 browse categories, 4 search categories, 3 per-kind string unions                               | one 45-row table, four scopes, `categoryIds` is the only join                                                 |
-| D7 quizzes had no category      | 0/20 quizzes carried a category (tags were prose)                                                                   | 21/21 carry `categoryIds`, derived once from the tag alias map and then frozen                                |
+| D7 quizzes had no category      | 0/20 quizzes carried a category (tags were prose)                                                                   | 42/42 carry `categoryIds`, derived once from the tag alias map (or authored with the record) and then frozen  |
 | D8 three body shapes            | news `sections`, tips markdown string, kb sections, plus an inline redeclaration                                    | one `ContentBlock[]` union for all three                                                                      |
 | D9 six time formats             | `"2 days ago"`, `"May 15, 2025"`, `Date.now()` at module import, …                                                  | one ISO-8601 instant (`publishedAt`, `sentAt`, `lastSeenAt`, `limitedTimeEndsAt`); prose is derived at render |
 | D10 framework objects in data   | `icon: <Trophy />`, `StaticImageData`, `string \| StaticImageData`                                                  | `ImageRef {src, alt}` and `iconKey` into `NOTIFICATION_ICON_KEYS`                                             |
@@ -117,6 +121,42 @@ Every field-level edit is in `ledger.json`. Summary:
 Four modules were renamed `.tsx` → `.ts` (`categories`, `currentQuiz`, `news-data`,
 `notifications`): they contained JSX, which is how D10 got in.
 
+### The 21 records that were missing from `data/`
+
+The first pass ported the 21 pre-migration quizzes and stopped there. `quiz-migration.md`
+§7 and §10 produce 21 more records, and they existed only in the migration harness
+(`migrated/quizzes.json`), so nothing in the app could join to them and a per-slot
+promotion keyed on `quiz-science-quiz-space-exploration` could not resolve (E11).
+
+Now ported, field-for-field:
+
+| module                     | records | source                                      |
+| -------------------------- | ------- | ------------------------------------------- |
+| `data/created-quizzes.ts`  | 5       | §7 — the `CreatedQuiz` records              |
+| `data/authored-quizzes.ts` | 16      | §10 — decision A's card-only quizzes        |
+| `data/quizzes.ts`          | 42      | the composition + `quizById` / `quizBySlug` |
+
+Three things about the port that are easy to miss:
+
+1. **`quiz-11` is part of the join, not just a template.** `explore-page/new[2]` and
+   `explore-featured/new[2]` both promote `Sports Trivia Challenge`, which resolves to
+   the _generator template_ `quiz-11`. The migration lifted that card's engagement
+   snapshot onto the record (§5): `status: "published"`, `plays: 124`, `capacity: 1000`,
+   `rating: 4.4`, badge `new`, `rewardCents: 300`, author `SportsNut`, cover
+   `/sports-trivia-quiz.png`. Its `settings` are untouched — `visibility: "private"`,
+   so it stays out of the search index. Without this, 2 of the 31 card records cannot
+   reproduce their numbers.
+2. **The merchandised Science snapshot is not a record.** `2105/2500 · $7.50 · 4.8 ·
+   popular` is a per-slot overlay (`zQuizPromotion`, B-01); the record keeps the
+   catalog's `2453/3000 · $10.00 · 4.9 · hot · 2025-01-03T00:00:00.000Z` and
+   `author: MarvelFan`, not the overlays' `CosmicMind`. A second record for the same
+   subject would fail E10 and fork the identity (A4).
+3. **Two deliberate deviations from the harness output** are kept in `data/currentQuiz`:
+   its `tags` facets (`history`, `world events`) survive, and its images keep
+   `alt: ""`. The harness dropped the tags and wrote alt strings from the prompts.
+   Neither is a join key or a card field, so neither affects a projection; both are
+   recorded here rather than silently swapped.
+
 ### Consumers
 
 31 components/pages were rewired to read the model instead of the old literals:
@@ -133,38 +173,49 @@ Per-record (`E0`): every record parses against its schema, every object strict.
 
 Collection-level:
 
-| code        | invariant                                                                                                                                       |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `E1` / `E2` | ids unique across all four kinds; `kind/slug` unique (a slug is URL identity)                                                                   |
-| `E3`        | question ids unique across quizzes; `status: "published"` implies at least one question; every `selectQuizCard()` output parses as a `QuizCard` |
-| `E4`        | a record may only reference categories in its own scope; every `data/categories` row is in the table with a non-negative derived count          |
-| `E5`        | contact refs resolve; notification `link` matches a real route and `iconKey` is in the registry                                                 |
-| `E6`        | conversation → contact refs resolve                                                                                                             |
-| `E7`        | `content/routes.ts` and the `app/` tree agree in both directions (34 routes)                                                                    |
-| `E8`        | every search row names a real quiz / category / curated page                                                                                    |
-| `E9`        | `content/quiz.ts` exists and `types/quiz.ts` does not (one `Quiz` type; positive control included)                                              |
+| code        | invariant                                                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `E1` / `E2` | ids unique across all four kinds; `kind/slug` unique (a slug is URL identity)                                                                        |
+| `E3`        | question ids unique across quizzes; every `selectQuizCard()` output parses as a `QuizCard` (a published quiz with 0 questions is `W1`, not an error) |
+| `E4`        | a record may only reference categories in its own scope; every `data/categories` row is in the table with a non-negative derived count               |
+| `E5`        | contact refs resolve; notification `link` matches a real route and `iconKey` is in the registry                                                      |
+| `E6`        | conversation → contact refs resolve                                                                                                                  |
+| `E7`        | `content/routes.ts` and the `app/` tree agree in both directions (34 routes)                                                                         |
+| `E8`        | every search row names a real quiz / category / curated page                                                                                         |
+| `E9`        | `content/quiz.ts` exists and `types/quiz.ts` does not (one `Quiz` type; positive control included)                                                   |
 
 Warnings are advisory and do not fail the build: `W1` published quiz with no
 questions, `W2` published quiz with no `publishedAt`, `W3` a renderable category with
 no quizzes, `W4` a reward with no limited-time window.
 
-### The one warning
+### The warning census (41 warnings, measured)
 
-`W2`: `quiz-ultimate-world-history-trivia` is published but has no authored date.
-No date was invented for it. Either set `publishedAt` or flip the quiz to `draft` —
-that is a content decision, not a migration one.
+| code | count | who                                                                                                                           |
+| ---- | ----- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `W1` | 5     | the 5 `CreatedQuiz` records: their content was never in the repo (a question _count_ was)                                     |
+| `W2` | 23    | every published record — no card, `CreatedQuiz` or generator template ever carried a publication instant                      |
+| `W4` | 13    | a prize with no window (`quiz-11` $3.00 and 12 authored quizzes); only 4 of the 17 rewarded records carry `limitedTimeEndsAt` |
+| `W3` | 0     | every renderable quiz category now has at least one quiz                                                                      |
+
+These are the §10 debt figures of `quiz-migration.md` (W1 5 / W2 23 / W3-there 13),
+reproduced by the collection itself rather than by the harness. None is a defect to
+paper over: `publishedAt` and prize windows are content decisions, and `questions`
+for the 5 `CreatedQuiz` records does not exist to copy.
 
 ## Consequences worth knowing
 
-- **The search palette is honest now.** It indexes 1 quiz (the published one), 1
-  category, 3 creators and 15 pages. Before, it listed 4 quizzes that did not exist
-  (plus 8 more in an inline copy inside `components/search/search-results.tsx`) and
-  creator counts of 87/34/56. The sparseness is real: 20 of the 21 quizzes are
-  `draft` generator templates, and no quiz has an author yet, so every creator's
-  `quizCount` is 0.
-- **Category tiles show derived counts**, so 24 of the 25 quiz subjects show `0`
-  until quizzes are authored into them. The alternative was keeping a stored count
-  that contradicted the collection (113 vs 20).
+- **The search palette is honest now.** It indexes 22 quizzes, 14 categories, 3
+  creators and 15 pages (54 rows). Before the P1 model it listed 4 quizzes that did
+  not exist (plus 8 more in an inline copy inside
+  `components/search/search-results.tsx`) and creator counts of 87/34/56. Only
+  `visibility: "public"` records enter it, so the 20 private generator templates stay
+  out; 22 of the 42 records are public.
+- **Category tiles show derived counts.** 16 of the 25 quiz subjects now have at
+  least one quiz, so 9 still show `0` — they are real, empty taxonomy rows, not a
+  stored count drifting from the collection (which is what 113-vs-20 was).
+- **Authorship is content.** 17 records name an author: the 16 authored quizzes
+  (MarvelFan, GeoExplorer, …) and `quiz-11` (SportsNut). A merchandising overlay can
+  never carry one — `zQuizPromotion` has no `author` key (B-01 §A4).
 - **Notification icons are a registry**, so a new icon is a one-line addition to
   `NOTIFICATION_ICON_KEYS` plus a case in `components/header/notification-icon.tsx`.
 
@@ -183,9 +234,9 @@ that is a content decision, not a migration one.
   instead of `generateMetadata`, so the route has no metadata and the function is
   dead code. Fixing it changes page behaviour, not fixture shape, so it is not in
   this change.
-- **Authorship** — no quiz has an `author` yet (`PersonRef` is optional on
-  `ContentBase`). Search `creators[]` will stay at `quizCount: 0` until records are
-  assigned.
+- **Authorship** — 17 of the 42 records name an `author`; the 20 generator templates and
+  the 5 `CreatedQuiz` records still do not, so search `creators[]` keeps `quizCount: 0`
+  until they are assigned. Assigning one is a content decision, not a migration one.
 - **`rewardCents`** lives in `QuizStats`; `Tournament` keeps `prizeCents`. If the two
   should share one shape, that is a tournament-model change.
 - **Taxonomy** — the quiz scope is A's 22 subjects corrected (`architechture` →
