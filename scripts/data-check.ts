@@ -766,17 +766,10 @@ const E21_ISLAND_SURFACES = ["components/search/", "components/chat/"];
 /** The components that render search results or chat rows — the files E21 binds today. */
 const E21_COPY_SURFACES = [...E21_ISLAND_SURFACES, "components/layout/header.tsx"];
 
-/** Declared deviations, one line each. A stale entry is harmless; a silent one is not. */
-const E21_EXEMPT_ISLANDS: Record<string, string> = {
-  "components/chat/chat-window.tsx":
-    "#47 (WU-12) deletes this component — no route imports it, so its contacts/initialMessages islands are dead code",
-};
-
 const searchChatIslands = moduleRecordArrays(uiSources).filter((island) =>
   E21_ISLAND_SURFACES.some((surface) => island.file.startsWith(surface)),
 );
 for (const island of searchChatIslands) {
-  if (island.file in E21_EXEMPT_ISLANDS) continue;
   err(
     "E21",
     `${island.file}:${island.line} declares the module-level array "${island.name}" (${island.records} records) — a collection belongs in data/ (or is derived in content/); import it and render it, never paste it`,
@@ -802,11 +795,6 @@ for (const copy of ownedCopies) {
 
 /** Debt on surfaces another work unit owns: measured and printed, never silently allowed. */
 const e21DebtCopies = fixtureCopies.length - ownedCopies.length;
-
-/** Exemptions that still match a file on disk — the count drops to 0 by itself when #47 lands. */
-const e21ActiveExemptions = searchChatIslands.filter(
-  (island) => island.file in E21_EXEMPT_ISLANDS,
-).length;
 
 /* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock
@@ -902,7 +890,7 @@ console.log(
   `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
 );
 console.log(
-  `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces (${e21ActiveExemptions} still exempt, #47) + ${ownedCopies.length} fixture rows copied into a search/chat component`,
+  `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
 );
 console.log(
   `      ${e21DebtCopies} fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)`,
