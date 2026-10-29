@@ -361,34 +361,106 @@ work units assert, and the schema that must exist first.
 | `MediaEntry`                                 | path-derived key (`category/animal`) | `data/media.ts` typed map         | 280 literals, 24 paths  | 280           |
 | `Player` / `LeaderboardRow`                  | username + avatar + score + window   | `data/players.ts`                 | 76 records in 6 islands | 107           |
 | `DiscussionComment`, `Review`, `Testimonial` | id + author ref + body + instant     | new social rows                   | 8 islands               | see WU-2/WU-9 |
-| `PageCopy`                                   | route pattern                        | `content/pages.ts`                | no home                 | 1118          |
+| `PageCopy`                                   | route pattern                        | `content/pages.ts`                | `/` migrated (WU-6)     | 1118          |
 | `MetricSnapshot`                             | (owner, period)                      | `data/quiz-analytics.ts` widening | invented in JSX         | 48            |
+
+### `PageCopy` — the shape WU-7…WU-11 reuse
+
+WU-6 built the object and the ratchet; the rest of the copy units only add rows to two tables. Read
+this before starting one.
+
+**Where it lives**
+
+| file                    | what it is                                                                                                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content/pages.ts`      | the shape: `zPageCopy`, `zPageCopySection`, `zPageCopyItem`, `zPageCopyLink`, and the `budget`/`table` records. Zod, no React — `data:check` compiles it for plain node |
+| `lib/page-copy.ts`      | the readers: `sectionOf`, `itemOf`, `itemLabel`, `itemValue`, `fillLabel`, `headingLines`. No zod, because client components import them                                |
+| `data/pages/<route>.ts` | one route's copy, parsed at import (`zPageCopy.parse`) — `data/pages/home.ts` is the worked example                                                                     |
+| `data/pages/index.ts`   | the table: route pattern → parsed `PageCopy`                                                                                                                            |
+| `data/pages/budget.ts`  | the ratchet: route pattern → `{ page, dirs, fixture, budget }`                                                                                                          |
+
+**The shape**
+
+```
+PageCopy        { eyebrow?, heading, subtitle?, cta?, secondaryCta?, sections? }
+PageCopySection { id, heading, body?, cta?, secondaryCta?, items? }
+PageCopyItem    { id, label, value? }          // ordered; `value` for a value-over-caption stat
+PageCopyLink    { label, href }                // href must be root-relative
+```
+
+Four conventions carry the whole thing, and a later unit that breaks one makes the gate weaker:
+
+- **`heading` spells a hard break as `\n`** and the view turns it into `<br />` (`headingLines`).
+  The break is copy, so it may not be markup in a fixture.
+- **`items` is the escape hatch that is not a junk drawer.** Tab labels, stat captions, inline
+  microcopy (`"N players joined"`), empty states (`"Uncategorised"`) are `{ id, label }` pairs. The
+  fixture owns the words, the view owns which ids it renders and in what order (`TABS` in
+  `featured-quizzes.tsx`, `LADDERS`, `PERKS`, `STATS` are module-level consts in their component), and
+  E23 fails when a view asks for an id the fixture does not carry — so a renamed id is a red build,
+  not a blank band.
+- **a number is never spelled into the copy.** `"Only {count} spots left"` + `fillLabel(label, {
+  count })`; an unfilled placeholder renders visibly rather than collapsing to `""`.
+- **`cta` is a link.** A button with no destination is not copy — it is a control, and its label is
+  an `item`. E23 resolves every `href` in a fixture against `content/routes.ts`, because moving a
+  link out of JSX otherwise hides it from E10.
+
+**The ratchet (E23), in two halves**
+
+`scripts/copy-refs.ts` holds the arithmetic and `scripts/data-check.ts` reports it; the negative cases
+are `scripts/__tests__/page-copy.test.ts` (22 cases).
+
+1. **leaf rule** — a JSX text node or string attribute value longer than 24 chars in an attributed
+   file is an error on its own, and the message names `file:line` and the fixture to move it to.
+   Technical attributes are not copy (`className`, `href`, `alt`, `variant`, `aria-*`; `alt` belongs
+   to `MediaEntry.alt`), and a glyph-only segment (`$`, `"`, an emoji) is not a string.
+2. **budget** — the _count_ of leaf literals in the route's surface may not exceed the recorded
+   number, short labels included. `/` is recorded at **0**; a unit lowers a budget and raising one is
+   a reviewable diff, never a re-baseline.
+
+**Attribution is by reachability, not by directory.** The surface is the route's page module plus the
+import closure inside the directories the route declares (`dirs`). That is what keeps two cards from
+fighting: `components/home/` still holds five components no page imports (WU-12 deletes them), and
+their 113 copy strings are in nobody's budget. The same pass proves the fixture is reachable from the
+page module — copy written and not wired changes nothing.
+
+**Migrating a route (the five steps a later unit repeats)**
+
+1. Add `data/pages/<route>.ts` with `zPageCopy.parse({...})`, and the row in `data/pages/index.ts`.
+2. Add the `data/pages/budget.ts` row: `page` (the route module), `dirs` (its component directories),
+   `fixture`, and `budget: 0`.
+3. Run `pnpm data:check`. It now lists every literal still in the surface, with `file:line`, and fails
+   on the sentences first (24-char rule) and then on the count.
+4. Move each string into the fixture, pass the section down from the page, and replace the literal
+   with `copy.heading` / `itemLabel(copy, "id")` / `fillLabel(...)`.
+5. Repeat until the route measures 0. If a band is rendered by two routes (`FeaturedQuizzes` is on
+   `/` and `/explore`), the _page_ decides which fixture's section it passes; `/explore` reads the
+   home fixture's `featured-quizzes` section today and WU-9 gives it its own.
 
 ## Invariants (proposed for P2; E = hard, W = declared deviation)
 
 Each names the check that proves it, per the P1 convention in `docs/DATA-MODEL.md`.
 
-| code | invariant                                                                                                                    | proof                                                                           |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| E17  | no `components/**` or `app/**` file contains a literal `public/` asset path                                                  | `data:check` E17: `assetReferences()` over the UI tree returns 0 (today: 280)   |
-| E18  | registry ⇄ disk is a bijection — every `MediaEntry.src` is a file, every file under `public/images`+avatars has an entry     | `data:check` E18: two-way walk, both directions 0 orphans (P2b item 3)          |
-| E19  | every `ImageRef.src` in `data/` equals a `MediaEntry.src`                                                                    | `data:check` E19 over `data/*` (today 73 fixture paths, all literal)            |
-| E20  | no display literal equals a `Category.name`, `Quiz.title` or `badge.label`                                                   | `data:check` E20: DUP tier = 0 (today: 26)                                      |
-| E21  | no module-level record array in `components/**` (≥ 2 object elements)                                                        | `data:check` E21: island scan = 0 (today: 29)                                   |
-| E22  | no metric literal (digit + unit/delta) in a component                                                                        | `data:check` E22 (today: 48)                                                    |
-| E23  | every route in `content/routes.ts` has a `PageCopy` key; an editorial component renders no leaf literal longer than 24 chars | E23 count + a per-route literal budget, ratcheting down per work unit           |
-| W7   | route metadata `title`/`description` stays hardcoded (26 strings, 13 routes)                                                 | declared: D14, `docs/DATA-MODEL.md` out-of-scope                                |
-| W8   | product-surface microcopy stays hardcoded (691 strings)                                                                      | declared: chrome, not content — a vertical reuses the screens                   |
-| W9   | the tournament domain ships static in P2 (`zTournamentRef` is a ref only)                                                    | declared: DATA-MODEL out-of-scope; WU-11 is a decision, not a build             |
-| W10  | chrome stays hardcoded (425 strings)                                                                                         | declared: identical across verticals                                            |
-| W11  | a rendered sentence split by inline markup is counted as N nodes                                                             | declared: extraction is AST-node based, so counts are upper bounds on sentences |
+| code | invariant                                                                                                                    | proof                                                                                                                                                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E17  | no `components/**` or `app/**` file contains a literal `public/` asset path                                                  | `data:check` E17: `assetReferences()` over the UI tree returns 0 (today: 280)                                                                                                                                                         |
+| E18  | registry ⇄ disk is a bijection — every `MediaEntry.src` is a file, every file under `public/images`+avatars has an entry     | `data:check` E18: two-way walk, both directions 0 orphans (P2b item 3)                                                                                                                                                                |
+| E19  | every `ImageRef.src` in `data/` equals a `MediaEntry.src`                                                                    | `data:check` E19 over `data/*` (today 73 fixture paths, all literal)                                                                                                                                                                  |
+| E20  | no display literal equals a `Category.name`, `Quiz.title` or `badge.label`                                                   | `data:check` E20: DUP tier = 0 (today: 26)                                                                                                                                                                                            |
+| E21  | no module-level record array in `components/**` (≥ 2 object elements)                                                        | `data:check` E21: island scan = 0 (today: 29)                                                                                                                                                                                         |
+| E22  | no metric literal (digit + unit/delta) in a component                                                                        | `data:check` E22 (today: 48)                                                                                                                                                                                                          |
+| E23  | every route in `content/routes.ts` has a `PageCopy` key; an editorial component renders no leaf literal longer than 24 chars | `data:check` E23: surface = page module + import closure inside the route's `dirs`; a literal > 24 chars is an error naming `file:line`, and the count may not exceed `data/pages/budget.ts`. `/` measures **0**. Established by WU-6 |
+| W7   | route metadata `title`/`description` stays hardcoded (26 strings, 13 routes)                                                 | declared: D14, `docs/DATA-MODEL.md` out-of-scope                                                                                                                                                                                      |
+| W8   | product-surface microcopy stays hardcoded (691 strings)                                                                      | declared: chrome, not content — a vertical reuses the screens                                                                                                                                                                         |
+| W9   | the tournament domain ships static in P2 (`zTournamentRef` is a ref only)                                                    | declared: DATA-MODEL out-of-scope; WU-11 is a decision, not a build                                                                                                                                                                   |
+| W10  | chrome stays hardcoded (425 strings)                                                                                         | declared: identical across verticals                                                                                                                                                                                                  |
+| W11  | a rendered sentence split by inline markup is counted as N nodes                                                             | declared: extraction is AST-node based, so counts are upper bounds on sentences                                                                                                                                                       |
 
 ## Strictness (for the two objects P2 introduces)
 
-| object                          | mode   | unknown key | note                                                                                               |
-| ------------------------------- | ------ | ----------- | -------------------------------------------------------------------------------------------------- |
-| `MediaEntry` (`data/media.ts`)  | strict | reject      | `{ src, alt, width, height, kind }`; key is path-derived, so the map is exhaustive by construction |
-| `PageCopy` (`content/pages.ts`) | strict | reject      | keyed by route pattern; `eyebrow?/heading/subtitle?/cta?` — never `labelOverride` on a record      |
+| object                          | mode   | unknown key | note                                                                                                                                                                                                                                      |
+| ------------------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MediaEntry` (`data/media.ts`)  | strict | reject      | `{ src, alt, width, height, kind }`; key is path-derived, so the map is exhaustive by construction                                                                                                                                        |
+| `PageCopy` (`content/pages.ts`) | strict | reject      | keyed by route pattern; `eyebrow?/heading/subtitle?/cta?/secondaryCta?/sections?`, a section is `id/heading/body?/cta?/secondaryCta?/items?`, an item is `id/label/value?` — never `labelOverride` on a record, and no copy key on `Quiz` |
 
 `ImageRef` does **not** change in P2 (decision D-P2-1): `src` stays a path and E19 pins it to the
 registry, so no fixture is rewritten. Switching `ImageRef` to `{ key, alt }` is a P3 change (the JSON
@@ -445,8 +517,9 @@ first and every later unit shrinks rather than grows the surface.
    `quiz-discustion`, results and discussion pages read the existing fixture.
 6. **WU-3 — search and chat mocks** (68): delete `mockSearchData`, render
    `buildSearchIndex`; chat reads `data/chat-data.ts`.
-7. **WU-6 — home copy** (78): establishes `PageCopy` and the E23 ratchet, and is the template
-   for 8–12.
+7. **WU-6 — home copy** (78): **done.** Established `PageCopy` (`content/pages.ts`), the readers,
+   `data/pages/home.ts` and the E23 ratchet; `/` measures 0 leaf literals of a recorded budget of 0.
+   The shape and the five-step migration a later unit repeats are above, under "Entities".
 8. **WU-7 — shell/auth/404** (126): the second `PageCopy` consumer; also renders the footer
    category column from `quizCategories`.
 9. **WU-8 — categories + explore** (95).

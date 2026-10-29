@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import cardCover from "@/public/card-cover.png";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { Award, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -134,7 +136,7 @@ const topPlayers = [
   },
 ];
 
-export function TopPlayersCarousel() {
+export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
   // Get badge color based on rank title
   const getBadgeVariant = (rankTitle: string) => {
     switch (rankTitle) {
@@ -163,7 +165,7 @@ export function TopPlayersCarousel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Award className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold tracking-tight">Top Players</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="prev-player">
@@ -191,7 +193,7 @@ export function TopPlayersCarousel() {
                     <Image
                       src={cardCover}
                       className="w-full object-cover size-full"
-                      alt="cover img"
+                      alt={media["card-cover"].alt}
                     />
                     {/* Avatar */}
                     <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">
@@ -243,17 +245,17 @@ export function TopPlayersCarousel() {
                             {player.rank}
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">Rank</p>
+                        <p className="text-xs text-muted-foreground">{itemLabel(copy, "rank")}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="font-semibold text-foreground">{player.totalWins}</p>
-                        <p className="text-xs text-muted-foreground">Wins</p>
+                        <p className="text-xs text-muted-foreground">{itemLabel(copy, "wins")}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="font-semibold text-green-600">
                           ${player.winAmount.toLocaleString()}
                         </p>
-                        <p className="text-xs text-muted-foreground">Earned</p>
+                        <p className="text-xs text-muted-foreground">{itemLabel(copy, "earned")}</p>
                       </div>
                     </div>
 
@@ -262,14 +264,14 @@ export function TopPlayersCarousel() {
                       <div className="flex flex-col items-center bg-muted/80 rounded-lg p-2">
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                           <Users className="h-3 w-3" />
-                          <span>Followers</span>
+                          <span>{itemLabel(copy, "followers")}</span>
                         </div>
                         <p className="font-semibold">{formatNumber(player.followers)}</p>
                       </div>
                       <div className="flex flex-col items-center bg-muted/80 rounded-lg p-2">
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                           <Users className="h-3 w-3" />
-                          <span>Following</span>
+                          <span>{itemLabel(copy, "following")}</span>
                         </div>
                         <p className="font-semibold">{formatNumber(player.following)}</p>
                       </div>
@@ -283,9 +285,11 @@ export function TopPlayersCarousel() {
       </div>
 
       <div className="flex justify-center">
-        <Button variant="outline" asChild>
-          <Link href="/leaderboard">View Full Leaderboard</Link>
-        </Button>
+        {copy.cta && (
+          <Button variant="outline" asChild>
+            <Link href={copy.cta.href}>{copy.cta.label}</Link>
+          </Button>
+        )}
       </div>
     </section>
   );
