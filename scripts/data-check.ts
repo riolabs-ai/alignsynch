@@ -33,7 +33,9 @@ import {
   zQuizCard,
   selectQuizAuthoringCard,
   selectQuizCard,
+  type Question,
 } from "../content/quiz";
+import { zQuizComment, zQuizResult, zQuizReview } from "../content/quiz-result";
 import { ROUTE_PATTERNS, routeManifest } from "../content/routes";
 import { matchRoute, normalizePath } from "../content/route-manifest";
 import {
@@ -63,6 +65,9 @@ import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 import { zMediaRegistry } from "../content/media";
 import { media } from "../data/media";
+import { quizComments } from "../data/quiz-comments";
+import { quizResults } from "../data/quiz-results";
+import { quizReviews } from "../data/quiz-reviews";
 import { promotionFindings } from "./data-check-promotions";
 import { COPY_LITERAL_MAX, copyProblems, measureRoute } from "./copy-refs";
 import { pageCopies } from "../data/pages";
@@ -784,6 +789,130 @@ const copyMeasured = Object.entries(pageCopyBudget).map(([route, entry]) => ({
 }));
 
 /* ------------------------------------------------------------------ *
+ * E24 — the quiz activity resolves against the quiz it names
+ *
+ * The quiz surface (detail page, review screen, discussions feed) reads three
+ * collections joined by id: results, comments, reviews. A dangling `quizId` does
+ * not throw — it renders an empty page, which is the failure mode that makes a
+ * fixture look finished while the page is blank. So the join is checked here.
+ *
+ *   * every `result.quizId` / `comment.quizId` / `review.quizId` names a `Quiz`;
+ *   * every `comment.questionId` names a question of THAT quiz, and a reply's
+ *     parent is a top-level comment on the same quiz (one level, like the UI);
+ *   * every answer in a sheet names a question of that quiz and, when the player
+ *     did not skip, an option of that question — an answer key pointing at a
+ *     renamed option is exactly the drift the option-id rule (D4) exists to stop;
+ *   * `score.total` never exceeds the quiz's question count, so a 10-answer result
+ *     cannot hang off a 5-question record;
+ *   * no instant is after the fixture clock — a card dated in the future renders
+ *     "in 2 days", the same defect E10 blocks for the social fixtures.
+ *
+ * Numbering: E20–E23 are reserved by `docs/P2-INVENTORY.md` (DUP / MOCK / METRIC /
+ * PageCopy), so the next free code is E24 rather than reusing a reserved one.
+ * ------------------------------------------------------------------ */
+
+const activityResults = validateCollection("E0", "quiz result", zQuizResult, [...quizResults]);
+const activityComments = validateCollection("E0", "quiz comment", zQuizComment, [...quizComments]);
+const activityReviews = validateCollection("E0", "quiz review", zQuizReview, [...quizReviews]);
+
+const recordById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+const questionIdsOf = new Map(
+  quizzes.map((quiz) => [
+    quiz.id,
+    new Map(quiz.questions.map((question) => [question.id, question])),
+  ]),
+);
+
+const uniqueIds = (code: string, label: string, rows: readonly { id: string }[]) => {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.id)) err(code, `${label}: duplicate id "${row.id}"`);
+    seen.add(row.id);
+  }
+};
+uniqueIds("E24", "quiz result", activityResults);
+uniqueIds("E24", "quiz comment", activityComments);
+uniqueIds("E24", "quiz review", activityReviews);
+
+for (const result of activityResults) {
+  const quiz = recordById.get(result.quizId);
+  if (quiz === undefined) {
+    err("E24", `result "${result.id}" references unknown quiz "${result.quizId}"`);
+    continue;
+  }
+  if (result.score.total > quiz.questions.length) {
+    err(
+      "E24",
+      `result "${result.id}" scores out of ${result.score.total}, but quiz "${quiz.id}" has ${quiz.questions.length} question(s)`,
+    );
+  }
+  const questions = questionIdsOf.get(quiz.id) ?? new Map<string, Question>();
+  for (const answer of result.answers ?? []) {
+    const question = questions.get(answer.questionId);
+    if (question === undefined) {
+      err(
+        "E24",
+        `result "${result.id}" answers "${answer.questionId}", which is not a question of "${quiz.id}"`,
+      );
+      continue;
+    }
+    if (
+      answer.selectedOptionId !== null &&
+      !question.options.some((option) => option.id === answer.selectedOptionId)
+    ) {
+      err(
+        "E24",
+        `result "${result.id}" selects option "${answer.selectedOptionId}" on "${question.id}" (options: ${question.options.map((option) => option.id).join(", ")})`,
+      );
+    }
+  }
+  if (new Date(result.completedAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `result "${result.id}" completed after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+const commentById = new Map(activityComments.map((comment) => [comment.id, comment]));
+for (const comment of activityComments) {
+  const quiz = recordById.get(comment.quizId);
+  if (quiz === undefined) {
+    err("E24", `comment "${comment.id}" references unknown quiz "${comment.quizId}"`);
+  } else if (comment.questionId !== undefined) {
+    const questions = questionIdsOf.get(quiz.id) ?? new Map<string, Question>();
+    if (!questions.has(comment.questionId)) {
+      err(
+        "E24",
+        `comment "${comment.id}" is about "${comment.questionId}", which is not a question of "${quiz.id}"`,
+      );
+    }
+  }
+  if (comment.parentId !== undefined) {
+    const parent = commentById.get(comment.parentId);
+    if (parent === undefined) {
+      err("E24", `comment "${comment.id}" replies to unknown comment "${comment.parentId}"`);
+    } else if (parent.quizId !== comment.quizId) {
+      err(
+        "E24",
+        `comment "${comment.id}" replies across quizzes ("${parent.quizId}" → "${comment.quizId}")`,
+      );
+    } else if (parent.parentId !== undefined) {
+      err("E24", `comment "${comment.id}" is a reply to a reply — threads are one level`);
+    }
+  }
+  if (new Date(comment.createdAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `comment "${comment.id}" created after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+for (const review of activityReviews) {
+  if (!recordById.has(review.quizId)) {
+    err("E24", `review "${review.id}" references unknown quiz "${review.quizId}"`);
+  }
+  if (new Date(review.createdAt).getTime() > new Date(DEMO_NOW_ISO).getTime()) {
+    err("E24", `review "${review.id}" created after the fixture clock (${DEMO_NOW_ISO})`);
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * E21 — no component authors a search result or a chat message
  *
  * The P2 inventory found 68 literals in WU-3 alone: `components/search/search-results.tsx`
@@ -889,6 +1018,7 @@ const counts = [
   `${conversations.length} conversations`,
   `${notificationRecords.length} notifications`,
   `${promotions.length} promotions`,
+  `${activityResults.length} quiz results, ${activityComments.length} comments, ${activityReviews.length} reviews`,
   `${Object.keys(registry).length} media entries`,
   `${Object.keys(pageCopies).length} page-copy routes`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
