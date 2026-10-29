@@ -55,9 +55,11 @@ import { notifications } from "../data/notifications";
 import { browseQuizzes } from "../data/browse-quizzes";
 import { catalogueAliases, quizShelves, shelvedIds } from "../data/quiz-catalogue";
 import { quizAnalytics } from "../data/quiz-analytics";
+import { promotions } from "../data/promotions";
 import { quizzes as quizRecords } from "../data/quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
+import { promotionFindings } from "./data-check-promotions";
 
 type Severity = "error" | "warn";
 interface Diagnostic {
@@ -267,6 +269,24 @@ for (const [alias, target] of Object.entries(catalogueAliases)) {
 
 for (const quizId of Object.keys(quizAnalytics)) {
   if (!collectionIds.has(quizId)) err("E13", `analytics key "${quizId}" is not a record`);
+}
+
+/* ------------------------------------------------------------------ *
+ * E14/E15/E16/W6 — the promotion overlays (B-01)
+ *
+ * The collection rules a single overlay cannot see: the join and the identity
+ * (E14), the window and the prize (E15), concurrent overlays agreeing field-wise
+ * (E16), and a campaign staged outside the quiz's published life (W6, a warning —
+ * preparing a campaign against a draft is legitimate).
+ *
+ * Issue #27 numbered these E11/E12/E13, which are already taken above (shelves,
+ * one record per subject, analytics keys), so they continue the set. The checks
+ * themselves live in `scripts/data-check-promotions.ts` and every one of them has
+ * a negative case in `scripts/__tests__/promotion-invariants.test.ts`.
+ * ------------------------------------------------------------------ */
+
+for (const finding of promotionFindings(promotions, quizzes)) {
+  diagnostics.push({ code: finding.rule, severity: finding.severity, message: finding.message });
 }
 
 /* ------------------------------------------------------------------ *
@@ -540,6 +560,7 @@ const counts = [
   `${contacts.length} contacts`,
   `${conversations.length} conversations`,
   `${notificationRecords.length} notifications`,
+  `${promotions.length} promotions`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
 ].join(", ");
 
