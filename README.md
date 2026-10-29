@@ -109,7 +109,7 @@ behind a toggle, an unreached fallback and tab state — which is why `pnpm dev`
 while they were there.
 
 They are fixed, and the rule is a check now instead of a habit: `pnpm data:check`
-invariant **E27** (`scripts/image-refs.ts`) scans every `<Image>` tag in `app/`, `components/`,
+invariant **E29** (`scripts/image-refs.ts`) scans every `<Image>` tag in `app/`, `components/`,
 `lib/` and `hooks/` and fails on a tag with no size source (E451 in dev) and on one that passes
 `fill` together with `width`/`height` (E96 in dev). A static import counts as a size source —
 `cover` carries its dimensions, `cover.src` is the plain string and does not — and the census
@@ -146,7 +146,7 @@ manager and Node version; a command change belongs in both.
   ```
 
   It emits **quizzes only**. A promotion names a slot that a shelf in `data/quiz-catalogue.ts`
-  renders (`E17`), and a generated quiz is in no shelf, so a generated campaign could never run;
+  renders (`E28`), and a generated quiz is in no shelf, so a generated campaign could never run;
   the overlays stay curated in `data/promotions.ts`. `data:check` rejects a
   `data/generated/promotions.ts` that reappears (`E26`), and `pnpm gen` deletes one left by an
   older clone, so `data/generated/` is always safe to leave on disk.

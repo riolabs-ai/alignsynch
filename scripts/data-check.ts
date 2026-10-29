@@ -231,10 +231,10 @@ for (const [label, table] of [
  * is absent `allQuizzes === quizzes` and this validator behaves as it did before P3.
  *
  * `data/generated/promotions.ts` is **not** a fixture, and its presence is an E26 error
- * rather than 7 E17 lines. A promotion names `(quizId, slot)` where the slot is a
+ * rather than 7 E28 lines. A promotion names `(quizId, slot)` where the slot is a
  * position `data/quiz-catalogue.ts` renders, and the shelves there are literal id lists,
  * so a generated quiz (`quiz-gen-*`) is in no shelf: there is no slot at which its
- * campaign could ever run, and a file of them can only fail E17. Campaigns are curated
+ * campaign could ever run, and a file of them can only fail E28. Campaigns are curated
  * data (`data/promotions.ts`); the generator deletes a file an older clone left behind.
  * ------------------------------------------------------------------ */
 
@@ -248,7 +248,7 @@ const generatedPromotionsSource = join(process.cwd(), "data", "generated", "prom
 if (existsSync(generatedPromotionsSource)) {
   err(
     "E26",
-    "data/generated/promotions.ts exists, but promotions are curated data (data/promotions.ts) and are never generated: a promotion is addressed to a position a shelf renders (E17), and a generated quiz is in no shelf, so no slot could ever render its campaign — delete the file (`pnpm gen` removes it)",
+    "data/generated/promotions.ts exists, but promotions are curated data (data/promotions.ts) and are never generated: a promotion is addressed to a position a shelf renders (E28), and a generated quiz is in no shelf, so no slot could ever render its campaign — delete the file (`pnpm gen` removes it)",
   );
 }
 
@@ -392,11 +392,11 @@ for (const quizId of Object.keys(quizAnalytics)) {
 }
 
 /* ------------------------------------------------------------------ *
- * E14/E15/E16/E17/W6 — the promotion overlays (B-01, P3)
+ * E14/E15/E16/E28/W6 — the promotion overlays (B-01, P3)
  *
  * The collection rules a single overlay cannot see: the join and the identity
  * (E14), the window and the prize (E15), concurrent overlays agreeing field-wise
- * (E16), the slot actually being a place a shelf renders (E17 — the rule that
+ * (E16), the slot actually being a place a shelf renders (E28 — the rule that
  * stops a campaign from silently never running), and a campaign staged outside
  * the quiz's published life (W6, a warning — preparing a campaign against a
  * draft is legitimate).
@@ -405,6 +405,12 @@ for (const quizId of Object.keys(quizAnalytics)) {
  * one record per subject, analytics keys), so they continue the set. The checks
  * themselves live in `scripts/data-check-promotions.ts` and every one of them has
  * a negative case in `scripts/__tests__/promotion-invariants.test.ts`.
+ *
+ * The slot guard was `E17` until issue #103 — the same code this file gives the
+ * media registry below, so `grep '[E17]'` could not say which rule fired. It moved
+ * to `E28` (the next free code after `E27`) rather than moving `E17`–`E19`; the
+ * registry in `scripts/rule-codes.ts` now keeps one code to one rule and
+ * `scripts/__tests__/rule-codes.test.ts` is the negative case for that.
  * ------------------------------------------------------------------ */
 
 for (const finding of promotionFindings(promotions, allQuizzes)) {
@@ -720,7 +726,11 @@ for (const missing of missingAssets) {
 }
 
 /* ------------------------------------------------------------------ *
- * E27 — every <Image> has exactly one size source
+ * E29 — every <Image> has exactly one size source
+ *
+ * (Numbered E27 by PR #99 until issue #103: E27 is the battle-mode rule in
+ * `scripts/mode-invariants.ts`, added earlier by PR #92, so this one moved to the
+ * next free code rather than sharing it. `scripts/rule-codes.ts` records the split.)
  *
  * `next/image` validates its own props inside `if (process.env.NODE_ENV !== "production")`,
  * so `next build` never reads the two rules: no `width`/`height` and no `fill` throws E451,
@@ -750,12 +760,12 @@ const imageSources = IMAGE_ROOTS.flatMap((root) =>
 );
 
 for (const problem of imageProblems(imageSources)) {
-  err("E27", problem.message);
+  err("E29", problem.message);
 }
 
 if (imageSources.length === 0) {
   err(
-    "E27",
+    "E29",
     "the next/image scan read 0 files: app/, components/, lib/ and hooks/ were not walked",
   );
 }
@@ -1437,7 +1447,7 @@ console.log(
   `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
 );
 console.log(
-  `      ${imageMeasured.tags} next/image tags: ${imageMeasured.dimensioned} width+height, ${imageMeasured.fill} fill, ${imageMeasured.staticImport} static import, ${imageMeasured.fillWithDimension} fill+width/height, ${imageMeasured.missingDimension} with no size source (E27); ${imageMeasured.fill} fill tags, ${imageMeasured.fillWithSizes} of them with sizes`,
+  `      ${imageMeasured.tags} next/image tags: ${imageMeasured.dimensioned} width+height, ${imageMeasured.fill} fill, ${imageMeasured.staticImport} static import, ${imageMeasured.fillWithDimension} fill+width/height, ${imageMeasured.missingDimension} with no size source (E29); ${imageMeasured.fill} fill tags, ${imageMeasured.fillWithSizes} of them with sizes`,
 );
 console.log(
   `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
