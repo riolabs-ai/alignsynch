@@ -13,6 +13,7 @@ import { Award, Clock, Crown, Flame, Star, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 export function FeaturedQuizzes() {
   const [filter, setFilter] = useState<"all" | QuizBadgeType>("all");
@@ -95,7 +96,7 @@ export function FeaturedQuizzes() {
                 <Image
                   width={600}
                   height={350}
-                  src={quiz.cover?.src ?? "/placeholder.svg"}
+                  src={quiz.cover?.src ?? media.placeholder.src}
                   alt={quiz.cover?.alt || quiz.title}
                   className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -129,7 +130,7 @@ export function FeaturedQuizzes() {
                 <div className="flex justify-between items-center gap-2">
                   <div className="flex items-center gap-3">
                     <Image
-                      src={quiz.author?.avatar?.src ?? "/avatars/alex.png"}
+                      src={quiz.author?.avatar?.src ?? media["avatars.alex"].src}
                       width={36}
                       height={36}
                       className="size-9 object-cover object-center rounded-full"
@@ -181,7 +182,7 @@ export function FeaturedQuizzes() {
                               className="border-2 border-background h-6 w-6"
                             >
                               <AvatarImage
-                                src={player.avatar?.src ?? "/placeholder.svg"}
+                                src={player.avatar?.src ?? media.placeholder.src}
                                 alt={player.name}
                               />
                               <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>

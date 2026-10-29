@@ -10,6 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import RelatedTips from "./related-tips";
+import { media } from "@/data/media";
 interface TipDetailProps {
   tip: Tip;
 }
@@ -60,7 +61,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
 
           <p className="text-xl text-gray-600 dark:text-gray-50 mb-6">{tip.summary}</p>
           <Image
-            src={tip.cover?.src ?? "/placeholder.svg"}
+            src={tip.cover?.src ?? media.placeholder.src}
             alt={tip.title}
             width={1000}
             height={300}
@@ -70,7 +71,7 @@ export default function TipDetail({ tip }: TipDetailProps) {
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                 <Image
-                  src={tip.author.avatar?.src ?? "/placeholder.svg"}
+                  src={tip.author.avatar?.src ?? media.placeholder.src}
                   alt={tip.author.name}
                   width={40}
                   height={40}

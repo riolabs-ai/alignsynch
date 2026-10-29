@@ -18,6 +18,7 @@
     "lib/quiz-cards.ts",
     "scripts/data-check*",
     "scripts/ui-refs.ts",
+    "scripts/media-refs.ts",
     "scripts/__tests__/**/*.ts"
   ],
   "exclude": ["node_modules", ".next", ".datacheck"]

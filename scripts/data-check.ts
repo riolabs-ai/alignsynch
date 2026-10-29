@@ -61,8 +61,17 @@ import { promotions } from "../data/promotions";
 import { quizzes as quizRecords } from "../data/quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
+import { zMediaRegistry } from "../content/media";
+import { media } from "../data/media";
 import { promotionFindings } from "./data-check-promotions";
 import {
+  danglingEntries,
+  registryProblems,
+  unregisteredFiles,
+  unregisteredRefs,
+} from "./media-refs";
+import {
+  assetOf,
   assetReferences,
   findDeadLinks,
   findMissingAssets,
@@ -609,6 +618,122 @@ for (const missing of missingAssets) {
 }
 
 /* ------------------------------------------------------------------ *
+ * E17/E18/E19 — the media registry is the only way to address a file
+ *
+ * E10 proved a literal path was not a 404. It could not prove the *model* owned the
+ * asset: 280 literal paths (27 distinct files) sat in JSX while `public/` held 103 files,
+ * so a fixture swap could never change what a page showed and nobody noticed, because the
+ * paths all resolved. Three checks close that:
+ *
+ *   E17  no `components/**` or `app/**` file writes a `public/` asset path at all — a
+ *        component asks the registry for a key (`media["quiz.q1"].src`).
+ *   E18  registry <-> disk is a bijection, both directions, plus the map's own integrity
+ *        (path-derived key, one key per file, real dimensions).
+ *   E19  every `ImageRef.src` a fixture carries equals a registry `src` (decision D-P2-1:
+ *        the fixture still holds a path in P2, so this is what keeps it honest).
+ *
+ * The registry is generated (`node scripts/gen-media.mjs`) precisely so E18 stays a
+ * zero-config check: adding a file is a one-command fix, and forgetting is a red build.
+ * ------------------------------------------------------------------ */
+
+const registry = media as unknown as Record<string, (typeof media)[keyof typeof media]>;
+const parsedRegistry = zMediaRegistry.safeParse(registry);
+if (!parsedRegistry.success) {
+  for (const issue of parsedRegistry.error.issues) {
+    err("E0", `media ${issue.path.join(".") || "(root)"}: ${issue.message}`);
+  }
+}
+
+for (const problem of registryProblems(registry)) err("E18", problem);
+
+for (const problem of danglingEntries(registry, (src) =>
+  existsSync(join(process.cwd(), "public", assetOf(src))),
+)) {
+  err("E18", problem);
+}
+
+function walkPublic(dir = join(process.cwd(), "public"), files: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    if (entry.startsWith(".")) continue;
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) walkPublic(full, files);
+    else
+      files.push(
+        full
+          .slice(join(process.cwd(), "public").length + 1)
+          .split("\\")
+          .join("/"),
+      );
+  }
+  return files;
+}
+
+const publicFiles = existsSync(join(process.cwd(), "public")) ? walkPublic() : [];
+if (publicFiles.length === 0) {
+  err("E18", "public/ is empty or missing: the registry<->disk check has nothing to compare");
+}
+for (const file of unregisteredFiles(registry, publicFiles)) {
+  err(
+    "E18",
+    `public/${file} has no media registry key — run \`node scripts/gen-media.mjs\` so a component can address it, or delete the file if nothing uses it`,
+  );
+}
+
+for (const literal of assetReferences(uiSources)) {
+  err(
+    "E17",
+    `${literal.file}:${literal.line} writes the media path "${literal.value}" — read it from the registry instead (media["<key>"].src, data/media.ts)`,
+  );
+}
+
+/**
+ * Every `ImageRef` reachable from a fixture, found structurally: the shape is
+ * `{ src, alt }` (the strict schema in `content/core.ts`). Walking the imported records
+ * rather than grepping `data/` means a ref assembled at runtime is still checked, and a
+ * ref inside a nested block (a question's media, a person's avatar) is found too.
+ * `data/media.ts` is skipped on purpose: it *is* the registry.
+ */
+function imageRefs(node: unknown, where: string, found: { where: string; src: string }[] = []) {
+  if (Array.isArray(node)) {
+    node.forEach((item, index) => {
+      imageRefs(item, `${where}[${index}]`, found);
+    });
+  } else if (node !== null && typeof node === "object") {
+    const record = node as Record<string, unknown>;
+    if (typeof record.src === "string" && typeof record.alt === "string") {
+      found.push({ where, src: record.src });
+    }
+    for (const [key, value] of Object.entries(record)) {
+      if (value !== null && typeof value === "object") imageRefs(value, `${where}.${key}`, found);
+    }
+  }
+  return found;
+}
+
+const fixtureImageRefs = [
+  ...imageRefs(quizzes, "data/quizzes"),
+  ...imageRefs(news, "data/news-data"),
+  ...imageRefs(tipRecords, "data/creator-tips-data"),
+  ...imageRefs(kbRecords, "data/knowledge-base-data"),
+  ...imageRefs(contacts, "data/chat-data"),
+  ...imageRefs(conversations, "data/chat-data"),
+  ...imageRefs(notificationRecords, "data/notifications"),
+  ...imageRefs(promotions, "data/promotions"),
+].filter((ref) => ref.src.startsWith("/"));
+
+for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", problem);
+
+/*
+ * Five fixture covers retired by E19 when this rule landed, recorded here so the deletion is
+ * not mistaken for an accident: `/easy-quiz-1.png`, `/easy-quiz-2.png`, `/easy-quiz-3.png`
+ * (data/authored-quizzes.ts), `/history-quiz.png` (data/currentQuiz.ts) and `/quiz/q16.png`
+ * (data/browse-quizzes.ts) were paths `public/` never held. `cover` is optional on the schema,
+ * so the record keeps its identity and loses a reference that was already a 404. Restoring a
+ * cover means adding the file (then `node scripts/gen-media.mjs`); inventing one here would
+ * have made the registry describe a file that does not exist, which is what E18 forbids.
+ */
+
+/* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock
  *
  * The UI renders relative labels against `DEMO_NOW_ISO` (content/core.ts), so an instant
@@ -652,6 +777,7 @@ const counts = [
   `${conversations.length} conversations`,
   `${notificationRecords.length} notifications`,
   `${promotions.length} promotions`,
+  `${Object.keys(registry).length} media entries`,
   `${searchIndex.quizzes.length + searchIndex.categories.length + searchIndex.creators.length + searchIndex.pages.length} search rows`,
 ].join(", ");
 

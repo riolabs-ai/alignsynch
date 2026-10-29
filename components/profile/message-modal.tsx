@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
+import { media } from "@/data/media";
 
 interface MessageModalProps {
   isOpen: boolean;
@@ -50,7 +51,7 @@ export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              <AvatarImage src={recipient.avatar || "/placeholder.svg"} alt={recipient.name} />
+              <AvatarImage src={recipient.avatar || media.placeholder.src} alt={recipient.name} />
               <AvatarFallback>{recipient.name.substring(0, 2)}</AvatarFallback>
             </Avatar>
             Message {recipient.name}
@@ -85,7 +86,10 @@ export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <Avatar>
-                  <AvatarImage src={recipient.avatar || "/placeholder.svg"} alt={recipient.name} />
+                  <AvatarImage
+                    src={recipient.avatar || media.placeholder.src}
+                    alt={recipient.name}
+                  />
                   <AvatarFallback>{recipient.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div className="rounded-lg bg-muted p-3">

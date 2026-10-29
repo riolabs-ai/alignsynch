@@ -26,13 +26,14 @@ import { LeaderboardFilters } from "./leaderboard-filters";
 import { LeaderboardPodium } from "./leaderboard-podium";
 import { LeaderboardStats } from "./leaderboard-stats";
 import { LeaderboardTable } from "./leaderboard-table";
+import { media } from "@/data/media";
 
 // Sample leaderboard data
 export const leaderboardData = [
   {
     id: 1,
     name: "Alex Johnson",
-    avatar: "/avatars/alex.png",
+    avatar: media["avatars.alex"].src,
     score: 9850,
     quizzes: 42,
     rank: 1,
@@ -45,7 +46,7 @@ export const leaderboardData = [
   {
     id: 2,
     name: "Sarah Williams",
-    avatar: "/avatars/sarah.webp",
+    avatar: media["avatars.sarah"].src,
     score: 8720,
     quizzes: 38,
     rank: 2,
@@ -58,7 +59,7 @@ export const leaderboardData = [
   {
     id: 3,
     name: "Michael Brown",
-    avatar: "/avatars/wizard.webp",
+    avatar: media["avatars.wizard"].src,
     score: 7640,
     quizzes: 35,
     rank: 3,
@@ -71,7 +72,7 @@ export const leaderboardData = [
   {
     id: 4,
     name: "Emily Davis",
-    avatar: "/avatars/champion.png",
+    avatar: media["avatars.champion"].src,
     score: 6980,
     quizzes: 31,
     rank: 4,
@@ -84,7 +85,7 @@ export const leaderboardData = [
   {
     id: 5,
     name: "David Wilson",
-    avatar: "/avatars/king.webp",
+    avatar: media["avatars.king"].src,
     score: 6540,
     quizzes: 29,
     rank: 5,
@@ -97,7 +98,7 @@ export const leaderboardData = [
   {
     id: 6,
     name: "Jessica Taylor",
-    avatar: "/avatars/mind.webp",
+    avatar: media["avatars.mind"].src,
     score: 5920,
     quizzes: 27,
     rank: 6,
@@ -110,7 +111,7 @@ export const leaderboardData = [
   {
     id: 7,
     name: "Ryan Martinez",
-    avatar: "/avatars/genious.png",
+    avatar: media["avatars.genious"].src,
     score: 5480,
     quizzes: 25,
     rank: 7,
@@ -123,7 +124,7 @@ export const leaderboardData = [
   {
     id: 8,
     name: "Olivia Anderson",
-    avatar: "/avatars/brain.png",
+    avatar: media["avatars.brain"].src,
     score: 5120,
     quizzes: 23,
     rank: 8,
@@ -136,7 +137,7 @@ export const leaderboardData = [
   {
     id: 9,
     name: "Daniel Thomas",
-    avatar: "/avatars/guru.png",
+    avatar: media["avatars.guru"].src,
     score: 4780,
     quizzes: 21,
     rank: 9,
@@ -149,7 +150,7 @@ export const leaderboardData = [
   {
     id: 10,
     name: "Sophia Garcia",
-    avatar: "/avatars/master.png",
+    avatar: media["avatars.master"].src,
     score: 4350,
     quizzes: 19,
     rank: 10,
@@ -162,7 +163,7 @@ export const leaderboardData = [
   {
     id: 11,
     name: "James Miller",
-    avatar: "/abstract-geometric-shapes.png",
+    avatar: media["abstract-geometric-shapes"].src,
     score: 4120,
     quizzes: 18,
     rank: 11,
@@ -175,7 +176,7 @@ export const leaderboardData = [
   {
     id: 12,
     name: "Emma Wilson",
-    avatar: "/abstract-geometric-shapes.png",
+    avatar: media["abstract-geometric-shapes"].src,
     score: 3980,
     quizzes: 17,
     rank: 12,
@@ -188,7 +189,7 @@ export const leaderboardData = [
   {
     id: 13,
     name: "Liam Harris",
-    avatar: "/abstract-geometric-shapes.png",
+    avatar: media["abstract-geometric-shapes"].src,
     score: 3750,
     quizzes: 16,
     rank: 13,
@@ -201,7 +202,7 @@ export const leaderboardData = [
   {
     id: 14,
     name: "Ava Martin",
-    avatar: "/abstract-geometric-shapes.png",
+    avatar: media["abstract-geometric-shapes"].src,
     score: 3620,
     quizzes: 15,
     rank: 14,
@@ -214,7 +215,7 @@ export const leaderboardData = [
   {
     id: 15,
     name: "Noah Thompson",
-    avatar: "/abstract-geometric-shapes.png",
+    avatar: media["abstract-geometric-shapes"].src,
     score: 3480,
     quizzes: 14,
     rank: 15,

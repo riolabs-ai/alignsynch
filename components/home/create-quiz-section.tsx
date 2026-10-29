@@ -2,6 +2,7 @@
 import Illustration from "@/public/quiz-ai-illustration.png";
 import Image from "next/image";
 import Link from "next/link";
+import { media } from "@/data/media";
 export function CreateQuizSection() {
   return (
     <section className="space-y-6">
@@ -30,7 +31,7 @@ export function CreateQuizSection() {
           <div className="flex flex-col h-full justify-between">
             <div className="mb-6">
               <Image
-                src="/quiz-ai-illustration.png"
+                src={media["quiz-ai-illustration"].src}
                 alt="AI Quiz Generator"
                 className="h-32 w-32 mb-6"
               />

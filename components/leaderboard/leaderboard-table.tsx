@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { LeaderboardItem } from "./leaderboard-podium";
+import { media } from "@/data/media";
 
 interface LeaderboardTableProps {
   leaderboardData: LeaderboardItem[];
@@ -105,7 +106,7 @@ export function LeaderboardTable({
                 >
                   <AvatarImage
                     className="object-cover object-center"
-                    src={user.avatar || "/placeholder.svg"}
+                    src={user.avatar || media.placeholder.src}
                     alt={user.name}
                   />
                   <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Button } from "../ui/button";
+import { media } from "@/data/media";
 export function CategoriesSlider() {
   return (
     <section className="space-y-4">
@@ -38,7 +39,7 @@ export function CategoriesSlider() {
             >
               <Image
                 className="size-full object-cover object-center absolute inset-0"
-                src={image?.src ?? "/placeholder.svg"}
+                src={image?.src ?? media.placeholder.src}
                 alt=""
                 fill
               />

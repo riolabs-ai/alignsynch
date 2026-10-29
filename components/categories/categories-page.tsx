@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { media } from "@/data/media";
 
 export function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,7 +49,7 @@ export function CategoriesPage() {
             >
               <Image
                 className="size-full object-cover object-center absolute inset-0"
-                src={image?.src ?? "/placeholder.svg"}
+                src={image?.src ?? media.placeholder.src}
                 alt=""
                 fill
               />

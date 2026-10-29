@@ -7,6 +7,7 @@ import { TournamentOverview } from "./tournament-overview";
 import { TournamentPrizes } from "./tournament-prizes";
 import { TournamentRules } from "./tournament-rules";
 import { TournamentSchedule } from "./tournament-schedule";
+import { media } from "@/data/media";
 
 interface TournamentDetailProps {
   id: string;
@@ -42,7 +43,7 @@ export function TournamentDetail({ id }: TournamentDetailProps) {
         ? "Test your knowledge against the best quiz enthusiasts from around the world in this premier tournament with multiple rounds of challenging questions."
         : "Test your scientific knowledge across physics, chemistry, biology and more.",
     image:
-      id === "global-championship" ? "/placeholder.svg?key=85jbh" : "/space-exploration-quiz.png",
+      id === "global-championship" ? media.placeholder.src : media["space-exploration-quiz"].src,
     category: id === "global-championship" ? "general" : "science",
     status: id === "global-championship" ? "registration" : "registration",
     dates: id === "global-championship" ? "May 15 - June 10, 2023" : "June 1 - June 15, 2023",

@@ -4,19 +4,25 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The merge queue tests a `gh-readonly-queue/...` ref and reports the required
+  # check against merge_group, which is a separate event from push/pull_request.
+  # Without this trigger the queue waits on `typecheck / lint / build` forever.
+  merge_group:
 
 concurrency:
+  # merge_group refs are distinct per queue entry, so groups never cross-cancel.
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a merge_group run: the queue reads a cancelled check as a failure
+  # and drops the PR. push and pull_request keep the previous cancel-on-supersede.
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 permissions:
   contents: read
 
-env:
-  NEXT_TELEMETRY_DISABLED: "1"
-
 jobs:
   verify:
+    # The job name is load-bearing: required status checks match on it, so keep
+    # it stable even as the step list changes (the steps live in the script now).
     name: typecheck / lint / build
     # pinned OS: ubuntu-latest is migrating to Ubuntu 26 during 2026
     runs-on: ubuntu-24.04
@@ -28,6 +34,7 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
         with:
+          # keep in sync with EXPECTED_PNPM in scripts/verify.sh
           version: 12.16.1
 
       - name: Set up Node
@@ -36,20 +43,9 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck (next typegen && tsc --noEmit)
-        run: pnpm typecheck
-
-      - name: Validate content data (data:check)
-        run: pnpm data:check
-
-      - name: Lint (biome check)
-        run: pnpm lint
-
-      - name: Format check (biome format)
-        run: pnpm format:check
-
-      - name: Build (next build)
-        run: pnpm build
+      # The gate. Nothing above or below this line may run a check: CI runs what
+      # `bash scripts/verify.sh` runs, in the same order, on the same pinned
+      # runtime. A check that exists only in this file is a red push; a check that
+      # exists only in the script is a red CI run. One definition, two callers.
+      - name: verify (bash scripts/verify.sh)
+        run: bash scripts/verify.sh

@@ -21,13 +21,14 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { media } from "@/data/media";
 
 // Mock data for contacts and messages
 const contacts = [
   {
     id: 1,
     name: "Emma Wilson",
-    avatar: "/avatars/alex.png",
+    avatar: media["avatars.alex"].src,
     status: "online",
     lastMessage: "Are you ready for the science quiz?",
     unread: 2,
@@ -36,7 +37,7 @@ const contacts = [
   {
     id: 2,
     name: "Michael Chen",
-    avatar: "/avatars/master.png",
+    avatar: media["avatars.master"].src,
     status: "online",
     lastMessage: "I scored 95% on the history quiz!",
     unread: 0,
@@ -45,7 +46,7 @@ const contacts = [
   {
     id: 3,
     name: "Sophia Rodriguez",
-    avatar: "/avatars/sarah.webp",
+    avatar: media["avatars.sarah"].src,
     status: "offline",
     lastMessage: "Can you help me with the math questions?",
     unread: 0,
@@ -54,7 +55,7 @@ const contacts = [
   {
     id: 4,
     name: "James Johnson",
-    avatar: "/avatars/wizard.webp",
+    avatar: media["avatars.wizard"].src,
     status: "online",
     lastMessage: "Let's create a quiz together",
     unread: 0,
@@ -63,7 +64,7 @@ const contacts = [
   {
     id: 5,
     name: "Olivia Parker",
-    avatar: "/avatars/guru.png",
+    avatar: media["avatars.guru"].src,
     status: "offline",
     lastMessage: "Thanks for the quiz tips!",
     unread: 0,
@@ -215,7 +216,7 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
                     <div className="relative">
                       <Avatar className="h-10 w-10">
                         <AvatarImage
-                          src={contact.avatar || "/placeholder.svg"}
+                          src={contact.avatar || media.placeholder.src}
                           alt={contact.name}
                         />
                         <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
@@ -243,7 +244,7 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage
-                      src={activeContact.avatar || "/placeholder.svg"}
+                      src={activeContact.avatar || media.placeholder.src}
                       alt={activeContact.name}
                     />
                     <AvatarFallback>{activeContact.name.charAt(0)}</AvatarFallback>
@@ -357,7 +358,10 @@ export function ChatWindow({ onClose }: ChatWindowProps) {
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <Avatar>
-                      <AvatarImage src={contact.avatar || "/placeholder.svg"} alt={contact.name} />
+                      <AvatarImage
+                        src={contact.avatar || media.placeholder.src}
+                        alt={contact.name}
+                      />
                       <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span

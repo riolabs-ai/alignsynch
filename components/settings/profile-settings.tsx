@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Camera, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { media } from "@/data/media";
 
 export function ProfileSettings() {
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +49,7 @@ export function ProfileSettings() {
       <div className="flex items-center gap-4">
         <Avatar className="h-24 w-24">
           <AvatarImage
-            src="/avatars/alex.png"
+            src={media["avatars.alex"].src}
             className="object-cover object-center"
             alt="Profile"
           />

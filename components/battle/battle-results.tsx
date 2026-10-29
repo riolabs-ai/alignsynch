@@ -14,6 +14,7 @@ import confetti from "canvas-confetti";
 import { Award, CheckCircle, Clock, Home, RotateCw, Share2, Trophy } from "lucide-react";
 import { useEffect } from "react";
 import type { BattleState } from "./battle-page";
+import { media } from "@/data/media";
 
 interface BattleResultsProps {
   battleState: BattleState;
@@ -87,7 +88,7 @@ export function BattleResults({ battleState, onRematch, onReturnHome }: BattleRe
                 <div key={player.id} className="flex flex-col items-center">
                   <div className="mb-2">
                     <Avatar className="h-16 w-16 border-4 border-background shadow-lg">
-                      <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
+                      <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
                       <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                   </div>
@@ -132,7 +133,7 @@ export function BattleResults({ battleState, onRematch, onReturnHome }: BattleRe
                   >
                     <div className="font-bold text-lg w-5">{index + 1}</div>
                     <Avatar className="h-10 w-10 mr-3">
-                      <AvatarImage src={player.avatar || "/placeholder.svg"} alt={player.name} />
+                      <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
                       <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">

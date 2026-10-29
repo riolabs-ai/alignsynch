@@ -20,6 +20,7 @@ import { formatCurrency, formatPlayerCount, type Difficulty } from "@/content/co
 import type { QuizCard } from "@/content/quiz";
 import { shelfCards } from "@/lib/quiz-cards";
 import { useEffect, useState } from "react";
+import { media } from "@/data/media";
 
 /** The card prints minutes; the model stores seconds. */
 const minutes = (quiz: QuizCard) => Math.round(quiz.timeLimitSeconds / 60);
@@ -87,13 +88,14 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
           return (b.publishedAt ?? b.title).localeCompare(a.publishedAt ?? a.title);
         case "reward":
           return (b.stats.rewardCents ?? 0) - (a.stats.rewardCents ?? 0);
-        case "difficulty":
+        case "difficulty": {
           // Sort by difficulty: Hard > Medium > Easy
           const difficultyOrder = { hard: 3, medium: 2, easy: 1 };
           return (
             (difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0) -
             (difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0)
           );
+        }
         default:
           return 0;
       }
@@ -229,7 +231,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                 <Image
                   width={1000}
                   height={500}
-                  src={quiz.cover?.src ?? "/placeholder.svg"}
+                  src={quiz.cover?.src ?? media.placeholder.src}
                   alt={quiz.cover?.alt || quiz.title}
                   className="h-full w-full object-cover"
                 />
@@ -258,7 +260,7 @@ export function CategoryDetailPage({ categoryName }: CategoryDetailPageProps) {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
                       <AvatarImage
-                        src={quiz.author?.avatar?.src ?? "/placeholder.svg"}
+                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
                         alt={quiz.author?.name ?? "creator"}
                       />
                       <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>

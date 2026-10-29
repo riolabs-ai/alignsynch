@@ -291,8 +291,15 @@ describe("the quiz detail projection agrees with the card", () => {
     // filled with the template's `MarvelFan2023`, `4.8` or `/quiz/q17.png`. That is
     // only possible if this projection *omits* the field instead of defaulting it, so
     // pin the omission across the whole collection. The counts are the census of the
-    // current fixtures (43/38/19 of 62); if a record gains an author or a cover, this
+    // current fixtures (43/38/24 of 62); if a record gains an author or a cover, this
     // assertion is where the change shows up.
+    //
+    // `noCover` moved 19 → 24 when the typed media registry landed (#65): five records
+    // carried literal covers whose files were never in `public/` — `/easy-quiz-1.png`,
+    // `/easy-quiz-2.png`, `/easy-quiz-3.png`, `/history-quiz.png`, `/quiz/q16.png` —
+    // and the registry deleted them rather than map a key to a missing file. They were
+    // dead images on a shipped page; `cover: undefined` renders the placeholder, which
+    // is the honest state until someone authors real art.
     let noAuthor = 0;
     let noRating = 0;
     let noCover = 0;
@@ -303,6 +310,6 @@ describe("the quiz detail projection agrees with the card", () => {
       if (card.stats.rating === undefined) noRating += 1;
       if (card.cover === undefined) noCover += 1;
     }
-    assert.deepEqual({ noAuthor, noRating, noCover }, { noAuthor: 43, noRating: 38, noCover: 19 });
+    assert.deepEqual({ noAuthor, noRating, noCover }, { noAuthor: 43, noRating: 38, noCover: 24 });
   });
 });

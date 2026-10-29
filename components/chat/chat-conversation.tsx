@@ -17,6 +17,7 @@ import {
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
 import type { Contact, Conversation, Message } from "./chat-page";
+import { media } from "@/data/media";
 
 interface ChatConversationProps {
   conversation: Conversation;
@@ -95,7 +96,7 @@ export function ChatConversation({
         <div className="flex items-center">
           <div className="relative">
             <Image
-              src={avatarError ? "/placeholder.svg?height=40&width=40" : contact.avatar}
+              src={avatarError ? media.placeholder.src : contact.avatar}
               alt={contact.name}
               width={40}
               height={40}

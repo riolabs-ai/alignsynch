@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import { media } from "@/data/media";
 type Props = {
   isMessagesDrawerOpen: boolean;
   setIsMessagesDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -49,7 +50,7 @@ const ChatDrawer = ({
               <Avatar className="size-10">
                 <AvatarImage
                   className="size-10 rounded-full object-cover object-center"
-                  src={message.avatar || "/placeholder.svg"}
+                  src={message.avatar || media.placeholder.src}
                   alt={message.sender}
                 />
                 <AvatarFallback>{message.sender.charAt(0)}</AvatarFallback>

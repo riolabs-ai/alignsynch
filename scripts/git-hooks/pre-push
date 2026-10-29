@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# pre-push — runs the same gate CI runs, before the push exists.
+#
+# A blocked push costs seconds. A red CI run costs a full agent turn (~35 min of
+# push/wait/red/fix/retry). Install per clone:  bash scripts/install-hooks.sh
+#
+# Do not add checks here that scripts/verify.sh does not run: two gates is zero
+# gates.
+set -euo pipefail
+
+exec "$(git rev-parse --show-toplevel)/scripts/verify.sh" "$@"

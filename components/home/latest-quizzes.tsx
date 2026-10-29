@@ -7,6 +7,7 @@ import type { Difficulty } from "@/content/core";
 import { shelfCards } from "@/lib/quiz-cards";
 import Image from "next/image";
 import Link from "next/link";
+import { media } from "@/data/media";
 
 export function LatestQuizzes() {
   // Projected from the catalogue, never authored here (D2).
@@ -41,7 +42,7 @@ export function LatestQuizzes() {
               <Image
                 width={600}
                 height={350}
-                src={quiz.cover?.src ?? "/placeholder.svg"}
+                src={quiz.cover?.src ?? media.placeholder.src}
                 alt={quiz.cover?.alt || quiz.title}
                 className="h-full w-full object-cover"
               />
