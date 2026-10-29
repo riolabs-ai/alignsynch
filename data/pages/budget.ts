@@ -18,14 +18,44 @@
  * `"/"` measured 87 literals before WU-6 and 0 after — every string the page's own
  * components rendered now lives in `data/pages/home.ts`. The budget stays 0: the
  * next literal added to `components/home/**` that a page renders is a red build.
+ *
+ * `/` also attributes `components/categories`, because the home page renders the
+ * how-it-works band that lives there (WU-8). Attribution is reachability, so only
+ * `categories-how-it-works.tsx` joins the count; the rest of the directory belongs to
+ * `/categories` and `/categories/[slug]`, which name the same directory and pick up
+ * only what their own page modules import.
  */
 import { zPageCopyBudget, type PageCopyBudget } from "../../content/pages";
 
 export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   "/": {
     page: "app/(mainlayout)/page.tsx",
-    dirs: ["components/home"],
+    dirs: ["components/home", "components/categories"],
     fixture: "data/pages/home",
+    budget: 0,
+  },
+  "/categories": {
+    page: "app/(mainlayout)/categories/page.tsx",
+    dirs: ["components/categories"],
+    fixture: "data/pages/categories",
+    budget: 0,
+  },
+  "/categories/[slug]": {
+    page: "app/(mainlayout)/categories/[slug]/page.tsx",
+    dirs: ["components/categories"],
+    fixture: "data/pages/category-detail",
+    budget: 0,
+  },
+  "/explore": {
+    page: "app/(mainlayout)/explore/page.tsx",
+    dirs: ["components/explore"],
+    fixture: "data/pages/explore",
+    budget: 0,
+  },
+  "/explore/featured": {
+    page: "app/(mainlayout)/explore/featured/page.tsx",
+    dirs: ["components/explore"],
+    fixture: "data/pages/explore-featured",
     budget: 0,
   },
 });

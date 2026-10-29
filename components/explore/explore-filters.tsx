@@ -12,7 +12,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
+import { DIFFICULTIES, difficultyLabel, type Difficulty } from "@/content/core";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel } from "@/lib/page-copy";
 import { Dispatch, SetStateAction, useState } from "react";
+
+/** The badge tint per level; the label is `difficultyLabel`'s, never typed here (WU-5). */
+const DIFFICULTY_BADGES: Readonly<Record<Difficulty, "success" | "warning" | "destructive">> = {
+  easy: "success",
+  medium: "warning",
+  hard: "destructive",
+};
 
 interface ExploreFiltersProps {
   activeFilters: {
@@ -27,9 +37,11 @@ interface ExploreFiltersProps {
       timeRange: string;
     }>
   >;
+  copy: PageCopySection;
 }
 
-export function ExploreFilters({ activeFilters, setActiveFilters }: ExploreFiltersProps) {
+/** The `/explore` filter rail. Its labels are `sectionOf(explorePageCopy, "filters")`. */
+export function ExploreFilters({ activeFilters, setActiveFilters, copy }: ExploreFiltersProps) {
   const [rewardRange, setRewardRange] = useState([0, 15]);
   const [timeRange, setTimeRange] = useState([0, 30]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
@@ -71,10 +83,10 @@ export function ExploreFilters({ activeFilters, setActiveFilters }: ExploreFilte
   return (
     <div className="w-full md:w-64 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium">Filters</h3>
+        <h3 className="font-medium">{copy.heading}</h3>
         {activeFilterCount > 0 && (
           <Button variant="ghost" size="sm" onClick={resetFilters}>
-            Reset
+            {itemLabel(copy, "reset")}
           </Button>
         )}
       </div>
@@ -82,64 +94,52 @@ export function ExploreFilters({ activeFilters, setActiveFilters }: ExploreFilte
       <div className="rounded-lg border bg-card">
         <Accordion type="multiple" defaultValue={["difficulty", "sort", "reward"]}>
           <AccordionItem value="difficulty">
-            <AccordionTrigger className="px-4">Difficulty</AccordionTrigger>
+            <AccordionTrigger className="px-4">{itemLabel(copy, "difficulty")}</AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               <RadioGroup value={activeFilters.difficulty} onValueChange={handleDifficultyChange}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="all" id="all" />
-                  <Label htmlFor="all">All Levels</Label>
+                  <Label htmlFor="all">{itemLabel(copy, "difficulty-all")}</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="easy" id="easy" />
-                  <Label htmlFor="easy">Easy</Label>
-                  <Badge variant="success" className="ml-auto">
-                    Easy
-                  </Badge>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="medium" id="medium" />
-                  <Label htmlFor="medium">Medium</Label>
-                  <Badge variant="warning" className="ml-auto">
-                    Medium
-                  </Badge>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="hard" id="hard" />
-                  <Label htmlFor="hard">Hard</Label>
-                  <Badge variant="destructive" className="ml-auto">
-                    Hard
-                  </Badge>
-                </div>
+                {DIFFICULTIES.map((level) => (
+                  <div key={level} className="flex items-center space-x-2">
+                    <RadioGroupItem value={level} id={level} />
+                    <Label htmlFor={level}>{difficultyLabel(level)}</Label>
+                    <Badge variant={DIFFICULTY_BADGES[level]} className="ml-auto">
+                      {difficultyLabel(level)}
+                    </Badge>
+                  </div>
+                ))}
               </RadioGroup>
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="sort">
-            <AccordionTrigger className="px-4">Sort By</AccordionTrigger>
+            <AccordionTrigger className="px-4">{itemLabel(copy, "sort")}</AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               <RadioGroup value={activeFilters.sortBy} onValueChange={handleSortChange}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="popular" id="popular" />
-                  <Label htmlFor="popular">Most Popular</Label>
+                  <Label htmlFor="popular">{itemLabel(copy, "sort-popular")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="newest" id="newest" />
-                  <Label htmlFor="newest">Newest</Label>
+                  <Label htmlFor="newest">{itemLabel(copy, "sort-newest")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="highest-rated" id="highest-rated" />
-                  <Label htmlFor="highest-rated">Highest Rated</Label>
+                  <Label htmlFor="highest-rated">{itemLabel(copy, "sort-rating")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="highest-reward" id="highest-reward" />
-                  <Label htmlFor="highest-reward">Highest Reward</Label>
+                  <Label htmlFor="highest-reward">{itemLabel(copy, "sort-reward")}</Label>
                 </div>
               </RadioGroup>
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="reward">
-            <AccordionTrigger className="px-4">Reward</AccordionTrigger>
+            <AccordionTrigger className="px-4">{itemLabel(copy, "reward")}</AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -158,12 +158,17 @@ export function ExploreFilters({ activeFilters, setActiveFilters }: ExploreFilte
           </AccordionItem>
 
           <AccordionItem value="time">
-            <AccordionTrigger className="px-4">Time Limit</AccordionTrigger>
+            <AccordionTrigger className="px-4">{itemLabel(copy, "time-limit")}</AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm">{timeRange[0]} min</span>
-                  <span className="text-sm">{timeRange[1]}+ min</span>
+                  <span className="text-sm">
+                    {timeRange[0]} {itemLabel(copy, "minutes")}
+                  </span>
+                  <span className="text-sm">
+                    {timeRange[1]}
+                    {itemLabel(copy, "minutes-plus")}
+                  </span>
                 </div>
                 <Slider
                   defaultValue={[0, 30]}
@@ -177,42 +182,42 @@ export function ExploreFilters({ activeFilters, setActiveFilters }: ExploreFilte
           </AccordionItem>
 
           <AccordionItem value="availability">
-            <AccordionTrigger className="px-4">Availability</AccordionTrigger>
+            <AccordionTrigger className="px-4">{itemLabel(copy, "availability")}</AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox id="spots-available" />
-                <Label htmlFor="spots-available">Spots Available</Label>
+                <Label htmlFor="spots-available">{itemLabel(copy, "spots-available")}</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox id="almost-full" />
-                <Label htmlFor="almost-full">Almost Full</Label>
+                <Label htmlFor="almost-full">{itemLabel(copy, "almost-full")}</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox id="limited-time" />
-                <Label htmlFor="limited-time">Limited Time</Label>
+                <Label htmlFor="limited-time">{itemLabel(copy, "limited-time")}</Label>
               </div>
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="time-range">
-            <AccordionTrigger className="px-4">Time Range</AccordionTrigger>
+            <AccordionTrigger className="px-4">{itemLabel(copy, "time-range")}</AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               <RadioGroup value={activeFilters.timeRange} onValueChange={handleTimeRangeChange}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="all" id="time-all" />
-                  <Label htmlFor="time-all">All Time</Label>
+                  <Label htmlFor="time-all">{itemLabel(copy, "time-all")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="today" id="today" />
-                  <Label htmlFor="today">Today</Label>
+                  <Label htmlFor="today">{itemLabel(copy, "time-today")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="this-week" id="this-week" />
-                  <Label htmlFor="this-week">This Week</Label>
+                  <Label htmlFor="this-week">{itemLabel(copy, "time-week")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="this-month" id="this-month" />
-                  <Label htmlFor="this-month">This Month</Label>
+                  <Label htmlFor="this-month">{itemLabel(copy, "time-month")}</Label>
                 </div>
               </RadioGroup>
             </AccordionContent>
@@ -221,7 +226,7 @@ export function ExploreFilters({ activeFilters, setActiveFilters }: ExploreFilte
       </div>
 
       <div className="hidden md:block">
-        <Button className="w-full">Apply Filters</Button>
+        <Button className="w-full">{itemLabel(copy, "apply")}</Button>
       </div>
     </div>
   );
