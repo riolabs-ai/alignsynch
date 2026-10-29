@@ -2,9 +2,11 @@
   // Single source of truth for linting and formatting (replaces `next lint`
   // and the old `.prettierrc` with printWidth 450).
   //
-  // Formatting is enforced: the one-shot reformat at lineWidth 100 already
-  // landed as a formatting-only commit (listed in .git-blame-ignore-revs) and
-  // CI runs `pnpm format:check`, so `pnpm format` must produce no diff.
+  // Formatting: lineWidth 100 is the agreed target, but this repo was
+  // formatted at printWidth 450, so enabling the formatter as a gate today
+  // would mean an ~18k-line diff mixed into a toolchain change. The one-shot
+  // reformat lands in its own PR (see issue #5); `pnpm format` is available
+  // now, and CI gates `pnpm lint` (lint rules only, no formatting check).
   //
   // Lint rules below that are set to "warn" already have violations on main.
   // They stay visible in CI output but do not fail the build; flip each one
@@ -14,11 +16,6 @@
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
-  },
-  "files": {
-    // pnpm-lock.yaml is generated: pnpm writes its own YAML quoting, so
-    // letting the formatter touch it turns every `pnpm install` into a diff.
-    "includes": ["**", "!pnpm-lock.yaml"]
   },
   "formatter": {
     "enabled": true,
