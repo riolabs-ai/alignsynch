@@ -11,7 +11,7 @@ fixtures that must satisfy it, and `pnpm data:check` fails the build when a fixt
 | -------------------------------- | -------------------- | ------------------------------------------------------------- |
 | `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                      |
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 157 `node:test` cases → validator; prints record counts |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts |
 | `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 232 warnings, 12 infos           |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 314 files; CI gate                            |
 | `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                      |
@@ -39,7 +39,9 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
   a per-slot campaign is an engagement-only overlay (`data/promotions.ts`), never a second record.
 - `scripts/data-check.ts` — the validator: per-record schema pass, then collection invariants
   E0–E17 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
-  `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E17/W6.
+  `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E17/W6,
+  and `scripts/__tests__/explore-curation.test.ts` pins which authored tab block each explore
+  shelf owns (the 3-vs-6 decision in `docs/p1-migration/MIGRATION.md`).
   E10 is the one that reads the UI tree: it extracts every literal `href`,
   `router.push`/`replace`/`redirect` in `components/` + `app/` and every `public/` asset literal,
   and fails on a route the manifest cannot match or a file `public/` does not have.
@@ -89,6 +91,12 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
   `export const dynamic = "force-dynamic"` and hand one server instant (`now`) down to the
   client component. Adding a slot surface means making its route request-time in the same
   change.
+- **A snapshot key is a harness label, not a shelf position.** `scripts/__tests__/fixtures/
+  card-records.ts` keys its rows `explore-page/*` and `explore-featured/*`, and those two groups
+  are the opposite way round from the pages that render them — the six-card tabs are
+  `/explore/featured`'s, the three-card block is `/explore`'s. `explore-page/popular[3]` is not
+  the fourth card of `/explore`. `explore-curation.test.ts` states the mapping and
+  `docs/p1-migration/MIGRATION.md` records the decision to keep `/explore` at three cards a tab.
 - **`params` is a Promise in Next 16.** Every dynamic route must take
   `params: Promise<{ id: string }>` and unwrap it (`await params` in an `async` page, or
   `use(params)`); a synchronous `params.id` logs `params is a Promise and must be unwrapped with

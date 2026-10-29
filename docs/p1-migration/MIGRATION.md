@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 ## Run it
 
 ```bash
-pnpm data:check   # tsc (content + data + scripts) -> node:test (157 cases) -> validator
+pnpm data:check   # tsc (content + data + scripts) -> node:test (171 cases) -> validator
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm lint         # biome check (includes the formatter gate)
 pnpm build        # next build
@@ -468,16 +468,48 @@ routes 30 → 29, hand-count 31 → 30 static pages of 34; it is the only route 
 slot-bearing routes hand one server instant (`now`) to their client component, so server render
 and hydration project the same campaign at the same clock.
 
-One curation question is left open, deliberately, because it is not a campaign question.
-`exploreTrending/Popular/New` hold **three** ids each; the authored snapshot rows for
-`explore-page/*` are **six** per tab, and those 18 ids are exactly the `featuredTrending/Popular/New`
-lists. The mounted section therefore shows 3-card tabs, and authored positions `[3..5]` have no
-shelf position — the campaign at `[1]` renders either way, which is why it does not block.
-Whether `/explore` should show the authored six is a curation decision, routed as its own card —
-note that the initial commit's two tab components carry three cards per tab on `/explore` and six
-per tab on `/explore/featured`, the opposite of what the snapshot's labels imply, so the question
-covers both the shelves and the two components. The mounted surface is correct for what the
-shelves currently hold.
+### The 3-vs-6 curation question, decided: `/explore` keeps three cards per tab
+
+`exploreTrending/Popular/New` hold **three** ids each; the authored snapshot carries **six** rows
+per `explore-page/*` tab. Measured against the template the components were ported from, by quiz id
+and order, the six are not `/explore`'s:
+
+| authored rows           | equals (id and order)          | authored in                                    | the template mounted it on                  |
+| ----------------------- | ------------------------------ | ---------------------------------------------- | ------------------------------------------- |
+| `explore-page/*`, 18    | `featuredTrending/Popular/New` | `components/explore/featured-quizzes-page.tsx` | `/explore/featured`                         |
+| `explore-featured/*`, 9 | `exploreTrending/Popular/New`  | `components/explore/explore-featured.tsx`      | **no page** — nothing imported it           |
+| `home/*`, 4 (no tabs)   | `homeFeatured`                 | `components/home/featured-quizzes.tsx`         | `/` **and** `/explore`'s merchandising slot |
+
+So the two `explore` groups run the opposite way from the pages in their names: the group called
+`explore-page` is the featured page's six-card tabs, and the group called `explore-featured` is the
+three-card block that now renders on `/explore` (P3b). `/explore` never had an authored six to
+restore — before P3b its merchandising slot was the flat four-card block, which the snapshot files
+under `home/*` because the harness keyed that shared component by its home page. The group names are
+therefore neither pure page names nor pure slot names, and a key does not mean "a shelf renders this
+position": `explore-page/popular[3]` is a harness label, not the fourth card of `/explore`.
+
+**Decision: keep the three-card teaser.** Three reasons, in the order that decides it:
+
+- **The six already have their page.** Extending the shelves would render the same 18 ids in the same
+  order on `/explore` and `/explore/featured`, and turn the section's `View All Featured Quizzes` link
+  into a pointer at a duplicate of itself.
+- **No authored card is orphaned.** `explore*` is a strict prefix of the authored `explore-page/*` run
+  in every tab, so rows `[0..2]` render on `/explore` and `[3..5]` render on `/explore/featured` as
+  `featured*`: every authored row has a screen, and no row has two on the same page.
+- **The campaign does not notice.** `popular[1]` is index 1 of all three lists, so both labelings
+  render 2105/2500 · $7.50 · 4.8 · `popular`; B-01's 31/31 projects each row through
+  `selectQuizCard` — never through a shelf index — so it holds byte-identically.
+
+`scripts/__tests__/explore-curation.test.ts` pins the measurement: each group's ids against the shelf
+it equals, the prefix relation, and the exact set of authored keys that name no rendered position
+(`explore-page/{trending,popular,new}[3..5]`, nine rows). A shelf that grows or a row that is re-keyed
+fails that suite, so this decision has to be restated wherever it would change.
+
+If curation later decides `/explore` should show six, the change is: copy the `featured*` lists into
+`exploreTrending/Popular/New` (13 shelves / 68 authored positions → the same 13 / 77), move E17's
+out-of-range case in `promotion-invariants.test.ts` from `explore-page/popular[3]` to `[6]` together
+with its `3 card` message assertion, and rewrite this paragraph and that suite. No snapshot row
+changes either way — the labels are the harness's, and the campaign's position is index 1 in both.
 
 The full C1 spec, the four product answers and the signed-off acceptance table live
 in `quiz-promotion-backlog.md` and `quiz-migration.md` §12.4 (harness documents,
