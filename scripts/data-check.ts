@@ -14,7 +14,7 @@
  * of the first one. Exit code is 1 if any E* check fails.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import { zArticleCollection, zKbArticle, zNewsArticle, zTip } from "../content/article";
 import {
@@ -368,6 +368,64 @@ for (const root of ["components", "app", "lib", "hooks"]) {
       );
     }
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * E10 — no route exports a metadata function Next never reads
+ *
+ * D14 was `export function Metadata(...)` on categories/[slug]: the right body
+ * under a name Next ignores, so the route shipped the layout title and the
+ * function was dead code. The same bug had already been fixed by hand once
+ * (creator-tips/[slug] exported `GenerateMetadata`). Next reads exactly two
+ * forms — `generateMetadata` (async) and `metadata` (a value) — so any other
+ * metadata-shaped export is dead. The positive control keeps this check from
+ * passing on a page that lost its metadata export entirely.
+ * ------------------------------------------------------------------ */
+
+const DEAD_METADATA_EXPORT =
+  /^export\s+(?:async\s+)?(?:function\s+|const\s+)(Metadata|GenerateMetadata|GetMetadata|getMetadata)\b/m;
+const METADATA_EXPORT =
+  /^export\s+(?:async\s+)?(?:function\s+|const\s+)(generateMetadata|metadata)\b/m;
+
+function walkRouteFiles(dir: string): string[] {
+  const found: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (entry.startsWith(".") || entry === "node_modules") continue;
+    if (statSync(full).isDirectory()) {
+      found.push(...walkRouteFiles(full));
+    } else if (entry === "page.tsx" || entry === "layout.tsx") {
+      found.push(full);
+    }
+  }
+  return found;
+}
+
+const routeFiles = walkRouteFiles(join(process.cwd(), "app"));
+for (const file of routeFiles) {
+  const dead = DEAD_METADATA_EXPORT.exec(readFileSync(file, "utf8"));
+  if (dead) {
+    err(
+      "E10",
+      `${relative(process.cwd(), file)} exports \`${dead[1]}\`, which Next never reads (D14). Export \`generateMetadata\` instead.`,
+    );
+  }
+}
+
+const categoryRoute = join(
+  process.cwd(),
+  "app",
+  "(mainlayout)",
+  "categories",
+  "[slug]",
+  "page.tsx",
+);
+const categoryRouteSource = existsSync(categoryRoute) ? readFileSync(categoryRoute, "utf8") : "";
+if (!METADATA_EXPORT.test(categoryRouteSource)) {
+  err(
+    "E10",
+    "app/(mainlayout)/categories/[slug]/page.tsx exports no `generateMetadata` or `metadata`: the D14 fix is missing or regressed",
+  );
 }
 
 /* ------------------------------------------------------------------ *
