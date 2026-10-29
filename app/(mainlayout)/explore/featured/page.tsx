@@ -15,5 +15,7 @@ import { FeaturedQuizzesPage } from "@/components/explore/featured-quizzes-page"
 export const dynamic = "force-dynamic";
 
 export default function FeaturedPage() {
-  return <FeaturedQuizzesPage />;
+  // One instant for the whole page: server render and hydration project the same
+  // campaigns at the same clock (see `FeaturedQuizzesPage`'s `now`).
+  return <FeaturedQuizzesPage now={new Date().toISOString()} />;
 }
