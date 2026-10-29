@@ -15,7 +15,6 @@
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { createRequire } from "node:module";
 
 import { zArticleCollection, zKbArticle, zNewsArticle, zTip } from "../content/article";
 import {
@@ -70,6 +69,7 @@ import { quizComments } from "../data/quiz-comments";
 import { quizResults } from "../data/quiz-results";
 import { quizReviews } from "../data/quiz-reviews";
 import { promotionFindings } from "./data-check-promotions";
+import { copiedFixtureText, moduleRecordArrays } from "./island-refs";
 import {
   danglingEntries,
   registryProblems,
@@ -97,36 +97,6 @@ const err = (code: string, message: string) =>
   diagnostics.push({ code, severity: "error", message });
 const warn = (code: string, message: string) =>
   diagnostics.push({ code, severity: "warn", message });
-
-const nodeRequire = createRequire(__filename);
-
-/**
- * The generated fixtures (P3 bulk variation) are gitignored and present only after
- * `pnpm gen`. When the source file exists, its compiled CommonJS module — produced by the
- * same `tsc -p tsconfig.datacheck.json` that compiled this validator — is required and its
- * exported array returned; when it is absent the generated set is simply empty. A present
- * but unloadable module is an E20 error, never a silent skip.
- */
-function loadGenerated<T>(label: string, exportName: string): readonly T[] {
-  const source = join(process.cwd(), "data", "generated", `${label}.ts`);
-  if (!existsSync(source)) return [];
-  let moduleValue: unknown;
-  try {
-    moduleValue = nodeRequire(join(__dirname, "..", "data", "generated", label));
-  } catch (cause) {
-    err(
-      "E20",
-      `data/generated/${label}.ts exists but its compiled module failed to load: ${String(cause)}`,
-    );
-    return [];
-  }
-  const value = (moduleValue as Record<string, unknown>)[exportName];
-  if (!Array.isArray(value)) {
-    err("E20", `data/generated/${label}.ts must export \`${exportName}\` as an array`);
-    return [];
-  }
-  return value as T[];
-}
 
 /* ------------------------------------------------------------------ *
  * E0 — per-record schema
@@ -894,6 +864,68 @@ for (const review of activityReviews) {
 }
 
 /* ------------------------------------------------------------------ *
+ * E21 — no component authors a search result or a chat message
+ *
+ * The P2 inventory found 68 literals in WU-3 alone: `components/search/search-results.tsx`
+ * carried 8 quizzes, 6 categories, 4 creators and 4 pages, and `components/chat/chat-window.tsx`
+ * carried 5 contacts and 6 messages. Not one of those rows existed in `data/`, so no fixture
+ * edit could reach them — the same failure the media registry (E17) closed for files.
+ *
+ * Two rules, because the defect has two shapes:
+ *
+ *   islands   a module-scope array of ≥ 2 record objects in `components/search/**` or
+ *             `components/chat/**`. Those are the two surfaces whose collections are derived
+ *             (`buildSearchIndex`, `data/chat-data.ts`), so an island there is a second
+ *             catalog by construction. The other feature directories still hold islands that
+ *             their own work unit removes; this check widens to all of `components/**` when
+ *             the last of them lands (E21 in docs/P2-INVENTORY.md is the whole-tree rule).
+ *   copies    a quiz title from the search index, or a chat message body from
+ *             `data/chat-data.ts`, written into one of the components that render them — as a
+ *             literal, a JSX text node or a comment. No baseline on these files: the count is
+ *             0 now, so every hit is a new copy.
+ *
+ * The scan itself is repo-wide and the remainder is *counted*, not ignored: 17 quiz titles are
+ * still written into `/profile`, `/quiz/*`, `/my-quizzes/*`, `/tournaments` and `/daily-challenge`
+ * components that their own units own. The summary line prints that number every run, so it
+ * ratchets down instead of disappearing.
+ * ------------------------------------------------------------------ */
+
+const E21_ISLAND_SURFACES = ["components/search/", "components/chat/"];
+
+/** The components that render search results or chat rows — the files E21 binds today. */
+const E21_COPY_SURFACES = [...E21_ISLAND_SURFACES, "components/layout/header.tsx"];
+
+const searchChatIslands = moduleRecordArrays(uiSources).filter((island) =>
+  E21_ISLAND_SURFACES.some((surface) => island.file.startsWith(surface)),
+);
+for (const island of searchChatIslands) {
+  err(
+    "E21",
+    `${island.file}:${island.line} declares the module-level array "${island.name}" (${island.records} records) — a collection belongs in data/ (or is derived in content/); import it and render it, never paste it`,
+  );
+}
+
+const fixtureText = [
+  ...searchIndex.quizzes.map((row) => row.title),
+  ...conversations.flatMap((conversation) =>
+    conversation.messages.map((message) => message.body ?? ""),
+  ),
+];
+const fixtureCopies = copiedFixtureText(uiSources, fixtureText);
+const ownedCopies = fixtureCopies.filter((copy) =>
+  E21_COPY_SURFACES.some((surface) => copy.file === surface || copy.file.startsWith(surface)),
+);
+for (const copy of ownedCopies) {
+  err(
+    "E21",
+    `${copy.file}:${copy.line} writes "${copy.value}", which is a fixture row — render it from data/searchdata.ts (buildSearchIndex) or data/chat-data.ts instead of copying it`,
+  );
+}
+
+/** Debt on surfaces another work unit owns: measured and printed, never silently allowed. */
+const e21DebtCopies = fixtureCopies.length - ownedCopies.length;
+
+/* ------------------------------------------------------------------ *
  * E10 — social instants sit at or before the fixture clock
  *
  * The UI renders relative labels against `DEMO_NOW_ISO` (content/core.ts), so an instant
@@ -986,5 +1018,11 @@ console.log(`PASS  ${counts}`);
 console.log(`      ${coverage}`);
 console.log(
   `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${missingAssets.length} known-missing assets)`,
+);
+console.log(
+  `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
+);
+console.log(
+  `      ${e21DebtCopies} fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)`,
 );
 console.log(`      0 social instants after the fixture clock ${DEMO_NOW_ISO}`);

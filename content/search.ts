@@ -260,3 +260,85 @@ export function validateSearchIndex(
 
   return problems;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Query — a projection over the index, not a second catalog
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * What the user typed, plus the one filter the index can actually answer.
+ *
+ * There is no `sort: "plays" | "rating"` here on purpose. The search index carries no play
+ * count and no rating — those two numbers existed only in the mock that this module replaced,
+ * so a sort by them could only sort fiction. Order is the index's own deterministic order
+ * (quizzes by title, categories by count then name, creators by username, pages by path), which
+ * is what "relevance" means until a real popularity signal exists.
+ */
+export interface SearchQuery {
+  readonly text: string;
+  /** `"all"` (or omitted) keeps every difficulty; the filter is only ever applied to quizzes. */
+  readonly difficulty?: Difficulty | "all";
+}
+
+/** A quiz row as the UI renders it: the stored row plus the names its `categoryIds` resolve to. */
+export interface SearchQuizHit extends SearchQuizRow {
+  readonly categoryNames: readonly string[];
+}
+
+export interface SearchResults {
+  readonly quizzes: SearchQuizHit[];
+  readonly categories: SearchCategoryRow[];
+  readonly creators: SearchCreatorRow[];
+  readonly pages: SearchPageRow[];
+  /** Sum of the four sections — the number the page prints as "N results". */
+  readonly total: number;
+}
+
+const hits = (values: readonly string[], needle: string): boolean =>
+  values.some((value) => value.toLowerCase().includes(needle));
+
+/**
+ * Filter the index by free text. Every section matches on the fields it *has*: a quiz on its
+ * title and the names of its categories (never its id), a category on name and slug, a creator
+ * on name and username, a page on title and path. A blank query returns nothing rather than
+ * everything — an empty palette is not a result list.
+ */
+export function querySearchIndex(index: SearchIndex, query: SearchQuery): SearchResults {
+  const needle = query.text.trim().toLowerCase();
+  if (needle === "") return { quizzes: [], categories: [], creators: [], pages: [], total: 0 };
+
+  const categoryById = new Map(index.categories.map((row) => [row.id, row]));
+  const nameOf = (id: string): string => categoryById.get(id)?.name ?? id;
+
+  const quizzes: SearchQuizHit[] = index.quizzes
+    .filter(
+      (row) =>
+        query.difficulty === undefined ||
+        query.difficulty === "all" ||
+        row.difficulty === query.difficulty,
+    )
+    .map((row) => ({ ...row, categoryNames: row.categoryIds.map(nameOf) }))
+    .filter((row) => hits([row.title, ...row.categoryNames], needle));
+
+  const categories = index.categories.filter((row) => hits([row.name, row.slug], needle));
+  const creators = index.creators.filter((row) => hits([row.name, row.username], needle));
+  const pages = index.pages.filter((row) => hits([row.title, row.path], needle));
+
+  return {
+    quizzes,
+    categories,
+    creators,
+    pages,
+    total: quizzes.length + categories.length + creators.length + pages.length,
+  };
+}
+
+/**
+ * The suggestion chips under an empty search box, derived: the most-populated quiz categories,
+ * in the index's own `count`-then-name order. The old list (`Music`, `Food`, `Movies`) contained
+ * three words no record in this app answers to, so clicking them was a guaranteed zero-result
+ * search. A category with 8 quizzes is a suggestion; a word nobody wrote is a dead end.
+ */
+export function popularSearches(index: SearchIndex, limit = 8): string[] {
+  return index.categories.slice(0, limit).map((row) => row.name);
+}
