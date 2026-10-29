@@ -2,10 +2,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { formatPercentValue } from "@/content/metrics";
+import type { PageCopySection } from "@/content/pages";
 import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { Calculator, Calendar, DollarSign, Users } from "lucide-react";
-import { JSX, useEffect, useReducer } from "react";
+import { type JSX, useEffect, useReducer } from "react";
 
 // Types
 interface CalculatorState {
@@ -55,7 +57,7 @@ function calculatorReducer(state: CalculatorState, action: CalculatorAction): Ca
       return { ...state, conversionRate: action.payload };
     case actionTypes.SET_AVERAGE_VALUE:
       return { ...state, averageValue: action.payload };
-    case actionTypes.UPDATE_EARNINGS:
+    case actionTypes.UPDATE_EARNINGS: {
       const conversions = Math.round(state.referrals * (state.conversionRate / 100));
       const monthly = conversions * state.averageValue * commissionRate; // share the programme pays
       return {
@@ -63,12 +65,13 @@ function calculatorReducer(state: CalculatorState, action: CalculatorAction): Ca
         monthlyEarnings: monthly,
         yearlyEarnings: monthly * 12,
       };
+    }
     default:
       return state;
   }
 }
 
-export function ProfitCalculator(): JSX.Element {
+export function ProfitCalculator({ copy }: { copy: PageCopySection }): JSX.Element {
   const [state, dispatch] = useReducer(calculatorReducer, initialState);
 
   // Update earnings whenever input values change
@@ -92,10 +95,9 @@ export function ProfitCalculator(): JSX.Element {
     <section className="py-10 xl:py-20 sm:px-4 xl:px-8 bg-slate-50 dark:bg-slate-900">
       <div className="container px-4 mx-auto">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Calculate Your Potential Earnings</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">{copy.heading}</h2>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Use our calculator to estimate how much you could earn as a QuizHub affiliate. Adjust
-            the sliders to match your audience and see your potential earnings.
+            {copy.body}
           </p>
         </div>
 
@@ -112,7 +114,7 @@ export function ProfitCalculator(): JSX.Element {
               <div className="flex justify-between items-center">
                 <label className="font-medium flex items-center gap-2">
                   <Users className="h-4 w-4 text-purple-500" />
-                  Monthly Referrals
+                  {itemLabel(copy, "monthly-referrals")}
                 </label>
                 <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">
                   {state.referrals}
@@ -127,7 +129,7 @@ export function ProfitCalculator(): JSX.Element {
                 className="py-2 "
               />
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                The number of people you refer to QuizHub each month
+                {itemLabel(copy, "monthly-referrals-hint")}
               </p>
             </div>
 
@@ -135,7 +137,7 @@ export function ProfitCalculator(): JSX.Element {
               <div className="flex justify-between items-center">
                 <label className="font-medium flex items-center gap-2">
                   <Users className="h-4 w-4 text-indigo-500" />
-                  Conversion Rate
+                  {itemLabel(copy, "conversion-rate")}
                 </label>
                 <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">
                   {state.conversionRate}%
@@ -150,7 +152,7 @@ export function ProfitCalculator(): JSX.Element {
                 className="py-2"
               />
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                The percentage of referrals who become paying customers
+                {itemLabel(copy, "conversion-rate-hint")}
               </p>
             </div>
 
@@ -158,7 +160,7 @@ export function ProfitCalculator(): JSX.Element {
               <div className="flex justify-between items-center">
                 <label className="font-medium flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-blue-500" />
-                  Average Purchase Value
+                  {itemLabel(copy, "average-purchase-value")}
                 </label>
                 <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">
                   ${state.averageValue}
@@ -173,7 +175,7 @@ export function ProfitCalculator(): JSX.Element {
                 className="py-2"
               />
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                The average amount your referrals spend on QuizHub{" "}
+                {itemLabel(copy, "average-purchase-value-hint")}
               </p>
             </div>
           </motion.div>
@@ -188,11 +190,13 @@ export function ProfitCalculator(): JSX.Element {
             <Card className="overflow-hidden border-0 shadow-xl bg-white dark:bg-slate-900">
               <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-xl">Your Earnings Potential</CardTitle>
+                  <CardTitle className="text-xl">{itemLabel(copy, "earnings-potential")}</CardTitle>
                   <Calculator className="h-5 w-5 opacity-75" />
                 </div>
                 <CardDescription className="text-purple-100">
-                  Based on your audience and our {formatPercentValue(commissionPct)} commission rate
+                  {fillLabel(itemLabel(copy, "commission-note"), {
+                    percent: formatPercentValue(commissionPct),
+                  })}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-3 xl:p-6">
@@ -201,14 +205,14 @@ export function ProfitCalculator(): JSX.Element {
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
                       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-1">
                         <Users className="h-4 w-4" />
-                        <span>Monthly Referrals</span>
+                        <span>{itemLabel(copy, "summary-monthly-referrals")}</span>
                       </div>
                       <div className="text-2xl font-bold">{state.referrals}</div>
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
                       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-1">
                         <Users className="h-4 w-4" />
-                        <span>Conversions</span>
+                        <span>{itemLabel(copy, "summary-conversions")}</span>
                       </div>
                       <div className="text-2xl font-bold">
                         {Math.round(state.referrals * (state.conversionRate / 100))}
@@ -223,7 +227,7 @@ export function ProfitCalculator(): JSX.Element {
                           <div className="p-2 bg-purple-100 dark:bg-purple-800/30 rounded-full">
                             <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                           </div>
-                          <span className="font-medium">Monthly Earnings</span>
+                          <span className="font-medium">{itemLabel(copy, "monthly-earnings")}</span>
                         </div>
                         <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                           ${state.monthlyEarnings.toFixed(2)}
@@ -237,7 +241,7 @@ export function ProfitCalculator(): JSX.Element {
                           <div className="p-2 bg-indigo-100 dark:bg-indigo-800/30 rounded-full">
                             <Calendar className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                           </div>
-                          <span className="font-medium">Yearly Earnings</span>
+                          <span className="font-medium">{itemLabel(copy, "yearly-earnings")}</span>
                         </div>
                         <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                           ${state.yearlyEarnings.toFixed(2)}
@@ -247,8 +251,7 @@ export function ProfitCalculator(): JSX.Element {
                   </div>
 
                   <div className="text-sm text-slate-500 dark:text-slate-400 italic">
-                    * These calculations are estimates and actual earnings may vary based on
-                    multiple factors.
+                    {itemLabel(copy, "disclaimer")}
                   </div>
                 </div>
               </CardContent>

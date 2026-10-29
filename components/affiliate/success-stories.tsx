@@ -1,11 +1,13 @@
 "use client";
 
+import type { PageCopySection } from "@/content/pages";
+import { media } from "@/data/media";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { media } from "@/data/media";
 
-export function SuccessStories() {
+export function SuccessStories({ copy }: { copy: PageCopySection }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const stories = [
@@ -50,11 +52,8 @@ export function SuccessStories() {
     <section className="py-10 xl:py-16 bg-white dark:bg-slate-900">
       <div className="container px-4 mx-auto">
         <div className="max-w-3xl mx-auto text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Success Stories</h2>
-          <p className="text-slate-600 dark:text-slate-400">
-            Hear from our top-performing affiliates who are earning consistent income by promoting
-            QuizHub .
-          </p>
+          <h2 className="text-3xl font-bold mb-4">{copy.heading}</h2>
+          <p className="text-slate-600 dark:text-slate-400">{copy.body}</p>
         </div>
 
         <div className="max-w-4xl mx-auto">
@@ -90,7 +89,9 @@ export function SuccessStories() {
                   {stories[currentIndex].role}
                 </div>
                 <div className="inline-block bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-sm font-medium px-3 py-1 rounded-full">
-                  Earning {stories[currentIndex].earnings}
+                  {fillLabel(itemLabel(copy, "earning-badge"), {
+                    earnings: stories[currentIndex].earnings,
+                  })}
                 </div>
               </div>
             </div>

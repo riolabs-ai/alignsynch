@@ -7,10 +7,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
+import type { PageCopySection } from "@/content/pages";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
 import { useState } from "react";
 
-export function PricingFaq() {
+export function PricingFaq({ copy }: { copy: PageCopySection }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const faqCategories = [
@@ -124,9 +126,9 @@ export function PricingFaq() {
     <section className="py-20 bg-slate-50 dark:bg-slate-900/50">
       <div className="container px-4 mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{copy.heading}</h2>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Find answers to common questions about our platform, pricing, and features
+            {copy.body}
           </p>
 
           <div className="mt-8 max-w-md mx-auto">
@@ -134,7 +136,7 @@ export function PricingFaq() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
                 type="search"
-                placeholder="Search questions..."
+                placeholder={itemLabel(copy, "search-placeholder")}
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -169,15 +171,15 @@ export function PricingFaq() {
           {filteredFaqs.length === 0 && (
             <div className="text-center py-8">
               <p className="text-slate-500 dark:text-slate-400">
-                No results found for &quot;{searchQuery}&quot;
+                {fillLabel(itemLabel(copy, "no-results"), { query: searchQuery })}
               </p>
               <p className="mt-2">
-                Try a different search term or{" "}
+                {itemLabel(copy, "no-results-hint")}{" "}
                 <button
                   onClick={() => setSearchQuery("")}
                   className="text-purple-600 hover:text-purple-700"
                 >
-                  clear your search
+                  {itemLabel(copy, "clear-search")}
                 </button>
               </p>
             </div>
@@ -186,12 +188,12 @@ export function PricingFaq() {
 
         <div className="mt-12 text-center">
           <p className="text-slate-600 dark:text-slate-400">
-            Still have questions? Contact our support team at{" "}
+            {itemLabel(copy, "contact-prompt")}{" "}
             <a
               href="mailto:support@quizhub.com"
               className="text-purple-600 hover:text-purple-700 font-medium"
             >
-              support@quizhub.com
+              {itemLabel(copy, "contact-email")}
             </a>
           </p>
         </div>

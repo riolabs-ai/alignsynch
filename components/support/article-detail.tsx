@@ -7,7 +7,9 @@ import { Separator } from "@/components/ui/separator";
 import { articlesData } from "@/data/knowledge-base-data";
 import type { KbArticle } from "@/content/article";
 import { categoryName } from "@/content/categories";
+import type { PageCopy } from "@/content/pages";
 import { ContentBlocks } from "@/components/content/content-blocks";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
   ArrowRight,
   Bookmark,
@@ -24,13 +26,18 @@ import { useEffect, useState } from "react";
 
 interface ArticleDetailProps {
   articleId: string;
+  copy: PageCopy;
 }
 
-export function ArticleDetail({ articleId }: ArticleDetailProps) {
+export function ArticleDetail({ articleId, copy }: ArticleDetailProps) {
   const [article, setArticle] = useState<KbArticle>();
   const [loading, setLoading] = useState(true);
   const [helpful, setHelpful] = useState<boolean | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<KbArticle[]>([]);
+
+  // The article's own words are the record; these are the bands the reader draws around it.
+  const detail = sectionOf(copy, "article-detail");
+  const relatedCopy = sectionOf(copy, "related-articles");
 
   useEffect(() => {
     // Simulate fetching article data
@@ -83,10 +90,10 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
     return (
       <div className="container max-w-4xl mx-auto py-4">
         <Card className="p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">Article Not Found</h2>
-          <p className="mb-6">The article you're looking for doesn't exist or has been moved.</p>
+          <h2 className="text-2xl font-bold mb-4">{copy.heading}</h2>
+          <p className="mb-6">{copy.subtitle}</p>
           <Button asChild>
-            <Link href="/support">Return to Support Center</Link>
+            <Link href="/support">{itemLabel(detail, "back-to-support")}</Link>
           </Button>
         </Card>
       </div>
@@ -101,14 +108,14 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
           href="/support"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          Support Center
+          {itemLabel(detail, "breadcrumb-support")}
         </Link>
         <ChevronLeft className="h-4 w-4 mx-2 text-muted-foreground rotate-180" />
         <Link
           href="/support"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          Knowledge Base
+          {itemLabel(detail, "breadcrumb-knowledge-base")}
         </Link>
         <ChevronLeft className="h-4 w-4 mx-2 text-muted-foreground rotate-180" />
         <span className="font-medium">{article.title}</span>
@@ -123,7 +130,9 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
             </Badge>
             <div className="flex items-center text-muted-foreground text-sm">
               <Clock className="h-3 w-3 mr-1" />
-              <span>{article.readMinutes} min read</span>
+              <span>
+                {article.readMinutes} {itemLabel(detail, "min-read")}
+              </span>
             </div>
           </div>
 
@@ -142,7 +151,7 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
 
         {/* Article feedback */}
         <div className="mt-8">
-          <h3 className="text-lg font-medium mb-4">Was this article helpful?</h3>
+          <h3 className="text-lg font-medium mb-4">{detail.heading}</h3>
           <div className="flex space-x-4">
             <Button
               variant={helpful === true ? "default" : "outline"}
@@ -151,7 +160,7 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
               className="flex items-center"
             >
               <ThumbsUp className="h-4 w-4 mr-2" />
-              Yes, it helped
+              {itemLabel(detail, "helpful-yes")}
             </Button>
             <Button
               variant={helpful === false ? "default" : "outline"}
@@ -160,19 +169,19 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
               className="flex items-center"
             >
               <ThumbsDown className="h-4 w-4 mr-2" />
-              No, I need more help
+              {itemLabel(detail, "helpful-no")}
             </Button>
           </div>
 
           {helpful === false && (
             <div className="mt-4 p-4 bg-muted rounded-md">
-              <p className="mb-2">We're sorry this article didn't help. Would you like to:</p>
+              <p className="mb-2">{itemLabel(detail, "helpful-follow-up")}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <Button asChild variant="outline" size="sm">
-                  <Link href="/support">Browse other articles</Link>
+                  <Link href="/support">{itemLabel(detail, "browse-articles")}</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <Link href="/support?tab=contact">Contact support</Link>
+                  <Link href="/support?tab=contact">{itemLabel(detail, "contact-support")}</Link>
                 </Button>
               </div>
             </div>
@@ -183,15 +192,15 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
         <div className="flex flex-wrap gap-2 mt-8">
           <Button variant="outline" size="sm" className="flex items-center">
             <Share2 className="h-4 w-4 mr-2" />
-            Share
+            {itemLabel(detail, "share")}
           </Button>
           <Button variant="outline" size="sm" className="flex items-center">
             <Bookmark className="h-4 w-4 mr-2" />
-            Save
+            {itemLabel(detail, "save")}
           </Button>
           <Button variant="outline" size="sm" className="flex items-center">
             <Printer className="h-4 w-4 mr-2" />
-            Print
+            {itemLabel(detail, "print")}
           </Button>
         </div>
       </Card>
@@ -199,7 +208,7 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
       {/* Related articles */}
       {relatedArticles.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-xl font-bold mb-4">Related Articles</h2>
+          <h2 className="text-xl font-bold mb-4">{relatedCopy.heading}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {relatedArticles.map((relatedArticle) => (
               <Card
@@ -218,7 +227,7 @@ export function ArticleDetail({ articleId }: ArticleDetailProps) {
                     {relatedArticle.summary}
                   </p>
                   <div className="flex items-center text-primary text-sm">
-                    <span>Read article</span>
+                    <span>{itemLabel(relatedCopy, "read-article")}</span>
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </div>
                 </Link>

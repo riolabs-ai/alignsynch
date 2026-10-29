@@ -1,5 +1,7 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { PageCopySection } from "@/content/pages";
+import { itemLabel, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import {
   Award,
@@ -13,69 +15,56 @@ import {
   Zap,
 } from "lucide-react";
 
-export function ProgramFeatures() {
-  const features = [
-    {
-      icon: <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "High Commission Rates",
-      description:
-        "Earn up to 30% commission on all referred user subscriptions for the first year.",
-    },
-    {
-      icon: <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "Real-time Analytics",
-      description: "Track your performance with detailed analytics and reporting tools.",
-    },
-    {
-      icon: <Link className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "Custom Referral Links",
-      description: "Create and manage multiple custom referral links for different campaigns.",
-    },
-    {
-      icon: <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "90-Day Cookie",
-      description: "Our 90-day cookie duration ensures you get credit for delayed conversions.",
-    },
-    {
-      icon: <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "Secure Payments",
-      description: "Get paid reliably via PayPal, bank transfer, or cryptocurrency.",
-    },
-    {
-      icon: <Headphones className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "Dedicated Support",
-      description: "Access to a dedicated affiliate manager to help optimize your strategy.",
-    },
-    {
-      icon: <Award className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "Performance Bonuses",
-      description: "Earn additional bonuses when you exceed your monthly targets.",
-    },
-    {
-      icon: <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "Instant Approval",
-      description: "Get started immediately with our instant approval process.",
-    },
-    {
-      icon: <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
-      title: "Global Program",
-      description: "Our affiliate program is open to partners worldwide with no restrictions.",
-    },
-  ];
+/** Which feature card renders where; the words are `itemLabel`/`itemValue` of the same id. */
+const FEATURES = [
+  {
+    id: "high-commission-rates",
+    icon: <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+  {
+    id: "real-time-analytics",
+    icon: <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+  {
+    id: "custom-referral-links",
+    icon: <Link className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+  { id: "90-day-cookie", icon: <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" /> },
+  {
+    id: "secure-payments",
+    icon: <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+  {
+    id: "dedicated-support",
+    icon: <Headphones className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+  {
+    id: "performance-bonuses",
+    icon: <Award className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+  {
+    id: "instant-approval",
+    icon: <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+  {
+    id: "global-program",
+    icon: <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+  },
+] as const;
 
+export function ProgramFeatures({ copy }: { copy: PageCopySection }) {
   return (
     <section className="py-10 xl:py-20 sm:px-4 xl:px-8 bg-white dark:bg-slate-900">
       <div className="container px-4 mx-auto">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Program Features</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">{copy.heading}</h2>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Our affiliate program is designed to maximize your earnings while providing all the
-            tools and support you need to succeed.
+            {copy.body}
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
+          {FEATURES.map((feature, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -89,12 +78,12 @@ export function ProgramFeatures() {
                     <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
                       {feature.icon}
                     </div>
-                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                    <CardTitle className="text-lg">{itemLabel(copy, feature.id)}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-slate-600 dark:text-slate-400">
-                    {feature.description}
+                    {itemValue(copy, feature.id)}
                   </CardDescription>
                 </CardContent>
               </Card>
