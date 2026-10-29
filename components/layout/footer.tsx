@@ -104,7 +104,7 @@ export function Footer() {
                 <ul className="space-y-3">
                   <li>
                     <Link
-                      href="/dashboard"
+                      href="/dashboard/user"
                       className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>

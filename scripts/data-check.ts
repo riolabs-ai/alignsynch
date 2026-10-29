@@ -60,6 +60,13 @@ import { quizzes as quizRecords } from "../data/quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
 import { promotionFindings } from "./data-check-promotions";
+import {
+  assetReferences,
+  findDeadLinks,
+  findMissingAssets,
+  navigationReferences,
+  type SourceFile,
+} from "./ui-refs";
 
 type Severity = "error" | "warn";
 interface Diagnostic {
@@ -534,6 +541,90 @@ if (!METADATA_EXPORT.test(categoryRouteSource)) {
 }
 
 /* ------------------------------------------------------------------ *
+ * E10 — the hardcoded references in the shell resolve
+ *
+ * E5/E6/E8 prove the links the *model* emits. The links a user clicks in the
+ * header, sidebar and footer are written inline in components, so nothing saw
+ * `/dashboard`, `/signup`, `/earnings` or `/analytics` 404 while every gate
+ * stayed green (issue #20). Same for the avatar that pointed at a
+ * `public/testimonials/jessica.png` that never existed.
+ *
+ * Scan every literal `href`, `router.push`/`replace` and `redirect`, resolve it
+ * against the route manifest, and scan every `public/` asset literal against the
+ * filesystem. Dynamic values (`href={item.href}`, template literals) are skipped:
+ * the model already proves those.
+ * ------------------------------------------------------------------ */
+
+const UI_ROOTS = ["components", "app"];
+
+/**
+ * Asset references that were already 404ing when this check landed. Frozen, not
+ * blessed: the list may only shrink. Carded as a follow-up to issue #20; the
+ * fix is a path or a file, never a new entry here.
+ */
+const KNOWN_MISSING_ASSETS = new Set([
+  "/avatars/chat-avatar-1.png",
+  "/avatars/chat-avatar-2.png",
+  "/avatars/chat-avatar-3.png",
+  "/avatars/chat-avatar-4.png",
+  "/avatars/chat-avatar-5.png",
+  "/easy-quiz-1.png",
+  "/easy-quiz-2.png",
+  "/easy-quiz-3.png",
+  "/quiz/q16.png",
+  "/science-quiz-lab.png",
+  "/wizard.png",
+]);
+
+function walkSources(root: string, dir = join(process.cwd(), root), files: SourceFile[] = []) {
+  for (const entry of readdirSync(dir)) {
+    if (entry === "node_modules" || entry === ".next" || entry === ".datacheck") continue;
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      walkSources(root, full, files);
+      continue;
+    }
+    if (!entry.endsWith(".tsx") && !entry.endsWith(".ts")) continue;
+    files.push({ path: full.slice(process.cwd().length + 1), source: readFileSync(full, "utf8") });
+  }
+  return files;
+}
+
+const uiSources = UI_ROOTS.flatMap((root) => {
+  const dir = join(process.cwd(), root);
+  if (!existsSync(dir)) {
+    err("E10", `${root}/ is missing: the hardcoded-reference scan has nothing to read`);
+    return [];
+  }
+  return walkSources(root);
+});
+
+const deadLinkRefs = findDeadLinks(
+  uiSources,
+  (route) => matchRoute(routeManifest, route) !== undefined,
+);
+for (const dead of deadLinkRefs) {
+  err(
+    "E10",
+    `${dead.file}:${dead.line} links "${dead.value}", which no route in content/routes.ts resolves — point it at an existing page or add the route (app/ + content/routes.ts)`,
+  );
+}
+if (uiSources.length === 0) {
+  err("E10", "the hardcoded-reference scan read 0 files: components/ and app/ were not walked");
+}
+
+const missingAssets = findMissingAssets(uiSources, (asset) =>
+  existsSync(join(process.cwd(), "public", asset)),
+);
+for (const missing of missingAssets) {
+  if (KNOWN_MISSING_ASSETS.has(missing.value.split(/[?#]/)[0])) continue;
+  err(
+    "E10",
+    `${missing.file}:${missing.line} references "${missing.value}", which is not in public/ — add the file or point at an existing one (a 404 image is invisible to every other gate)`,
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * report
  * ------------------------------------------------------------------ */
 
@@ -601,5 +692,11 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
+const navRefs = navigationReferences(uiSources);
+const assetRefs = assetReferences(uiSources);
+
 console.log(`PASS  ${counts}`);
 console.log(`      ${coverage}`);
+console.log(
+  `      ${navRefs.length} hardcoded links + ${assetRefs.length} asset refs resolve in components/ and app/ (${KNOWN_MISSING_ASSETS.size} known-missing assets baselined)`,
+);

@@ -47,10 +47,10 @@ export function AppSidebar() {
       <div className="flex-1 overflow-auto py-4">
         <nav className="grid gap-1 px-2">
           <NavItem
-            href="/dashboard"
+            href="/dashboard/user"
             icon={<LayoutDashboard className="h-5 w-5" />}
             label="Dashboard"
-            active={isActive("/dashboard")}
+            active={isActive("/dashboard/user")}
           />
           <NavItem
             href="/my-quizzes"
@@ -117,17 +117,22 @@ export function AppSidebar() {
             label="Pricing Plan"
             active={isActive("/pricing")}
           />
+          {/*
+            These two are dashboard tabs behind `?tab=`; the pathname (all `isActive`
+            sees) is `/dashboard/user` for both, so marking them active would light up
+            three entries at once. Dashboard owns the highlight.
+          */}
           <NavItem
-            href="/earnings"
+            href="/dashboard/user?tab=wallet"
             icon={<DollarSign className="h-5 w-5" />}
             label="Earnings & Wallet"
-            active={isActive("/earnings")}
+            active={false}
           />
           <NavItem
-            href="/analytics"
+            href="/dashboard/user?tab=my-quizzes"
             icon={<BarChart3 className="h-5 w-5" />}
             label="Results & Analytics"
-            active={isActive("/analytics")}
+            active={false}
           />
           <NavItem
             href="/settings"
