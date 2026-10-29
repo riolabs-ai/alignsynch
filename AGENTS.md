@@ -34,10 +34,12 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
 - `content/` — schemas (`quiz`, `article`, `blocks`, `category`, `categories`, `social`, `search`,
   `routes`) and the derivations over them. **Never import React or Next here**: `data:check`
   compiles it with `tsconfig.datacheck.json` into `.datacheck/` and runs it under plain node.
-- `data/` — the 9 fixture modules (quizzes, news, tips, kb, social, notifications, search, current
-  quiz, categories). Card shapes are projections (`selectQuizCard`), never authored arrays.
+- `data/` — the fixture modules (quizzes, promotions, news, tips, kb, social, notifications, search,
+  current quiz, categories). Card shapes are projections (`selectQuizCard`), never authored arrays;
+  a per-slot campaign is an engagement-only overlay (`data/promotions.ts`), never a second record.
 - `scripts/data-check.ts` — the validator: per-record schema pass, then collection invariants
-  E0–E9 plus W1–W4 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite.
+  E0–E16 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
+  `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E16/W6.
 - `app/(mainlayout)/**` — every product page behind the header/sidebar shell; `app/(auth)/**` —
   login/register, no shell. Dynamic segments: `quiz/[id]/{play,discussion}`,
   `my-quizzes/[id]/{statistics}`, `categories/[slug]`, `news/[slug]`, `creator-tips/[slug]`,
