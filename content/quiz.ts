@@ -193,6 +193,101 @@ export const zQuiz = zContentBase
   });
 
 /* ------------------------------------------------------------------ *
+ * Promotions (engagement overlay, keyed by slot — B-01)
+ * ------------------------------------------------------------------ */
+
+/**
+ * A campaign snapshot for ONE merchandising slot (`explore-page/popular[1]`).
+ *
+ * It is the third record next to content (`Quiz`) and catalog stats
+ * (`QuizStats`) and it is deliberately **engagement-only**: `strict()` turns a
+ * content key (`title`, `slug`, `summary`, `categoryIds`, `questions`, `cover`,
+ * `author`) into a validation error, so a slot can never fork identity — that
+ * is the shadow-record failure E10/W5 exist to prevent. There is no
+ * `labelOverride` either: a label that differs from the record's title is a
+ * presentation problem, not a second title (see B-01 §A4).
+ *
+ * `startsAt` is required and `endsAt` optional: the window is half-open,
+ * `startsAt <= now < endsAt`, and an absent `endsAt` is bounded by the catalog
+ * window rather than meaning "forever". Outside the window the slot renders the
+ * catalog projection — never an error state, never a half-applied merge.
+ */
+export const zQuizPromotionObject = z
+  .object({
+    id: z.string().regex(/^promo-[a-z0-9-]+$/, "promotion ids are `promo-<kebab-case>`"),
+    /** Must resolve to a `Quiz` (E11). It is the join key, never a copy of content. */
+    quizId: zId,
+    slot: z.string().min(1),
+    startsAt: zIsoDateTime,
+    endsAt: zIsoDateTime.optional(),
+    /* engagement only — content keys are unrepresentable */
+    plays: z.number().int().nonnegative().optional(),
+    capacity: z.number().int().positive().optional(),
+    rating: z.number().min(0).max(5).optional(),
+    /** A3: > 0, because "no prize" is the absence of the key. Boundedness is E12. */
+    rewardCents: z.number().int().positive().optional(),
+    badge: zQuizBadge.optional(),
+    /** `null` = this slot shows no countdown, even while the catalog record does. */
+    limitedTimeEndsAt: zIsoDateTime.nullable().optional(),
+  })
+  .strict();
+
+export const zQuizPromotion = zQuizPromotionObject.superRefine((promotion, ctx) => {
+  if (
+    promotion.endsAt !== undefined &&
+    new Date(promotion.endsAt).getTime() <= new Date(promotion.startsAt).getTime()
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endsAt"],
+      message: `endsAt (${promotion.endsAt}) must be after startsAt (${promotion.startsAt}) — the window is [startsAt, endsAt)`,
+    });
+  }
+  // The same seat rule as `zQuizStats`, applied to the override itself; the
+  // cross-record case (overlay against catalog) is re-checked after the merge.
+  if (
+    promotion.capacity !== undefined &&
+    promotion.plays !== undefined &&
+    promotion.plays > promotion.capacity
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["capacity"],
+      message: `capacity (${promotion.capacity}) < plays (${promotion.plays}) — spotsLeft would go negative`,
+    });
+  }
+});
+
+/**
+ * The collection rules a single overlay cannot see: ids are unique and
+ * `(quizId, slot)` is unique, i.e. at most one live campaign per slot. A second
+ * campaign on a slot is an edit of the record, not a second record.
+ */
+export const zQuizPromotionCollection = z.array(zQuizPromotion).superRefine((promotions, ctx) => {
+  const ids = new Set<string>();
+  const slots = new Set<string>();
+  promotions.forEach((promotion, index) => {
+    if (ids.has(promotion.id)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index, "id"],
+        message: `duplicate promotion id "${promotion.id}"`,
+      });
+    }
+    ids.add(promotion.id);
+    const key = `${promotion.quizId}::${promotion.slot}`;
+    if (slots.has(key)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index, "slot"],
+        message: `(quizId, slot) "${key}" is carried by two promotions — a second campaign on a slot is an edit`,
+      });
+    }
+    slots.add(key);
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * Derived views — projections, never authored (D2)
  * ------------------------------------------------------------------ */
 
@@ -302,6 +397,7 @@ export type Question = z.infer<typeof zQuestion>;
 export type QuizSettings = z.infer<typeof zQuizSettings>;
 export type QuizStats = z.infer<typeof zQuizStats>;
 export type Quiz = z.infer<typeof zQuiz>;
+export type QuizPromotion = z.infer<typeof zQuizPromotion>;
 export type QuizCard = z.infer<typeof zQuizCard>;
 export type QuizCardStats = z.infer<typeof zQuizCardStats>;
 export type QuizAnalytics = z.infer<typeof zQuizAnalytics>;
@@ -352,6 +448,130 @@ export function isLimitedTime(
   );
 }
 
+/**
+ * The instant a campaign stops applying (A2): the earliest of its own `endsAt`,
+ * the catalog window, and a concrete overlay countdown. A slot window
+ * **intersects** the catalog window — a slot may shorten an offer but never
+ * extend it — so an absent `endsAt` means "until something bounds it", not
+ * "forever". `limitedTimeEndsAt: null` is deliberately excluded: it cancels the
+ * countdown *display*, not the campaign bound.
+ */
+export function effectivePromotionEndsAt(
+  promotion: Pick<QuizPromotion, "endsAt" | "limitedTimeEndsAt">,
+  stats: Pick<QuizStats, "limitedTimeEndsAt">,
+): string | undefined {
+  return earliestInstant(
+    promotion.endsAt,
+    stats.limitedTimeEndsAt,
+    promotion.limitedTimeEndsAt ?? undefined,
+  );
+}
+
+/**
+ * True iff a campaign applies to `quiz` at `now` (A2):
+ * `startsAt <= now < effective end` **and** the quiz is published **and** it is
+ * past `publishedAt` (a campaign cannot outrun the content it merchandises).
+ */
+export function isPromotionActive(
+  promotion: Pick<QuizPromotion, "startsAt" | "endsAt" | "limitedTimeEndsAt">,
+  quiz: Pick<Quiz, "status" | "publishedAt" | "stats">,
+  now: Date = new Date(),
+): boolean {
+  if (quiz.status !== "published") return false;
+  const at = now.getTime();
+  if (quiz.publishedAt !== undefined && at < new Date(quiz.publishedAt).getTime()) return false;
+  if (at < new Date(promotion.startsAt).getTime()) return false;
+  const endsAt = effectivePromotionEndsAt(promotion, quiz.stats);
+  if (endsAt !== undefined && at >= new Date(endsAt).getTime()) return false;
+  return true;
+}
+
+/** The earliest of the given instants, ignoring the ones that are absent. */
+function earliestInstant(...instants: Array<string | undefined>): string | undefined {
+  let best: string | undefined;
+  for (const instant of instants) {
+    if (instant === undefined) continue;
+    if (best === undefined || new Date(instant).getTime() < new Date(best).getTime())
+      best = instant;
+  }
+  return best;
+}
+
+/**
+ * Field-wise merge of a campaign into catalog stats (B-01 §3):
+ *
+ * - `undefined` inherits the catalog value, `null` cancels;
+ * - the countdown is `min(overlay, catalog, endsAt)` — a slot may shorten an
+ *   offer but never extend it, so `limitedTimeEndsAt: null` removes the
+ *   countdown *display* while `endsAt`/the catalog window still bound the
+ *   campaign (they are different things and both are kept);
+ * - `spotsLeft` / `almostFull` / `limitedTime` are recomputed by the caller from
+ *   the merged record, never merged;
+ * - the seat rule is re-checked on the merged pair and violated data throws: a
+ *   card must never render "Only -547 spots left".
+ */
+export function mergePromotionIntoStats(stats: QuizStats, promotion: QuizPromotion): QuizStats {
+  const merged: QuizStats = {
+    ...stats,
+    ...(promotion.plays !== undefined ? { plays: promotion.plays } : {}),
+    ...(promotion.capacity !== undefined ? { capacity: promotion.capacity } : {}),
+    ...(promotion.rating !== undefined ? { rating: promotion.rating } : {}),
+    ...(promotion.rewardCents !== undefined ? { rewardCents: promotion.rewardCents } : {}),
+    ...(promotion.badge !== undefined ? { badge: promotion.badge } : {}),
+  };
+  if (merged.capacity !== undefined && merged.plays > merged.capacity) {
+    throw new Error(
+      `promotion "${promotion.id}" (${promotion.quizId} @ ${promotion.slot}): merged plays ` +
+        `(${merged.plays}) exceed capacity (${merged.capacity}) — spotsLeft would go negative`,
+    );
+  }
+  const countdown =
+    promotion.limitedTimeEndsAt === null
+      ? undefined
+      : earliestInstant(
+          promotion.limitedTimeEndsAt ?? stats.limitedTimeEndsAt,
+          stats.limitedTimeEndsAt,
+          promotion.endsAt,
+        );
+  if (countdown === undefined) delete merged.limitedTimeEndsAt;
+  else merged.limitedTimeEndsAt = countdown;
+  return merged;
+}
+
+/**
+ * The one live campaign for a quiz (A3, bound 4: one prize per quiz at a time).
+ * Every surface that renders a quiz's reward resolves it here, so two live
+ * slots of one quiz can never advertise two different prizes. Collection rule
+ * E13 fails the build when concurrent overlays disagree; this function then
+ * stays deterministic (first in collection order) rather than ambient.
+ */
+export function activePromotionFor(
+  quiz: Quiz,
+  promotions: readonly QuizPromotion[],
+  now: Date = new Date(),
+): QuizPromotion | undefined {
+  return promotions.find(
+    (promotion) => promotion.quizId === quiz.id && isPromotionActive(promotion, quiz, now),
+  );
+}
+
+/**
+ * Bind the collections once, so a surface that only has a `quizId` (the quiz
+ * detail page, an earnings row) asks the same question the card asks:
+ * `resolve(quizId, now)`. The quiz is needed because a campaign never applies to
+ * unpublished content.
+ */
+export function createPromotionResolver(
+  quizzes: readonly Quiz[],
+  promotions: readonly QuizPromotion[],
+): (quizId: string, now?: Date) => QuizPromotion | undefined {
+  const byId = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+  return (quizId, now = new Date()) => {
+    const quiz = byId.get(quizId);
+    return quiz === undefined ? undefined : activePromotionFor(quiz, promotions, now);
+  };
+}
+
 function categoriesOf(
   quiz: Pick<Quiz, "categoryIds">,
   resolve?: CategoryNameResolver,
@@ -362,17 +582,50 @@ function categoriesOf(
   });
 }
 
+/** What `selectQuizCard` needs beyond the record. Every field is optional. */
+export interface SelectQuizCardOptions {
+  resolveCategoryName?: CategoryNameResolver;
+  /** The clock a limited-time window is evaluated against. Defaults to now. */
+  now?: Date;
+  /**
+   * The campaign for THIS slot. It is applied **iff** it is active at `now`
+   * (`startsAt <= now < endsAt`, quiz published); otherwise the card is the
+   * catalog projection, field for field.
+   */
+  promotion?: QuizPromotion;
+}
+
 /**
  * The ONLY way a quiz becomes a list card. Replaces `featuredQuizzes`,
  * `exploreFeatured`, `featured-quizzes-page`'s three tab arrays and the card
  * half of `recentQuizzes` (D2). Pure: no I/O, no clock unless a window is live.
+ *
+ * The catalog stats are the base; an active campaign for the slot is merged
+ * field-wise into them (B-01), and only then are `spotsLeft` / `almostFull` /
+ * `limitedTime` recomputed — so a merchandised record can never disagree with
+ * its own numbers, and content (`title`, `slug`, `author`, `summary`, …) can
+ * never come from a campaign.
  */
+export function selectQuizCard(quiz: Quiz, options?: SelectQuizCardOptions): QuizCard;
 export function selectQuizCard(
   quiz: Quiz,
   resolveCategoryName?: CategoryNameResolver,
-  now: Date = new Date(),
+  now?: Date,
+): QuizCard;
+export function selectQuizCard(
+  quiz: Quiz,
+  optionsOrResolver?: SelectQuizCardOptions | CategoryNameResolver,
+  legacyNow?: Date,
 ): QuizCard {
-  const stats = quiz.stats;
+  const { resolveCategoryName, now, promotion } =
+    optionsOrResolver === undefined || typeof optionsOrResolver === "function"
+      ? { resolveCategoryName: optionsOrResolver, now: legacyNow, promotion: undefined }
+      : optionsOrResolver;
+  const clock = now ?? new Date();
+  const stats =
+    promotion !== undefined && isPromotionActive(promotion, quiz, clock)
+      ? mergePromotionIntoStats(quiz.stats, promotion)
+      : quiz.stats;
   return {
     id: quiz.id,
     slug: quiz.slug,
@@ -390,7 +643,7 @@ export function selectQuizCard(
       ...stats,
       spotsLeft: spotsLeftOf(stats),
       almostFull: almostFullOf(stats),
-      limitedTime: isLimitedTime(stats, now),
+      limitedTime: isLimitedTime(stats, clock),
     },
   };
 }
