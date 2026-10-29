@@ -131,8 +131,11 @@ process bug.
   `profile/[username]`, `support/articles/[id]`, `tournaments/[id]`.
 - `components/<feature>/` — one directory per feature; `components/ui/` is shadcn primitives.
 - `docs/p1-migration/{MIGRATION.md,ledger.json}` — what the P1 model changed, field by field.
-- Generated, not part of the build: `.next/`, `.datacheck/`, `node_modules/`, `.migration/`. An
-  untracked `lib/quizhub/` is a static HTML template drop — nothing imports it.
+- Generated, not part of the build: `.next/`, `.datacheck/`, `node_modules/`, `.migration/`.
+- `lib/quizhub/` — a **vendored** static HTML template drop (`index.html` + `assets/`, `css/`, `js/`,
+  `scss/`), kept as reference and out of the build: nothing imports it. It is listed in `.gitignore`,
+  so it never shows in `git status` and `biome check` (`vcs.useIgnoreFile`) never lints it — do not
+  delete it as dead code, and do not commit it back into the tree.
 
 ## Conventions (measured, not aspirational)
 
