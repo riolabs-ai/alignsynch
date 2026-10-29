@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 ## Run it
 
 ```bash
-pnpm data:check   # tsc (content + data + scripts) -> node:test (374 cases) -> validator
+pnpm data:check   # tsc (content + data + scripts) -> node:test (383 cases) -> validator
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm lint         # biome check (includes the formatter gate)
 pnpm build        # next build
@@ -28,16 +28,16 @@ Today's output:
 ```
 PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts, 5 conversations,
       6 notifications, 2 promotions, 17 quiz results, 14 comments, 5 reviews, 99 media entries,
-      5 page-copy routes, 10 players, 50 leaderboard rows, 8 wins, 74 search rows
+      9 page-copy routes, 10 players, 50 leaderboard rows, 8 wins, 74 search rows
       34 routes match app/, 0 unknown category ids, 0 dead links
-      / 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals (measured/budget, E23)
+      / 0/0 page-copy literals, /categories 0/0 page-copy literals, /categories/[slug] 0/0 page-copy literals, /explore 0/0 page-copy literals, /explore/featured 0/0 page-copy literals, /login 0/0 page-copy literals, /register 0/0 page-copy literals, shell 0/0 page-copy literals, not-found 0/0 page-copy literals (measured/budget, E23)
       80 hardcoded links + 0 asset refs resolve in components/ and app/ (0 known-missing assets)
       0 module-scope record arrays on the search/chat surfaces + 0 fixture rows copied into a search/chat component
       11 fixture title(s) still written into components another work unit owns (E21 debt, counted not allowed)
       0 social instants after the fixture clock 2026-10-29T12:00:00.000Z
       0 metric literals in components/ and app/, 71 metric snapshots
 WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
-      374/374 node:test cases, 87 suites
+      383/383 node:test cases, 88 suites
 ```
 
 Repeated diagnostics are grouped by code and message template, so a gap that
