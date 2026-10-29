@@ -1,6 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatPercentValue } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import { Award, Clock, Gift, Medal, Sparkles, Star, Target, Trophy, Zap } from "lucide-react";
 import { Tournament } from "./tournament-detail";
 
@@ -145,7 +147,8 @@ export function TournamentPrizes({ tournament }: TournamentPrizesProps) {
                     <div>
                       <div className="font-medium">Perfect Round</div>
                       <div className="text-xs text-muted-foreground">
-                        100% accuracy in any round
+                        {formatPercentValue(metric("tournament.prizes.perfectRoundAccuracy").value)}{" "}
+                        accuracy in any round
                       </div>
                     </div>
                   </div>

@@ -13,6 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
+import { formatPercentValue, formatMetricValue } from "@/content/metrics";
+import { metric } from "@/data/metrics";
 import confetti from "canvas-confetti";
 import { Award, Clock, Facebook, Link, Medal, Share2, Trophy, Twitter } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -46,6 +48,16 @@ export function CompletedChallenge({
   selectedAnswers,
 }: CompletedChallengeProps) {
   const [activeTab, setActiveTab] = useState("summary");
+
+  /** The day's numbers, read once: the reward table, the streak bar and the copy share them. */
+  const streakDays = metric("daily.challenge.streak.days").value;
+  const badgeGoalDays = metric("daily.challenge.streak.badgeGoalDays").value;
+  const participantPercent = metric("daily.challenge.streak.participantPercent");
+  const rankTopPercent =
+    result.rank <= 10
+      ? metric("daily.challenge.rank.top10Percent")
+      : metric("daily.challenge.rank.top30Percent");
+  const xpPerScorePoint = metric("daily.challenge.reward.xpPerScorePoint").value;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -171,7 +183,9 @@ export function CompletedChallenge({
           <div className="flex flex-col items-center p-3 bg-muted/30 rounded-lg">
             <Medal className="h-5 w-5 text-purple-500 mb-1" />
             <span className="text-sm text-muted-foreground">Earned</span>
-            <span className="text-xl font-bold">+125 XP</span>
+            <span className="text-xl font-bold">
+              +{formatMetricValue(metric("daily.challenge.earnedXp"))} XP
+            </span>
           </div>
         </div>
 
@@ -187,11 +201,11 @@ export function CompletedChallenge({
               <h3 className="font-medium">Your Performance</h3>
               <p className="text-sm text-muted-foreground">
                 You completed today's challenge in {formatTime(result.timeTaken)}, which is faster
-                than 65% of participants.
+                than {formatPercentValue(participantPercent.value)} of participants.
               </p>
               <p className="text-sm text-muted-foreground">
                 Your score of {result.score}% places you in the top{" "}
-                {result.rank <= 10 ? "10%" : "30%"} of today's participants.
+                {formatPercentValue(rankTopPercent.value)} of today's participants.
               </p>
             </div>
 
@@ -200,18 +214,18 @@ export function CompletedChallenge({
             <div className="space-y-2">
               <h3 className="font-medium">Streak Update</h3>
               <p className="text-sm text-muted-foreground">
-                You've maintained a 4-day streak! Keep it up to earn bonus rewards.
+                You've maintained a {streakDays}-day streak! Keep it up to earn bonus rewards.
               </p>
               <div className="flex space-x-1 mt-2">
-                {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                {Array.from({ length: badgeGoalDays }, (_, index) => index + 1).map((day) => (
                   <div
                     key={day}
-                    className={`h-2 w-full rounded-full ${day <= 4 ? "bg-green-500" : "bg-muted"}`}
+                    className={`h-2 w-full rounded-full ${day <= streakDays ? "bg-green-500" : "bg-muted"}`}
                   />
                 ))}
               </div>
               <p className="text-xs text-muted-foreground text-right mt-1">
-                3 days until 7-day streak badge
+                {badgeGoalDays - streakDays} days until {badgeGoalDays}-day streak badge
               </p>
             </div>
           </TabsContent>
@@ -224,7 +238,9 @@ export function CompletedChallenge({
                 </div>
                 <div>
                   <h4 className="font-medium">Daily Participant</h4>
-                  <p className="text-sm text-muted-foreground">+50 Coins</p>
+                  <p className="text-sm text-muted-foreground">
+                    +{formatMetricValue(metric("daily.challenge.reward.participantCoins"))} Coins
+                  </p>
                 </div>
               </div>
 
@@ -234,7 +250,9 @@ export function CompletedChallenge({
                 </div>
                 <div>
                   <h4 className="font-medium">Score Bonus</h4>
-                  <p className="text-sm text-muted-foreground">+{result.score} XP</p>
+                  <p className="text-sm text-muted-foreground">
+                    +{result.score * xpPerScorePoint} XP
+                  </p>
                 </div>
               </div>
 
@@ -244,7 +262,10 @@ export function CompletedChallenge({
                 </div>
                 <div>
                   <h4 className="font-medium">Streak Bonus</h4>
-                  <p className="text-sm text-muted-foreground">+25 Coins (4-day streak)</p>
+                  <p className="text-sm text-muted-foreground">
+                    +{formatMetricValue(metric("daily.challenge.reward.streakBonusCoins"))} Coins (
+                    {streakDays}-day streak)
+                  </p>
                 </div>
               </div>
 
@@ -254,7 +275,9 @@ export function CompletedChallenge({
                 </div>
                 <div>
                   <h4 className="font-medium">Top 50 Rank</h4>
-                  <p className="text-sm text-muted-foreground">+50 XP</p>
+                  <p className="text-sm text-muted-foreground">
+                    +{formatMetricValue(metric("daily.challenge.reward.topRankXp"))} XP
+                  </p>
                 </div>
               </div>
             </div>
@@ -268,13 +291,17 @@ export function CompletedChallenge({
                   <div className="bg-amber-100 dark:bg-amber-900 p-1 rounded-full mr-2">
                     <span className="text-amber-600 dark:text-amber-400 text-xs font-bold">$</span>
                   </div>
-                  <span className="font-bold">+75 Coins</span>
+                  <span className="font-bold">
+                    +{formatMetricValue(metric("daily.challenge.totalCoins"))} Coins
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <div className="bg-blue-100 dark:bg-blue-900 p-1 rounded-full mr-2">
                     <span className="text-blue-600 dark:text-blue-400 text-xs font-bold">XP</span>
                   </div>
-                  <span className="font-bold">+125 XP</span>
+                  <span className="font-bold">
+                    +{formatMetricValue(metric("daily.challenge.totalXp"))} XP
+                  </span>
                 </div>
               </div>
             </div>

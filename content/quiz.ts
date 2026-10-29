@@ -763,6 +763,11 @@ export function selectQuizForPlay(quiz: Quiz, resolveCategoryName?: CategoryName
     categoryLabel: resolveCategoryName?.(firstCategoryId) ?? firstCategoryId,
     difficulty: quiz.difficulty,
     timeLimitSeconds: quiz.settings.timeLimitSeconds,
+    /**
+     * The pass mark travels with the projection: the results screen's "Scored over 70%" badge
+     * is the quiz's own threshold, not a literal. `data:check` E22 fails on the literal.
+     */
+    passingScore: quiz.settings.passingScore,
     questions: quiz.questions,
   };
 }

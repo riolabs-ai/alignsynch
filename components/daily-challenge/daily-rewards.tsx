@@ -1,8 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCount, formatDayCount } from "@/content/metrics";
+import { metric, streakRewards } from "@/data/metrics";
 import { Award, Calendar, Clock, Gift, Star, Trophy, Zap } from "lucide-react";
 
 export function DailyRewards() {
+  const streakDays = metric("daily.challenge.streak.days").value;
+  const badgeGoalDays = metric("daily.challenge.streak.badgeGoalDays").value;
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2">
@@ -18,13 +23,13 @@ export function DailyRewards() {
             </h3>
 
             <div className="flex space-x-1">
-              {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+              {Array.from({ length: badgeGoalDays }, (_, index) => index + 1).map((day) => (
                 <div
                   key={day}
-                  className={`relative flex items-center justify-center h-8 w-8 rounded-full border ${day <= 4 ? "bg-blue-100 border-blue-300 dark:bg-blue-900 dark:border-blue-700" : "bg-muted/30 border-muted"}`}
+                  className={`relative flex items-center justify-center h-8 w-8 rounded-full border ${day <= streakDays ? "bg-blue-100 border-blue-300 dark:bg-blue-900 dark:border-blue-700" : "bg-muted/30 border-muted"}`}
                 >
                   <span className="text-xs font-medium">{day}</span>
-                  {day === 7 && (
+                  {day === badgeGoalDays && (
                     <div className="absolute -top-1 -right-1">
                       <Trophy className="h-3 w-3 text-amber-500" />
                     </div>
@@ -34,7 +39,7 @@ export function DailyRewards() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Current streak: 4 days. Keep playing daily!
+              Current streak: {formatDayCount(streakDays)}. Keep playing daily!
             </p>
           </div>
 
@@ -45,33 +50,21 @@ export function DailyRewards() {
             </h3>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="border rounded-lg p-2 flex flex-col items-center text-center">
-                <Badge variant="outline" className="mb-1">
-                  3 Days
-                </Badge>
-                <span className="text-xs font-medium">+50 Coins</span>
-              </div>
-
-              <div className="border rounded-lg p-2 flex flex-col items-center text-center">
-                <Badge variant="outline" className="mb-1">
-                  5 Days
-                </Badge>
-                <span className="text-xs font-medium">+100 Coins</span>
-              </div>
-
-              <div className="border rounded-lg p-2 flex flex-col items-center text-center">
-                <Badge variant="outline" className="mb-1">
-                  7 Days
-                </Badge>
-                <span className="text-xs font-medium">Special Badge</span>
-              </div>
-
-              <div className="border rounded-lg p-2 flex flex-col items-center text-center">
-                <Badge variant="outline" className="mb-1">
-                  14 Days
-                </Badge>
-                <span className="text-xs font-medium">Premium Theme</span>
-              </div>
+              {streakRewards.map((reward) => (
+                <div
+                  key={reward.days}
+                  className="border rounded-lg p-2 flex flex-col items-center text-center"
+                >
+                  <Badge variant="outline" className="mb-1">
+                    {formatDayCount(reward.days, "upper")}
+                  </Badge>
+                  <span className="text-xs font-medium">
+                    {reward.coins === undefined
+                      ? reward.label
+                      : `+${formatCount(reward.coins)} Coins`}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
