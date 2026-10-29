@@ -47,14 +47,41 @@ export interface QuizDetailModel {
  * capacity — is hidden rather than shown. A page may not state content or numbers the
  * model does not own.
  *
- * Still template copy for a record: the leaderboard rows and the reviews. The model
- * has no fields for either yet — that is P4 work, and it is listed in the follow-up
- * rather than pretended away here.
+ * **No leaderboard, no reviews, for a record.** `QuizStats` is aggregate engagement
+ * (plays, rating, seats, prize) — the model has no participant rows and no review
+ * records at all, so there is nothing true to print in those two tabs and a record's
+ * page does not render them. Not a tab with an empty state, and not the template's
+ * `ThorFan` / `MarvelFan` rows: an absent field prints nothing, the same rule as
+ * `ratingCount` and the prize. Only `templateView` carries `leaderboard`/`reviews`,
+ * which is why the tabs exist on `/quiz/<not-a-record>` and nowhere else. Giving the
+ * model those fields is P4 work — it needs a `QuizLeaderboardEntry` / `QuizReview`
+ * record behind it; authoring rows beside this component would be fabricated people
+ * again, which is the defect this page just lost.
  *
  * `/quiz/<id>` for an id that is not a record (`/quiz/1`, the template's) keeps
  * rendering the template card, so the mock stays a visible fallback rather than a
  * silent second source of truth.
  */
+
+/** One leaderboard row, as the template authored it — there is no model record for this. */
+interface LeaderboardRow {
+  rank: number;
+  name: string;
+  avatar: string;
+  /** Percent correct, `0`–`100`. */
+  score: number;
+  /** `mm:ss`, the template's own literal. */
+  time: string;
+}
+
+/** One review, as the template authored it — same standing as `LeaderboardRow`. */
+interface ReviewRow {
+  name: string;
+  avatar: string;
+  rating: number;
+  comment: string;
+}
+
 interface DetailView {
   title: string;
   /** Absent when the record has no cover; the hero then renders the placeholder. */
@@ -95,6 +122,18 @@ interface DetailView {
   tags?: string[];
   /** Template-only related cards — they name other records, so only the template has them. */
   related?: Array<{ id: number; title: string; image: string; difficulty: string }>;
+  /**
+   * Template-only leaderboard. The model has no participant records, so a real
+   * record's page has no rows and does not render the tab — an empty tab is still a
+   * claim that the quiz has a leaderboard.
+   */
+  leaderboard?: LeaderboardRow[];
+  /**
+   * Template-only reviews, same rule: `QuizStats.rating` is an average, not a list of
+   * people who wrote something. A record's page renders no reviews tab, no
+   * "Write a Review" button and no `ReviewModal`.
+   */
+  reviews?: ReviewRow[];
 }
 
 /** Sample quiz data - in a real app, you would fetch this based on the ID */
@@ -201,9 +240,23 @@ const templateView: DetailView = {
   requirements: quizData.requirements,
   tags: quizData.tags,
   related: quizData.relatedQuizzes,
+  // The one place these two exist: the template is not a record, so its rows are the
+  // mock's own and no real page can inherit them (`modelView` omits both).
+  leaderboard: quizData.leaderboard,
+  reviews: quizData.reviews,
 };
 
 const cap = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+
+/**
+ * `grid-cols-N` for the tab bar, as literal strings: a class name built by
+ * interpolation is invisible to Tailwind's scanner, so the column count is a lookup.
+ */
+const TAB_COLUMNS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+};
 
 /** The record's numbers, at the instant it was projected. */
 function modelView(detail: QuizDetailModel): DetailView {
@@ -239,11 +292,20 @@ function modelView(detail: QuizDetailModel): DetailView {
 }
 
 export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailModel }) {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [userReviews, setUserReviews] = useState(quizData.reviews);
-
   const view = detail === undefined ? templateView : modelView(detail);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [userReviews, setUserReviews] = useState<ReviewRow[]>(() => view.reviews ?? []);
+
+  // A tab exists only where its content does: `modelView()` carries no leaderboard and
+  // no reviews, so `/quiz/<record>` renders one tab, not three with two empty panes.
+  const leaderboard = view.leaderboard ?? [];
+  const reviews = view.reviews ?? [];
+  const hasSummary = view.summary.trim().length > 0;
+  const tabs: Array<{ value: string; label: string }> = [
+    ...(hasSummary ? [{ value: "overview", label: "Overview" }] : []),
+    ...(leaderboard.length > 0 ? [{ value: "leaderboard", label: "Leaderboard" }] : []),
+    ...(reviews.length > 0 ? [{ value: "reviews", label: "Reviews" }] : []),
+  ];
 
   const getDifficultyVariant = (difficulty: string) => {
     switch (difficulty) {
@@ -265,18 +327,86 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
       : (view.players / view.maxPlayers) * 100;
 
   const handleReviewSubmit = (review: { rating: number; comment: string }) => {
-    const newReview = {
+    const newReview: ReviewRow = {
       name: "You",
       avatar: "/avatars/master.png",
       rating: review.rating,
       comment: review.comment,
     };
-    setUserReviews([newReview, ...userReviews]);
+    setUserReviews((previous) => [newReview, ...previous]);
   };
   const route = useRouter();
   const playNow = () => {
     route.push(`/quiz/${id}/play`);
   };
+
+  /**
+   * The overview pane, free of the tab chrome. A record's page has only this pane, and
+   * one pane is not a tab bar: inside `Tabs` it would render a `role="tabpanel"` whose
+   * `aria-labelledby` names a tab that does not exist. So the body is defined once and
+   * rendered either as tab content or as plain content.
+   */
+  const overviewBody = (
+    <>
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Description</h2>
+        <p className="text-muted-foreground">{view.summary}</p>
+      </div>
+
+      {view.requirements && (
+        <div>
+          <h2 className="text-xl font-semibold mb-2">Requirements</h2>
+          <p className="text-muted-foreground">{view.requirements}</p>
+        </div>
+      )}
+
+      {view.tags && view.tags.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold mb-2">Tags</h2>
+          <div className="flex flex-wrap gap-2">
+            {view.tags.map((tag, index) => (
+              <Badge key={index} variant="outline">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {view.related && view.related.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Related Quizzes</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {view.related.map((quiz) => (
+              <Card key={quiz.id} className="overflow-hidden">
+                <div className="relative h-32">
+                  <Image
+                    width={600}
+                    height={350}
+                    src={quiz.image || "/placeholder.svg"}
+                    alt={quiz.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                    <div>
+                      <Badge variant={getDifficultyVariant(quiz.difficulty)} className="mb-1">
+                        {quiz.difficulty}
+                      </Badge>
+                      <h3 className="text-sm font-medium text-white">{quiz.title}</h3>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  /** A view with exactly one pane — every record — renders it without a tab bar. */
+  const singlePane = tabs.length === 1 ? <div className="space-y-6">{overviewBody}</div> : null;
+
   return (
     <div className="container mx-auto">
       <div className="mb-6">
@@ -337,147 +467,94 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-6 mt-6">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">Description</h2>
-                  <p className="text-muted-foreground">{view.summary}</p>
-                </div>
-
-                {view.requirements && (
-                  <div>
-                    <h2 className="text-xl font-semibold mb-2">Requirements</h2>
-                    <p className="text-muted-foreground">{view.requirements}</p>
-                  </div>
-                )}
-
-                {view.tags && view.tags.length > 0 && (
-                  <div>
-                    <h2 className="text-xl font-semibold mb-2">Tags</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {view.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {view.related && view.related.length > 0 && (
-                  <div>
-                    <h2 className="text-xl font-semibold mb-4">Related Quizzes</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {view.related.map((quiz) => (
-                        <Card key={quiz.id} className="overflow-hidden">
-                          <div className="relative h-32">
-                            <Image
-                              width={600}
-                              height={350}
-                              src={quiz.image || "/placeholder.svg"}
-                              alt={quiz.title}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
-                              <div>
-                                <Badge
-                                  variant={getDifficultyVariant(quiz.difficulty)}
-                                  className="mb-1"
-                                >
-                                  {quiz.difficulty}
-                                </Badge>
-                                <h3 className="text-sm font-medium text-white">{quiz.title}</h3>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="leaderboard" className="mt-6">
-                <div className="rounded-md border">
-                  <div className="grid grid-cols-12 bg-muted/50 p-3 text-sm font-medium">
-                    <div className="col-span-1 text-center">#</div>
-                    <div className="col-span-5">Player</div>
-                    <div className="col-span-3 text-center">Score</div>
-                    <div className="col-span-3 text-center">Time</div>
-                  </div>
-                  {quizData.leaderboard.map((player) => (
-                    <div key={player.rank} className="grid grid-cols-12 p-3 text-sm border-t">
-                      <div className="col-span-1 text-center font-medium">{player.rank}</div>
-                      <div className="col-span-5 flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={player.avatar || "/placeholder.svg"}
-                            alt={player.name}
-                          />
-                          <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <span>{player.name}</span>
-                      </div>
-                      <div className="col-span-3 text-center">{player.score}%</div>
-                      <div className="col-span-3 text-center">{player.time}</div>
-                    </div>
+            {tabs.length > 1 ? (
+              <Tabs defaultValue={tabs[0].value} className="w-full">
+                <TabsList className={`grid w-full ${TAB_COLUMNS[tabs.length] ?? "grid-cols-3"}`}>
+                  {tabs.map((tab) => (
+                    <TabsTrigger key={tab.value} value={tab.value}>
+                      {tab.label}
+                    </TabsTrigger>
                   ))}
-                </div>
-              </TabsContent>
+                </TabsList>
 
-              <TabsContent value="reviews" className="space-y-4 mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Reviews</h2>
-                  <Button onClick={() => setIsReviewModalOpen(true)}>Write a Review</Button>
-                </div>
-
-                {userReviews.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6 text-center">
-                      <p className="text-muted-foreground">
-                        No reviews yet. Be the first to review!
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  userReviews.map((review, index) => (
-                    <Card key={index}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <Avatar>
-                            <AvatarImage
-                              src={review.avatar || "/placeholder.svg"}
-                              alt={review.name}
-                            />
-                            <AvatarFallback>{review.name.substring(0, 2)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-medium">{review.name}</h3>
-                              <div className="flex items-center">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`h-4 w-4 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <p className="text-muted-foreground text-sm mt-1">{review.comment}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                {hasSummary && (
+                  <TabsContent value="overview" className="space-y-6 mt-6">
+                    {overviewBody}
+                  </TabsContent>
                 )}
-              </TabsContent>
-            </Tabs>
+
+                {leaderboard.length > 0 && (
+                  <TabsContent value="leaderboard" className="mt-6">
+                    <div className="rounded-md border">
+                      <div className="grid grid-cols-12 bg-muted/50 p-3 text-sm font-medium">
+                        <div className="col-span-1 text-center">#</div>
+                        <div className="col-span-5">Player</div>
+                        <div className="col-span-3 text-center">Score</div>
+                        <div className="col-span-3 text-center">Time</div>
+                      </div>
+                      {leaderboard.map((player) => (
+                        <div key={player.rank} className="grid grid-cols-12 p-3 text-sm border-t">
+                          <div className="col-span-1 text-center font-medium">{player.rank}</div>
+                          <div className="col-span-5 flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src={player.avatar || "/placeholder.svg"}
+                                alt={player.name}
+                              />
+                              <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
+                            </Avatar>
+                            <span>{player.name}</span>
+                          </div>
+                          <div className="col-span-3 text-center">{player.score}%</div>
+                          <div className="col-span-3 text-center">{player.time}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                )}
+
+                {reviews.length > 0 && (
+                  <TabsContent value="reviews" className="space-y-4 mt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-semibold">Reviews</h2>
+                      <Button onClick={() => setIsReviewModalOpen(true)}>Write a Review</Button>
+                    </div>
+
+                    {userReviews.map((review, index) => (
+                      <Card key={index}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar>
+                              <AvatarImage
+                                src={review.avatar || "/placeholder.svg"}
+                                alt={review.name}
+                              />
+                              <AvatarFallback>{review.name.substring(0, 2)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-medium">{review.name}</h3>
+                                <div className="flex items-center">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-4 w-4 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <p className="text-muted-foreground text-sm mt-1">{review.comment}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </TabsContent>
+                )}
+              </Tabs>
+            ) : (
+              singlePane
+            )}
           </div>
 
           <div>
@@ -593,12 +670,17 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
           </div>
         </div>
       </div>
-      <ReviewModal
-        isOpen={isReviewModalOpen}
-        onClose={() => setIsReviewModalOpen(false)}
-        onSubmit={handleReviewSubmit}
-        quizTitle={view.title}
-      />
+      {/* The review flow writes to a local array — it is the template's toy, so it is
+          mounted only where the template's reviews are. A record's page has no path to
+          "submit" a review that no model stores. */}
+      {reviews.length > 0 && (
+        <ReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          onSubmit={handleReviewSubmit}
+          quizTitle={view.title}
+        />
+      )}
     </div>
   );
 }

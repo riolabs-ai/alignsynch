@@ -12,8 +12,8 @@ fixtures that must satisfy it, and `pnpm data:check` fails the build when a fixt
 | `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                      |
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                |
 | `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts |
-| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 232 warnings, 12 infos           |
-| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 314 files; CI gate                            |
+| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 231 warnings, 12 infos           |
+| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 316 files; CI gate                            |
 | `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                      |
 | `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                 |
 | `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                       |
@@ -115,7 +115,7 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
   record with no questions), `W2` 42 (no `publishedAt`), `W4` 32 (a prize with no window); `W3`/`W5`
   are 0. No date, question or window is invented to silence one — the census and the reason each
   survives are in `docs/p1-migration/MIGRATION.md`.
-- 232 lint warnings / 12 infos are the current baseline. Compare counts, not vibes: a new warning is a
+- 231 lint warnings / 12 infos are the current baseline. Compare counts, not vibes: a new warning is a
   regression even though `pnpm lint` exits 0.
 - Stop `pnpm dev` before `pnpm build` — both write `.next/` and a concurrent run corrupts it.
 
