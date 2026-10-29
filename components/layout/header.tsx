@@ -10,7 +10,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { formatMetricValue } from "@/content/metrics";
 import { recentMessages } from "@/data/chat-data";
+import { metric } from "@/data/metrics";
 import { notifications } from "@/data/notifications";
 import { searchIndex } from "@/data/searchdata";
 import { querySearchIndex } from "@/content/search";
@@ -364,7 +366,9 @@ export function Header() {
             href="/dashboard/user?tab=wallet"
             className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden"
           >
-            <span className="text-sm font-medium">$124.50</span>
+            <span className="text-sm font-medium">
+              {formatMetricValue(metric("dashboard.balance"))}
+            </span>
             <span className="text-green-500">💰</span>
           </Link>
 

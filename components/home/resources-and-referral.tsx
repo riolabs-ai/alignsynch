@@ -3,9 +3,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatWholeCurrency } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";
 import { media } from "@/data/media";
-import { itemLabel } from "@/lib/page-copy";
+import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import {
   ArrowRight,
   ChevronLeft,
@@ -107,7 +109,9 @@ export function ResourcesAndReferral({
                       <p className="text-slate-100 xl:text-lg">{referral.body}</p>
                     </div>
                     <Badge className="bg-amber-500 hover:bg-amber-600">
-                      {itemLabel(referral, "bonus-badge")}
+                      {fillLabel(itemLabel(referral, "bonus-badge"), {
+                        amount: formatWholeCurrency(metric("affiliate.referralBonus").value),
+                      })}
                     </Badge>
                   </div>
 

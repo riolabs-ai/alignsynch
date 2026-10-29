@@ -13,7 +13,13 @@
  *    into `<br />`). The leading space on the second line is copy the original
  *    JSX carried; keep it so the rendered text node is byte-identical.
  *  - `{count}` placeholders are filled by the view from the record it renders
- *    (`fillLabel`). They exist so a number is never spelled into the copy.
+ *    (`fillLabel`). They exist so a number is never spelled into the copy. A
+ *    *product quantity* is not copy at all: `bonus-badge` carries
+ *    `Earn up to {amount}` and the view fills it from `data/metrics.ts`
+ *    (`affiliate.referralBonus`), and `stat-subscribers` carries only its caption
+ *    because `home.newsletterSubscribers` is the snapshot the stat renders (WU-4,
+ *    E22). A number typed here as well would be a second source of truth that
+ *    `data:check` cannot compare against the one the page renders.
  *
  * Records are *not* here: the mock islands inside the home components (players,
  * winners, testimonials, tips) belong to the Player/Testimonial units, and this
@@ -113,7 +119,7 @@ export const homePageCopy: PageCopy = zPageCopy.parse({
       heading: "Refer & Earn",
       body: "Invite friends and earn bonus rewards!",
       items: [
-        { id: "bonus-badge", label: "Earn up to $10" },
+        { id: "bonus-badge", label: "Earn up to {amount}" },
         { id: "invite-friends", label: "Invite Friends" },
       ],
     },
@@ -138,7 +144,7 @@ export const homePageCopy: PageCopy = zPageCopy.parse({
         { id: "perk-insights", label: "Weekly insights" },
         { id: "perk-strategies", label: "Exclusive strategies" },
         { id: "perk-unsubscribe", label: "Unsubscribe anytime" },
-        { id: "stat-subscribers", label: "Subscribers", value: "10k+" },
+        { id: "stat-subscribers", label: "Subscribers" },
         { id: "stat-satisfaction", label: "Satisfaction", value: "4.9/5" },
         { id: "stat-updates", label: "Updates", value: "Weekly" },
       ],
