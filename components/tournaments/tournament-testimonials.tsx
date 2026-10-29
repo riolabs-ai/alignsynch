@@ -65,7 +65,7 @@ export function TournamentTestimonials() {
     {
       id: 6,
       name: "Jessica Taylor",
-      avatar: "/testimonials/jessica.png",
+      avatar: "/avatars/mind.webp",
       role: "Trivia Buff",
       rating: 5,
       text: "I love how the tournaments are structured with qualifying rounds and finals. It gives everyone a fair chance while still rewarding skill and knowledge. The Pop Culture tournament was my favorite so far!",

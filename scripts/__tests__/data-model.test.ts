@@ -12,6 +12,7 @@ import { zArticleCollection, zNewsArticle } from "../../content/article";
 import { zCategory, zCategories } from "../../content/category";
 import { zQuiz, zQuizCard, selectQuizCard } from "../../content/quiz";
 import { zContact, zConversation, zNotification, zMessage } from "../../content/social";
+import { findDeadLinks, findMissingAssets } from "../ui-refs";
 
 const iso = "2025-05-15T00:00:00.000Z";
 
@@ -296,6 +297,79 @@ describe("social", () => {
       lastMessage: { text: "hi", timestamp: iso },
     };
     assert.equal(zConversation.safeParse(conversation).success, false);
+  });
+});
+
+/* ---------------------------------------------------------------- *
+ * E10 — hardcoded references resolve (issue #20)
+ * ---------------------------------------------------------------- */
+describe("ui-refs", () => {
+  const ROUTES = new Set(["/", "/dashboard/user", "/register"]);
+
+  /** `/quiz/[id]` is the only dynamic pattern the real manifest needs here. */
+  const resolves = (route: string) => ROUTES.has(route) || /^\/quiz\/[^/]+$/.test(route);
+
+  /** Mirrors `public/`: one real avatar and the placeholder, query string stripped first. */
+  const exists = (asset: string) => asset === "/avatars/alex.png" || asset === "/placeholder.svg";
+
+  const dead = (source: string) => findDeadLinks([{ path: "components/x.tsx", source }], resolves);
+  const missing = (source: string) =>
+    findMissingAssets([{ path: "components/x.tsx", source }], exists);
+
+  it("flags a hardcoded href no route resolves, with file and line", () => {
+    const found = dead('<Link href="/dashboard" className="x" />');
+    assert.equal(found.length, 1);
+    assert.equal(found[0].file, "components/x.tsx");
+    assert.equal(found[0].line, 1);
+    assert.equal(found[0].value, "/dashboard");
+  });
+
+  it("accepts the route the sidebar now points at, query string and all", () => {
+    assert.deepEqual(dead('<Link href="/dashboard/user?tab=wallet">Wallet</Link>'), []);
+    assert.deepEqual(dead('<Link href={"/register"}>Join</Link>'), []);
+    assert.deepEqual(dead('<Link href="/quiz/world-history">Play</Link>'), []);
+  });
+
+  it("ignores external, scheme and fragment hrefs", () => {
+    // The template href is assembled, not written out: a literal `${` in a plain
+    // string trips biome's noTemplateCurlyInString guard.
+    const dollar = String.fromCharCode(36);
+    const source = [
+      '<a href="https://example.com/x">x</a>',
+      '<a href="#top">top</a>',
+      '<a href="mailto:support@quizhub.com">mail</a>',
+      `<Link href={\`/quiz/${dollar}{id}\`}>template</Link>`,
+    ].join("\n");
+    assert.deepEqual(dead(source), []);
+  });
+
+  it("catches navigation written as a router call", () => {
+    const found = dead('<Button onClick={() => router.push("/signup")}>Join</Button>');
+    assert.equal(found.length, 1);
+    assert.equal(found[0].value, "/signup");
+  });
+
+  it("flags an asset literal with no file under public/, and only that one", () => {
+    const source = [
+      'const a = { avatar: "/testimonials/jessica.png" };',
+      'const b = { avatar: "/avatars/alex.png" };',
+      'const c = { src: "/placeholder.svg?height=400" };',
+    ].join("\n");
+    const found = missing(source);
+    assert.equal(found.length, 1);
+    assert.equal(found[0].value, "/testimonials/jessica.png");
+    assert.equal(found[0].line, 1);
+  });
+
+  it("counts lines from the real file body, not the first match", () => {
+    const source = [
+      'import Link from "next/link";',
+      "",
+      "export function X() {",
+      '  return <Link href="/signup" />;',
+      "}",
+    ].join("\n");
+    assert.equal(dead(source)[0].line, 4);
   });
 });
 
