@@ -1,7 +1,7 @@
 /**
  * The slot surfaces — the half of the join `data:check` cannot see.
  *
- * `E17` proves that every `promotions[].slot` names a shelf position that renders the
+ * `E28` proves that every `promotions[].slot` names a shelf position that renders the
  * promoted quiz. It proves nothing about whether a **page renders that shelf**:
  * `explore-page/popular[1]` passed every check while its only rendering component had
  * no importers at all, so the campaign advertised numbers on no screen (P3b, and the

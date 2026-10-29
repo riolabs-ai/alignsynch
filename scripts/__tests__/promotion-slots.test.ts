@@ -159,8 +159,8 @@ describe("slot → shelf — the join a campaign is reachable through", () => {
     );
   });
 
-  it("is what E17 checks: the authored pair produces no slot finding", () => {
-    const findings = promotionFindings(promotions, quizzes).filter((f) => f.rule === "E17");
+  it("is what E28 checks: the authored pair produces no slot finding", () => {
+    const findings = promotionFindings(promotions, quizzes).filter((f) => f.rule === "E28");
     assert.deepEqual(findings, []);
   });
 });

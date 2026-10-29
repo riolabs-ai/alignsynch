@@ -621,7 +621,7 @@ export function activePromotionForSlot(
  * no clock of its own.
  *
  * Indexed by `(quizId, slot)` so a 60-card page costs one lookup per card. A
- * duplicate pair cannot shadow another here: E14 fails the build first, and E17
+ * duplicate pair cannot shadow another here: E14 fails the build first, and E28
  * rejects a pair whose slot no shelf renders.
  */
 export function createSlotPromotionResolver(

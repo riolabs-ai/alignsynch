@@ -18,6 +18,7 @@
     "lib/quiz-cards.ts",
     "lib/quiz-detail.ts",
     "scripts/data-check*",
+    "scripts/rule-codes.ts",
     "scripts/ui-refs.ts",
     "scripts/metric-refs.ts",
     "scripts/metric-invariants.ts",

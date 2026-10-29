@@ -30,11 +30,11 @@
  * ## Why there are no generated promotions
  *
  * A promotion is keyed `(quizId, slot)`, and its `slot` is a **position a shelf
- * renders**: `data:check` E17 fails when that position renders a different quiz,
+ * renders**: `data:check` E28 fails when that position renders a different quiz,
  * because the campaign would never run. The shelves in `data/quiz-catalogue.ts` are
  * curation — literal id lists, not a query — so a generated quiz (`quiz-gen-*`) is in
  * none of them, and there is no slot at which one is rendered. A generated promotion
- * is therefore a guaranteed E17 rather than a fixture: the earlier version of this
+ * is therefore a guaranteed E28 rather than a fixture: the earlier version of this
  * script emitted one per three quizzes (7 at `--count 20 --seed 42`) and turned the
  * documented P3 command red on a tree nobody had broken.
  *
@@ -762,14 +762,14 @@ function main() {
   const target = join(outDir, "quizzes.ts");
 
   // A `promotions.ts` here is a leftover from a generator that emitted campaigns. It
-  // cannot be valid (see the header): E17 has no slot that renders a generated quiz, so
+  // cannot be valid (see the header): E28 has no slot that renders a generated quiz, so
   // re-running clears it rather than leaving the gate red for a file this script would
   // never write.
   const stalePromotions = join(outDir, "promotions.ts");
   if (existsSync(stalePromotions)) {
     rmSync(stalePromotions);
     console.log(
-      `gen: removed ${stalePromotions} — promotions are curated (data/promotions.ts), never generated: a generated quiz is in no shelf, so E17 has no slot that renders its campaign`,
+      `gen: removed ${stalePromotions} — promotions are curated (data/promotions.ts), never generated: a generated quiz is in no shelf, so E28 has no slot that renders its campaign`,
     );
   }
 

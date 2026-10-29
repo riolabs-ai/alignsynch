@@ -19,12 +19,21 @@
  *         bounded, and the derived bound is the earliest declared one.
  *   E16 — one quiz advertises one set of numbers: overlays that are live at the same
  *         time agree on every engagement key they both set.
- *   E17 — the slot is a place a shelf actually renders: `promotions[].slot` parses
+ *   E28 — the slot is a place a shelf actually renders: `promotions[].slot` parses
  *         against `slotShelves` (`data/quiz-catalogue.ts`), its index exists on that
  *         shelf, and that position renders the quiz the overlay names. A campaign on
  *         a slot nobody renders never runs, and nothing else would notice.
  *   W6  — a campaign staged outside the quiz's published life warns; staging against
  *         a draft is legitimate, so it must not fail the build.
+ *
+ * `E17` is deliberately absent from that list: it is the media registry's ("no
+ * `components/**` / `app/**` file writes a `public/` asset path", `scripts/data-check.ts`,
+ * PR #65). PR #41 had numbered this file's slot guard `E17` as well, so one code named
+ * two unrelated failures and `grep '[E17]'` could not say which rule fired. Issue #103
+ * moved the slot guard to `E28` — the next free code after `E27`, following the
+ * precedent recorded in `scripts/data-check.ts` — instead of moving the media set's
+ * contiguous `E17`–`E19`. `scripts/rule-codes.ts` is the registry that keeps one code
+ * to one owner, and `scripts/__tests__/rule-codes.test.ts` fails when that slips.
  *
  * Diagnostics are returned, never thrown: `data:check` prints every finding of a run
  * so one pass reports every problem.
@@ -38,7 +47,7 @@ import {
 } from "../content/quiz";
 import { parseSlot, quizShelves, slotShelves } from "../data/quiz-catalogue";
 
-export type PromotionRule = "E14" | "E15" | "E16" | "E17" | "W6";
+export type PromotionRule = "E14" | "E15" | "E16" | "E28" | "W6";
 
 export interface PromotionFinding {
   rule: PromotionRule;
@@ -283,7 +292,7 @@ export function promotionFindings(
   }
 
   /* ---------------------------------------------------------------- *
-   * E17 — the slot is a place a shelf actually renders
+   * E28 — the slot is a place a shelf actually renders
    * ---------------------------------------------------------------- */
 
   const knownGroups = Object.keys(slotShelves).join(", ");
@@ -292,7 +301,7 @@ export function promotionFindings(
     const address = parseSlot(promotion.slot);
     if (address === undefined) {
       error(
-        "E17",
+        "E28",
         `${label}: slot "${promotion.slot}" is not a slot any shelf renders — expected \`<page>/<section>[<index>]\` from: ${knownGroups}. A campaign on a slot nobody renders silently never runs`,
       );
       continue;
@@ -300,7 +309,7 @@ export function promotionFindings(
     const shelf = quizShelves[address.shelf];
     if (address.index >= shelf.length) {
       error(
-        "E17",
+        "E28",
         `${label}: slot "${promotion.slot}" addresses position ${address.index} of shelf "${address.shelf}", which renders ${shelf.length} card(s) — the campaign would never run`,
       );
       continue;
@@ -308,7 +317,7 @@ export function promotionFindings(
     const rendered = shelf[address.index];
     if (rendered !== promotion.quizId) {
       error(
-        "E17",
+        "E28",
         `${label}: slot "${promotion.slot}" renders "${rendered}", not "${promotion.quizId}" — the campaign would never run (curation and the campaign disagree about this position)`,
       );
     }
