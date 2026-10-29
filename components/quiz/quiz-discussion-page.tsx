@@ -156,7 +156,9 @@ function DiscussionCard({ discussion }: { discussion: QuizDiscussionSummary }) {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1 text-sm">
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                  <span>{commentCount} comments</span>
+                  <span>
+                    {commentCount} {commentCount === 1 ? "comment" : "comments"}
+                  </span>
                 </div>
                 <Button variant="outline" size="sm" asChild>
                   View Discussion
