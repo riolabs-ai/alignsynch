@@ -77,7 +77,7 @@ fails `data:check` by name.
 | D11 stored derived values       | `spotsLeft`, `almostFull`, `unread`, `recentMessages`, `count`, `quizCount` authored by hand                        | derived: `zQuizStats` + `spotsLeftOf`, `deriveUnread`, `deriveCategoryCounts`, `buildSearchIndex`                                                                            |
 | D12 duplicated `recentMessages` | a hand-written array whose avatars disagreed with the conversations 3/5 of the time                                 | `selectRecentMessages()` over the real conversation                                                                                                                          |
 | D13 dead links                  | 2 notification routes with no page, 2 accidental `/profile/<word>` matches                                          | `routeManifest` + `matchRoute` + `checkNotificationRefs`; `data:check` walks `app/` in both directions                                                                       |
-| D14 dead `Metadata` export      | `app/(mainlayout)/categories/[slug]/page.tsx` exports `Metadata`, which Next never reads                            | **not fixed here** — a page-level bug, not a data-model one (see Deferred)                                                                                                   |
+| D14 dead `Metadata` export      | `app/(mainlayout)/categories/[slug]/page.tsx` exports `Metadata`, which Next never reads                            | `generateMetadata` over the same lookup (fixed after this change; `E10` fails the build if the dead export returns)                                                          |
 | D15 three `categories` exports  | three shapes, three imports, all named `categories`                                                                 | one table in `content/categories.ts`; `data/*` re-exports scoped views with derived counts                                                                                   |
 | D16 kb category                 | `category: "Getting Started"` (display name) vs a `SupportCategory` union                                           | `categoryIds: ["kb-getting-started"]` against the kb scope                                                                                                                   |
 | D17 three identity namespaces   | authors in quizzes, `creators` in search, `users` in `lib/data`, none joinable                                      | `zPersonRef {id?, name, avatar?, role?, bio?}` everywhere, with no `username` on it; `id` is the only join and it is optional, so search creators come from `lib/data/users` |
@@ -216,6 +216,7 @@ Collection-level:
 | `E7`        | `content/routes.ts` and the `app/` tree agree in both directions (34 routes)                                                                                            |
 | `E8`        | every search row names a real quiz / category / curated page                                                                                                            |
 | `E9`        | `content/quiz.ts` exists and `types/quiz.ts` does not; no file under `components/`, `app/`, `lib/` declares its own `Quiz` (one `Quiz` type; positive control included) |
+| `E10`       | no `app/` page or layout exports a metadata function Next never reads (`Metadata`, `GenerateMetadata`, …); `categories/[slug]` must export `generateMetadata`           |
 
 Warnings are advisory and do not fail the build: `W1` published quiz with no
 questions, `W2` published quiz with no `publishedAt`, `W3` a renderable category with
@@ -263,10 +264,6 @@ for the 5 `CreatedQuiz` records does not exist to copy.
 
 ## Deferred
 
-- **D14** — `app/(mainlayout)/categories/[slug]/page.tsx` exports `Metadata`
-  instead of `generateMetadata`, so the route has no metadata and the function is
-  dead code. Fixing it changes page behaviour, not fixture shape, so it is not in
-  this change.
 - **Authorship** — 17 of the 42 records name an `author`; the 20 generator templates and
   the 5 `CreatedQuiz` records still do not, so search `creators[]` keeps `quizCount: 0`
   until they are assigned. Assigning one is a content decision, not a migration one.
