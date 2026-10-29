@@ -245,10 +245,13 @@ copy, and matching it would turn "All Tournaments" into a category reference.
 | `components/tournaments/tournament-overview.tsx:152`       | `General Knowledge`    | `Category.name`  |
 | `components/tournaments/tournament-overview.tsx:156`       | `Science & Technology` | `Quiz.title`     |
 
-The category literals are the model's own taxonomy written out by hand in a filter list
+The category literals were the model's own taxonomy written out by hand in a filter list
 (`battle-mode-selection`, `leaderboard-filters`, `settings/quiz-preferences`, `layout/footer`): 25 rows
-in `content/categories.ts`, re-typed in six places. `deriveCategoryCounts` cannot fix that — only
-rendering `quizCategories` can.
+in `content/categories.ts`, re-typed in six places. `deriveCategoryCounts` could not fix that — only
+rendering the table could, and WU-5 did: those four components now pick a `QuizCategorySlug` and render
+`quizCategoryLabel(slug)`, the difficulty control iterates `DIFFICULTIES` and labels each entry through
+`difficultyLabel`, and the footer's subject links point at `/categories/<slug>` instead of `#`. The
+table above stays the `8929ec10` record of what that cost; `data:check` E20 is what keeps it at 0.
 
 ### METRIC — 48 invented numbers
 
@@ -484,7 +487,7 @@ Each names the check that proves it, per the P1 convention in `docs/DATA-MODEL.m
 | E17  | no `components/**` or `app/**` file contains a literal `public/` asset path                                                  | `data:check` E17 returns 0 asset refs (246 today, 280 measured)                                                                                                                                                                       |
 | E18  | registry ⇄ disk is a bijection — every `MediaEntry.src` is a file, every file under `public/images`+avatars has an entry     | `data:check` E18: two-way walk, both directions 0 orphans (P2b item 3)                                                                                                                                                                |
 | E19  | every `ImageRef.src` in `data/` equals a `MediaEntry.src`                                                                    | `data:check` E19 over `data/*` (today 73 fixture paths, all literal)                                                                                                                                                                  |
-| E20  | no display literal equals a `Category.name`, `Quiz.title` or `badge.label`                                                   | `data:check` E20: DUP tier = 0 (today: 26)                                                                                                                                                                                            |
+| E20  | no display literal equals a `Category.name`, `Quiz.title` or `badge.label`                                                   | `data:check` E20: DUP tier = 0 (today: 0)                                                                                                                                                                                             |
 | E21  | no module-level record array in `components/**` (≥ 2 object elements)                                                        | `data:check` E21: island scan = 0 (24 after WU-12; 29 measured)                                                                                                                                                                       |
 | E22  | no metric literal (digit + unit/delta) in a component                                                                        | `data:check` E22 (40 after WU-12; 48 measured)                                                                                                                                                                                        |
 | E23  | every route in `content/routes.ts` has a `PageCopy` key; an editorial component renders no leaf literal longer than 24 chars | `data:check` E23: surface = page module + import closure inside the route's `dirs`; a literal > 24 chars is an error naming `file:line`, and the count may not exceed `data/pages/budget.ts`. `/` measures **0**. Established by WU-6 |
@@ -561,8 +564,11 @@ file. The other rows are untouched on purpose — a card that wants "hits remain
    leaderboard islands. Unblocks /leaderboard, /daily-challenge and the two home widgets.
 3. **WU-4 — metrics** (40): widen `QuizAnalytics` (or add a
    `MetricSnapshot`) so `+4 from last month` is computed, not typed.
-4. **WU-5 — taxonomy literals** (26): render `quizCategories` and
-   `badge.label` instead of re-typing them; six files, mechanical.
+4. **WU-5 — taxonomy literals** (26): **done**, landed as `e613237` (PR #73; #50 closed). The schema
+   layer it added is `content/categories.ts::quizCategoryLabel(slug)` — a slug in, the table's `name`
+   out — plus `content/core.ts::{DIFFICULTIES,DIFFICULTY_LABELS,difficultyLabel,isDifficulty}` for the
+   difficulty enum and a narrowing guard. `data:check` E20 is the enforcement: it fails a component
+   that types a label one of those records already owns, and the tree measures 0.
 5. **WU-2 — quiz surface mocks** (117): `quiz-details`, `my-quizzes/quiz-details`,
    `quiz-discustion`, results and discussion pages read the existing fixture.
 6. **WU-3 — search and chat mocks** (68): delete `mockSearchData`, render
