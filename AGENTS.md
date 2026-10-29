@@ -75,9 +75,12 @@ build` on every push and PR; the job name is `typecheck / lint / build`.
 - **`next/image` needs an intrinsic size.** Without `width`/`height` or `fill`, dev renders a 500:
   `Image with src "/category/animal.webp" is missing required "width" property.` `next build`
   still passes, so CI cannot see it. Use `fill` inside a `position: relative` parent.
-- **`data/chat-data.ts` formats times at module scope** (`formatRelative(...)`), so server and
-  client disagree and every page logs React error `#418` (hydration mismatch) in the console.
-  Until that is fixed, feed ISO timestamps to client components and format at render time.
+- **Never read a clock in a render path.** A label from `new Date()` or `toLocale*` is rendered
+  once by the server and re-rendered at hydration; the two disagree and every page logs React
+  `#418` (hydration mismatch). `content/core.ts` owns the fixture clock (`DEMO_NOW_ISO`) and every
+  label there is a pure function of the ISO instant — `data/` carries instants only, the UI calls
+  `formatRelative` / `formatClockTime` / `formatDayHeading`, and `data:check` E10 fails when a
+  social fixture is dated after the clock.
 - **`params` is a Promise in Next 16.** Every dynamic route must take
   `params: Promise<{ id: string }>` and unwrap it (`await params` in an `async` page, or
   `use(params)`); a synchronous `params.id` logs `params is a Promise and must be unwrapped with

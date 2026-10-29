@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { formatDayHeading, formatDayKey, formatRelative } from "@/content/core";
 import { Archive, Info, MoreVertical, Phone, Search, Trash2, UserPlus, Video } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -60,21 +61,26 @@ export function ChatConversation({
       case "away":
         return "Away";
       default:
-        return contact.lastSeen ? `Last seen ${contact.lastSeen}` : "Offline";
+        return contact.lastSeenAt ? `Last seen ${formatRelative(contact.lastSeenAt)}` : "Offline";
     }
   };
 
+  /**
+   * Bucket by UTC calendar day and label the bucket at the same time. The previous version used
+   * `.toLocaleDateString()` both as the key and as the label relative to `new Date()`, so the
+   * server and the browser could produce a different number of groups — a structural mismatch,
+   * not just a text one.
+   */
   const groupMessagesByDate = (messages: Message[]) => {
-    const groups: { date: string; messages: Message[] }[] = [];
+    const groups: { dayKey: string; label: string; messages: Message[] }[] = [];
 
     messages.forEach((message) => {
-      const messageDate = new Date(message.timestamp).toLocaleDateString();
-      const existingGroup = groups.find((group) => group.date === messageDate);
-
+      const dayKey = formatDayKey(message.timestamp);
+      const existingGroup = groups.find((group) => group.dayKey === dayKey);
       if (existingGroup) {
         existingGroup.messages.push(message);
       } else {
-        groups.push({ date: messageDate, messages: [message] });
+        groups.push({ dayKey, label: formatDayHeading(message.timestamp), messages: [message] });
       }
     });
 
@@ -82,25 +88,6 @@ export function ChatConversation({
   };
 
   const messageGroups = groupMessagesByDate(conversation.messages);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return "Today";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday";
-    } else {
-      return date.toLocaleDateString(undefined, {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-      });
-    }
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -191,7 +178,7 @@ export function ChatConversation({
             <div key={index} className="space-y-4">
               <div className="flex justify-center">
                 <span className="text-xs bg-muted/80 px-3 py-1 rounded-full text-muted-foreground font-medium shadow-sm">
-                  {formatDate(group.date)}
+                  {group.label}
                 </span>
               </div>
               {group.messages.map((message) => (

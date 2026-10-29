@@ -494,6 +494,55 @@ export function checkConversationRefs(conversations: readonly Conversation[]): R
 }
 
 /**
+ * Every social instant must be at or before the fixture clock (`content/core.ts`
+ * `DEMO_NOW_ISO`).
+ *
+ * The UI renders relative labels against that clock, so a fixture dated after it renders
+ * `in 1 hour` — which is what the P1 migration shipped (`2026-10-29T11:55:00Z` authored
+ * against a build that ran earlier the same morning). Relative labels are only meaningful
+ * when "now" is after everything they describe; this makes that a checked invariant instead
+ * of a thing you notice in a screenshot. It is also the reason a label can be a pure function
+ * of its input: there is exactly one clock, and it does not move.
+ */
+export function checkSocialInstants(
+  input: {
+    contacts: readonly Contact[];
+    conversations: readonly Conversation[];
+    notifications: readonly Notification[];
+  },
+  nowIso: string,
+): RefIssue[] {
+  const issues: RefIssue[] = [];
+  const limit = ts(nowIso);
+
+  const report = (id: string, field: string, value: string) => {
+    issues.push({
+      id,
+      field,
+      value,
+      reason: `is after the fixture clock ${nowIso} — a relative label would read "in ...". Move the instant earlier or move DEMO_NOW_ISO forward.`,
+    });
+  };
+
+  for (const contact of input.contacts) {
+    if (contact.lastSeenAt !== undefined && ts(contact.lastSeenAt) > limit) {
+      report(contact.id, "lastSeenAt", contact.lastSeenAt);
+    }
+  }
+  for (const conversation of input.conversations) {
+    for (const message of conversation.messages) {
+      if (ts(message.sentAt) > limit) report(message.id, "sentAt", message.sentAt);
+    }
+  }
+  for (const notification of input.notifications) {
+    if (ts(notification.createdAt) > limit) {
+      report(notification.id, "createdAt", notification.createdAt);
+    }
+  }
+  return issues;
+}
+
+/**
  * `notification.link` against the route manifest (C2 owns the manifest; this only consumes it).
  * The resolver MUST distinguish "static route exists" from "fell into a dynamic route with a
  * value that is not a real id" — `/profile/achievements` matched `/profile/[username]` and would

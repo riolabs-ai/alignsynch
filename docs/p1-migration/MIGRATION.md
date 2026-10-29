@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 ## Run it
 
 ```bash
-pnpm data:check   # tsc (content + data + scripts) -> node:test (75 cases) -> validator
+pnpm data:check   # tsc (content + data + scripts) -> node:test (134 cases) -> validator
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm lint         # biome check (includes the formatter gate)
 pnpm build        # next build
@@ -59,7 +59,7 @@ CI runs `pnpm data:check` as its own step, after typecheck and before build.
 | `data/browse-quizzes.ts`                         | the 20 card-only quizzes the D2 grids carried and the migration never did                                                                                                                                                                          |
 | `data/quiz-catalogue.ts`                         | curation only: 13 ordered shelf id lists + `catalogueAliases`; no `Quiz` records                                                                                                                                                                   |
 | `scripts/data-check.ts`                          | the validator: per-record schema pass, then the collection-level invariants                                                                                                                                                                        |
-| `scripts/__tests__/data-model.test.ts`           | 28 negative tests; one per drift class                                                                                                                                                                                                             |
+| `scripts/__tests__/data-model.test.ts`           | 28 negative tests (one per drift class) + 5 fixture-clock cases                                                                                                                                                                                    |
 | `scripts/__tests__/quiz-collection.test.ts`      | the 62 records, the frozen slugs, the Science overlay case, one record per subject                                                                                                                                                                 |
 
 Every object in `content/` is `.strict()`: an unknown key is an error. That is the
@@ -114,7 +114,9 @@ Every field-level edit is in `ledger.json`. Summary:
   cover or date, so none was invented.
 - **`data/chat-data`** — 5 contacts, 5 conversations: prose presence → `lastSeenAt`
   instants, derived preview columns dropped, `text` → `body`, `timestamp` →
-  `sentAt`. `recentMessages` is deleted; the drawer derives it.
+  `sentAt`. `recentMessages` is deleted; the drawer derives it and formats
+  `lastMessageAt` at render time against the fixture clock (`DEMO_NOW_ISO`) — no
+  formatted string and no clock reading lives in `data/`.
 - **`data/notifications`** — 6 notifications: JSX icon → registry key, prose time →
   ISO, `description` → `body`, and four links re-pointed at routes that exist
   (`/affiliate`, `/create/editor`, and two real profile slugs).
