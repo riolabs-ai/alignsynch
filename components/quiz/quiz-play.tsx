@@ -7,45 +7,16 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { currentQuiz } from "@/data/currentQuiz";
 import { categoryName } from "@/content/categories";
 import { selectQuizForPlay, type QuizForPlay } from "@/content/quiz";
-import type { Question } from "@/content/quiz";
+import { currentQuiz } from "@/data/currentQuiz";
 
 /**
- * The play surface works on the PROJECTION of the content record that
- * `content/quiz.ts::selectQuizForPlay` returns, not on the record itself.
- *
- * The renderer only renames: a model question's `prompt`/`media.src` are its
- * `text`/`image`. That projection is the one renderer-local type below, and it is
- * deliberately not called `Quiz` — there is exactly one `Quiz` type, in `content/`.
+ * The play surface reads `selectQuizForPlay()` directly: `categoryLabel` is resolved
+ * from the taxonomy and questions keep the model's `prompt`/`media` names, so there
+ * is no second `Quiz` shape here (D1/D2).
  */
-interface PlayQuestion {
-  id: string;
-  text: string;
-  options: { id: string; text: string }[];
-  correctOptionId: string;
-  explanation?: string;
-  image?: string;
-}
-
-/** `QuizForPlay` owns id/title/category label/difficulty/time limit; only the
- *  questions are renamed for the renderer, so a model change still breaks here. */
-type PlayableQuiz = Omit<QuizForPlay, "questions"> & { questions: PlayQuestion[] };
-
-const toPlayQuestion = (question: Question): PlayQuestion => ({
-  id: question.id,
-  text: question.prompt,
-  options: question.options.map((option) => ({ id: option.id, text: option.text })),
-  correctOptionId: question.correctOptionId,
-  ...(question.explanation ? { explanation: question.explanation } : {}),
-  ...(question.media ? { image: question.media.src } : {}),
-});
-
-const playableQuiz: PlayableQuiz = {
-  ...selectQuizForPlay(currentQuiz, categoryName),
-  questions: currentQuiz.questions.map(toPlayQuestion),
-};
+const playableQuiz: QuizForPlay = selectQuizForPlay(currentQuiz, categoryName);
 
 /** One answered question, local to the play surface (UI state, not content). */
 interface Answer {
@@ -62,7 +33,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 
 // Types for the quiz state
 interface QuizState {
-  quiz: PlayableQuiz | null;
+  quiz: QuizForPlay | null;
   loading: boolean;
   error: string | null;
   currentQuestionIndex: number;
@@ -82,7 +53,7 @@ interface QuizState {
 type QuizAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
-  | { type: "SET_QUIZ"; payload: PlayableQuiz }
+  | { type: "SET_QUIZ"; payload: QuizForPlay }
   | { type: "SET_CURRENT_QUESTION_INDEX"; payload: number }
   | { type: "SET_DIRECTION"; payload: number }
   | { type: "SET_QUIZ_START_TIME"; payload: number }
@@ -98,7 +69,7 @@ type QuizAction =
   | { type: "UPDATE_ANSWER"; payload: { index: number; answer: Answer } }
   | { type: "NAVIGATE_QUESTION"; payload: { direction: number; index: number } }
   | { type: "TIMEOUT_QUIZ" }
-  | { type: "RESTART_QUIZ"; payload: { timeLimitSeconds: number | null } }
+  | { type: "RESTART_QUIZ"; payload: { timeLimit: number | null } }
   | { type: "START_REVIEW" };
 
 // Initial state
@@ -204,7 +175,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         quizStartTime: now,
         quizEndTime: null,
         questionStartTime: now,
-        timeRemaining: action.payload.timeLimitSeconds,
+        timeRemaining: action.payload.timeLimit,
         isQuizCompleted: false,
         isReviewMode: false,
         showFeedback: false,
@@ -372,7 +343,7 @@ export function QuizPlay({ id }: { id: string }) {
   const handleRestartQuiz = () => {
     dispatch({
       type: "RESTART_QUIZ",
-      payload: { timeLimitSeconds: state.quiz?.timeLimitSeconds || null },
+      payload: { timeLimit: state.quiz?.timeLimitSeconds || null },
     });
   };
 
@@ -510,10 +481,10 @@ export function QuizPlay({ id }: { id: string }) {
                 className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6"
               >
                 {/* Question image */}
-                {currentQuestion.image && (
+                {currentQuestion.media && (
                   <div className="rounded-lg overflow-hidden">
                     <Image
-                      src={currentQuestion.image || "/placeholder.svg"}
+                      src={currentQuestion.media.src}
                       alt="Question illustration"
                       className="size-full object-center object-cover"
                     />

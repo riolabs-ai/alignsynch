@@ -5,18 +5,11 @@ import { motion } from "framer-motion";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface QuestionOption {
-  id: string;
-  text: string;
-}
+import type { Question } from "@/content/quiz";
 
 interface QuestionProps {
-  question: {
-    id: string;
-    text: string;
-    options: QuestionOption[];
-    correctOptionId: string;
-  };
+  /** The model's question, narrowed to what the renderer reads. */
+  question: Pick<Question, "id" | "prompt" | "options" | "correctOptionId">;
   selectedOptionId: string | null;
   correctOptionId?: string;
   onSelectOption: (questionId: string, optionId: string) => void;
@@ -61,7 +54,7 @@ export function QuizQuestion({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl md:text-2xl font-semibold leading-tight">{question.text}</h2>
+      <h2 className="text-xl md:text-2xl font-semibold leading-tight">{question.prompt}</h2>
 
       <div className="space-y-3 mt-6">
         {question.options.map((option, index) => {

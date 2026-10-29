@@ -20,9 +20,13 @@ import { users } from "../lib/data/users";
 import { categories } from "./categories";
 import { currentQuiz } from "./currentQuiz";
 import { mockQuizzes } from "./mock-quizzes";
+import { quizCatalogue } from "./quiz-catalogue";
 
-/** Only `public` quizzes enter the index; the 20 generator templates are private drafts. */
-const searchableQuizzes = [...mockQuizzes, currentQuiz].map((quiz) => ({
+/**
+ * Only `public` quizzes enter the index; the 20 generator templates are private
+ * drafts, and the catalogue is the public collection.
+ */
+const searchableQuizzes = [...mockQuizzes, ...quizCatalogue, currentQuiz].map((quiz) => ({
   id: quiz.id,
   slug: quiz.slug,
   title: quiz.title,
