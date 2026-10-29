@@ -169,9 +169,13 @@ export function sharePercentOf(part: number, whole: number): number {
   return whole === 0 ? 0 : round1((part / whole) * 100);
 }
 
-/** `(part / whole) * 100`, one decimal. Goal progress, bar widths, completion meters. */
+/**
+ * `(part / whole) * 100`, unrounded. A bar's fill is geometry, not copy: rounding it to one
+ * decimal (`81.25` -> `81.3`) moves the rendered width, so the exact ratio stays exact and
+ * only the formatter (`formatPercentValue`) rounds what a human reads.
+ */
 export function progressPercentOf(part: number, whole: number): number {
-  return sharePercentOf(part, whole);
+  return whole === 0 ? 0 : (part / whole) * 100;
 }
 
 function round1(value: number): number {

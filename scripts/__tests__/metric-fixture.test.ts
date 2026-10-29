@@ -175,6 +175,13 @@ describe("formatters — the only place a number becomes a string", () => {
     assert.equal(sharePercentOf(7_825, 12_450), 62.9);
     assert.equal(progressPercentOf(124_050, 165_400), 75);
   });
+
+  it("keeps a bar's fill exact — rounding belongs to the label, not the geometry", () => {
+    // `/leaderboard`'s 3,250 / 4,000 points bar was `value={81.25}`. A one-decimal bar would
+    // render 81.3 and move the fill by 0.05 points; the exact ratio keeps the pixel identical.
+    assert.equal(progressPercentOf(3_250, 4_000), 81.25);
+    assert.equal(formatPercentValue(progressPercentOf(3_250, 4_000)), "81.3%");
+  });
 });
 
 describe("the schema refuses a snapshot that cannot be rendered honestly", () => {
