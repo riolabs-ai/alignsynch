@@ -131,8 +131,11 @@ export const metrics = {
 
   /* --- /battle -------------------------------------------------------------------- */
 
-  "battle.group.minPlayers": { unit: "players", value: 3, period: "allTime" },
-  "battle.group.maxPlayers": { unit: "players", value: 10, period: "allTime" },
+  /*
+   * The group battle's 3-10 roster left this file for `data/battle-modes.ts`, where the
+   * `group` mode owns it: a roster bound is a domain fact the mode record needs to render
+   * its card, not a quantity the page renders. E25's range check reads the record now.
+   */
 
   /* --- /leaderboard --------------------------------------------------------------- */
 

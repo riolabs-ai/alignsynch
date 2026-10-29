@@ -1,6 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { PageCopySection } from "@/content/pages";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ChevronRight } from "lucide-react";
 
 // Mock data for past challenges
@@ -47,13 +49,13 @@ const pastChallenges = [
   },
 ];
 
-export function DailyHistory() {
+export function DailyHistory({ copy }: { copy: PageCopySection }) {
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2 flex flex-wrap gap-2 flex-row items-center justify-between">
-        <CardTitle className="text-xl">Challenge History</CardTitle>
+        <CardTitle className="text-xl">{copy.heading}</CardTitle>
         <Button variant="ghost" size="sm" className="text-xs">
-          View All
+          {itemLabel(copy, "view-all")}
           <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </CardHeader>
@@ -71,13 +73,17 @@ export function DailyHistory() {
                   <Badge variant="outline" className="mr-2">
                     {challenge.theme}
                   </Badge>
-                  {challenge.rank <= 10 && <Badge className="bg-amber-500">Top 10</Badge>}
+                  {challenge.rank <= 10 && (
+                    <Badge className="bg-amber-500">{itemLabel(copy, "top-ten")}</Badge>
+                  )}
                 </div>
               </div>
 
               <div className="text-right">
                 <div className="font-medium">{challenge.score}%</div>
-                <div className="text-sm text-muted-foreground">Rank #{challenge.rank}</div>
+                <div className="text-sm text-muted-foreground">
+                  {fillLabel(itemLabel(copy, "rank"), { value: challenge.rank })}
+                </div>
               </div>
             </div>
           ))}

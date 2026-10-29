@@ -77,6 +77,8 @@ import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
 import { zMetricTable } from "../content/metrics";
 import { media } from "../data/media";
 import { affiliateTiers, earningSources, metricTable, streakRewards } from "../data/metrics";
+import { battleModes, battleRoundOptions } from "../data/battle-modes";
+import { dailyChallengeBadges } from "../data/daily-challenge";
 import { quizComments } from "../data/quiz-comments";
 import { quizResults } from "../data/quiz-results";
 import { quizReviews } from "../data/quiz-reviews";
@@ -96,6 +98,12 @@ import {
   tierBandProblems,
   unusedMetricKeys,
 } from "./metric-invariants";
+import {
+  MODE_RULE,
+  battleModeProblems,
+  dailyChallengeRewardProblems,
+  modeWiringProblems,
+} from "./mode-invariants";
 import { durationLabels, findMetricLiterals, relativeLabels } from "./metric-refs";
 import {
   danglingEntries,
@@ -902,8 +910,8 @@ for (const problem of streakRewardProblems(streakRewards)) err("E25", problem);
 
 for (const problem of rangeProblems(
   "the group battle player range",
-  metricTable["battle.group.minPlayers"]?.value ?? 0,
-  metricTable["battle.group.maxPlayers"]?.value ?? 0,
+  battleModes.find((mode) => mode.id === "group")?.playersMin ?? 0,
+  battleModes.find((mode) => mode.id === "group")?.playersMax ?? 0,
 )) {
   err("E25", problem);
 }
@@ -913,6 +921,47 @@ if (metricLiterals.length === 0 && Object.keys(metricTable).length === 0) {
     "E22",
     "the metric scan found 0 literals and data/metrics.ts holds 0 snapshots: the scan walked no sources or the fixture was not parsed",
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * E27 — a mode is a record, and the record is the one the page renders
+ *
+ * WU-10 moved `/battle`'s mode list and `/daily-challenge`'s badge set out of the
+ * components. A fixture is not a gate: a mode whose `questionCount` is not one of the
+ * lengths its `<Select>` offers renders a control showing no selection, and a fixture
+ * nothing imports leaves the page rendering the literals it was meant to replace while
+ * every other check stays green. So: the mode set has the ids the page branches on,
+ * each default is an offered option, the only description placeholder is `{players}`,
+ * the badge ids are unique, and each surface imports its fixture.
+ *
+ * `data/battle-modes.ts` owns the roster range now, so E25's "group battle is a range"
+ * check reads it there instead of `metricTable` (see the call above).
+ * ------------------------------------------------------------------ */
+
+for (const problem of battleModeProblems(battleModes, battleRoundOptions)) {
+  err(MODE_RULE, problem);
+}
+
+for (const problem of dailyChallengeRewardProblems(dailyChallengeBadges)) {
+  err(MODE_RULE, problem);
+}
+
+for (const problem of modeWiringProblems(
+  uiSources,
+  "components/battle",
+  "battleModes",
+  "data/battle-modes",
+)) {
+  err(MODE_RULE, problem);
+}
+
+for (const problem of modeWiringProblems(
+  uiSources,
+  "components/daily-challenge",
+  "dailyChallengeBadges",
+  "data/daily-challenge",
+)) {
+  err(MODE_RULE, problem);
 }
 
 /* ------------------------------------------------------------------ *
@@ -1279,6 +1328,7 @@ const counts = [
   `${activityResults.length} quiz results, ${activityComments.length} comments, ${activityReviews.length} reviews`,
   `${Object.keys(registry).length} media entries`,
   `${Object.keys(pageCopies).length} page-copy routes`,
+  `${battleModes.length} battle modes, ${dailyChallengeBadges.length} daily-challenge badges`,
   `${playerRecords.length} players`,
   `${leaderboardRowCount} leaderboard rows`,
   `${winRecords.length} wins`,

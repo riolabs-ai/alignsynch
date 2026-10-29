@@ -48,6 +48,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/home",
     budget: 0,
   },
+  "/battle": {
+    page: "app/(mainlayout)/battle/page.tsx",
+    dirs: ["components/battle"],
+    fixture: "data/pages/battle",
+    budget: 0,
+  },
   "/categories": {
     page: "app/(mainlayout)/categories/page.tsx",
     dirs: ["components/categories"],
@@ -58,6 +64,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/categories/[slug]/page.tsx",
     dirs: ["components/categories"],
     fixture: "data/pages/category-detail",
+    budget: 0,
+  },
+  "/daily-challenge": {
+    page: "app/(mainlayout)/daily-challenge/page.tsx",
+    dirs: ["components/daily-challenge"],
+    fixture: "data/pages/daily-challenge",
     budget: 0,
   },
   "/explore": {

@@ -13,8 +13,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
-import { formatPercentValue, formatMetricValue } from "@/content/metrics";
+import { formatMetricValue, formatPercentValue } from "@/content/metrics";
+import type { PageCopySection } from "@/content/pages";
 import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
 import confetti from "canvas-confetti";
 import { Award, Clock, Facebook, Link, Medal, Share2, Trophy, Twitter } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -29,6 +31,8 @@ type dailyQuizData = {
   }[];
 };
 interface CompletedChallengeProps {
+  /** The card's words, from `data/pages/daily-challenge.ts` (WU-10) — never a literal here. */
+  copy: PageCopySection;
   result: {
     score: number;
     totalQuestions: number;
@@ -42,6 +46,7 @@ interface CompletedChallengeProps {
 }
 
 export function CompletedChallenge({
+  copy,
   result,
   onReset,
   dailyQuizData,
@@ -65,11 +70,15 @@ export function CompletedChallenge({
     return `${mins}m ${secs}s`;
   };
 
+  /**
+   * The four score bands are copy (`score-excellent` … `score-low`); the thresholds are the
+   * logic, so they stay here. Which band applies is decided by the score, not by a string.
+   */
   const getScoreMessage = (score: number) => {
-    if (score >= 90) return "Excellent! You're a quiz master!";
-    if (score >= 70) return "Great job! You know your stuff!";
-    if (score >= 50) return "Good effort! Keep learning!";
-    return "Nice try! There's room for improvement.";
+    if (score >= 90) return itemLabel(copy, "score-excellent");
+    if (score >= 70) return itemLabel(copy, "score-great");
+    if (score >= 50) return itemLabel(copy, "score-good");
+    return itemLabel(copy, "score-low");
   };
 
   const getRankEmoji = (rank: number) => {
@@ -80,26 +89,29 @@ export function CompletedChallenge({
   };
 
   const handleShare = (platform: string) => {
-    const message = `I scored ${result.score}% and ranked #${result.rank} in today's quiz challenge! Can you beat me?`;
+    const message = fillLabel(itemLabel(copy, "share-message"), {
+      score: result.score,
+      rank: result.rank,
+    });
 
     // In a real app, these would open share dialogs or copy to clipboard
     if (platform === "twitter") {
       console.log("Sharing to Twitter:", message);
       toast({
-        title: "Shared to Twitter",
-        description: "Your results have been shared to Twitter.",
+        title: itemLabel(copy, "toast-twitter"),
+        description: itemLabel(copy, "toast-twitter-body"),
       });
     } else if (platform === "facebook") {
       console.log("Sharing to Facebook:", message);
       toast({
-        title: "Shared to Facebook",
-        description: "Your results have been shared to Facebook.",
+        title: itemLabel(copy, "toast-facebook"),
+        description: itemLabel(copy, "toast-facebook-body"),
       });
     } else if (platform === "copy") {
       navigator.clipboard.writeText(message);
       toast({
-        title: "Link Copied",
-        description: "Challenge link copied to clipboard.",
+        title: itemLabel(copy, "toast-copy"),
+        description: itemLabel(copy, "toast-copy-body"),
       });
     }
   };
@@ -142,7 +154,7 @@ export function CompletedChallenge({
   return (
     <Card className="shadow-md">
       <CardHeader className="pb-4">
-        <CardTitle className="text-center">Challenge Completed!</CardTitle>
+        <CardTitle className="text-center">{copy.heading}</CardTitle>
         <CardDescription className="text-center">{getScoreMessage(result.score)}</CardDescription>
       </CardHeader>
 
@@ -152,7 +164,7 @@ export function CompletedChallenge({
             <CircularProgress value={result.score} size={180} strokeWidth={10} />
             <div className="absolute inset-0 flex items-center justify-center flex-col">
               <span className="text-4xl font-bold">{result.score}%</span>
-              <span className="text-sm text-muted-foreground">Your Score</span>
+              <span className="text-sm text-muted-foreground">{itemLabel(copy, "your-score")}</span>
             </div>
           </div>
         </div>
@@ -160,7 +172,7 @@ export function CompletedChallenge({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="flex flex-col items-center p-3 bg-muted/30 rounded-lg">
             <Trophy className="h-5 w-5 text-amber-500 mb-1" />
-            <span className="text-sm text-muted-foreground">Rank</span>
+            <span className="text-sm text-muted-foreground">{itemLabel(copy, "rank")}</span>
             <span className="text-xl font-bold">
               {getRankEmoji(result.rank)} #{result.rank}
             </span>
@@ -168,13 +180,13 @@ export function CompletedChallenge({
 
           <div className="flex flex-col items-center p-3 bg-muted/30 rounded-lg">
             <Clock className="h-5 w-5 text-blue-500 mb-1" />
-            <span className="text-sm text-muted-foreground">Time</span>
+            <span className="text-sm text-muted-foreground">{itemLabel(copy, "time")}</span>
             <span className="text-xl font-bold">{formatTime(result.timeTaken)}</span>
           </div>
 
           <div className="flex flex-col items-center p-3 bg-muted/30 rounded-lg">
             <Award className="h-5 w-5 text-green-500 mb-1" />
-            <span className="text-sm text-muted-foreground">Correct</span>
+            <span className="text-sm text-muted-foreground">{itemLabel(copy, "correct")}</span>
             <span className="text-xl font-bold">
               {result.correctAnswers}/{result.totalQuestions}
             </span>
@@ -182,39 +194,45 @@ export function CompletedChallenge({
 
           <div className="flex flex-col items-center p-3 bg-muted/30 rounded-lg">
             <Medal className="h-5 w-5 text-purple-500 mb-1" />
-            <span className="text-sm text-muted-foreground">Earned</span>
+            <span className="text-sm text-muted-foreground">{itemLabel(copy, "earned")}</span>
             <span className="text-xl font-bold">
-              +{formatMetricValue(metric("daily.challenge.earnedXp"))} XP
+              {fillLabel(itemLabel(copy, "xp"), {
+                amount: formatMetricValue(metric("daily.challenge.earnedXp")),
+              })}
             </span>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="summary">Summary</TabsTrigger>
-            <TabsTrigger value="rewards">Rewards</TabsTrigger>
-            <TabsTrigger value="answers">Answers</TabsTrigger>
+            <TabsTrigger value="summary">{itemLabel(copy, "tab-summary")}</TabsTrigger>
+            <TabsTrigger value="rewards">{itemLabel(copy, "tab-rewards")}</TabsTrigger>
+            <TabsTrigger value="answers">{itemLabel(copy, "tab-answers")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="summary" className="space-y-4">
             <div className="space-y-2">
-              <h3 className="font-medium">Your Performance</h3>
+              <h3 className="font-medium">{itemLabel(copy, "performance")}</h3>
               <p className="text-sm text-muted-foreground">
-                You completed today's challenge in {formatTime(result.timeTaken)}, which is faster
-                than {formatPercentValue(participantPercent.value)} of participants.
+                {fillLabel(itemLabel(copy, "speed-line"), {
+                  time: formatTime(result.timeTaken),
+                  percent: formatPercentValue(participantPercent.value),
+                })}
               </p>
               <p className="text-sm text-muted-foreground">
-                Your score of {result.score}% places you in the top{" "}
-                {formatPercentValue(rankTopPercent.value)} of today's participants.
+                {fillLabel(itemLabel(copy, "rank-line"), {
+                  score: result.score,
+                  percent: formatPercentValue(rankTopPercent.value),
+                })}
               </p>
             </div>
 
             <Separator />
 
             <div className="space-y-2">
-              <h3 className="font-medium">Streak Update</h3>
+              <h3 className="font-medium">{itemLabel(copy, "streak-update")}</h3>
               <p className="text-sm text-muted-foreground">
-                You've maintained a {streakDays}-day streak! Keep it up to earn bonus rewards.
+                {fillLabel(itemLabel(copy, "streak-line"), { days: streakDays })}
               </p>
               <div className="flex space-x-1 mt-2">
                 {Array.from({ length: badgeGoalDays }, (_, index) => index + 1).map((day) => (
@@ -225,7 +243,10 @@ export function CompletedChallenge({
                 ))}
               </div>
               <p className="text-xs text-muted-foreground text-right mt-1">
-                {badgeGoalDays - streakDays} days until {badgeGoalDays}-day streak badge
+                {fillLabel(itemLabel(copy, "badge-progress"), {
+                  remaining: badgeGoalDays - streakDays,
+                  goal: badgeGoalDays,
+                })}
               </p>
             </div>
           </TabsContent>
@@ -237,9 +258,11 @@ export function CompletedChallenge({
                   <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Daily Participant</h4>
+                  <h4 className="font-medium">{itemLabel(copy, "participant")}</h4>
                   <p className="text-sm text-muted-foreground">
-                    +{formatMetricValue(metric("daily.challenge.reward.participantCoins"))} Coins
+                    {fillLabel(itemLabel(copy, "coins"), {
+                      amount: formatMetricValue(metric("daily.challenge.reward.participantCoins")),
+                    })}
                   </p>
                 </div>
               </div>
@@ -249,9 +272,11 @@ export function CompletedChallenge({
                   <Award className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Score Bonus</h4>
+                  <h4 className="font-medium">{itemLabel(copy, "score-bonus")}</h4>
                   <p className="text-sm text-muted-foreground">
-                    +{result.score * xpPerScorePoint} XP
+                    {fillLabel(itemLabel(copy, "xp"), {
+                      amount: result.score * xpPerScorePoint,
+                    })}
                   </p>
                 </div>
               </div>
@@ -261,10 +286,12 @@ export function CompletedChallenge({
                   <Medal className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Streak Bonus</h4>
+                  <h4 className="font-medium">{itemLabel(copy, "streak-bonus")}</h4>
                   <p className="text-sm text-muted-foreground">
-                    +{formatMetricValue(metric("daily.challenge.reward.streakBonusCoins"))} Coins (
-                    {streakDays}-day streak)
+                    {fillLabel(itemLabel(copy, "streak-coins"), {
+                      amount: formatMetricValue(metric("daily.challenge.reward.streakBonusCoins")),
+                      days: streakDays,
+                    })}
                   </p>
                 </div>
               </div>
@@ -274,9 +301,11 @@ export function CompletedChallenge({
                   <Trophy className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Top 50 Rank</h4>
+                  <h4 className="font-medium">{itemLabel(copy, "top-rank")}</h4>
                   <p className="text-sm text-muted-foreground">
-                    +{formatMetricValue(metric("daily.challenge.reward.topRankXp"))} XP
+                    {fillLabel(itemLabel(copy, "xp"), {
+                      amount: formatMetricValue(metric("daily.challenge.reward.topRankXp")),
+                    })}
                   </p>
                 </div>
               </div>
@@ -285,22 +314,28 @@ export function CompletedChallenge({
             <Separator />
 
             <div className="text-center">
-              <p className="font-medium">Total Earned</p>
+              <p className="font-medium">{itemLabel(copy, "total-earned")}</p>
               <div className="flex justify-center space-x-4 mt-2">
                 <div className="flex items-center">
                   <div className="bg-amber-100 dark:bg-amber-900 p-1 rounded-full mr-2">
                     <span className="text-amber-600 dark:text-amber-400 text-xs font-bold">$</span>
                   </div>
                   <span className="font-bold">
-                    +{formatMetricValue(metric("daily.challenge.totalCoins"))} Coins
+                    {fillLabel(itemLabel(copy, "coins"), {
+                      amount: formatMetricValue(metric("daily.challenge.totalCoins")),
+                    })}
                   </span>
                 </div>
                 <div className="flex items-center">
                   <div className="bg-blue-100 dark:bg-blue-900 p-1 rounded-full mr-2">
-                    <span className="text-blue-600 dark:text-blue-400 text-xs font-bold">XP</span>
+                    <span className="text-blue-600 dark:text-blue-400 text-xs font-bold">
+                      {itemLabel(copy, "xp-unit")}
+                    </span>
                   </div>
                   <span className="font-bold">
-                    +{formatMetricValue(metric("daily.challenge.totalXp"))} XP
+                    {fillLabel(itemLabel(copy, "xp"), {
+                      amount: formatMetricValue(metric("daily.challenge.totalXp")),
+                    })}
                   </span>
                 </div>
               </div>
@@ -308,13 +343,11 @@ export function CompletedChallenge({
           </TabsContent>
 
           <TabsContent value="answers" className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Review your answers and see the correct solutions.
-            </p>
+            <p className="text-sm text-muted-foreground mb-4">{itemLabel(copy, "answers-intro")}</p>
 
             <div className="space-y-4">
               {dailyQuizData.questions.map((q, index) => {
-                const userAnswer = selectedAnswers[index] || "Not answered";
+                const userAnswer = selectedAnswers[index] || itemLabel(copy, "not-answered");
                 const isCorrect = userAnswer === q.correctAnswer;
 
                 return (
@@ -326,13 +359,17 @@ export function CompletedChallenge({
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${isCorrect ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}
                       >
-                        {isCorrect ? "Correct" : "Incorrect"}
+                        {isCorrect
+                          ? itemLabel(copy, "status-correct")
+                          : itemLabel(copy, "status-incorrect")}
                       </span>
                     </div>
 
                     <div className="mt-2 space-y-1 text-sm">
                       <p>
-                        <span className="text-muted-foreground">Your answer: </span>
+                        <span className="text-muted-foreground">
+                          {itemLabel(copy, "your-answer")}{" "}
+                        </span>
                         <span
                           className={
                             isCorrect
@@ -346,7 +383,9 @@ export function CompletedChallenge({
 
                       {!isCorrect && (
                         <p>
-                          <span className="text-muted-foreground">Correct answer: </span>
+                          <span className="text-muted-foreground">
+                            {itemLabel(copy, "correct-answer")}{" "}
+                          </span>
                           <span className="text-green-600 dark:text-green-400 font-medium">
                             {q.correctAnswer}
                           </span>
@@ -363,7 +402,7 @@ export function CompletedChallenge({
 
       <CardFooter className="flex flex-col sm:flex-row justify-between gap-4 pt-4">
         <Button variant="outline" onClick={onReset}>
-          View Challenge Details
+          {itemLabel(copy, "view-details")}
         </Button>
 
         <div className="flex space-x-2">
@@ -371,7 +410,7 @@ export function CompletedChallenge({
             <PopoverTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700">
                 <Share2 className="h-4 w-4 mr-2" />
-                Share Results
+                {itemLabel(copy, "share")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-2" align="end">
@@ -383,7 +422,7 @@ export function CompletedChallenge({
                   onClick={() => handleShare("twitter")}
                 >
                   <Twitter className="h-4 w-4 mr-2" />
-                  Twitter
+                  {itemLabel(copy, "share-twitter")}
                 </Button>
                 <Button
                   size="sm"
@@ -392,7 +431,7 @@ export function CompletedChallenge({
                   onClick={() => handleShare("facebook")}
                 >
                   <Facebook className="h-4 w-4 mr-2" />
-                  Facebook
+                  {itemLabel(copy, "share-facebook")}
                 </Button>
                 <Button
                   size="sm"
@@ -401,7 +440,7 @@ export function CompletedChallenge({
                   onClick={() => handleShare("copy")}
                 >
                   <Link className="h-4 w-4 mr-2" />
-                  Copy
+                  {itemLabel(copy, "share-copy")}
                 </Button>
               </div>
             </PopoverContent>

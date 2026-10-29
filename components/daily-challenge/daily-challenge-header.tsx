@@ -2,8 +2,10 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { quizCategoryLabel } from "@/content/categories";
-import { formatMetricValue, formatDayCount } from "@/content/metrics";
+import { formatDayCount, formatMetricValue } from "@/content/metrics";
+import type { PageCopy } from "@/content/pages";
 import { metric } from "@/data/metrics";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { Calendar, Clock, Flame, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -14,7 +16,8 @@ import { useEffect, useState } from "react";
  */
 const TODAYS_THEME = quizCategoryLabel("science");
 
-export function DailyChallengeHeader() {
+export function DailyChallengeHeader({ copy }: { copy: PageCopy }) {
+  const cards = sectionOf(copy, "stat-cards");
   const [timeLeft, setTimeLeft] = useState({
     hours: 0,
     minutes: 0,
@@ -47,10 +50,8 @@ export function DailyChallengeHeader() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Daily Challenge</h1>
-        <p className="text-muted-foreground">
-          A new quiz every day. Test your knowledge and compete with others!
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{copy.heading}</h1>
+        <p className="text-muted-foreground">{copy.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -60,7 +61,9 @@ export function DailyChallengeHeader() {
               <Clock className="h-5 w-5 text-purple-600 dark:text-purple-300" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Time Remaining</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {itemLabel(cards, "time-remaining")}
+              </p>
               <p className="text-xl font-bold">
                 {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:
                 {formatTime(timeLeft.seconds)}
@@ -75,7 +78,9 @@ export function DailyChallengeHeader() {
               <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-300" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Today's Theme</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {itemLabel(cards, "todays-theme")}
+              </p>
               <p className="text-xl font-bold">{TODAYS_THEME}</p>
             </div>
           </CardContent>
@@ -87,9 +92,13 @@ export function DailyChallengeHeader() {
               <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-300" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Top Prize</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {itemLabel(cards, "top-prize")}
+              </p>
               <p className="text-xl font-bold">
-                {formatMetricValue(metric("daily.challenge.topPrize"))} Coins
+                {fillLabel(itemLabel(cards, "coins"), {
+                  amount: formatMetricValue(metric("daily.challenge.topPrize")),
+                })}
               </p>
             </div>
           </CardContent>
@@ -101,7 +110,9 @@ export function DailyChallengeHeader() {
               <Flame className="h-5 w-5 text-red-600 dark:text-red-300" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Your Streak</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {itemLabel(cards, "your-streak")}
+              </p>
               <p className="text-xl font-bold">
                 {formatDayCount(metric("daily.challenge.streak.days").value, "upper")}
               </p>
