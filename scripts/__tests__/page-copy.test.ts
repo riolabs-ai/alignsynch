@@ -49,7 +49,7 @@ const HOME = copyOf({
   ],
 });
 
-/** The smallest tree the rule can run on: a page, one band, the fixture. */
+/** The smallest tree the rule can run on: a route, the shell, the 404, one band each. */
 const TREE: SourceFile[] = [
   file(
     "app/(mainlayout)/page.tsx",
@@ -71,13 +71,79 @@ export function Band({ copy }: { copy: PageCopySection }) {
 `,
   ),
   file("data/pages/home.ts", `export const homePageCopy = {};`),
+  // The shell: the layout mounts the header, the pages mount the footer. One fixture,
+  // two entry modules — which is what `mounts` exists for.
+  file(
+    "app/(mainlayout)/layout.tsx",
+    `import { Chrome } from "@/components/layout/chrome";
+import { shellPageCopy } from "@/data/pages/shell";
+
+export default function Layout({ children }) {
+  return <Chrome copy={shellPageCopy}>{children}</Chrome>;
+}
+`,
+  ),
+  file(
+    "components/layout/chrome.tsx",
+    `import { Head } from "@/components/header/head";
+
+export function Chrome({ copy }) {
+  return <Head copy={copy} />;
+}
+`,
+  ),
+  file(
+    "components/header/head.tsx",
+    `export function Head({ copy }) {
+  return <header>{copy.heading}</header>;
+}
+`,
+  ),
+  file(
+    "components/layout/footer.tsx",
+    `import { shellPageCopy } from "@/data/pages/shell";
+
+export function Footer() {
+  return <footer>{shellPageCopy.heading}</footer>;
+}
+`,
+  ),
+  file("data/pages/shell.ts", `export const shellPageCopy = {};`),
+  file(
+    "app/not-found.tsx",
+    `import { notFoundPageCopy } from "@/data/pages/not-found";
+
+export default function NotFound() {
+  return <h1>{notFoundPageCopy.heading}</h1>;
+}
+`,
+  ),
+  file("data/pages/not-found.ts", `export const notFoundPageCopy = {};`),
 ];
+
+const SHELL = copyOf({ heading: "QuizHub" });
+const NOT_FOUND = copyOf({ heading: "Oops" });
+
+const COPIES: PageCopyTable = { "/": HOME, shell: SHELL, "not-found": NOT_FOUND };
 
 const BUDGET: PageCopyBudget = {
   "/": {
     page: "app/(mainlayout)/page.tsx",
     dirs: ["components/home"],
     fixture: "data/pages/home",
+    budget: 0,
+  },
+  shell: {
+    page: "app/(mainlayout)/layout.tsx",
+    mounts: ["components/layout/footer.tsx"],
+    dirs: ["components/layout", "components/header"],
+    fixture: "data/pages/shell",
+    budget: 0,
+  },
+  "not-found": {
+    page: "app/not-found.tsx",
+    dirs: [],
+    fixture: "data/pages/not-found",
     budget: 0,
   },
 };
@@ -92,7 +158,7 @@ const check = (
   } = {},
 ) =>
   copyProblems({
-    copies: overrides.copies ?? { "/": HOME },
+    copies: overrides.copies ?? COPIES,
     budget: overrides.budget ?? BUDGET,
     sources: overrides.sources ?? TREE,
     routePatterns: overrides.routePatterns ?? ["/", "/explore"],
@@ -141,6 +207,18 @@ describe("leafLiterals", () => {
       file(
         "components/home/x.tsx",
         `<DropdownMenuContent align="end"><ScrollBar orientation="horizontal" /></DropdownMenuContent>`,
+      ),
+    );
+    assert.deepEqual(literals, []);
+  });
+
+  it("ignores SVG presentation attributes — `evenodd` is a drawing keyword, not copy", () => {
+    const literals = leafLiterals(
+      file(
+        "components/layout/x.tsx",
+        `<svg viewBox="0 0 24 24" preserveAspectRatio="none" fillRule="evenodd">
+  <path d="M0 0h24v24H0z" clipRule="evenodd" strokeLinecap="round" strokeLinejoin="round" />
+</svg>`,
       ),
     );
     assert.deepEqual(literals, []);
@@ -241,7 +319,7 @@ describe("copyProblems — the passing tree", () => {
     // `sentence` is an expression, not a literal — a literal of that exact length is fine.
     const literals = leafLiterals(file("components/home/x.tsx", `<p>${sentence}</p>`));
     assert.equal(literals[0].value.length, COPY_LITERAL_MAX);
-    assert.deepEqual(messages({ sources, budget: { "/": { ...BUDGET["/"], budget: 0 } } }), []);
+    assert.deepEqual(messages({ sources, budget: { ...BUDGET } }), []);
   });
 });
 
@@ -365,7 +443,7 @@ export const x = sectionOf(homePageCopy, "latest-quizes");
       ...HOME,
       items: [{ id: "search-placeholder", label: "Search categories..." }],
     });
-    assert.deepEqual(messages({ sources, copies: { "/": withItems } }), []);
+    assert.deepEqual(messages({ sources, copies: { ...COPIES, "/": withItems } }), []);
   });
 
   it("fails on a duplicate section id or a duplicate item id", () => {
@@ -405,5 +483,96 @@ export const x = sectionOf(homePageCopy, "latest-quizes");
       found.join("\n"),
       /no PageCopy fixture for "\/" — the ratchet has nothing to prove/,
     );
+  });
+
+  it("fails when the shell is left out of the table — no route budget can stand in", () => {
+    const found = messages({ copies: { "/": HOME, "not-found": NOT_FOUND } });
+    assert.match(found.join("\n"), /no PageCopy fixture for the "shell" surface/);
+    assert.doesNotMatch(found.join("\n"), /"not-found" surface/);
+  });
+
+  it("fails when the 404 is left out of the table", () => {
+    const found = messages({ copies: { "/": HOME, shell: SHELL } });
+    assert.match(found.join("\n"), /no PageCopy fixture for the "not-found" surface/);
+  });
+
+  it("fails when a mount names a file that does not exist", () => {
+    const found = messages({
+      budget: { ...BUDGET, shell: { ...BUDGET.shell, mounts: ["components/layout/gone.tsx"] } },
+    });
+    assert.match(found.join("\n"), /mounts "components\/layout\/gone\.tsx"/);
+  });
+});
+
+describe("surfaces that are not routes", () => {
+  it("attributes a mount's reachable files — the footer belongs to the shell", () => {
+    const withMount = attributedFiles(BUDGET.shell, TREE).sort();
+    assert.deepEqual(withMount, [
+      "components/header/head.tsx",
+      "components/layout/chrome.tsx",
+      "components/layout/footer.tsx",
+    ]);
+    // Without the mount the footer is attributed to nobody, which is the hole the
+    // `mounts` field closes: the layout never imports it, a page does.
+    assert.deepEqual(attributedFiles({ ...BUDGET.shell, mounts: [] }, TREE).sort(), [
+      "components/header/head.tsx",
+      "components/layout/chrome.tsx",
+    ]);
+  });
+
+  it("measures a surface that is the module alone — no dirs, no attributed files", () => {
+    const measured = measureRoute(BUDGET["not-found"], TREE);
+    assert.deepEqual(measured.files, ["app/not-found.tsx"]);
+    assert.deepEqual(measured.literals, []);
+  });
+
+  it("counts the entry module's own literals when the surface has no dirs", () => {
+    const sources = [
+      ...TREE,
+      file(
+        "app/not-found.tsx",
+        `import { notFoundPageCopy } from "@/data/pages/not-found";
+export default function NotFound() {
+  return <h2>Oops! That quiz does not exist</h2>;
+}
+`,
+      ),
+    ];
+    const found = messages({ sources });
+    assert.match(found.join("\n"), /app\/not-found\.tsx:3 still renders the literal/);
+  });
+
+  it("fails a surface with no dirs that renders a component — that is an exemption", () => {
+    const sources = [
+      ...TREE,
+      file(
+        "app/not-found.tsx",
+        `import { Glyphs } from "@/components/not-found/glyphs";
+import { notFoundPageCopy } from "@/data/pages/not-found";
+
+export default function NotFound() {
+  return <Glyphs copy={notFoundPageCopy} />;
+}
+`,
+      ),
+      file(
+        "components/not-found/glyphs.tsx",
+        `export function Glyphs({ copy }) { return copy.heading; }`,
+      ),
+    ];
+    const found = messages({ sources });
+    assert.match(
+      found.join("\n"),
+      /"not-found" declares no dirs, but "app\/not-found.tsx" imports "components\/not-found\/glyphs.tsx"/,
+    );
+  });
+
+  it("accepts a section with no heading — a nav list is items only", () => {
+    const nav = copyOf({
+      heading: "QuizHub",
+      sections: [{ id: "nav", items: [{ id: "home", label: "Home" }] }],
+    });
+    assert.equal(nav.sections?.[0].heading, undefined);
+    assert.deepEqual(messages({ copies: { ...COPIES, shell: nav } }), []);
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { Footer } from "@/components/layout/footer";
+import type { PageCopy } from "@/content/pages";
 import { useState } from "react";
 import { FeaturedTournament } from "./featured-tournament";
 import { TournamentCategories } from "./tournament-categories";
@@ -10,7 +11,12 @@ import { TournamentHowItWorks } from "./tournament-how-it-works";
 import { TournamentList } from "./tournament-list";
 import { TournamentTestimonials } from "./tournament-testimonials";
 
-export function TournamentPage() {
+/**
+ * `shellCopy` is the shell fixture (`data/pages/shell.ts`), not this page's own copy:
+ * the tournaments page renders the footer itself, and the footer's words belong to the
+ * chrome. WU-11 adds the page copy as its own prop and hands it to the bands above.
+ */
+export function TournamentPage({ shellCopy }: { shellCopy: PageCopy }) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
@@ -49,7 +55,7 @@ export function TournamentPage() {
       </div>
 
       {/* Add the Footer */}
-      <Footer />
+      <Footer copy={shellCopy} />
     </>
   );
 }

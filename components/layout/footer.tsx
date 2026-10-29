@@ -1,15 +1,28 @@
 import { Button } from "@/components/ui/button";
-import { quizCategoryLabel } from "@/content/categories";
+import { quizCategories } from "@/content/categories";
+import type { PageCopy } from "@/content/pages";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
 /**
- * The subject column. Slugs, not labels — `quizCategories` owns the text, and the slug is
- * also the `/categories/[slug]` route, so a link can never name a category the table lost.
+ * The footer — the one shell band the pages render themselves, so it takes the whole
+ * shell copy and resolves its own sections (`data/pages/shell.ts`, WU-7). `data:check`
+ * E23 attributes this file to the `shell` surface through the budget entry's `mounts`:
+ * the layout mounts the header and sidebar, the pages mount this.
+ *
+ * The subject column is **derived**, never re-typed: `quizCategories` is the one table
+ * that owns a subject's name and slug, and the column is the rows flagged `featured`.
+ * The old `FOOTER_SUBJECTS` re-listed five slugs the table already had, which is how a
+ * footer column and a browse page drift apart. Order is the table's order.
  */
-const FOOTER_SUBJECTS = ["science", "history", "math", "literature", "sports"] as const;
+export function Footer({ copy }: { copy: PageCopy }) {
+  const links = sectionOf(copy, "footer-links");
+  const categories = sectionOf(copy, "footer-categories");
+  const contact = sectionOf(copy, "footer-contact");
+  const newsletter = sectionOf(copy, "footer-newsletter");
+  const legal = sectionOf(copy, "footer-legal");
 
-export function Footer() {
   return (
     <footer className="relative overflow-hidden bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 pt-16 pb-8 sm:px-4 xl:px-8">
       {/* Decorative elements */}
@@ -27,12 +40,11 @@ export function Footer() {
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                QuizHub
+                {copy.heading}
               </span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 max-w-xs leading-relaxed">
-              Create engaging quizzes, challenge others, and earn rewards for your knowledge. Join
-              our community of quiz creators and players today.
+              {copy.subtitle}
             </p>
 
             <div className="flex space-x-3">
@@ -105,7 +117,7 @@ export function Footer() {
               {/* Quick Links */}
               <div className="space-y-5">
                 <h3 className="text-base font-bold relative inline-block">
-                  Quick Links
+                  {links.heading}
                   <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
                 </h3>
                 <ul className="space-y-3">
@@ -115,7 +127,7 @@ export function Footer() {
                       className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Dashboard
+                      {itemLabel(links, "dashboard")}
                     </Link>
                   </li>
                   <li>
@@ -124,7 +136,7 @@ export function Footer() {
                       className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Create Quiz
+                      {itemLabel(links, "create-quiz")}
                     </Link>
                   </li>
                   <li>
@@ -133,7 +145,7 @@ export function Footer() {
                       className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Leaderboard
+                      {itemLabel(links, "leaderboard")}
                     </Link>
                   </li>
                   <li>
@@ -142,7 +154,7 @@ export function Footer() {
                       className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Affiliate Program
+                      {itemLabel(links, "affiliate")}
                     </Link>
                   </li>
                   <li>
@@ -151,7 +163,7 @@ export function Footer() {
                       className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      Pricing
+                      {itemLabel(links, "pricing")}
                     </Link>
                   </li>
                 </ul>
@@ -160,28 +172,30 @@ export function Footer() {
               {/* Categories */}
               <div className="space-y-5">
                 <h3 className="text-base font-bold relative inline-block">
-                  Categories
+                  {categories.heading}
                   <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
                 </h3>
                 <ul className="space-y-3">
-                  {FOOTER_SUBJECTS.map((slug) => (
-                    <li key={slug}>
-                      <Link
-                        href={`/categories/${slug}`}
-                        className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                        {quizCategoryLabel(slug)}
-                      </Link>
-                    </li>
-                  ))}
+                  {quizCategories
+                    .filter((category) => category.featured)
+                    .map((category) => (
+                      <li key={category.id}>
+                        <Link
+                          href={`/categories/${category.slug}`}
+                          className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
+                          {category.name}
+                        </Link>
+                      </li>
+                    ))}
                 </ul>
               </div>
 
               {/* Contact */}
               <div className="space-y-5">
                 <h3 className="text-base font-bold relative inline-block">
-                  Contact
+                  {contact.heading}
                   <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
                 </h3>
                 <ul className="space-y-4">
@@ -190,23 +204,27 @@ export function Footer() {
                       <MapPin className="h-4 w-4 text-purple-500" />
                     </div>
                     <span className="text-slate-600 dark:text-slate-400">
-                      123 Quiz Street, Knowledge City, QZ 12345
+                      {itemLabel(contact, "address")}
                     </span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
                       <Phone className="h-4 w-4 text-purple-500" />
                     </div>
-                    <span className="text-slate-600 dark:text-slate-400">+1 (555) 123-4567</span>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      {itemLabel(contact, "phone")}
+                    </span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
                       <Mail className="h-4 w-4 text-purple-500" />
                     </div>
-                    <span className="text-slate-600 dark:text-slate-400">support@quizhub.com</span>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      {itemLabel(contact, "email")}
+                    </span>
                   </li>
                 </ul>
-                <Button variant={"gradient"}>Contact Support</Button>
+                <Button variant={"gradient"}>{itemLabel(contact, "cta")}</Button>
               </div>
             </div>
           </div>
@@ -216,21 +234,19 @@ export function Footer() {
         <div className="mt-16 p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
-              <h3 className="text-xl font-bold mb-2">Subscribe to our newsletter</h3>
-              <p className="text-slate-600 dark:text-slate-400">
-                Get the latest news, updates and quiz tips delivered directly to your inbox.
-              </p>
+              <h3 className="text-xl font-bold mb-2">{newsletter.heading}</h3>
+              <p className="text-slate-600 dark:text-slate-400">{newsletter.body}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={itemLabel(newsletter, "placeholder")}
                   className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
                 />
               </div>
               <Button variant={"gradient"}>
-                Subscribe
+                {itemLabel(newsletter, "subscribe")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -241,28 +257,28 @@ export function Footer() {
         <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-slate-500 dark:text-slate-400">
-              © {new Date().getFullYear()} QuizHub . All rights reserved.
+              © {new Date().getFullYear()} {itemLabel(legal, "copyright")}
             </p>
             <div className="flex flex-wrap justify-center gap-6 mt-4 md:mt-0">
               <Link
                 href="#"
                 className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
               >
-                <span>Privacy Policy</span>
+                <span>{itemLabel(legal, "privacy")}</span>
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
                 href="#"
                 className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
               >
-                <span>Terms of Service</span>
+                <span>{itemLabel(legal, "terms")}</span>
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
                 href="#"
                 className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
               >
-                <span>Cookie Policy</span>
+                <span>{itemLabel(legal, "cookies")}</span>
                 <ExternalLink className="h-3 w-3" />
               </Link>
             </div>

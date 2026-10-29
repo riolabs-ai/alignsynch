@@ -2,6 +2,7 @@ import { PricingPlans } from "@/components/pricing/pricing-plans";
 import { PricingFaq } from "@/components/pricing/pricing-faq";
 import { PricingCta } from "@/components/pricing/pricing-cta";
 import { Footer } from "@/components/layout/footer";
+import { shellPageCopy } from "@/data/pages/shell";
 
 export default function PricingPage() {
   return (
@@ -9,7 +10,7 @@ export default function PricingPage() {
       <PricingPlans />
       <PricingFaq />
       <PricingCta />
-      <Footer />
+      <Footer copy={shellPageCopy} />
     </div>
   );
 }
