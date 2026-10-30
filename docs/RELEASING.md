@@ -61,7 +61,8 @@ dependency. Every commit lands in exactly one section, so no merged PR can be dr
 
 The trailing `(#NNN)` every squash-merged commit carries becomes a link to that pull request. The
 version heading is `## [x.y.z] - <date>`; the release link is a plain footer definition
-(`[x.y.z]: <url>`), deliberately not a heading, so it never reads as the start of an entry.
+(`[x.y.z]: <url>`), deliberately not a heading. The entry parser stops at both, so the footer is
+never part of an entry — and therefore never part of the release notes, which are the entry.
 
 ## Known limits are mandatory
 

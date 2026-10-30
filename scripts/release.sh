@@ -59,32 +59,41 @@ changelog_versions() {
   grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' "$CHANGELOG" | tr -d '#[] ' || true
 }
 
-newest_version() { changelog_versions | head -1; }
+newest_version() {
+  local all
+  all="$(changelog_versions)"
+  awk 'NR == 1 { print; exit }' <<<"$all"
+}
 
-entry_of() { # <version> -> the entry's lines
+entry_of() { # <version> -> the entry's lines; the file's link definitions are not the entry
   awk -v want="## [$1] - " '
     index($0, want) == 1 { inside = 1; print; next }
-    inside && /^## \[/ { exit }
+    inside && (/^## \[/ || /^\[[0-9]+\.[0-9]+\.[0-9]+\]: /) { exit }
     inside { print }
   ' "$CHANGELOG"
 }
 
 limits_of() { # <version> -> the Known limits block, body only
-  entry_of "$1" | awk '
+  local entry
+  entry="$(entry_of "$1")"
+  awk '
     /^### Known limits[[:space:]]*$/ { inside = 1; next }
     inside && /^#{2,3} / { exit }
     inside { print }
-  '
+  ' <<<"$entry"
 }
 
 limits_bullets() { # <version> -> count of bullets, 0 when the block is missing or empty
-  local n
-  n="$(limits_of "$1" | grep -c '^- ' || true)"
+  local n block
+  block="$(limits_of "$1")"
+  n="$(grep -c '^- ' <<<"$block" || true)"
   printf '%s' "${n:-0}"
 }
 
 limits_placeholder() { # <version> -> 0 when the block is still the generated TODO
-  limits_of "$1" | grep -qi 'TODO'
+  local block
+  block="$(limits_of "$1")"
+  grep -qi 'TODO' <<<"$block"
 }
 
 # --- commits -> entry ----------------------------------------------------------
@@ -233,7 +242,9 @@ cmd_check() {
       [ -n "$line" ] || continue
       examined=$((examined + 1))
       text="$(entry_text "$line")"
-      if ! printf '%s\n' "$entry" | grep -Fq -- "$text"; then
+      # A here-string, not `printf … | grep`: with `pipefail`, grep's early exit closes the pipe
+      # and the upstream SIGPIPE turns a match into "missing" — a gate that fails at random.
+      if ! grep -Fq -- "$text" <<<"$entry"; then
         missing=$((missing + 1))
         [ -n "$first_missing" ] || first_missing="$text"
       fi
