@@ -119,20 +119,20 @@ describe("quizDetailModel — leaderboard", () => {
     assert.equal(formatStopwatch(model.leaderboard[0].seconds), "02:00");
   });
 
-  it("keeps an avatar optional and carries its source when the person has one", () => {
+  it("seeds each row's avatar from the person's id, and from the name when there is none", () => {
     const model = quizDetailModel(quizzes[0], now, {
       results: [
-        attempt({ id: "r-avatar", quizId: quizzes[0].id }),
+        attempt({ id: "r-with-id", quizId: quizzes[0].id }),
         attempt({
-          id: "r-no-avatar",
+          id: "r-no-id",
           quizId: quizzes[0].id,
           score: { correct: 1, total: 5 },
-          player: { id: "player-2", name: "No Avatar" },
+          player: { name: "No Id" },
         }),
       ],
     });
-    assert.equal(model.leaderboard[0].avatar, "/avatars/one.png");
-    assert.equal(model.leaderboard[1].avatar, undefined);
+    assert.equal(model.leaderboard[0].seed, "player-1");
+    assert.equal(model.leaderboard[1].seed, "No Id");
   });
 
   it("is empty for a record with no attempt — the tab is not rendered, not empty", () => {

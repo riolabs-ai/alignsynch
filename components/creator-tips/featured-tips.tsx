@@ -1,4 +1,5 @@
 import { getFeaturedTips, tipCategoryName } from "@/data/creator-tips-data";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowRight, Clock } from "lucide-react";
@@ -52,15 +53,12 @@ export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full overflow-hidden mr-2">
-                    <Image
-                      src={tip.author.avatar?.src ?? media.placeholder.src}
-                      alt={tip.author.name}
-                      width={32}
-                      height={32}
-                      className="object-cover"
-                    />
-                  </div>
+                  <GeneratedAvatar
+                    name={tip.author.name}
+                    seed={tip.author.id ?? tip.author.name}
+                    size={32}
+                    className="mr-2"
+                  />
                   <span className="text-sm font-medium">{tip.author.name}</span>
                 </div>
 

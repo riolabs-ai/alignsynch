@@ -1,9 +1,9 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatPlayerCount, formatTimeRemaining } from "@/content/core";
@@ -140,12 +140,10 @@ export function FeaturedQuizzes({ copy }: { copy: PageCopySection }) {
               <CardContent className="p-4 xl:p-6 space-y-4 xl:space-y-6">
                 <div className="flex justify-between items-center gap-2">
                   <div className="flex items-center gap-3">
-                    <Image
-                      src={quiz.author?.avatar?.src ?? media["avatars.alex"].src}
-                      width={36}
-                      height={36}
-                      className="size-9 object-cover object-center rounded-full"
-                      alt={quiz.author?.name ?? "creator"}
+                    <GeneratedAvatar
+                      name={quiz.author?.name ?? "creator"}
+                      seed={quiz.author?.id ?? quiz.author?.name ?? "unknown-creator"}
+                      size={36}
                     />
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
@@ -190,16 +188,13 @@ export function FeaturedQuizzes({ copy }: { copy: PageCopySection }) {
                       <div className="flex items-center gap-1.5">
                         <div className="flex -space-x-2">
                           {quiz.stats.recentPlayers.slice(0, 3).map((player) => (
-                            <Avatar
+                            <GeneratedAvatar
                               key={player.name}
-                              className="border-2 border-background h-6 w-6"
-                            >
-                              <AvatarImage
-                                src={player.avatar?.src ?? media.placeholder.src}
-                                alt={player.name}
-                              />
-                              <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
-                            </Avatar>
+                              name={player.name}
+                              seed={player.id ?? player.name}
+                              size={24}
+                              className="border-2 border-background"
+                            />
                           ))}
                         </div>
                         <span className="text-sm font-medium">

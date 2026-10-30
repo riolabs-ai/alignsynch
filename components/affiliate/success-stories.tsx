@@ -1,11 +1,10 @@
 "use client";
 
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
-import { media } from "@/data/media";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 
 export function SuccessStories({ copy }: { copy: PageCopySection }) {
@@ -15,7 +14,6 @@ export function SuccessStories({ copy }: { copy: PageCopySection }) {
     {
       name: "Sarah Johnson",
       role: "Content Creator",
-      image: media["avatars.wizard"].src,
       quote: `I've been promoting ${brand.name} to my audience for 6 months now and the results have been incredible. The 30% commission is one of the best in the industry, and the recurring revenue has added a reliable income stream to my business.`,
       earnings: "$2,450/month",
       rating: 5,
@@ -23,7 +21,6 @@ export function SuccessStories({ copy }: { copy: PageCopySection }) {
     {
       name: "Michael Chen",
       role: "Education Blogger",
-      image: media["avatars.sarah"].src,
       quote: `What I love about ${brand.name}'s affiliate program is how easy they make it to promote. The marketing materials are top-notch, and my audience loves the product. I'm earning more with ${brand.name} than with any other affiliate program I've tried.`,
       earnings: "$1,875/month",
       rating: 5,
@@ -31,7 +28,6 @@ export function SuccessStories({ copy }: { copy: PageCopySection }) {
     {
       name: "Jessica Williams",
       role: "YouTube Educator",
-      image: media["avatars.king"].src,
       quote: `As someone who creates educational content, ${brand.name} was a natural fit for my audience. The affiliate dashboard makes it easy to track my performance, and the team is always responsive when I have questions. Highly recommended!`,
       earnings: "$3,200/month",
       rating: 5,
@@ -58,20 +54,12 @@ export function SuccessStories({ copy }: { copy: PageCopySection }) {
           <div className="relative bg-slate-50 dark:bg-slate-800 rounded-xl p-8 shadow-sm">
             <div className="flex flex-col md:flex-row gap-8 items-center">
               <div className="w-full md:w-1/3 flex justify-center">
-                <div className="relative w-32 h-32">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full" />
-                  <Image
-                    src={stories[currentIndex].image || media.placeholder.src}
-                    alt={stories[currentIndex].name}
-                    width={128}
-                    height={128}
-                    className="rounded-full object-cover border-4 border-white dark:border-slate-700"
-                    onError={(e) => {
-                      // Fallback to a default avatar if image fails to load
-                      e.currentTarget.src = media.placeholder.src;
-                    }}
-                  />
-                </div>
+                <GeneratedAvatar
+                  name={stories[currentIndex].name}
+                  seed={stories[currentIndex].name}
+                  size={128}
+                  className="border-4 border-white dark:border-slate-700"
+                />
               </div>
               <div className="w-full md:w-2/3 text-center md:text-left">
                 <div className="flex mb-2 justify-center md:justify-start">

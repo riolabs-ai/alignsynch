@@ -1,5 +1,6 @@
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import {
   formatMetricValue,
   formatPercentRange,
@@ -8,12 +9,10 @@ import {
 } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
-import { media } from "@/data/media";
 import { metric } from "@/data/metrics";
 import { fillLabel, itemLabel, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock, DollarSign, Gift, LifeBuoy, TrendingUp } from "lucide-react";
-import Image from "next/image";
 
 /** Which benefit card renders where; the words are `itemLabel`/`itemValue` of the same id. */
 const BENEFITS = [
@@ -49,14 +48,12 @@ export function WhyPartner({ copy }: { copy: PageCopySection }) {
       quote: `I've been part of many affiliate programs, but ${brand.name}'s stands out with its high commission rates and reliable tracking. I've earned over $5,000 monthly since joining.`,
       author: "Sarah Johnson",
       role: "Educational Content Creator",
-      image: media["avatars.sarah"].src,
     },
     {
       quote:
         "The conversion rates are incredible. The product sells itself, and the affiliate team provides amazing support whenever I need help optimizing my campaigns.",
       author: "Michael Chen",
       role: "Digital Marketing Specialist",
-      image: media["avatars.alex"].src,
     },
   ];
 
@@ -122,15 +119,11 @@ export function WhyPartner({ copy }: { copy: PageCopySection }) {
                   className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700"
                 >
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full overflow-hidden">
-                      <Image
-                        width={48}
-                        height={48}
-                        src={testimonial.image || media.placeholder.src}
-                        alt={testimonial.author}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    <GeneratedAvatar
+                      name={testimonial.author}
+                      seed={testimonial.author}
+                      size={48}
+                    />
                     <div>
                       <p className="font-semibold">{testimonial.author}</p>
                       <p className="text-sm text-slate-600 dark:text-slate-400">

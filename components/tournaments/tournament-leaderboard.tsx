@@ -255,11 +255,7 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="relative h-8 w-8">
-                            <GeneratedAvatar
-                              name={player.name}
-                              seed={player.username}
-                              size={32}
-                            />
+                            <GeneratedAvatar name={player.name} seed={player.username} size={32} />
                             <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white" />
                           </div>
                           <div>
@@ -314,7 +310,13 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="relative h-12 w-12">
-                  <GeneratedAvatar name="You" seed="current-user" size={48} />
+                  {/* The row's name and seed come from the copy fixture: `/tournaments/[id]`
+                      has a zero page-copy budget, and a demo viewer is a label, not a literal. */}
+                  <GeneratedAvatar
+                    name={itemLabel(copy, "you")}
+                    seed={itemLabel(copy, "you")}
+                    size={48}
+                  />
                 </div>
                 <div>
                   <div className="font-medium">

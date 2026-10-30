@@ -1,7 +1,6 @@
 "use client";
 
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +15,6 @@ import { Progress } from "@/components/ui/progress";
 import { difficultyLabel } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import { battleMode } from "@/data/battle-modes";
-import { media } from "@/data/media";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { CheckCircle2, Clock, Copy, ListChecks, Trophy, X, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -114,10 +112,12 @@ export function BattleLobby({ copy, battleState, onStartBattle, onCancel }: Batt
                     key={player.id}
                     className="flex flex-col items-center p-3 border rounded-lg bg-background"
                   >
-                    <Avatar className="h-16 w-16 mb-2">
-                      <GeneratedAvatar name={player.name} seed={player.seed} size={40} />
-                      <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <GeneratedAvatar
+                      name={player.name}
+                      seed={player.seed}
+                      size={64}
+                      className="mb-2"
+                    />
                     <div className="text-center">
                       <div className="font-medium">{player.name}</div>
                       <Badge variant={player.isReady ? "default" : "outline"} className="mt-1">

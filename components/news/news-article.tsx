@@ -1,5 +1,6 @@
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -115,13 +116,10 @@ export function NewsArticle({ slug, copy }: { slug: string; copy: PageCopy }) {
 
         <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <div className="flex items-center space-x-4">
-            <Avatar>
-              <AvatarImage
-                src={article.author.avatar?.src ?? media["avatars.wizard"].src}
-                alt={article.author.name}
-              />
-              <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+            <GeneratedAvatar
+              name={article.author.name}
+              seed={article.author.id ?? article.author.name}
+            />
             <div>
               <p className="font-medium">{article.author.name}</p>
               <div className="flex items-center space-x-4 text-sm text-muted-foreground">
@@ -355,13 +353,11 @@ export function NewsArticle({ slug, copy }: { slug: string; copy: PageCopy }) {
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-4 mb-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage
-                    src={article.author.avatar?.src ?? media.placeholder.src}
-                    alt={article.author.name}
-                  />
-                  <AvatarFallback>{article.author.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <GeneratedAvatar
+                  name={article.author.name}
+                  seed={article.author.id ?? article.author.name}
+                  size={48}
+                />
                 <div>
                   <p className="font-medium">{article.author.name}</p>
                   <p className="text-sm text-muted-foreground">{article.author.role}</p>

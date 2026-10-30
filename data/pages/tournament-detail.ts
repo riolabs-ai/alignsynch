@@ -265,6 +265,7 @@ export const tournamentDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "showing", label: "Showing {shown} of {total} players" },
         { id: "view-full", label: "View Full Leaderboard" },
         { id: "performance", label: "Your Performance" },
+        { id: "you", label: "You" },
         { id: "your-rank", label: "Your Rank:" },
         { id: "percentile", label: "Top {percent} of participants" },
         { id: "stat-score", label: "Score" },

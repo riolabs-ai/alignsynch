@@ -3,7 +3,6 @@
 import type { BattleModeId } from "@/content/battle";
 import type { PageCopy } from "@/content/pages";
 import { battleMode } from "@/data/battle-modes";
-import { media } from "@/data/media";
 import { sectionOf } from "@/lib/page-copy";
 import { useState } from "react";
 import { ActiveBattle } from "./active-battle";
