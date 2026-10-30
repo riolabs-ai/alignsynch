@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * The token layer — one light set, one dark set, and the density decisions that make a
+ * product surface read tighter than a marketing page (#160).
+ *
+ * Every value below is H S% L% because `tailwind.config.ts` resolves each colour as
+ * `hsl(var(--token))`. Five decisions, each measurable rather than adjectival:
+ *
+ *   --radius 0.5rem -> 0.375rem. `rounded-lg` is this token, `rounded-md` is two pixels
+ *                less and `rounded-sm` four: a dashboard reads tighter at 6px than at 8.
+ *   --border  / --input warm (hue 214 cool -> 30) and ~17% stronger: 1.23:1 -> 1.44:1 on
+ *                the light ground, so a card separates from the page on its hairline and
+ *                no longer needs a shadow to say where its edge is. It stops below the
+ *                slate-300 (1.55:1) that `hover:border-slate-300` paints, because a
+ *                resting edge that reached the hover weight would delete the hover step.
+ *                The two tokens were the same value before this card and they still are —
+ *                a warm card edge beside a cool input edge is one component drawn twice.
+ *   --muted-foreground lifted 215.4 16.3% 46.9% -> 215 21% 44%: 4.33:1 -> 4.88:1 on
+ *                `--muted` (and 4.75:1 -> 5.34:1 on the background). It passed AA on pure
+ *                white before this card and failed it on every muted or secondary chip,
+ *                which is the pair the app actually draws (`bg-muted` 83 times,
+ *                `text-muted-foreground` 525).
+ *   --destructive darkened 0 84.2% 60.2% -> 0 76% 46%: the old red was 3.59:1 under
+ *                `--destructive-foreground` (AA needs 4.5) and 3.76:1 as `text-destructive`
+ *                on white, and components draw it both ways. Now 5.25:1 and 5.49:1.
+ *
+ * Type is the sixth: body copy steps one step down the scale (16px -> 14px) and unstyled
+ * headings hold the 16px they used to inherit, which is the clear jump the old sheet
+ * lacked — see the second `@layer base` block.
+ *
+ * `.dark` stays valid and stays here: the brand record's colours are mode-blind (they are
+ * painted on `<html>` inline, outranking both blocks), and a later card restores the
+ * toggle. Neither build renders `class="dark"` today — this block is the set that card
+ * will paint, not the set this one ships.
+ *
+ * Contrast for every pair below is reported in the PR; `python3 contrast.py app/globals.css`
+ * recomputes it from this file, which is why the numbers above are a measurement.
+ */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -20,19 +57,19 @@
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 215 21% 44%;
 
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 76% 46%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 30 16% 84%;
+    --input: 30 16% 84%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.375rem;
   }
 
   .dark {
@@ -60,8 +97,8 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 30 8% 21%;
+    --input: 30 8% 21%;
     --ring: 212.7 26.8% 83.9%;
   }
 }
@@ -72,6 +109,26 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* One step down Tailwind's scale, 16px -> 14px: the surface already reads at
+       `text-sm` (525 `text-muted-foreground`, the default size on every card description),
+       so unclassed prose was the only text still at the old 16px. 14px x 1.5 = 21px of
+       line box against 24px, and `text-*` utilities are rem-based, so a component that
+       names its size keeps it. Inter is untouched: `app/layout.tsx` owns the family. */
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  /* The headings hold the size they used to inherit from `body`. That is the jump: an
+     unclassed `h3` card title was 16px against a 16px body (1.00) and is now 16px against
+     14px (1.14), and the classed ones were always a step above it (`text-2xl` 24px, 1.71).
+     The ladder is deliberately flat — `h3`/`h4` are card titles in this app, not document
+     sections, and a 20px card title is a layout change this card does not make. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: 1rem;
   }
 }
 
