@@ -1,5 +1,11 @@
 import { ExploreQuizzesPage } from "@/components/explore/explore-quizzes-page";
 import { explorePageCopy } from "@/data/pages/explore";
+import type { Metadata } from "next";
+
+/** The route's title is its own heading (`data/pages/explore.ts`). */
+export const metadata: Metadata = {
+  title: "Explore Quizzes",
+};
 
 /**
  * Request-time, not static (P3b).

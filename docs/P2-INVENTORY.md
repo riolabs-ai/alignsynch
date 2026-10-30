@@ -363,6 +363,16 @@ here so the decision is recorded rather than forgotten (W7).
 | `app/layout.tsx:13`                            | metadata | `Quiz Making Website - Play & Earn Money`                          |
 | `app/layout.tsx:14`                            | metadata | `Create quizzes, play games, and earn money with our multi-vendo…` |
 
+**#113 rewrote these titles, so this table is the pre-#113 census.** The root layout now carries
+the brand and the composition rule — `title: { default: "QuizHub", template: "%s · QuizHub" }` —
+and every route title above is written brand-free, because a title that still carried
+`| QuizHub` / `| QuizMaker` (three spellings were live: `QuizHub`, `Quizhub`, `QuizMaker`) would
+print the brand twice. The `file:line` column stays as measured; the current values are the
+`metadata` / `generateMetadata` exports under `app/**`, and the twenty routes that had no metadata
+at all (home, `/explore`, `/quiz/[id]`, `/login`, `/register`, the 404, …) now have one.
+`QuizHub` is the product name here because `data/pages/shell.ts` already ships it as the brand
+word the sidebar and footer logos render — no name is invented for a document title.
+
 ### CHROME — 425 framework microcopy (out of scope, W10)
 
 Nav labels, form labels, table headers, sort options, a11y strings, toast verbs, unit suffixes,

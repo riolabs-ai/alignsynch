@@ -4,6 +4,7 @@ import { selectQuestionAccuracy, selectQuizResults } from "@/content/quiz-result
 import { analyticsFor } from "@/data/quiz-analytics";
 import { quizResults } from "@/data/quiz-results";
 import { quizById } from "@/data/quizzes";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 /**
@@ -13,6 +14,18 @@ import { notFound } from "next/navigation";
  * players table is a projection over results, and the per-question accuracy is
  * derived from the answer sheets — nothing on this page is a typed number.
  */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const quiz = quizById(id);
+  return quiz === undefined
+    ? { title: "My Quizzes" }
+    : { title: quiz.title, description: quiz.summary };
+}
+
 export default async function QuizDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const quiz = quizById(id);

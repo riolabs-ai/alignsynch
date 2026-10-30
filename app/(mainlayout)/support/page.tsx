@@ -4,8 +4,8 @@ import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Support - QuizHub",
-  description: "Get help and support for your QuizHub  account",
+  title: "Support",
+  description: "Get help and support for your QuizHub account",
 };
 
 export default function Support() {

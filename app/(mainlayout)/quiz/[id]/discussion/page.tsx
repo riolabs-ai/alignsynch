@@ -3,6 +3,7 @@ import { selectCommentThreads, selectViewerResult } from "@/content/quiz-result"
 import { quizComments } from "@/data/quiz-comments";
 import { quizResults } from "@/data/quiz-results";
 import { quizById } from "@/data/quizzes";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { use } from "react";
 import type { QuizCommentThread } from "@/content/quiz-result";
@@ -15,6 +16,16 @@ import type { QuizCommentThread } from "@/content/quiz-result";
  * route named and rendered its mock regardless. The threads are built per question
  * here so the client component gets plain data.
  */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const quiz = quizById(id);
+  return { title: quiz === undefined ? "Quiz Discussion" : `${quiz.title} — Discussion` };
+}
+
 export default function QuizDiscussionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const quiz = quizById(id);
