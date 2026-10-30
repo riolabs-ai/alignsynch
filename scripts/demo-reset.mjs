@@ -2,8 +2,10 @@
 /**
  * `pnpm demo:reset` — the demo branch, back to the demo dataset (#185).
  *
- * The demo is one Neon branch (`demo`) whose parent is the **schema-only base** `demo-base`, never
- * the project's default branch. Three operations, in this order, and nothing else:
+ * The demo is one Neon branch (`demo`) restored from the **schema-only base** `demo-base`, never
+ * the project's default branch. The source is `DEMO_SOURCE_BRANCH` when that is set and the
+ * branch's parent otherwise, and it is resolved by name through the API before anything is
+ * written. Three operations, in this order, and nothing else:
  *
  *   1. **Migrate the source** (`demo-base`) through its own unpooled connection string. The base
  *      holds the schema and no rows, so it is only as current as the last migration applied to it;
@@ -13,17 +15,21 @@
  *      `--skip-migrate` is the manual/offline opt-out, and the step is skipped entirely on
  *      `--skip-reset`.
  *
- *   2. **Reset the branch from its parent.** One API call — `POST …/branches/<id>/restore`
- *      with `source_branch_id` = the branch's parent, which is exactly what
- *      `neon branches reset <branch> --parent` / `restore ^parent` runs. It is atomic on the
+ *   2. **Reset the branch from the source.** One API call — `POST …/branches/<id>/restore`
+ *      with `source_branch_id` = the resolved source. `neon branches reset <branch> ^parent` is
+ *      the same call with the parent as the source; naming the source explicitly is what lets a
+ *      branch whose parent is `production` restore from the base instead. It is atomic on the
  *      storage side, so there is no window where half the data is gone; a script of `DELETE`s
  *      has as many half-finished states as it has statements, and one of them always looks like
  *      a valid demo until you read it.
  *
- *      The parent is the base, and the base holds no rows, so the restore lands on an empty
+ *      The source is the base, and the base holds no rows, so the restore lands on an empty
  *      branch: this is what makes production data structurally unable to appear on the branch the
- *      demo serves. `assertResettable` refuses a parent that is the project's default branch, by
- *      id, so a re-parented demo is a refusal and not a silent copy of the live data.
+ *      demo serves. `assertSourceResettable` refuses a source that is the project's default
+ *      branch, by id, so a mis-pointed source is a refusal and not a silent copy of the live data.
+ *      The branch's own parent is *not* the rule: Neon does not allow re-parenting a branch
+ *      through the API, so for a demo cut before the base existed that parent is a historical
+ *      accident, and the source is what decides where the rows come from.
  *
  *   3. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
  *      branch's* connection string and *this branch's* auth host. The seed reads
@@ -43,13 +49,17 @@
  * ## What it refuses
  *
  * - **The default branch** (`production`). The demo reset never touches it, by id and by name.
- *   The parent's name is checked too, so a project whose default is renamed is still refused.
- * - **A target whose parent is the default branch.** The demo's source must be the schema-only
- *   base: a parent of `production` would copy live rows and real accounts onto the branch a
- *   public URL serves, so it is a refusal (`demo-parent-guard.mjs`) rather than a warning.
- * - **A branch with no parent.** A root branch *is* a default branch; resetting it from
- *   "parent" is not a thing that exists, and guessing would mean a second code path.
- * - **A parent with no read-write compute.** The migrate step writes to the base, so a base
+ * - **A source that is the default branch.** The source is the demo's whole supply of data, so a
+ *   source of `production` would copy live rows and real accounts onto the branch a public URL
+ *   serves. That is a refusal (`demo-source-guard.mjs`) rather than a warning, by id from the
+ *   API's own `default` flag, so a renamed default is still refused.
+ * - **A named source that does not exist.** Resolving the source is a lookup before the first
+ *   write: an unknown name is a refusal listing the branches that do exist, never a silent fall
+ *   back to the parent.
+ * - **A branch with no parent and no `DEMO_SOURCE_BRANCH`.** A root branch *is* a default branch;
+ *   with nothing named there is nothing to restore it from, and guessing would mean a second code
+ *   path.
+ * - **A source with no read-write compute.** The migrate step writes to the base, so a base
  *   without an endpoint is named and refused instead of half-run.
  * - **A missing branch.** Creating infrastructure is a decision, not a retry: the script says
  *   how to create it and exits.
@@ -74,8 +84,13 @@
  *   NEON_API_KEY=… node scripts/demo-reset.mjs --skip-seed     # migrate + reset only
  *   NEON_API_KEY=… node scripts/demo-reset.mjs --skip-reset    # reseed only (empties first)
  *
- * Flags: --branch <name> (default `demo`), --project <id> (default: the only project the key
- * can see), --dry-run, --skip-migrate, --skip-reset, --skip-seed, --help.
+ * Flags: --branch <name> (default `demo`), --source <name> (default `$DEMO_SOURCE_BRANCH`, else
+ * the branch's parent), --project <id> (default: the only project the key can see), --dry-run,
+ * --skip-migrate, --skip-reset, --skip-seed, --help.
+ *
+ * `DEMO_SOURCE_BRANCH` is how the demo restores from `demo-base` while its own parent is still
+ * `production`: Neon does not allow a branch to be re-parented, so the source is named instead of
+ * inherited. Pointing it at `production` is refused, by id.
  *
  * Exit: 0 the demo is reset and seeded · 1 a step failed (the state is reported) · 2 usage or
  * a refused target · 3 `NEON_API_KEY` is not set.
@@ -84,8 +99,8 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { register } from "node:module";
 import { Client } from "pg";
-import { parentRefusal } from "./demo-parent-guard.mjs";
 import { repoRoot } from "./load-env.mjs";
+import { sourceRefusal } from "./demo-source-guard.mjs";
 
 const API = (process.env.NEON_API_BASE ?? "https://console.neon.tech/api/v2").replace(/\/+$/, "");
 const BUNDLE = "data/bundles/demo-dataset.alignsynch.json";
@@ -121,25 +136,28 @@ class Refused extends Error {
  * Arguments
  * ------------------------------------------------------------------ */
 
-const USAGE = `usage: node scripts/demo-reset.mjs [--branch <name>] [--project <id>]
+const USAGE = `usage: node scripts/demo-reset.mjs [--branch <name>] [--source <name>] [--project <id>]
                                 [--dry-run] [--skip-migrate] [--skip-reset] [--skip-seed]
 
   --branch <name>   the branch to reset (default: demo)
-  --project <id>    the Neon project (default: $NEON_PROJECT_ID, else the only one the key sees)
+  --source <name>   the branch to restore from (default: $DEMO_SOURCE_BRANCH, else the branch's parent)
+  --project <id>    the Neon project (default: $NEON_PROJECT_ID, else the only project the key sees)
   --dry-run         resolve the branch and print the plan; change nothing
   --skip-migrate    do not apply db/migrations to the source branch first
   --skip-reset      reseed without resetting (the branch is emptied first)
   --skip-seed       reset without reseeding
 
-The source is the branch's parent and must be the schema-only base (demo-base): a parent that is
-the project's default branch is refused, because a restore would copy live data onto the branch
-a public URL serves.
+The source is a branch name — \`DEMO_SOURCE_BRANCH=demo-base\`, or \`--source demo-base\` — and it
+must be the schema-only base: a source that is the project's default branch is refused, because a
+restore would copy live data onto the branch a public URL serves. With nothing named the branch's
+own parent is used.
 
 requires NEON_API_KEY (a Neon API key, or a CLI OAuth token). The key is never printed.`;
 
 function parseArgs(argv) {
   const options = {
     branch: process.env.DEMO_BRANCH?.trim() || "demo",
+    source: process.env.DEMO_SOURCE_BRANCH?.trim() || null,
     project: process.env.NEON_PROJECT_ID?.trim() || null,
     dryRun: false,
     skipMigrate: false,
@@ -159,6 +177,9 @@ function parseArgs(argv) {
     switch (arg) {
       case "--branch":
         options.branch = next();
+        break;
+      case "--source":
+        options.source = next();
         break;
       case "--project":
         options.project = next();
@@ -288,8 +309,61 @@ async function resolveBranch(projectId, name) {
   };
 }
 
-/** Every check that must pass before a single byte is written. */
-function assertResettable(branch) {
+/**
+ * The branch the demo is restored from: `DEMO_SOURCE_BRANCH` (or `--source`) when it is named,
+ * else the branch's own parent.
+ *
+ * The parent is the default because it is what `neon branches reset <branch> ^parent` means, so a
+ * demo cut under the old topology keeps working unchanged. Naming the source is what lets a demo
+ * that cannot be re-parented — Neon's `PATCH …/branches/{id}` refuses `parent_id` — still restore
+ * from the schema-only base instead of the default branch its parent happens to be.
+ *
+ * A named source is resolved here, by name, **before** anything is written: an unknown name is a
+ * refusal that lists the branches the project does have. The alternative — restoring from
+ * `undefined`, or quietly falling back to the parent — is exactly the behaviour this change
+ * exists to remove, because the parent is the thing nobody can vouch for.
+ */
+async function resolveSource(projectId, branch, requested) {
+  const branches =
+    (await neon("GET", `/projects/${projectId}/branches?limit=1000`))?.branches ?? [];
+  const defaultBranch = branches.find((candidate) => candidate.default === true) ?? null;
+
+  if (requested === null && branch.parentId === null) {
+    throw new Refused(
+      `"${branch.name}" has no parent and DEMO_SOURCE_BRANCH is not set, so there is nothing to reset it from (a root branch is a default branch). Nothing was changed.`,
+    );
+  }
+
+  const found =
+    requested === null
+      ? branches.find((candidate) => candidate.id === branch.parentId)
+      : branches.find((candidate) => candidate.name === requested);
+  if (found === undefined) {
+    throw new Refused(
+      `project ${projectId} has no branch named "${requested}" to reset "${branch.name}" from — DEMO_SOURCE_BRANCH must name an existing branch (it has: ${branches.map((b) => b.name).join(", ") || "none"}). Nothing was changed.`,
+    );
+  }
+  if (found.id === branch.id) {
+    throw new Refused(
+      `"${branch.name}" names itself as its source — restoring a branch from itself needs a timestamp and a backup branch, which this script never does. Nothing was changed.`,
+    );
+  }
+
+  return {
+    id: found.id,
+    name: found.name,
+    requested: requested !== null,
+    defaultBranchId: defaultBranch?.id ?? null,
+  };
+}
+
+/**
+ * The target checks: every one of these must pass before a single byte is written.
+ *
+ * These are about the branch being *written*, and stay separate from the source rule below so
+ * that `--branch production` is refused for being production rather than for having no source.
+ */
+function assertTargetResettable(branch) {
   if (branch.isDefault || branch.id === branch.defaultBranchId) {
     throw new Refused(
       `"${branch.name}" (${branch.id}) is the project's default branch — the demo reset never touches it. Nothing was changed.`,
@@ -305,17 +379,81 @@ function assertResettable(branch) {
       `"${branch.name}" is protected — unprotected it first if this is really the demo`,
     );
   }
-  if (branch.parentId === null) {
-    throw new Refused(
-      `"${branch.name}" has no parent, so there is nothing to reset it from (a root branch is a default branch). Nothing was changed.`,
+}
+
+/**
+ * The source rule (#185 follow-up): the demo's whole supply of data is the branch it is restored
+ * from, so *that* is what must not be the default branch — a source of `production` copies live
+ * rows and real accounts onto the branch a public URL serves for as long as the
+ * restore-to-reseed window lasts. The comparison is pure and lives in `demo-source-guard.mjs` so
+ * `tests/demo-reset.test.ts` can prove it without a Neon key.
+ */
+function assertSourceResettable(branch, source) {
+  const refusal = sourceRefusal(branch, source);
+  if (refusal !== null) throw new Refused(refusal);
+}
+
+/**
+ * A source that carries content rows is harmless; a source that carries none of the auth
+ * *configuration* is not.
+ *
+ * The restore copies the source's `neon_auth` schema along with its content tables, and the demo's
+ * auth server reads its settings from `neon_auth.project_config` and its signing key from
+ * `neon_auth.jwks`. A source emptied by deleting every `neon_auth` row restores a demo whose
+ * `sign-up/email` answers `{"message":"Project config not found"}`: the restore lands on zeros and
+ * the reseed cannot create the three accounts, so the public URL serves an empty demo until
+ * someone notices. That failure is silent at the API level and only shows up one step later, which
+ * is why it is checked **before** the restore rather than discovered by the seed.
+ */
+async function assertSourceSuppliesAuth(source, connectionString, branchName) {
+  const client = await connect(connectionString, "demo-reset:source-auth");
+  try {
+    const counts = {};
+    for (const table of ["project_config", "jwks"]) {
+      const present = (
+        await client.query("SELECT to_regclass($1) IS NOT NULL AS present", [
+          `neon_auth."${table}"`,
+        ])
+      ).rows[0].present;
+      counts[table] = present
+        ? (await client.query(`SELECT count(*)::int AS n FROM neon_auth."${table}"`)).rows[0].n
+        : 0;
+    }
+    const missing = Object.entries(counts)
+      .filter(([, count]) => count === 0)
+      .map(([table]) => `neon_auth.${table}`);
+    if (missing.length > 0) {
+      throw new Refused(
+        `the source branch "${source.name}" (${source.id}) cannot supply a working demo: ${missing.join(" and ")} ${missing.length === 1 ? "is" : "are"} empty or absent, so a restore would leave "${branchName}" with an auth server that answers "Project config not found" and a reseed that cannot create the demo accounts. The source must carry the auth configuration (\`neon_auth.project_config\` and \`neon_auth.jwks\`) and no users — see docs/DEMO.md. Nothing was changed.`,
+      );
+    }
+    return counts;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Everything the migrate step and the source check need, resolved once: the endpoint, the
+ * database and role, the two connection strings, and the assertion that the source can supply a
+ * working demo. Resolving here (and not inside the migrate step) keeps one resolution per run, and
+ * lets the check run on `--skip-migrate` too, where the migrate step never executes.
+ */
+async function prepareSource(projectId, source, branchName) {
+  const enriched = await resolveSourceEndpoint(projectId, source);
+  const { database, role } = await resolveDatabaseAndRole(projectId, enriched);
+  const connectionStrings = await resolveConnectionStrings(projectId, enriched, database, role);
+
+  // Same identity check the demo gets: the URI we hand the migration must address the source's own
+  // compute. Migrating the wrong branch is a write to production's schema, so it stops here.
+  if (!connectionStrings.direct.includes(enriched.endpointHost)) {
+    throw new Error(
+      `the connection string the API returned for ${enriched.name} does not address ${enriched.endpointHost} — refusing to migrate`,
     );
   }
-  // The demo's whole supply of data is its parent, so the parent is the rule (#185 follow-up):
-  // a parent of `production` copies live rows and real accounts onto the branch a public URL
-  // serves for as long as the restore-to-reseed window lasts. The comparison is pure and lives in
-  // `demo-parent-guard.mjs` so `tests/demo-reset.test.ts` can prove it without a Neon key.
-  const refusedParent = parentRefusal(branch);
-  if (refusedParent !== null) throw new Refused(refusedParent);
+
+  await assertSourceSuppliesAuth(enriched, connectionStrings.direct, branchName);
+  return { ...enriched, database, role, connectionStrings };
 }
 
 /** The database and role inside the branch: the app's own names when the branch has them. */
@@ -350,24 +488,19 @@ async function resolveConnectionStrings(projectId, branch, database, role) {
 /**
  * The source branch's read-write endpoint — the migrate step writes to it, so it needs one.
  *
- * The parent is already in the branch list `resolveBranch` fetched (its id and name are on the
- * target), so this only asks for the endpoints of an id we already have. A base with no compute
- * cannot be migrated, and the refusal names it: half-running the reset and discovering that at
- * the restore would leave the demo on a source whose ledger nobody advanced.
+ * A base with no compute cannot be migrated, and the refusal names it: half-running the reset and
+ * discovering that at the restore would leave the demo on a source whose ledger nobody advanced.
  */
-async function resolveParentEndpoint(projectId, branch) {
-  const endpoints = await neon(
-    "GET",
-    `/projects/${projectId}/branches/${branch.parentId}/endpoints`,
-  );
+async function resolveSourceEndpoint(projectId, source) {
+  const endpoints = await neon("GET", `/projects/${projectId}/branches/${source.id}/endpoints`);
   const rw =
     (endpoints?.endpoints ?? []).find((endpoint) => endpoint.type === "read_write") ?? null;
   if (rw === null) {
     throw new Refused(
-      `the source branch "${branch.parentName ?? branch.parentId}" (${branch.parentId}) has no read-write compute endpoint — the reset migrates it before restoring, so create one in the console (or \`neon endpoints create\`) and re-run. Nothing was changed.`,
+      `the source branch "${source.name}" (${source.id}) has no read-write compute endpoint — the reset migrates it before restoring, so create one in the console (or \`neon endpoints create\`) and re-run. Nothing was changed.`,
     );
   }
-  return { id: branch.parentId, name: branch.parentName ?? branch.parentId, endpointHost: rw.host };
+  return { ...source, endpointHost: rw.host };
 }
 
 /**
@@ -389,16 +522,18 @@ function authBaseUrlFor(endpointHost, database) {
 }
 
 /**
- * Resets the branch to its parent's head — the single operation.
+ * Resets the branch to the source's head — the single operation.
  *
- * `POST /projects/{p}/branches/{b}/restore` with `source_branch_id` = the parent and no LSN or
- * timestamp is "restore to the parent's head", i.e. `neon branches reset --parent` /
- * `restore ^parent`. The API answers with operations; the reset is not done until the last one
+ * `POST /projects/{p}/branches/{b}/restore` with `source_branch_id` = the resolved source and no
+ * LSN or timestamp is "restore to the source's head", i.e. `neon branches restore <branch>
+ * <source>`. The source does not have to be the branch's parent: the API restores from any branch
+ * in the project, which is what lets a demo whose parent cannot be changed restore from the
+ * schema-only base. The API answers with operations; the reset is not done until the last one
  * reports `finished`, which is why this waits instead of returning on a 200.
  */
-async function resetFromParent(projectId, branch) {
+async function restoreFromSource(projectId, branch, source) {
   const started = await neon("POST", `/projects/${projectId}/branches/${branch.id}/restore`, {
-    source_branch_id: branch.parentId,
+    source_branch_id: source.id,
   });
 
   const operations = started?.operations ?? [];
@@ -695,26 +830,14 @@ function printBundleComparison(afterSeed, expected) {
  * (`schema_migrations`), so running it on every reset is the cheap fix and the ledger in the run
  * log is the evidence it ran.
  *
- * `DATABASE_URL_UNPOOLED` is set to the *parent's* direct URI and inherited by the child process;
- * `scripts/load-env.mjs` does not override an already-set variable, so a `.env.local` pointing at
- * production cannot win here. A failed migration throws before the restore, which is what leaves
- * the demo untouched.
+ * `DATABASE_URL_UNPOOLED` is set to the *source's* direct URI (resolved and checked by
+ * `prepareSource`) and inherited by the child process; `scripts/load-env.mjs` does not override an
+ * already-set variable, so a `.env.local` pointing at production cannot win here. A failed
+ * migration throws before the restore, which is what leaves the demo untouched.
  */
-async function migrateSource({ projectId, branch }) {
-  const parent = await resolveParentEndpoint(projectId, branch);
-  const { database, role } = await resolveDatabaseAndRole(projectId, parent);
-  const strings = await resolveConnectionStrings(projectId, parent, database, role);
-
-  // Same identity check the demo gets: the URI we hand the migration must address the parent's own
-  // compute. Migrating the wrong branch is a write to production's schema, so it stops here.
-  if (!strings.direct.includes(parent.endpointHost)) {
-    throw new Error(
-      `the connection string the API returned for ${parent.name} does not address ${parent.endpointHost} — refusing to migrate`,
-    );
-  }
-
-  step(`migrate ${parent.name} (${parent.id}) — db:migrate is idempotent and ledgered`);
-  say(`  database  ${database} on ${parent.endpointHost}`);
+async function migrateSource({ branch, source }) {
+  step(`migrate ${source.name} (${source.id}) — db:migrate is idempotent and ledgered`);
+  say(`  database  ${source.database} on ${source.endpointHost}`);
   say(`  migrate   node ${MIGRATE}`);
 
   const result = spawnSync(
@@ -722,7 +845,7 @@ async function migrateSource({ projectId, branch }) {
     ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", MIGRATE],
     {
       cwd: repoRoot,
-      env: { ...process.env, DATABASE_URL_UNPOOLED: strings.direct },
+      env: { ...process.env, DATABASE_URL_UNPOOLED: source.connectionStrings.direct },
       stdio: "inherit",
     },
   );
@@ -730,10 +853,10 @@ async function migrateSource({ projectId, branch }) {
   if (result.error) throw new Error(`could not run ${MIGRATE}: ${result.error.message}`);
   if (result.status !== 0) {
     throw new Error(
-      `${MIGRATE} exited ${result.status ?? result.signal} on ${parent.name} — the restore has not run, so ${branch.name} is untouched; fix the failing migration and re-run`,
+      `${MIGRATE} exited ${result.status ?? result.signal} on ${source.name} — the restore has not run, so ${branch.name} is untouched; fix the failing migration and re-run`,
     );
   }
-  return parent;
+  return source;
 }
 
 function reseed({ branch, connectionStrings, authBaseUrl, database, resetRan }) {
@@ -772,7 +895,7 @@ function reseed({ branch, connectionStrings, authBaseUrl, database, resetRan }) 
     throw new Error(
       resetRan
         ? `${SEED} exited ${result.status ?? result.signal} — the reset landed, the reseed did not`
-        : `${SEED} exited ${result.status ?? result.signal} — the branch was not reset; re-run with the reset to rebuild it from its parent`,
+        : `${SEED} exited ${result.status ?? result.signal} — the branch was not reset; re-run with the reset to rebuild it from its source`,
     );
   }
 }
@@ -800,7 +923,18 @@ async function main() {
   progress.branchName = options.branch;
 
   let branch = await resolveBranch(project.id, options.branch);
-  assertResettable(branch);
+  assertTargetResettable(branch);
+  let source = await resolveSource(project.id, branch, options.source);
+  assertSourceResettable(branch, source);
+
+  // The source is resolved and checked once, before anything is written: the migrate step writes
+  // to it, the restore copies it, and a source that cannot supply a working demo (no auth
+  // configuration) must be a refusal rather than an empty branch discovered one step later. A
+  // `--skip-reset` run never reads the source, so it has nothing to check.
+  let prepared = null;
+  if (!options.skipReset) {
+    prepared = await prepareSource(project.id, source, branch.name);
+  }
 
   const { database, role } = await resolveDatabaseAndRole(project.id, branch);
   progress.database = database;
@@ -817,15 +951,16 @@ async function main() {
   }
 
   say(`demo:reset — project ${project.name} (${project.id})`);
+  say(`  branch    ${branch.name} (${branch.id})`);
   say(
-    `  branch    ${branch.name} (${branch.id}) ← parent ${branch.parentName ?? "?"} (${branch.parentId})`,
+    `  source    ${source.name} (${source.id}) — ${source.requested ? "DEMO_SOURCE_BRANCH" : "the branch's parent"}`,
   );
   say(`  compute   ${branch.endpointHost}`);
   say(
     `  steps     ${
       options.skipReset
         ? "reseed only (the branch is emptied first)"
-        : `migrate ${branch.parentName ?? "parent"}${options.skipMigrate ? " (--skip-migrate)" : ""} → restore from parent`
+        : `migrate ${source.name}${options.skipMigrate ? " (--skip-migrate)" : ""} → restore from source`
     } → ${options.skipSeed ? "nothing" : "reseed from the bundle"}`,
   );
 
@@ -842,20 +977,16 @@ async function main() {
   if (!options.skipReset) {
     // The source first: a base that is three migrations behind restores a schema the app no
     // longer matches, and the reseed would fail on tables the base does not have. This writes to
-    // the parent, never to the demo, so it cannot touch what visitors see — and if it fails the
+    // the source, never to the demo, so it cannot touch what visitors see — and if it fails the
     // restore below never runs, which is why a failed migration leaves the demo exactly as it was.
     if (options.skipMigrate) {
-      step(
-        `migrate ${branch.parentName ?? branch.parentId} — skipped (--skip-migrate: the source's ledger is trusted)`,
-      );
+      step(`migrate ${source.name} — skipped (--skip-migrate: the source's ledger is trusted)`);
     } else {
-      await migrateSource({ projectId: project.id, branch });
+      await migrateSource({ branch, source: prepared });
     }
 
-    step(
-      `reset ${branch.name} from ${branch.parentName ?? branch.parentId} (one restore, not a delete)`,
-    );
-    const reset = await resetFromParent(project.id, branch);
+    step(`reset ${branch.name} from ${source.name} (one restore, not a delete)`);
+    const reset = await restoreFromSource(project.id, branch, source);
     say(
       `  reset ${reset.operations === 0 ? "accepted with no operations" : `finished after ${(reset.waitedMs / 1000).toFixed(1)}s (${reset.operations} operation(s))`}`,
     );
@@ -873,7 +1004,9 @@ async function main() {
       );
     }
     branch = after;
-    assertResettable(branch);
+    assertTargetResettable(branch);
+    source = await resolveSource(project.id, branch, options.source);
+    assertSourceResettable(branch, source);
     progress.branchId = branch.id;
     connectionStrings = await resolveConnectionStrings(project.id, branch, database, role);
     authBaseUrl = authBaseUrlFor(branch.endpointHost, database);
@@ -919,7 +1052,7 @@ async function main() {
 
   // The accounts are the seed's own half of the demo; the bundle says nothing about them. The
   // invariant that holds them to the file is structural: one credential, one profile, one auth
-  // user per demo account — no more (a leftover copy of the parent's users) and no fewer.
+  // user per demo account — no more (a leftover copy of the source's users) and no fewer.
   const accountsAgree =
     typeof afterSeed.demo_account === "number" &&
     afterSeed.demo_account > 0 &&
@@ -933,12 +1066,10 @@ async function main() {
     `  source      ${
       options.skipReset
         ? "unchanged (--skip-reset: nothing was restored)"
-        : `${branch.parentName ?? branch.parentId}${options.skipMigrate ? " (ledger trusted, --skip-migrate)" : " (migrated, then restored)"}`
+        : `${source.name}${source.requested ? " (DEMO_SOURCE_BRANCH)" : " (the branch's parent)"}${options.skipMigrate ? " — ledger trusted, --skip-migrate" : " — migrated, then restored"}`
     }`,
   );
-  say(
-    `  reset       ${options.skipReset ? "skipped" : `restore from parent ${branch.parentName ?? branch.parentId}`}`,
-  );
+  say(`  reset       ${options.skipReset ? "skipped" : `restore from source ${source.name}`}`);
   say(
     `  emptied     ${
       options.skipSeed

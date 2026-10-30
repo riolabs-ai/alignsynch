@@ -1,16 +1,23 @@
 # The demo — one branch, one base, one reset, one bundle (#185)
 
-The demo is a **Neon branch** named `demo` whose parent is **`demo-base`**: a schema-only branch
-holding the migrations' schema, the `schema_migrations` ledger and no rows — no app deployment, no
-data. It runs the same code as everything else and holds the same six content tables; what makes it
-a demo is that it is disposable, and the thing that makes it disposable is a command.
+The demo is a **Neon branch** named `demo`, restored from the **schema-only base** `demo-base`: a
+branch holding the migrations' schema, the `schema_migrations` ledger, the auth configuration and
+no rows — no app deployment, no data, no users. It runs the same code as everything else and holds
+the same six content tables; what makes it a demo is that it is disposable, and the thing that
+makes it disposable is a command.
 
-The base is why production data never reaches the demo. The reset restores `demo` from its parent,
-so the parent is the demo's entire supply of data: while that parent was `production`, every
-nightly reset copied the live branch's runtime rows and real auth accounts onto the branch a public
-URL serves, for as long as the emptying took. With a schema-only parent the restore lands on an
-empty branch, so the copy cannot happen at all — the exposure is removed by topology, not by a
-faster `DELETE`.
+The base is why production data never reaches the demo. The reset restores `demo` from a **source
+branch**, so the source is the demo's entire supply of data: while that source was `production`,
+every nightly reset copied the live branch's runtime rows and real auth accounts onto the branch a
+public URL serves, for as long as the emptying took. With a schema-only source the restore lands
+on an empty branch, so the copy cannot happen at all — the exposure is removed by topology, not by
+a faster `DELETE`.
+
+The source is named explicitly, `DEMO_SOURCE_BRANCH=demo-base`, and not inferred from the branch's
+parent. Neon does not let a branch be re-parented through the API (`PATCH …/branches/{id}` answers
+`nothing to update` for `parent_id`), so when the base was cut the `demo` branch kept `production`
+for a parent it never chose. Naming the source is what lets that branch restore from the base
+anyway. The rest of this document describes the source, because the source is the rule.
 
 ```bash
 pnpm demo:reset        # migrate `demo-base`, restore `demo` from it, reseed from the bundle
@@ -28,7 +35,7 @@ Three operations, in this order, and nothing else:
 
 1. **Migrate the source (`demo-base`).** `node scripts/db-migrate.mjs` against the base's own
    unpooled connection string, run from inside the reset script with `DATABASE_URL_UNPOOLED` set to
-   the parent's URI. The base is schema-only, and a schema-only branch still drifts: every migration
+   the source's URI. The base is schema-only, and a schema-only branch still drifts: every migration
    written after the base was cut is a table or a column the demo would silently lack, because the
    restore copies the schema the base happens to have at that moment. `db:migrate` is idempotent and
    ledgered (`schema_migrations`), so this is one connection and a printed ledger when there is
@@ -36,17 +43,18 @@ Three operations, in this order, and nothing else:
    migrates it before every restore, in the same run.** `--skip-migrate` is the manual/offline
    opt-out, and the step is skipped entirely on `--skip-reset`.
 
-2. **Restore the branch from its parent.** One call — `POST /projects/<id>/branches/<branch>/restore`
-   with `source_branch_id` = `demo-base`, which is what `neon branches reset <branch> --parent` (or
-   `restore ^parent`) runs. It is atomic: there is no window in which half the data is gone. A script
-   of `DELETE`s would have as many half-finished states as it has statements, and one of them always
-   looks like a valid demo until you read it.
+2. **Restore the branch from the source.** One call —
+   `POST /projects/<id>/branches/<branch>/restore` with `source_branch_id` = `demo-base`. It is
+   atomic: there is no window in which half the data is gone. A script of `DELETE`s would have as
+   many half-finished states as it has statements, and one of them always looks like a valid demo
+   until you read it.
 
-   The parent holds no rows, so the branch now holds the schema and nothing else — that is the
-   property the base exists for. Production data cannot enter the demo, and a demo re-parented onto
-   the project's default branch is refused before anything is written
-   (`scripts/demo-parent-guard.mjs`, used by `assertResettable()`): the source is a topology, not a
-   flag someone can pass.
+   The source holds no rows, so the branch now holds the schema and nothing else — that is the
+   property the base exists for. Production data cannot enter the demo, and a source that is the
+   project's default branch is refused before anything is written
+   (`scripts/demo-source-guard.mjs`, used by `assertSourceResettable()`). The check is on the
+   **source**, not on the target's parent: the parent of a branch cut before the base existed is a
+   historical accident, and a rule that refused it would refuse every scheduled run.
 
 3. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
    `DEMO_AUTH=1`, pointed at _that branch's_ connection string and _that branch's_ auth host. The
@@ -63,9 +71,16 @@ script rather than in `db-seed`, whose refusal to delete a row it did not author
 on **production** and the wrong one on a demo. The normal path empties nothing: the restore already
 landed on an empty branch.
 
-`demo-base` must never hold rows or an app deployment. It is a schema, not an environment: nothing
-reads it directly, so a row written there is invisible until a restore copies it into the demo, and
-a deployment pointed at it would serve an empty database with no auth users.
+`demo-base` must never hold content rows, auth users or an app deployment. It is a schema, not an
+environment: nothing reads it directly, so a row written there is invisible until a restore copies
+it into the demo, and a deployment pointed at it would serve an empty database. It **must** hold
+the `neon_auth` configuration, though — `project_config` and `jwks` — because the restore copies
+the auth schema along with everything else and the demo's auth server cannot start without those
+two rows. Emptying the base by deleting every `neon_auth` row is what turns a reset into an empty
+demo whose sign-up answers `Project config not found`; `assertSourceSuppliesAuth()` refuses that
+source before the restore, and the recipe for repairing it is: restore the base from `production`
+(`POST …/branches/demo-base/restore`, `preserve_under_name` if it has children), delete the content
+tables and `neon_auth.user`/`session`/`account`, keep `project_config` and `jwks`.
 
 The reset is the **only** bound on the demo. There is no session expiry and no TTL, by decision on
 #185: a visitor's state does not decay, and the next nightly reset is what ends every session.
@@ -75,7 +90,7 @@ The reset is the **only** bound on the demo. There is no session expiry and no T
 Row counts before the reset, after the reset and after the reseed; then the six counts the bundle
 itself declares, compared against the branch; then a verdict. The middle column is the evidence
 part 2 checks: it reads **zeros**, because the schema-only source carries no rows. A non-zero there
-means the source is holding data, which is the case the parent refusal exists to make impossible.
+means the source is holding data, which is the case the source refusal exists to make impossible.
 
 ```
 ▶ before                    ▶ after the reset           ▶ after the reseed
@@ -104,7 +119,13 @@ NEON_API_KEY=napi_… node scripts/demo-reset.mjs --dry-run     # resolve and pr
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --skip-migrate  # trust the base's ledger
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --skip-reset  # reseed only (empties first)
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --branch demo-scratch   # another branch
+DEMO_SOURCE_BRANCH=demo-base node scripts/demo-reset.mjs      # name the source explicitly
 ```
+
+The source is `DEMO_SOURCE_BRANCH` (or `--source <name>`) when it is set, and the branch's own
+parent otherwise. Set it in CI and for any manual run: without it, a `demo` branch whose parent is
+still `production` refuses, because a parent that is the default branch is exactly the case the
+rule exists for.
 
 The key is a project-scoped **Neon API key** (console → Project settings → API keys). It is read
 from the environment and nowhere else — not from `.env.local`, not from a file in the tree — and it
@@ -118,13 +139,20 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
 - **The project's default branch** (`production`), by id and by name. The demo reset never touches
   it, and the check is the API's own `default` flag rather than a string, so a renamed default is
   still refused.
-- **A demo whose parent is the default branch.** The parent is the demo's whole supply of data, so
-  a parent of `production` would copy live rows and real accounts onto the branch a public URL
+- **A source that is the default branch.** The source is the demo's whole supply of data, so a
+  source of `production` would copy live rows and real accounts onto the branch a public URL
   serves. That is a refusal before the first write, not a warning — the source is the schema-only
-  base, and re-parenting the demo is the only way to change it.
-- **A branch with no parent.** A root branch _is_ a default branch; there is nothing to reset it
-  from.
-- **A source with no read-write compute.** The migrate step writes to `demo-base`, so a base
+  base, and `DEMO_SOURCE_BRANCH` is how it is named.
+- **A named source that does not exist.** It is resolved by name before anything is written; an
+  unknown name lists the branches the project does have. There is no silent fall back to the parent.
+- **A source that cannot supply a working demo.** The restore copies the source's `neon_auth`
+  schema, and the demo's auth server reads its configuration from `neon_auth.project_config` and its
+  key from `neon_auth.jwks`. A source missing either restores a demo whose sign-up answers
+  `Project config not found` — a reset that lands on an empty branch and cannot reseed it. Refused
+  before the restore, because after it the demo is already empty.
+- **A branch with no parent, and no `DEMO_SOURCE_BRANCH`.** A root branch _is_ a default branch;
+  there is nothing to reset it from.
+- **A source with no read-write compute.** The migrate step writes to `demo-base`, so a source
   without an endpoint is named and refused before the restore, not half-run.
 - **A missing branch.** Creating infrastructure is a decision, not a retry; the message says how to
   create it and exits.
@@ -132,7 +160,7 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
   from the branch id through the API. A shell that exported production's `DATABASE_URL` or
   `NEON_AUTH_BASE_URL` cannot aim this script at production: the values are overwritten, not
   inherited, and the URL must address the branch's own compute host or the run stops before
-  writing. The same holds for the migrate step, which sets `DATABASE_URL_UNPOOLED` to the parent's
+  writing. The same holds for the migrate step, which sets `DATABASE_URL_UNPOOLED` to the source's
   URI for the child process — `scripts/load-env.mjs` does not override a variable that is already
   set.
 
@@ -163,12 +191,14 @@ learn to ignore. The first step decides, the rest is skipped with a notice and a
 run concludes successfully. Add the secret under **Settings → Secrets and variables → Actions** to
 turn the reset on; the project id and branch name are passed by the workflow and are not secrets.
 
-The secret is set on this repository, so the job really runs. The migration is a step inside the
-script — there is no extra job for it — and the first thing the job would do with a re-parented demo
-is refuse: a parent that is the project's default branch is a red run and an untouched branch, not a
-copy of live data. The after-reset block in the log is what proves the source carried no rows; the
-`db-seed` refusal to delete rows it does not author is what protects production, and the demo no
-longer depends on it for that.
+The secret is set on this repository, so the job really runs. The workflow passes
+`DEMO_SOURCE_BRANCH=demo-base` — the demo branch's own parent is a historical accident, and the
+source is what decides where the rows come from. The migration is a step inside the script — there
+is no extra job for it — and the first thing the job does with a mis-pointed source is refuse
+before the restore: a red run and an untouched branch, not a copy of live data and not an empty
+one. The after-reset block in the log is what proves the source carried no rows; `db-seed`'s
+refusal to delete rows it does not author is what protects production, and the demo no longer
+depends on it for that.
 
 ## Promoting a bundle
 
