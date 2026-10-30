@@ -18,9 +18,10 @@
  *
  * The mark is returned by value, not as a media key, because the sidebar is a client
  * component: `app/(mainlayout)/layout.tsx` resolves it on the server and passes it down, so
- * the registry (100 entries) never enters the browser bundle. React-free on purpose —
- * `data:check` and a test can import it.
+ * the registry never enters the browser bundle. React-free on purpose — `data:check` and a
+ * test can import it.
  */
+import { isFileMedia } from "@/content/media";
 import { media } from "@/data/media";
 
 /** What the chrome needs to draw a brand's mark. Intrinsic size included, for `next/image`. */
@@ -39,7 +40,9 @@ export interface BrandMark {
  * registry — so this branch is a second line, not the only one.)
  */
 export function brandMark(logo: string): BrandMark | undefined {
-  const entry = Object.values(media).find((candidate) => candidate.src === logo);
-  if (!entry || entry.kind === "fallback") return undefined;
+  const entry = Object.values(media).find(
+    (candidate) => isFileMedia(candidate) && candidate.src === logo,
+  );
+  if (!entry || !isFileMedia(entry) || entry.kind === "fallback") return undefined;
   return { src: entry.src, width: entry.width, height: entry.height };
 }

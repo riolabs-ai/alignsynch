@@ -10,6 +10,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { isFileMedia } from "@/content/media";
 import { quizHubBrand } from "@/data/brand";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { media } from "@/data/media";
@@ -70,7 +71,9 @@ describe("brandMark", () => {
   it("returns undefined for the template's placeholder, which the shell draws as an icon", () => {
     expect(brandMark(quizHubBrand.logo)).toBeUndefined();
     // The registry is what carries the decision, not a flag on the record.
-    const fallback = Object.values(media).find((entry) => entry.src === quizHubBrand.logo);
+    const fallback = Object.values(media).find(
+      (entry) => isFileMedia(entry) && entry.src === quizHubBrand.logo,
+    );
     expect(fallback?.kind).toBe("fallback");
   });
 

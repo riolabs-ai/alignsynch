@@ -11,10 +11,10 @@ import type React from "react";
  * and fails if `data/pages/shell.ts` stops being reachable from it.
  *
  * `mark` is resolved here for the same reason `copy` is: `brandMark` reads the media
- * registry (`data/media.ts`, 100 entries) and the sidebar is a client component, so the
- * lookup happens on the server and only the three fields `next/image` needs cross over. It
- * is `undefined` for a brand whose logo is a placeholder — see `lib/brand-mark.ts` — and
- * the sidebar then draws the icon it has always drawn.
+ * registry (`data/media.ts`) and the sidebar is a client component, so the lookup happens on
+ * the server and only the three fields `next/image` needs cross over. It is `undefined` for a
+ * brand whose logo is a placeholder — see `lib/brand-mark.ts` — and the sidebar then draws the
+ * icon it has always drawn.
  */
 export default function Layout({
   children,
