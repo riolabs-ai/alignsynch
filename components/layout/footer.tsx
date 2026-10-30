@@ -51,11 +51,23 @@ export function Footer({
   copy,
   viewer = navViewer(),
   brandId = brandIdOf(brand),
+  hiddenNav,
 }: {
   copy: PageCopy;
   viewer?: NavViewer;
   /** Overridable for the node test that proves both brands' columns; a page never passes it. */
   brandId?: BrandId;
+  /**
+   * The gated hrefs the shell must not draw, resolved on the server by
+   * `lib/flags.ts::hiddenNavHrefs()` and passed down — **required, with no default** (#175
+   * follow-up). This module has no `"use client"`, but `components/categories/categories-page.tsx`
+   * and `components/tournaments/tournament-page.tsx` are client components that mount it, so it
+   * is in a client bundle wherever they are. A default would let a mount quietly fall back to
+   * "draw everything" in exactly the bundles that cannot ask the server; leaving it required makes
+   * the compiler name every mount instead, and `tests/leaderboard-links.test.ts` scans the sources
+   * for a new one.
+   */
+  hiddenNav: readonly string[];
 }) {
   const links = sectionOf(copy, "footer-links");
   const alignLinks = sectionOf(copy, "footer-links-alignsynch");
@@ -75,7 +87,14 @@ export function Footer({
    * viewer allowed to see the quiz product, and are not rendered at all otherwise. No route
    * is deleted; every one of them still answers a request (see the PR's surface table).
    */
-  const linkColumns = footerLinkColumns({ brandId, viewer, links, alignLinks, categories });
+  const linkColumns = footerLinkColumns({
+    brandId,
+    viewer,
+    links,
+    alignLinks,
+    categories,
+    hiddenNav,
+  });
   /**
    * The product mark, resolved from the brand record (#187).
    *
@@ -305,22 +324,24 @@ function footerLinkColumns({
   links,
   alignLinks,
   categories,
+  hiddenNav,
 }: {
   brandId: BrandId;
   viewer: NavViewer;
   links: PageCopySection;
   alignLinks: PageCopySection;
   categories: PageCopySection;
+  hiddenNav: readonly string[];
 }) {
   switch (brandId) {
     case "quizhub":
-      return <QuizHubLinkColumns links={links} categories={categories} />;
+      return <QuizHubLinkColumns links={links} categories={categories} hiddenNav={hiddenNav} />;
     case "alignsynch":
       return (
         <>
           <AlignSynchLinkColumn links={alignLinks} />
           {sees(viewer, "quiz-surfaces") && (
-            <QuizHubLinkColumns links={links} categories={categories} />
+            <QuizHubLinkColumns links={links} categories={categories} hiddenNav={hiddenNav} />
           )}
         </>
       );
@@ -360,15 +381,23 @@ function FooterColumnHeading({ children }: { children: React.ReactNode }) {
 /**
  * The quiz product's two columns: Quick Links and the featured quiz subjects.
  *
- * Unchanged in output for `BRAND=quizhub` — same rows, same order, same hrefs — and reachable
- * on the alignment brand only for a viewer with the quiz capability.
+ * Unchanged in output for `BRAND=quizhub` with every surface on — same rows, same order, same
+ * hrefs — and reachable on the alignment brand only for a viewer with the quiz capability.
+ *
+ * `hiddenNav` drops the Quick Links row whose destination is flagged off (#175 follow-up). The
+ * footer is the widest of the four surfaces that used to advertise `/leaderboard` while the flag
+ * answered 404: this one mounts on `/`, `/pricing`, `/affiliate`, `/creator-tips`, its detail
+ * pages, `/categories` and `/tournaments`. The row is filtered here, not before the call, because
+ * the label is the fixture's and only the destination is gated.
  */
 function QuizHubLinkColumns({
   links,
   categories,
+  hiddenNav,
 }: {
   links: PageCopySection;
   categories: PageCopySection;
+  hiddenNav: readonly string[];
 }) {
   return (
     <>
@@ -377,7 +406,9 @@ function QuizHubLinkColumns({
         <ul className="space-y-3">
           <FooterLinkRow href="/dashboard/user" label={itemLabel(links, "dashboard")} />
           <FooterLinkRow href="/create/editor" label={itemLabel(links, "create-quiz")} />
-          <FooterLinkRow href="/leaderboard" label={itemLabel(links, "leaderboard")} />
+          {!hiddenNav.includes("/leaderboard") && (
+            <FooterLinkRow href="/leaderboard" label={itemLabel(links, "leaderboard")} />
+          )}
           <FooterLinkRow href="/affiliate" label={itemLabel(links, "affiliate")} />
           <FooterLinkRow href="/pricing" label={itemLabel(links, "pricing")} />
         </ul>

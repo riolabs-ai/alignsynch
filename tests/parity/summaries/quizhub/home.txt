@@ -84,7 +84,7 @@ landmarks (6)
   main           1
   navigation     2
 
-links (78 unique, 107 total)
+links (77 unique, 105 total)
   #                                                    8
   /                                                    2
   /affiliate                                           2
@@ -123,7 +123,6 @@ links (78 unique, 107 total)
   /dashboard/user                                      1
   /dashboard/user?tab=wallet                           1
   /explore                                             2
-  /leaderboard                                         2
   /news                                                1
   /pricing                                             2
   /profile/alexjohnson                                 2
@@ -165,7 +164,7 @@ links (78 unique, 107 total)
   /tournaments                                         1
 
 counts
-  elements  2589
+  elements  2585
   images    24
   buttons   42
   inputs    3

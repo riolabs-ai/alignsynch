@@ -7,7 +7,7 @@
 # half of the same render; the full HTML is only ever written to tests/parity/artifacts/.
 #
 # route | brand | sha256
-/ | quizhub | 2c0da6f42df86a0e4744c1b338870f62bcb6ce60a93318c1bd7312a2892ff3b3
+/ | quizhub | 8e3e6a0103ef25a380d3481d87c0acbf2dafd2e99739d05ec07efad2e94fe4e7
 / | alignsynch | f8e2cdaf893e3b87cccc8ae61f8485b1dbce8940985a47d48e00b01c4e0b6f7c
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
@@ -19,5 +19,5 @@
 /quiz/[id] | alignsynch | 4f20516e919e76b82c24cc9b636f43c71ffe301add2078996c5cf72ed7693ff0
 /assessment/avery-rowan | quizhub | 75cd990bf518db89afa72d2911640e1b9aeb6f06c1f96e0ba9d30949f5758a2b
 /assessment/avery-rowan | alignsynch | 0bd4869c6e4a3869487795be3a8686eaf465d5370c82ff69906a83021c0ed7d7
-/profile/[username] | quizhub | 04aac6040081157b498540b38583f3b220bcf6694d1ea92bf74e99641e4f6908
-/profile/[username] | alignsynch | 5c07f6e4b3af67493c8effc2845c3b6462ba30d1587378966c6a27f876c3503b
+/profile/[username] | quizhub | e28e467e08990bb1be56e69afd0dce88b086bb530cd4a04f895d2bf01d868328
+/profile/[username] | alignsynch | 96a014abfee11364df226a167613b137221bd5ce351b6edc7bcc5c46fce96517
