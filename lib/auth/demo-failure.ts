@@ -30,7 +30,7 @@ import { PIN_REJECTION } from "@/lib/auth/demo-pin";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** Which refusal this was, for the log line. The reply is `message`; the kind never leaves the server. */
-export type DemoFailureKind = "pin" | "not-seeded" | "origin" | "network" | "sign-in";
+export type DemoFailureKind = "pin" | "not-seeded" | "origin" | "network" | "sign-in" | "unlock";
 
 export interface DemoFailure {
   readonly kind: DemoFailureKind;
@@ -46,6 +46,18 @@ export const DEMO_SIGN_IN_REFUSED =
   "The PIN was accepted, but the auth server refused the sign-in. Try again; if it keeps failing, check the demo's auth settings.";
 
 /**
+ * The sentence a role button gets when the unlock cookie no longer verifies (#218).
+ *
+ * One sentence for every non-ok verdict — absent, malformed, expired, tampered, or a deployment
+ * with no signing secret. The reader's next step is identical in all five (type the PIN again),
+ * and the difference between "you edited my cookie" and "your fifteen minutes ran out" is
+ * diagnosis for the log, not instruction for the panel. It names neither the PIN nor the cookie's
+ * contents, and it does not claim the PIN was wrong: the PIN was right when the unlock was issued.
+ */
+export const DEMO_UNLOCK_EXPIRED =
+  "The demo unlock is no longer valid. Enter the demo PIN again, then pick a role.";
+
+/**
  * The login fixture's `sign-in` section — the canonical wording for an auth failure the app
  * already describes. Read, never copied: a second literal would drift the moment one changed.
  */
@@ -57,6 +69,9 @@ function copyFor(failure: "origin" | "network"): string {
 
 /** A wrong PIN, or a button value that is not one of the three. One sentence, on purpose. */
 export const PIN_REJECTED: DemoFailure = { kind: "pin", message: PIN_REJECTION };
+
+/** The unlock cookie did not verify: expired, tampered with, absent, or unsignable here (#218). */
+export const UNLOCK_EXPIRED: DemoFailure = { kind: "unlock", message: DEMO_UNLOCK_EXPIRED };
 
 /** `demo_account` has no row for this role: the demo branch was not seeded. */
 export const NOT_SEEDED: DemoFailure = { kind: "not-seeded", message: DEMO_NOT_SEEDED };

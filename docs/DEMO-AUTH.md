@@ -1,8 +1,10 @@
-# Demo auth — a role, a gate, a panel, and three seeded accounts
+# Demo auth — a role, a gate, the role buttons, and three seeded accounts
 
-Parts 1 and 2 of #183. Part 1 is the data and the roles (`user_profile.role`,
-`lib/auth/require-role.ts`, the three seeded accounts); part 2 is `/demo`, the PIN-gated panel
-that signs a browser in as one of them.
+Parts 1 and 2 of #183, re-cut by #218. Part 1 is the data and the roles (`user_profile.role`,
+`lib/auth/require-role.ts`, the three seeded accounts); part 2 is `/demo`, the PIN gate, and the
+three role buttons `/login` draws for a browser that has entered the PIN. The gate and the buttons
+are two doors onto one secret: the PIN decides _whether_ a browser may pick a demo role, the button
+decides _who_, and a signed fifteen-minute cookie carries the first decision to the second.
 
 ## The role
 
@@ -77,9 +79,9 @@ pnpm db:seed                                              # delete, create none
 
 ### Reading the credential server-side
 
-The panel must sign a browser in **without ever sending it a password**. The server action
-(`app/(auth)/demo/actions.ts`) reads the row through `lib/db/demo-accounts.ts` and presents it to
-Neon Auth itself:
+The demo must sign a browser in **without ever sending it a password**. The server action
+(`app/(auth)/login/demo-actions.ts`, behind the unlock cookie) reads the row through
+`lib/db/demo-accounts.ts` and presents it to Neon Auth itself:
 
 ```sql
 SELECT da.email, da.password, up.role
@@ -113,10 +115,10 @@ What is _not_ accepted is any of that being assumed. The password never reaches 
 line, a fixture or a commit, and the built output is grepped for each one in the gate's own
 acceptance (`grep -r` over `.next` for every `demo_account.password`: zero matches).
 
-## The panel (`/demo`, part 2)
+## The gate, and the role buttons it unlocks (#218)
 
 ```bash
-DEMO_AUTH=1 DEMO_PIN=… pnpm dev          # http://localhost:3000/demo
+DEMO_AUTH=1 DEMO_PIN=… pnpm dev          # http://localhost:3000/demo → /login
 ```
 
 | Variable                  | What it does                                                                  |
@@ -137,39 +139,82 @@ placeholder. Both routes are `force-dynamic`: the mode is read per request, so s
 variable and restarting is the whole operation in both directions, and a build made under one
 setting can never ship the other.
 
-**The action is a second gate.** A server action is a public POST endpoint; the page being a 404
-does not close it. `signInAsDemo` asks the mode again and answers `notFound()` too.
+**The gate's action is a second gate.** A server action is a public POST endpoint; the page being
+a 404 does not close it. `unlockDemo` asks the mode again and answers `notFound()` too.
 
-**The PIN.** Compared with `pinMatches()` (`lib/auth/demo-pin.ts`), which hashes both sides with
-SHA-256 and compares the digests with `timingSafeEqual` — digesting first is what makes the
-comparison length-independent, so neither the PIN's value nor its length is observable in the
-time taken. The credential is not read until the PIN matches.
+**The PIN.** Compared with `pinMatches()` (`lib/auth/demo-pin.ts`), which delegates to
+`constantTimeEqual()` (`lib/auth/constant-time.ts`): both sides are hashed with SHA-256 and the
+digests compared with `timingSafeEqual`, so neither the PIN's value nor its length is observable in
+the time taken. Nothing is read from `demo_account` until a database-backed role button is pressed.
 
-**A refusal names its cause.** Four outcomes, and the sentence is chosen by the one the reader
-can act on (`lib/auth/demo-failure.ts`, #216) — the sign-in refusal splitting only where the app
-already has words for the cause:
+**The unlock cookie** (`lib/auth/demo-unlock.ts`, `lib/auth/demo-unlock-cookie.ts`).
 
-| Outcome                                        | Sentence                                                                                                |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| A wrong PIN, or a button value that is not one | "That PIN is not correct." — **one** sentence for both, so a reply cannot say whether an account exists |
-| `demo_account` has no row for that role        | "No demo account is seeded for that role. Run the demo reset, then try again."                          |
-| The auth server refused the sign-in            | "The PIN was accepted, but the auth server refused the sign-in. …"                                      |
-| …and the cause is the browser's origin         | the login page's own `error-origin` line, read through `authFailureItemId()` rather than re-worded      |
-| …and the cause is the transport                | the login page's own `error-network` line, read the same way                                            |
+| Property   | Value                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| name       | `demo_unlock`                                                                                 |
+| value      | `v1.<expiresAt in base 36>.<HMAC-SHA256 base64url>`                                           |
+| signed     | HMAC-SHA256 with an HKDF subkey of `NEON_AUTH_COOKIE_SECRET` (no new environment variable)    |
+| expires    | the expiry is **inside** the signed payload — fifteen minutes, and editing it breaks the HMAC |
+| attributes | `httpOnly`, `sameSite=lax`, `path=/`, `maxAge=900`, `secure` in a production deployment       |
+
+It authorises **"may pick a demo role"**, never "is signed in": it carries no address, no role and
+no session id, nothing reads it as a session (`lib/auth/session.ts` is the only thing that answers
+that question), and it is named so it cannot be confused with `neon-auth.*`. `secure` follows
+`demoMode().production` rather than `NODE_ENV`, because `next start` on a dev box is
+`NODE_ENV=production` over `http://127.0.0.1` and a `Secure` cookie there is silently dropped.
+A client that keeps the cookie past `maxAge` still fails the payload's expiry; there is no way to
+extend it short of typing the PIN again.
+
+**Every role button re-verifies it.** `signInAsDemoRole` (`app/(auth)/login/demo-actions.ts`) reads
+the cookie from the request's own header and verifies the signature before it touches
+`demo_account`, so a forged form post and a tab left open past the expiry get the expired-unlock
+sentence and no session. Rendering the button is not authorisation.
+
+**`/login` has three demo states** (`lib/auth/demo-surface.ts`), decided on the server and handed
+down as a prop:
+
+| State   | When                          | What `/login` renders                                      |
+| ------- | ----------------------------- | ---------------------------------------------------------- |
+| `off`   | demo mode is off or refused   | nothing — no link, no buttons, not even a disabled control |
+| `entry` | demo mode on, no valid unlock | a plain `<a href="/demo">Demo sign-in</a>` with a PIN note |
+| `roles` | demo mode on, unlock verifies | the three role buttons, and **no** link back to the gate   |
+
+The `entry` link is how the gate is reachable without knowing the URL, and it is the reason the
+`roles` state hides it: with a valid unlock the buttons already switch between the three demo
+accounts, so a link to the PIN step would ask again for something the cookie grants. There is no
+`/login → /demo → /login` loop to get stuck in.
+
+**A refusal names its cause.** Five outcomes, and the sentence is chosen by the one the reader can
+act on (`lib/auth/demo-failure.ts`, #216, plus the unlock's own sentence from #218) — the sign-in
+refusal splitting only where the app already has words for the cause:
+
+| Outcome                                        | Sentence                                                                                                           |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| A wrong PIN (at the gate)                      | "That PIN is not correct." — the only reply the gate can give, and it names nothing else                           |
+| The unlock cookie did not verify (at `/login`) | "The demo unlock is no longer valid. Enter the demo PIN again, then pick a role."                                  |
+| A button value that is not one of the three    | "That PIN is not correct." — the **same** sentence as a wrong PIN, so a reply cannot say whether an account exists |
+| `demo_account` has no row for that role        | "No demo account is seeded for that role. Run the demo reset, then try again."                                     |
+| The auth server refused the sign-in            | "The PIN was accepted, but the auth server refused the sign-in. …"                                                 |
+| …and the cause is the browser's origin         | the login page's own `error-origin` line, read through `authFailureItemId()` rather than re-worded                 |
+| …and the cause is the transport                | the login page's own `error-network` line, read the same way                                                       |
 
 The reply never carries a password, a token or the provider's message — `authFailureOf()`
 (`lib/auth/errors.ts`) classifies the error and only a string chosen by that classification is
-rendered. Each case logs its own line (`PIN rejected for …`, `no seeded demo account for …`,
-`sign-in refused for … (origin)`), so the diagnosis is in the server log while the panel stays
-short. Every row after the first is only reachable after the PIN matched, which is what keeps them
-from answering "does this address exist?".
+rendered. Each case logs its own line (`PIN rejected at the gate`, `role sign-in refused
+(expired)`, `no seeded demo account for …`, `sign-in refused for … (origin)`), so the diagnosis is
+in the server log while the surface stays short. Every row after the first two is only reachable
+after the unlock verified — which is what keeps them from answering "does this address exist?" —
+and the unlock sentence itself names no cause beyond "type the PIN again".
 
 **The limit.** Five attempts a minute per caller (`x-forwarded-for`, else one shared bucket),
 fixed window with pruning; a refused attempt is not recorded, so knocking does not extend the
-ban. A successful sign-in resets the caller. One further message — "Too many attempts" —
-describes the caller's history, not the secret, and carries the retry in seconds.
+ban. A correct PIN resets the caller. The arithmetic is why the limit has to stay: 4 digits is
+10,000 combinations, so five a minute is a rate of 5/10,000 per minute rather than a door. One
+further message — "Too many attempts" — describes the caller's history, not the secret, and
+carries the retry in seconds. The role buttons carry no limiter: their input is a signed cookie,
+not a guessable value.
 
-**Where each button lands.**
+**Where each button lands** (the buttons are on `/login`, under the unlock).
 
 | Button       | Signs in as                         | Lands on                                                |
 | ------------ | ----------------------------------- | ------------------------------------------------------- |
@@ -190,5 +235,5 @@ no header, cookie or query value is consulted.
 
 **Startup logs one line.** `instrumentation.ts` prints `[demo-auth] mode=…` once per server
 process — `demo`, `off`, or `refused` with the reason. It names variables and the mode, never a
-value. `mode=off` says the panel is not mounted; there is no line claiming a demo login exists
+value. `mode=off` says the gate is not mounted; there is no line claiming a demo login exists
 when there is none.

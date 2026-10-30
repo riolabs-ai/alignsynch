@@ -243,12 +243,12 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   {
     kind: "route",
     surface: "/demo",
-    status: "db",
+    status: "mock",
     templates: ["alignsynch"],
     capability:
-      "A PIN-gated demo panel: three buttons sign a browser in as the seeded Initiator, Counterparty or Admin through a server action, with no password ever sent to the browser.",
+      "The demo PIN gate: one four-digit field and a submit. A correct PIN sets a signed, httpOnly unlock cookie and redirects to `/login`, where the three role buttons appear.",
     notes:
-      "Exists only under DEMO_AUTH=1, and refused when VERCEL_ENV=production unless DEMO_ALLOW_PRODUCTION=1 is also set; outside demo mode the route answers the same 404 a URL that never existed does.",
+      "Exists only under DEMO_AUTH=1, and refused when VERCEL_ENV=production unless DEMO_ALLOW_PRODUCTION=1 is also set; outside demo mode the route answers the same 404 a URL that never existed does. `mock` rather than `db` since #218: the gate reads no Postgres — it compares the PIN and signs a cookie, and the credential read moved to the role action behind `/login`.",
   },
   {
     kind: "route",
@@ -256,7 +256,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The admin-only check behind the demo panel's third button: it prints the session it read from Postgres, and a member account asking for it gets a 404 rather than a 403.",
+      "The admin-only check behind the demo's Admin role button (drawn on `/login` under a valid unlock): it prints the session it read from Postgres, and a member account asking for it gets a 404 rather than a 403.",
     notes:
       "The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route.",
   },
@@ -494,7 +494,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "live",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The sign-in and sign-up forms, including pending, invalid-credentials and network states.",
+      "The sign-in and sign-up forms, including pending, invalid-credentials and network states, plus the two demo surfaces `/login` draws only in demo mode: the anchor to the PIN gate and, under a valid unlock cookie, the three role buttons.",
+    notes:
+      "The demo surfaces are decided on the server (`lib/auth/demo-surface.ts`) and render nothing outside demo mode; the PIN gate itself is `/demo` (`components/auth/demo-gate.tsx`), not this route.",
   },
   {
     kind: "domain",

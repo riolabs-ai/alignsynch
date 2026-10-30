@@ -1,5 +1,7 @@
 "use client";
 
+import { DemoEntry } from "@/components/auth/demo-entry";
+import { DemoRoles } from "@/components/auth/demo-roles";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +13,7 @@ import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
+import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { BookOpen, Loader2, Trophy } from "lucide-react";
 import Link from "next/link";
@@ -39,8 +42,24 @@ import { type FormEvent, useState } from "react";
  * protected page is not reused. The component never reads `window.location` to decide where to go.
  *
  * The words stay in `data/pages/login.ts`: this file owns which id it asks for, never the string.
+ *
+ * **The demo block is a prop, not a client decision** (#218). `demo` arrives already resolved by
+ * the page (`lib/auth/demo-surface.ts`): `off` renders nothing at all, `entry` renders the anchor
+ * to the PIN gate, and `roles` renders the three server-action buttons for a request whose unlock
+ * cookie verified. This component never asks for the mode, never reads a cookie and never decides
+ * whether the demo exists — a client that could answer that question would be a client that could
+ * be talked into answering it wrongly. The general sign-in form above is untouched by the demo:
+ * two surfaces, two contracts, one of which is a development door.
  */
-export function LoginView({ copy, next }: { copy: PageCopy; next: string }) {
+export function LoginView({
+  copy,
+  next,
+  demo,
+}: {
+  copy: PageCopy;
+  next: string;
+  demo: DemoViewProps;
+}) {
   const router = useRouter();
   const form = sectionOf(copy, "sign-in");
   const stats = sectionOf(copy, "stats");
@@ -191,6 +210,11 @@ export function LoginView({ copy, next }: { copy: PageCopy; next: string }) {
                 {itemLabel(form, "signup-action")}
               </Link>
             </div>
+
+            {/* The demo surfaces, resolved on the server (#218). `off` renders nothing — no
+                disabled control, no hint, the same page this route rendered before the demo. */}
+            {demo.kind === "entry" && <DemoEntry copy={copy} />}
+            {demo.kind === "roles" && <DemoRoles copy={copy} action={demo.action} />}
           </CardContent>
         </Card>
       </div>

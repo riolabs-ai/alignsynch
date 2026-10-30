@@ -15,16 +15,16 @@ import {
   DEMO_ACCOUNT_EMAILS,
   DEMO_ACCOUNT_ROLES,
   DEMO_INSTANCE_ID,
-  DEMO_PANEL_LABELS,
-  DEMO_PANEL_ROLES,
-  demoPanelRoleOf,
+  DEMO_ROLE_LABELS,
+  DEMO_ROLES,
+  demoRoleOf,
   destinationFor,
 } from "@/lib/auth/demo-accounts";
 
 describe("the demo panel's buttons", () => {
   it("has exactly the three the card names", () => {
-    expect([...DEMO_PANEL_ROLES]).toEqual(["initiator", "counterparty", "admin"]);
-    expect(DEMO_PANEL_ROLES.map((role) => DEMO_PANEL_LABELS[role])).toEqual([
+    expect([...DEMO_ROLES]).toEqual(["initiator", "counterparty", "admin"]);
+    expect(DEMO_ROLES.map((role) => DEMO_ROLE_LABELS[role])).toEqual([
       "Initiator",
       "Counterparty",
       "Admin",
@@ -52,10 +52,10 @@ describe("the demo panel's buttons", () => {
 
   it("rejects anything that is not one of the three", () => {
     for (const value of ["Initator", "", "INFERRED", "member", null, undefined]) {
-      expect(demoPanelRoleOf(value)).toBeUndefined();
+      expect(demoRoleOf(value)).toBeUndefined();
     }
-    for (const role of DEMO_PANEL_ROLES) {
-      expect(demoPanelRoleOf(role)).toBe(role);
+    for (const role of DEMO_ROLES) {
+      expect(demoRoleOf(role)).toBe(role);
     }
   });
 
