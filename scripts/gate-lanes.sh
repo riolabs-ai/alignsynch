@@ -106,9 +106,11 @@ resolve_lane() {
   esac
 
   # No base ref -> no evidence about what changed -> the full gate. This is the
-  # CI case: actions/checkout fetches one commit, so origin/main does not exist
-  # there and `auto` deliberately resolves to code. CI has no build contention
-  # to relieve, so the conservative answer costs it nothing.
+  # safety net, not the CI case: ci.yml checks out full history and fetches
+  # `origin/main` precisely so that this branch is not taken on every run (a
+  # depth-1 checkout has no such ref, which is how CI silently ran lane=code
+  # for every PR). A missing ref, a bad GATE_REF, or a diff that cannot be
+  # computed still costs the full gate — never a cheaper lane.
   if ! git rev-parse --verify --quiet "${ref}^{commit}" >/dev/null 2>&1; then
     LANE='code'
     LANE_REASON="no ${ref} to diff against — full gate (conservative)"
