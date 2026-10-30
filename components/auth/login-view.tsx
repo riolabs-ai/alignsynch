@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,20 +9,80 @@ import { Label } from "@/components/ui/label";
 import type { PageCopy } from "@/content/pages";
 import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
+import { authClient } from "@/lib/auth/client";
+import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { BookOpen, Trophy } from "lucide-react";
+import { BookOpen, Loader2, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { type FormEvent, useState } from "react";
 
 /**
- * `/login`, the client half. The words come from `data/pages/login.ts`, parsed by the page
- * module (`app/(auth)/login/page.tsx`) and passed in: this component is a client boundary,
- * and the fixture carries zod.
+ * `/login`, the client half — a real sign-in since issue #164.
+ *
+ * What it was: two uncontrolled inputs and a submit that pushed `/`. Nothing ever reached the auth
+ * server, so every password "worked".
+ *
+ * What it does now, in the order the card lists it:
+ *
+ *   - `pending`      the button says it is working and refuses a second submit; a double-click on
+ *                    a sign-in form is a second session on somebody's device.
+ *   - `credentials`  a wrong password renders **"Invalid email or password"** from the fixture.
+ *                    Never `error.message` — the SDK's text is written for a developer and can
+ *                    echo the identifier back.
+ *   - `network`      a request that never arrived says so. This is the state a `catch` around a
+ *                    fetch usually swallows into "invalid credentials", which is the one wrong
+ *                    answer for a flaky connection.
+ *
+ * On success the router moves to `next` — the same-site path the *server* put in the URL when it
+ * redirected here (`lib/auth/paths.ts`) — and refreshes, so a cached server payload for the
+ * protected page is not reused. The component never reads `window.location` to decide where to go.
+ *
+ * The words stay in `data/pages/login.ts`: this file owns which id it asks for, never the string.
  */
-export function LoginView({ copy }: { copy: PageCopy }) {
+export function LoginView({ copy, next }: { copy: PageCopy; next: string }) {
   const router = useRouter();
   const form = sectionOf(copy, "sign-in");
   const stats = sectionOf(copy, "stats");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState<AuthFailure | null>(null);
+  const [fieldProblem, setFieldProblem] = useState(false);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (email.trim() === "" || password === "") {
+      setFieldProblem(true);
+      setFailure(null);
+      return;
+    }
+    setFieldProblem(false);
+    setFailure(null);
+    setPending(true);
+
+    let result: { error?: unknown } | undefined;
+    try {
+      result = await authClient.signIn.email({ email: email.trim(), password });
+    } catch (error) {
+      // A thrown value is a transport failure: the SDK reports a *rejected* sign-in by returning
+      // `{ error }`, so anything that escapes the call never reached the server.
+      const failureOf = authFailureOf(error);
+      setFailure(failureOf === "unknown" ? "network" : failureOf);
+      setPending(false);
+      return;
+    }
+
+    if (result?.error) {
+      setFailure(authFailureOf(result.error));
+      setPending(false);
+      return;
+    }
+
+    router.push(next);
+    router.refresh();
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -67,47 +128,68 @@ export function LoginView({ copy }: { copy: PageCopy }) {
             <CardDescription>{form.body}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium ">
-                {itemLabel(form, "email")}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={itemLabel(form, "email-placeholder")}
-                className="h-12 border-gray-300 "
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium ">
-                {itemLabel(form, "password")}
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder={itemLabel(form, "password-placeholder")}
-                className="h-12 border-gray-300 "
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox id="remember" />
-                <Label htmlFor="remember" className="text-sm ">
-                  {itemLabel(form, "remember")}
+            <form onSubmit={submit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium ">
+                  {itemLabel(form, "email")}
                 </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder={itemLabel(form, "email-placeholder")}
+                  className="h-12 border-gray-300 "
+                />
               </div>
-              <Link href="#" className="text-sm text-indigo-600 font-medium">
-                {itemLabel(form, "forgot")}
-              </Link>
-            </div>
-            <Button className="w-full" onClick={() => router.push("/")}>
-              {itemLabel(form, "submit")}
-            </Button>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium ">
+                  {itemLabel(form, "password")}
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder={itemLabel(form, "password-placeholder")}
+                  className="h-12 border-gray-300 "
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="remember" />
+                  <Label htmlFor="remember" className="text-sm ">
+                    {itemLabel(form, "remember")}
+                  </Label>
+                </div>
+                <Link href="#" className="text-sm text-indigo-600 font-medium">
+                  {itemLabel(form, "forgot")}
+                </Link>
+              </div>
+
+              {fieldProblem && (
+                <Alert variant="destructive">
+                  <AlertDescription>{itemLabel(form, "error-required")}</AlertDescription>
+                </Alert>
+              )}
+              {failure !== null && (
+                <Alert variant="destructive">
+                  <AlertDescription>{itemLabel(form, authFailureItemId(failure))}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button type="submit" className="w-full" disabled={pending}>
+                {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {pending ? itemLabel(form, "pending") : itemLabel(form, "submit")}
+              </Button>
+            </form>
             <div className="text-center text-sm ">
               {itemLabel(form, "signup-prompt")}{" "}
-              <button onClick={() => router.push("/register")} className="text-indigo-600">
+              <Link href="/register" className="text-indigo-600">
                 {itemLabel(form, "signup-action")}
-              </button>
+              </Link>
             </div>
           </CardContent>
         </Card>

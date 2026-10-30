@@ -235,8 +235,11 @@ function opinionsCandidateOf(row: OpinionRow | undefined): OpinionsCandidate {
  * A row that fails the schema is an error, never a best-effort object: the fixtures are the
  * authored source and the database is their mirror, so a row the model rejects is drift in
  * the mirror, and the page must not draw it.
+ *
+ * Exported because `lib/db/profile-rows.ts` is a second read boundary over a different table
+ * and must report a rejected row the same way.
  */
-function parseOrThrow<T>(schema: z.ZodType<T>, candidate: unknown, context: string): T {
+export function parseOrThrow<T>(schema: z.ZodType<T>, candidate: unknown, context: string): T {
   const result = schema.safeParse(candidate);
   if (result.success) return result.data;
   const problems = result.error.issues
