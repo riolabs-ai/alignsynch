@@ -1,7 +1,7 @@
 import { AccountSettings } from "@/components/settings/account-settings";
 
 export const metadata = {
-  title: "Account Settings | QuizHub",
+  title: "Account Settings",
   description: "Manage your account settings and preferences",
 };
 

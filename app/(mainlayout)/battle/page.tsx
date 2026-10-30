@@ -3,7 +3,7 @@ import { battlePageCopy } from "@/data/pages/battle";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Quiz Battle | QuizHub",
+  title: "Quiz Battle",
   description: "Challenge friends or random players to real-time quiz battles",
 };
 

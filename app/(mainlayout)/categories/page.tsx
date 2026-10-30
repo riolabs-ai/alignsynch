@@ -3,7 +3,7 @@ import { categoriesPageCopy } from "@/data/pages/categories";
 import { shellPageCopy } from "@/data/pages/shell";
 
 export const metadata = {
-  title: "Quiz Categories | QuizHub",
+  title: "Quiz Categories",
   description: "Browse all quiz categories and find quizzes that match your interests.",
 };
 

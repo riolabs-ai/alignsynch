@@ -2,8 +2,8 @@ import { SearchResults } from "@/components/search/search-results";
 import { searchIndex } from "@/data/searchdata";
 
 export const metadata = {
-  title: "Search Results | QuizMaker",
-  description: "Search for quizzes, categories, creators, and more on QuizMaker.",
+  title: "Search Results",
+  description: "Search for quizzes, categories, creators, and more on QuizHub.",
 };
 
 export default async function SearchPage({

@@ -4,7 +4,7 @@ import { tournamentsPageCopy } from "@/data/pages/tournaments";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Quiz Tournaments | QuizHub",
+  title: "Quiz Tournaments",
   description: "Participate in exciting quiz tournaments and win amazing prizes.",
 };
 

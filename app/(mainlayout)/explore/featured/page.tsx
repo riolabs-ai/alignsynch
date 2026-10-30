@@ -1,5 +1,11 @@
 import { FeaturedQuizzesPage } from "@/components/explore/featured-quizzes-page";
 import { exploreFeaturedPageCopy } from "@/data/pages/explore-featured";
+import type { Metadata } from "next";
+
+/** The route's title is its own heading (`data/pages/explore-featured.ts`). */
+export const metadata: Metadata = {
+  title: "Featured Quizzes",
+};
 
 /**
  * Request-time, not static (P3).

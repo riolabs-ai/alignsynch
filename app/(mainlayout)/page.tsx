@@ -15,6 +15,16 @@ import { shellPageCopy } from "@/data/pages/shell";
 import { sectionOf } from "@/lib/page-copy";
 import { winFeed } from "@/lib/win-feed";
 import "swiper/swiper-bundle.css";
+import type { Metadata } from "next";
+
+/**
+ * The home page names the product itself, so it uses `absolute`: the root layout's
+ * `%s · QuizHub` template would otherwise print "QuizHub — Play, Share, Earn ·
+ * QuizHub". The words are the hero's (`data/pages/home.ts`, `heading`).
+ */
+export const metadata: Metadata = {
+  title: { absolute: "QuizHub — Play, Share, Earn" },
+};
 
 /**
  * The home route. Every band's words come from `data/pages/home.ts`, resolved here

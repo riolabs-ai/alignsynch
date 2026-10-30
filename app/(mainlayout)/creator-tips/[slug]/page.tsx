@@ -33,7 +33,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${tip.title} - Quiz Creator Tips`,
+    title: tip.title,
     description: tip.summary,
   };
 }

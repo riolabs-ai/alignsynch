@@ -1,7 +1,25 @@
 import { QuizDetails } from "@/components/quiz/quiz-details";
 import { quizById } from "@/data/quizzes";
 import { quizDetailModel, type QuizDetailModel } from "@/lib/quiz-detail";
+import type { Metadata } from "next";
 import { use } from "react";
+
+/**
+ * The document title is the record's own name. Before this, `/quiz/<id>` fell back to
+ * the root layout's placeholder. An id that is not a record (`/quiz/1`) has no name to
+ * show, so it says what the page is rather than repeating the product title.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const quiz = quizById(id);
+  return quiz === undefined
+    ? { title: "Quiz Details" }
+    : { title: quiz.title, description: quiz.summary };
+}
 
 /**
  * `/quiz/<id>` — the record, projected once on the server.
