@@ -78,6 +78,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/daily-challenge",
     budget: 0,
   },
+  "/dashboard/user": {
+    page: "app/(mainlayout)/dashboard/user/page.tsx",
+    dirs: ["components/identity"],
+    fixture: "data/pages/dashboard",
+    budget: 0,
+  },
   "/explore": {
     page: "app/(mainlayout)/explore/page.tsx",
     dirs: ["components/explore"],
@@ -112,6 +118,23 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/pricing/page.tsx",
     dirs: ["components/pricing"],
     fixture: "data/pages/pricing",
+    budget: 0,
+  },
+  "/profile/[username]": {
+    page: "app/(mainlayout)/profile/[username]/page.tsx",
+    // Only the identity components this card added. The demo branch still renders the fixture
+    // profile view (`components/profile/**`), which holds 132 unreviewed literals and several
+    // sentences — attributing that directory here would fail the length rule in this card
+    // instead of leaving it where it is: pre-existing copy debt with its own unit. The ratchet
+    // still applies to everything new, which is what "budget 0" means for this surface.
+    dirs: ["components/identity"],
+    fixture: "data/pages/profile",
+    budget: 0,
+  },
+  "/settings": {
+    page: "app/(mainlayout)/settings/page.tsx",
+    dirs: ["components/identity"],
+    fixture: "data/pages/settings",
     budget: 0,
   },
   "/news": {

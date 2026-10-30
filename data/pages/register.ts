@@ -44,6 +44,18 @@ export const registerPageCopy: PageCopy = zPageCopy.parse({
       items: [{ id: "label", label: "Step {step} of {total}" }],
     },
     {
+      id: "status",
+      items: [
+        { id: "pending", label: "Creating your account…" },
+        { id: "error-email-taken", label: "An account already uses this email. Sign in instead." },
+        { id: "error-invalid-email", label: "That email address doesn't look right." },
+        { id: "error-weak-password", label: "Choose a password with at least 8 characters." },
+        { id: "error-network", label: "Couldn't reach the server. Check your connection." },
+        { id: "error-unknown", label: "Something went wrong. Try again." },
+        { id: "error-required", label: "Fill in the required fields." },
+      ],
+    },
+    {
       id: "interests",
       heading: "What types of quizzes interest you? *",
       items: [
