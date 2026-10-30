@@ -141,8 +141,20 @@ branch's auth server:
 The **`demo`** branch trusts `http://127.0.0.1:3000`. The **`production`** branch deliberately does
 not, and must not: a loopback address is a developer's machine, not an origin the product is served
 from. So pull `.env.local` from a dev branch when you want to work at `127.0.0.1`, or open
-`http://localhost:3000` while you are linked to `production`. To give another dev branch the same
-origin (include the protocol, no trailing slash):
+`http://localhost:3000` while you are linked to `production`.
+
+**The list belongs to the branch, so a restore replaces it.** `pnpm demo:reset` recreates `demo` from
+its parent, and the trusted domains go with the rest of the branch's config — re-add the origin after
+a reset, or check it first when `127.0.0.1` starts failing on a demo that worked yesterday:
+
+```bash
+curl "https://console.neon.tech/api/v2/projects/$PROJECT_ID/branches/$BRANCH_ID/auth/domains" \
+  -H "Authorization: Bearer $NEON_API_KEY"   # [] after a restore means re-add it
+```
+
+Folding that step into the reset itself is [#214](https://github.com/riolabs-ai/alignsynch/issues/214).
+
+To give another dev branch the same origin (include the protocol, no trailing slash):
 
 ```bash
 # Console: Project → Branch → Auth → Configuration → Domains — or:
