@@ -12,9 +12,13 @@
  *  4. content (`Quiz`) is separate from engagement (`QuizStats`)                  — D11
  *  5. card views are PROJECTIONS (`selectQuizCard`), never authored arrays       — D2
  *  6. ids are kind-prefixed strings; question ids are `quiz-<quiz>-q<n>`         — D3
+ *  7. a quiz is a record: `quizAsTemplate(quiz)` validates against `content/record.ts`,
+ *     the one root content type an assessment also is (issue #128). The quiz's own
+ *     fields — the answer key, the score — stay here and never move onto the record.
  */
 import { z } from "zod";
 import {
+  DEMO_NOW_ISO,
   zContentBase,
   zDifficulty,
   zId,
@@ -24,6 +28,7 @@ import {
   zPublishStatus,
   zSlug,
 } from "./core";
+import { templateProblems, zResponseOption, type ResponseScale, type Template } from "./record";
 
 /* ------------------------------------------------------------------ *
  * Question
@@ -32,17 +37,17 @@ import {
 /** Option-id alphabet, in order. `options[i].id === QUESTION_OPTION_IDS[i]` at migration. */
 export const QUESTION_OPTION_IDS = ["a", "b", "c", "d", "e", "f"] as const;
 
-export const zQuestionOption = z
-  .object({
-    /**
-     * Stable option identity, generated from position at migration. The editor must
-     * keep it when options are reordered — that is the point of an id answer key:
-     * shuffling options can never re-point the answer (D4).
-     */
-    id: zId,
-    text: z.string().min(1),
-  })
-  .strict();
+/**
+ * An option IS a response option (`content/record.ts`): a named value on the
+ * question's scale. The quiz keeps its own export name — the type, the migration's
+ * `a`..`f` alphabet and D4's note about shuffling all live here — but it is not a
+ * second copy of the schema, so an option can never mean two different things.
+ *
+ * The id is stable option identity, generated from position at migration. The editor
+ * must keep it when options are reordered — that is the point of an id answer key:
+ * shuffling options can never re-point the answer (D4).
+ */
+export const zQuestionOption = zResponseOption;
 
 export const zQuestion = z
   .object({
@@ -74,6 +79,52 @@ export const zQuestion = z
       });
     }
   });
+
+/* ------------------------------------------------------------------ *
+ * The record the quiz is — the one root content type (content/record.ts)
+ * ------------------------------------------------------------------ */
+
+/**
+ * A question's responses are its options: the quiz's Item is a question and its scale
+ * is the option list, so a response is an option id (D4).
+ */
+export function questionScale(question: Question): ResponseScale {
+  return {
+    kind: "options",
+    options: question.options.map((option) => ({ id: option.id, text: option.text })),
+  };
+}
+
+/**
+ * The quiz as a record — what a quiz shares with every other template: identity,
+ * publication state, one date, and Items that each carry a response scale.
+ *
+ * The projection drops `correctOptionId`, `settings`, `stats` and `difficulty`. Those
+ * are the quiz's own fields: the answer key is what makes a question a question, and
+ * `content/record.ts` deliberately has no idea what a right answer is. Dropping them
+ * is also what keeps this honest — the record is not a "generic quiz", it is the part
+ * of a quiz that an assessment also has.
+ *
+ * `date` is `publishedAt` when the quiz has one, `createdAt` otherwise, and the
+ * fixture clock when it carries neither. One deterministic instant, never
+ * `new Date()` (D9), so the projection stays a pure function of its argument.
+ */
+export function quizAsTemplate(quiz: Quiz): Template {
+  return {
+    id: quiz.id,
+    slug: quiz.slug,
+    type: "quiz",
+    status: quiz.status,
+    date: quiz.publishedAt ?? quiz.createdAt ?? DEMO_NOW_ISO,
+    title: quiz.title,
+    summary: quiz.summary,
+    items: quiz.questions.map((question) => ({
+      id: question.id,
+      prompt: question.prompt,
+      scale: questionScale(question),
+    })),
+  };
+}
 
 /* ------------------------------------------------------------------ *
  * Settings (authoring knobs)
@@ -190,6 +241,23 @@ export const zQuiz = zContentBase
       }
       seen.add(question.id);
     });
+
+    /**
+     * A quiz IS a record, so it validates against the shared record
+     * (`content/record.ts`). The projection is what makes the two models one model:
+     * `quizAsTemplate` drops the fields that are a question's own, and if it ever
+     * produces something the record cannot describe — an item with no prompt, a scale
+     * the record does not have, two items sharing an id — the quiz fails here rather
+     * than drifting. It is the check that fires when either side of the projection
+     * moves, which is exactly when a reviewer needs one.
+     */
+    for (const problem of templateProblems(quizAsTemplate(quiz))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["record", ...problem.path],
+        message: `record model: ${problem.message}`,
+      });
+    }
   });
 
 /* ------------------------------------------------------------------ *
