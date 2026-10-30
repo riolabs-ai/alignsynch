@@ -1,0 +1,466 @@
+#!/usr/bin/env node
+/**
+ * `pnpm flow:e2e` — the two-party flow, end to end, through the running app (#146).
+ *
+ * This is not part of `scripts/verify.sh`: the gate must stay database-free and build-free.
+ * It is the dogfood the issue asks for, written down so it can be repeated:
+ *
+ *   1. create      an Instance from a published Template, over the create form
+ *   2. invite      the invitation link is on the screen (no RESEND_API_KEY, so no email)
+ *   3. claim       the Counterparty follows the link once; a second claim is refused
+ *   4. blind       the Counterparty's screen shows no report and no Gap while only the
+ *                  Initiator has answered
+ *   5. submit      the Counterparty answers differently on one Aspect
+ *   6. gap         both parties now see `data-feel-gap="3"` where Feel 2 meets Feel 5, and
+ *                  "In synch" where they agree
+ *   7. freeze      a post-completion submit is a 409, and the stored rows are unchanged
+ *   8. copy        editing the Template's prompt afterwards does not change the instance
+ *   9. hashes      the invitation row stores the SHA-256 of the token, never the token
+ *
+ * Usage:
+ *   BASE_URL=http://localhost:3100 DATABASE_URL=postgres://… node --import ./scripts/ts-modules.mjs scripts/flow-e2e.mjs
+ *
+ * It creates its own instance and deletes it (and the Template edit) before it exits, so it
+ * is safe to re-run against a database another process is reading.
+ */
+import { Client } from "pg";
+
+const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+const TEMPLATE_ID = "assessment-relationship-basics";
+const TIME = "aspect-time-together";
+const MONEY = "aspect-money";
+
+const failures = [];
+const notes = [];
+
+function check(name, ok, detail = "") {
+  console.log(`${ok ? "✔" : "✘"} ${name}${detail === "" ? "" : ` — ${detail}`}`);
+  if (!ok) failures.push(name);
+}
+
+function note(text) {
+  notes.push(text);
+  console.log(`· ${text}`);
+}
+
+/* ------------------------------------------------------------------ *
+ * A cookie jar, so two "people" can be two jars of one script
+ * ------------------------------------------------------------------ */
+
+class Jar {
+  constructor(label) {
+    this.label = label;
+    this.cookies = new Map();
+  }
+
+  absorb(response) {
+    const set = response.headers.getSetCookie?.() ?? [];
+    for (const raw of set) {
+      const pair = raw.split(";")[0];
+      const index = pair.indexOf("=");
+      if (index === -1) continue;
+      const name = pair.slice(0, index);
+      const value = pair.slice(index + 1);
+      if (value === "") this.cookies.delete(name);
+      else this.cookies.set(name, value);
+    }
+  }
+
+  header() {
+    return [...this.cookies.entries()].map(([name, value]) => `${name}=${value}`).join("; ");
+  }
+
+  async get(path) {
+    const response = await fetch(`${BASE_URL}${path}`, {
+      redirect: "manual",
+      headers: { cookie: this.header() },
+    });
+    this.absorb(response);
+    return {
+      status: response.status,
+      location: response.headers.get("location"),
+      html: await response.text(),
+    };
+  }
+
+  async post(path, fields) {
+    const response = await fetch(`${BASE_URL}${path}`, {
+      method: "POST",
+      redirect: "manual",
+      headers: {
+        cookie: this.header(),
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams(fields).toString(),
+    });
+    this.absorb(response);
+    return {
+      status: response.status,
+      location: response.headers.get("location"),
+      html: await response.text(),
+    };
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * The run
+ * ------------------------------------------------------------------ */
+
+const db = new Client({ connectionString: process.env.DATABASE_URL });
+const created = [];
+
+function answers({ feel, wish }, overrides = {}) {
+  const fields = {};
+  for (const itemId of ASPECT_IDS) {
+    const pair = overrides[itemId] ?? { feel, wish };
+    fields[`feel:${itemId}`] = String(pair.feel);
+    fields[`wish:${itemId}`] = String(pair.wish);
+  }
+  return fields;
+}
+
+let ASPECT_IDS = [];
+
+async function main() {
+  await db.connect();
+
+  const templateItems = await db.query(
+    "SELECT item_id FROM item WHERE record_id = $1 ORDER BY position",
+    [TEMPLATE_ID],
+  );
+  ASPECT_IDS = templateItems.rows.map((row) => row.item_id);
+  check(
+    "the template has the five Aspects the run answers",
+    ASPECT_IDS.length === 5,
+    ASPECT_IDS.join(", "),
+  );
+
+  const initiator = new Jar("initiator");
+  const counterparty = new Jar("counterparty");
+  const stranger = new Jar("stranger");
+
+  /* 1. create ------------------------------------------------------- */
+  const createdResponse = await initiator.post("/assessment/new", {
+    templateRecordId: TEMPLATE_ID,
+    initiatorName: "Avery E2E",
+    counterpartyName: "Rowan E2E",
+    email: "rowan-e2e@example.com",
+  });
+  check(
+    "POST /assessment/new answers 303",
+    createdResponse.status === 303,
+    `status ${createdResponse.status}`,
+  );
+  const location = createdResponse.location ?? "";
+  const instanceMatch = location.match(/\/assessment\/instances\/([0-9a-f-]{36})/);
+  check("it redirects to the new instance", instanceMatch !== null, location);
+  if (instanceMatch === null) throw new Error("no instance id in the redirect");
+  const instanceId = instanceMatch[1];
+  created.push(instanceId);
+
+  const instancePath = `/assessment/instances/${instanceId}`;
+  const inviteNotice = new URL(location, BASE_URL).searchParams.get("invite");
+  check(
+    "with no RESEND_API_KEY the redirect says the email was not sent",
+    inviteNotice === "unsent",
+    `invite=${inviteNotice}`,
+  );
+  check(
+    "the initiator's party cookie is set",
+    initiator.cookies.has(`flow_party_${instanceId}`),
+    [...initiator.cookies.keys()].join(", "),
+  );
+
+  const copy = await db.query(
+    "SELECT item_id, prompt FROM item WHERE record_id = $1 ORDER BY position",
+    [instanceId],
+  );
+  check(
+    "creating the instance copied the template's five Aspects into its own rows",
+    copy.rows.length === 5 && copy.rows.map((row) => row.item_id).join() === ASPECT_IDS.join(),
+    `${copy.rows.length} rows`,
+  );
+
+  /* 2. invite ------------------------------------------------------- */
+  // The creation redirect carries `?invite=unsent`; the notice is a fact about that instant,
+  // so the probe reads the screen the redirect pointed at.
+  const initiatorScreen = await initiator.get(`${instancePath}?invite=${inviteNotice}`);
+  check(
+    "the initiator's screen renders",
+    initiatorScreen.status === 200,
+    `status ${initiatorScreen.status}`,
+  );
+  const linkMatch = initiatorScreen.html.match(/http:\/\/[^\s"<>]+\/invite\/[A-Za-z0-9_-]{43}/);
+  check(
+    "the screen shows the invitation link, because no email was sent",
+    linkMatch !== null,
+    linkMatch?.[0],
+  );
+  if (linkMatch === null) throw new Error("no invitation link on the screen");
+  const link = linkMatch[0];
+  const token = link.split("/invite/")[1];
+  check("the screen says no email was sent", initiatorScreen.html.includes("No email was sent"));
+  check(
+    "the screen shows the answer sheet while the invite is unclaimed",
+    initiatorScreen.html.includes(`name="feel:${TIME}"`),
+  );
+
+  const inviteRow = await db.query(
+    "SELECT email, counterparty_name, token_hash, claimed_at, expires_at, created_at FROM instance_invite WHERE instance_record_id = $1",
+    [instanceId],
+  );
+  const stored = inviteRow.rows[0];
+  check(
+    "the invite row stores a SHA-256 hash, never the token",
+    stored.token_hash !== token && /^[0-9a-f]{64}$/.test(stored.token_hash),
+    stored.token_hash.slice(0, 12),
+  );
+  check(
+    "the invitation expires seven days after it was created",
+    new Date(stored.expires_at).getTime() - new Date(stored.created_at).getTime() ===
+      7 * 24 * 60 * 60 * 1000,
+    `${stored.created_at} → ${stored.expires_at}`,
+  );
+
+  /* 3. the stranger, then the claim --------------------------------- */
+  const strangerScreen = await stranger.get(instancePath);
+  check(
+    "a browser with no party token gets a 404, not the screen",
+    strangerScreen.status === 404,
+    `status ${strangerScreen.status}`,
+  );
+
+  const invitePage = await counterparty.get(`/invite/${token}`);
+  check(
+    "the invitation page renders for the Counterparty",
+    invitePage.status === 200,
+    `status ${invitePage.status}`,
+  );
+  check("it names the Initiator", invitePage.html.includes("Avery E2E"));
+  check("it names the Template", invitePage.html.includes("Relationship Basics"));
+  check(
+    "the GET did not claim the invite",
+    (
+      await db.query("SELECT claimed_at FROM instance_invite WHERE instance_record_id = $1", [
+        instanceId,
+      ])
+    ).rows[0].claimed_at === null,
+  );
+
+  const claim = await counterparty.post(`/invite/${token}/claim`, {});
+  check(
+    "claiming answers 303 to the instance screen",
+    claim.status === 303 && (claim.location ?? "").includes(instancePath),
+    `${claim.status} ${claim.location}`,
+  );
+  check(
+    "the Counterparty's party cookie is set",
+    counterparty.cookies.has(`flow_party_${instanceId}`),
+  );
+  const claimed = await db.query(
+    "SELECT claimed_at,(SELECT count(*) FROM party WHERE instance_record_id = $1)::int AS parties FROM instance_invite WHERE instance_record_id = $1",
+    [instanceId],
+  );
+  check(
+    "the claim is recorded, and both party rows exist",
+    claimed.rows[0].claimed_at !== null && claimed.rows[0].parties === 2,
+    `parties=${claimed.rows[0].parties}`,
+  );
+
+  const secondClaim = await stranger.post(`/invite/${token}/claim`, {});
+  check(
+    "a second claim is refused (redirected back to the invitation's own 'used already' state)",
+    secondClaim.status === 303 && (secondClaim.location ?? "").endsWith(`/invite/${token}`),
+    `${secondClaim.status} ${secondClaim.location}`,
+  );
+  const secondClaimPage = await stranger.get(`/invite/${token}`);
+  check(
+    "the second claim lands on the 'used already' band",
+    secondClaimPage.html.includes("This invitation was used already"),
+  );
+
+  /* 4. blind: only the Initiator has answered ----------------------- */
+  const initiatorSubmit = await initiator.post(
+    `${instancePath}/answers`,
+    answers({ feel: 2, wish: 5 }, { [MONEY]: { feel: 4, wish: 4 } }),
+  );
+  check(
+    "the Initiator's submit answers 303",
+    initiatorSubmit.status === 303,
+    `status ${initiatorSubmit.status}`,
+  );
+
+  const blindScreen = await counterparty.get(instancePath);
+  check(
+    "the Counterparty's screen renders while the Initiator has answered",
+    blindScreen.status === 200,
+  );
+  check(
+    "the Counterparty sees no Gap at all",
+    !blindScreen.html.includes("data-feel-gap") && !blindScreen.html.includes("data-wish-gap"),
+  );
+  check(
+    "the Counterparty's page names no score of the Initiator's",
+    !/aria-label="Avery E2E (feel|wish):/.test(blindScreen.html) &&
+      !blindScreen.html.includes("In synch"),
+    "no 'Avery E2E feel: …' label and no report row",
+  );
+  check(
+    "the Counterparty still has their own answer sheet",
+    blindScreen.html.includes(`name="feel:${TIME}"`),
+  );
+  const initiatorWhileBlind = await initiator.get(instancePath);
+  check(
+    "the Initiator sees no Gap either, while they wait",
+    !initiatorWhileBlind.html.includes("data-feel-gap"),
+  );
+  check(
+    "the Initiator is told who is still to answer",
+    initiatorWhileBlind.html.includes("Rowan E2E"),
+  );
+
+  /* 5-6. the Counterparty answers, and the Gap unlocks --------------- */
+  const counterpartySubmit = await counterparty.post(
+    `${instancePath}/answers`,
+    answers({ feel: 5, wish: 3 }, { [MONEY]: { feel: 4, wish: 4 } }),
+  );
+  check(
+    "the Counterparty's submit answers 303",
+    counterpartySubmit.status === 303,
+    `status ${counterpartySubmit.status}`,
+  );
+
+  const afterBoth = await initiator.get(instancePath);
+  const gapAttribute = afterBoth.html.match(
+    /data-aspect="aspect-time-together" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
+  );
+  check(
+    "Feel 2 against Feel 5 renders a Gap of 3",
+    gapAttribute !== null && gapAttribute[1] === "3",
+    gapAttribute === null ? "attribute not found" : `data-feel-gap="${gapAttribute[1]}"`,
+  );
+  check(
+    "Wish 5 against Wish 3 renders a Gap of 2",
+    gapAttribute !== null && gapAttribute[2] === "2",
+    gapAttribute === null ? "" : `data-wish-gap="${gapAttribute[2]}"`,
+  );
+  const moneyRow = afterBoth.html.match(
+    /data-aspect="aspect-money" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
+  );
+  check(
+    "the agreed Aspect renders 'In synch'",
+    moneyRow !== null && moneyRow[1] === "0" && afterBoth.html.includes("In synch"),
+    moneyRow === null ? "" : "gap 0",
+  );
+  note(
+    `rendered: data-aspect="aspect-time-together" data-feel-gap="${gapAttribute?.[1]}" data-wish-gap="${gapAttribute?.[2]}"`,
+  );
+
+  const counterpartyReport = await counterparty.get(instancePath);
+  const counterpartyGap = counterpartyReport.html.match(
+    /data-aspect="aspect-time-together" data-feel-gap="(\d)"/,
+  );
+  check(
+    "both parties see the same Gap",
+    counterpartyGap?.[1] === "3",
+    `counterparty data-feel-gap="${counterpartyGap?.[1]}"`,
+  );
+
+  /* 7. freeze -------------------------------------------------------- */
+  const editAttempt = await initiator.post(
+    `${instancePath}/answers`,
+    answers({ feel: 4, wish: 4 }),
+  );
+  check(
+    "editing after both submitted answers 409",
+    editAttempt.status === 409,
+    `status ${editAttempt.status}`,
+  );
+  check(
+    "the refusal says the answers are frozen",
+    editAttempt.html.includes("Both of you have submitted, so an answer cannot be changed."),
+  );
+  const storedFeel = await db.query(
+    "SELECT feel, wish FROM opinion WHERE instance_record_id = $1 AND role = 'initiator' AND item_id = $2",
+    [instanceId, TIME],
+  );
+  check(
+    "the refused edit wrote nothing (still 2/5)",
+    storedFeel.rows[0]?.feel === 2 && storedFeel.rows[0]?.wish === 5,
+    JSON.stringify(storedFeel.rows[0]),
+  );
+
+  /* 8. copy, not alias ---------------------------------------------- */
+  const original = copy.rows.find((row) => row.item_id === TIME)?.prompt ?? "";
+  await db.query("UPDATE item SET prompt = $2 WHERE record_id = $1 AND item_id = $3", [
+    TEMPLATE_ID,
+    "TEMPLATE EDITED AFTER ANSWERING",
+    TIME,
+  ]);
+  try {
+    const afterEdit = await initiator.get(instancePath);
+    check(
+      "editing the template afterwards does not change the instance's screen",
+      afterEdit.html.includes(original) &&
+        !afterEdit.html.includes("TEMPLATE EDITED AFTER ANSWERING"),
+      "the original prompt is still drawn",
+    );
+    const instanceRow = await db.query(
+      "SELECT prompt FROM item WHERE record_id = $1 AND item_id = $2",
+      [instanceId, TIME],
+    );
+    check("the instance's own copy row is unchanged", instanceRow.rows[0]?.prompt === original);
+  } finally {
+    await db.query("UPDATE item SET prompt = $2 WHERE record_id = $1 AND item_id = $3", [
+      TEMPLATE_ID,
+      original,
+      TIME,
+    ]);
+  }
+
+  /* 9. every party is reachable by hash only ------------------------- */
+  const partyHashes = await db.query(
+    "SELECT role, access_token_hash FROM party WHERE instance_record_id = $1 ORDER BY role",
+    [instanceId],
+  );
+  check(
+    "both parties carry a 64-hex token hash and no raw token",
+    partyHashes.rows.length === 2 &&
+      partyHashes.rows.every((row) => /^[0-9a-f]{64}$/.test(row.access_token_hash ?? "")),
+  );
+  const gapColumns = await db.query(
+    `SELECT count(*)::int AS n FROM information_schema.columns
+      WHERE table_schema = 'public' AND column_name ILIKE '%gap%'`,
+  );
+  check(
+    "no column anywhere is named like a Gap",
+    gapColumns.rows[0].n === 0,
+    `${gapColumns.rows[0].n}`,
+  );
+}
+
+async function cleanup() {
+  try {
+    for (const instanceId of created) {
+      await db.query("DELETE FROM record WHERE id = $1", [instanceId]);
+    }
+    if (created.length > 0) console.log(`· cleaned up ${created.length} instance(s)`);
+  } catch (error) {
+    console.error(
+      `! cleanup failed: ${error.message} — delete record ${created.join(", ")} by hand`,
+    );
+  }
+}
+
+try {
+  await main();
+} catch (error) {
+  failures.push(`threw: ${error.message}`);
+  console.error(error);
+} finally {
+  await cleanup();
+  await db.end();
+  console.log(`\n${failures.length === 0 ? "PASS" : "FAIL"} — ${failures.length} failure(s)`);
+  for (const failure of failures) console.log(`  ✘ ${failure}`);
+  process.exit(failures.length === 0 ? 0 : 1);
+}

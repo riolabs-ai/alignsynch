@@ -1,0 +1,188 @@
+/**
+ * The screen's two-party arithmetic, and its blind state (#146).
+ *
+ * Both halves are read out of **static markup**, the way `tests/assessment-report.test.ts`
+ * reads the fixture report: the components are server components with no state, so the
+ * markup is the screen. What this file adds is the second party:
+ *
+ *   beginner   with only the Initiator's answers in the rows, the Counterparty's projection
+ *              is `report: null` and every Aspect's `own` is `null` — there is no field in
+ *              the view model that could carry the other party's scores;
+ *   complete   Feel 2 against Feel 5 on `aspect-time-together` renders `data-feel-gap="3"`
+ *              (`gapOf(2, 5) === 3`), Wish 5 against Wish 3 renders `2`, and the Aspect the
+ *              two parties agree on renders "In synch".
+ *
+ * The rows are built from the real template fixture, not invented: the Aspect ids, prompts
+ * and Values are `data/assessments.ts`'s, which is what the screen would draw.
+ */
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { AssessmentReportView } from "@/components/assessment/assessment-report";
+import { assessments } from "@/data/assessments";
+import type { PartyRole } from "@/content/assessment";
+import type { Assessment } from "@/content/assessment";
+import { gapOf } from "@/content/record";
+import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
+import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+
+const template: Assessment = (() => {
+  const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
+  if (found === undefined) throw new Error("the test's template fixture is missing");
+  return found;
+})();
+
+const INSTANCE_ID = "instance-flow-test";
+const TIME = "aspect-time-together";
+const MONEY = "aspect-money";
+
+const items: ItemRow[] = template.items.map((item, position) => ({
+  record_id: INSTANCE_ID,
+  item_id: item.id,
+  position,
+  prompt: item.prompt,
+  scale_kind: "score",
+  left_value: item.leftValue,
+  right_value: item.rightValue,
+}));
+
+const parties: PartyRow[] = [
+  { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+  { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+];
+
+/** feel/wish for one party; every Aspect not named here is 3/3. */
+function opinionsFor(
+  role: PartyRole,
+  overrides: Record<string, { feel: number; wish: number }> = {},
+): OpinionRow[] {
+  return template.items.map((item) => {
+    const override = overrides[item.id];
+    return {
+      instance_record_id: INSTANCE_ID,
+      role,
+      item_id: item.id,
+      feel: override?.feel ?? 3,
+      wish: override?.wish ?? 3,
+      think: null,
+      guess: null,
+    };
+  });
+}
+
+function rowsWith(opinions: OpinionRow[], answered: Record<PartyRole, number>): FlowInstanceRows {
+  return {
+    record: {
+      id: INSTANCE_ID,
+      slug: "relationship-basics-test",
+      record_type: "assessment",
+      status: "draft",
+      date: new Date("2026-10-30T12:00:00.000Z"),
+      title: template?.title ?? "",
+      summary: "answered by Avery and Rowan",
+    },
+    items,
+    options: [],
+    instance: { record_id: INSTANCE_ID, template_record_id: template?.id ?? "" },
+    parties,
+    opinions,
+    answerCounts: answered,
+  };
+}
+
+const invite = { email: "rowan@example.com", counterpartyName: "Rowan", claimed: true, link: null };
+
+describe("the blind state", () => {
+  const initiatorAnswers = opinionsFor("initiator", {
+    [TIME]: { feel: 2, wish: 5 },
+    [MONEY]: { feel: 4, wish: 4 },
+  });
+
+  it("shows the Counterparty no report and none of the Initiator's scores", () => {
+    const screen = projectScreen({
+      rows: rowsWith(initiatorAnswers, { initiator: items.length, counterparty: 0 }),
+      template,
+      viewerRole: "counterparty",
+      invite,
+    });
+
+    expect(screen.status).toBe("answering");
+    expect(screen.report).toBeNull();
+    expect(screen.aspects.every((aspect) => aspect.own === null)).toBe(true);
+
+    // Nothing in the view model carries the other party's numbers: the ids are the only
+    // trace of the Aspects, and 2/5/4 never appear as a score of somebody else's.
+    const serialized = JSON.stringify(screen);
+    expect(serialized).not.toContain("data-feel-gap");
+    expect(serialized).not.toContain('"initiator":2');
+  });
+
+  it("shows the Initiator their own answers while they wait, and still no Gap", () => {
+    const screen = projectScreen({
+      rows: rowsWith(initiatorAnswers, { initiator: items.length, counterparty: 0 }),
+      template,
+      viewerRole: "initiator",
+      invite,
+    });
+
+    expect(screen.report).toBeNull();
+    expect(screen.aspects.find((aspect) => aspect.itemId === TIME)?.own).toEqual({
+      feel: 2,
+      wish: 5,
+    });
+    expect(screen.waiting).toEqual(["counterparty"]);
+    expect(screen.invite?.claimed).toBe(true);
+  });
+});
+
+describe("the report, once both have submitted", () => {
+  const both = [
+    ...opinionsFor("initiator", { [TIME]: { feel: 2, wish: 5 }, [MONEY]: { feel: 4, wish: 4 } }),
+    ...opinionsFor("counterparty", { [TIME]: { feel: 5, wish: 3 }, [MONEY]: { feel: 4, wish: 4 } }),
+  ];
+
+  const screen = projectScreen({
+    rows: rowsWith(both, { initiator: items.length, counterparty: items.length }),
+    template,
+    viewerRole: "initiator",
+    invite,
+  });
+  const markup =
+    screen.report === null
+      ? ""
+      : renderToStaticMarkup(createElement(AssessmentReportView, { report: screen.report }));
+
+  it("opens for both parties at complete", () => {
+    expect(screen.status).toBe("complete");
+    expect(screen.report).not.toBeNull();
+    expect(screen.report?.rows).toHaveLength(items.length);
+  });
+
+  it("renders Feel 2 against Feel 5 as a Gap of 3", () => {
+    const row = screen.report?.rows.find((entry) => entry.itemId === TIME);
+    expect(row?.left.opinions).toMatchObject({ feel: 2, wish: 5 });
+    expect(row?.right.opinions).toMatchObject({ feel: 5, wish: 3 });
+    expect(gapOf(2, 5)).toBe(3);
+    expect(row?.gaps.feel).toBe(3);
+    expect(markup).toContain(
+      'data-aspect="aspect-time-together" data-feel-gap="3" data-wish-gap="2"',
+    );
+  });
+
+  it("renders an agreed Aspect as In synch", () => {
+    const row = screen.report?.rows.find((entry) => entry.itemId === MONEY);
+    expect(row?.gaps).toMatchObject({ feel: 0, wish: 0 });
+    expect(markup).toContain('data-aspect="aspect-money" data-feel-gap="0" data-wish-gap="0"');
+    expect(markup).toContain("In synch");
+  });
+
+  it("draws the Gap for the Counterparty too — the unlock is symmetric", () => {
+    const counterpartyView = projectScreen({
+      rows: rowsWith(both, { initiator: items.length, counterparty: items.length }),
+      template,
+      viewerRole: "counterparty",
+      invite,
+    });
+    expect(counterpartyView.report?.rows.find((row) => row.itemId === TIME)?.gaps.feel).toBe(3);
+  });
+});
