@@ -11,6 +11,7 @@
  */
 import type { Contact, Conversation } from "../content/social";
 import { deriveLastMessage, deriveUnread, selectRecentMessages } from "../content/social";
+import type { BrandId } from "./brand";
 import { media } from "./media";
 
 /** The stored records — what `data:check` validates. */
@@ -306,3 +307,33 @@ export const recentMessages = selectRecentMessages(conversations, contacts).map(
   lastMessageAt: row.lastMessageAt,
   unread: row.hasUnread,
 }));
+
+/** One row of the header's messages drawer. */
+export type RecentMessage = (typeof recentMessages)[number];
+
+/**
+ * The conversations this brand's messages drawer shows (issue #156 follow-up).
+ *
+ * The five sample conversations above are the quiz product's: a quiz tournament, a quiz meetup,
+ * a science quiz. The header is chrome on every route of both builds, so on `BRAND=alignsynch`
+ * they rendered a whole quiz conversation list above an alignment front page. This build has no
+ * conversations behind that drawer — nothing in `data/` is one — so it gets an empty list and the
+ * drawer draws its empty state (the words are `messages`' `empty-title` / `empty-body`).
+ *
+ * An empty list rather than a second set of invented alignment conversations: a fixture of
+ * messages nobody sent is the mock this repo keeps deleting, and the drawer's own empty state is
+ * already the screen for "you have no conversations".
+ */
+export function recentMessagesFor(brandId: BrandId): readonly RecentMessage[] {
+  switch (brandId) {
+    case "quizhub":
+      return recentMessages;
+    case "alignsynch":
+      return [];
+    default: {
+      // A brand added to `data/brand.ts` without a drawer decision fails `tsc` here.
+      const unhandled: never = brandId;
+      throw new Error(`no messages drawer for brand ${String(unhandled)}`);
+    }
+  }
+}

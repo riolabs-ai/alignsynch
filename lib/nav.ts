@@ -36,6 +36,7 @@
  * Nothing here imports React, Next or zod: it is a pure predicate, so a node test can prove
  * both viewers without a browser (see `tests/nav-brand.test.ts`).
  */
+import type { BrandId } from "@/data/brand";
 
 /** One destination family a viewer may or may not be shown. */
 export const NAV_CAPABILITIES = ["quiz-surfaces"] as const;
@@ -87,4 +88,34 @@ export const ALIGNMENT_ROUTES: readonly string[] = ["/", "/settings", "/support"
  */
 export function navViewer(): NavViewer {
   return PLATFORM_VIEWER;
+}
+
+/**
+ * Does this viewer get the quiz product's chrome on this brand? (issue #156 follow-up)
+ *
+ * The rule is the one `components/layout/nav-menus.tsx` already follows, and the reason it is a
+ * function rather than a `sees(...)` call in each component: **on the quiz brand the brand is the
+ * product**, so the shipped chrome is what every viewer gets — `navViewer()` grants no capability
+ * today, and gating on the capability alone would strip the quiz build of its own shell. On the
+ * alignment brand the quiz product is an *addition*, and only a viewer carrying `quiz-surfaces`
+ * gets it back.
+ *
+ * What it gates is the quiz product's chrome outside the sidebar: the header's wallet chip, the
+ * account menu's profile/dashboard/my-quizzes rows, and — through `sees` in `data/searchdata.ts`
+ * and `lib/shell-copy.ts`'s tab ids — the quiz rows and tabs in search.
+ *
+ * The `switch` over the brand literal has no fall-through: a third brand fails `tsc` until
+ * someone decides whether it ships the quiz product's chrome.
+ */
+export function seesQuizProduct(brandId: BrandId, viewer: NavViewer): boolean {
+  switch (brandId) {
+    case "quizhub":
+      return true;
+    case "alignsynch":
+      return sees(viewer, "quiz-surfaces");
+    default: {
+      const unhandled: never = brandId;
+      throw new Error(`no chrome decision for brand ${String(unhandled)}`);
+    }
+  }
 }

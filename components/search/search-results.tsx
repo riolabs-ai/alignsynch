@@ -15,7 +15,10 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { popularSearches, querySearchIndex, type SearchIndex } from "@/content/search";
+import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
+import { fillLabel, itemLabel } from "@/lib/page-copy";
+import { type SearchTabId, searchTabIds } from "@/lib/shell-copy";
 import { FileQuestion, FileText, Filter, Search, Tag, User, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -34,16 +37,29 @@ import { useEffect, useState } from "react";
  * Three columns of the old mock are gone because no record could answer them: `plays`, `rating`
  * (and the "Most Played"/"Highest Rated" sort that ordered them), `followers` and `bio` on a
  * creator, and a `description` on a page. What is left is either stored or counted.
+ *
+ * The tab strip is chrome on two brands now (issue #156 follow-up). Its labels are the brand's
+ * (`data/pages/shell.ts` sections `search-tabs` / `search-tabs-alignsynch`, resolved by
+ * `searchTabsFor`) and its *ids* are the index's own groups (`searchTabIds`), so the alignment
+ * build renders "All Results" and "Assessments & pages" over the four records its index holds
+ * instead of the five quiz-shaped tabs it used to spell in this file.
  */
 export function SearchResults({
   query,
   index,
   placeholder,
+  tabs,
 }: {
   query: string;
   index: SearchIndex;
   /** The brand's own words for the field — `lib/shell-copy.ts` picks the section (issue #156). */
   placeholder: string;
+  /**
+   * The brand's words for the tab strip (`search-tabs` / `search-tabs-alignsynch`). Which tabs
+   * render is `searchTabIds(index)`, not the brand: a tab with no record behind it is a filter
+   * that can only ever return nothing, and the alignment build's index has no quiz to filter.
+   */
+  tabs: PageCopySection;
 }) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState(query);
@@ -65,6 +81,20 @@ export function SearchResults({
 
   const results = querySearchIndex(index, { text: searchQuery, difficulty: difficultyFilter });
   const suggestions = popularSearches(index);
+
+  /**
+   * The tabs this index can fill, and the count each one prints. A group's count is the rows
+   * the query matched (`querySearchIndex` above); the id set is the index's own groups, so the
+   * strip can never offer a filter whose group the build does not have (issue #156 follow-up).
+   */
+  const tabIds = searchTabIds(index);
+  const tabCounts: Record<SearchTabId, number> = {
+    all: results.total,
+    quizzes: results.quizzes.length,
+    categories: results.categories.length,
+    creators: results.creators.length,
+    pages: results.pages.length,
+  };
 
   /** `hard` is the stored value; `Hard` is what the badge prints. No other casing is stored. */
   const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -119,11 +149,11 @@ export function SearchResults({
 
           <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-8">
             <TabsList className="mb-6 overflow-x-auto w-full">
-              <TabsTrigger value="all">All Results ({results.total})</TabsTrigger>
-              <TabsTrigger value="quizzes">Quizzes ({results.quizzes.length})</TabsTrigger>
-              <TabsTrigger value="categories">Categories ({results.categories.length})</TabsTrigger>
-              <TabsTrigger value="creators">Creators ({results.creators.length})</TabsTrigger>
-              <TabsTrigger value="pages">Pages ({results.pages.length})</TabsTrigger>
+              {tabIds.map((id) => (
+                <TabsTrigger key={id} value={id}>
+                  {fillLabel(itemLabel(tabs, id), { count: tabCounts[id] })}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             <TabsContent value="all" className="space-y-8">
