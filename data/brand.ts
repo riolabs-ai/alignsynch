@@ -50,6 +50,7 @@ import { alignSynchBrand } from "./brands/alignsynch";
 export const quizHubBrand: Brand = zBrand.parse({
   name: "QuizHub",
   legalName: "QuizHub",
+  description: "Create quizzes, play games, and earn money with our multi-vendor quiz platform",
   domain: "quizhub.com",
   logo: "/placeholder-logo.svg",
   colors: {

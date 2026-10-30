@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     default: brand.name,
     template: `%s · ${brand.name}`,
   },
-  description: "Create quizzes, play games, and earn money with our multi-vendor quiz platform",
+  description: brand.description,
 };
 
 export default function RootLayout({
