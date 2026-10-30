@@ -22,6 +22,7 @@ const ROW: UserProfileRow = {
   bio: "Analyst, engines.",
   country: "United Kingdom",
   country_code: "gb",
+  role: "member",
   joined_at: new Date("2026-10-30T12:00:00.000Z"),
   updated_at: "2026-10-30T12:00:00.000Z",
 };
@@ -66,7 +67,16 @@ describe("zUserProfile", () => {
   const PROFILE = userProfileFromRow(ROW);
 
   it("is strict: an unknown key is drift, not a carried field", () => {
-    expect(zUserProfile.safeParse({ ...PROFILE, role: "admin" }).success).toBe(false);
+    expect(zUserProfile.safeParse({ ...PROFILE, isAdmin: true }).success).toBe(false);
+  });
+
+  it("carries the role off the row, and rejects a role outside the vocabulary", () => {
+    expect(userProfileFromRow({ ...ROW, role: "admin" }).role).toBe("admin");
+    expect(zUserProfile.safeParse({ ...PROFILE, role: "owner" }).success).toBe(false);
+    // No default in the schema: a row always carries one (the column does), so a profile that
+    // lost it is drift rather than a silent member.
+    const { role: _dropped, ...withoutRole } = PROFILE;
+    expect(zUserProfile.safeParse(withoutRole).success).toBe(false);
   });
 
   it("names the field that failed, not just 'invalid'", () => {
@@ -82,6 +92,11 @@ describe("publicProfileOf", () => {
     expect(publicProfile).not.toHaveProperty("userId");
     expect(publicProfile.handle).toBe("ada-lovelace");
     expect(publicProfile.displayName).toBe("Ada Lovelace");
+  });
+
+  it("drops the role too — a public page does not say who the admin is", () => {
+    const publicProfile = publicProfileOf(userProfileFromRow({ ...ROW, role: "admin" }));
+    expect(publicProfile).not.toHaveProperty("role");
   });
 });
 
