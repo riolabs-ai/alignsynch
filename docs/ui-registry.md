@@ -14,7 +14,7 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **41** — 27 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 228 files under `components/`, 224 of them `.tsx`
+- component domains: **32** — 229 files under `components/`, 225 of them `.tsx`
 - route handlers: **5** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 10 · **fixture** 50 · **db** 8 · **live** 5
 - templates: Both templates 19 · AlignSynch 10 · QuizHub 42 · No template yet 2
@@ -178,9 +178,9 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment` — **mock**
   - capability: The assessment report: each Aspect's two Opinions, the Values behind them and the Gap between the parties.
-  - files (1): `assessment-report.tsx`
+  - files (2): `assessment-report.tsx`, `assessment-unreadable.tsx`
   - routes (2): `/assessment/[slug]`, `/assessment/instances/[instanceId]`
-  - notes: Reads nothing itself — the instance arrives as props from the route that read Postgres, which is why the surface is `mock` and the route above it is `db`.
+  - notes: Reads nothing itself — the instance arrives as props from the route that read Postgres, which is why the surface is `mock` and the route above it is `db`. Since #204 it also draws the one failure state the route can describe: `assessment-unreadable.tsx` prints the database layer's own sentence when the read did not answer, instead of Next's 500 and a digest.
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
