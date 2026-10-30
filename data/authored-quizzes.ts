@@ -14,6 +14,16 @@
  * the second merchandising snapshot (2105/2500 · $7.50 · 4.8 · `popular`) is a
  * per-slot overlay (B-01, `zQuizPromotion`), never a second record for the same
  * subject — E10 forbids a duplicate record and A4 forbids a shadow identity.
+ *
+ * **The four `limitedTimeEndsAt` values are demo-epoch-relative, not capture dates.**
+ * The authored cards said `expiresIn: 172800 / 129600 / 86400 / 43200` (48 h, 36 h,
+ * 24 h, 12 h); `DEMO_NOW_ISO` (`content/core.ts`) + that duration is the instant each
+ * window closes, exactly as MIGRATION.md's field table specifies. They were left on
+ * the 2025 capture dates by the migration, so every window had already closed at the
+ * demo clock and no limited-time card rendered a countdown — including the two
+ * `data/promotions.ts` campaigns, which are bounded by the Science quiz's window and
+ * therefore never ran (issue #110). `data:check` E30 now fails the build when a
+ * campaign's window stops covering the fixture clock.
  */
 import type { Quiz } from "../content/quiz";
 import { media } from "./media";
@@ -201,7 +211,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Hot 🔥",
       },
       rewardCents: 1000,
-      limitedTimeEndsAt: "2025-01-03T00:00:00.000Z",
+      limitedTimeEndsAt: "2026-10-31T12:00:00.000Z",
       updatedAt: "2024-12-27T00:00:00.000Z",
     },
     cover: {
@@ -593,7 +603,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Trending 📈",
       },
       rewardCents: 800,
-      limitedTimeEndsAt: "2025-01-02T00:00:00.000Z",
+      limitedTimeEndsAt: "2026-10-30T12:00:00.000Z",
     },
     cover: {
       src: media["brain-teasers-puzzles"].src,
@@ -957,7 +967,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Hot 🔥",
       },
       rewardCents: 900,
-      limitedTimeEndsAt: "2025-01-02T12:00:00.000Z",
+      limitedTimeEndsAt: "2026-10-31T00:00:00.000Z",
       updatedAt: "2024-12-25T00:00:00.000Z",
     },
     author: {
@@ -1292,7 +1302,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Hot 🔥",
       },
       rewardCents: 700,
-      limitedTimeEndsAt: "2025-01-01T12:00:00.000Z",
+      limitedTimeEndsAt: "2026-10-30T00:00:00.000Z",
     },
     author: {
       name: "BookWorm",
