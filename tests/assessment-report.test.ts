@@ -27,8 +27,20 @@ import { gapOf, type Gap } from "@/content/record";
 import { assessmentInstances, assessments } from "@/data/assessments";
 import { assessmentReport, instanceBySlug } from "@/lib/assessment-report";
 
-const instance = assessmentInstances[0];
-const template = assessments.find((entry) => entry.id === instance.templateId);
+/** React escapes the characters it writes as markup; a title carrying `&` arrives escaped. */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+const instance = instanceBySlug("avery-rowan", assessmentInstances);
+const template = instance
+  ? assessments.find((entry) => entry.id === instance.templateId)
+  : undefined;
 
 if (instance === undefined || template === undefined) {
   throw new Error("the Avery/Rowan fixture and its template are the test's subject");
@@ -112,6 +124,30 @@ describe("the rendered screen", () => {
     expect(basicOnly).not.toContain(">think<");
     expect(basicOnly).not.toContain(">guess<");
     expect(basicOnly).not.toContain("data-think-gap");
+  });
+
+  /**
+   * The fixture grew four instances after this screen was written (three Relationship
+   * Types, one template with no instances). A projection that only draws the record its
+   * test was written for would pass every case above and blank `/assessment/ruth-sam`,
+   * so every instance is rendered here and counted against its own Aspects.
+   */
+  it("renders every instance in the fixture, not only the one this file names", () => {
+    expect(assessmentInstances.length).toBeGreaterThan(1);
+    for (const entry of assessmentInstances) {
+      const own = assessments.find((candidate) => candidate.id === entry.templateId);
+      expect(own, `${entry.slug} names no template`).toBeDefined();
+      if (own === undefined) continue;
+
+      const html = renderToStaticMarkup(
+        createElement(AssessmentReportView, { report: assessmentReport(entry, own) }),
+      );
+      // React escapes the markup it writes, so a title with an `&` in it ("Parent & Child")
+      // is the escaped string on the wire; compare against the same escaping.
+      expect(html).toContain(escapeHtml(own.title));
+      for (const party of entry.parties) expect(html).toContain(escapeHtml(party.name));
+      expect((html.match(/<section /g) ?? []).length).toBe(entry.items.length);
+    }
   });
 });
 
