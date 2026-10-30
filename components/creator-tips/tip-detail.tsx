@@ -2,10 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
-import { type Tip, getRelatedTips, tipCategoryName } from "@/data/creator-tips-data";
 import { ContentBlocks } from "@/components/content/content-blocks";
 import { formatDate } from "@/content/core";
 import type { PageCopySection } from "@/content/pages";
+import { tipCategoryName } from "@/data/creator-tips-data";
+import type { TipRecord } from "@/lib/article-records";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Bookmark, Clock, Share2, ThumbsUp } from "lucide-react";
@@ -14,18 +15,24 @@ import Link from "next/link";
 import { useState } from "react";
 import RelatedTips from "./related-tips";
 import { media } from "@/data/media";
+
 interface TipDetailProps {
-  tip: Tip;
+  /**
+   * The record, resolved by the route from its slug (issue #165). It is a published
+   * tip or the page has already called `notFound()`, so this reader never renders an
+   * empty state for an unknown slug.
+   */
+  tip: TipRecord;
+  /** Published tips sharing a category, newest first. Resolved by the route. */
+  relatedTips: readonly TipRecord[];
   copy: PageCopySection;
   related: PageCopySection;
 }
 
-export default function TipDetail({ tip, copy, related }: TipDetailProps) {
+export default function TipDetail({ tip, relatedTips, copy, related }: TipDetailProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [likeCount, setLikeCount] = useState(45);
   const [hasLiked, setHasLiked] = useState(false);
-
-  const relatedTips = getRelatedTips(tip);
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
@@ -82,9 +89,7 @@ export default function TipDetail({ tip, copy, related }: TipDetailProps) {
               />
               <div>
                 <div className="font-medium">{tip.author.name}</div>
-                <div className="text-sm text-gray-500">
-                  {tip.publishedAt ? formatDate(tip.publishedAt) : ""}
-                </div>
+                <div className="text-sm text-gray-500">{formatDate(tip.date)}</div>
               </div>
             </div>
 
@@ -128,7 +133,7 @@ export default function TipDetail({ tip, copy, related }: TipDetailProps) {
         </div>
       </article>
 
-      {relatedTips.length > 0 && <RelatedTips tips={relatedTips} copy={related} />}
+      {relatedTips.length > 0 && <RelatedTips articles={relatedTips} copy={related} />}
     </div>
   );
 }

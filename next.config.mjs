@@ -68,6 +68,22 @@ const nextConfig = {
        */
       { source: "/tournaments/register", destination: "/register", permanent: true },
       { source: "/tournaments/create", destination: "/create/editor", permanent: true },
+      /**
+       * The help centre's old URL shape (issue #165). `/support/articles/[id]` took the
+       * record id — `/support/articles/kb-account-setup` — and now takes the slug like
+       * the other two editorial detail routes. The id is the slug behind a `kb-` prefix
+       * (`content/article.ts` §2 composes it that way), so the whole old shape is one
+       * pattern, answered before the page renders: an external link, a bookmark or cached
+       * markup lands on the article (308) instead of a 404.
+       *
+       * It is a redirect and not a second lookup in the page: an id is not a URL, and a
+       * page that also resolved ids would be a second way to address one record.
+       */
+      {
+        source: "/support/articles/kb-:slug",
+        destination: "/support/articles/:slug",
+        permanent: true,
+      },
     ];
   },
 };

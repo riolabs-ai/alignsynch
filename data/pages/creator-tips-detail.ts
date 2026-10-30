@@ -1,7 +1,8 @@
 /**
  * `/creator-tips/[slug]` — one creator tip's copy (WU-9).
  *
- * The article itself is a record (`getTipBySlug`): title, summary, author, date
+ * The article itself is a record (`publishedArticle("tip", slug)` in
+ * `lib/article-records.ts`): title, summary, author, date
  * and body all come from `data/creator-tips-data.ts` and are not copy. What a
  * component still spelled out is the chrome around it, and that is what this
  * fixture carries: the back link, the reading-time caption, the save/bookmark

@@ -11,8 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPercentValue } from "@/content/metrics";
 import { metric } from "@/data/metrics";
-import { categories as categoryNames, newsData } from "@/data/news-data";
-import type { NewsArticle as NewsArticleContent } from "@/content/article";
+import { categories as categoryNames } from "@/data/news-data";
+import { articlePath, type NewsRecord } from "@/lib/article-records";
 import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -34,53 +34,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { media } from "@/data/media";
 
-export function NewsArticle({ slug, copy }: { slug: string; copy: PageCopy }) {
+/**
+ * The reader for `/news/[slug]`. The record is resolved by the route from its slug
+ * (issue #165) — a news post that is not published and a slug that is not a record are
+ * already a 404 before this component mounts, so it renders a record or nothing at all.
+ * The bands around it (`actions`, `comments`, `author`, `related-articles`, `newsletter`)
+ * are the route's copy; the title, author, date and body are the record.
+ */
+export function NewsArticle({
+  article,
+  relatedArticles,
+  copy,
+}: {
+  article: NewsRecord;
+  relatedArticles: readonly NewsRecord[];
+  copy: PageCopy;
+}) {
   const router = useRouter();
-  const [article, setArticle] = useState<NewsArticleContent>();
-  const [relatedArticles, setRelatedArticles] = useState<NewsArticleContent[]>([]);
   const [comment, setComment] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // The bands this reader renders around the record. The article's own title, author,
-  // date and body come from `newsData`; everything else is the route's copy.
   const actions = sectionOf(copy, "article-actions");
   const comments = sectionOf(copy, "comments");
   const authorCard = sectionOf(copy, "author");
   const relatedCopy = sectionOf(copy, "related-articles");
   const newsletter = sectionOf(copy, "newsletter");
-
-  useEffect(() => {
-    const currentArticle = newsData.find((a) => a.slug === slug);
-    if (!currentArticle) {
-      router.push("/news");
-      return;
-    }
-
-    setArticle(currentArticle);
-
-    // Find related articles based on categories
-    if (currentArticle) {
-      const related = newsData
-        .filter(
-          (a) =>
-            a.slug !== slug && a.categoryIds.some((id) => currentArticle.categoryIds.includes(id)),
-        )
-        .slice(0, 3);
-      setRelatedArticles(related);
-    }
-  }, [slug, router]);
-
-  if (!article) {
-    return (
-      <div className="container mx-auto py-12 px-4 md:px-6 text-center">
-        <p>{copy.heading}</p>
-      </div>
-    );
-  }
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -125,7 +107,7 @@ export function NewsArticle({ slug, copy }: { slug: string; copy: PageCopy }) {
               <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <Calendar className="mr-1 h-3 w-3" />
-                  <span>{article.publishedAt ? formatDate(article.publishedAt) : ""}</span>
+                  <span>{formatDate(article.date)}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="mr-1 h-3 w-3" />
@@ -386,11 +368,11 @@ export function NewsArticle({ slug, copy }: { slug: string; copy: PageCopy }) {
                       />
                     </div>
                     <div className="flex-1 p-3">
-                      <Link href={`/news/${related.slug}`} className="hover:underline">
+                      <Link href={articlePath(related)} className="hover:underline">
                         <h4 className="font-medium line-clamp-2">{related.title}</h4>
                       </Link>
                       <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-2">
-                        <span>{related.publishedAt ? formatDate(related.publishedAt) : ""}</span>
+                        <span>{formatDate(related.date)}</span>
                         <span>•</span>
                         <span>
                           {related.readMinutes} {itemLabel(relatedCopy, "min-read")}

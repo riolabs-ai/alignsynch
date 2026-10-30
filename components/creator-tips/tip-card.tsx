@@ -1,8 +1,9 @@
 "use client";
 
-import { tipCategoryName, type Tip } from "@/data/creator-tips-data";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
+import { tipCategoryName } from "@/data/creator-tips-data";
+import { articlePath, type TipRecord } from "@/lib/article-records";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Bookmark, Clock } from "lucide-react";
 import Image from "next/image";
@@ -10,14 +11,14 @@ import Link from "next/link";
 import { media } from "@/data/media";
 
 interface TipCardProps {
-  tip: Tip;
+  tip: TipRecord;
   copy: PageCopySection;
 }
 
 export default function TipCard({ tip, copy }: TipCardProps) {
   return (
     <Link
-      href={`/creator-tips/${tip.slug}`}
+      href={articlePath(tip)}
       className="group flex flex-col h-full overflow-hidden rounded-lg border border-gray-200 hover:border-purple-300 dark:border-gray-700 hover:shadow-md transition-all"
     >
       <div className="aspect-video relative">

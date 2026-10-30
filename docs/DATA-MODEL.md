@@ -4,7 +4,7 @@ One typed model: `content/*.ts` zod schemas are the single source of truth; type
 every `data/*` fixture is validated at build by `pnpm data:check` (134 tests, exit 0). A drift is a
 red build. `content/` has no React/Next import. Full history: docs/p1-migration/MIGRATION.md.
 
-## Inventory — every `data/*` module → entity (62 quizzes · 4 assessment templates + 4 instances · 9 news · 6 tips · 8 kb · 5 contacts · 5 conv · 6 notifs)
+## Inventory — every `data/*` module → entity (62 quizzes · 4 assessment templates + 4 instances · 9 news · 6 tips · 9 kb — one of them a draft · 5 contacts · 5 conv · 6 notifs)
 
 | module                      | entity (count)                                                           | storage / view                        |
 | --------------------------- | ------------------------------------------------------------------------ | ------------------------------------- |
@@ -20,7 +20,7 @@ red build. `content/` has no React/Next import. Full history: docs/p1-migration/
 | data/categories.ts          | Category ×25 (quiz rows + derived `count`)                               | view of content/categories.ts         |
 | data/news-data.ts           | NewsArticle ×9 + news Category ×7 (re-export)                            | storage                               |
 | data/creator-tips-data.ts   | Tip ×6 + tip Category ×6 (re-export)                                     | storage                               |
-| data/knowledge-base-data.ts | KbArticle ×8                                                             | storage                               |
+| data/knowledge-base-data.ts | KbArticle ×9 (one draft)                                                 | storage                               |
 | data/chat-data.ts           | Contact ×5, Conversation ×5 (+ derived mock views)                       | storage                               |
 | data/notifications.ts       | Notification ×6                                                          | storage                               |
 | data/searchdata.ts          | SearchIndex ×74 derived rows                                             | derived, never authored               |
@@ -71,6 +71,28 @@ into the other.
   `Template` and `zQuiz`'s refinement rejects a quiz that projection cannot express (that is what keeps
   "both are records" a check instead of a sentence). `correctOptionId` and the score stay on the quiz;
   the record has no notion of a right answer.
+
+### Article records — the third `type`, and the one with no items (issue #165)
+
+`article` is the record type that holds no items: a news post, a creator tip and a help article are one
+record with a title, a summary, a body, one date, a status and a category, and prose instead of rows.
+`lib/article-records.ts` is the read function all three surfaces call — `publishedArticles(kind)`,
+`publishedArticle(kind, slug)`, `relatedArticles(article)` — and it is the seam the database slots into:
+today it projects the three editorial fixtures plus their record layer, and #145 changes the projection,
+not a component.
+
+- **status is authored, not defaulted.** `content/article.ts` models what an article says; it has no
+  `status`. `data/article-publication.ts` is one row per article id (`published`, and one `draft`), and
+  the store throws on an article with no row rather than publishing it by omission.
+- **one date.** The record's `date` is the fixture's `publishedAt`. The help-centre articles had none
+  (`publishedAt` is optional on `kb` only, because the old fixture carried no date at all), so each of
+  the eight now authors its publication instant. No epoch was invented and the schema is unchanged.
+- **slugs are URLs.** Detail routes resolve `slug`. `/support/articles/[id]` became
+  `/support/articles/[slug]`; the old `kb-<slug>` shape is a 308 in `next.config.mjs` (an id is not a
+  second way to address a record).
+- **published only.** Every read is `status === "published"`, so an unpublished record is absent from
+  its index and its detail is a 404. `tests/article-records.test.ts` holds the draft in the fixtures and
+  asserts both halves on every gate run.
 
 ## Invariants (`data:check`; E = hard, W = declared drift — each names its proving test)
 

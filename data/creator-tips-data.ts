@@ -8,8 +8,6 @@ import type { Category } from "../content/category";
 import { tipCategories as taxonomyTipCategories } from "../content/categories";
 import { media } from "./media";
 
-export type { Tip } from "../content/article";
-
 export const tips: readonly Tip[] = [
   {
     id: "tip-1",
@@ -166,33 +164,15 @@ export const tips: readonly Tip[] = [
 /** The tip vocabulary — from the ONE taxonomy table (D15). The count is derived in data:check. */
 export const categories: readonly Category[] = taxonomyTipCategories;
 
-/* Selectors over the collection. They were local helpers in this module before the
- * migration and the pages already import them from here, so they stay here — but
- * they are queries now, not a second copy of the data. */
-
-export const getFeaturedTips = (): readonly Tip[] => tips.filter((tip) => tip.featured);
-
-export const getTipsByCategory = (categoryId: string): readonly Tip[] =>
-  tips.filter((tip) => tip.categoryIds.includes(categoryId));
-
-export const getTipBySlug = (slug: string): Tip | undefined =>
-  tips.find((tip) => tip.slug === slug);
-
-export const getRelatedTips = (current: Tip, count = 3): readonly Tip[] =>
-  tips
-    .filter(
-      (tip) =>
-        tip.slug !== current.slug && tip.categoryIds.some((id) => current.categoryIds.includes(id)),
-    )
-    .slice(0, count);
-
-export function searchTips(query: string): readonly Tip[] {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return tips;
-  return tips.filter(
-    (tip) => tip.title.toLowerCase().includes(needle) || tip.summary.toLowerCase().includes(needle),
-  );
-}
+/*
+ * The reads moved to the record store (issue #165). `getTipBySlug`, `getFeaturedTips`,
+ * `getRelatedTips`, `searchTips` and `tipCategoryRows` lived here as queries over the
+ * fixture; they are now `publishedArticle("tip", slug)`, `publishedArticles("tip")`,
+ * `relatedArticles()`, `searchArticles()` and `articleCategoryRows("tip")` in
+ * `lib/article-records.ts`, where all three editorial surfaces read one record shape and
+ * a draft cannot be returned by accident. This module is the storage the store projects —
+ * it authors tips, it does not answer questions about them.
+ */
 
 /**
  * Display label for a tip category id. The components used to title-case the
@@ -208,9 +188,3 @@ export function tipCategoryName(categoryId: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
-
-/** The category cards the tips page renders: taxonomy row + a count derived from the tips. */
-export const tipCategoryRows = taxonomyTipCategories.map((category) => ({
-  ...category,
-  count: tips.filter((tip) => tip.categoryIds.includes(category.id)).length,
-}));

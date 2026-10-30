@@ -4,9 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { articlesData } from "@/data/knowledge-base-data";
 import { categoryName } from "@/content/categories";
 import type { PageCopySection } from "@/content/pages";
+import { articlePath, publishedArticles } from "@/lib/article-records";
 import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, FileText, Search } from "lucide-react";
 import Link from "next/link";
@@ -22,11 +22,15 @@ interface KnowledgeBaseProps {
 export function KnowledgeBase({ selectedCategory, copy, categoryCopy }: KnowledgeBaseProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Get the appropriate articles based on the selected category
-  const articles =
-    selectedCategory === "all"
-      ? articlesData
-      : articlesData.filter((article) => article.categoryIds.includes(`kb-${selectedCategory}`));
+  /**
+   * The panel lists article records (issue #165): published help articles, newest first,
+   * narrowed by the selected category. There is no second collection — the record store
+   * is the only thing this panel reads.
+   */
+  const articles = publishedArticles("kb").filter(
+    (article) =>
+      selectedCategory === "all" || article.categoryIds.includes(`kb-${selectedCategory}`),
+  );
 
   // Filter articles based on search query
   const filteredArticles = articles.filter(
@@ -84,7 +88,7 @@ export function KnowledgeBase({ selectedCategory, copy, categoryCopy }: Knowledg
               className="overflow-hidden border hover:border-primary/50 transition-colors"
             >
               <CardContent className="!pt-6">
-                <Link href={`/support/articles/${article.id}`} className="block">
+                <Link href={articlePath(article)} className="block">
                   <Button
                     variant="ghost"
                     className="w-full h-full p-4 justify-start flex-col items-start"
