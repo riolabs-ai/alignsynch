@@ -35,7 +35,16 @@ import { useEffect, useState } from "react";
  * (and the "Most Played"/"Highest Rated" sort that ordered them), `followers` and `bio` on a
  * creator, and a `description` on a page. What is left is either stored or counted.
  */
-export function SearchResults({ query, index }: { query: string; index: SearchIndex }) {
+export function SearchResults({
+  query,
+  index,
+  placeholder,
+}: {
+  query: string;
+  index: SearchIndex;
+  /** The brand's own words for the field — `lib/shell-copy.ts` picks the section (issue #156). */
+  placeholder: string;
+}) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState(query);
   const [activeTab, setActiveTab] = useState("all");
@@ -70,7 +79,7 @@ export function SearchResults({ query, index }: { query: string; index: SearchIn
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search quizzes, categories, creators..."
+              placeholder={placeholder}
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

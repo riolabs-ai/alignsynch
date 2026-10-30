@@ -9,14 +9,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import type { SearchIndex } from "@/content/search";
 import { formatMetricValue } from "@/content/metrics";
-import type { PageCopy } from "@/content/pages";
+import type { PageCopy, PageCopySection } from "@/content/pages";
 import { recentMessages } from "@/data/chat-data";
+import type { BrandId } from "@/data/brand";
 import { metric } from "@/data/metrics";
 import { notifications } from "@/data/notifications";
-import { searchIndex } from "@/data/searchdata";
 import { querySearchIndex } from "@/content/search";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
+import { searchSectionFor } from "@/lib/shell-copy";
 import {
   Bell,
   FileQuestion,
@@ -43,11 +45,20 @@ import NotificationDrawer from "../header/NotificationDrawer";
 import { Badge } from "../ui/badge";
 import { useSidebar } from "./sidebar-context";
 
-export function Header({ copy }: { copy: PageCopy }) {
+export function Header({
+  copy,
+  brandId,
+  searchIndex,
+}: {
+  copy: PageCopy;
+  brandId: BrandId;
+  /** The brand's own search catalog, built on the server (`data/searchdata.ts`). */
+  searchIndex: SearchIndex;
+}) {
   // The shell's copy, resolved here rather than in each band: `data/pages/shell.ts`
   // owns the words, this file owns which ids it renders. A renamed id is a red build
   // (E23) and a blank header would be the alternative.
-  const searchCopy = sectionOf(copy, "search");
+  const searchCopy = searchSectionFor(copy, brandId);
   const accountCopy = sectionOf(copy, "account");
   const notificationsCopy = sectionOf(copy, "notifications");
   const messagesCopy = sectionOf(copy, "messages");

@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { quizCategories } from "@/content/categories";
-import type { PageCopy } from "@/content/pages";
+import type { PageCopy, PageCopySection } from "@/content/pages";
+import { brand, brandIdOf, type BrandId } from "@/data/brand";
+import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
+import type React from "react";
 
 /**
  * The footer — the one shell band the pages render themselves, so it takes the whole
@@ -16,12 +19,35 @@ import Link from "next/link";
  * The old `FOOTER_SUBJECTS` re-listed five slugs the table already had, which is how a
  * footer column and a browse page drift apart. Order is the table's order.
  */
-export function Footer({ copy }: { copy: PageCopy }) {
+export function Footer({
+  copy,
+  viewer = navViewer(),
+  brandId = brandIdOf(brand),
+}: {
+  copy: PageCopy;
+  viewer?: NavViewer;
+  /** Overridable for the node test that proves both brands' columns; a page never passes it. */
+  brandId?: BrandId;
+}) {
   const links = sectionOf(copy, "footer-links");
+  const alignLinks = sectionOf(copy, "footer-links-alignsynch");
   const categories = sectionOf(copy, "footer-categories");
   const contact = sectionOf(copy, "footer-contact");
   const newsletter = sectionOf(copy, "footer-newsletter");
   const legal = sectionOf(copy, "footer-legal");
+
+  /**
+   * The link columns are the brand's (issue #156). A footer is part of navigation: before
+   * this, the AlignSynch front page ended on a Quick Links column whose third row was
+   * `/leaderboard`, and a Categories column of quiz subjects. The switch is the same shape
+   * `app/(mainlayout)/page.tsx` uses for its front page, so a third brand cannot inherit the
+   * quiz columns by accident — it fails to compile until its own are chosen.
+   *
+   * `viewer` is the capability stub from `lib/nav.ts`: the quiz columns come back for a
+   * viewer allowed to see the quiz product, and are not rendered at all otherwise. No route
+   * is deleted; every one of them still answers a request (see the PR's surface table).
+   */
+  const linkColumns = footerLinkColumns({ brandId, viewer, links, alignLinks, categories });
 
   return (
     <footer className="relative overflow-hidden bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 pt-16 pb-8 sm:px-4 xl:px-8">
@@ -114,83 +140,7 @@ export function Footer({ copy }: { copy: PageCopy }) {
           {/* Links Sections */}
           <div className="lg:col-span-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-              {/* Quick Links */}
-              <div className="space-y-5">
-                <h3 className="text-base font-bold relative inline-block">
-                  {links.heading}
-                  <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
-                </h3>
-                <ul className="space-y-3">
-                  <li>
-                    <Link
-                      href="/dashboard/user"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      {itemLabel(links, "dashboard")}
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/create/editor"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      {itemLabel(links, "create-quiz")}
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/leaderboard"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      {itemLabel(links, "leaderboard")}
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/affiliate"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      {itemLabel(links, "affiliate")}
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/pricing"
-                      className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                      {itemLabel(links, "pricing")}
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Categories */}
-              <div className="space-y-5">
-                <h3 className="text-base font-bold relative inline-block">
-                  {categories.heading}
-                  <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
-                </h3>
-                <ul className="space-y-3">
-                  {quizCategories
-                    .filter((category) => category.featured)
-                    .map((category) => (
-                      <li key={category.id}>
-                        <Link
-                          href={`/categories/${category.slug}`}
-                          className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
-                          {category.name}
-                        </Link>
-                      </li>
-                    ))}
-                </ul>
-              </div>
+              {linkColumns}
 
               {/* Contact */}
               <div className="space-y-5">
@@ -286,5 +236,129 @@ export function Footer({ copy }: { copy: PageCopy }) {
         </div>
       </div>
     </footer>
+  );
+}
+
+/** The three column parts the brand switch chooses between, as one value. */
+function footerLinkColumns({
+  brandId,
+  viewer,
+  links,
+  alignLinks,
+  categories,
+}: {
+  brandId: BrandId;
+  viewer: NavViewer;
+  links: PageCopySection;
+  alignLinks: PageCopySection;
+  categories: PageCopySection;
+}) {
+  switch (brandId) {
+    case "quizhub":
+      return <QuizHubLinkColumns links={links} categories={categories} />;
+    case "alignsynch":
+      return (
+        <>
+          <AlignSynchLinkColumn links={alignLinks} />
+          {sees(viewer, "quiz-surfaces") && (
+            <QuizHubLinkColumns links={links} categories={categories} />
+          )}
+        </>
+      );
+    default: {
+      // A brand added to `data/brand.ts` without footer columns lands here and fails `tsc`.
+      const unhandled: never = brandId;
+      throw new Error(`no footer navigation for brand ${String(unhandled)}`);
+    }
+  }
+}
+
+/** One row of a footer column: the bullet, the `Link`, the label. */
+function FooterLinkRow({ href, label }: { href: string; label: string }) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
+        {label}
+      </Link>
+    </li>
+  );
+}
+
+/** A column's heading and bullet rule — the same rule every column in this footer draws. */
+function FooterColumnHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-base font-bold relative inline-block">
+      {children}
+      <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
+    </h3>
+  );
+}
+
+/**
+ * The quiz product's two columns: Quick Links and the featured quiz subjects.
+ *
+ * Unchanged in output for `BRAND=quizhub` — same rows, same order, same hrefs — and reachable
+ * on the alignment brand only for a viewer with the quiz capability.
+ */
+function QuizHubLinkColumns({
+  links,
+  categories,
+}: {
+  links: PageCopySection;
+  categories: PageCopySection;
+}) {
+  return (
+    <>
+      <div className="space-y-5">
+        <FooterColumnHeading>{links.heading}</FooterColumnHeading>
+        <ul className="space-y-3">
+          <FooterLinkRow href="/dashboard/user" label={itemLabel(links, "dashboard")} />
+          <FooterLinkRow href="/create/editor" label={itemLabel(links, "create-quiz")} />
+          <FooterLinkRow href="/leaderboard" label={itemLabel(links, "leaderboard")} />
+          <FooterLinkRow href="/affiliate" label={itemLabel(links, "affiliate")} />
+          <FooterLinkRow href="/pricing" label={itemLabel(links, "pricing")} />
+        </ul>
+      </div>
+
+      <div className="space-y-5">
+        <FooterColumnHeading>{categories.heading}</FooterColumnHeading>
+        <ul className="space-y-3">
+          {quizCategories
+            .filter((category) => category.featured)
+            .map((category) => (
+              <FooterLinkRow
+                key={category.id}
+                href={`/categories/${category.slug}`}
+                label={category.name}
+              />
+            ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+/**
+ * The alignment product's column — the sidebar's destinations minus Home, because a footer
+ * column whose first row is the page you are standing on is furniture.
+ *
+ * The hrefs are literal JSX for the reason `components/layout/nav-menus.tsx` gives: E10 only
+ * sees a `href="…"` attribute, and `/`'s two anchor bands are the only honest targets for
+ * Templates and How it works until a listing route ships.
+ */
+function AlignSynchLinkColumn({ links }: { links: PageCopySection }) {
+  return (
+    <div className="space-y-5">
+      <FooterColumnHeading>{links.heading}</FooterColumnHeading>
+      <ul className="space-y-3">
+        <FooterLinkRow href="/#templates" label={itemLabel(links, "templates")} />
+        <FooterLinkRow href="/#questions" label={itemLabel(links, "how-it-works")} />
+        <FooterLinkRow href="/support" label={itemLabel(links, "support")} />
+      </ul>
+    </div>
   );
 }
