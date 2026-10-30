@@ -161,9 +161,11 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
         name,
       });
     } catch (error) {
-      // A thrown value never reached the server — see `lib/auth/errors.ts`.
-      const failureOf = authFailureOf(error);
-      setFailure(failureOf === "unknown" ? "network" : failureOf);
+      // A thrown value is **not** by itself a transport failure: `@neon/auth` throws a normalized
+      // `AuthApiError` for every non-2xx answer, a 403 origin rejection included (#203). Classify
+      // it exactly like a returned `{ error }`; `authFailureOf` is what decides whether the
+      // transport is implicated, and only a failure with no status and no code reads as `network`.
+      setFailure(authFailureOf(error));
       setPending(false);
       return;
     }

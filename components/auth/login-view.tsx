@@ -66,10 +66,10 @@ export function LoginView({ copy, next }: { copy: PageCopy; next: string }) {
     try {
       result = await authClient.signIn.email({ email: email.trim(), password });
     } catch (error) {
-      // A thrown value is a transport failure: the SDK reports a *rejected* sign-in by returning
-      // `{ error }`, so anything that escapes the call never reached the server.
-      const failureOf = authFailureOf(error);
-      setFailure(failureOf === "unknown" ? "network" : failureOf);
+      // Not automatically a transport failure: the SDK throws a normalized `AuthApiError` for any
+      // non-2xx answer, so an origin rejection arrives here too (#203). `authFailureOf` decides —
+      // only a failure carrying no status and no code is a `network` one.
+      setFailure(authFailureOf(error));
       setPending(false);
       return;
     }

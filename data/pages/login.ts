@@ -31,6 +31,11 @@ export const loginPageCopy: PageCopy = zPageCopy.parse({
         { id: "pending", label: "Signing in…" },
         { id: "error-invalid-credentials", label: "Invalid email or password" },
         { id: "error-network", label: "Couldn't reach the server. Check your connection." },
+        {
+          id: "error-origin",
+          label:
+            "This site's address isn't authorised to sign in. Open the app at the address it was set up for.",
+        },
         { id: "error-unknown", label: "Something went wrong. Sign in again." },
         { id: "error-required", label: "Enter your email and password." },
         { id: "signup-prompt", label: "Don't have an account?" },

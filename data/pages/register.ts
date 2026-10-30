@@ -51,6 +51,11 @@ export const registerPageCopy: PageCopy = zPageCopy.parse({
         { id: "error-invalid-email", label: "That email address doesn't look right." },
         { id: "error-weak-password", label: "Choose a password with at least 8 characters." },
         { id: "error-network", label: "Couldn't reach the server. Check your connection." },
+        {
+          id: "error-origin",
+          label:
+            "This site's address isn't authorised to sign in. Open the app at the address it was set up for.",
+        },
         { id: "error-unknown", label: "Something went wrong. Try again." },
         { id: "error-required", label: "Fill in the required fields." },
       ],
