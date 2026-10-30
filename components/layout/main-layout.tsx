@@ -28,6 +28,7 @@ export function MainLayout({
   brandId,
   viewer,
   searchIndex,
+  hiddenNav,
 }: {
   children: React.ReactNode;
   copy: PageCopy;
@@ -35,6 +36,12 @@ export function MainLayout({
   brandId: BrandId;
   viewer: NavViewer;
   searchIndex: SearchIndex;
+  /**
+   * The hrefs a feature flag has turned off (issue #175), forwarded to the sidebar. Resolved in
+   * `app/(mainlayout)/layout.tsx` because the resolver is server-only — it has to be able to
+   * stop a request, which a value the browser decided cannot do.
+   */
+  hiddenNav?: readonly string[];
 }) {
   const { collapsed, mobileOpen, closeMobile } = useSidebar();
   return (
@@ -53,7 +60,13 @@ export function MainLayout({
       ) : null}
       <div className="flex min-h-screen">
         <div className="z-50 relative">
-          <AppSidebar copy={copy} mark={mark} brandId={brandId} viewer={viewer} />
+          <AppSidebar
+            copy={copy}
+            mark={mark}
+            brandId={brandId}
+            viewer={viewer}
+            hiddenNav={hiddenNav}
+          />
         </div>
         <div
           className={cn(collapsed ? "xl:w-[calc(100%-70px)]" : "xl:w-[calc(100%-250px)]", "w-full")}
