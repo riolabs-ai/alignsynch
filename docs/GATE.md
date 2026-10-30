@@ -46,6 +46,30 @@ under `~/.cache/quizhub/`: eight workers compiling at once took load from ~6 to 
 stretched this gate to 145 s. The layer table, the classifier rules and the lock are in
 **`docs/REPO-LAYERS.md`**.
 
+## Lanes in CI, measured 2026-10-30
+
+A lane is a diff, and a diff needs a base ref. CI had none: `actions/checkout` fetches one
+commit by default, so `origin/main` did not exist in the clone, `GATE_REF` never resolved,
+and **every** run — docs or code — logged the conservative fallback:
+
+```
+ lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no origin/main to diff against — full gate (conservative))
+```
+
+`ci.yml` now checks out with `fetch-depth: 0` and fetches `refs/heads/main` before the gate
+(the mechanism is in `docs/REPO-LAYERS.md`), so the same job classifies the same way it does
+locally. Measured job wall time, GitHub `ubuntu-24.04` runner, pnpm cache warm:
+
+| PR head                   | lane            | job wall |
+| ------------------------- | --------------- | -------- |
+| `wt/fix-metadata-title`   | code (fallback) | 73 s     |
+| `wt/fix-ci-lane-classif…` | config          | 33 s     |
+
+Reading: the same one-job workflow now spends 73 s on a code PR and 33 s on a config PR,
+because the config PR drops `next build`. The fallback is still the floor, not a shortcut —
+a missing ref, an uncomputable diff, or an empty diff (a `push` to `main`, where `HEAD` _is_
+`origin/main`) all mean the full gate.
+
 ## Baseline, measured 2026-10-29 (before the gate)
 
 Source: `gh run list --workflow=ci.yml --limit 100` → 22 runs, 22 distinct head SHAs,
