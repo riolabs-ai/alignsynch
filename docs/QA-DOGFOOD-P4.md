@@ -15,13 +15,13 @@ work holds up: no hydration-mismatch family (`#418/#425/#423`), no dead asset pa
 
 Five defects found (details + GitHub issues below):
 
-| # | Severity | Category | Issue | One line |
-| - | -------- | -------- | ------ | -------- |
-| 1 | High | Visual / Functional | #109 | Mobile sidebar never hides — covers content on every page at <1280 px |
-| 2 | High | Content | #110 | Campaign overlay never renders — catalog numbers everywhere (window is 21 months in the past) |
-| 3 | Medium | Functional | #111 | `/profile/<username>` ignores the username; always renders hardcoded Alex Johnson |
-| 4 | Medium | Functional | #112 | `/categories/`, `/news/`, `/tournaments/` return 200 with fallback content for unknown ids |
-| 5 | Low | Content | #113 | Default `<title>` is the placeholder "Quiz Making Website - Play & Earn Money" |
+| #   | Severity | Category            | Issue | One line                                                                                      |
+| --- | -------- | ------------------- | ----- | --------------------------------------------------------------------------------------------- |
+| 1   | High     | Visual / Functional | #109  | Mobile sidebar never hides — covers content on every page at <1280 px                         |
+| 2   | High     | Content             | #110  | Campaign overlay never renders — catalog numbers everywhere (window is 21 months in the past) |
+| 3   | Medium   | Functional          | #111  | `/profile/<username>` ignores the username; always renders hardcoded Alex Johnson             |
+| 4   | Medium   | Functional          | #112  | `/categories/`, `/news/`, `/tournaments/` return 200 with fallback content for unknown ids    |
+| 5   | Low      | Content             | #113  | Default `<title>` is the placeholder "Quiz Making Website - Play & Earn Money"                |
 
 PR: #108 · `main` sha tested: `f5e1b00a2d1fe59419fcb5f2fe0d9eff6dfbf3e9`
 
@@ -31,49 +31,49 @@ Screenshots live in `docs/qa-p4-screenshots/` (committed alongside this file). S
 is the HTTP status; "console" is the count of captured console errors/warnings; the
 verdict is against the acceptance criteria (broken / blank / mismatched / 404).
 
-| Route | Status | Console | 1440 px | 390 px | Verdict |
-| ----- | ------ | ------- | ------- | ------ | ------- |
-| `/` | 200 | 0 | home-1440.png | home-390.png | OK (sidebar bug #1 visible at 390) |
-| `/explore` | 200 | 0 | explore-1440.png | explore-390.png | OK (campaign bug #2) |
-| `/explore/featured` | 200 | 0 | explore-featured-1440.png | explore-featured-390.png | OK (campaign bug #2) |
-| `/quiz/quiz-science-quiz-space-exploration` | 200 | 0 | quiz-space-1440.png | quiz-space-390.png | OK (campaign bug #2) |
-| `/quiz/quiz-ultimate-world-history-trivia` | 200 | 0 | quiz-history-trivia-1440.png | quiz-history-trivia-390.png | OK |
-| `/quiz/quiz-world-geography-challenge-capitals-landmarks` | 200 | 0 | quiz-geography-1440.png | quiz-geography-390.png | OK |
-| `/quiz/quiz-brain-teasers-logic-puzzles` | 200 | 0 | quiz-brain-1440.png | quiz-brain-390.png | OK |
-| `/quiz/quiz-ultimate-world-history-trivia/play` | 200 | 0 | quiz-play-1440.png | quiz-play-390.png | OK |
-| `/quiz/quiz-ultimate-world-history-trivia/discussion` | 200 | 0 | quiz-discussion-1440.png | quiz-discussion-390.png | OK |
-| `/quiz/quiz-science-quiz-space-exploration/discussion` | 200 | 0 | quiz-space-discussion-1440.png | quiz-space-discussion-390.png | OK |
-| `/leaderboard` | 200 | 0 | leaderboard-1440.png | leaderboard-390.png | OK |
-| `/daily-challenge` | 200 | 0 | daily-challenge-1440.png | daily-challenge-390.png | OK |
-| `/battle` | 200 | 0 | battle-1440.png | battle-390.png | OK |
-| `/tournaments` | 200 | 0 | tournaments-1440.png | tournaments-390.png | OK (PageCopy renders) |
-| `/tournaments/science-showdown` | 200 | 0 | tournament-detail-1440.png | tournament-detail-390.png | OK |
-| `/search` | 200 | 0 | search-1440.png | search-390.png | OK |
-| `/profile/alexjohnson` | 200 | 0 | profile-1440.png | profile-390.png | OK |
-| `/profile/sarahwilliams` | 200 | 0 | profile-sarah-1440.png | profile-sarah-390.png | **bug #3** (shows Alex Johnson) |
-| `/my-quizzes` | 200 | 0 | my-quizzes-1440.png | my-quizzes-390.png | OK |
-| `/my-quizzes/quiz-world-geography-challenge` | 200 | 0 | my-quizzes-id-1440.png | my-quizzes-id-390.png | OK |
-| `/my-quizzes/quiz-world-geography-challenge/statistics` | 200 | 0 | my-quizzes-stats-1440.png | my-quizzes-stats-390.png | OK |
-| `/dashboard/user` | 200 | 0 | dashboard-1440.png | dashboard-390.png | OK |
-| `/login` | 200 | 0 | login-1440.png | login-390.png | OK |
-| `/register` | 200 | 0 | register-1440.png | register-390.png | OK |
-| `/support` | 200 | 0 | support-1440.png | support-390.png | OK |
-| `/support/articles/kb-getting-started` | 200 | 0 | support-article-1440.png | support-article-390.png | OK |
-| `/news` | 200 | 0 | news-1440.png | news-390.png | OK |
-| `/news/10-strategies-for-creating-engaging-quizzes` | 200 | 0 | news-article-1440.png | news-article-390.png | OK |
-| `/categories` | 200 | 0 | categories-1440.png | categories-390.png | OK |
-| `/categories/science` | 200 | 0 | category-science-1440.png | category-science-390.png | OK |
-| `/categories/architecture` | 200 | 0 | category-architecture-1440.png | category-architecture-390.png | OK |
-| `/creator-tips` | 200 | 0 | creator-tips-1440.png | creator-tips-390.png | OK |
-| `/creator-tips/writing-effective-quiz-questions` | 200 | 0 | creator-tip-detail-1440.png | creator-tip-detail-390.png | OK |
-| `/chat` | 200 | 0 | chat-1440.png | chat-390.png | OK |
-| `/create/editor` | 200 | 0 | create-editor-1440.png | create-editor-390.png | OK |
-| `/create/generator` | 200 | 0 | create-generator-1440.png | create-generator-390.png | OK |
-| `/affiliate` | 200 | 0 | affiliate-1440.png | affiliate-390.png | OK |
-| `/pricing` | 200 | 0 | pricing-1440.png | pricing-390.png | OK |
-| `/quiz-discussions` | 200 | 0 | quiz-discussions-1440.png | quiz-discussions-390.png | OK |
-| `/settings` | 200 | 0 | settings-1440.png | settings-390.png | OK |
-| `/nonexistent-route-xyz` (404) | 404 | 0 | notfound-404-1440.png | notfound-404-390.png | OK (custom 404 renders) |
+| Route                                                     | Status | Console | 1440 px                        | 390 px                        | Verdict                            |
+| --------------------------------------------------------- | ------ | ------- | ------------------------------ | ----------------------------- | ---------------------------------- |
+| `/`                                                       | 200    | 0       | home-1440.png                  | home-390.png                  | OK (sidebar bug #1 visible at 390) |
+| `/explore`                                                | 200    | 0       | explore-1440.png               | explore-390.png               | OK (campaign bug #2)               |
+| `/explore/featured`                                       | 200    | 0       | explore-featured-1440.png      | explore-featured-390.png      | OK (campaign bug #2)               |
+| `/quiz/quiz-science-quiz-space-exploration`               | 200    | 0       | quiz-space-1440.png            | quiz-space-390.png            | OK (campaign bug #2)               |
+| `/quiz/quiz-ultimate-world-history-trivia`                | 200    | 0       | quiz-history-trivia-1440.png   | quiz-history-trivia-390.png   | OK                                 |
+| `/quiz/quiz-world-geography-challenge-capitals-landmarks` | 200    | 0       | quiz-geography-1440.png        | quiz-geography-390.png        | OK                                 |
+| `/quiz/quiz-brain-teasers-logic-puzzles`                  | 200    | 0       | quiz-brain-1440.png            | quiz-brain-390.png            | OK                                 |
+| `/quiz/quiz-ultimate-world-history-trivia/play`           | 200    | 0       | quiz-play-1440.png             | quiz-play-390.png             | OK                                 |
+| `/quiz/quiz-ultimate-world-history-trivia/discussion`     | 200    | 0       | quiz-discussion-1440.png       | quiz-discussion-390.png       | OK                                 |
+| `/quiz/quiz-science-quiz-space-exploration/discussion`    | 200    | 0       | quiz-space-discussion-1440.png | quiz-space-discussion-390.png | OK                                 |
+| `/leaderboard`                                            | 200    | 0       | leaderboard-1440.png           | leaderboard-390.png           | OK                                 |
+| `/daily-challenge`                                        | 200    | 0       | daily-challenge-1440.png       | daily-challenge-390.png       | OK                                 |
+| `/battle`                                                 | 200    | 0       | battle-1440.png                | battle-390.png                | OK                                 |
+| `/tournaments`                                            | 200    | 0       | tournaments-1440.png           | tournaments-390.png           | OK (PageCopy renders)              |
+| `/tournaments/science-showdown`                           | 200    | 0       | tournament-detail-1440.png     | tournament-detail-390.png     | OK                                 |
+| `/search`                                                 | 200    | 0       | search-1440.png                | search-390.png                | OK                                 |
+| `/profile/alexjohnson`                                    | 200    | 0       | profile-1440.png               | profile-390.png               | OK                                 |
+| `/profile/sarahwilliams`                                  | 200    | 0       | profile-sarah-1440.png         | profile-sarah-390.png         | **bug #3** (shows Alex Johnson)    |
+| `/my-quizzes`                                             | 200    | 0       | my-quizzes-1440.png            | my-quizzes-390.png            | OK                                 |
+| `/my-quizzes/quiz-world-geography-challenge`              | 200    | 0       | my-quizzes-id-1440.png         | my-quizzes-id-390.png         | OK                                 |
+| `/my-quizzes/quiz-world-geography-challenge/statistics`   | 200    | 0       | my-quizzes-stats-1440.png      | my-quizzes-stats-390.png      | OK                                 |
+| `/dashboard/user`                                         | 200    | 0       | dashboard-1440.png             | dashboard-390.png             | OK                                 |
+| `/login`                                                  | 200    | 0       | login-1440.png                 | login-390.png                 | OK                                 |
+| `/register`                                               | 200    | 0       | register-1440.png              | register-390.png              | OK                                 |
+| `/support`                                                | 200    | 0       | support-1440.png               | support-390.png               | OK                                 |
+| `/support/articles/kb-getting-started`                    | 200    | 0       | support-article-1440.png       | support-article-390.png       | OK                                 |
+| `/news`                                                   | 200    | 0       | news-1440.png                  | news-390.png                  | OK                                 |
+| `/news/10-strategies-for-creating-engaging-quizzes`       | 200    | 0       | news-article-1440.png          | news-article-390.png          | OK                                 |
+| `/categories`                                             | 200    | 0       | categories-1440.png            | categories-390.png            | OK                                 |
+| `/categories/science`                                     | 200    | 0       | category-science-1440.png      | category-science-390.png      | OK                                 |
+| `/categories/architecture`                                | 200    | 0       | category-architecture-1440.png | category-architecture-390.png | OK                                 |
+| `/creator-tips`                                           | 200    | 0       | creator-tips-1440.png          | creator-tips-390.png          | OK                                 |
+| `/creator-tips/writing-effective-quiz-questions`          | 200    | 0       | creator-tip-detail-1440.png    | creator-tip-detail-390.png    | OK                                 |
+| `/chat`                                                   | 200    | 0       | chat-1440.png                  | chat-390.png                  | OK                                 |
+| `/create/editor`                                          | 200    | 0       | create-editor-1440.png         | create-editor-390.png         | OK                                 |
+| `/create/generator`                                       | 200    | 0       | create-generator-1440.png      | create-generator-390.png      | OK                                 |
+| `/affiliate`                                              | 200    | 0       | affiliate-1440.png             | affiliate-390.png             | OK                                 |
+| `/pricing`                                                | 200    | 0       | pricing-1440.png               | pricing-390.png               | OK                                 |
+| `/quiz-discussions`                                       | 200    | 0       | quiz-discussions-1440.png      | quiz-discussions-390.png      | OK                                 |
+| `/settings`                                               | 200    | 0       | settings-1440.png              | settings-390.png              | OK                                 |
+| `/nonexistent-route-xyz` (404)                            | 404    | 0       | notfound-404-1440.png          | notfound-404-390.png          | OK (custom 404 renders)            |
 
 ## Defects
 
