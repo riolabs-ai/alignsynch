@@ -1,4 +1,5 @@
 "use client";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,7 +98,7 @@ export function BattleResults({ copy, battleState, onRematch, onReturnHome }: Ba
                 <div key={player.id} className="flex flex-col items-center">
                   <div className="mb-2">
                     <Avatar className="h-16 w-16 border-4 border-background shadow-lg">
-                      <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
+                      <GeneratedAvatar name={player.name} seed={player.seed} size={40} />
                       <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                   </div>
@@ -146,7 +147,7 @@ export function BattleResults({ copy, battleState, onRematch, onReturnHome }: Ba
                   >
                     <div className="font-bold text-lg w-5">{index + 1}</div>
                     <Avatar className="h-10 w-10 mr-3">
-                      <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
+                      <GeneratedAvatar name={player.name} seed={player.seed} size={40} />
                       <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">

@@ -1,5 +1,6 @@
 "use client";
 
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -114,7 +115,7 @@ export function BattleLobby({ copy, battleState, onStartBattle, onCancel }: Batt
                     className="flex flex-col items-center p-3 border rounded-lg bg-background"
                   >
                     <Avatar className="h-16 w-16 mb-2">
-                      <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
+                      <GeneratedAvatar name={player.name} seed={player.seed} size={40} />
                       <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="text-center">

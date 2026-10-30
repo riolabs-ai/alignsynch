@@ -62,7 +62,6 @@ const mockDiscussions = [
     author: {
       id: "user1",
       name: "Alex Johnson",
-      avatar: media["avatars.alex"].src,
       role: "Tournament Finalist",
     },
     content:
@@ -79,7 +78,6 @@ const mockDiscussions = [
     author: {
       id: "user2",
       name: "Sarah Williams",
-      avatar: media["avatars.sarah"].src,
       role: "Participant",
     },
     content:
@@ -96,7 +94,6 @@ const mockDiscussions = [
     author: {
       id: "user3",
       name: "Michael Chen",
-      avatar: media["avatars.wizard"].src,
       role: "Participant",
     },
     content:
@@ -113,7 +110,6 @@ const mockDiscussions = [
     author: {
       id: "user4",
       name: "Emily Rodriguez",
-      avatar: media["avatars.guru"].src,
       role: "Participant",
     },
     content:
@@ -130,7 +126,6 @@ const mockDiscussions = [
     author: {
       id: "user5",
       name: "David Kim",
-      avatar: media["avatars.master"].src,
       role: "Participant",
     },
     content:
@@ -150,7 +145,6 @@ const mockComments = [
     author: {
       id: "user6",
       name: "Jessica Taylor",
-      avatar: media["avatars.mind"].src,
       role: "Tournament Moderator",
     },
     content:
@@ -164,7 +158,6 @@ const mockComments = [
     author: {
       id: "user7",
       name: "Robert Chen",
-      avatar: media["avatars.brain"].src,
       role: "Previous Champion",
     },
     content:
@@ -178,7 +171,6 @@ const mockComments = [
     author: {
       id: "user8",
       name: "Sophia Martinez",
-      avatar: media["avatars.genious"].src,
       role: "Participant",
     },
     content:
