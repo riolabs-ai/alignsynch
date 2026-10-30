@@ -241,9 +241,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: 11 record fixtures — `data/authored-quizzes.ts`, `data/browse-quizzes.ts`, `data/created-quizzes.ts` (+8 more)
 
 - `/leaderboard` — **fixture**
-  - capability: The player leaderboard: podium, summary stats and a filterable ranked table.
+  - capability: The player leaderboard: podium, summary stats and a filterable ranked table. Not freely available: `community.leaderboard` ships it off for every visitor, and only an admin session reaches it — through the flag's `adminBypass` (#184) — while its rows are still the `data/players.ts` mock.
   - components: `components/leaderboard`, `components/media`, `components/ui`
-  - reads: 3 record fixtures — `data/flags.ts`, `data/metrics.ts`, `data/players.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: The Postgres reach listed here is the flag's role gate (`lib/auth/require-role.ts` reading `user_profile.role`), not the boards: the rows the page renders are still `data/players.ts`, and the read happens before them.
 
 - `/my-quizzes` — **fixture**
   - capability: Your own quizzes — drafts, published and their analytics — as a grid of quiz cards.
