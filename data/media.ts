@@ -116,6 +116,13 @@ export const media = {
     height: 574,
     kind: "illustration",
   },
+  "brand.as2-logo_v2_cl": {
+    src: "/brand/as2-logo_v2_cl.png",
+    alt: "As2 Logo V2 Cl",
+    width: 818,
+    height: 127,
+    kind: "illustration",
+  },
   "browse-category": {
     src: "/browse-category.png",
     alt: "Browse Category",

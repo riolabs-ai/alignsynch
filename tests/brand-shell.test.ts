@@ -64,13 +64,18 @@ function render(value: unknown): string {
  * product, renamed. The record a build ships lives in `data/brands/alignsynch.ts`, and the
  * last describe block asserts the two are equal — so the shell proof below is a proof
  * about the skin the `BRAND=alignsynch` build renders, not about a test-only fixture.
+ *
+ * Its mark and its palette are the record's own, not restated here: both are derived — the
+ * logo is a registered media path, the two accents are sampled out of the PNG and held to it
+ * by `data:check`. A second copy of a sampled hex would be a second source of truth, which is
+ * exactly what this test used to demonstrate.
  */
 const alignSynch: Brand = zBrand.parse({
   name: "AlignSynch",
   legalName: "AlignSynch",
   domain: "alignsynch.com",
-  logo: brand.logo,
-  colors: brand.colors,
+  logo: alignSynchBrand.logo,
+  colors: alignSynchBrand.colors,
   supportEmail: "alignsynch@riolabs.ai",
   affiliateEmail: "alignsynch@riolabs.ai",
   referralBase: "https://alignsynch.com",
@@ -142,6 +147,12 @@ describe("the brand record", () => {
   it("points `logo` at a file the media registry already carries", () => {
     const srcs = Object.values(media).map((entry) => entry.src);
     expect(srcs).toContain(brand.logo);
+    // Both records, because the skin's mark is a real file now and not the template's
+    // placeholder: `data:check` E18 proves the registry matches `public/`, this proves the
+    // record points at it.
+    for (const record of [quizHubBrand, alignSynchBrand]) {
+      expect(srcs).toContain(record.logo);
+    }
   });
 
   it("carries the values the app paints with today", () => {
@@ -216,6 +227,21 @@ describe("one build flag, one brand", () => {
     // The shell proof above runs on a fixture; this is that fixture, so the proof is
     // about the record the `BRAND=alignsynch` build actually renders.
     expect(alignSynchBrand).toEqual(alignSynch);
+  });
+
+  it("owns its palette and its mark, sampled from its own logo", () => {
+    // The skin stopped borrowing the template's: the two accents are the logo's, and the
+    // mark is a real file. The *values* are pinned against the PNG by
+    // `scripts/sample-brand-colors.mjs --check`, so this only asserts the relationship.
+    expect(alignSynchBrand.colors.primary).not.toBe(quizHubBrand.colors.primary);
+    expect(alignSynchBrand.colors.accent).not.toBe(quizHubBrand.colors.accent);
+    expect(alignSynchBrand.logo).not.toBe(quizHubBrand.logo);
+    expect(alignSynchBrand.colors.primary).toMatch(/^#[0-9a-f]{6}$/);
+    expect(alignSynchBrand.colors.accent).toMatch(/^#[0-9a-f]{6}$/);
+    // The card's decisions, which are not samples: the ground is the app's dark theme, the
+    // ink is the marketing slate, and the type stays Inter (there is no font field to check).
+    expect(alignSynchBrand.colors.background).toBe("hsl(0 0% 3.9%)");
+    expect(alignSynchBrand.colors.foreground).toBe("#363d49");
   });
 
   it("keeps the mailbox off the site domain, on purpose", () => {
