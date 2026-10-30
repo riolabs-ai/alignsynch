@@ -15,6 +15,8 @@
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { affiliatePageCopy } from "./affiliate";
+import { assessmentPageCopy } from "./assessment";
+import { assessmentInstancePageCopy } from "./assessment-instance";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
@@ -25,6 +27,7 @@ import { dashboardPageCopy } from "./dashboard";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
+import { invitePageCopy } from "./invite";
 import { loginPageCopy } from "./login";
 import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
@@ -43,6 +46,8 @@ import { tournamentsPageCopy } from "./tournaments";
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
   "/affiliate": affiliatePageCopy,
+  "/assessment": assessmentPageCopy,
+  "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
   "/categories/[slug]": categoryDetailPageCopy,
@@ -52,6 +57,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
+  "/invite/[token]": invitePageCopy,
   "/login": loginPageCopy,
   "/news": newsPageCopy,
   "/news/[slug]": newsArticlePageCopy,
