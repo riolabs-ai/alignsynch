@@ -23,7 +23,8 @@ pnpm build        # next build
 bundler, no framework imports) into `.datacheck/` and then runs it under plain
 node. That is why `content/` must never import React or Next.
 
-Today's output:
+The output **the migration landed with** (kept as the record of that tree; the v1 data
+repair described under "The warning census" below took `W1`/`W2`/`W4` to 0):
 
 ```
 PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts, 5 conversations,
@@ -47,11 +48,18 @@ WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
 
 Repeated diagnostics are grouped by code and message template, so a gap that
 affects the whole collection prints as one line with a count instead of 98 lines.
-The 98 are real: 24 published records are card records with no questions, 42 carry
-no authored date, and 32 advertise a reward that never expires. See "D2 — the card
+The 98 were real: 24 published records were card records with no questions, 42 carried
+no authored date, and 32 advertised a reward that never expired. See "D2 — the card
 grids read the model" and "Two collections, one winner". `W6` — a campaign staged
 outside its quiz's published life — is **0**, which is what two promotion records
 authored against a settled published window should read.
+
+**The v1 data repair (2026-10-30) took all three to 0.** `data:check` now prints
+`PASS 62 quizzes, 391 questions, …` and no `WARN` line at all (the generated set adds
+its own records to that count when `data/generated/` is present). The rules the three
+warnings were removed **with** — no prose invented, no clock read, no field added — are
+recorded under "The warning census" below, and the generator enforces them before it
+writes (`scripts/gen-fixtures.mjs`, `publishedRecordProblems`).
 
 CI runs `pnpm data:check` as its own step, after typecheck and before build.
 
@@ -421,7 +429,7 @@ in `scripts/data-check.ts`: two unrelated failures, one number, one run. The ima
 line and the `README` reference followed. A guard that only documents the first incident would have
 shipped this one with it.
 
-### The warning census (98 warnings, measured)
+### The warning census (98 warnings, measured — and 0 after the v1 data repair)
 
 | code | count | who                                                                                                                     |
 | ---- | ----- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -435,6 +443,27 @@ shipped this one with it.
 These are the §10 debt figures of `quiz-migration.md`, reproduced by the collection
 itself rather than by the harness, plus the honest cost of the 20 browse cards d2
 contributed: no question, date or expiry was invented to silence a warning.
+
+**That refusal is what the v1 release had to undo, and it was undone by deriving, not by
+inventing.** All three counts are now 0, and each one is a projection of something the
+tree already held:
+
+| warning | repair                                                                                                                                                                                                                              | where                                                                              |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `W1`    | a published card record takes the question set of the quiz-generator template that matches its category (5 questions, answer by option id, ids re-minted as `<quiz>-q<n>`)                                                          | `data/question-templates.ts` → `data/created-quizzes.ts`, `data/browse-quizzes.ts` |
+| `W2`    | `publishedAt` is the latest instant the record itself carries (`stats.updatedAt`, else `createdAt`), else `DEMO_NOW_ISO`                                                                                                            | the four quiz fixture modules                                                      |
+| `W4`    | a reward takes the window its own card named: `expiresIn: 172800` → `DEMO_NOW_ISO` + 48 h, the same epoch-relative rule the four migrated windows follow. A browse card named no duration, so it rotates the four authored instants | `data/reward-windows.ts`                                                           |
+
+`quiz-math-puzzles-and-problems` stays a draft with no questions on purpose — an authoring
+draft is the one record shape `zQuiz` allows to carry none, and `W1` is status-gated. The
+one edit the repair forces elsewhere is the card snapshot: 13 authored records now carry
+the window their card held back while its `limitedTime` flag said false, so 21 of the 31
+snapshot rows project a countdown the card did not render. That divergence is written down
+in `scripts/__tests__/promotion-fixtures.test.ts::REPAIRED_WINDOWS` and its size is
+asserted there, rather than absorbed by editing the snapshot.
+
+`W1`/`W2`/`W4` are also enforced in the generator now: `pnpm gen` refuses to write a set
+that would report them, so a regenerated tree cannot undo this repair.
 
 ### The promotions collection (B-01, issue #27)
 

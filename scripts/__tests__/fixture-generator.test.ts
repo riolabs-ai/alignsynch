@@ -109,6 +109,33 @@ describe("scripts/gen-fixtures.mjs", () => {
     }
   });
 
+  it("emits only records that satisfy the published-record rules (no W1/W2/W4)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "gen-rules-"));
+    try {
+      generateInto(dir, 20, 42);
+      const text = readFileSync(join(dir, "quizzes.ts"), "utf8");
+      // The serializer writes one record per `  {` block; split on that, not on prose.
+      const records = text.split("\n  {\n").slice(1);
+      assert.equal(records.length, 20);
+      for (const record of records) {
+        const lines = record.split("\n");
+        assert.ok(
+          lines.some((line) => line.startsWith('    publishedAt: "')),
+          "W2: every record needs a publishedAt",
+        );
+        assert.ok(!lines.includes("    questions: [],"), "W1: a published quiz needs questions");
+        if (lines.some((line) => line.startsWith("      rewardCents:"))) {
+          assert.ok(
+            lines.some((line) => line.startsWith("      limitedTimeEndsAt:")),
+            "W4: a reward must carry a limited-time window",
+          );
+        }
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("varies with the seed: different --seed produce different bytes", () => {
     const first = mkdtempSync(join(tmpdir(), "gen-seed-a-"));
     const second = mkdtempSync(join(tmpdir(), "gen-seed-b-"));

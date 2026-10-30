@@ -20,9 +20,27 @@
  * `players` -> `stats.plays`, `maxPlayers` -> `stats.capacity`, reward string ->
  * `stats.rewardCents`, `timeLimit` minutes -> `settings.timeLimitSeconds`. No
  * engagement value is invented here; each is the literal the component held.
+ *
+ * **The v1 data repair (`W1`, `W2`, `W4`).** As they arrived from d2, all 20 were card
+ * records with no questions, no `publishedAt`, and — for 19 of them — a prize with no
+ * deadline. Each is now a record a play surface can actually run:
+ *
+ *   - `questions` is a projection of the quiz-generator template that matches the
+ *     record's category (`data/question-templates.ts`), never prose written for the card;
+ *   - `publishedAt` is the latest instant the record itself carries (the two that carry
+ *     one), else `DEMO_NOW_ISO`, the fixture clock of the demo snapshot;
+ *   - a reward takes a window from `data/reward-windows.ts` instead of losing its prize.
+ *
+ * `quiz-math-puzzles-and-problems` stays a draft with no questions on purpose: an
+ * authoring draft is the one record shape the model says may carry none (zQuiz), and it
+ * is the fixture that proves it. It still takes a window, because `W4` is about the
+ * prize, not the publication state.
  */
 import type { Quiz, QuizSettings, QuizStats } from "../content/quiz";
+import { DEMO_NOW_ISO } from "../content/core";
 import { media } from "./media";
+import { templateQuestions } from "./question-templates";
+import { rewardWindow } from "./reward-windows";
 
 /** Authoring knobs these cards all share; only the time limit differs. */
 function settings(timeLimitSeconds: number): QuizSettings {
@@ -54,13 +72,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q15"].src, alt: "Advanced Programming Concepts" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "hard",
-    questions: [],
+    questions: templateQuestions("quiz-advanced-programming-concepts", ["technology"], 0),
     settings: settings(2400),
     stats: stats({
       plays: 60,
       capacity: 100,
       rewardCents: 1500,
+      limitedTimeEndsAt: rewardWindow(0),
     }),
   },
   {
@@ -73,13 +93,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q11"].src, alt: "Advanced Quantum Physics" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "hard",
-    questions: [],
+    questions: templateQuestions("quiz-advanced-quantum-physics", ["science"], 1),
     settings: settings(1800),
     stats: stats({
       plays: 75,
       capacity: 100,
       rewardCents: 1000,
+      limitedTimeEndsAt: rewardWindow(1),
     }),
   },
   {
@@ -92,13 +114,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q12"].src, alt: "Ancient Civilizations Deep Dive" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "hard",
-    questions: [],
+    questions: templateQuestions("quiz-ancient-civilizations-deep-dive", ["history"], 2),
     settings: settings(1500),
     stats: stats({
       plays: 90,
       capacity: 100,
       rewardCents: 900,
+      limitedTimeEndsAt: rewardWindow(2),
     }),
   },
   {
@@ -111,13 +135,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q13"].src, alt: "Complex Mathematical Theories" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "hard",
-    questions: [],
+    questions: templateQuestions("quiz-complex-mathematical-theories", ["math"], 3),
     settings: settings(2100),
     stats: stats({
       plays: 50,
       capacity: 100,
       rewardCents: 1200,
+      limitedTimeEndsAt: rewardWindow(3),
     }),
   },
   {
@@ -130,13 +156,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q13"].src, alt: "General Knowledge Basics" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "easy",
-    questions: [],
+    questions: templateQuestions("quiz-general-knowledge-basics", ["general-knowledge"], 4),
     settings: settings(600),
     stats: stats({
       plays: 15,
       capacity: 100,
       rewardCents: 300,
+      limitedTimeEndsAt: rewardWindow(4),
     }),
   },
   {
@@ -149,13 +177,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q11"].src, alt: "Geography Adventures" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "medium",
-    questions: [],
+    questions: templateQuestions("quiz-geography-adventures", ["geography"], 5),
     settings: settings(1200),
     stats: stats({
       plays: 15,
       capacity: 50,
       rewardCents: 600,
+      limitedTimeEndsAt: rewardWindow(5),
     }),
   },
   {
@@ -168,13 +198,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q17"].src, alt: "Geography Starters" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "easy",
-    questions: [],
+    questions: templateQuestions("quiz-geography-starters", ["geography"], 6),
     settings: settings(900),
     stats: stats({
       plays: 75,
       capacity: 100,
       rewardCents: 400,
+      limitedTimeEndsAt: rewardWindow(6),
     }),
   },
   {
@@ -187,13 +219,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q6"].src, alt: "History Basics" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "easy",
-    questions: [],
+    questions: templateQuestions("quiz-history-basics", ["history"], 7),
     settings: settings(720),
     stats: stats({
       plays: 50,
       capacity: 100,
       rewardCents: 350,
+      limitedTimeEndsAt: rewardWindow(7),
     }),
   },
   {
@@ -211,8 +245,9 @@ export const browseQuizzes: readonly Quiz[] = [
     },
     createdAt: "2023-09-18T16:20:00Z",
     status: "published",
+    publishedAt: "2023-10-12T08:30:00Z",
     difficulty: "medium",
-    questions: [],
+    questions: templateQuestions("quiz-history-ancient-civilizations", ["history"], 8),
     settings: settings(900),
     stats: stats({
       plays: 412,
@@ -220,6 +255,7 @@ export const browseQuizzes: readonly Quiz[] = [
       rating: 4.7,
       ratingCount: 156,
       rewardCents: 500,
+      limitedTimeEndsAt: rewardWindow(8),
       updatedAt: "2023-10-12T08:30:00Z",
       recentPlayers: [
         { name: "Ryan M.", avatar: { src: media["avatars.genious"].src, alt: "Ryan M." } },
@@ -252,6 +288,7 @@ export const browseQuizzes: readonly Quiz[] = [
       rating: 4.6,
       ratingCount: 78,
       rewardCents: 800,
+      limitedTimeEndsAt: rewardWindow(9),
       updatedAt: "2023-12-05T13:40:00Z",
       recentPlayers: [
         { name: "Sophia L.", avatar: { src: media["avatars.wizard"].src, alt: "Sophia L." } },
@@ -270,13 +307,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q9"].src, alt: "Mathematical Challenges" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "medium",
-    questions: [],
+    questions: templateQuestions("quiz-mathematical-challenges", ["math"], 10),
     settings: settings(1500),
     stats: stats({
       plays: 30,
       capacity: 50,
       rewardCents: 700,
+      limitedTimeEndsAt: rewardWindow(10),
     }),
   },
   {
@@ -289,8 +328,9 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q9"].src, alt: "Mathematical Puzzles" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "hard",
-    questions: [],
+    questions: templateQuestions("quiz-mathematical-puzzles", ["math"], 11),
     settings: settings(0),
     stats: stats({
       plays: 0,
@@ -306,13 +346,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q7"].src, alt: "Mathematics Basics" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "easy",
-    questions: [],
+    questions: templateQuestions("quiz-mathematics-basics", ["math"], 12),
     settings: settings(600),
     stats: stats({
       plays: 30,
       capacity: 100,
       rewardCents: 300,
+      limitedTimeEndsAt: rewardWindow(12),
     }),
   },
   {
@@ -325,13 +367,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q14"].src, alt: "Philosophy & Ethics" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "hard",
-    questions: [],
+    questions: templateQuestions("quiz-philosophy-and-ethics", ["general-knowledge"], 13),
     settings: settings(1800),
     stats: stats({
       plays: 20,
       capacity: 100,
       rewardCents: 1050,
+      limitedTimeEndsAt: rewardWindow(13),
     }),
   },
   {
@@ -344,13 +388,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q6"].src, alt: "Pop Culture Essentials" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "easy",
-    questions: [],
+    questions: templateQuestions("quiz-pop-culture-essentials", ["movies"], 14),
     settings: settings(480),
     stats: stats({
       plays: 60,
       capacity: 100,
       rewardCents: 250,
+      limitedTimeEndsAt: rewardWindow(14),
     }),
   },
   {
@@ -363,13 +409,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q7"].src, alt: "Science & Technology" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "medium",
-    questions: [],
+    questions: templateQuestions("quiz-science-and-technology", ["science"], 15),
     settings: settings(1080),
     stats: stats({
       plays: 40,
       capacity: 50,
       rewardCents: 600,
+      limitedTimeEndsAt: rewardWindow(15),
     }),
   },
   {
@@ -382,13 +430,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q12"].src, alt: "Science for Beginners" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "easy",
-    questions: [],
+    questions: templateQuestions("quiz-science-for-beginners", ["science"], 16),
     settings: settings(720),
     stats: stats({
       plays: 90,
       capacity: 100,
       rewardCents: 350,
+      limitedTimeEndsAt: rewardWindow(16),
     }),
   },
   {
@@ -401,13 +451,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q15"].src, alt: "Sports Fundamentals" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "easy",
-    questions: [],
+    questions: templateQuestions("quiz-sports-fundamentals", ["sports"], 17),
     settings: settings(600),
     stats: stats({
       plays: 40,
       capacity: 100,
       rewardCents: 300,
+      limitedTimeEndsAt: rewardWindow(17),
     }),
   },
   {
@@ -419,13 +471,15 @@ export const browseQuizzes: readonly Quiz[] = [
     categoryIds: ["history"],
     tags: [],
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "hard",
-    questions: [],
+    questions: templateQuestions("quiz-world-history-through-time", ["history"], 18),
     settings: settings(2100),
     stats: stats({
       plays: 30,
       capacity: 100,
       rewardCents: 1250,
+      limitedTimeEndsAt: rewardWindow(18),
     }),
   },
   {
@@ -438,13 +492,15 @@ export const browseQuizzes: readonly Quiz[] = [
     tags: [],
     cover: { src: media["quiz.q8"].src, alt: "World Literature Classics" },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "medium",
-    questions: [],
+    questions: templateQuestions("quiz-world-literature-classics", ["literature"], 19),
     settings: settings(1200),
     stats: stats({
       plays: 10,
       capacity: 50,
       rewardCents: 650,
+      limitedTimeEndsAt: rewardWindow(19),
     }),
   },
 ];

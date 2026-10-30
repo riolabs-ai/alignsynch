@@ -1,17 +1,22 @@
 /**
  * GENERATED from the P1 fixture migration — see docs/p1-migration/MIGRATION.md §7.
  *
- * The 5 `CreatedQuiz` records (`lib/data/users.ts`, users 1–3). Their content was
- * never in the repo: each fixture published a question COUNT (15–40), so
- * `questions` is empty and the count survives only in the migration log (W1).
- * `publishedAt` is absent because no publication instant exists (W2); the
- * engagement snapshot (plays, rating, completion rate, tournament) is the fixture's.
+ * The 5 `CreatedQuiz` records (`lib/data/users.ts`, users 1–3). The migration could not
+ * recover their content: each source fixture published a question COUNT (15–40) and no
+ * questions, so `questions` was empty (`W1`) and no publication instant existed (`W2`).
+ *
+ * Both are repaired here, and neither by inventing prose or a clock read: `questions` is
+ * a projection of the matching quiz-generator template (`data/question-templates.ts`), and
+ * `publishedAt` is the record's own `stats.updatedAt` — the last instant it stood as it
+ * does here. The engagement snapshot (plays, rating, completion rate, tournament) is the
+ * fixture's, unchanged.
  *
  * These records were absent from `data/` until now: only the migration harness
  * carried them, so nothing in the app could join to them.
  */
 import type { Quiz } from "../content/quiz";
 import { media } from "./media";
+import { templateQuestions } from "./question-templates";
 
 export const createdQuizzes: readonly Quiz[] = [
   {
@@ -28,7 +33,8 @@ export const createdQuizzes: readonly Quiz[] = [
     },
     difficulty: "medium",
     status: "published",
-    questions: [],
+    publishedAt: "2023-02-10T14:20:00Z",
+    questions: templateQuestions("quiz-world-geography-challenge", ["geography"], 0),
     settings: {
       timeLimitSeconds: 0,
       questionTimerSeconds: 0,
@@ -62,7 +68,8 @@ export const createdQuizzes: readonly Quiz[] = [
     },
     difficulty: "hard",
     status: "published",
-    questions: [],
+    publishedAt: "2023-02-20T09:15:00Z",
+    questions: templateQuestions("quiz-science-quiz-extravaganza", ["science"], 1),
     settings: {
       timeLimitSeconds: 0,
       questionTimerSeconds: 0,
@@ -95,7 +102,8 @@ export const createdQuizzes: readonly Quiz[] = [
     },
     difficulty: "medium",
     status: "published",
-    questions: [],
+    publishedAt: "2023-04-10T16:30:00Z",
+    questions: templateQuestions("quiz-history-through-the-ages", ["history"], 2),
     settings: {
       timeLimitSeconds: 0,
       questionTimerSeconds: 0,
@@ -129,7 +137,8 @@ export const createdQuizzes: readonly Quiz[] = [
     },
     difficulty: "easy",
     status: "published",
-    questions: [],
+    publishedAt: "2023-03-18T14:20:00Z",
+    questions: templateQuestions("quiz-pop-culture-trivia", ["general-knowledge"], 3),
     settings: {
       timeLimitSeconds: 0,
       questionTimerSeconds: 0,
@@ -162,7 +171,8 @@ export const createdQuizzes: readonly Quiz[] = [
     },
     difficulty: "hard",
     status: "published",
-    questions: [],
+    publishedAt: "2023-04-15T10:45:00Z",
+    questions: templateQuestions("quiz-annual-science-tournament", ["science"], 4),
     settings: {
       timeLimitSeconds: 0,
       questionTimerSeconds: 0,

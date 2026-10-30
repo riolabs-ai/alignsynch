@@ -19,6 +19,10 @@
  *   3. Quizzes only — no `promotions.ts` (see "Why there are no generated promotions"),
  *      and a `promotions.ts` an older generator left behind is removed, so the output
  *      directory is always something `pnpm data:check` can pass.
+ *   4. Published-record rules — every emitted record is `published` with questions and a
+ *      `publishedAt`, and a reward always carries a window. Those are `data:check`'s
+ *      W1/W2/W4; the generator refuses to write a set that would report them, so a
+ *      regenerated tree cannot undo the fixture repair.
  *
  * Variation dimensions come from TEMPLATES, never from free-form strings:
  *   title pattern  — adjective × topic × format, enumerated and shuffled once
@@ -621,6 +625,30 @@ function buildStats(rng, index, avatarKeys) {
   return stats;
 }
 
+/**
+ * The published-record rules `data:check` reports as W1/W2/W4 on the authored fixtures.
+ *
+ * A generated record is held to the same three, and the generator is where they are
+ * cheapest to enforce: `pnpm gen` fails and writes nothing rather than emitting a set that
+ * turns the next `data:check` yellow. The rules live here as well as in the validator
+ * because the generator is the only writer of a fixture nobody hand-edits.
+ */
+function publishedRecordProblems(quizzes) {
+  const problems = [];
+  for (const quiz of quizzes) {
+    if (quiz.status === "published" && quiz.questions.length === 0) {
+      problems.push(`[W1] "${quiz.id}" would be published with no questions`);
+    }
+    if (quiz.status === "published" && quiz.publishedAt === undefined) {
+      problems.push(`[W2] "${quiz.id}" would be published with no publishedAt`);
+    }
+    if (quiz.stats.rewardCents !== undefined && quiz.stats.limitedTimeEndsAt === undefined) {
+      problems.push(`[W4] "${quiz.id}" would offer a reward with no limitedTimeEndsAt`);
+    }
+  }
+  return problems;
+}
+
 function buildQuiz(rng, template, index, seed, registry) {
   const id = `quiz-gen-${seed}-${index}`;
   const difficulty = pick(rng, DIFFICULTIES);
@@ -741,6 +769,15 @@ function main() {
   const quizzes = titles.map((template, index) =>
     buildQuiz(rng, template, index, args.seed, registry),
   );
+
+  const ruleProblems = publishedRecordProblems(quizzes);
+  if (ruleProblems.length > 0) {
+    for (const problem of ruleProblems) console.error(`gen: ${problem}`);
+    console.error(
+      "gen: nothing was written — a generated record is held to the authored fixtures' published-record rules (data:check W1/W2/W4)",
+    );
+    process.exit(1);
+  }
 
   const outDir = resolve(args.out);
   const seedHeader = `/**
