@@ -10,9 +10,11 @@
  *
  * Two things this fixture deliberately does NOT do:
  *
- *   - it does not carry a path. `avatarKey` is a registry key (`avatars.alex`), and the
- *     `AvatarKey` type below is derived from `data/media.ts`, so a key that names no
- *     avatar file is a type error here and a `data:check` E24 error at build time.
+ *   - it does not carry a path, **or a key** (issue #152). A player's avatar is
+ *     `GeneratedAvatar` over `name` + `id`, drawn in the browser with no bytes and no
+ *     request, so `data/players.ts` has nothing to point at and no `AvatarKey` type to
+ *     narrow — nine of the ten avatar files were two images repeated, which is the defect
+ *     the generated avatar removes.
  *   - it does not carry ranks beyond the board. `rank` is the row's position (E24 requires
  *     it to equal the index) and `rankTitle` is `rankTitleOf(rank)`, so a row cannot
  *     disagree with its own position.
@@ -35,26 +37,15 @@ import {
   indexPlayers,
   type WinEvent,
 } from "../content/people";
-import type { media, MediaKey } from "./media";
 
-/**
- * The registry keys whose entry is `kind: "avatar"` — derived from the generated registry, so
- * adding a face adds a member here for free. `media` is `as const`, which is what keeps each
- * entry's `kind` a literal type and makes this union computable.
- */
-type AvatarKey = {
-  [K in MediaKey]: (typeof media)[K]["kind"] extends "avatar" ? K : never;
-}[MediaKey];
-
-/** A player as authored: same shape, avatar narrowed to a key that is an avatar file. */
-type PlayerSeed = Omit<Player, "avatarKey"> & { avatarKey: AvatarKey };
+/** A player as authored — the schema's shape, with nothing narrowed (issue #152). */
+type PlayerSeed = Player;
 
 const playerSeeds = [
   {
     id: "player-alex-johnson",
     handle: "alexjohnson",
     name: "Alex Johnson",
-    avatarKey: "avatars.alex",
     level: 78,
     country: "United States",
     countryCode: "us",
@@ -66,7 +57,6 @@ const playerSeeds = [
     id: "player-sarah-williams",
     handle: "sarahwilliams",
     name: "Sarah Williams",
-    avatarKey: "avatars.sarah",
     level: 65,
     country: "Canada",
     countryCode: "ca",
@@ -78,7 +68,6 @@ const playerSeeds = [
     id: "player-michael-brown",
     handle: "michaelbrown",
     name: "Michael Brown",
-    avatarKey: "avatars.wizard",
     level: 59,
     country: "United Kingdom",
     countryCode: "gb",
@@ -90,7 +79,6 @@ const playerSeeds = [
     id: "player-emily-davis",
     handle: "emilydavis",
     name: "Emily Davis",
-    avatarKey: "avatars.champion",
     level: 52,
     country: "Australia",
     countryCode: "au",
@@ -102,7 +90,6 @@ const playerSeeds = [
     id: "player-david-wilson",
     handle: "davidwilson",
     name: "David Wilson",
-    avatarKey: "avatars.king",
     level: 48,
     country: "Germany",
     countryCode: "de",
@@ -114,7 +101,6 @@ const playerSeeds = [
     id: "player-jessica-taylor",
     handle: "jessicataylor",
     name: "Jessica Taylor",
-    avatarKey: "avatars.mind",
     level: 45,
     country: "France",
     countryCode: "fr",
@@ -126,7 +112,6 @@ const playerSeeds = [
     id: "player-ryan-martinez",
     handle: "ryanmartinez",
     name: "Ryan Martinez",
-    avatarKey: "avatars.genious",
     level: 41,
     country: "Spain",
     countryCode: "es",
@@ -138,7 +123,6 @@ const playerSeeds = [
     id: "player-olivia-anderson",
     handle: "oliviaanderson",
     name: "Olivia Anderson",
-    avatarKey: "avatars.brain",
     level: 38,
     country: "Italy",
     countryCode: "it",
@@ -150,7 +134,6 @@ const playerSeeds = [
     id: "player-daniel-thomas",
     handle: "danielthomas",
     name: "Daniel Thomas",
-    avatarKey: "avatars.guru",
     level: 36,
     country: "Japan",
     countryCode: "jp",
@@ -161,7 +144,6 @@ const playerSeeds = [
     id: "player-sophia-garcia",
     handle: "sophiagarcia",
     name: "Sophia Garcia",
-    avatarKey: "avatars.master",
     level: 33,
     country: "Brazil",
     countryCode: "br",

@@ -10,10 +10,6 @@
  *             silently disappears from the board, so the page is one person short and nothing
  *             fails. The same for a win's `quizId`: the feed used to type quiz titles instead
  *             of joining them, so nothing could catch it.
- *   avatar    a player's `avatarKey` is a key the registry does not hold, or holds an entry
- *             that is not an avatar (five rows on the old `/leaderboard` island used
- *             `/abstract-geometric-shapes` as a face), or addresses no file under `public/`.
- *             E17 kept the *path* out of JSX; this is what keeps the *key* honest.
  *   rank      `rank` disagrees with the row's position, or two rows share a rank. The podium
  *             is index-driven (`entries[1], entries[0], entries[2]`), so a drifted rank shows
  *             a crown on the wrong person with no error anywhere.
@@ -21,6 +17,11 @@
  *             order — the trending board is *defined* by that order.
  *   instant   a win is dated after the fixture clock, so `formatRelative` renders
  *             "in 1 hour" and server/client disagree (the E10 rule, applied to payouts).
+ *
+ * There is no avatar rule here any more (issue #152). It held a player's `avatarKey` to a
+ * registered `kind: "avatar"` file, which existed because nine people shared two images.
+ * `GeneratedAvatar` now draws the face from `name` + `id`, so the rule has nothing to read:
+ * a player carries no key, and the registry's avatar entries are not referenced by people.
  *
  * Pure by construction, like `scripts/data-check-promotions.ts`: no `fs`, no React, no Next.
  * `data-check.ts` passes the real registry, the real `public/` existence test and the real
@@ -41,19 +42,11 @@ export interface PeopleFinding {
 }
 
 /**
- * What the media registry knows about a key. Supplied by the caller so this module stays
- * filesystem-free: the registry itself is `data/media.ts` and the file test is `public/`.
- *
- * `src` is optional because the registry has two kinds of entry since issue #130: a file,
- * which has a path, and a generated default (`generated: true`), which has none. An avatar
- * is a face someone uploaded, so a generated entry can never satisfy one.
+ * What this module deliberately does not know: the media registry. It used to take a
+ * `MediaFacts` pair (registry lookup + `public/` existence) so it could validate a player's
+ * `avatarKey`; issue #152 removed the key, so the module is filesystem-free with nothing to
+ * pass in.
  */
-export interface MediaFacts {
-  /** The registry entry a key addresses, or `undefined` when the key is not registered. */
-  entry: (key: string) => { src?: string; kind: string } | undefined;
-  /** Whether the file a registry entry addresses exists under `public/`. */
-  fileExists: (src: string) => boolean;
-}
 
 export interface PeopleInput {
   players: readonly Player[];
@@ -61,7 +54,6 @@ export interface PeopleInput {
   wins: readonly WinEvent[];
   /** Every id `data/quizzes.ts` holds — a win joins to one of these. */
   quizIds: ReadonlySet<string>;
-  media: MediaFacts;
   /** The fixture clock (`DEMO_NOW_ISO`); no payout may be dated after it. */
   nowIso: string;
 }
@@ -93,29 +85,6 @@ export function peopleFindings(input: PeopleInput): PeopleFinding[] {
       });
     } else {
       handleOwner.set(player.handle, player.id);
-    }
-
-    const entry = input.media.entry(player.avatarKey);
-    if (entry === undefined) {
-      findings.push({
-        rule: "E24",
-        message: `player "${player.id}": avatarKey "${player.avatarKey}" is not in the media registry (data/media.ts) — run \`node scripts/gen-media.mjs\` if the file is missing`,
-      });
-    } else if (entry.src === undefined) {
-      findings.push({
-        rule: "E24",
-        message: `player "${player.id}": avatarKey "${player.avatarKey}" is a generated default (no file) — a player avatar has to be artwork, not a drawn placeholder`,
-      });
-    } else if (entry.kind !== "avatar") {
-      findings.push({
-        rule: "E24",
-        message: `player "${player.id}": avatarKey "${player.avatarKey}" addresses a "${entry.kind}" (${entry.src}), not an avatar — a face the registry does not call a face is a stand-in`,
-      });
-    } else if (!input.media.fileExists(entry.src)) {
-      findings.push({
-        rule: "E24",
-        message: `player "${player.id}": avatarKey "${player.avatarKey}" addresses "${entry.src}", which is not a file under public/`,
-      });
     }
   });
 

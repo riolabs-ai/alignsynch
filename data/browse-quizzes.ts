@@ -241,7 +241,6 @@ export const browseQuizzes: readonly Quiz[] = [
     cover: { src: media["ancient-civilizations-quiz"].src, alt: "History: Ancient Civilizations" },
     author: {
       name: "HistoryBuff",
-      avatar: { src: media["avatars.sarah"].src, alt: "HistoryBuff" },
     },
     createdAt: "2023-09-18T16:20:00Z",
     status: "published",
@@ -258,9 +257,9 @@ export const browseQuizzes: readonly Quiz[] = [
       limitedTimeEndsAt: rewardWindow(8),
       updatedAt: "2023-10-12T08:30:00Z",
       recentPlayers: [
-        { name: "Ryan M.", avatar: { src: media["avatars.genious"].src, alt: "Ryan M." } },
-        { name: "Olivia A.", avatar: { src: media["avatars.brain"].src, alt: "Olivia A." } },
-        { name: "James K.", avatar: { src: media["avatars.alex"].src, alt: "James K." } },
+        { name: "Ryan M." },
+        { name: "Olivia A." },
+        { name: "James K." },
       ],
     }),
   },
@@ -275,7 +274,6 @@ export const browseQuizzes: readonly Quiz[] = [
     cover: { src: media["math-puzzles-quiz"].src, alt: "Math Puzzles & Problems" },
     author: {
       name: "MathGenius",
-      avatar: { src: media["avatars.king"].src, alt: "MathGenius" },
     },
     createdAt: "2023-12-05T13:40:00Z",
     status: "draft",
@@ -291,9 +289,9 @@ export const browseQuizzes: readonly Quiz[] = [
       limitedTimeEndsAt: rewardWindow(9),
       updatedAt: "2023-12-05T13:40:00Z",
       recentPlayers: [
-        { name: "Sophia L.", avatar: { src: media["avatars.wizard"].src, alt: "Sophia L." } },
-        { name: "Noah P.", avatar: { src: media["avatars.sarah"].src, alt: "Noah P." } },
-        { name: "Emma R.", avatar: { src: media["avatars.king"].src, alt: "Emma R." } },
+        { name: "Sophia L." },
+        { name: "Noah P." },
+        { name: "Emma R." },
       ],
     }),
   },

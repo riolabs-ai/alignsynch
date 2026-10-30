@@ -6,31 +6,16 @@
  * records (`data/players.ts`), the schema and the join are `content/people.ts`, and this
  * module is the one import a surface needs.
  *
- * `avatarSrcOf` is here rather than in `content/people.ts` because `content/` must not
- * import the generated registry: the fixture carries a **key** and the UI turns it into the
- * one path `next/image` wants. E24 proves the key addresses an avatar file, so the
- * placeholder branch is unreachable in a green tree and exists only so a bad deploy renders
- * a face-shaped hole instead of a 500.
+ * There is no avatar helper here any more (issue #152). `avatarSrcOf` turned a player's
+ * registry key into a `/avatars/*.png` path, but nine of those ten files were two images
+ * repeated, so the path was never the identity. A surface now renders
+ * `GeneratedAvatar name={player.name} seed={player.id}` — which needs nothing from this
+ * module and no file from `public/`.
  */
-import { isFileMedia, type MediaEntry } from "@/content/media";
-import {
-  type LeaderboardBoardId,
-  type LeaderboardEntry,
-  type Player,
-  selectLeaderboard,
-} from "@/content/people";
-import { media, mediaSrc } from "@/data/media";
+import { type LeaderboardBoardId, type LeaderboardEntry, selectLeaderboard } from "@/content/people";
 import { leaderboards, playerIndex } from "@/data/players";
-
-const registry: Record<string, MediaEntry> = media;
 
 /** One board, joined to its players, in rank order. `limit` is the surface's slice, not a re-sort. */
 export function leaderboardEntries(board: LeaderboardBoardId, limit?: number): LeaderboardEntry[] {
   return selectLeaderboard(leaderboards[board], playerIndex, limit);
-}
-
-/** The public path for a player's avatar key (`avatars.alex` -> `/avatars/alex.png`). */
-export function avatarSrcOf(player: Player): string {
-  const entry = registry[player.avatarKey];
-  return entry !== undefined && isFileMedia(entry) ? entry.src : mediaSrc("placeholder");
 }

@@ -5,10 +5,9 @@ import Link from "next/link";
 import { type User, getUserFollowing } from "@/lib/data/users";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { UserCheck, UserPlus } from "lucide-react";
-import { media } from "@/data/media";
 
 interface ProfileFollowingProps {
   userId: string;
@@ -55,10 +54,7 @@ export function ProfileFollowing({ userId }: ProfileFollowingProps) {
           {following.map((user) => (
             <div key={user.id} className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={user.avatar || media.placeholder.src} alt={user.name} />
-                  <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-                </Avatar>
+                <GeneratedAvatar name={user.name} seed={user.username} size={40} />
                 <div>
                   <Link href={`/profile/${user.username}`} className="font-medium hover:underline">
                     {user.name}
