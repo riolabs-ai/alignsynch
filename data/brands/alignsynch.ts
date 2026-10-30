@@ -19,7 +19,7 @@
  * script prints the pixel counts and bounding boxes behind each value, so "the blue in the
  * monogram" and "the green in the arrows" are checkable claims rather than adjectives.
  *
- * The other five keys are decisions, not samples (issue #157):
+ * The other seven keys are decisions, not samples (issue #157, #187):
  *
  *   background   `#ffffff`. The mark is black ink on white — 53.7% of its 28,112 opaque
  *                pixels are pure `#000000` and 11.6% are `#3b3b3c` — so the near-black ground
@@ -32,6 +32,13 @@
  *   accentForeground   `#1c1c1c`: 8.34:1 on the sampled green, where white is 2.04:1. It was
  *                `#0a0a0a` while the ground was near-black; on white it is an ink, not the
  *                ground, and it stays a decision about the green rather than a copy of a token.
+ *   action       the blue again, under the role a *button* is painted with (#187). It equals
+ *                `primary` on this brand and that is not a coincidence to be tidied away: the
+ *                mark is one blue, and a product whose CTA is a second blue is a product with
+ *                two accents. Kept as its own key because the role is its own — a skin may
+ *                darken a CTA without moving the ink its headings use.
+ *   actionForeground   white: the same 6.06:1 as `primaryForeground`, and white is the only
+ *                readable ink on the sampled blue.
  *   navActive    the blue, under the role the sidebar paints the active nav with.
  *
  * `logo` stays a media path (D-P2-1): the file is registered in `data/media.ts` as
@@ -64,6 +71,8 @@ export const alignSynchBrand: Brand = zBrand.parse({
     primaryForeground: "#ffffff",
     accent: "#8dc63f",
     accentForeground: "#1c1c1c",
+    action: "#156898",
+    actionForeground: "#ffffff",
     navActive: "#156898",
   },
   supportEmail: "alignsynch@riolabs.ai",

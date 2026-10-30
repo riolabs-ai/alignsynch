@@ -5,8 +5,9 @@
  * `tailwind.config.ts` expects on `<html>`, and decides which tokens travel at all;
  * `lib/brand-mark.ts` turns `brand.logo` into what `next/image` needs, or into `undefined`
  * for a placeholder. Both are React-free so this file can state their rules without a DOM —
- * and the rules are the card: the skin's palette is painted (accents, ground and ink), and
- * the template's markup is not touched.
+ * and the rules are the card: the skin's palette is painted (accents, ground and ink), the
+ * template's overrides are not, and the three roles the theme sheet has no default for
+ * (`action`, `actionForeground`, `navActive` — issue #187) are painted for both brands.
  */
 import { describe, expect, it } from "vitest";
 
@@ -37,8 +38,16 @@ describe("hslTriple", () => {
 });
 
 describe("brandThemeVars", () => {
-  it("emits nothing for the template brand, so its markup does not move", () => {
-    expect(brandThemeVars(quizHubBrand)).toEqual({});
+  it("emits only the roles the theme sheet has no default for, on the template brand", () => {
+    // Rule 3 (#187): `--action`, `--action-foreground` and `--nav-active` are not in
+    // `app/globals.css`, so they cannot be "overrides" — an unset `hsl(var(--action))` is an
+    // invalid declaration and `bg-action` would paint nothing. They are painted for every
+    // brand; the template's *other* tokens still do not travel.
+    expect(brandThemeVars(quizHubBrand)).toEqual({
+      "--action": "238.7 83.5% 66.7%",
+      "--action-foreground": "0 0% 100%",
+      "--nav-active": "238.7 83.5% 66.7%",
+    });
   });
 
   it("paints the skin's sampled accents, the ground and the ink", () => {
@@ -50,6 +59,9 @@ describe("brandThemeVars", () => {
       "--primary-foreground": "0 0% 100%",
       "--accent": "85.3 54.2% 51.2%",
       "--accent-foreground": "0 0% 11%",
+      "--action": "202 75.7% 33.9%",
+      "--action-foreground": "0 0% 100%",
+      "--nav-active": "202 75.7% 33.9%",
     });
   });
 

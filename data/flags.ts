@@ -17,6 +17,20 @@
  *      time; this field is the narrower case where one template ships a surface before another.
  *   3. `default` — what every other template gets.
  *
+ * and, ahead of all three, one **opt-in** exception (#184):
+ *
+ *   0. `adminBypass: true` on the flag **and** an `admin` caller — the flag resolves on,
+ *      whatever the env, the template list or the default say. This is what makes a hidden
+ *      surface reviewable: `/leaderboard` is off for every visitor and still reachable by the
+ *      one person who needs to look at it before it ships. It is opt-in per flag and never
+ *      global — a flag that does not declare it keeps the three steps above exactly as they
+ *      were, which is why `adminBypass` is absent on the other seven.
+ *
+ *      The role is **not** read here and is not read by the resolver: a caller passes it in,
+ *      resolved server-side from the request's own session (`lib/auth/flag-gate.ts` is the one
+ *      caller). There is no header, cookie, query string or prop a client can set to become an
+ *      admin, and the resolver is server-only for the same reason.
+ *
  * Two things this file is **not**, both on purpose:
  *
  *   - it is not a remote flag service and not a table. No GrowthBook, no LaunchDarkly, no
@@ -35,6 +49,11 @@
  * `templates` is empty on all eight today: each surface has the same status on both templates,
  * so an override would be a claim nobody made. The field is schema, not decoration — the
  * resolver reads it and `tests/flags.test.ts` proves it beats `default` and loses to the env.
+ *
+ * `adminBypass` is set on **one** flag, `community.leaderboard`, and it does not weaken the rule
+ * above: the surface still ships off for every visitor, and an admin reaching it is a review
+ * path, not a release. A second flag opting in is a decision to argue for, and
+ * `tests/flags.test.ts` fails until that argument is made in the test as well as in the record.
  *
  * Adding a flag: add a line here, then gate the surface (`lib/flags.ts` names the three places a
  * flagged-off surface has to be off) and add it to the panel that proves the mechanism.
@@ -55,6 +74,14 @@ export const zFlagDefinition = z
      * but says nothing is a claim that reads as intent.
      */
     templates: z.array(z.string().trim().min(1)).min(1).optional(),
+    /**
+     * Let an `admin` caller through while the flag is off (#184). Absent — the default, and the
+     * value every flag but one carries — means no bypass at all: the flag's three steps decide
+     * and the session is never consulted. `true` means the role is the last step of the
+     * precedence, ahead of the env override, so an operator's `FLAG_X=0` does not lock an admin
+     * out of the surface they are reviewing. Opt-in per flag, never a global policy.
+     */
+    adminBypass: z.boolean().optional(),
     /** The surface's real state and why the default is what it is. Written for the next reader. */
     note: z.string().trim().min(1),
   })
@@ -86,7 +113,8 @@ export type FlagName = keyof Flags;
 export const flags: Flags = zFlags.parse({
   "community.leaderboard": {
     default: false,
-    note: "Mocked: the boards are `data/players.ts` projected by `lib/players.ts`, deferred from #163. Off until the rows are real.",
+    adminBypass: true,
+    note: "Mocked: the boards are `data/players.ts` projected by `lib/players.ts`, deferred from #163. Off until the rows are real — and reachable by an admin session meanwhile (#184), so the surface can be reviewed without being shipped.",
   },
   "community.tournaments": {
     default: false,

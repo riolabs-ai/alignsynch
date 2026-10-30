@@ -76,6 +76,16 @@ export type BrandColor = z.infer<typeof zBrandColor>;
  * not a custom property: the sidebar paints the active nav with the Tailwind palette step
  * `indigo-500`, so the record carries that step's value under the role it plays.
  *
+ * `action` is the second (issue #187): the brand's *interactive* colour — a solid fill with
+ * `actionForeground` on top, for a call to action, a link hover, an icon inside a chip. The
+ * theme sheet cannot supply it: `--primary` is the template's ink (`hsl(0 0% 9%)` in
+ * `data/brand.ts`) and `--accent` is shadcn's subtle hover *surface*, which is why every
+ * CTA in the tree used to be typed as a purple 600 fill and leaked QuizHub's palette into an
+ * AlignSynch page. A role that has no token gets a token here; it does not get a literal in
+ * a component, and this pair is the measurement of what that cost: on `f6cad944`, the chrome,
+ * the assessment flow and the 404 carried 31 lines and 49 indigo, purple and violet literals
+ * across 8 files, of which 15 were gradient stops in 10 `bg-gradient-to-*`.
+ *
  * Strict: a skin that invents a token gets a hard error, not a field nothing reads.
  */
 export const zBrandColors = z
@@ -86,6 +96,8 @@ export const zBrandColors = z
     primaryForeground: zBrandColor,
     accent: zBrandColor,
     accentForeground: zBrandColor,
+    action: zBrandColor,
+    actionForeground: zBrandColor,
     navActive: zBrandColor,
   })
   .strict();

@@ -36,6 +36,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { DEFAULT_USER_ROLE, roleAdmits, type UserRole } from "@/content/identity";
 import { loginPathFor, AFTER_SIGN_IN } from "@/lib/auth/paths";
+import { authConfigured } from "@/lib/auth/config";
 import { currentUser, type SessionUser } from "@/lib/auth/session";
 import { readUserProfileByUserId } from "@/lib/db/user-profiles";
 
@@ -116,6 +117,32 @@ export async function roleOfUser(userId: string): Promise<UserRole> {
 export interface RoleGrant {
   readonly user: SessionUser;
   readonly role: UserRole;
+}
+
+/**
+ * The role of the request's own session, or `null` when nobody is signed in (#184).
+ *
+ * This is the lookup the feature flags' admin bypass uses: `/leaderboard` is off for every
+ * visitor and on for an `admin`, so the page needs the role **without** the three answers
+ * `requireRole` gives — a member must get the same 404 a signed-out visitor gets, not a redirect
+ * and not a 403.
+ *
+ * `null` means "no role", and it covers two states that answer identically on purpose:
+ *
+ *   - nobody is signed in;
+ *   - auth is not configured in this deployment (`authConfigured()`), so nobody *can* be.
+ *
+ * The second one is why this function exists instead of a bare `currentUser()` call: a tree with
+ * no `NEON_AUTH_*` env (CI, the parity render, a gate run) must not turn a flagged-off surface
+ * into a 500. It is not an outage being hidden — an outage with auth configured is a session read
+ * that already answers `null`, and a profile read that fails still throws, exactly as
+ * `roleOfUser` documents.
+ */
+export async function currentRole(): Promise<UserRole | null> {
+  if (!authConfigured()) return null;
+  const user = await currentUser();
+  if (user === null) return null;
+  return roleOfUser(user.userId);
 }
 
 /**

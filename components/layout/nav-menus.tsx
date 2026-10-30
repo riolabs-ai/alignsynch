@@ -107,7 +107,9 @@ export function NavRow({ href, icon, label, active, collapsed, onNavigate, hidde
           onClick={onNavigate}
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
-            active ? "bg-indigo-500 text-white" : "hover:bg-accent hover:text-accent-foreground",
+            active
+              ? "bg-nav-active text-action-foreground"
+              : "hover:bg-accent hover:text-accent-foreground",
           )}
         >
           {icon}
@@ -122,7 +124,9 @@ export function NavRow({ href, icon, label, active, collapsed, onNavigate, hidde
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 xl:py-2.5 text-sm font-medium transition-colors",
-        active ? "bg-indigo-500 text-white" : "hover:bg-accent hover:text-accent-foreground",
+        active
+          ? "bg-nav-active text-action-foreground"
+          : "hover:bg-accent hover:text-accent-foreground",
       )}
     >
       <span>{icon}</span>

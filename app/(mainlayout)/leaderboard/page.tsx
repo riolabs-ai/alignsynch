@@ -27,9 +27,18 @@
  * shell at build time and needs a rebuild to match (see `docs/ENV-SPEC.md` §9 for the measured
  * numbers). Turning a surface *off* is therefore the safe direction to flip without a build: the
  * worst case is an advertised entry that lands on a 404, never a render of the surface.
+ *
+ * ## The admin bypass (#184)
+ *
+ * The gate is `enabledForCaller`, not `isEnabled`: `community.leaderboard` is the one flag that
+ * declares `adminBypass: true`, so an `admin` session reaches this page **while the flag is off
+ * for every visitor**. That is the demo this card exists for — the nav hides the surface and the
+ * admin still gets the page — without shipping a mock to a member. The role is read from the
+ * request's session server-side; a header or a cookie that claims `admin` is not read by
+ * anything, so a forged one still gets the 404.
  */
 import { LeaderboardPage } from "@/components/leaderboard/leaderboard-page";
-import { isEnabled } from "@/lib/flags";
+import { enabledForCaller } from "@/lib/auth/flag-gate";
 import { leaderboardEntries } from "@/lib/players";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -42,8 +51,17 @@ export const metadata: Metadata = {
 /** Read per request: the flag is the lever, and a lever that needs a rebuild is not one. */
 export const dynamic = "force-dynamic";
 
-export default function LeaderboardRoute() {
-  if (!isEnabled("community.leaderboard")) notFound();
+export default async function LeaderboardRoute() {
+  /**
+   * The gate (#184): on for everyone when the flag says so, and on for an `admin` session while
+   * the flag is off — the bypass that makes a hidden surface reviewable. The role is resolved
+   * from this request's own session inside `enabledForCaller`, never from anything the browser
+   * sent, so a forged header or cookie is not a role this page can see.
+   *
+   * A member and a signed-out visitor both land on `notFound()` here, before `leaderboardEntries`
+   * below is reached: nothing is projected, so the 404 costs no fixture work and leaks nothing.
+   */
+  if (!(await enabledForCaller("community.leaderboard"))) notFound();
 
   /**
    * The three boards the page shows, projected once per request. `limit` is the surface's slice

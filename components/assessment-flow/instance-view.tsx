@@ -105,9 +105,7 @@ export function AssessmentInstanceView({
                       counterparty: screen.invite.counterpartyName,
                     })}
                   </span>
-                  <code className="break-all text-xs text-purple-700 dark:text-purple-300">
-                    {screen.invite.link}
-                  </code>
+                  <code className="break-all text-xs text-primary">{screen.invite.link}</code>
                 </p>
               )}
             </section>
