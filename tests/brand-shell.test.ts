@@ -254,9 +254,10 @@ describe("one build flag, one brand", () => {
     expect(alignSynchBrand.logo).not.toBe(quizHubBrand.logo);
     expect(alignSynchBrand.colors.primary).toMatch(/^#[0-9a-f]{6}$/);
     expect(alignSynchBrand.colors.accent).toMatch(/^#[0-9a-f]{6}$/);
-    // The card's decisions, which are not samples: the ground is the app's dark theme, the
-    // ink is the marketing slate, and the type stays Inter (there is no font field to check).
-    expect(alignSynchBrand.colors.background).toBe("hsl(0 0% 3.9%)");
+    // The card's decisions, which are not samples: the ground is white because the mark is
+    // black ink on white (#157), the ink is the marketing slate, and the type stays Inter
+    // (there is no font field to check).
+    expect(alignSynchBrand.colors.background).toBe("#ffffff");
     expect(alignSynchBrand.colors.foreground).toBe("#363d49");
   });
 
