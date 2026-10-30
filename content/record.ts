@@ -1,10 +1,12 @@
 /**
  * The record — one root content type, and the shape every template validates against.
  *
- * A quiz and an assessment are both records. They have the same identity, the same
- * publication state, and the same internal shape: **a record holds items, an item
- * carries a response scale, and a response is a value on that scale.** What makes
- * them different *templates* is only what each item adds:
+ * **Every template is a record.** A quiz and an assessment are the two the platform
+ * ships today, and they have the same identity, the same publication state, and the
+ * same internal shape: **a record holds items, an item carries a response scale, and
+ * a response is a value on that scale.** A third template is a new `type` member and
+ * a new `content/` module, never a second root type. What makes two templates
+ * different is only what each item adds:
  *
  *   quiz        an item is a question; it adds `correctOptionId`, and its scale is the
  *               option list, so a response is an option id            — `content/quiz.ts`
@@ -190,8 +192,8 @@ export function uniqueItemIds(
 export const zTemplateObject = zRecord
   .extend({
     /**
-     * Empty is legal: an authoring draft starts with no items, exactly as a quiz
-     * draft does. "A published record has items" is a census rule (W1 today), not
+     * Empty is legal: an authoring draft starts with no items, on every template.
+     * "A published record has items" is a census rule (W1 today), not
      * something this schema can decide without knowing the status.
      */
     items: z.array(zItem),
@@ -241,7 +243,7 @@ export interface TemplateLike {
 /**
  * Does this template validate against the shared record?
  *
- * The one mechanical answer to "a quiz and an assessment are both records": the record
+ * The one mechanical answer to "every template is a record": the record
  * half parses as a `Record`, every item parses as an `Item` once the template's own
  * fields are left behind, and item ids are unique within the record. A template that
  * adds fields to an item passes — that is what `zItem.extend()` is for — and a template
