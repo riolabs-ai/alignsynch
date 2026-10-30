@@ -2,6 +2,7 @@ import TipDetail from "@/components/creator-tips/tip-detail";
 import { Footer } from "@/components/layout/footer";
 import { creatorTipsDetailPageCopy } from "@/data/pages/creator-tips-detail";
 import { shellPageCopy } from "@/data/pages/shell";
+import { hiddenNavHrefs } from "@/lib/flags";
 import { publishedArticle, publishedArticles, relatedArticles } from "@/lib/article-records";
 import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
@@ -63,7 +64,7 @@ export default function TipPage({ params }: { params: Promise<{ slug: string }> 
         copy={sectionOf(creatorTipsDetailPageCopy, "article")}
         related={sectionOf(creatorTipsDetailPageCopy, "related")}
       />
-      <Footer copy={shellPageCopy} />
+      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
     </>
   );
 }

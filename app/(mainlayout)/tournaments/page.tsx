@@ -1,6 +1,7 @@
 import { TournamentPage } from "@/components/tournaments/tournament-page";
 import { shellPageCopy } from "@/data/pages/shell";
 import { tournamentsPageCopy } from "@/data/pages/tournaments";
+import { hiddenNavHrefs } from "@/lib/flags";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -12,7 +13,16 @@ export const metadata: Metadata = {
  * `/tournaments` — every word the page renders comes from `data/pages/tournaments.ts`
  * (WU-11). Copy, not records: the tournament domain is P4, so the list still renders
  * the components' own mock rows and this module only hands the fixture down.
+ *
+ * `hiddenNav` is the footer's half of the flag (#175 follow-up), resolved on the server: the
+ * page and the footer it mounts are both client modules.
  */
 export default function Tournaments() {
-  return <TournamentPage copy={tournamentsPageCopy} shellCopy={shellPageCopy} />;
+  return (
+    <TournamentPage
+      copy={tournamentsPageCopy}
+      shellCopy={shellPageCopy}
+      hiddenNav={hiddenNavHrefs()}
+    />
+  );
 }

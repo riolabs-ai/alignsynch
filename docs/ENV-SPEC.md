@@ -365,9 +365,17 @@ change plus `pnpm build` — still no code change, which is the point of the fla
 request-time would mean `force-dynamic` on `app/(mainlayout)/layout.tsx`, turning the 15 prerendered
 shell pages and the six `/creator-tips/[slug]` paths into server renders; that cost is not paid here.
 
-Known gap, deliberately not in this change: four deep links to a gated surface that are not the
-sidebar — the footer column, the home page's "View Full Leaderboard" CTA, the demo profile's
-back-link, and the 404 page's own "Leaderboard" action — still point at `/leaderboard`, so they 404
-while the flag is off (measured on the quizhub build: `/` carries two such links outside
-`id="app-sidebar"`). Wiring every inbound link is its own change; the nav entry and the route are
-what the mechanism owns.
+The four deep links #175 left unwired are wired now (the #175 follow-up): the footer column's
+Leaderboard row, the home page's "View Full Leaderboard" CTA, the demo profile's back-link and the
+404 page's own "Leaderboard" action all read the **same** list the sidebar does —
+`hiddenNavHrefs()`, resolved on the server and passed to each client component as `hiddenNav` — so a
+build with the flag off draws none of them. Measured on the quizhub build: `/` went from **2** links
+outside `id="app-sidebar"` to **0**, `/profile/alexjohnson` from 1 to 0, and the 404 body from 1 to
+0, with `FLAG_COMMUNITY_LEADERBOARD=1` restoring all four in their original positions. The fixtures
+were not touched (`data/pages/home.ts` still authors the CTA), because the filter is at the mount:
+turning the flag on gives back the page byte for byte.
+
+The same build-time caveat applies to those four, since they are part of a prerendered document —
+and the 404 body is the extreme case: Next renders it once, into `/_not-found`, so the flag is a
+build-time value there exactly as it is for the sidebar. A flip therefore needs a rebuild for the
+advertising to follow; only the route's 404/200 answer moves on a restart.

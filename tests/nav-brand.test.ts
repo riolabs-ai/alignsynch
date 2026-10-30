@@ -66,10 +66,19 @@ function navHrefs(brandId: BrandId, viewer: NavViewer = PLATFORM_VIEWER): string
   );
 }
 
-/** The footer's link columns for one brand and one viewer (the contact/social rows excluded). */
+/**
+ * The footer's link columns for one brand and one viewer (the contact/social rows excluded).
+ *
+ * `hiddenNav: []` is stated at the call site rather than defaulted on the component (#175
+ * follow-up): `Footer`'s prop is required precisely so no mount can forget it, and this file is
+ * about the *brand* rule, so it renders a build with every gated surface on. The flag half of the
+ * same columns is `tests/leaderboard-links.test.ts`.
+ */
 function footerHrefs(brandId: BrandId, viewer: NavViewer = PLATFORM_VIEWER): string[] {
   return hrefsOf(
-    renderToStaticMarkup(createElement(Footer, { copy: shellPageCopy, viewer, brandId })),
+    renderToStaticMarkup(
+      createElement(Footer, { copy: shellPageCopy, viewer, brandId, hiddenNav: [] }),
+    ),
   ).filter((href) => href !== "#");
 }
 

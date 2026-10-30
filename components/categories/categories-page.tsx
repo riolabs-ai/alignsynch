@@ -21,7 +21,20 @@ import { useState } from "react";
  * Two props, not one, so a later unit can add page copy without the footer inheriting
  * it — the page module is still the one that decides which fixture a band receives.
  */
-export function CategoriesPage({ copy, shellCopy }: { copy: PageCopy; shellCopy: PageCopy }) {
+export function CategoriesPage({
+  copy,
+  shellCopy,
+  hiddenNav,
+}: {
+  copy: PageCopy;
+  shellCopy: PageCopy;
+  /**
+   * The gated hrefs the shell must not draw (#175 follow-up). This is a client component and the
+   * footer it mounts is client-bundled through it, so the list arrives as a prop from the route —
+   * `lib/flags.ts` throws in a browser and the footer has no default to fall back to.
+   */
+  hiddenNav: readonly string[];
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const empty = sectionOf(copy, "empty");
 
@@ -89,7 +102,7 @@ export function CategoriesPage({ copy, shellCopy }: { copy: PageCopy; shellCopy:
       <CategoriesHowItWorks copy={sectionOf(copy, "how-it-works")} />
 
       {/* Footer */}
-      <Footer copy={shellCopy} />
+      <Footer copy={shellCopy} hiddenNav={hiddenNav} />
     </div>
   );
 }
