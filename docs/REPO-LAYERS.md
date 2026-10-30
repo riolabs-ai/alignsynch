@@ -133,8 +133,11 @@ not split into a docs job and a code job, and it will not be:
 - a matrix (`.github/workflows` `strategy:`) has the same problem: the required
   context is the job name, and one job name per lane means renaming the
   requirement;
-- CI has no contention to relieve. The lanes exist to stop eight local workers
-  from compiling in parallel; a GitHub runner is already one build at a time.
+- CI has no contention to relieve. The lanes were built because eight local
+  workers compiling at once saturated this box; on a GitHub runner the win is
+  the required check's wall time (19 s docs vs 59 s code, measured in
+  `docs/GATE.md`), not throughput — which is another reason it belongs inside
+  the job rather than in a second one.
 
 On CI `auto` could not classify at all until the `ci.yml` checkout was fixed,
 and that failure mode is worth keeping in view: `actions/checkout` fetches a
