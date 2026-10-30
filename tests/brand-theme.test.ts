@@ -5,8 +5,8 @@
  * `tailwind.config.ts` expects on `<html>`, and decides which tokens travel at all;
  * `lib/brand-mark.ts` turns `brand.logo` into what `next/image` needs, or into `undefined`
  * for a placeholder. Both are React-free so this file can state their rules without a DOM —
- * and the rules are the card: the skin's blue is painted, the template's markup is not
- * touched, and the ground and the ink stay the theme's.
+ * and the rules are the card: the skin's palette is painted (accents, ground and ink), and
+ * the template's markup is not touched.
  */
 import { describe, expect, it } from "vitest";
 
@@ -41,21 +41,25 @@ describe("brandThemeVars", () => {
     expect(brandThemeVars(quizHubBrand)).toEqual({});
   });
 
-  it("paints the skin's sampled accents", () => {
+  it("paints the skin's sampled accents, the ground and the ink", () => {
+    // `#ffffff` -> `0 0% 100%`; `#363d49` -> `217.9 15% 24.9%`; `#1c1c1c` -> `0 0% 11%`.
     expect(brandThemeVars(alignSynchBrand)).toEqual({
+      "--background": "0 0% 100%",
+      "--foreground": "217.9 15% 24.9%",
       "--primary": "202 75.7% 33.9%",
       "--primary-foreground": "0 0% 100%",
       "--accent": "85.3 54.2% 51.2%",
-      "--accent-foreground": "0 0% 3.9%",
+      "--accent-foreground": "0 0% 11%",
     });
   });
 
-  it("never overrides the ground or the ink", () => {
-    // The card pins both to the app's theme: `#363d49` on a near-black ground is 1.8:1, and
-    // a brand-supplied background would be the second theme the card forbids.
+  it("keeps the ground and the ink for the brand that changes them", () => {
+    // #157: the record's ground and ink paint, because the mark is black ink on white and
+    // the old near-black ground hid two thirds of it. The template is untouched — the test
+    // above is the proof that its values are skipped, not a shorter list.
     const vars = brandThemeVars(alignSynchBrand);
-    expect(vars).not.toHaveProperty("--background");
-    expect(vars).not.toHaveProperty("--foreground");
+    expect(vars["--background"]).toBe(hslTriple(alignSynchBrand.colors.background));
+    expect(vars["--foreground"]).toBe(hslTriple(alignSynchBrand.colors.foreground));
   });
 });
 

@@ -19,20 +19,19 @@
  * script prints the pixel counts and bounding boxes behind each value, so "the blue in the
  * monogram" and "the green in the arrows" are checkable claims rather than adjectives.
  *
- * The other five keys are decisions, not samples:
+ * The other five keys are decisions, not samples (issue #157):
  *
- *   background   the app's dark theme ground, `hsl(0 0% 3.9%)`. The logo is built to sit on
- *                black — the monogram's interior is black and its silver outline is what
- *                separates the mark from that ground — and the dark theme already exists, so
- *                this record does not add a light one.
- *   foreground   `#363d49`, the marketing site's slate — text, not brand. It is carried here
- *                because `zBrandColors` has the key, but it is deliberately *not* painted
- *                onto the dark ground: 1.8:1 against `hsl(0 0% 3.9%)` is unreadable, and
- *                "the slates are the foreground" is a statement about the brand's type, not
- *                a licence to override the theme's ink. `lib/brand-theme.ts` says the same
- *                thing in code.
+ *   background   `#ffffff`. The mark is black ink on white — 53.7% of its 28,112 opaque
+ *                pixels are pure `#000000` and 11.6% are `#3b3b3c` — so the near-black ground
+ *                it used to name hid two thirds of it. White is the ground the logo was
+ *                drawn for, and `lib/brand-theme.ts` paints it onto `<html>`.
+ *   foreground   `#363d49`, the marketing site's slate. It used to be carried and deliberately
+ *                not painted; it travels with the ground now, because 10.9:1 on white is
+ *                readable where 1.8:1 on the old near-black ground was not.
  *   primaryForeground  white: 6.06:1 on the sampled blue.
- *   accentForeground   the ground itself: 9.69:1 on the sampled green, where white is 2.04:1.
+ *   accentForeground   `#1c1c1c`: 8.34:1 on the sampled green, where white is 2.04:1. It was
+ *                `#0a0a0a` while the ground was near-black; on white it is an ink, not the
+ *                ground, and it stays a decision about the green rather than a copy of a token.
  *   navActive    the blue, under the role the sidebar paints the active nav with.
  *
  * `logo` stays a media path (D-P2-1): the file is registered in `data/media.ts` as
@@ -59,12 +58,12 @@ export const alignSynchBrand: Brand = zBrand.parse({
   domain: "alignsynch.com",
   logo: "/brand/as2-logo_v2_cl.png",
   colors: {
-    background: "hsl(0 0% 3.9%)",
+    background: "#ffffff",
     foreground: "#363d49",
     primary: "#156898",
     primaryForeground: "#ffffff",
     accent: "#8dc63f",
-    accentForeground: "#0a0a0a",
+    accentForeground: "#1c1c1c",
     navActive: "#156898",
   },
   supportEmail: "alignsynch@riolabs.ai",

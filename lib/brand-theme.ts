@@ -16,12 +16,13 @@
  *      pages renders the bytes it rendered before this module existed. Identity comparison
  *      would have been enough for that, but the per-token rule also states the intent: a
  *      skin overrides what it owns.
- *   2. **Only the accent tokens.** `primary` and `accent` (and their foregrounds) are what
- *      the logo is *for* — the sampled blue and green. `background` and `foreground` are
- *      the ground and the ink, and the card pins both to the app's theme: overriding the
- *      ink with the marketing slate (`#363d49`) on a dark ground is 1.8:1 and unreadable,
- *      and overriding the ground would be the second theme the card forbids. They stay
- *      data the record carries; `data/brands/alignsynch.ts` says so at the field.
+ *   2. **The ground and the ink too.** `background` and `foreground` travel with the accents
+ *      (issue #157). AlignSynch's mark is black ink on white — the logo is 53.7% pure
+ *      `#000000` — so a near-black ground erased two thirds of the mark, and the brand's
+ *      slate `#363d49` ink measured 1.8:1 on that ground. The record's ground and ink are
+ *      what the page paints now; `data/brands/alignsynch.ts` says so at the fields. The
+ *      guard against a second theme is rule 1, not a shorter list: the template's values
+ *      are skipped, so its markup still carries no `style` attribute.
  *   3. **No `navActive`.** It is the one colour in the schema that is not a custom property
  *      (the sidebar paints it as a Tailwind palette step), so there is no `var(--nav-active)`
  *      to set. Wiring it means changing the class the sidebar writes, which is a different
@@ -40,6 +41,8 @@ import { quizHubBrand } from "@/data/brand";
 
 /** The brand colours that paint, and the custom property each one resolves to. */
 const PAINTED: readonly (readonly [keyof BrandColors, string])[] = [
+  ["background", "background"],
+  ["foreground", "foreground"],
   ["primary", "primary"],
   ["primaryForeground", "primary-foreground"],
   ["accent", "accent"],
