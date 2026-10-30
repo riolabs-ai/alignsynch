@@ -14,7 +14,7 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **41** — 27 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 225 files under `components/`, 221 of them `.tsx`
+- component domains: **32** — 226 files under `components/`, 222 of them `.tsx`
 - route handlers: **5** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 9 · **fixture** 50 · **db** 9 · **live** 5
 - templates: Both templates 19 · AlignSynch 10 · QuizHub 42 · No template yet 2
@@ -116,8 +116,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - routes: none — no route imports this domain today
 
 - `components/profile` — **fixture**
-  - capability: The public profile in ten parts: header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.
-  - files (10): `message-modal.tsx`, `profile-achievements.tsx`, `profile-activity.tsx`, `profile-created-quizzes.tsx`, `profile-followers.tsx`, `profile-following.tsx`, `profile-header.tsx`, `profile-quiz-history.tsx`, `profile-stats.tsx`, `user-profile.tsx`
+  - capability: The public profile in ten parts: cover, header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.
+  - files (11): `message-modal.tsx`, `profile-achievements.tsx`, `profile-activity.tsx`, `profile-cover.tsx`, `profile-created-quizzes.tsx`, `profile-followers.tsx`, `profile-following.tsx`, `profile-header.tsx`, `profile-quiz-history.tsx`, `profile-stats.tsx`, `user-profile.tsx`
   - routes (1): `/profile/[username]`
 
 - `components/support` — **fixture**
