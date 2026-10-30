@@ -27,7 +27,7 @@ landmarks (6)
   main           1
   navigation     3
 
-links (27 unique, 43 total)
+links (26 unique, 42 total)
   #                                                    1
   /                                                    2
   /affiliate                                           1
@@ -40,7 +40,6 @@ links (27 unique, 43 total)
   /daily-challenge                                     1
   /dashboard/user?tab=wallet                           1
   /explore                                             1
-  /leaderboard                                         1
   /news                                                1
   /news/10-strategies-for-creating-engaging-quizzes    2
   /news/ai-powered-quiz-creation-tools                 2
@@ -57,8 +56,8 @@ links (27 unique, 43 total)
   /tournaments                                         1
 
 counts
-  elements  711
-  images    12
+  elements  740
+  images    0
   buttons   18
   inputs    2
-  classes   252 (sha 66e42ce798a2)
+  classes   251 (sha 59820b1f8541)

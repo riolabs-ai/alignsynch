@@ -44,8 +44,8 @@ links (10 unique, 11 total)
   /support                                             1
 
 counts
-  elements  445
-  images    7
+  elements  457
+  images    3
   buttons   26
   inputs    3
   classes   245 (sha 79903efb50da)

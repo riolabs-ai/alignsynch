@@ -191,3 +191,32 @@ export function summarize(html: string, route: string, brand: string): string {
 
   return `${lines.join("\n")}\n`;
 }
+
+/**
+ * The committed artifact for a route whose surface is **off**: a declared 404, not a render (#175).
+ *
+ * `document` is what the manifest hashes and what the failure artifact holds; `summary` is what a
+ * reviewer reads. Both name the flag, so the pair is a statement of *why* there is no page — and
+ * the day the flag is turned on, the hash moves and the summary's `outcome` line changes from a
+ * 404 to headings, which is the diff that asks for a decision rather than hiding one.
+ */
+export function absentRender(
+  route: string,
+  brand: string,
+  flag: string,
+): { document: string; summary: string } {
+  const document = `route  ${route}\nbrand  ${brand}\noutcome  404\nflag  ${flag}\n`;
+  const summary = [
+    `route  ${route}`,
+    `brand  ${brand}`,
+    "",
+    `outcome  404 — ${flag} is off (data/flags.ts)`,
+    "",
+    "This route is in the parity list and currently renders nothing: the surface is flagged",
+    "off, so the page calls notFound() before reading anything. Turning the flag on makes",
+    'this hash move to a rendered page — run `pnpm parity:update --reason "…"` and drop',
+    "`disabledByFlag` from tests/parity/routes.ts.",
+  ].join("\n");
+
+  return { document, summary: `${summary}\n` };
+}

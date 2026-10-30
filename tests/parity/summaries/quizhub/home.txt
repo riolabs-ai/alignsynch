@@ -84,7 +84,7 @@ landmarks (6)
   main           1
   navigation     2
 
-links (78 unique, 108 total)
+links (78 unique, 107 total)
   #                                                    8
   /                                                    2
   /affiliate                                           2
@@ -123,7 +123,7 @@ links (78 unique, 108 total)
   /dashboard/user                                      1
   /dashboard/user?tab=wallet                           1
   /explore                                             2
-  /leaderboard                                         3
+  /leaderboard                                         2
   /news                                                1
   /pricing                                             2
   /profile/alexjohnson                                 2
@@ -165,8 +165,8 @@ links (78 unique, 108 total)
   /tournaments                                         1
 
 counts
-  elements  2426
-  images    71
+  elements  2589
+  images    24
   buttons   42
   inputs    3
-  classes   599 (sha 916f242487e9)
+  classes   598 (sha 006a178d56b5)

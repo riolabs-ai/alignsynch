@@ -44,8 +44,9 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it, vi } from "vitest";
 
 import { freezeClock, normalize, renderRoute } from "./harness";
-import { parityRoutes } from "./routes";
-import { summarize } from "./summary";
+import { parityRoutes, type ParityRoute } from "./routes";
+import { absentRender, summarize } from "./summary";
+import { isEnabled } from "@/lib/flags";
 
 /**
  * The brand this process is. Set by `scripts/parity.mjs`, alongside `BRAND` — which is what
@@ -197,21 +198,36 @@ function hash(document: string): string {
 const computed: { route: string; brand: string; sha: string }[] = [];
 
 /**
- * Write the render that failed, so the failure is diagnosable from the CI artifact rather than
- * only from a 64-character hash. Both files are named in the assertion message.
+ * Does this route answer 404 right now?
+ *
+ * Only asked for a route that declares `disabledByFlag` in `routes.ts`, and only Next's own
+ * not-found counts: any other throw (a fixture that stopped resolving, a render error) propagates
+ * and fails the run, which is the guard that keeps a broken page from being pinned as "absent".
  */
-async function writeArtifacts(
-  brand: string,
-  route: string,
-  slug: string,
-  document: string,
-): Promise<string[]> {
+async function rendersNotFound(route: ParityRoute): Promise<boolean> {
+  try {
+    await renderRoute(route.page, route.params, route.route);
+    return false;
+  } catch (error) {
+    const digest = (error as { digest?: unknown }).digest;
+    return typeof digest === "string" && digest.startsWith("NEXT_HTTP_ERROR_FALLBACK;404");
+  }
+}
+
+type Artifact = { document: string; summary: string; extension: string };
+
+/**
+ * Write the render (or the declared 404) that failed, so the failure is diagnosable from the CI
+ * artifact rather than only from a 64-character hash. Both paths are named in the assertion
+ * message; the summary is the same text the committed file carries.
+ */
+async function writeArtifacts(brand: string, slug: string, artifact: Artifact): Promise<string[]> {
   await mkdir(`${ARTIFACTS}/${brand}`, { recursive: true });
-  const htmlFile = `${ARTIFACTS}/${brand}/${slug}.html`;
+  const documentFile = `${ARTIFACTS}/${brand}/${slug}.${artifact.extension}`;
   const summaryFile = `${ARTIFACTS}/${brand}/${slug}.summary.txt`;
-  await writeFile(htmlFile, document, "utf8");
-  await writeFile(summaryFile, summarize(document, route, brand), "utf8");
-  return [htmlFile, summaryFile];
+  await writeFile(documentFile, artifact.document, "utf8");
+  await writeFile(summaryFile, artifact.summary, "utf8");
+  return [documentFile, summaryFile];
 }
 
 describe("brand parity", () => {
@@ -236,25 +252,54 @@ describe("brand parity", () => {
     it(`${route.route} — ${brand}`, async () => {
       freezeClock();
 
-      const html = await renderRoute(route.page, route.params, route.route);
-      expect(html).toContain(NAMES[brand].own);
-      expect(html).not.toContain(NAMES[brand].other);
+      let artifact: Artifact;
 
-      // The same tree rendered twice must produce the same bytes. Without this the manifest is a
-      // flaky comparison, and the failure would be blamed on the next honest commit instead of on
-      // the clock: `/quiz/[id]` is the route that reads it, which is what `freezeClock()` is for.
-      const document = normalize(html);
-      expect(normalize(await renderRoute(route.page, route.params, route.route))).toBe(document);
+      if (route.disabledByFlag !== undefined) {
+        // A surface that is off (#175). The two halves of the claim are asserted separately:
+        // the flag resolver says off, and the page really throws `notFound()` — a page that
+        // silently rendered an empty shell would pass a hash comparison and fail a user.
+        const flag = route.disabledByFlag;
+        expect(
+          isEnabled(flag),
+          `${brand} ${route.route}: data/flags.ts now has "${flag}" on, so the route renders ` +
+            "again — drop `disabledByFlag` from tests/parity/routes.ts and run " +
+            '`pnpm parity:update --reason "…"` so the hash pins the page instead of the 404',
+        ).toBe(false);
 
-      const sha = hash(document);
-      const summary = summarize(document, route.route, brand);
+        expect(
+          await rendersNotFound(route),
+          `${brand} ${route.route} declares disabledByFlag "${flag}" but the route rendered — ` +
+            "either the page stopped honouring the flag (a defect) or the declaration is stale",
+        ).toBe(true);
+
+        const absent = absentRender(route.route, brand, flag);
+        artifact = { ...absent, extension: "txt" };
+      } else {
+        const html = await renderRoute(route.page, route.params, route.route);
+        expect(html).toContain(NAMES[brand].own);
+        expect(html).not.toContain(NAMES[brand].other);
+
+        // The same tree rendered twice must produce the same bytes. Without this the manifest is
+        // a flaky comparison, and the failure would be blamed on the next honest commit instead of
+        // on the clock: `/quiz/[id]` is the route that reads it, which is `freezeClock()`'s job.
+        const document = normalize(html);
+        expect(normalize(await renderRoute(route.page, route.params, route.route))).toBe(document);
+
+        artifact = {
+          document,
+          summary: summarize(document, route.route, brand),
+          extension: "html",
+        };
+      }
+
+      const sha = hash(artifact.document);
       computed.push({ route: route.route, brand, sha });
 
       const summaryFile = `${SUMMARIES}/${brand}/${route.slug}.txt`;
 
       if (UPDATE) {
         await mkdir(dirname(summaryFile), { recursive: true });
-        await writeFile(summaryFile, summary, "utf8");
+        await writeFile(summaryFile, artifact.summary, "utf8");
         console.log(`updated  ${brand} ${route.route} ${sha.slice(0, 12)}`);
         return;
       }
@@ -263,27 +308,22 @@ describe("brand parity", () => {
       const expected = committed.get(`${route.route}\u0000${brand}`);
 
       if (expected === undefined) {
-        const [htmlFile] = await writeArtifacts(brand, route.route, route.slug, document);
+        const [documentFile] = await writeArtifacts(brand, route.slug, artifact);
         throw new Error(
           `${brand} ${route.route} has no line in tests/parity/manifest.txt (computed ${sha}). ` +
             `Run \`pnpm parity:update --reason "…"\` and say in the PR which routes moved and why. ` +
-            `Render: ${htmlFile}`,
+            `Render: ${documentFile}`,
         );
       }
 
       if (expected !== sha) {
-        const [htmlFile, summaryArtifact] = await writeArtifacts(
-          brand,
-          route.route,
-          route.slug,
-          document,
-        );
+        const [documentFile, summaryArtifact] = await writeArtifacts(brand, route.slug, artifact);
         expect(
           sha,
           `${brand} ${route.route} drifted: rendered ${sha}, manifest says ${expected}. ` +
             `A rendered byte changed. If it is intended, run \`pnpm parity:update --reason "…"\` ` +
             `and say in the PR which routes moved and why; if it is not, this is the bug. ` +
-            `Render: ${htmlFile} · summary: ${summaryArtifact}`,
+            `Render: ${documentFile} · summary: ${summaryArtifact}`,
         ).toBe(expected);
       }
 
@@ -295,7 +335,7 @@ describe("brand parity", () => {
       ).toBeDefined();
 
       expect(
-        summary,
+        artifact.summary,
         `${brand} ${route.route} renders the same bytes as the manifest but its summary ` +
           `(headings, landmarks, links, counts) is stale — run \`pnpm parity:update --reason "…"\``,
       ).toBe(committedSummary);

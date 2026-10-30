@@ -52,6 +52,26 @@ bytes in the artifact are the bytes that were hashed.
 The committed `summaries/<brand>/<route>.txt` is compared too. A summary that no longer matches its
 own render is a stale generated file, not a mystery: the same `pnpm parity:update` rewrites both.
 
+## A route that is switched off is pinned as a 404, not dropped
+
+`/leaderboard` is in the list and currently renders nothing: `community.leaderboard` is off in
+`data/flags.ts` (#175), so the page calls `notFound()` before reading anything. The route declares
+that in `routes.ts` (`disabledByFlag`), and the suite asserts both halves — the resolver says off,
+and the page really throws Next's not-found:
+
+```
+route  /leaderboard
+brand  alignsynch
+
+outcome  404 — community.leaderboard is off (data/flags.ts)
+```
+
+The declared 404 is what the manifest hashes, so turning the flag on moves the hash and turns the
+summary into a rendered page: a reviewer gets that decision instead of a surface quietly vanishing
+from the list. Only a route that _names_ its flag may 404 — any other not-found (a fixture that
+stopped resolving) still fails the run, which is the guard that keeps a broken page from being
+pinned as "absent".
+
 ## Why a hash and a summary, and not HTML
 
 Fourteen full-page snapshots were 1.4 MB (`/` alone 327 KB). They caught drift — and every card

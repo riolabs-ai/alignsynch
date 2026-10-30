@@ -19,7 +19,7 @@ landmarks (6)
   main           1
   navigation     2
 
-links (18 unique, 19 total)
+links (17 unique, 18 total)
   #                                                    1
   /                                                    2
   /affiliate                                           1
@@ -32,7 +32,6 @@ links (18 unique, 19 total)
   /daily-challenge                                     1
   /dashboard/user?tab=wallet                           1
   /explore                                             1
-  /leaderboard                                         1
   /news                                                1
   /pricing                                             1
   /quiz-discussions                                    1
@@ -40,8 +39,8 @@ links (18 unique, 19 total)
   /tournaments                                         1
 
 counts
-  elements  656
+  elements  646
   images    0
   buttons   9
   inputs    1
-  classes   231 (sha cacfcd76a0cf)
+  classes   230 (sha 4a1d4c63cdc8)
