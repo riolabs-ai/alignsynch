@@ -15,13 +15,15 @@ work holds up: no hydration-mismatch family (`#418/#425/#423`), no dead asset pa
 
 Five defects found (details + GitHub issues below):
 
-| # | Severity | Category | One line |
-| - | -------- | -------- | -------- |
-| 1 | High | Visual / Functional | Mobile sidebar never hides — covers content on every page at <1280 px |
-| 2 | High | Content | Campaign overlay never renders — catalog numbers everywhere (window is 21 months in the past) |
-| 3 | Medium | Functional | `/profile/<username>` ignores the username; always renders hardcoded Alex Johnson |
-| 4 | Medium | Functional | `/categories/`, `/news/`, `/tournaments/` return 200 with fallback content for unknown ids |
-| 5 | Low | Content | Default `<title>` is the placeholder "Quiz Making Website - Play & Earn Money" |
+| # | Severity | Category | Issue | One line |
+| - | -------- | -------- | ------ | -------- |
+| 1 | High | Visual / Functional | #109 | Mobile sidebar never hides — covers content on every page at <1280 px |
+| 2 | High | Content | #110 | Campaign overlay never renders — catalog numbers everywhere (window is 21 months in the past) |
+| 3 | Medium | Functional | #111 | `/profile/<username>` ignores the username; always renders hardcoded Alex Johnson |
+| 4 | Medium | Functional | #112 | `/categories/`, `/news/`, `/tournaments/` return 200 with fallback content for unknown ids |
+| 5 | Low | Content | #113 | Default `<title>` is the placeholder "Quiz Making Website - Play & Earn Money" |
+
+PR: #108 · `main` sha tested: `f5e1b00a2d1fe59419fcb5f2fe0d9eff6dfbf3e9`
 
 ## Route-by-route table
 
