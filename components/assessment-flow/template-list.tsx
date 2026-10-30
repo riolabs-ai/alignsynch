@@ -104,7 +104,7 @@ export function TemplateList({
 
                 <button
                   type="submit"
-                  className="justify-self-start rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+                  className="justify-self-start rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action/90"
                 >
                   {itemLabel(create, "submit")}
                 </button>

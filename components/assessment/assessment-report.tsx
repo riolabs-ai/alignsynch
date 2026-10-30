@@ -10,6 +10,12 @@
  * It takes the projection rather than the records so the render is testable in a node
  * environment: `tests/assessment-report.test.ts` renders this with `renderToStaticMarkup`
  * and reads the row attributes back out of the markup.
+ *
+ * The filled notch is `bg-action`, not the purple 600 step (issue #187): this is the screen a
+ * visitor lands on after an assessment, and 28 purple dots on it were the loudest palette leak
+ * in the AlignSynch build — the `assessment-flow` components this card owns are the write half
+ * of the same product, so leaving the read half purple would have moved the leak one route to
+ * the right. The unfilled notch stays `bg-gray-200`: it is a neutral ground, not a brand colour.
  */
 import type { OpinionKind } from "@/content/assessment";
 import type { AspectReportRow, AssessmentReport, ReportedParty } from "@/lib/assessment-report";
@@ -53,7 +59,7 @@ function Notches({
             key={notch}
             className={cn(
               "h-2.5 w-2.5 rounded-full",
-              notch === value ? "bg-purple-600" : "bg-gray-200 dark:bg-gray-700",
+              notch === value ? "bg-action" : "bg-gray-200 dark:bg-gray-700",
             )}
           />
         ))}

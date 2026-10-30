@@ -9,6 +9,14 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-indigo-500 text-white hover:bg-indigo-600",
+        /**
+         * The brand's own interactive colour (#187), for a call to action on a page whose
+         * chrome has already moved to tokens. `default` and `gradient` above and below still
+         * carry palette steps: they are drawn across the home, affiliate and profile surfaces
+         * (stages 2 and 3 of issue #187), and re-pointing them here would repaint every one of
+         * those pages in the same commit — a colour change this card cannot verify.
+         */
+        action: "bg-action text-action-foreground hover:bg-action/90",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
           "border border-input text-primary bg-background hover:bg-accent hover:text-accent-foreground",

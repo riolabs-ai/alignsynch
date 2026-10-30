@@ -60,6 +60,9 @@ export const quizHubBrand: Brand = zBrand.parse({
     primaryForeground: "hsl(0 0% 98%)",
     accent: "hsl(0 0% 96.1%)",
     accentForeground: "hsl(0 0% 9%)",
+    /** `indigo-500` — the step the default button and the active nav already painted (#187). */
+    action: "#6366f1",
+    actionForeground: "#ffffff",
     navActive: "#6366f1",
   },
   supportEmail: "quizhub@riolabs.ai",

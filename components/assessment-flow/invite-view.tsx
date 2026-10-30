@@ -53,7 +53,7 @@ export function InviteView({
           <form action={claimPath(token)} method="post" className="mt-6">
             <button
               type="submit"
-              className="rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+              className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action/90"
             >
               {itemLabel(sectionOf(copy, "claim"), "claim")}
             </button>
