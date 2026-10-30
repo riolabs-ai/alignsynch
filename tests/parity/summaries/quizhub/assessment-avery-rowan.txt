@@ -1,0 +1,46 @@
+route  /assessment/avery-rowan
+brand  quizhub
+
+headings (10)
+  h2  "Recent Messages"
+  h2  "Notifications"
+  h3  "New"
+  h3  "Earlier"
+  h1  "Relationship Basics"
+  h2  "How much time do you spend together in a normal week?"
+  h2  "How is the work of the household divided?"
+  h2  "How are money and the decisions about it handled?"
+  h2  "When there is a disagreement, how is it raised?"
+  h2  "How often do you show affection?"
+
+landmarks (6)
+  banner         2
+  complementary  1
+  main           1
+  navigation     2
+
+links (17 unique, 18 total)
+  #                                                    1
+  /                                                    2
+  /affiliate                                           1
+  /battle                                              1
+  /categories                                          1
+  /chat                                                1
+  /create/editor                                       1
+  /create/generator                                    1
+  /creator-tips                                        1
+  /daily-challenge                                     1
+  /dashboard/user?tab=wallet                           1
+  /explore                                             1
+  /news                                                1
+  /pricing                                             1
+  /quiz-discussions                                    1
+  /support                                             1
+  /tournaments                                         1
+
+counts
+  elements  646
+  images    0
+  buttons   9
+  inputs    1
+  classes   230 (sha 4a1d4c63cdc8)

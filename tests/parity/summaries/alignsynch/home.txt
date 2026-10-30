@@ -1,0 +1,46 @@
+route  /
+brand  alignsynch
+
+headings (17)
+  h2  "Recent Messages"
+  h3  "No messages"
+  h2  "Notifications"
+  h3  "No notifications"
+  h1  "How do you feel, against how they feel?"
+  h2  "Two questions, asked of both of you"
+  h2  "Four templates"
+  h3  "Relationship Basics"
+  h3  "Staff &amp; Manager"
+  h3  "Parent &amp; Child"
+  h3  "Untitled Relationship"
+  h2  "Two families"
+  h3  "Business"
+  h3  "Personal"
+  h3  "Quick Links"
+  h3  "Contact"
+  h3  "Subscribe to our newsletter"
+
+landmarks (6)
+  banner         1
+  complementary  1
+  contentinfo    1
+  main           1
+  navigation     2
+
+links (9 unique, 23 total)
+  #                                                    8
+  /                                                    2
+  /#questions                                          2
+  /#templates                                          2
+  /assessment/avery-rowan                              2
+  /assessment/marco-priya                              2
+  /assessment/ruth-sam                                 2
+  /settings                                            1
+  /support                                             2
+
+counts
+  elements  314
+  images    2
+  buttons   10
+  inputs    2
+  classes   299 (sha 791638aeccaa)

@@ -1,0 +1,35 @@
+route  /assessment/avery-rowan
+brand  alignsynch
+
+headings (10)
+  h2  "Recent Messages"
+  h3  "No messages"
+  h2  "Notifications"
+  h3  "No notifications"
+  h1  "Relationship Basics"
+  h2  "How much time do you spend together in a normal week?"
+  h2  "How is the work of the household divided?"
+  h2  "How are money and the decisions about it handled?"
+  h2  "When there is a disagreement, how is it raised?"
+  h2  "How often do you show affection?"
+
+landmarks (6)
+  banner         2
+  complementary  1
+  main           1
+  navigation     2
+
+links (6 unique, 7 total)
+  #                                                    1
+  /                                                    2
+  /#questions                                          1
+  /#templates                                          1
+  /settings                                            1
+  /support                                             1
+
+counts
+  elements  447
+  images    1
+  buttons   8
+  inputs    1
+  classes   190 (sha 2b09ccf3c835)
