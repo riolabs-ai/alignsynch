@@ -2,6 +2,7 @@ import { categoriesData } from "@/components/categories/categories-data";
 import { CategoryDetailPage } from "@/components/categories/category-detail-page";
 import { categoryDetailPageCopy } from "@/data/pages/category-detail";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { use } from "react";
 
 // Was `export function Metadata(...)` — a component-shaped function with a name
@@ -29,9 +30,19 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * `/categories/[slug]` — the record gate is the page's, not the view's (issue #112).
+ *
+ * An unknown slug used to fall through to `CategoryDetailPage` with
+ * `categoryName: undefined`, which rendered the whole "explore all" wall under a 200
+ * while `generateMetadata` already answered "Category Not Found". Now the page 404s and
+ * `app/not-found.tsx` renders, so the status, the title and the body agree.
+ */
 export default function CategoryRoute({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const category = categoriesData.find((cat) => cat.slug === slug);
+
+  if (!category) notFound();
 
   return <CategoryDetailPage categoryName={category} copy={categoryDetailPageCopy} />;
 }

@@ -42,6 +42,15 @@ const nextConfig = {
       { source: "/analytics", destination: "/dashboard/user?tab=my-quizzes", permanent: true },
       { source: "/signup", destination: "/register", permanent: true },
       { source: "/testimonials/jessica.png", destination: "/avatars/mind.webp", permanent: true },
+      /**
+       * The tournament CTA band's two buttons (issue #112). They were never tournament
+       * ids — they only reached a page because `/tournaments/[id]` answered every value
+       * with the mock, which is the 200-on-unknown-id bug. With the route gating on
+       * `components/tournaments/tournament-ids.ts` they would 404, so the intent paths
+       * point at the route that does the job: signing up, and the editor.
+       */
+      { source: "/tournaments/register", destination: "/register", permanent: true },
+      { source: "/tournaments/create", destination: "/create/editor", permanent: true },
     ];
   },
 };
