@@ -54,6 +54,8 @@ import { zBrand, type Brand } from "../../content/brand";
 export const alignSynchBrand: Brand = zBrand.parse({
   name: "AlignSynch",
   legalName: "AlignSynch",
+  description:
+    "See how you feel against how they feel, and how each of you wishes it to be — the Gap is the conversation worth having.",
   domain: "alignsynch.com",
   logo: "/brand/as2-logo_v2_cl.png",
   colors: {
