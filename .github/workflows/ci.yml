@@ -28,8 +28,30 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
+      # The lane classifier (scripts/gate-lanes.sh) diffs `$GATE_REF...HEAD` —
+      # default `origin/main`, three-dot, so it needs the ref AND a real merge
+      # base with it. actions/checkout's default depth-1, single-branch clone has
+      # neither: `origin/main` simply did not exist in the CI clone, so
+      # `GATE_LANE=auto` resolved to `lane=code (… no origin/main to diff
+      # against — full gate (conservative))` on every single run and the lane
+      # mechanism was dead in the only place it is enforced. Full history is
+      # ~12 MB here (198 commits), which is what makes the ref resolvable.
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Only diagnostics + a belt-and-braces ref. A failed fetch must NOT fail
+      # the job: a missing base ref is a reason to run the FULL gate, never a
+      # reason to skip steps or to stop the run (see the fallback in
+      # scripts/gate-lanes.sh::resolve_lane).
+      - name: Fetch the gate's diff base (origin/main)
+        run: |
+          if git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main; then
+            echo "GATE_REF=origin/main -> $(git rev-parse --short origin/main)"
+          else
+            echo "::warning title=Lane classifier::origin/main is not in this clone — verify.sh falls back to lane=code (full gate)"
+          fi
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
@@ -48,9 +70,10 @@ jobs:
       # runtime. A check that exists only in this file is a red push; a check that
       # exists only in the script is a red CI run. One definition, two callers.
       #
-      # GATE_LANE=auto is the lane classifier (docs/REPO-LAYERS.md). On a
-      # depth-1 checkout there is no origin/main to diff against, so auto
-      # resolves to the code lane here: CI is the last gate and runs everything.
+      # GATE_LANE=auto is the lane classifier (docs/REPO-LAYERS.md). It only
+      # classifies because the checkout above carries origin/main; the fallback
+      # is unchanged and deliberately conservative — no ref, no diff, or a
+      # non-fast-forward base means lane=code and the full gate.
       - name: verify (bash scripts/verify.sh)
         env:
           GATE_LANE: auto

@@ -35,9 +35,11 @@ Markdown is formatter-gated too: Biome 2 formats `.md`, so a hand-wrapped doc ca
 docs-only change runs `git diff --check` + relative links + biome (~2 s), a `content/**`
 change runs typecheck + `data:check` and **skips `next build`**, and only
 `app|components|lib|hooks` pays for the build. `GATE_LANE=full bash scripts/verify.sh`
-forces the full gate. CI still runs one job named `typecheck / lint / build`, and on CI
-`auto` resolves to the code lane because a depth-1 checkout has no `origin/main` to diff
-against.
+forces the full gate. CI still runs one job named `typecheck / lint / build`, and it
+classifies in that job: `ci.yml` checks out full history and fetches `origin/main`, so
+`GATE_REF` resolves there too. Without that ref the gate falls back to `lane=code` — which
+is what every CI run did until `.github/workflows/ci.yml` was fixed, because
+`actions/checkout`'s default depth-1 clone contains no `origin/main`.
 
 `next build` is capped at `QUIZHUB_BUILD_SLOTS` (default 2) concurrent builds by `flock`
 under `~/.cache/quizhub/`: eight workers compiling at once took load from ~6 to 39.5 and
