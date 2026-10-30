@@ -1,6 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import type { PageCopy } from "@/content/pages";
+import type { BrandMark } from "@/lib/brand-mark";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
   Award,
@@ -22,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { useSidebar } from "./sidebar-context";
@@ -33,7 +35,7 @@ import { useSidebar } from "./sidebar-context";
  * 15 route references out of the link gate without failing anything. Words move into the
  * fixture; destinations stay where the checker can see them.
  */
-export function AppSidebar({ copy }: { copy: PageCopy }) {
+export function AppSidebar({ copy, mark }: { copy: PageCopy; mark?: BrandMark }) {
   const nav = sectionOf(copy, "nav");
   const pathname = usePathname();
 
@@ -62,8 +64,43 @@ export function AppSidebar({ copy }: { copy: PageCopy }) {
       <div
         className={`flex h-16 items-center max-xl:justify-between gap-2 border-b px-4 ${collapsed ? "justify-center" : "justify-between"}`}
       >
-        <Link href="/" className="flex justify-center items-center gap-2">
-          <BookOpen className="h-6 w-6 text-primary" />
+        <Link
+          href="/"
+          aria-label={mark ? copy.heading : undefined}
+          className="flex justify-center items-center gap-2"
+        >
+          {mark ? (
+            /**
+             * The brand's mark, cropped out of its lockup.
+             *
+             * `as2-logo_v2_cl.png` is one 818×127 file: the AS monogram in the first ~175
+             * columns, then the wordmark. Its wordmark is black "Align" beside gray
+             * "Synch", so on this near-black rail the black half is invisible and drawing
+             * the whole lockup would leave a ghost "Synch" floating right of the mark. The
+             * shell therefore draws the *mark* — the file at its natural height in a 40 px
+             * window (`h-7 w-10`), the rest clipped — and sets the full name in type beside
+             * it, which is what the brand asks for: the logo carries the motif, the record
+             * carries the name. `max-w-none` is load-bearing: Tailwind's preflight would
+             * otherwise cap the image at its 40 px container and scale it down instead of
+             * cropping it.
+             *
+             * `alt=""` because the wordmark beside it already says the name — a second
+             * description would make a screen reader read the brand twice — and the link
+             * carries `aria-label` so it still has a name when the rail is collapsed.
+             */
+            <span className="block h-7 w-10 shrink-0 overflow-hidden">
+              <Image
+                src={mark.src}
+                alt=""
+                width={mark.width}
+                height={mark.height}
+                className="h-7 w-auto max-w-none"
+                priority
+              />
+            </span>
+          ) : (
+            <BookOpen className="h-6 w-6 text-primary" />
+          )}
           {!collapsed && <span className="text-xl font-bold">{copy.heading}</span>}
         </Link>
         <button

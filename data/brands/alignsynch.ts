@@ -1,18 +1,50 @@
 /**
- * The AlignSynch skin: the same product, a second brand record.
+ * The AlignSynch palette, sampled from the logo the brand actually ships.
  *
- * This file exists to prove the tree is a skin and not a name. Nothing here is a design
- * decision of its own — the card that adds this record does not design a theme, so `logo`
- * and `colors` are the QuizHub record's, and a skin that wants different ones changes
- * them here and nowhere else.
+ * This record used to be a copy of the QuizHub one, and its comment said so: no theme had
+ * been designed, so the skin borrowed the template's. The logo *is* the theme — an AS
+ * monogram in blue and silver, three green arrows under the S, "Synch" in gray — so this
+ * card stops describing the skin and reads its two accents out of the file.
  *
- * What it does own is identity: `AlignSynch` on `alignsynch.com`, and the brand's mailbox.
- * Both addresses are `alignsynch@riolabs.ai` — one mailbox per brand, on the template's
- * domain and not on the site's, because the site domain is what a page claims to be and
- * the mailbox is where a human answers (see `content/brand.ts`). The test the swap has to
- * pass is the crude one — a `BRAND=alignsynch` build whose prerendered pages contain no
- * `quizhub` in any case — so every value a page can print is spelled out here rather than
- * inherited from the record a page is not showing.
+ * Where the values come from, and why they are not typed here:
+ *
+ *   primary  `#156898` — the modal shade of blue in the monogram
+ *   accent   `#8dc63f` — the modal shade of the three arrows under the S
+ *
+ * `scripts/sample-brand-colors.mjs` decodes `public/brand/as2-logo_v2_cl.png`, keeps the
+ * opaque saturated pixels, splits them into a blue band (hue 180–260°) and a green one
+ * (60–170°), and takes the heaviest shade in each band. `pnpm data:check` runs it with
+ * `--check`, so the two hexes above are a copy of a measurement: re-export the logo and the
+ * gate fails until they are re-sampled, and a hex typed from memory fails immediately. The
+ * script prints the pixel counts and bounding boxes behind each value, so "the blue in the
+ * monogram" and "the green in the arrows" are checkable claims rather than adjectives.
+ *
+ * The other five keys are decisions, not samples:
+ *
+ *   background   the app's dark theme ground, `hsl(0 0% 3.9%)`. The logo is built to sit on
+ *                black — the monogram's interior is black and its silver outline is what
+ *                separates the mark from that ground — and the dark theme already exists, so
+ *                this record does not add a light one.
+ *   foreground   `#363d49`, the marketing site's slate — text, not brand. It is carried here
+ *                because `zBrandColors` has the key, but it is deliberately *not* painted
+ *                onto the dark ground: 1.8:1 against `hsl(0 0% 3.9%)` is unreadable, and
+ *                "the slates are the foreground" is a statement about the brand's type, not
+ *                a licence to override the theme's ink. `lib/brand-theme.ts` says the same
+ *                thing in code.
+ *   primaryForeground  white: 6.06:1 on the sampled blue.
+ *   accentForeground   the ground itself: 9.69:1 on the sampled green, where white is 2.04:1.
+ *   navActive    the blue, under the role the sidebar paints the active nav with.
+ *
+ * `logo` stays a media path (D-P2-1): the file is registered in `data/media.ts` as
+ * `brand.as2-logo_v2_cl` (E18 keeps the registry a bijection with `public/`), and the string
+ * here equals that entry's `src` — never a hotlink, never a URL.
+ *
+ * The lockup is a *light-ground* asset even where the card calls it a dark-ground one: its
+ * wordmark is black "Align" beside gray "Synch", so on near-black chrome the black half
+ * disappears and only "Synch" ghosts through. That is why the shell draws the monogram (the
+ * left fifth of the file, cropped in CSS) and sets the full name in type beside it —
+ * `lib/brand-mark.ts` and `components/layout/sidebar.tsx`. The committed PNG is the upstream
+ * export, unmodified.
  *
  * Imported by `data/brand.ts` (the resolver) and by nothing else. A screen never names a
  * brand module: it reads `brand`, which is the one the build selected.
@@ -23,17 +55,15 @@ export const alignSynchBrand: Brand = zBrand.parse({
   name: "AlignSynch",
   legalName: "AlignSynch",
   domain: "alignsynch.com",
-  // The theme is the other record's, and this card does not design one: a skin with its
-  // own palette changes these fields, not the components that paint with them.
-  logo: "/placeholder-logo.svg",
+  logo: "/brand/as2-logo_v2_cl.png",
   colors: {
-    background: "hsl(0 0% 100%)",
-    foreground: "hsl(0 0% 3.9%)",
-    primary: "hsl(0 0% 9%)",
-    primaryForeground: "hsl(0 0% 98%)",
-    accent: "hsl(0 0% 96.1%)",
-    accentForeground: "hsl(0 0% 9%)",
-    navActive: "#6366f1",
+    background: "hsl(0 0% 3.9%)",
+    foreground: "#363d49",
+    primary: "#156898",
+    primaryForeground: "#ffffff",
+    accent: "#8dc63f",
+    accentForeground: "#0a0a0a",
+    navActive: "#156898",
   },
   supportEmail: "alignsynch@riolabs.ai",
   affiliateEmail: "alignsynch@riolabs.ai",

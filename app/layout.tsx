@@ -2,6 +2,7 @@ import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { brand } from "@/data/brand";
+import { brandThemeVars } from "@/lib/brand-theme";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";
@@ -39,8 +40,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  /**
+   * The brand's accent tokens, as custom properties on `<html>`.
+   *
+   * An inline style, not a class and not a `<style>` block, for two reasons: it outranks
+   * both `:root` and `.dark` without `!important`, so the skin's `primary` is painted in
+   * both modes; and it is empty for the template brand — `{}` becomes `undefined` here, so
+   * the default build ships no `style` attribute at all and its markup is unchanged. What
+   * does and does not travel is `lib/brand-theme.ts`'s decision, including why the ground
+   * and the ink stay the theme's.
+   */
+  const brandVars = brandThemeVars(brand);
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      style={Object.keys(brandVars).length > 0 ? (brandVars as React.CSSProperties) : undefined}
+    >
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <TooltipProvider delayDuration={0}>
