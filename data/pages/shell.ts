@@ -295,7 +295,7 @@ export function shellCopy(brand: Brand): PageCopy {
         id: "footer-legal",
         items: [
           { id: "copyright", label: `${brand.name}. All rights reserved.` },
-          { id: "privacy", label: "Privacy Policy" },
+          { id: "privacy", label: "Privacy Notice" },
           { id: "terms", label: "Terms of Service" },
           { id: "cookies", label: "Cookie Policy" },
         ],
