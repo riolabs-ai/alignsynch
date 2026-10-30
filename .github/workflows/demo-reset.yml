@@ -14,12 +14,15 @@ name: Demo reset
 # concludes green. `scripts/demo-reset.mjs` exits 3 with the same explanation when it is run
 # without the key, so the local path and the CI path say the same thing.
 #
-# **The reset is `demo` and the parent is `demo-base`, never `production`.** The parent is the
-# demo's whole supply of data, so a parent of the live branch would copy production's rows and
-# real accounts onto the branch the public URL serves. The script refuses a parent that is the
-# project's default branch, by id, before writing anything; this workflow does not need its own
-# copy of that rule and must not grow one. The migration into the base is part of the script, not
-# a step here — hence no extra job, and `pnpm install` above is enough.
+# **The reset is `demo` and the source is `demo-base`, never `production`.** The source is the
+# demo's whole supply of data, so a source of the live branch would copy production's rows and
+# real accounts onto the branch the public URL serves. It is passed explicitly —
+# `DEMO_SOURCE_BRANCH` — because the `demo` branch was cut before `demo-base` existed and Neon
+# does not allow a branch to be re-parented, so its own parent is still `production`. The script
+# refuses a source that is the project's default branch, by id, before writing anything; this
+# workflow does not need its own copy of that rule and must not grow one. The migration into the
+# base is part of the script, not a step here — hence no extra job, and `pnpm install` above is
+# enough.
 
 on:
   schedule:
@@ -109,6 +112,10 @@ jobs:
           # explicitly so the script never has to guess from a list of one.
           NEON_PROJECT_ID: fragrant-glade-99460966
           DEMO_BRANCH: demo
+          # The schema-only base, named explicitly: `demo`'s own parent is still `production`
+          # because a branch cannot be re-parented, so the source is passed instead of inherited.
+          # The script refuses this value if it ever resolves to the project's default branch.
+          DEMO_SOURCE_BRANCH: demo-base
           # A scheduled run has no browser origin; the seed's sign-ups carry the app's own.
           DEMO_ORIGIN: ${{ vars.DEMO_ORIGIN || 'http://localhost:3000' }}
         run: node scripts/demo-reset.mjs
