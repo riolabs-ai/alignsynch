@@ -18,7 +18,14 @@
   "files": {
     // pnpm-lock.yaml is generated: pnpm writes its own YAML quoting, so
     // letting the formatter touch it turns every `pnpm install` into a diff.
-    "includes": ["**", "!pnpm-lock.yaml"]
+    //
+    // tests/parity/snapshots is generated too, by a *render* (#171): the HTML a
+    // component produces, not hand-written markup. Biome parses it as HTML and
+    // reports the components' own a11y lints against their output — every
+    // `<button>` shadcn renders without a `type` lands here a second time, in a
+    // file that `pnpm parity:update` rewrites byte for byte. Those buttons are
+    // already linted where they are written.
+    "includes": ["**", "!pnpm-lock.yaml", "!tests/parity/snapshots"]
   },
   "formatter": {
     "enabled": true,

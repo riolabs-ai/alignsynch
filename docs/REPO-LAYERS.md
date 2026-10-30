@@ -77,6 +77,7 @@ the commit) classifies what it is about to push. `GATE_REF` defaults to
 | `format:check`       | ✓    | ✓       | ✓      | ✓    |
 | `data:check`         |      | ✓       | ✓      | ✓    |
 | `test`               |      | ✓       | ✓      | ✓    |
+| `parity`             |      | ✓       | ✓      | ✓    |
 | `build` (next build) |      |         |        | ✓    |
 
 `test` is `pnpm test` — `vitest run` over `tests/**/*.test.ts`, the app-side units
@@ -87,6 +88,15 @@ fixtures that model describes, while vitest imports `lib/` and `data/` through t
 alias with no build step and asserts what the pages actually render. ~1.3 s for 4 files
 / 36 cases, so it rides in every lane that already pays for `data:check` and never in
 docs.
+
+`parity` is `pnpm parity` — the seven routes in `tests/parity/routes.ts` rendered under
+**both** brands and compared to committed snapshots (#171). It is a second process per
+brand (`data/brand.ts` resolves `BRAND` at import, which is what makes a brand a build
+constant), so the step is ~15 s. It rides in the same lanes as `test` for the same reason:
+a `content/` or `data/` edit changes rendered text exactly as a component edit does, and a
+lane that dropped it would hand a green local gate to a red CI run. The docs lane skips it
+— no rendered output depends on prose. Updating a snapshot is `pnpm parity:update` and a
+stated reason in the PR: [`tests/parity/README.md`](../tests/parity/README.md).
 
 Two deviations from the layer table, both in the same direction — a lane may be
 **deeper** than its row, never shallower:
@@ -131,20 +141,32 @@ Anything else (`GATE_LANE=docs`, a typo) is an error, not a silent `auto`.
 
 ## One CI job, four internal depths
 
-`ci.yml` still has exactly one job named **`typecheck / lint / build`**. It is
-not split into a docs job and a code job, and it will not be:
+`ci.yml` runs the gate as **one job per brand** — `typecheck / lint / build (quizhub)` and
+`typecheck / lint / build (alignsynch)` — and the required context is collected by a third job
+named exactly **`typecheck / lint / build`**. Inside each brand's job the four lanes are still
+internal depths of one script, not separate jobs:
 
 - the repository ruleset requires that exact context. A **skipped** job never
   reports a context, so a `paths:`-filtered docs job would leave every docs PR
   waiting on a check that never arrives — a permanent red;
-- a matrix (`.github/workflows` `strategy:`) has the same problem: the required
-  context is the job name, and one job name per lane means renaming the
-  requirement;
+- a matrix leg has the same problem, which is why the matrix was not added until the
+  aggregator existed: GitHub suffixes a leg's check-run name with its matrix values, so
+  neither leg reports `typecheck / lint / build`. The `gate` job does — `needs: [verify]`
+  with `if: always()` — and it runs no checks of its own. Renaming it, or giving it a
+  step, breaks branch protection or duplicates the gate; neither is a rename;
 - CI has no contention to relieve. The lanes were built because eight local
   workers compiling at once saturated this box; on a GitHub runner the win is
   the required check's wall time (19 s docs vs 59 s code, measured in
   `docs/GATE.md`), not throughput — which is another reason it belongs inside
   the job rather than in a second one.
+
+**Why two brands (#171).** The repo ships two products from one tree and CI compiled one of
+them, so "QuizHub is unchanged" was a convention nobody enforced. The matrix is one dimension
+on the existing job — `BRAND` is the only thing that differs, exactly like a lane — and both
+legs run `bash scripts/verify.sh` unchanged. `fail-fast: false` because a red lane is only
+informative next to the other one. Wall time is one build's, not two: the legs run in
+parallel. The cost is runner minutes, and the alternative is a brand that breaks silently.
+
 
 On CI `auto` could not classify at all until the `ci.yml` checkout was fixed,
 and that failure mode is worth keeping in view: `actions/checkout` fetches a

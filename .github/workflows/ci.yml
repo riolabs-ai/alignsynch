@@ -21,12 +21,33 @@ permissions:
 
 jobs:
   verify:
-    # The job name is load-bearing: required status checks match on it, so keep
-    # it stable even as the step list changes (the steps live in the script now).
-    name: typecheck / lint / build
-    # pinned OS: ubuntu-latest is migrating to Ubuntu 26 during 2026
+    # Name + matrix, and why both are the way they are (#171).
+    #
+    # The repo ships two brands and used to compile one. The gate now runs once per brand, as
+    # a matrix dimension on this job rather than as a second job, because the two lanes are one
+    # definition with one variable: every step below is the same, and `BRAND` is the only thing
+    # that differs — exactly like the lanes inside `verify.sh`.
+    #
+    # GitHub appends the matrix values to a leg's check-run name, so the two legs report as
+    # `typecheck / lint / build (quizhub)` and `… (alignsynch)`. The branch ruleset requires the
+    # context `typecheck / lint / build` (ruleset 26115314, integration 15368), and a required
+    # context that never reports blocks every merge forever — so `gate`, below, collects both
+    # legs under that exact name. That job is the load-bearing name; this one is the work.
+    name: typecheck / lint / build (${{ matrix.brand }})
+    strategy:
+      # Both lanes report even when one fails: "QuizHub is unchanged" is only meaningful next to
+      # the other brand's result.
+      fail-fast: false
+      matrix:
+        brand: [quizhub, alignsynch]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      # `data/brand.ts` reads this at import and `next.config.mjs` inlines it into the browser
+      # bundle, so it is the brand this whole lane builds and tests. `pnpm parity` re-sets it per
+      # process — it checks both brands in both lanes, which is redundant and deliberate: the
+      # gate script is identical in every lane.
+      BRAND: ${{ matrix.brand }}
     steps:
       # The lane classifier (scripts/gate-lanes.sh) diffs `$GATE_REF...HEAD` —
       # default `origin/main`, three-dot, so it needs the ref AND a real merge
@@ -97,3 +118,30 @@ jobs:
         env:
           GATE_LANE: auto
         run: bash scripts/verify.sh
+
+  gate:
+    # The required status check, and the only job whose name it must be.
+    #
+    # The ruleset on `main` requires the context `typecheck / lint / build`. A matrix leg cannot
+    # report that name — GitHub suffixes it with the matrix values — so without this job every
+    # PR would wait forever on a check nobody sends, which is the failure mode that makes a
+    # required context worse than no gate at all. `needs` + `always()` is what makes it report
+    # on every outcome: a leg that failed, a leg that was cancelled, both failed.
+    #
+    # It runs no checks of its own. Adding one here would be a second definition of the gate.
+    name: typecheck / lint / build
+    needs: [verify]
+    if: always()
+    # pinned OS: ubuntu-latest is migrating to Ubuntu 26 during 2026
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Both brand lanes are green
+        env:
+          # The aggregate of the matrix: `success` only when every leg succeeded.
+          VERIFY: ${{ needs.verify.result }}
+        run: |
+          echo "verify (both brands): $VERIFY"
+          if [ "$VERIFY" != "success" ]; then
+            echo "::error title=typecheck / lint / build::a brand lane did not pass ($VERIFY) — fix the failing lane; this check stays red until both brands are green"
+            exit 1
+          fi

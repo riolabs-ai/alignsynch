@@ -61,6 +61,16 @@
 # model. Two runners, one gate: the `test` step runs in every non-docs lane, directly
 # after `data:check`, and costs ~1.3 s in vitest (~2.7 s wall through pnpm) on 4 files.
 #
+# BRAND PARITY (#171) — `pnpm parity` renders the seven routes in `tests/parity/routes.ts`
+# under `BRAND=quizhub` and `BRAND=alignsynch` and compares each to a committed snapshot.
+# One brand per process (`data/brand.ts` resolves the flag at import, the way the build
+# inlines it), so `scripts/parity.mjs` spawns vitest twice: ~7 s per brand, ~15 s for the
+# step. It is a gate step and not a CI-only check, and it runs in every non-docs lane,
+# because a `data/` fixture edit changes rendered text exactly as a component edit does —
+# a lane that skipped it would hand a green local gate to a red CI run. The snapshots in
+# `tests/parity/snapshots/` are generated: rewriting one is `pnpm parity:update`, and the
+# PR that carries it says which routes moved and why (tests/parity/README.md).
+#
 # BUDGET — measured 2026-10-29, Node 24.22.0 / pnpm 12.16.1, warm node_modules,
 # on an 8-core box that was ALSO running other agents' builds (load 7–14), so
 # every row is "as measured under real fleet load", not on a quiet box:
@@ -430,6 +440,16 @@ if [ "$LANE" != "docs" ]; then
     run_step "test" pnpm test || fail
   else
     skip_step "test" "no test script in package.json"
+  fi
+
+  # Both brands, both snapshots (#171). Placed beside `test` rather than beside `build`
+  # because it renders, it does not compile: the step is ~15 s and a cheaper lane may pay
+  # that, which is why it is not part of the code lane's build. It cannot be dropped from a
+  # lane that changes content either — a fixture edit is exactly the drift this catches.
+  if has_script "parity"; then
+    run_step "parity (both brands render the committed snapshot)" pnpm parity || fail
+  else
+    skip_step "parity" "no parity script in package.json"
   fi
 fi
 
