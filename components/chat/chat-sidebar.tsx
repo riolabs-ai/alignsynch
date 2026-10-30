@@ -1,5 +1,6 @@
 "use client";
 
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,10 +21,8 @@ import {
   formatWeekdayShort,
 } from "@/content/core";
 import { Plus, Search } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 import type { Contact, Conversation } from "./chat-page";
-import { media } from "@/data/media";
 
 interface ChatSidebarProps {
   contacts: Contact[];
@@ -41,7 +40,6 @@ export function ChatSidebar({
   onNewConversation,
 }: ChatSidebarProps) {
   const [filter, setFilter] = useState<Filter>("all");
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isNewConversationDialogOpen, setIsNewConversationDialogOpen] = useState(false);
   const [searchContactQuery, setSearchContactQuery] = useState("");
 
@@ -159,14 +157,7 @@ export function ChatSidebar({
                   onClick={() => onConversationSelect(conversation.id)}
                 >
                   <div className="relative flex-shrink-0">
-                    <Image
-                      src={imageErrors[contact.id] ? media.placeholder.src : contact.avatar}
-                      alt={contact.name}
-                      width={48}
-                      height={48}
-                      className="rounded-full object-cover border border-border"
-                      onError={() => setImageErrors((prev) => ({ ...prev, [contact.id]: true }))}
-                    />
+                    <GeneratedAvatar name={contact.name} seed={contact.id} size={48} />
                     <span
                       className={cn(
                         "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background",
@@ -264,14 +255,7 @@ export function ChatSidebar({
                     onClick={() => handleNewConversation(contact.id)}
                   >
                     <div className="relative">
-                      <Image
-                        src={imageErrors[contact.id] ? media.placeholder.src : contact.avatar}
-                        alt={contact.name}
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        onError={() => setImageErrors((prev) => ({ ...prev, [contact.id]: true }))}
-                      />
+                      <GeneratedAvatar name={contact.name} seed={contact.id} size={40} />
                       <span
                         className={cn(
                           "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",

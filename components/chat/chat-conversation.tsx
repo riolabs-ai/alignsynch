@@ -1,12 +1,12 @@
 "use client";
 // Import cn function
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { formatDayHeading, formatDayKey, formatRelative } from "@/content/core";
 import { Archive, Info, MoreVertical, Phone, Search, Trash2, UserPlus, Video } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import {
   DropdownMenu,
@@ -17,7 +17,6 @@ import {
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
 import type { Contact, Conversation, Message } from "./chat-page";
-import { media } from "@/data/media";
 
 interface ChatConversationProps {
   conversation: Conversation;
@@ -34,7 +33,6 @@ export function ChatConversation({
 }: ChatConversationProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     scrollToBottom();
@@ -95,14 +93,7 @@ export function ChatConversation({
       <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center">
           <div className="relative">
-            <Image
-              src={avatarError ? media.placeholder.src : contact.avatar}
-              alt={contact.name}
-              width={40}
-              height={40}
-              className="rounded-full object-cover"
-              onError={() => setAvatarError(true)}
-            />
+            <GeneratedAvatar name={contact.name} seed={contact.id} size={40} />
             <span
               className={cn(
                 "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background",
@@ -188,7 +179,7 @@ export function ChatConversation({
                   message={message}
                   isOwn={message.senderId === "current-user"}
                   contactName={contact.name}
-                  contactAvatar={contact.avatar}
+                  contactSeed={contact.id}
                 />
               ))}
             </div>

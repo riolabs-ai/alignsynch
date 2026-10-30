@@ -32,12 +32,12 @@
  *     ISO instant by `content/core.ts` against `DEMO_NOW_ISO` — `lastActiveAt: "Yesterday"`
  *     is exactly the stored-label mistake D9 removed.
  *
- * Keys and files: `avatarKey` is a registry key (`avatars.alex`), never a path — E17 keeps
- * paths out of JSX, and a fixture that carried one would reintroduce them at the source.
- * `content/` must not import the generated registry (`data/media.ts`), so the key is a
- * string here and `data:check` **E24** holds it to a registered entry of kind `avatar`
- * whose file exists under `public/`. `data/players.ts` additionally narrows the key to the
- * avatar subset of `MediaKey` at authoring time, so a typo is a type error there too.
+ * Keys and files: a player carries **no avatar reference at all** (issue #152). The nine
+ * files under `public/avatars/` were two images repeated nine times, so nine people shared
+ * two faces; the avatar is now drawn by `components/media/generated-avatar.tsx` from the
+ * person's name and their stable `id`, which is why the identity fields are the only thing
+ * a face needs. There is no key to validate and no file to exist, so E24 no longer has an
+ * avatar rule — a drawn avatar cannot address the wrong file because it addresses none.
  *
  * Numbering: E20–E23 are reserved by `docs/P2-INVENTORY.md` for WU-5 / WU-3 / WU-4 / WU-6,
  * so the people and leaderboard joins continue the set as **E24**. Every object is
@@ -80,18 +80,11 @@ export const PLAYER_TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"] 
 export const zPlayerTier = z.enum(PLAYER_TIERS);
 export type PlayerTier = z.infer<typeof zPlayerTier>;
 
-/**
- * A media registry key: `avatars.alex`, `quiz.q1`, `how-it-works.create-quiz`. Derived from
- * the file path by `mediaKeyOf` (`scripts/media-refs.ts`), so this regex is the *shape* of a
- * key; whether the key exists is E24's job, not the schema's.
+/*
+ * `zMediaKeyRef` lived here — the string shape of a registry key — and went with `avatarKey`
+ * in issue #152: a player's avatar is drawn from `name` + `id`, so the model has no key to
+ * validate.
  */
-export const zMediaKeyRef = z
-  .string()
-  .min(1)
-  .regex(
-    /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/,
-    "must be a media registry key (path-derived, e.g. avatars.alex) — not a /path/file.png",
-  );
 
 /* ------------------------------------------------------------------ *
  * Player
@@ -123,8 +116,10 @@ export const zPlayer = z
     /** `/profile/<handle>`. Unique across players (E24) — two people, one URL is a bug. */
     handle: zId,
     name: z.string().min(1),
-    /** Registry key, not a path (see the module header). E24: registered, kind `avatar`, file exists. */
-    avatarKey: zMediaKeyRef,
+    /**
+     * No avatar field (issue #152): the face is `GeneratedAvatar` over `name` + `id`, because
+     * every avatar file the roster could name was one of two images shared by nine people.
+     */
     level: z.number().int().positive(),
     /** ISO-3166 display name (`United States`) — the visible label next to the flag. */
     country: z.string().min(1).optional(),

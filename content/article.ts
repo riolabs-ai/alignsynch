@@ -215,13 +215,15 @@ export const zKbCategoryId = membership(KB_CATEGORY_IDS, "kb");
  * ================================================================== */
 
 /**
- * Editorial authors are `zPersonRef` with a required avatar: all 9 news and all 6 tip
- * authors have one (4-field and 2-field inline objects respectively). `id` stays
- * optional and is absent on all 15 entries — no author is joined to a `User` today
- * (2 of the 14 distinct names, Alex Johnson and Sarah Williams, exist in
- * `lib/data/users.ts`, but the fixture links neither). C4 owns that reconciliation.
+ * An editorial author is a person, full stop — `zPersonRef`, no extra field (issue #152).
+ *
+ * It used to `extend({ avatar: zImageRef })` so all 9 news and all 6 tip authors carried an
+ * avatar file. Those files were the same two images every other surface used, so the
+ * "required avatar" proved nothing a name did not: the byline face is now drawn from the
+ * name by `components/media/generated-avatar.tsx`, and there is no file to require. `id`
+ * stays optional and is absent on all 15 entries — no author is joined to a `User` yet.
  */
-export const zEditorialAuthor = zPersonRef.extend({ avatar: zImageRef });
+export const zEditorialAuthor = zPersonRef;
 
 /* ================================================================== *
  * 4. Article schemas

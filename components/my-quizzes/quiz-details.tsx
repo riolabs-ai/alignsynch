@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -276,15 +276,11 @@ export function QuizDetails({
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
                             {index + 1}
                           </div>
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage
-                              src={player.result.player.avatar?.src ?? media.placeholder.src}
-                              alt={player.result.player.name}
-                            />
-                            <AvatarFallback>
-                              {player.result.player.name.substring(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <GeneratedAvatar
+                            name={player.result.player.name}
+                            seed={player.result.player.id ?? player.result.player.name}
+                            size={40}
+                          />
                           <div>
                             <p className="font-medium">{player.result.player.name}</p>
                             <p className="text-sm text-muted-foreground">
@@ -383,15 +379,11 @@ export function QuizDetails({
                         <TableRow key={player.result.id}>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage
-                                  src={player.result.player.avatar?.src ?? media.placeholder.src}
-                                  alt={player.result.player.name}
-                                />
-                                <AvatarFallback>
-                                  {player.result.player.name.substring(0, 2)}
-                                </AvatarFallback>
-                              </Avatar>
+                              <GeneratedAvatar
+                                name={player.result.player.name}
+                                seed={player.result.player.id ?? player.result.player.name}
+                                size={32}
+                              />
                               <span>{player.result.player.name}</span>
                             </div>
                           </TableCell>

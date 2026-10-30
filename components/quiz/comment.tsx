@@ -1,11 +1,10 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeLong } from "@/content/core";
 import type { QuizComment, QuizCommentThread } from "@/content/quiz-result";
-import { media } from "@/data/media";
 import { ChevronDown, ChevronUp, Flag, MessageSquare, Send, ThumbsUp } from "lucide-react";
 import { useState } from "react";
 
@@ -49,7 +48,6 @@ export function Comment({ thread }: { thread: QuizCommentThread }) {
       author: {
         id: "current-user",
         name: "You",
-        avatar: { src: media["avatars.master"].src, alt: "You" },
       },
       body: replyText,
       createdAt: new Date().toISOString(),
@@ -66,13 +64,11 @@ export function Comment({ thread }: { thread: QuizCommentThread }) {
   return (
     <div className="border rounded-md p-4">
       <div className="flex items-start gap-3">
-        <Avatar>
-          <AvatarImage
-            src={comment.author.avatar?.src ?? media.placeholder.src}
-            alt={comment.author.name}
-          />
-          <AvatarFallback>{comment.author.name.substring(0, 2)}</AvatarFallback>
-        </Avatar>
+        <GeneratedAvatar
+          name={comment.author.name}
+          seed={comment.author.id ?? comment.author.name}
+          size={40}
+        />
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div>
@@ -157,13 +153,11 @@ export function Comment({ thread }: { thread: QuizCommentThread }) {
             <div className="mt-4 space-y-3 pl-6 border-l-2 border-gray-200 dark:border-gray-700">
               {replies.map((reply) => (
                 <div key={reply.id} className="flex items-start gap-3">
-                  <Avatar className="h-7 w-7">
-                    <AvatarImage
-                      src={reply.author.avatar?.src ?? media.placeholder.src}
-                      alt={reply.author.name}
-                    />
-                    <AvatarFallback>{reply.author.name.substring(0, 2)}</AvatarFallback>
-                  </Avatar>
+                  <GeneratedAvatar
+                    name={reply.author.name}
+                    seed={reply.author.id ?? reply.author.name}
+                    size={28}
+                  />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div>

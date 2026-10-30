@@ -1,11 +1,10 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Progress } from "@/components/ui/progress";
 import type { LeaderboardEntry, PlayerTier } from "@/content/people";
-import { avatarSrcOf } from "@/lib/players";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
@@ -96,8 +95,11 @@ export function LeaderboardTable({
             </div>
             <div className="col-span-3 flex items-center gap-3">
               <Link href={`/profile/${entry.player.handle}`} className="block">
-                <Avatar
-                  className={`h-10 w-10 ${
+                <GeneratedAvatar
+                  name={entry.player.name}
+                  seed={entry.player.id}
+                  size={40}
+                  className={
                     entry.rank <= 3
                       ? `ring-2 ring-offset-2 ${
                           entry.rank === 1
@@ -106,16 +108,9 @@ export function LeaderboardTable({
                               ? "ring-gray-300"
                               : "ring-amber-700"
                         }`
-                      : ""
-                  }`}
-                >
-                  <AvatarImage
-                    className="object-cover object-center"
-                    src={avatarSrcOf(entry.player)}
-                    alt={entry.player.name}
-                  />
-                  <AvatarFallback>{entry.player.name.substring(0, 2)}</AvatarFallback>
-                </Avatar>
+                      : undefined
+                  }
+                />
               </Link>
               <div>
                 <Link

@@ -1,5 +1,5 @@
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,6 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { PageCopySection } from "@/content/pages";
-import { media } from "@/data/media";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import {
   Filter,
@@ -63,7 +62,6 @@ const mockDiscussions = [
     author: {
       id: "user1",
       name: "Alex Johnson",
-      avatar: media["avatars.alex"].src,
       role: "Tournament Finalist",
     },
     content:
@@ -80,7 +78,6 @@ const mockDiscussions = [
     author: {
       id: "user2",
       name: "Sarah Williams",
-      avatar: media["avatars.sarah"].src,
       role: "Participant",
     },
     content:
@@ -97,7 +94,6 @@ const mockDiscussions = [
     author: {
       id: "user3",
       name: "Michael Chen",
-      avatar: media["avatars.wizard"].src,
       role: "Participant",
     },
     content:
@@ -114,7 +110,6 @@ const mockDiscussions = [
     author: {
       id: "user4",
       name: "Emily Rodriguez",
-      avatar: media["avatars.guru"].src,
       role: "Participant",
     },
     content:
@@ -131,7 +126,6 @@ const mockDiscussions = [
     author: {
       id: "user5",
       name: "David Kim",
-      avatar: media["avatars.master"].src,
       role: "Participant",
     },
     content:
@@ -151,7 +145,6 @@ const mockComments = [
     author: {
       id: "user6",
       name: "Jessica Taylor",
-      avatar: media["avatars.mind"].src,
       role: "Tournament Moderator",
     },
     content:
@@ -165,7 +158,6 @@ const mockComments = [
     author: {
       id: "user7",
       name: "Robert Chen",
-      avatar: media["avatars.brain"].src,
       role: "Previous Champion",
     },
     content:
@@ -179,7 +171,6 @@ const mockComments = [
     author: {
       id: "user8",
       name: "Sophia Martinez",
-      avatar: media["avatars.genious"].src,
       role: "Participant",
     },
     content:
@@ -254,13 +245,12 @@ export function TournamentDiscussion({ tournamentId, copy }: TournamentDiscussio
         <div className="bg-card rounded-lg p-6 shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border-2 border-primary/20">
-                <AvatarImage
-                  src={discussion.author.avatar || media.placeholder.src}
-                  alt={discussion.author.name}
-                />
-                <AvatarFallback>{discussion.author.name.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <GeneratedAvatar
+                name={discussion.author.name}
+                seed={discussion.author.id ?? discussion.author.name}
+                size={40}
+                className="border-2 border-primary/20"
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{discussion.author.name}</span>
@@ -333,15 +323,12 @@ export function TournamentDiscussion({ tournamentId, copy }: TournamentDiscussio
             <div key={comment.id} className="bg-card rounded-lg p-5 shadow-sm">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
-                  <Avatar
-                    className={`h-9 w-9 ${comment.isOfficial ? "border-2 border-primary" : ""}`}
-                  >
-                    <AvatarImage
-                      src={comment.author.avatar || media.placeholder.src}
-                      alt={comment.author.name}
-                    />
-                    <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
+                  <GeneratedAvatar
+                    name={comment.author.name}
+                    seed={comment.author.id ?? comment.author.name}
+                    size={36}
+                    className={comment.isOfficial ? "border-2 border-primary" : undefined}
+                  />
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{comment.author.name}</span>
@@ -499,13 +486,11 @@ export function TournamentDiscussion({ tournamentId, copy }: TournamentDiscussio
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={discussion.author.avatar || media.placeholder.src}
-                      alt={discussion.author.name}
-                    />
-                    <AvatarFallback>{discussion.author.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
+                  <GeneratedAvatar
+                    name={discussion.author.name}
+                    seed={discussion.author.id ?? discussion.author.name}
+                    size={32}
+                  />
                   <div>
                     <span className="text-sm font-medium">{discussion.author.name}</span>
                     <p className="text-xs text-muted-foreground">{discussion.createdAt}</p>

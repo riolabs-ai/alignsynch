@@ -18,26 +18,18 @@
  */
 import type { PersonRef } from "../content/core";
 import type { QuizResult } from "../content/quiz-result";
-import { mediaSrc, type FileMediaKey } from "./media";
 
-/** A key that addresses a real file. A generated tile (#130) has no path to put on a face. */
-type AvatarKey = FileMediaKey;
-
-const player = (id: string, name: string, avatar: AvatarKey): PersonRef => ({
-  id,
-  name,
-  avatar: { src: mediaSrc(avatar), alt: name },
-});
+const player = (id: string, name: string): PersonRef => ({ id, name });
 
 /* The cast. One `PersonRef` table for the whole file: a result, a comment and a
  * review about the same person must agree on the name and the avatar. */
-const alex = player("player-alex-johnson", "Alex Johnson", "avatars.alex");
-const sarah = player("player-sarah-williams", "Sarah Williams", "avatars.wizard");
-const mike = player("player-mike-brown", "Mike Brown", "avatars.sarah");
-const emily = player("player-emily-davis", "Emily Davis", "avatars.king");
-const david = player("player-david-wilson", "David Wilson", "avatars.champion");
-const priya = player("player-priya-raman", "Priya Raman", "avatars.mind");
-const viewer = player("current-user", "You", "avatars.master");
+const alex = player("player-alex-johnson", "Alex Johnson");
+const sarah = player("player-sarah-williams", "Sarah Williams");
+const mike = player("player-mike-brown", "Mike Brown");
+const emily = player("player-emily-davis", "Emily Davis");
+const david = player("player-david-wilson", "David Wilson");
+const priya = player("player-priya-raman", "Priya Raman");
+const viewer = player("current-user", "You");
 
 export const quizResults: readonly QuizResult[] = [
   /* ---- the playable quiz: the review screen's subject is the viewer's sheet ---- */
