@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { popularSearches, querySearchIndex, type SearchIndex } from "@/content/search";
+import { brand } from "@/data/brand";
 import { FileQuestion, FileText, Filter, Search, Tag, User, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -418,7 +419,7 @@ export function SearchResults({ query, index }: { query: string; index: SearchIn
           <h2 className="text-2xl font-semibold mb-3">Search for quizzes, categories, and more</h2>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
             Enter a search term above to find quizzes, categories, creators, and pages across
-            QuizHub.
+            {brand.name}.
           </p>
 
           <div className="max-w-3xl mx-auto">

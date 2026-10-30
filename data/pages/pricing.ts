@@ -22,6 +22,7 @@
  * `features`, `limitations`, `cta`, `price`) and the FAQ question/answer rows are
  * record-shaped blocks with no schema in P2 — see the WU-9 report.
  */
+import { brand } from "../brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const pricingPageCopy: PageCopy = zPageCopy.parse({
@@ -60,7 +61,7 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
         { id: "no-results-hint", label: "Try a different search term or" },
         { id: "clear-search", label: "clear your search" },
         { id: "contact-prompt", label: "Still have questions? Contact our support team at" },
-        { id: "contact-email", label: "support@quizhub.com" },
+        { id: "contact-email", label: brand.supportEmail },
       ],
     },
     {

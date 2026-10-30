@@ -1,6 +1,7 @@
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { brand } from "@/data/brand";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type React from "react";
@@ -12,22 +13,23 @@ const inter = Inter({ subsets: ["latin"] });
 /**
  * The document title.
  *
- * `QuizHub` is not invented here: it is the product name the repo already ships, and
- * the sidebar logo and the footer logo render the same word from `data/pages/shell.ts`
- * (`heading`, and the `footer-legal/copyright` line).
+ * Both halves read `brand.name` from `data/brand.ts`: the sidebar logo, the footer logo
+ * and the copyright line render the same word out of `data/pages/shell.ts`, so a title
+ * spelled here would be a second source of truth for the product's name — and a second
+ * brand would change the chrome and leave the tab title behind.
  *
  *  - `default` is what a route with no `metadata.title` of its own gets. The string it
  *    replaces ("Quiz Making Website - Play & Earn Money") was scaffold copy from before
  *    the brand, and it was the tab title on roughly twenty routes.
  *  - `template` composes a child route's own title in front of the brand
- *    ("Explore Quizzes · QuizHub") instead of replacing it. That is why every route
- *    title below is written brand-free: a title that still carried "| QuizHub" or
+ *    ("Explore Quizzes · <brand>") instead of replacing it. That is why every route
+ *    title below is written brand-free: a title that still carried "| <brand>" or
  *    "| QuizMaker" would print the brand twice and disagree with this one.
  */
 export const metadata: Metadata = {
   title: {
-    default: "QuizHub",
-    template: "%s · QuizHub",
+    default: brand.name,
+    template: `%s · ${brand.name}`,
   },
   description: "Create quizzes, play games, and earn money with our multi-vendor quiz platform",
 };

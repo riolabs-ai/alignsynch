@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { brand } from "@/data/brand";
 import { Loader2, Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
@@ -43,7 +44,7 @@ export function AppearanceSettings() {
       <div>
         <h3 className="text-lg font-medium">Appearance Settings</h3>
         <p className="text-sm text-muted-foreground">
-          Customize how QuizHub looks and feels for you.
+          Customize how {brand.name} looks and feels for you.
         </p>
       </div>
 

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { brand } from "@/data/brand";
 import { Eye, Loader2, Shield } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -64,7 +65,7 @@ export function PrivacySettings() {
       <div>
         <h3 className="text-lg font-medium">Privacy Settings</h3>
         <p className="text-sm text-muted-foreground">
-          Control your privacy and how your information is shared on QuizHub.
+          Control your privacy and how your information is shared on {brand.name}.
         </p>
       </div>
 
@@ -216,7 +217,7 @@ export function PrivacySettings() {
       <Card>
         <CardHeader>
           <CardTitle>Data Privacy</CardTitle>
-          <CardDescription>Control how your data is used on QuizHub.</CardDescription>
+          <CardDescription>Control how your data is used on {brand.name}.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -225,7 +226,7 @@ export function PrivacySettings() {
               <div>
                 <p className="font-medium">Data Collection</p>
                 <p className="text-sm text-muted-foreground">
-                  Allow QuizHub to collect data to improve your experience.
+                  Allow {brand.name} to collect data to improve your experience.
                 </p>
               </div>
             </div>

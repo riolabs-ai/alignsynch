@@ -1,11 +1,13 @@
 /**
  * The brand the demo ships with: QuizHub.
  *
- * One record, parsed by `content/brand.ts`, read by the fixtures that print the product's
- * name — today that is `data/pages/shell.ts` alone (`brand.name` in the brand word and the
- * copyright line). The rest of the 94 `QuizHub` literals still in `app/` and
- * `components/` are the next card's find-and-replace, not this one's: this card adds the
- * record the reskin will read, and changes no screen.
+ * One record, parsed by `content/brand.ts`, read by everything that prints the product's
+ * name: the shell projection (`brand.name` in the brand word and the copyright line, and
+ * `brand.supportEmail` in both addresses), the page-copy fixtures, the knowledge-base and
+ * news fixtures, the two FAQ projections and the components that print a sentence naming
+ * it. This file is the only place the name lives — `rg -l QuizHub app components data`
+ * returns this file and nothing else — so a skin is a second `Brand`, not a
+ * find-and-replace across the tree.
  *
  * Every value here is the one the app already renders today, so the record is a
  * transcription and not a redesign:
@@ -17,9 +19,10 @@
  *     `hsl(var(--token))`, plus the `indigo-500` the sidebar paints the active nav with.
  *     The dark theme is not in this record: it is the same tokens under `.dark`, and a
  *     skin that wants to own dark mode is a schema change, not a second field here.
- *   - `supportEmail` is the address the shell's footer contact prints
- *     (`support@quizhub.com`). The account block's `info@quizhub.com` is a demo identity,
- *     not the brand's support address.
+ *   - `supportEmail` is the one address the demo prints: the shell's header account block
+ *     (`display-email`) and footer contact (`footer-contact/email`), the pricing FAQ's
+ *     contact link and the support FAQ's "email us" line all read it, because a second
+ *     address typed into a fixture is a second source of truth for the same fact.
  */
 import { zBrand, type Brand } from "../content/brand";
 

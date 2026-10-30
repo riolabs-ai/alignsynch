@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { brand } from "@/data/brand";
 import { Bell, DollarSign, Loader2, MessageSquare, Trophy, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -62,7 +63,7 @@ export function NotificationSettings() {
       <div>
         <h3 className="text-lg font-medium">Notification Preferences</h3>
         <p className="text-sm text-muted-foreground">
-          Manage how and when you receive notifications from QuizHub.
+          Manage how and when you receive notifications from {brand.name}.
         </p>
       </div>
 

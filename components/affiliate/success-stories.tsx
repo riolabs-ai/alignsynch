@@ -1,6 +1,7 @@
 "use client";
 
 import type { PageCopySection } from "@/content/pages";
+import { brand } from "@/data/brand";
 import { media } from "@/data/media";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
@@ -15,8 +16,7 @@ export function SuccessStories({ copy }: { copy: PageCopySection }) {
       name: "Sarah Johnson",
       role: "Content Creator",
       image: media["avatars.wizard"].src,
-      quote:
-        "I've been promoting QuizHub to my audience for 6 months now and the results have been incredible. The 30% commission is one of the best in the industry, and the recurring revenue has added a reliable income stream to my business.",
+      quote: `I've been promoting ${brand.name} to my audience for 6 months now and the results have been incredible. The 30% commission is one of the best in the industry, and the recurring revenue has added a reliable income stream to my business.`,
       earnings: "$2,450/month",
       rating: 5,
     },
@@ -24,8 +24,7 @@ export function SuccessStories({ copy }: { copy: PageCopySection }) {
       name: "Michael Chen",
       role: "Education Blogger",
       image: media["avatars.sarah"].src,
-      quote:
-        "What I love about QuizHub's affiliate program is how easy they make it to promote. The marketing materials are top-notch, and my audience loves the product. I'm earning more with QuizHub than with any other affiliate program I've tried.",
+      quote: `What I love about ${brand.name}'s affiliate program is how easy they make it to promote. The marketing materials are top-notch, and my audience loves the product. I'm earning more with ${brand.name} than with any other affiliate program I've tried.`,
       earnings: "$1,875/month",
       rating: 5,
     },
@@ -33,8 +32,7 @@ export function SuccessStories({ copy }: { copy: PageCopySection }) {
       name: "Jessica Williams",
       role: "YouTube Educator",
       image: media["avatars.king"].src,
-      quote:
-        "As someone who creates educational content, QuizHub was a natural fit for my audience. The affiliate dashboard makes it easy to track my performance, and the team is always responsive when I have questions. Highly recommended!",
+      quote: `As someone who creates educational content, ${brand.name} was a natural fit for my audience. The affiliate dashboard makes it easy to track my performance, and the team is always responsive when I have questions. Highly recommended!`,
       earnings: "$3,200/month",
       rating: 5,
     },

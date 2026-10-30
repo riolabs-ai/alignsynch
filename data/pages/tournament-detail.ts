@@ -28,6 +28,7 @@
  *    heading item and its bullets) while the words live here. That is the same
  *    split `TABS` uses on `/`: the view owns ids and order, the fixture owns text.
  */
+import { brand } from "../brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const tournamentDetailPageCopy: PageCopy = zPageCopy.parse({
@@ -67,8 +68,7 @@ export const tournamentDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "eligibility-heading", label: "Eligibility" },
         {
           id: "eligibility-body",
-          label:
-            "{eligibility}. All participants must have a registered account on QuizHub and agree to the tournament rules and fair play guidelines.",
+          label: `{eligibility}. All participants must have a registered account on ${brand.name} and agree to the tournament rules and fair play guidelines.`,
         },
         { id: "participate-heading", label: "How to Participate" },
         {
@@ -114,7 +114,7 @@ export const tournamentDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "group-eligibility", label: "Eligibility & Registration" },
         {
           id: "eligibility-1",
-          label: "All registered users of QuizHub are eligible to participate.",
+          label: `All registered users of ${brand.name} are eligible to participate.`,
         },
         {
           id: "eligibility-2",
@@ -167,7 +167,7 @@ export const tournamentDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "fair-play-3", label: "Multiple accounts or collaborative play is forbidden." },
         {
           id: "fair-play-4",
-          label: "QuizHub reserves the right to disqualify participants suspected of cheating.",
+          label: `${brand.name} reserves the right to disqualify participants suspected of cheating.`,
         },
         {
           id: "fair-play-5",

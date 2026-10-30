@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { brand } from "@/data/brand";
 import { Facebook, Github, Loader2, Twitter } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -56,7 +57,7 @@ export function ConnectedAccounts() {
       <Card>
         <CardHeader>
           <CardTitle>Social Accounts</CardTitle>
-          <CardDescription>Connect your social media accounts to QuizHub.</CardDescription>
+          <CardDescription>Connect your social media accounts to {brand.name}.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">

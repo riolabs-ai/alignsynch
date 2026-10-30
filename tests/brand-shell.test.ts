@@ -19,37 +19,40 @@
  * string the projection carries is collected in declaration order instead — if a string
  * reaches the screen, it is in this walk.
  *
- * Deliberately out of scope: the two addresses the fixture still spells
- * (`info@quizhub.com`, `support@quizhub.com`). They are copy literals on `main` like the
- * other 92, `brand.supportEmail` carries the value, and wiring them changes a rendered
- * screen — the next card's job. Asserting their absence here would make this test red on
- * behalf of work this card must not do.
+ * The three surfaces below are the ones a second brand must change end to end: the shell
+ * (chrome on every page), the `/` title (the tab), and the pricing FAQ (a sentence that
+ * spells the product's name and prints its support address). Every other literal in
+ * `app/`, `components/` and `data/` reads the same record; the shell's two addresses now
+ * read `brand.supportEmail` rather than a demo literal, which is why the AlignSynch render
+ * swaps the address as well as the name.
  */
 import { describe, expect, it } from "vitest";
 
+import { pricingFaqCategories } from "@/components/pricing/pricing-faq";
+import { supportFaqGroups } from "@/components/support/support-faq";
 import { zBrand, type Brand } from "@/content/brand";
-import type { PageCopy } from "@/content/pages";
 import { brand } from "@/data/brand";
 import { media } from "@/data/media";
+import { homePageCopy, homeTitle } from "@/data/pages/home";
 import { shellCopy, shellPageCopy } from "@/data/pages/shell";
 
 /** Every string a projection carries, in the order it declares them. */
-function render(copy: PageCopy): string {
+function render(value: unknown): string {
   const out: string[] = [];
-  const walk = (value: unknown): void => {
-    if (typeof value === "string") {
-      out.push(value);
+  const walk = (node: unknown): void => {
+    if (typeof node === "string") {
+      out.push(node);
       return;
     }
-    if (Array.isArray(value)) {
-      for (const entry of value) walk(entry);
+    if (Array.isArray(node)) {
+      for (const entry of node) walk(entry);
       return;
     }
-    if (value && typeof value === "object") {
-      for (const entry of Object.values(value)) walk(entry);
+    if (node && typeof node === "object") {
+      for (const entry of Object.values(node)) walk(entry);
     }
   };
-  walk(copy);
+  walk(value);
   return out.join("\n");
 }
 
@@ -80,13 +83,52 @@ describe("shell projection — the product name comes from the brand", () => {
     expect(alignSynchRender).not.toContain("QuizHub");
   });
 
-  it("is the QuizHub render with the name swapped, and nothing else", () => {
-    expect(alignSynchRender).toBe(quizHubRender.replaceAll("QuizHub", "AlignSynch"));
+  it("is the QuizHub render with the name and the address swapped, and nothing else", () => {
+    expect(alignSynchRender).toBe(
+      quizHubRender
+        .replaceAll("QuizHub", "AlignSynch")
+        .replaceAll(brand.supportEmail, alignSynch.supportEmail),
+    );
+  });
+
+  it("prints the record's support address in both of the shell's addresses", () => {
+    const rendered = render(shellPageCopy);
+    expect(rendered.split(brand.supportEmail).length - 1).toBe(2);
+    expect(rendered).not.toContain("info@quizhub.com");
   });
 
   it("exports today's shell as the QuizHub instance", () => {
     expect(shellPageCopy).toEqual(shellCopy(brand));
     expect(shellPageCopy.heading).toBe(brand.name);
+  });
+});
+
+describe("the home title and one FAQ read the same record", () => {
+  it("builds the / title from the brand word in front of the route's tagline", () => {
+    expect(homeTitle(brand)).toBe(`${brand.name} — Play, Share, Earn`);
+    expect(homeTitle(alignSynch)).toBe("AlignSynch — Play, Share, Earn");
+    // The route's own copy never spelled the product name; the title was the only literal.
+    expect(render(homePageCopy)).not.toContain("QuizHub");
+  });
+
+  it("renders the pricing FAQ in the brand it was given", () => {
+    const quizHubFaq = render(pricingFaqCategories(brand));
+    const alignSynchFaq = render(pricingFaqCategories(alignSynch));
+    expect(quizHubFaq).toContain("What is QuizHub?");
+    expect(alignSynchFaq).toContain("What is AlignSynch?");
+    expect(alignSynchFaq).not.toContain("QuizHub");
+    expect(alignSynchFaq).toBe(
+      quizHubFaq
+        .replaceAll("QuizHub", "AlignSynch")
+        .replaceAll(brand.supportEmail, alignSynch.supportEmail),
+    );
+  });
+
+  it("renders the support FAQ as the brand it was given", () => {
+    const alignSynchFaq = render(supportFaqGroups(alignSynch));
+    expect(alignSynchFaq).toContain("AlignSynch");
+    expect(alignSynchFaq).not.toContain("QuizHub");
+    expect(alignSynchFaq).not.toContain(brand.supportEmail);
   });
 });
 

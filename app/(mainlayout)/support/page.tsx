@@ -1,11 +1,12 @@
 import { SupportPage } from "@/components/support/support-page";
+import { brand } from "@/data/brand";
 import { supportPageCopy } from "@/data/pages/support";
 import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Support",
-  description: "Get help and support for your QuizHub account",
+  description: `Get help and support for your ${brand.name} account`,
 };
 
 export default function Support() {
