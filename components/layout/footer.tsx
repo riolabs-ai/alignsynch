@@ -2,10 +2,12 @@ import { Button } from "@/components/ui/button";
 import { quizCategories } from "@/content/categories";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
+import { brandMark } from "@/lib/brand-mark";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 
@@ -19,6 +21,32 @@ import type React from "react";
  * that owns a subject's name and slug, and the column is the rows flagged `featured`.
  * The old `FOOTER_SUBJECTS` re-listed five slugs the table already had, which is how a
  * footer column and a browse page drift apart. Order is the table's order.
+ *
+ * **The palette is the brand's (issue #187).** This file held 16 of the 31 matching lines in
+ * the card's scope — 28 indigo / purple / violet literals — on every page of both builds, and
+ * it carried six gradients built out of them. The mapping, and why each one:
+ *
+ *   - the icon chips and their glyphs: a purple 100 tint becomes `bg-muted`, the purple 500
+ *     and 600 glyphs become `text-action`. A tinted surface is `muted`; a glyph that names an
+ *     action is the brand's action colour.
+ *   - every hover and the column rules: the purple 600 hover becomes `hover:text-action`; a
+ *     purple→indigo 500 gradient becomes `bg-action`. A 48px rule under a heading has no
+ *     second stop to say anything, so it is a solid brand bar rather than a recoloured
+ *     gradient — the restraint the marketing page already shows.
+ *   - the 1px band at the top and the two blurred discs: a three-stop purple, indigo and blue
+ *     becomes `bg-action`, and the indigo 100 / purple 100 discs become `bg-muted`. They are
+ *     decoration, and decoration that only ever existed as two hues of the leaked palette
+ *     becomes one brand bar and two neutral discs.
+ *   - the ground: the white-to-slate pair becomes `from-background to-muted`, which is the same
+ *     two stops the theme already names (`slate-100` and `--muted` are within a percent of
+ *     each other on both brands).
+ *   - the product mark: `BookOpen` in a purple→indigo 600 box, and a wordmark filled by the
+ *     same gradient, become `brandMark(brand.logo)` beside `text-action`. The record's mark
+ *     when it has one, the old icon when `data/media.ts` calls it a fallback.
+ *
+ * The old class names are deliberately not quoted here: the acceptance test is a `git grep` for
+ * the three palette prefixes over the card's paths, and a comment that repeats a banned literal
+ * makes that grep a lie about the code. The mapping is the same statement in prose.
  */
 export function Footer({
   copy,
@@ -54,13 +82,24 @@ export function Footer({
    * is deleted; every one of them still answers a request (see the PR's surface table).
    */
   const linkColumns = footerLinkColumns({ brandId, viewer, links, alignLinks, categories });
+  /**
+   * The product mark, resolved from the brand record (#187).
+   *
+   * `brandMark` is the same call `components/layout/sidebar.tsx` makes: `undefined` for
+   * `brand.logo` when the registry marks the file a `fallback`, so the template build keeps the
+   * `BookOpen` icon it has always drawn and gains no markup, and the real size and `src` of an
+   * exported lockup otherwise. A footer that hardcoded its own glyph was drawing "a generic quiz
+   * icon" on an AlignSynch page — the exact sentence in issue #187 — so the mark is read from the
+   * record here for the same reason the sidebar reads it.
+   */
+  const mark = brandMark(brand.logo);
 
   return (
-    <footer className="relative overflow-hidden bg-gradient-to-b from-white to-slate-100 dark:from-slate-950 dark:to-slate-900 pt-16 pb-8 sm:px-4 xl:px-8">
+    <footer className="relative overflow-hidden bg-gradient-to-b from-background to-muted pt-16 pb-8 sm:px-4 xl:px-8">
       {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"></div>
-      <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-indigo-100 dark:bg-indigo-900/20 blur-3xl opacity-70"></div>
-      <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-purple-100 dark:bg-purple-900/20 blur-3xl opacity-70"></div>
+      <div className="absolute top-0 left-0 w-full h-1 bg-action"></div>
+      <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-muted blur-3xl opacity-70"></div>
+      <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-muted blur-3xl opacity-70"></div>
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Main footer content */}
@@ -68,12 +107,32 @@ export function Footer({
           {/* Company info */}
           <div className="lg:col-span-4 space-y-6">
             <div className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-2 rounded-lg">
-                <BookOpen className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                {copy.heading}
-              </span>
+              {mark ? (
+                /**
+                 * The brand's mark, in the slot the product mark has always had.
+                 *
+                 * `alt=""` because the wordmark beside it already says the name — a second
+                 * description would have a screen reader read the brand twice. The 44 px window
+                 * crops the lockup to its monogram, exactly as the sidebar does: the AlignSynch
+                 * file's wordmark is black "Align" beside gray "Synch", so the whole file in the
+                 * footer's light ground reads as two different greys beside the type already set
+                 * next to it. `max-w-none` is load-bearing (preflight would scale, not crop).
+                 */
+                <span className="block h-8 w-11 shrink-0 overflow-hidden">
+                  <Image
+                    src={mark.src}
+                    alt=""
+                    width={mark.width}
+                    height={mark.height}
+                    className="h-8 w-auto max-w-none"
+                  />
+                </span>
+              ) : (
+                <div className="bg-action p-2 rounded-lg">
+                  <BookOpen className="h-6 w-6 text-action-foreground" />
+                </div>
+              )}
+              <span className="text-2xl font-bold text-action">{copy.heading}</span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 max-w-xs leading-relaxed">
               {sectionBody(brandBlurb)}
@@ -152,12 +211,12 @@ export function Footer({
               <div className="space-y-5">
                 <h3 className="text-base font-bold relative inline-block">
                   {contact.heading}
-                  <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
+                  <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-action"></span>
                 </h3>
                 <ul className="space-y-4">
                   <li className="flex items-start space-x-3">
                     <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                      <MapPin className="h-4 w-4 text-purple-500" />
+                      <MapPin className="h-4 w-4 text-action" />
                     </div>
                     <span className="text-slate-600 dark:text-slate-400">
                       {itemLabel(contact, "address")}
@@ -165,7 +224,7 @@ export function Footer({
                   </li>
                   <li className="flex items-center space-x-3">
                     <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                      <Phone className="h-4 w-4 text-purple-500" />
+                      <Phone className="h-4 w-4 text-action" />
                     </div>
                     <span className="text-slate-600 dark:text-slate-400">
                       {itemLabel(contact, "phone")}
@@ -173,14 +232,14 @@ export function Footer({
                   </li>
                   <li className="flex items-center space-x-3">
                     <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                      <Mail className="h-4 w-4 text-purple-500" />
+                      <Mail className="h-4 w-4 text-action" />
                     </div>
                     <span className="text-slate-600 dark:text-slate-400">
                       {itemLabel(contact, "email")}
                     </span>
                   </li>
                 </ul>
-                <Button variant={"gradient"}>{itemLabel(contact, "cta")}</Button>
+                <Button variant={"action"}>{itemLabel(contact, "cta")}</Button>
               </div>
             </div>
           </div>
@@ -198,10 +257,10 @@ export function Footer({
                 <input
                   type="email"
                   placeholder={itemLabel(newsletter, "placeholder")}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
-              <Button variant={"gradient"}>
+              <Button variant={"action"}>
                 {itemLabel(newsletter, "subscribe")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -218,21 +277,21 @@ export function Footer({
             <div className="flex flex-wrap justify-center gap-6 mt-4 md:mt-0">
               <Link
                 href="#"
-                className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
+                className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
               >
                 <span>{itemLabel(legal, "privacy")}</span>
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
                 href="#"
-                className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
+                className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
               >
                 <span>{itemLabel(legal, "terms")}</span>
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
                 href="#"
-                className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
+                className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
               >
                 <span>{itemLabel(legal, "cookies")}</span>
                 <ExternalLink className="h-3 w-3" />
@@ -285,9 +344,9 @@ function FooterLinkRow({ href, label }: { href: string; label: string }) {
     <li>
       <Link
         href={href}
-        className="text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center group"
+        className="text-slate-600 dark:text-slate-400 hover:text-action transition-colors flex items-center group"
       >
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-purple-500 transition-colors"></span>
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-action transition-colors"></span>
         {label}
       </Link>
     </li>
@@ -299,7 +358,7 @@ function FooterColumnHeading({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="text-base font-bold relative inline-block">
       {children}
-      <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500"></span>
+      <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-action"></span>
     </h3>
   );
 }

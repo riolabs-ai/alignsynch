@@ -24,6 +24,17 @@ export const metadata: Metadata = {
  * route pattern. The words come from `data/pages/not-found.ts`; the randomised glyphs are
  * a client component of their own (`FloatingGlyphs`), so this module stays on the server
  * and the fixture's zod never reaches the browser.
+ *
+ * **The ground is the brand's ink, not a gradient (issue #187).** This page opened on a
+ * three-stop purple and indigo diagonal — a decoration in QuizHub's palette that made the 404 the
+ * most QuizHub-looking page in the AlignSynch build, and the one a visitor hits by following a
+ * dead link. Three stops cannot be the brand when the brand record carries one ink and one
+ * action colour, so the gradient is **removed** rather than recoloured: `bg-foreground` is the
+ * dark ground both brands own (`hsl(0 0% 3.9%)` for the template, `#363d49` for AlignSynch),
+ * `text-background` is the ink on it, and the brand's `action` paints the one button. The other
+ * three gradients here (the `404`'s text fill, the icon disc, the fact panel) went the same way:
+ * solid `background` / `white/10` fills. The remaining literals — `text-blue-400`,
+ * `text-yellow-400`, `text-gray-200` — are not this card's palette and are untouched.
  */
 export default function NotFound() {
   const message = sectionOf(notFoundPageCopy, "message");
@@ -31,7 +42,7 @@ export default function NotFound() {
   const actions = sectionOf(notFoundPageCopy, "actions");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+    <div className="min-h-screen bg-foreground text-background relative overflow-hidden">
       {/* Animated Background Elements */}
       <FloatingGlyphs />
 
@@ -41,11 +52,11 @@ export default function NotFound() {
           {/* 404 Animation */}
           <div className="mb-8">
             <div className="relative">
-              <h1 className="text-9xl md:text-[12rem] font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse">
+              <h1 className="text-9xl md:text-[12rem] font-bold text-background animate-pulse">
                 404
               </h1>
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center animate-bounce">
+                <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center animate-bounce">
                   <BookOpen className="w-12 h-12 text-white" />
                 </div>
               </div>
@@ -65,7 +76,7 @@ export default function NotFound() {
               </p>
 
               {/* Fun Quiz Fact */}
-              <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg p-4 mb-6 border border-white/10">
+              <div className="bg-white/10 rounded-lg p-4 mb-6 border border-white/20">
                 <div className="flex items-center justify-center mb-2">
                   <Trophy className="w-5 h-5 text-yellow-400 mr-2" />
                   <span className="text-sm font-semibold text-yellow-400">{fact.heading}</span>
@@ -76,7 +87,7 @@ export default function NotFound() {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/">
-                  <Button variant={"default"}>
+                  <Button variant={"action"}>
                     <Home className="w-5 h-5 mr-2" />
                     {itemLabel(actions, "home")}
                   </Button>
@@ -93,7 +104,7 @@ export default function NotFound() {
             <div className="flex justify-center space-x-4 text-sm">
               <Link
                 href="/explore"
-                className="text-purple-400 hover:text-purple-300 transition-colors flex items-center"
+                className="text-background/80 hover:text-background transition-colors flex items-center"
               >
                 <Search className="w-4 h-4 mr-1" />
                 {itemLabel(actions, "browse")}

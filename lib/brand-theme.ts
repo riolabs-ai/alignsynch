@@ -23,10 +23,20 @@
  *      what the page paints now; `data/brands/alignsynch.ts` says so at the fields. The
  *      guard against a second theme is rule 1, not a shorter list: the template's values
  *      are skipped, so its markup still carries no `style` attribute.
- *   3. **No `navActive`.** It is the one colour in the schema that is not a custom property
- *      (the sidebar paints it as a Tailwind palette step), so there is no `var(--nav-active)`
- *      to set. Wiring it means changing the class the sidebar writes, which is a different
- *      card's diff.
+ *   3. **`navActive` and `action` travel even though the template's values do not.** They are
+ *      the two colours the schema carries that `styles/globals.css` has no `:root` value for
+ *      (#187), so "only what the brand changes" cannot apply to them: `hsl(var(--action))` with
+ *      the variable unset is an invalid declaration and `bg-action` renders as nothing at all.
+ *      So the always-painted list below is painted for *every* brand, and the cost is stated
+ *      rather than hidden: the template build's `<html>` now carries a `style` attribute with
+ *      three custom properties where it used to carry none. Its rendered colours do not move —
+ *      `--action` is what `bg-action` paints, and before this card nothing painted it because
+ *      nothing wrote the class.
+ *
+ *   4. **No `navActive` was a palette step, and now it is a variable.** The sidebar painted the
+ *      active nav with the indigo 500 step and the record carried the same step under the role;
+ *      with `--nav-active` painted, `bg-nav-active` reads the record. The old rule here said
+ *      wiring it "is a different card's diff" — issue #187 is that card.
  *
  * `!important` and specificity games are deliberate non-features: the variables are written
  * as an inline style on `<html>`, which outranks `:root` and `.dark` without them. That is
@@ -47,6 +57,19 @@ const PAINTED: readonly (readonly [keyof BrandColors, string])[] = [
   ["primaryForeground", "primary-foreground"],
   ["accent", "accent"],
   ["accentForeground", "accent-foreground"],
+];
+
+/**
+ * The roles `styles/globals.css` has no default for, painted for every brand (rule 3).
+ *
+ * They cannot be "overrides": there is no value underneath to override. A separate list rather
+ * than a flag on `PAINTED` because the reason differs — one list is "what this brand changed",
+ * this one is "what the sheet never had" — and a reader should be able to see which is which.
+ */
+const NO_THEME_DEFAULT: readonly (readonly [keyof BrandColors, string])[] = [
+  ["action", "action"],
+  ["actionForeground", "action-foreground"],
+  ["navActive", "nav-active"],
 ];
 
 /** `#156898` -> `"202 75.7% 33.9%"`, which is what `hsl(var(--primary))` expects. */
@@ -95,13 +118,17 @@ function percent(value: string): string {
 }
 
 /**
- * The `<html>` style for a build: `{}` for the template brand (nothing to override), the
- * changed accent tokens otherwise.
+ * The `<html>` style for a build: `{}` for the template brand's overrides plus the roles the
+ * sheet has no default for, the changed accent tokens otherwise.
  */
 export function brandThemeVars(brand: Brand): Record<string, string> {
   const vars: Record<string, string> = {};
   for (const [key, token] of PAINTED) {
     if (brand.colors[key] === quizHubBrand.colors[key]) continue;
+    vars[`--${token}`] = hslTriple(brand.colors[key]);
+  }
+  // No default underneath, so no override to compare against: always painted (rule 3).
+  for (const [key, token] of NO_THEME_DEFAULT) {
     vars[`--${token}`] = hslTriple(brand.colors[key]);
   }
   return vars;
