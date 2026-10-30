@@ -61,11 +61,17 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     { id: "side-them", label: "They" },
     /** A template's link, named after the two people who answered it. */
     { id: "template-read", label: "Read {left} and {right}" },
-    /** The state of a template nobody has copied into a Relationship yet. */
+    /**
+     * The state of a template nobody has answered yet — and nothing more.
+     *
+     * The row renders as a note, not a link, and the note has no control beside it: there is no
+     * copy-into-a-relationship flow on this page, so the sentence must not offer one. Say the
+     * state (unanswered), not the verb a reader cannot perform.
+     */
     {
       id: "template-unplayed",
       label: "No relationship yet",
-      body: "Nobody has answered this template yet. Copy it, name it, and its five Aspects become yours.",
+      body: "Nobody has answered this template yet. Its Aspects are still unnamed — the two answers each one asks for arrive with the relationship.",
     },
     /** One row of a template: how many Aspects it asks, counted from the record. */
     { id: "aspects", label: "{count} Aspects" },
