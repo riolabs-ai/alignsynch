@@ -54,7 +54,7 @@ const DYNAMIC_ROUTES = [
   "/quiz/[id]",
   "/quiz/[id]/discussion",
   "/quiz/[id]/play",
-  "/support/articles/[id]",
+  "/support/articles/[slug]",
   "/tournaments/[id]",
 ] as const;
 
