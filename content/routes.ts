@@ -44,6 +44,7 @@ const STATIC_ROUTES = [
 
 /** Routes with `[param]` segments, as Next spells them. */
 const DYNAMIC_ROUTES = [
+  "/assessment/[slug]",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/my-quizzes/[id]",

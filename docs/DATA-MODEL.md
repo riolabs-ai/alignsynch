@@ -4,12 +4,12 @@ One typed model: `content/*.ts` zod schemas are the single source of truth; type
 every `data/*` fixture is validated at build by `pnpm data:check` (134 tests, exit 0). A drift is a
 red build. `content/` has no React/Next import. Full history: docs/p1-migration/MIGRATION.md.
 
-## Inventory — every `data/*` module → entity (62 quizzes · 1 assessment template + 1 instance · 9 news · 6 tips · 8 kb · 5 contacts · 5 conv · 6 notifs)
+## Inventory — every `data/*` module → entity (62 quizzes · 4 assessment templates + 4 instances · 9 news · 6 tips · 8 kb · 5 contacts · 5 conv · 6 notifs)
 
 | module                      | entity (count)                                                           | storage / view                        |
 | --------------------------- | ------------------------------------------------------------------------ | ------------------------------------- |
 | data/quizzes.ts             | Quiz ×62 (mock 20 + currentQuiz 1 + created 5 + authored 16 + browse 20) | THE one list; `quizById`/`quizBySlug` |
-| data/assessments.ts         | Assessment ×1 template + AssessmentInstance ×1 (two parties)             | storage (record model, issue #128)    |
+| data/assessments.ts         | Assessment ×4 templates + AssessmentInstance ×4 (two parties each)       | storage (record model, issue #128)    |
 | data/mock-quizzes.ts        | Quiz ×20 generator templates (draft, private)                            | storage                               |
 | data/currentQuiz.ts         | Quiz ×1 playable                                                         | storage                               |
 | data/created-quizzes.ts     | Quiz ×5 (§7; published, no questions)                                    | storage                               |
