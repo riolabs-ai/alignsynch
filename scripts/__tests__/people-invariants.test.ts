@@ -23,6 +23,7 @@ import {
   selectLeaderboard,
   selectWinEvents,
 } from "../../content/people";
+import type { MediaEntry } from "../../content/media";
 import { media } from "../../data/media";
 import { leaderboards, playerIndex, players, winEvents } from "../../data/players";
 import { quizzes } from "../../data/quizzes";
@@ -31,7 +32,7 @@ import { type MediaFacts, type PeopleInput, peopleFindings } from "../data-check
 
 /** The real registry, plus a controllable answer to "does that file exist?". */
 const realMedia = (fileExists: (src: string) => boolean): MediaFacts => ({
-  entry: (key) => (media as Record<string, { src: string; kind: string }>)[key],
+  entry: (key) => (media as Record<string, MediaEntry>)[key],
   fileExists,
 });
 

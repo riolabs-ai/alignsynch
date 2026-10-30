@@ -18,14 +18,15 @@
  */
 import type { PersonRef } from "../content/core";
 import type { QuizResult } from "../content/quiz-result";
-import { media } from "./media";
+import { mediaSrc, type FileMediaKey } from "./media";
 
-type AvatarKey = keyof typeof media;
+/** A key that addresses a real file. A generated tile (#130) has no path to put on a face. */
+type AvatarKey = FileMediaKey;
 
 const player = (id: string, name: string, avatar: AvatarKey): PersonRef => ({
   id,
   name,
-  avatar: { src: media[avatar].src, alt: name },
+  avatar: { src: mediaSrc(avatar), alt: name },
 });
 
 /* The cast. One `PersonRef` table for the whole file: a result, a comment and a
