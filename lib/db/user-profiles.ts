@@ -21,7 +21,8 @@ import { queryRows } from "@/lib/db/client";
 import { type UserProfileRow, userProfileFromRow } from "@/lib/db/profile-rows";
 
 /** Every column the model needs, in the order `userProfileFromRow` reads them. */
-const COLUMNS = "user_id, handle, display_name, bio, country, country_code, joined_at, updated_at";
+const COLUMNS =
+  "user_id, handle, display_name, bio, country, country_code, role, joined_at, updated_at";
 
 /** `/profile/<handle>` — `null` when nobody answers to it, because absence is not an error. */
 export async function readUserProfileByHandle(handle: string): Promise<UserProfile | null> {
@@ -67,6 +68,12 @@ const UNIQUE_VIOLATION = "23505";
  * else is *not* an upsert target, so Postgres raises the unique violation and this returns
  * `handle-taken`. The alternative — read-then-write — would leave a window where two people
  * choosing the same handle both pass the read.
+ *
+ * **It never writes `role`.** The INSERT names no role, so a first save lands on the column's
+ * `DEFAULT 'member'`, and the UPDATE clause does not mention it, so a later save cannot change
+ * it in either direction. That is #183's rule as a property of the statement: the settings form
+ * is a person writing about themselves, and a column the form's write path cannot name is not
+ * one it can escalate with.
  */
 export async function writeUserProfile(
   userId: string,
