@@ -13,6 +13,10 @@
  *   name          the word the chrome prints — sidebar logo, footer logo, copyright
  *   legalName     the entity behind the product; not what the UI says, what the footer
  *                 says when a contract or a licence needs the company, not the badge
+ *   description   the one sentence the document head prints as `<meta name="description">`
+ *                 on every route that sets no description of its own. Brand data, not route
+ *                 copy: the root layout owns the tag, and a second brand is a second
+ *                 sentence, never a second edit to a `.tsx`
  *   domain        the bare host (`quizhub.com`), no scheme and no trailing slash: a
  *                 canonical URL is composed from it, so it must never carry either
  *   logo          a path into `data/media.ts` (D-P2-1: a fixture holds the `src`, E19
@@ -128,6 +132,7 @@ export const zBrand = z
   .object({
     name: z.string().min(1),
     legalName: z.string().min(1),
+    description: z.string().min(1),
     domain: zBrandDomain,
     logo: zBrandLogoPath,
     colors: zBrandColors,

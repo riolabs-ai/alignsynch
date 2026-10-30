@@ -73,6 +73,7 @@ function render(value: unknown): string {
 const alignSynch: Brand = zBrand.parse({
   name: "AlignSynch",
   legalName: "AlignSynch",
+  description: alignSynchBrand.description,
   domain: "alignsynch.com",
   logo: alignSynchBrand.logo,
   colors: alignSynchBrand.colors,
@@ -227,6 +228,21 @@ describe("one build flag, one brand", () => {
     // The shell proof above runs on a fixture; this is that fixture, so the proof is
     // about the record the `BRAND=alignsynch` build actually renders.
     expect(alignSynchBrand).toEqual(alignSynch);
+  });
+
+  it("gives each brand its own document description", () => {
+    // `app/layout.tsx` prints `brand.description` as the document head's meta description, so
+    // the AlignSynch build must stop advertising the quiz product in the tag no page overrides
+    // on `/`. QuizHub's value is the exact string the tree rendered before the field existed,
+    // pinned byte for byte so the template build's head does not move; AlignSynch's carries no
+    // quiz vocabulary at all.
+    expect(quizHubBrand.description).toBe(
+      "Create quizzes, play games, and earn money with our multi-vendor quiz platform",
+    );
+    expect(alignSynchBrand.description).toBe(
+      "See how you feel against how they feel, and how each of you wishes it to be — the Gap is the conversation worth having.",
+    );
+    expect(alignSynchBrand.description).not.toMatch(/\bquiz/i);
   });
 
   it("owns its palette and its mark, sampled from its own logo", () => {
