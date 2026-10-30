@@ -39,6 +39,7 @@ import {
   type RecordRow,
 } from "@/lib/db/rows";
 import { invitationLink } from "@/lib/flow/email";
+import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import {
   instanceStatusOf,
   parseSubmission,
@@ -261,22 +262,54 @@ function cryptoRandomId(): string {
  * Claim
  * ------------------------------------------------------------------ */
 
+export interface ClaimInput {
+  /** The invitation's raw token, from the URL. */
+  readonly token: string;
+  /**
+   * Every `flow_party_*` token this browser holds (`partyTokensFrom()`). The claim is
+   * only valid for a browser that is not already bound to this instance (#202).
+   */
+  readonly viewerTokens?: readonly string[];
+  /** What the claim form posted as its confirmation: the counterparty's name. */
+  readonly confirm?: string | null;
+  readonly now?: Date;
+}
+
 export type ClaimResult =
   | { readonly ok: true; readonly instanceRecordId: string; readonly sessionToken: string }
   | {
       readonly ok: false;
-      readonly code: "unknown" | "claimed" | "expired";
+      readonly code: ClaimRefusal;
       readonly reason: string;
+      /** The party this browser already answers as, when that is why it was refused. */
+      readonly role?: PartyRole;
     };
 
 /**
- * Claim an invitation, exactly once.
+ * Claim an invitation, exactly once, for a party that is not already bound (#202, #146).
  *
- * Three refusals, each named: an unknown token, a token already claimed, and a token past
- * `expires_at`. The `FOR UPDATE` on the invite row is what makes "exactly once" true under
- * two simultaneous claims — the second one waits, then reads `claimed_at` and is refused.
+ * Six refusals, each named, and **only the successful one writes anything**:
+ *
+ *   unknown          no invitation carries that token
+ *   claimed          the token was spent by the claim that succeeded
+ *   expired          past `expires_at`
+ *   already-a-party  this browser already holds a party token for this instance. This is
+ *                    the defect QA found: an Initiator following their own link used to
+ *                    spend the invitation and have their session silently become the
+ *                    Counterparty, so one person filled both columns and the Gap was
+ *                    computed between them. A refusal here leaves `claimed_at` NULL.
+ *   already-bound    the instance already has both party rows (a seeded instance, or a
+ *                    claim that raced this one)
+ *   unconfirmed      the post did not name the party it is joining, or named another one
+ *
+ * The `FOR UPDATE` on the invite row is what makes "exactly once" true under two
+ * simultaneous claims — the second one waits, then reads `claimed_at` and is refused. The
+ * `ON CONFLICT DO NOTHING` on the party insert is the same rule one level down: even with
+ * the invite row locked, a second counterparty row is a refusal, never an overwrite.
  */
-export async function claimInvite(token: string, now = new Date()): Promise<ClaimResult> {
+export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
+  const { token } = input;
+  const now = input.now ?? new Date();
   if (!tokenIsWellFormed(token)) {
     return { ok: false, code: "unknown", reason: "that token is not an invitation token" };
   }
@@ -317,12 +350,49 @@ export async function claimInvite(token: string, now = new Date()): Promise<Clai
       };
     }
 
+    // The caller's own binding, read before anything is written: a claim is for a party
+    // that is not already bound, and the Initiator opening their own link is a refusal
+    // rather than a seat swap. The session keeps answering as whoever it already is.
+    const viewerRole = await partyRoleForTokens(
+      client,
+      invite.instance_record_id,
+      input.viewerTokens ?? [],
+    );
+    if (viewerRole !== undefined) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "already-a-party",
+        role: viewerRole,
+        reason: `this browser already answers as the ${viewerRole} of that instance; the invitation is not its to claim`,
+      };
+    }
+
+    if (!confirmationMatches(input.confirm, invite.counterparty_name)) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "unconfirmed",
+        reason: `the claim did not confirm joining as ${invite.counterparty_name}; nothing was claimed`,
+      };
+    }
+
     const sessionToken = mintToken();
-    await client.query(
+    const inserted = await client.query(
       `INSERT INTO party (instance_record_id, role, name, access_token_hash)
-       VALUES ($1, 'counterparty', $2, $3)`,
+       VALUES ($1, 'counterparty', $2, $3)
+       ON CONFLICT (instance_record_id, role) DO NOTHING`,
       [invite.instance_record_id, invite.counterparty_name, hashToken(sessionToken)],
     );
+    if (inserted.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "already-bound",
+        reason:
+          "that instance already has a Counterparty; a second one would answer in their place",
+      };
+    }
     await client.query("UPDATE instance_invite SET claimed_at = $2 WHERE instance_record_id = $1", [
       invite.instance_record_id,
       now.toISOString(),
@@ -354,6 +424,16 @@ export interface SubmitInput {
   readonly instanceRecordId: string;
   /** The viewer's cookie token. The role is looked up from its hash, never from the form. */
   readonly token: string | undefined;
+  /**
+   * A role the request *claims* to be answering as, if it named one at all (#202).
+   *
+   * The form has no such field — the cookie is the only thing that says who is answering —
+   * so a populated value is a hand-written POST trying to write the other party's column.
+   * When it disagrees with the role the token resolves to, the submit is refused instead of
+   * being quietly written under the token's role: a request that asked to answer as the
+   * Counterparty must not succeed as the Initiator, or the caller learns nothing from it.
+   */
+  readonly assertedRole?: string;
   readonly answers: ReadonlyMap<string, RawAnswer>;
   readonly now?: Date;
 }
@@ -390,6 +470,20 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
         ok: false,
         code: "not-a-party",
         reason: "this browser holds no party token for the instance",
+      };
+    }
+
+    // A request that names a role it is not is refused, not reinterpreted (#202). The
+    // cookie decided the role above; this only rejects a POST that tried to decide it
+    // itself, so a session bound as the Initiator can never be talked into writing the
+    // Counterparty's column.
+    const asserted = input.assertedRole?.trim().toLowerCase() ?? "";
+    if (asserted !== "" && asserted !== role) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "not-a-party",
+        reason: `this session answers as the ${role}; the request asked to answer as the ${asserted}`,
       };
     }
 
@@ -456,6 +550,30 @@ async function partyRoleOf(
     `SELECT role FROM party
       WHERE instance_record_id = $1 AND access_token_hash = $2`,
     [instanceRecordId, hashToken(token)],
+  );
+  return found.rows[0]?.role;
+}
+
+/**
+ * The party any of a browser's cookies already answers as on one instance (#202).
+ *
+ * `partyTokensFrom()` hands in every `flow_party_*` value the request carries; the cookie's
+ * name is the instance id and the token's hash is what this table is indexed by, so one
+ * `= ANY` answers "is this browser already bound here" without a lookup of which instance
+ * the invitation belongs to. Undefined means "not bound", which is the only state a claim
+ * may start from.
+ */
+async function partyRoleForTokens(
+  client: PoolClient,
+  instanceRecordId: string,
+  tokens: readonly string[],
+): Promise<PartyRole | undefined> {
+  const hashes = tokens.filter((token) => token !== "").map(hashToken);
+  if (hashes.length === 0) return undefined;
+  const found = await client.query<{ role: PartyRole }>(
+    `SELECT role FROM party
+      WHERE instance_record_id = $1 AND access_token_hash = ANY($2::text[])`,
+    [instanceRecordId, hashes],
   );
   return found.rows[0]?.role;
 }
@@ -741,18 +859,36 @@ export interface InvitePreview {
   readonly initiatorName: string | null;
   readonly counterpartyName: string | null;
   readonly templateTitle: string | null;
+  /**
+   * The party this browser already answers as on the invitation's instance, or `null`
+   * (#202). The page names it on every visit, so a session never has to guess which column
+   * it is filling — and a claimable invite is not offered to a browser that is already a
+   * party to it.
+   */
+  readonly viewerRole: PartyRole | null;
 }
 
 /**
  * What the claim page may show, without claiming anything.
  *
  * A GET must not spend the token — a mail client's link preview would burn an invitation
- * the person has not opened yet. So the page asks this, and the button posts.
+ * the person has not opened yet. So the page asks this, and the button posts. `viewerRole`
+ * is the same question the claim asks before it writes: the page renders the answer, the
+ * store refuses on it, and one query answers both (#202).
  */
-export async function previewInvite(token: string, now = new Date()): Promise<InvitePreview> {
-  if (!tokenIsWellFormed(token)) {
-    return { state: "unknown", initiatorName: null, counterpartyName: null, templateTitle: null };
-  }
+export async function previewInvite(
+  token: string,
+  options: { readonly viewerTokens?: readonly string[]; readonly now?: Date } = {},
+): Promise<InvitePreview> {
+  const now = options.now ?? new Date();
+  const empty = {
+    state: "unknown" as const,
+    initiatorName: null,
+    counterpartyName: null,
+    templateTitle: null,
+    viewerRole: null,
+  };
+  if (!tokenIsWellFormed(token)) return empty;
   const [row] = await query<{
     instance_record_id: string;
     counterparty_name: string;
@@ -771,21 +907,36 @@ export async function previewInvite(token: string, now = new Date()): Promise<In
       WHERE iv.token_hash = $1`,
     [hashToken(token)],
   );
-  if (row === undefined) {
-    return { state: "unknown", initiatorName: null, counterpartyName: null, templateTitle: null };
-  }
+  if (row === undefined) return empty;
   const state: InviteState =
     row.claimed_at !== null
       ? "claimed"
       : row.expires_at.getTime() <= now.getTime()
         ? "expired"
         : "claimable";
+  const viewerRole = await viewerRoleOf(row.instance_record_id, options.viewerTokens ?? []);
   return {
     state,
     initiatorName: row.initiator_name,
     counterpartyName: row.counterparty_name,
     templateTitle: row.title,
+    viewerRole: viewerRole ?? null,
   };
+}
+
+/** The pool's half of `partyRoleForTokens` — the same question, outside a transaction. */
+async function viewerRoleOf(
+  instanceRecordId: string,
+  tokens: readonly string[],
+): Promise<PartyRole | undefined> {
+  const hashes = tokens.filter((token) => token !== "").map(hashToken);
+  if (hashes.length === 0) return undefined;
+  const [row] = await query<{ role: PartyRole }>(
+    `SELECT role FROM party
+      WHERE instance_record_id = $1 AND access_token_hash = ANY($2::text[])`,
+    [instanceRecordId, hashes],
+  );
+  return row?.role;
 }
 
 /* ------------------------------------------------------------------ *\
