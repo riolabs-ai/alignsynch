@@ -1,0 +1,32 @@
+route  /quiz/[id]
+brand  alignsynch
+
+headings (6)
+  h2  "Recent Messages"
+  h3  "No messages"
+  h2  "Notifications"
+  h3  "No notifications"
+  h1  "Ultimate World History Trivia"
+  h2  "Description"
+
+landmarks (5)
+  banner         1
+  complementary  1
+  main           1
+  navigation     2
+
+links (7 unique, 8 total)
+  #                                                    1
+  /                                                    2
+  /#questions                                          1
+  /#templates                                          1
+  /explore                                             1
+  /settings                                            1
+  /support                                             1
+
+counts
+  elements  214
+  images    1
+  buttons   15
+  inputs    1
+  classes   222 (sha 68cf43f398a4)

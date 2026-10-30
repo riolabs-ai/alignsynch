@@ -1,0 +1,36 @@
+route  /profile/[username]
+brand  alignsynch
+
+headings (9)
+  h2  "Recent Messages"
+  h3  "No messages"
+  h2  "Notifications"
+  h3  "No notifications"
+  h1  "Alex Johnson"
+  h4  "Quiz Master"
+  h4  "Knowledge Seeker"
+  h4  "Perfect Score"
+  h3  "Contact"
+
+landmarks (5)
+  banner         1
+  complementary  1
+  main           1
+  navigation     2
+
+links (8 unique, 9 total)
+  #                                                    1
+  /                                                    2
+  /#questions                                          1
+  /#templates                                          1
+  /leaderboard                                         1
+  /quiz/q123                                           1
+  /settings                                            1
+  /support                                             1
+
+counts
+  elements  349
+  images    1
+  buttons   16
+  inputs    1
+  classes   274 (sha be82af1f8671)
