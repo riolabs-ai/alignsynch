@@ -60,15 +60,25 @@ and **every** run — docs or code — logged the conservative fallback:
 (the mechanism is in `docs/REPO-LAYERS.md`), so the same job classifies the same way it does
 locally. Measured job wall time, GitHub `ubuntu-24.04` runner, pnpm cache warm:
 
-| PR head                   | lane            | job wall |
-| ------------------------- | --------------- | -------- |
-| `wt/fix-metadata-title`   | code (fallback) | 73 s     |
-| `wt/fix-ci-lane-classif…` | config          | 33 s     |
+| PR head                   | lane                    | job wall |
+| ------------------------- | ----------------------- | -------- |
+| `wt/fix-metadata-title`   | code (fallback, no ref) | 73 s     |
+| `wt/fix-ci-lane-classif…` | config                  | 33 s     |
+| `probe/lane-code`         | code                    | 59 s     |
+| `docs/ci-lane-evidence`   | docs                    | 19 s     |
 
-Reading: the same one-job workflow now spends 73 s on a code PR and 33 s on a config PR,
-because the config PR drops `next build`. The fallback is still the floor, not a shortcut —
-a missing ref, an uncomputable diff, or an empty diff (a `push` to `main`, where `HEAD` _is_
-`origin/main`) all mean the full gate.
+Reading: the same one-job workflow spends 59 s on a code PR (build 25.7 s of it) and 19 s on
+a docs-only PR, where the build is skipped outright. The first row is the old behaviour for
+comparison — every run paid it, because the base ref was never there.
+
+The fallback is still the floor, not a shortcut. A `push` to `main` proves it: `HEAD` _is_
+`origin/main` there, so the diff is empty and the post-merge run logs
+
+```
+ lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no changed files vs origin/main — full gate)
+```
+
+and pays the full gate (~70 s). A missing ref or an uncomputable diff lands in the same place.
 
 ## Baseline, measured 2026-10-29 (before the gate)
 
