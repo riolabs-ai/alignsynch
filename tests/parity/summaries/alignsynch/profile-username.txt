@@ -18,19 +18,18 @@ landmarks (5)
   main           1
   navigation     2
 
-links (8 unique, 9 total)
+links (7 unique, 8 total)
   #                                                    1
   /                                                    2
   /#questions                                          1
   /#templates                                          1
-  /leaderboard                                         1
   /quiz/q123                                           1
   /settings                                            1
   /support                                             1
 
 counts
-  elements  352
+  elements  350
   images    1
   buttons   16
   inputs    1
-  classes   280 (sha ef424344d840)
+  classes   278 (sha 405f9aa0b142)

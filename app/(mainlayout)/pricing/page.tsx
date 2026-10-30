@@ -4,6 +4,7 @@ import { PricingCta } from "@/components/pricing/pricing-cta";
 import { Footer } from "@/components/layout/footer";
 import { pricingPageCopy } from "@/data/pages/pricing";
 import { shellPageCopy } from "@/data/pages/shell";
+import { hiddenNavHrefs } from "@/lib/flags";
 import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
 
@@ -21,7 +22,7 @@ export default function PricingPage() {
       <PricingPlans copy={sectionOf(pricingPageCopy, "plans")} />
       <PricingFaq copy={sectionOf(pricingPageCopy, "faq")} />
       <PricingCta copy={sectionOf(pricingPageCopy, "cta")} />
-      <Footer copy={shellPageCopy} />
+      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
     </div>
   );
 }

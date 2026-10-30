@@ -17,13 +17,16 @@ import { NextResponse } from "next/server";
  * for: an edit after the freeze is an error, and a test reads the status.
  *
  * The party is resolved from the cookie's token hash inside the store's transaction; the
- * form cannot say who it is.
+ * form cannot say who it is. A form field called `role`, if one is posted, is not read as an
+ * instruction — it is read as an **assertion**, and an assertion the cookie contradicts is
+ * refused (403) rather than quietly written under the cookie's role (#202). That is what
+ * makes a hand-written POST unable to record the other party's column.
  *
  * The refusal page is assembled here as HTML rather than rendered from a component, for
  * one mechanical reason: this Next version refuses `react-dom/server` inside `app/` (it
  * wants a Server Component, and a route handler that must return a status is not one). The
- * words are still the fixture's — `problems` in `data/pages/assessment-instance.ts` — so
- * there is no copy in this file.
+ * words are still the fixture's — `problems` in `data/pages/assessment-instance.ts` — plus
+ * the store's own reason line, which says which role this session actually answers as.
  */
 export async function POST(
   request: Request,
@@ -34,10 +37,12 @@ export async function POST(
   const parsed = answersFrom(form);
   const jar = await cookies();
   const token = jar.get(partyCookieName(instanceId))?.value;
+  const asserted = form.get("role");
 
   const result = await submitAnswers({
     instanceRecordId: instanceId,
     token,
+    ...(typeof asserted === "string" ? { assertedRole: asserted } : {}),
     answers: parsed.answers,
   });
 
@@ -63,6 +68,7 @@ export async function POST(
     `<title>${escapeHtml(label)}</title></head>`,
     '<body class="mx-auto max-w-xl px-4 py-12">',
     `<main><h1 class="text-xl font-semibold text-red-800">${escapeHtml(label)}</h1>`,
+    `<p class="mt-2 text-sm">${escapeHtml(result.reason)}</p>`,
     `<p class="mt-4"><a class="text-sm font-medium underline" href="${href}">${escapeHtml(back)}</a></p>`,
     "</main></body></html>",
   ].join("");

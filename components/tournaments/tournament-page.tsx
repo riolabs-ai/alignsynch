@@ -23,7 +23,19 @@ import { TournamentTestimonials } from "./tournament-testimonials";
  * the tournaments page renders the footer itself, and the footer's words belong to the
  * chrome. WU-11 adds the page copy as its own prop and hands it to the bands above.
  */
-export function TournamentPage({ copy, shellCopy }: { copy: PageCopy; shellCopy: PageCopy }) {
+export function TournamentPage({
+  copy,
+  shellCopy,
+  hiddenNav,
+}: {
+  copy: PageCopy;
+  shellCopy: PageCopy;
+  /**
+   * The gated hrefs the shell must not draw (#175 follow-up) — forwarded to the footer, which is
+   * client-bundled through this `"use client"` module and so cannot resolve the flag itself.
+   */
+  hiddenNav: readonly string[];
+}) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const catalogue = sectionOf(copy, "all-tournaments");
@@ -70,7 +82,7 @@ export function TournamentPage({ copy, shellCopy }: { copy: PageCopy; shellCopy:
       </div>
 
       {/* Add the Footer */}
-      <Footer copy={shellCopy} />
+      <Footer copy={shellCopy} hiddenNav={hiddenNav} />
     </>
   );
 }

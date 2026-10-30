@@ -28,6 +28,7 @@ import { isOwner, publicProfileOf } from "@/content/identity";
 import { profilePageCopy } from "@/data/pages/profile";
 import { currentUser } from "@/lib/auth/session";
 import { readUserProfileByHandle } from "@/lib/db/user-profiles";
+import { hiddenNavHrefs } from "@/lib/flags";
 import { profileByHandle } from "@/lib/profile";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -94,7 +95,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   return (
     <>
       <DemoAccountNotice copy={profilePageCopy} />
-      <UserProfile profile={fixture} />
+      {/* Resolved once, on the server, and passed down: `UserProfile` is a client component and
+          `lib/flags.ts` throws in a browser (#175 follow-up). The member branch above mounts
+          `MemberProfile`, which has no leaderboard link, so it needs nothing. */}
+      <UserProfile profile={fixture} hiddenNav={hiddenNavHrefs()} />
     </>
   );
 }
