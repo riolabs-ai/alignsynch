@@ -21,9 +21,12 @@
  *    below matches `NAV` in `components/layout/sidebar.tsx` id-for-id. A renamed id
  *    is a red build (E23) rather than a blank link.
  *
- * The account block is a demo identity, not a `Player` row: WU-1 owns real people and
- * this header avatar is chrome that predates it. Keep it here until the record the
- * header renders exists — a copy fixture is the wrong place to invent one.
+ * The account block holds **no person** (issue #212). It carried a demo identity — `JD`,
+ * "Jonathan Doe", "@johndoe" — that the header painted onto every page behind the shell, so a
+ * signed-in demo admin's own board announced a stranger. A person is session data, not copy:
+ * `lib/auth/shell-account.ts` resolves the signed-in name, handle and address from the request,
+ * and `components/layout/header.tsx` draws `GeneratedAvatar` from them. What stays here is the
+ * one word the slot needs when nobody is signed in ("Sign in") and the menu's destinations.
  *
  * THE PRODUCT NAME IS NOT COPY. `heading` is the brand word the sidebar logo and the
  * footer logo render, and `footer-legal/copyright` is the same word in a sentence; both
@@ -34,10 +37,10 @@
  * literal in `app/`, `components/` and `data/` reads the same record, so a skin is a
  * second `Brand` and not a find-and-replace.
  *
- * The two addresses in this fixture are the brand's too: `display-email` (the header's
- * account block) and `footer-contact/email` (the footer) both read
- * `brand.supportEmail`, because the record carries one support address and a demo that
- * printed a second one would be a second source of truth for it.
+ * The footer's mailbox is the brand's: `footer-contact/email` reads `brand.supportEmail`,
+ * because the record carries one support address and a demo that printed a second one would be
+ * a second source of truth for it. The header's account block no longer prints an address at all
+ * (#212) — it prints the signed-in person's own, which is session data and not this fixture's.
  *
  * THE FOOTER'S THREE SENTENCES ARE THE BRAND'S VOCABULARY, NOT THE TEMPLATE'S (issue
  * #188, stage S3). `Brand` carries a name, an address and a domain; it does not carry a
@@ -339,10 +342,15 @@ export function shellCopy(brand: Brand): PageCopy {
       {
         id: "account",
         items: [
-          { id: "initials", label: "JD" },
-          { id: "display-name", label: "Jonathan Doe" },
-          { id: "display-handle", label: "@johndoe" },
-          { id: "display-email", label: brand.supportEmail },
+          /**
+           * The account slot's *signed-out* state (#212). It is the only word the slot still
+           * needs here: the signed-in person's name, handle and address come from that
+           * request's session (`lib/auth/shell-account.ts`), because a copy fixture is the
+           * wrong place to store a person — the four items this replaced (`initials` "JD",
+           * `display-name` "Jonathan Doe", `display-handle` "@johndoe", `display-email`) painted
+           * a stranger over every page behind the shell, including a demo admin's own board.
+           */
+          { id: "signed-out", label: "Sign in" },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },

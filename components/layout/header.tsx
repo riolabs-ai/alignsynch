@@ -17,6 +17,7 @@ import type { BrandId } from "@/data/brand";
 import { metric } from "@/data/metrics";
 import { notificationsFor } from "@/data/notifications";
 import { querySearchIndex } from "@/content/search";
+import type { ShellAccount } from "@/lib/auth/shell-account";
 import { type NavViewer, seesQuizProduct } from "@/lib/nav";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { searchSectionFor } from "@/lib/shell-copy";
@@ -46,10 +47,37 @@ import NotificationDrawer from "../header/NotificationDrawer";
 import { Badge } from "../ui/badge";
 import { useSidebar } from "./sidebar-context";
 
+/**
+ * The account slot when nobody is signed in (issue #212).
+ *
+ * `GeneratedAvatar` draws a monogram from a person's name; a signed-out shell has no person and
+ * no name, so it must not draw one. This is the neutral disc the spec allows in that state: the
+ * same size and shape as the avatar it stands in for, a muted surface, and a generic person glyph
+ * — plus the accessible name the slot needs so a screen reader does not announce a person who is
+ * not there. It is drawn here rather than in `components/media/` because it is not an avatar of
+ * anybody; it is the absence of one, and it has no seed to be a function of.
+ */
+function SignedOutAvatar({ label, size }: { label: string; size: number }) {
+  return (
+    <span
+      aria-label={label}
+      className="inline-flex shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+      role="img"
+      style={{ width: size, height: size }}
+    >
+      <User
+        aria-hidden="true"
+        style={{ width: Math.round(size * 0.5), height: Math.round(size * 0.5) }}
+      />
+    </span>
+  );
+}
+
 export function Header({
   copy,
   brandId,
   viewer,
+  account,
   searchIndex,
 }: {
   copy: PageCopy;
@@ -64,6 +92,19 @@ export function Header({
    * (`navViewer()` grants nothing today).
    */
   viewer: NavViewer;
+  /**
+   * The signed-in person, or `null` (issue #212). Resolved server-side from this request's
+   * session by `lib/auth/shell-account.ts` and passed down through the layout, because a client
+   * component cannot read a session and an identity the browser supplied is not one.
+   *
+   * This used to be copy — `JD`, "Jonathan Doe", "@johndoe" out of `data/pages/shell.ts` — so
+   * every page behind the shell announced a stranger, including a demo Admin's own board. The
+   * three lines below are the whole rendering of a person now: the monogram and gradient come
+   * from `GeneratedAvatar` (`name` + the handle as its seed), which is the one avatar path
+   * `/profile` and `/leaderboard` already draw (#152). Nothing here invents a person, and
+   * nothing is random, so the disc is byte-identical on the server and in the browser.
+   */
+  account: ShellAccount | null;
   /** The brand's own search catalog, built on the server (`data/searchdata.ts`). */
   searchIndex: SearchIndex;
 }) {
@@ -456,35 +497,42 @@ export function Header({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
-                <GeneratedAvatar
-                  name={itemLabel(accountCopy, "display-name")}
-                  seed={itemLabel(accountCopy, "display-handle")}
-                  size={32}
-                />
+                {account === null ? (
+                  /* Signed out: a neutral disc, not a person. The label says what the slot is
+                     for, and the menu it opens offers the only action that exists. */
+                  <SignedOutAvatar label={itemLabel(accountCopy, "signed-out")} size={32} />
+                ) : (
+                  <GeneratedAvatar name={account.name} seed={account.handle} size={32} />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 p-0">
-              <div className="flex flex-col space-y-2 p-4">
-                <div className="flex items-center gap-3">
-                  <GeneratedAvatar
-                    name={itemLabel(accountCopy, "display-name")}
-                    seed={itemLabel(accountCopy, "display-handle")}
-                    size={64}
-                  />
-                  <div>
-                    <h3 className="text-lg font-semibold">
-                      {itemLabel(accountCopy, "display-name")}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {itemLabel(accountCopy, "display-handle")}
-                    </p>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      <span>{itemLabel(accountCopy, "display-email")}</span>
+              {account === null ? (
+                <div className="p-2">
+                  <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
+                    <Link href="/login">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <span>{itemLabel(accountCopy, "signed-out")}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </div>
+              ) : (
+                <div className="flex flex-col space-y-2 p-4">
+                  <div className="flex items-center gap-3">
+                    <GeneratedAvatar name={account.name} seed={account.handle} size={64} />
+                    <div>
+                      <h3 className="text-lg font-semibold">{account.name}</h3>
+                      <p className="text-sm text-muted-foreground">{`@${account.handle}`}</p>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Mail className="h-3 w-3" />
+                        <span>{account.email}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <DropdownMenuSeparator />
 
