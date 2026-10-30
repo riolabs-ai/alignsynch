@@ -24,137 +24,170 @@
  * The account block is a demo identity, not a `Player` row: WU-1 owns real people and
  * this header avatar is chrome that predates it. Keep it here until the record the
  * header renders exists — a copy fixture is the wrong place to invent one.
+ *
+ * THE PRODUCT NAME IS NOT COPY. `heading` is the brand word the sidebar logo and the
+ * footer logo render, and `footer-legal/copyright` is the same word in a sentence; both
+ * read `brand.name` from `data/brand.ts`, so the projection is a function of the brand
+ * record (`shellCopy(brand)`) and the two strings a second brand must change are the
+ * ones it actually prints. `shellPageCopy` stays the QuizHub instance, so every caller
+ * keeps importing a `PageCopy` and nothing else moved. The 94 other `QuizHub` literals
+ * in `app/` and `components/` are deliberately untouched — replacing those is the next
+ * card, not this one.
+ *
+ * The addresses in this fixture are copy, not the brand: `display-email` is a demo
+ * identity and `footer-contact/email` is the address the footer prints, which the brand
+ * record also carries as `supportEmail`. Wiring that one is the reskin's call; doing it
+ * here would change a screen this card must not touch.
  */
+import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { brand } from "../brand";
 
-export const shellPageCopy: PageCopy = zPageCopy.parse({
-  /** The brand word: the sidebar logo and the footer logo render it. */
-  heading: "QuizHub",
-  /** The footer's brand sentence. */
-  subtitle:
-    "Create engaging quizzes, challenge others, and earn rewards for your knowledge. Join our community of quiz creators and players today.",
-  sections: [
-    {
-      id: "nav",
-      items: [
-        { id: "home", label: "Home" },
-        { id: "daily-challenge", label: "Today's Challenge" },
-        { id: "categories", label: "Categories" },
-        { id: "battle", label: "Quiz Battle" },
-        { id: "news", label: "News & Updates" },
-        { id: "explore", label: "Explore Quizzes" },
-        { id: "tournaments", label: "Quiz Tournament" },
-        { id: "leaderboard", label: "Leaderboard" },
-        { id: "creator-tips", label: "Quiz Creator Tips" },
-        { id: "quiz-discussions", label: "Quiz Discussions" },
-        { id: "create-editor", label: "Create Quiz" },
-        { id: "create-generator", label: "Ai Quiz Generator" },
-        { id: "affiliate", label: "Affiliate Page" },
-        { id: "pricing", label: "Pricing Plan" },
-        { id: "support", label: "Support" },
-        { id: "logout", label: "Logout" },
-      ],
-    },
-    {
-      id: "search",
-      items: [
-        { id: "placeholder", label: "Search quizzes, categories, creators..." },
-        { id: "hint", label: "Type to search for quizzes, categories, creators, and more..." },
-        { id: "empty-title", label: 'No results found for "{query}"' },
-        { id: "empty-hint", label: "Try different keywords or check spelling" },
-        { id: "group-quizzes", label: "Quizzes" },
-        { id: "group-categories", label: "Categories" },
-        { id: "group-creators", label: "Creators" },
-        { id: "group-pages", label: "Pages" },
-        { id: "count-quizzes", label: "{count} quizzes" },
-        { id: "view-all", label: 'View all results for "{query}"' },
-      ],
-    },
-    {
-      id: "account",
-      items: [
-        { id: "initials", label: "JD" },
-        { id: "display-name", label: "Jonathan Doe" },
-        { id: "display-handle", label: "@johndoe" },
-        { id: "display-email", label: "info@quizhub.com" },
-        { id: "profile", label: "My Profile" },
-        { id: "profile-hint", label: "Account settings" },
-        { id: "dashboard", label: "Dashboard" },
-        { id: "dashboard-hint", label: "Your activity and stats" },
-        { id: "quizzes", label: "My Quizes" },
-        { id: "quizzes-hint", label: "Your created quizes" },
-        { id: "settings", label: "Settings" },
-        { id: "settings-hint", label: "Preferences" },
-        { id: "dark-mode", label: "Dark Mode" },
-        { id: "dark-mode-hint", label: "Toggle theme" },
-        { id: "logout", label: "Log out" },
-      ],
-    },
-    {
-      id: "notifications",
-      heading: "Notifications",
-      items: [
-        { id: "mark-all", label: "Mark all read" },
-        { id: "empty-title", label: "No notifications" },
-        {
-          id: "empty-body",
-          label: "You're all caught up! We'll notify you when something new happens.",
-        },
-        { id: "new", label: "New" },
-        { id: "earlier", label: "Earlier" },
-      ],
-    },
-    {
-      id: "messages",
-      heading: "Recent Messages",
-      items: [{ id: "view-all", label: "View All" }],
-    },
-    {
-      id: "theme",
-      items: [{ id: "toggle", label: "Toggle theme" }],
-    },
-    {
-      id: "footer-links",
-      heading: "Quick Links",
-      items: [
-        { id: "dashboard", label: "Dashboard" },
-        { id: "create-quiz", label: "Create Quiz" },
-        { id: "leaderboard", label: "Leaderboard" },
-        { id: "affiliate", label: "Affiliate Program" },
-        { id: "pricing", label: "Pricing" },
-      ],
-    },
-    {
-      id: "footer-categories",
-      heading: "Categories",
-    },
-    {
-      id: "footer-contact",
-      heading: "Contact",
-      items: [
-        { id: "address", label: "123 Quiz Street, Knowledge City, QZ 12345" },
-        { id: "phone", label: "+1 (555) 123-4567" },
-        { id: "email", label: "support@quizhub.com" },
-        { id: "cta", label: "Contact Support" },
-      ],
-    },
-    {
-      id: "footer-newsletter",
-      heading: "Subscribe to our newsletter",
-      body: "Get the latest news, updates and quiz tips delivered directly to your inbox.",
-      items: [
-        { id: "placeholder", label: "Enter your email" },
-        { id: "subscribe", label: "Subscribe" },
-      ],
-    },
-    {
-      id: "footer-legal",
-      items: [
-        { id: "copyright", label: "QuizHub. All rights reserved." },
-        { id: "privacy", label: "Privacy Policy" },
-        { id: "terms", label: "Terms of Service" },
-        { id: "cookies", label: "Cookie Policy" },
-      ],
-    },
-  ],
-});
+/**
+ * The shell's copy for one brand. `heading` and the copyright line are the only fields
+ * that depend on it, and both are derived rather than written: a projection that spells
+ * the product name cannot be re-skinned without a find-and-replace.
+ */
+export function shellCopy(brand: Brand): PageCopy {
+  return zPageCopy.parse({
+    /** The brand word: the sidebar logo and the footer logo render it. */
+    heading: brand.name,
+
+    /** The footer's brand sentence. */
+    subtitle:
+      "Create engaging quizzes, challenge others, and earn rewards for your knowledge. Join our community of quiz creators and players today.",
+    sections: [
+      {
+        id: "nav",
+        items: [
+          { id: "home", label: "Home" },
+          { id: "daily-challenge", label: "Today's Challenge" },
+          { id: "categories", label: "Categories" },
+          { id: "battle", label: "Quiz Battle" },
+          { id: "news", label: "News & Updates" },
+          { id: "explore", label: "Explore Quizzes" },
+          { id: "tournaments", label: "Quiz Tournament" },
+          { id: "leaderboard", label: "Leaderboard" },
+          { id: "creator-tips", label: "Quiz Creator Tips" },
+          { id: "quiz-discussions", label: "Quiz Discussions" },
+          { id: "create-editor", label: "Create Quiz" },
+          { id: "create-generator", label: "Ai Quiz Generator" },
+          { id: "affiliate", label: "Affiliate Page" },
+          { id: "pricing", label: "Pricing Plan" },
+          { id: "support", label: "Support" },
+          { id: "logout", label: "Logout" },
+        ],
+      },
+      {
+        id: "search",
+        items: [
+          { id: "placeholder", label: "Search quizzes, categories, creators..." },
+          { id: "hint", label: "Type to search for quizzes, categories, creators, and more..." },
+          { id: "empty-title", label: 'No results found for "{query}"' },
+          { id: "empty-hint", label: "Try different keywords or check spelling" },
+          { id: "group-quizzes", label: "Quizzes" },
+          { id: "group-categories", label: "Categories" },
+          { id: "group-creators", label: "Creators" },
+          { id: "group-pages", label: "Pages" },
+          { id: "count-quizzes", label: "{count} quizzes" },
+          { id: "view-all", label: 'View all results for "{query}"' },
+        ],
+      },
+      {
+        id: "account",
+        items: [
+          { id: "initials", label: "JD" },
+          { id: "display-name", label: "Jonathan Doe" },
+          { id: "display-handle", label: "@johndoe" },
+          { id: "display-email", label: "info@quizhub.com" },
+          { id: "profile", label: "My Profile" },
+          { id: "profile-hint", label: "Account settings" },
+          { id: "dashboard", label: "Dashboard" },
+          { id: "dashboard-hint", label: "Your activity and stats" },
+          { id: "quizzes", label: "My Quizes" },
+          { id: "quizzes-hint", label: "Your created quizes" },
+          { id: "settings", label: "Settings" },
+          { id: "settings-hint", label: "Preferences" },
+          { id: "dark-mode", label: "Dark Mode" },
+          { id: "dark-mode-hint", label: "Toggle theme" },
+          { id: "logout", label: "Log out" },
+        ],
+      },
+      {
+        id: "notifications",
+        heading: "Notifications",
+        items: [
+          { id: "mark-all", label: "Mark all read" },
+          { id: "empty-title", label: "No notifications" },
+          {
+            id: "empty-body",
+            label: "You're all caught up! We'll notify you when something new happens.",
+          },
+          { id: "new", label: "New" },
+          { id: "earlier", label: "Earlier" },
+        ],
+      },
+      {
+        id: "messages",
+        heading: "Recent Messages",
+        items: [{ id: "view-all", label: "View All" }],
+      },
+      {
+        id: "theme",
+        items: [{ id: "toggle", label: "Toggle theme" }],
+      },
+      {
+        id: "footer-links",
+        heading: "Quick Links",
+        items: [
+          { id: "dashboard", label: "Dashboard" },
+          { id: "create-quiz", label: "Create Quiz" },
+          { id: "leaderboard", label: "Leaderboard" },
+          { id: "affiliate", label: "Affiliate Program" },
+          { id: "pricing", label: "Pricing" },
+        ],
+      },
+      {
+        id: "footer-categories",
+        heading: "Categories",
+      },
+      {
+        id: "footer-contact",
+        heading: "Contact",
+        items: [
+          { id: "address", label: "123 Quiz Street, Knowledge City, QZ 12345" },
+          { id: "phone", label: "+1 (555) 123-4567" },
+          { id: "email", label: "support@quizhub.com" },
+          { id: "cta", label: "Contact Support" },
+        ],
+      },
+      {
+        id: "footer-newsletter",
+        heading: "Subscribe to our newsletter",
+        body: "Get the latest news, updates and quiz tips delivered directly to your inbox.",
+        items: [
+          { id: "placeholder", label: "Enter your email" },
+          { id: "subscribe", label: "Subscribe" },
+        ],
+      },
+      {
+        id: "footer-legal",
+        items: [
+          { id: "copyright", label: `${brand.name}. All rights reserved.` },
+          { id: "privacy", label: "Privacy Policy" },
+          { id: "terms", label: "Terms of Service" },
+          { id: "cookies", label: "Cookie Policy" },
+        ],
+      },
+    ],
+  });
+}
+
+/**
+ * The shell as the app renders it today — the QuizHub instance of `shellCopy`.
+ *
+ * Still a parsed `PageCopy` at module scope, so the layout, the eleven pages that mount
+ * the footer, `data/pages/index.ts` and the E23 ratchet need no change: they import a
+ * value, and a value is what they get.
+ */
+export const shellPageCopy: PageCopy = shellCopy(brand);
