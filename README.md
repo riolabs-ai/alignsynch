@@ -1,8 +1,8 @@
 # AlignSynch
 
-AlignSynch is a whitelabel relationship and learning platform: two people answer the same questions
-about how they feel and how they wish it to be, and the distance between the two answers — the Gap —
-is the conversation worth having.
+AlignSynch is a relationship and learning platform: two people answer the same questions about how
+they feel and how they wish it to be, and the distance between the two answers — the Gap — is the
+conversation worth having.
 
 This repository is the **template** that product is built from, not a single site. One codebase, one
 route table, several templates and several brands, and a build picks the brand. It ships as

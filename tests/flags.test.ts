@@ -21,7 +21,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { type FlagDefinition, flagDefinition, flags, zFlags } from "@/data/flags";
 import {
+  bypassesForAdmin,
   currentTemplate,
+  declaresAdminBypass,
   envNameFor,
   hiddenNavHrefs,
   isEnabled,
@@ -182,5 +184,116 @@ describe("the nav and the browser", () => {
   it("refuses to resolve in a browser — a flag the client decides enforces nothing", () => {
     vi.stubGlobal("window", {});
     expect(() => isEnabled("community.leaderboard")).toThrow(/server-only/);
+  });
+});
+
+/**
+ * The admin bypass (#184) — one flag, opt-in, and the three cases that must not move.
+ *
+ * The bypass is the only step that sits ahead of the environment, so the tests that matter are
+ * the *negative* ones: a flag that did not opt in must answer exactly as it did before, whatever
+ * role it is handed. Both halves are driven through the pure resolver, so no `process.env`
+ * write is needed to prove the precedence; `isEnabled` gets the plumbing case at the end.
+ */
+describe("the admin bypass (#184)", () => {
+  const bypassing = (over: Partial<FlagDefinition> = {}): FlagDefinition =>
+    definition({ adminBypass: true, ...over });
+
+  it("an opted-in flag is on for an admin whatever the env, template or default say", () => {
+    // The default is off, there is a template list that does not include this build, and the
+    // operator set the override to 0 — all three say "off", and the role is the one that wins.
+    const flag = bypassing({ default: false, templates: ["alignsynch"] });
+
+    expect(resolveFlag(flag, { template: "quizhub", override: false, role: "admin" })).toBe(true);
+    expect(resolveFlag(flag, { template: "quizhub", role: "admin" })).toBe(true);
+    expect(resolveFlag(flag, { template: "alignsynch", override: false, role: "admin" })).toBe(
+      true,
+    );
+    // Even a default of true with the override off: the env does not lock the admin out.
+    expect(
+      resolveFlag(bypassing({ default: true }), {
+        template: "quizhub",
+        override: false,
+        role: "admin",
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps the three steps untouched for a member and for nobody-signed-in", () => {
+    const flag = bypassing({ default: false, templates: ["alignsynch"] });
+
+    for (const role of ["member", null, undefined] as const) {
+      // default
+      expect(resolveFlag(flag, { template: "quizhub", role })).toBe(false);
+      // template
+      expect(resolveFlag(flag, { template: "alignsynch", role })).toBe(true);
+      // env, both directions
+      expect(resolveFlag(flag, { template: "quizhub", override: true, role })).toBe(true);
+      expect(resolveFlag(flag, { template: "alignsynch", override: false, role })).toBe(false);
+    }
+  });
+
+  it("does not change a flag that did not opt in — an admin is just another caller", () => {
+    const plain = definition({ default: false, templates: ["alignsynch"] });
+
+    // Every precedence case with the admin role present, and every one answers as with no role.
+    expect(resolveFlag(plain, { template: "quizhub", role: "admin" })).toBe(false);
+    expect(resolveFlag(plain, { template: "alignsynch", role: "admin" })).toBe(true);
+    expect(resolveFlag(plain, { template: "quizhub", override: true, role: "admin" })).toBe(true);
+    expect(resolveFlag(plain, { template: "alignsynch", override: false, role: "admin" })).toBe(
+      false,
+    );
+    // and `adminBypass: false` is the same statement spelled out, not a global switch.
+    const explicit = definition({ default: false, adminBypass: false });
+    expect(resolveFlag(explicit, { template: "quizhub", role: "admin" })).toBe(false);
+  });
+
+  it("is declared by exactly one flag — `community.leaderboard` — and never by a second", () => {
+    const optedIn = Object.entries(flags)
+      .filter(([, flag]) => flag.adminBypass === true)
+      .map(([name]) => name);
+    expect(optedIn).toEqual(["community.leaderboard"]);
+
+    // Absent is the default, and it must stay absent: a flag that gains the field is a decision
+    // somebody has to make in this test as well as in the record.
+    for (const [name, flag] of Object.entries(flags)) {
+      if (name === "community.leaderboard") continue;
+      expect(flag.adminBypass, `${name} opted in to the admin bypass`).toBeUndefined();
+    }
+  });
+
+  it("rejects a non-boolean `adminBypass` — a string is not an opt-in", () => {
+    const stringly = zFlags.safeParse({
+      ...flags,
+      "community.leaderboard": { ...flags["community.leaderboard"], adminBypass: "yes" },
+    });
+    expect(stringly.success).toBe(false);
+  });
+
+  it("reaches the resolver through isEnabled, and only for the flag that opted in", () => {
+    // The record's flag: off for everyone (the default), on for an admin.
+    expect(isEnabled("community.leaderboard")).toBe(false);
+    expect(isEnabled("community.leaderboard", { role: "admin" })).toBe(true);
+    expect(isEnabled("community.leaderboard", { role: "member" })).toBe(false);
+    expect(isEnabled("community.leaderboard", { role: null })).toBe(false);
+
+    // The env cannot take it away from an admin, and it still works on everyone else.
+    vi.stubEnv("FLAG_COMMUNITY_LEADERBOARD", "0");
+    expect(isEnabled("community.leaderboard", { role: "admin" })).toBe(true);
+    expect(isEnabled("community.leaderboard", { role: "member" })).toBe(false);
+    vi.unstubAllEnvs();
+
+    // A flag without the field: the role is not an input to its answer.
+    expect(isEnabled("community.tournaments", { role: "admin" })).toBe(false);
+  });
+
+  it("names the opt-in, so a caller can skip the session read for a flag that has none", () => {
+    expect(declaresAdminBypass("community.leaderboard")).toBe(true);
+    expect(declaresAdminBypass("commerce.pricing")).toBe(false);
+    expect(declaresAdminBypass("create.editor")).toBe(false);
+    // And the resolver's own predicate agrees with it, per role.
+    expect(bypassesForAdmin(flags["community.leaderboard"], "admin")).toBe(true);
+    expect(bypassesForAdmin(flags["community.leaderboard"], "member")).toBe(false);
+    expect(bypassesForAdmin(flags["community.tournaments"], "admin")).toBe(false);
   });
 });
