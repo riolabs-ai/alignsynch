@@ -1,5 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  /**
+   * The brand this build renders: `BRAND=quizhub` (default) or `BRAND=alignsynch`.
+   *
+   * `data/brand.ts` picks the record and the whole tree reads it from there, so this is
+   * the only place the flag is turned into a value. It is declared in `env` — and not
+   * just read from the shell — because Next inlines `env` into the *browser* bundle as
+   * well: `brand` reaches client components (settings, the affiliate dashboard), and a
+   * shell-only lookup would give the server one brand and the browser another, which is a
+   * hydration mismatch and a `BRAND=alignsynch` build that still says QuizHub wherever
+   * React re-renders.
+   *
+   * Unset or empty means the default, which is why the fallback is `||` and not `??`.
+   * An unknown value is a build failure, raised by `resolveBrand` with the accepted ids.
+   */
+  env: {
+    BRAND: process.env.BRAND || "quizhub",
+  },
   // typescript: {
   //   ignoreBuildErrors: true,
   // },

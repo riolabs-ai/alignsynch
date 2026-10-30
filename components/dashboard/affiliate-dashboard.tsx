@@ -8,6 +8,7 @@ import { formatCountRange, formatMetricValue, formatPercentValue } from "@/conte
 import { Copy, DollarSign, ExternalLink, LinkIcon, Share2, TrendingUp, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { brand } from "@/data/brand";
 import { media } from "@/data/media";
 import { affiliateTiers, currentAffiliateTier, metric } from "@/data/metrics";
 type Referral = {
@@ -60,7 +61,9 @@ const referrals: Referral[] = [
 ];
 
 export function AffiliateDashboard() {
-  const referralLink = "https://quizhub.com/ref/username123";
+  // The origin is brand (`brand.referralBase`); `username123` is the demo's handle and
+  // stays a literal — this card does not invent a user system to derive it.
+  const referralLink = `${brand.referralBase}/ref/username123`;
 
   const totalReferrals = referrals.length;
   const activeReferrals = referrals.filter((r) => r.status === "active").length;

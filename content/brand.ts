@@ -24,6 +24,20 @@
  *                 (`hsl(0 0% 9%)`), not a `var(--primary)` reference, because the point
  *                 of the record is to carry the value that reference resolves to
  *   supportEmail  the address the footer and the support pages print
+ *   affiliateEmail the address the affiliate program prints. A second field rather than a
+ *                 second use of `supportEmail`, because it is a second *surface* that
+ *                 answers a partner — even when a brand routes both to one mailbox, that
+ *                 is a routing decision made in the record, not a fact the schema assumes
+ *   referralBase  the origin a referral link is composed from (`https://host`), never a
+ *                 whole link: the path and the handle belong to the caller, so the record
+ *                 carries the half a skin owns and the demo's `username123` stays a
+ *                 literal in the component that prints it
+ *
+ * An address is **not** derived from `domain`, and the records make that visible: the site
+ * domain is what a page claims to be, the mailbox is where a human answers, and the
+ * templates answer at `@riolabs.ai` while the site claims `quizhub.com` or
+ * `alignsynch.com`. Composing an address out of `domain` would invent a mailbox nobody
+ * reads — the failure it replaced was two addresses typed into a component.
  *
  * `logo` and `colors` are the only fields with a shape beyond "a non-empty string", and
  * both are validated here rather than at the render site: a skin that supplies
@@ -89,6 +103,27 @@ export const zBrandDomain = z
     "must be a bare lowercase host — no scheme, no path, no trailing dot",
   );
 
+/**
+ * The origin a referral link is built on: `https://quizhub.com`, never a whole link.
+ *
+ * The two halves have different owners. The host is brand — an AlignSynch link points at
+ * `alignsynch.com` — while the path (`/ref/`) and the handle belong to the product, and
+ * the handle in this demo (`username123`) is a literal in the component that prints it. A
+ * record that carried the whole link would have to know a username it has no business
+ * knowing, and a second brand would carry a second copy of a demo value.
+ *
+ * Rejected, loudly, because each one composes into a broken link: a path (`/ref` appended
+ * to it yields `https://host/ref/ref/…`), a trailing slash (`…/` + `/ref/x` -> `//ref/x`),
+ * a username (`https://me@host`), a query or a fragment, and a bare `quizhub.com` with no
+ * scheme (the scheme is required for exactly that reason).
+ */
+export const zBrandReferralBase = z
+  .string()
+  .regex(
+    /^https?:\/\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(?::\d{1,5})?$/,
+    "must be an origin — scheme and host only: no path, no username, no trailing slash",
+  );
+
 export const zBrand = z
   .object({
     name: z.string().min(1),
@@ -97,6 +132,8 @@ export const zBrand = z
     logo: zBrandLogoPath,
     colors: zBrandColors,
     supportEmail: z.string().email(),
+    affiliateEmail: z.string().email(),
+    referralBase: zBrandReferralBase,
   })
   .strict();
 

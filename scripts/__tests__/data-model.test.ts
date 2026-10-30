@@ -352,7 +352,7 @@ describe("ui-refs", () => {
     const source = [
       '<a href="https://example.com/x">x</a>',
       '<a href="#top">top</a>',
-      '<a href="mailto:support@quizhub.com">mail</a>',
+      '<a href="mailto:quizhub@riolabs.ai">mail</a>',
       `<Link href={\`/quiz/${dollar}{id}\`}>template</Link>`,
     ].join("\n");
     assert.deepEqual(dead(source), []);

@@ -354,8 +354,11 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "join-now", label: "Join Now" },
         { id: "learn-more", label: "Learn More" },
-        { id: "contact-prompt", label: "Have questions? Contact our affiliate team at " },
-        { id: "contact-email", label: "affiliates@quizhub.com" },
+        {
+          id: "contact-prompt",
+          label: "Have questions? Contact our affiliate team at ",
+        },
+        { id: "contact-email", label: brand.affiliateEmail },
       ],
     },
   ],
