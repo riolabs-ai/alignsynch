@@ -71,7 +71,7 @@ export function MainLayout({
         <div
           className={cn(collapsed ? "xl:w-[calc(100%-70px)]" : "xl:w-[calc(100%-250px)]", "w-full")}
         >
-          <Header copy={copy} brandId={brandId} searchIndex={searchIndex} />
+          <Header copy={copy} brandId={brandId} viewer={viewer} searchIndex={searchIndex} />
           <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">{children}</main>
         </div>
       </div>
