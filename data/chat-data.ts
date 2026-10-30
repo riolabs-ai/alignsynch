@@ -18,47 +18,27 @@ export const contacts: readonly Contact[] = [
   {
     id: "contact-1",
     name: "Alex Johnson",
-    avatar: {
-      src: media["avatars.alex"].src,
-      alt: "Alex Johnson",
-    },
     status: "online",
   },
   {
     id: "contact-2",
     name: "Sarah Williams",
-    avatar: {
-      src: media["avatars.brain"].src,
-      alt: "Sarah Williams",
-    },
     status: "offline",
     lastSeenAt: "2026-10-29T10:00:00.000Z",
   },
   {
     id: "contact-3",
     name: "Michael Brown",
-    avatar: {
-      src: media["avatars.champion"].src,
-      alt: "Michael Brown",
-    },
     status: "online",
   },
   {
     id: "contact-4",
     name: "Emily Davis",
-    avatar: {
-      src: media["avatars.genious"].src,
-      alt: "Emily Davis",
-    },
     status: "away",
   },
   {
     id: "contact-5",
     name: "David Wilson",
-    avatar: {
-      src: media["avatars.guru"].src,
-      alt: "David Wilson",
-    },
     status: "offline",
     lastSeenAt: "2026-10-28T12:00:00.000Z",
   },
@@ -296,7 +276,6 @@ export const conversations: readonly Conversation[] = [
 export const mockContacts = contacts.map((contact) => ({
   id: contact.id,
   name: contact.name,
-  avatar: contact.avatar?.src ?? "",
   status: contact.status,
   ...(contact.lastSeenAt ? { lastSeenAt: contact.lastSeenAt } : {}),
 }));
@@ -323,7 +302,6 @@ export const recentMessages = selectRecentMessages(conversations, contacts).map(
   id: `${row.conversationId}-preview`,
   conversationId: row.conversationId,
   sender: row.person.name,
-  avatar: row.person.avatar?.src ?? "",
   content: row.lastMessage.body ?? "",
   lastMessageAt: row.lastMessageAt,
   unread: row.hasUnread,

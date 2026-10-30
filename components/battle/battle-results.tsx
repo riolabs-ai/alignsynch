@@ -1,5 +1,5 @@
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,6 @@ import {
 import confetti from "canvas-confetti";
 import { Award, CheckCircle, Clock, Home, RotateCw, Share2, Trophy } from "lucide-react";
 import type { PageCopySection } from "@/content/pages";
-import { media } from "@/data/media";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { useEffect } from "react";
 import type { BattleState } from "./battle-page";
@@ -96,10 +95,12 @@ export function BattleResults({ copy, battleState, onRematch, onReturnHome }: Ba
               return (
                 <div key={player.id} className="flex flex-col items-center">
                   <div className="mb-2">
-                    <Avatar className="h-16 w-16 border-4 border-background shadow-lg">
-                      <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
-                      <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <GeneratedAvatar
+                      name={player.name}
+                      seed={player.seed}
+                      size={64}
+                      className="border-4 border-background shadow-lg"
+                    />
                   </div>
                   <div className="text-center mb-2">
                     <div className="font-bold">{player.name}</div>
@@ -145,10 +146,12 @@ export function BattleResults({ copy, battleState, onRematch, onReturnHome }: Ba
                     className={`flex items-center p-3 rounded-lg border ${player.isCurrentUser ? "bg-primary/5 border-primary" : ""}`}
                   >
                     <div className="font-bold text-lg w-5">{index + 1}</div>
-                    <Avatar className="h-10 w-10 mr-3">
-                      <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
-                      <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <GeneratedAvatar
+                      name={player.name}
+                      seed={player.seed}
+                      size={40}
+                      className="mr-3"
+                    />
                     <div className="flex-1">
                       <div className="font-medium">{player.name}</div>
                       <div className="text-sm text-muted-foreground">

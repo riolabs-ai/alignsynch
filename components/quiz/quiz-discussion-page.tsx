@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,6 @@ import {
   scorePercent,
   type QuizDiscussionSummary,
 } from "@/content/quiz-result";
-import { media } from "@/data/media";
 import { CheckCircle, MessageSquare, Search, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -130,7 +129,6 @@ function DiscussionCard({ discussion }: { discussion: QuizDiscussionSummary }) {
   };
 
   const category = quiz.categoryIds[0];
-  const avatar = lastComment.author.avatar?.src ?? media.placeholder.src;
 
   return (
     <Card className="overflow-hidden">
@@ -168,10 +166,11 @@ function DiscussionCard({ discussion }: { discussion: QuizDiscussionSummary }) {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={avatar} alt={lastComment.author.name} />
-                  <AvatarFallback>{lastComment.author.name.substring(0, 2)}</AvatarFallback>
-                </Avatar>
+                <GeneratedAvatar
+                  name={lastComment.author.name}
+                  seed={lastComment.author.id ?? lastComment.author.name}
+                  size={32}
+                />
                 <span className="text-sm font-medium">{lastComment.author.name}</span>
               </div>
               {result !== undefined && (

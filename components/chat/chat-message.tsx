@@ -7,16 +7,17 @@ import { formatClockTime, formatDateTimeLong } from "@/content/core";
 import { Check, CheckCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { media } from "@/data/media";
 
 interface ChatMessageProps {
   message: Message;
   isOwn: boolean;
   contactName: string;
-  contactAvatar: string;
+  contactSeed: string;
 }
 
-export function ChatMessage({ message, isOwn, contactName, contactAvatar }: ChatMessageProps) {
+export function ChatMessage({ message, isOwn, contactName, contactSeed }: ChatMessageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -46,14 +47,7 @@ export function ChatMessage({ message, isOwn, contactName, contactAvatar }: Chat
       {!isOwn && (
         <div className="flex-shrink-0">
           <div className="relative w-7 h-7">
-            <Image
-              src={imageError ? media.placeholder.src : contactAvatar}
-              alt={contactName}
-              width={28}
-              height={28}
-              className="rounded-full object-cover mb-1 border border-border"
-              onError={() => setImageError(true)}
-            />
+            <GeneratedAvatar name={contactName} seed={contactSeed} size={28} />
           </div>
         </div>
       )}

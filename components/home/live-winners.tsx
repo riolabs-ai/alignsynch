@@ -1,12 +1,11 @@
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatCurrency, formatRelative } from "@/content/core";
 import type { PageCopySection } from "@/content/pages";
 import type { WinEventRow } from "@/content/people";
 import { itemLabel } from "@/lib/page-copy";
-import { avatarSrcOf } from "@/lib/players";
 import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -60,14 +59,12 @@ export function LiveWinners({ copy, wins }: LiveWinnersProps) {
                   </div>
                 )}
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                    <AvatarImage
-                      src={avatarSrcOf(player)}
-                      className="object-cover object-center"
-                      alt={player.name}
-                    />
-                    <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
-                  </Avatar>
+                  <GeneratedAvatar
+                    name={player.name}
+                    seed={player.id}
+                    size={48}
+                    className="border-2 border-white shadow-sm"
+                  />
                   <div>
                     <h3 className="font-medium">
                       <Link href={`/profile/${player.handle}`}>{player.name}</Link>

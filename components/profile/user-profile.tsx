@@ -122,7 +122,7 @@ export function UserProfile({ profile }: UserProfileProps) {
       <MessageModal
         isOpen={isMessageModalOpen}
         onClose={() => setIsMessageModalOpen(false)}
-        recipient={{ name: person.name, avatar: person.avatar }}
+        recipient={{ name: person.name, seed: person.id }}
       />
     </div>
   );

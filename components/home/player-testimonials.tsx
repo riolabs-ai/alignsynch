@@ -1,19 +1,12 @@
 "use client";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import avatarAlex from "@/public/avatars/alex.png";
-import avatarBrain from "@/public/avatars/brain.png";
-import avatarChampion from "@/public/avatars/champion.png";
-import avatarGenius from "@/public/avatars/genious.png";
-import avatarSarah from "@/public/avatars/sarah.webp";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
 import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
-import { media } from "@/data/media";
 
 // Sample testimonial data
 const testimonials = [
@@ -21,7 +14,6 @@ const testimonials = [
     id: 1,
     name: "Sarah Johnson",
     role: "Quiz Creator",
-    avatar: avatarSarah,
     rating: 5,
     testimonial:
       "I've created over 50 quizzes and earned more than $2,000 in just three months. The platform makes it incredibly easy to monetize my knowledge!",
@@ -31,7 +23,6 @@ const testimonials = [
     id: 2,
     name: "Michael Chen",
     role: "Top Earner",
-    avatar: avatarAlex,
     rating: 5,
     testimonial:
       "Quitting my part-time job was the best decision ever. I now make double creating fun quizzes about topics I'm passionate about. The community is amazing!",
@@ -41,7 +32,6 @@ const testimonials = [
     id: 3,
     name: "Jessica Williams",
     role: "Teacher",
-    avatar: avatarBrain,
     rating: 4,
     testimonial:
       "As an educator, I use this platform to create supplementary quizzes for my students. They love the interactive format, and I earn extra income. Win-win!",
@@ -51,7 +41,6 @@ const testimonials = [
     id: 4,
     name: "David Rodriguez",
     role: "Content Creator",
-    avatar: avatarGenius,
     rating: 5,
     testimonial:
       "I've integrated these quizzes into my content strategy and seen engagement skyrocket. The analytics help me understand what my audience loves.",
@@ -61,7 +50,6 @@ const testimonials = [
     id: 5,
     name: "Emma Thompson",
     role: "Trivia Enthusiast",
-    avatar: avatarChampion,
     rating: 5,
     testimonial:
       "From quiz player to creator, this platform changed my hobby into a profitable side hustle. The referral program helped me build a solid player base quickly.",
@@ -110,15 +98,12 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                 <div className="absolute -top-6 -left-6">
                   <Quote className="h-12 w-12 text-indigo-200 dark:text-indigo-800 rotate-180" />
                 </div>
-                <Avatar className="h-64 w-64 border-4 border-white dark:border-slate-800 shadow-lg">
-                  <Image
-                    src={testimonials[activeIndex].avatar}
-                    width={400}
-                    height={400}
-                    alt={testimonials[activeIndex].name}
-                    className="object-cover object-center"
-                  />
-                </Avatar>
+                <GeneratedAvatar
+                  name={testimonials[activeIndex].name}
+                  seed={testimonials[activeIndex].name}
+                  size={256}
+                  className="border-4 border-white shadow-lg dark:border-slate-800"
+                />
                 <Badge className="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5">
                   {testimonials[activeIndex].role}
                 </Badge>
@@ -173,20 +158,12 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
             <Card className="border-2 border-indigo-100 dark:border-indigo-900/30 overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex justify-center mb-6">
-                  <Avatar className="h-24 w-24 border-4 border-white dark:border-slate-800 shadow-md">
-                    <Image
-                      src={testimonials[activeIndex].avatar || media.placeholder.src}
-                      alt={testimonials[activeIndex].name}
-                      fill
-                      className="object-cover object-center"
-                    />
-                    <AvatarFallback>
-                      {testimonials[activeIndex].name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
+                  <GeneratedAvatar
+                    name={testimonials[activeIndex].name}
+                    seed={testimonials[activeIndex].name}
+                    size={96}
+                    className="border-4 border-white shadow-md dark:border-slate-800"
+                  />
                 </div>
 
                 <div className="text-center mb-4">

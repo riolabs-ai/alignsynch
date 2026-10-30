@@ -188,31 +188,15 @@ export const authoredQuizzes: readonly Quiz[] = [
       recentPlayers: [
         {
           name: "Alex J.",
-          avatar: {
-            src: media["avatars.alex"].src,
-            alt: "Alex J.",
-          },
         },
         {
           name: "Sarah W.",
-          avatar: {
-            src: media["avatars.wizard"].src,
-            alt: "Sarah W.",
-          },
         },
         {
           name: "Mike B.",
-          avatar: {
-            src: media["avatars.sarah"].src,
-            alt: "Mike B.",
-          },
         },
         {
           name: "Emily D.",
-          avatar: {
-            src: media["avatars.king"].src,
-            alt: "Emily D.",
-          },
         },
       ],
       plays: 2453,
@@ -232,10 +216,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "MarvelFan",
-      avatar: {
-        src: media["avatars.alex"].src,
-        alt: "MarvelFan",
-      },
     },
   },
   {
@@ -386,31 +366,15 @@ export const authoredQuizzes: readonly Quiz[] = [
       recentPlayers: [
         {
           name: "David W.",
-          avatar: {
-            src: media["avatars.champion"].src,
-            alt: "David W.",
-          },
         },
         {
           name: "Jessica T.",
-          avatar: {
-            src: media["avatars.mind"].src,
-            alt: "Jessica T.",
-          },
         },
         {
           name: "Ryan M.",
-          avatar: {
-            src: media["avatars.genious"].src,
-            alt: "Ryan M.",
-          },
         },
         {
           name: "Olivia A.",
-          avatar: {
-            src: media["avatars.brain"].src,
-            alt: "Olivia A.",
-          },
         },
       ],
       plays: 1872,
@@ -429,10 +393,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "GeoExplorer",
-      avatar: {
-        src: media["avatars.wizard"].src,
-        alt: "GeoExplorer",
-      },
     },
   },
   {
@@ -583,31 +543,15 @@ export const authoredQuizzes: readonly Quiz[] = [
       recentPlayers: [
         {
           name: "James K.",
-          avatar: {
-            src: media["avatars.alex"].src,
-            alt: "James K.",
-          },
         },
         {
           name: "Sophia L.",
-          avatar: {
-            src: media["avatars.wizard"].src,
-            alt: "Sophia L.",
-          },
         },
         {
           name: "Noah P.",
-          avatar: {
-            src: media["avatars.sarah"].src,
-            alt: "Noah P.",
-          },
         },
         {
           name: "Emma R.",
-          avatar: {
-            src: media["avatars.king"].src,
-            alt: "Emma R.",
-          },
         },
       ],
       plays: 3241,
@@ -626,10 +570,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "PuzzleMaster",
-      avatar: {
-        src: media["avatars.sarah"].src,
-        alt: "PuzzleMaster",
-      },
     },
   },
   {
@@ -782,31 +722,15 @@ export const authoredQuizzes: readonly Quiz[] = [
       recentPlayers: [
         {
           name: "William T.",
-          avatar: {
-            src: media["avatars.champion"].src,
-            alt: "William T.",
-          },
         },
         {
           name: "Ava M.",
-          avatar: {
-            src: media["avatars.mind"].src,
-            alt: "Ava M.",
-          },
         },
         {
           name: "Liam S.",
-          avatar: {
-            src: media["avatars.genious"].src,
-            alt: "Liam S.",
-          },
         },
         {
           name: "Mia J.",
-          avatar: {
-            src: media["avatars.brain"].src,
-            alt: "Mia J.",
-          },
         },
       ],
       plays: 1563,
@@ -825,10 +749,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "HistoryBuff",
-      avatar: {
-        src: media["avatars.king"].src,
-        alt: "HistoryBuff",
-      },
     },
   },
   {
@@ -990,10 +910,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "HistoryBuff",
-      avatar: {
-        src: media["avatars.king"].src,
-        alt: "HistoryBuff",
-      },
     },
     cover: {
       src: media["ancient-civilizations-quiz"].src,
@@ -1159,10 +1075,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "MathWhiz",
-      avatar: {
-        src: media["avatars.genious"].src,
-        alt: "MathWhiz",
-      },
     },
     cover: {
       src: media["math-puzzles-quiz"].src,
@@ -1327,10 +1239,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "BookWorm",
-      avatar: {
-        src: media["avatars.mind"].src,
-        alt: "BookWorm",
-      },
     },
     cover: {
       src: media["classic-novels-quiz"].src,
@@ -1495,10 +1403,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "BookWorm",
-      avatar: {
-        src: media["avatars.mind"].src,
-        alt: "BookWorm",
-      },
     },
     cover: {
       src: media["classic-novels-quiz"].src,
@@ -1663,10 +1567,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "SportsNut",
-      avatar: {
-        src: media["avatars.guru"].src,
-        alt: "SportsNut",
-      },
     },
     cover: {
       src: media["sports-trivia-quiz"].src,
@@ -1831,10 +1731,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "MovieBuff",
-      avatar: {
-        src: media["avatars.brain"].src,
-        alt: "MovieBuff",
-      },
     },
     cover: {
       src: media["space-exploration-quiz"].src,
@@ -1999,10 +1895,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "NatureExplorer",
-      avatar: {
-        src: media["avatars.master"].src,
-        alt: "NatureExplorer",
-      },
     },
     cover: {
       src: media["world-landmarks"].src,
@@ -2167,10 +2059,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "MusicMaestro",
-      avatar: {
-        src: media["avatars.genious"].src,
-        alt: "MusicMaestro",
-      },
     },
     cover: {
       src: media["music-quiz"].src,
@@ -2335,10 +2223,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "TechGuru",
-      avatar: {
-        src: media["avatars.brain"].src,
-        alt: "TechGuru",
-      },
     },
     cover: {
       src: media["technology-quiz"].src,
@@ -2503,10 +2387,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "FoodieChef",
-      avatar: {
-        src: media["avatars.alex"].src,
-        alt: "FoodieChef",
-      },
     },
   },
   {
@@ -2666,10 +2546,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "ArtLover",
-      avatar: {
-        src: media["avatars.sarah"].src,
-        alt: "ArtLover",
-      },
     },
   },
   {
@@ -2830,10 +2706,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "ScienceGeek",
-      avatar: {
-        src: media["avatars.wizard"].src,
-        alt: "ScienceGeek",
-      },
     },
   },
 ];

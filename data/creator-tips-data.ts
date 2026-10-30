@@ -24,10 +24,6 @@ export const tips: readonly Tip[] = [
     },
     author: {
       name: "Alex Johnson",
-      avatar: {
-        src: media["avatars.alex"].src,
-        alt: "Alex Johnson",
-      },
     },
     publishedAt: "2023-04-15T00:00:00.000Z",
     readMinutes: 5,
@@ -54,10 +50,6 @@ export const tips: readonly Tip[] = [
     },
     author: {
       name: "Sarah Williams",
-      avatar: {
-        src: media["avatars.sarah"].src,
-        alt: "Sarah Williams",
-      },
     },
     publishedAt: "2023-05-22T00:00:00.000Z",
     readMinutes: 6,
@@ -82,10 +74,6 @@ export const tips: readonly Tip[] = [
     },
     author: {
       name: "Michael Chen",
-      avatar: {
-        src: media["placeholder"].src,
-        alt: "Michael Chen",
-      },
     },
     publishedAt: "2023-06-10T00:00:00.000Z",
     readMinutes: 8,
@@ -112,10 +100,6 @@ export const tips: readonly Tip[] = [
     },
     author: {
       name: "Emma Rodriguez",
-      avatar: {
-        src: media["avatars.alex"].src,
-        alt: "Emma Rodriguez",
-      },
     },
     publishedAt: "2023-07-05T00:00:00.000Z",
     readMinutes: 7,
@@ -140,10 +124,6 @@ export const tips: readonly Tip[] = [
     },
     author: {
       name: "David Wilson",
-      avatar: {
-        src: media["avatars.guru"].src,
-        alt: "David Wilson",
-      },
     },
     publishedAt: "2023-08-12T00:00:00.000Z",
     readMinutes: 6,
@@ -169,10 +149,6 @@ export const tips: readonly Tip[] = [
     },
     author: {
       name: "Tech Team",
-      avatar: {
-        src: media["avatars.king"].src,
-        alt: "Tech Team",
-      },
     },
     publishedAt: "2023-09-18T00:00:00.000Z",
     readMinutes: 9,

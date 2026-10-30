@@ -19,23 +19,15 @@
  */
 import type { PersonRef } from "../content/core";
 import type { QuizComment } from "../content/quiz-result";
-import { mediaSrc, type FileMediaKey } from "./media";
 
-/** A key that addresses a real file. A generated tile (#130) has no path to put on a face. */
-type AvatarKey = FileMediaKey;
+const person = (id: string, name: string): PersonRef => ({ id, name });
 
-const person = (id: string, name: string, avatar: AvatarKey): PersonRef => ({
-  id,
-  name,
-  avatar: { src: mediaSrc(avatar), alt: name },
-});
-
-const alex = person("player-alex-johnson", "Alex Johnson", "avatars.alex");
-const sarah = person("player-sarah-williams", "Sarah Williams", "avatars.wizard");
-const mike = person("player-mike-brown", "Mike Brown", "avatars.sarah");
-const emily = person("player-emily-davis", "Emily Davis", "avatars.king");
-const priya = person("player-priya-raman", "Priya Raman", "avatars.mind");
-const viewer = person("current-user", "You", "avatars.master");
+const alex = person("player-alex-johnson", "Alex Johnson");
+const sarah = person("player-sarah-williams", "Sarah Williams");
+const mike = person("player-mike-brown", "Mike Brown");
+const emily = person("player-emily-davis", "Emily Davis");
+const priya = person("player-priya-raman", "Priya Raman");
+const viewer = person("current-user", "You");
 
 export const quizComments: readonly QuizComment[] = [
   /* ---- the playable quiz: threads on three of its five questions, plus a

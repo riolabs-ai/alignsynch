@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatPlayerCount } from "@/content/core";
 import type { PageCopySection } from "@/content/pages";
 import type { QuizCard } from "@/content/quiz";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { ChevronLeft, ChevronRight, Clock, DollarSign, Users } from "lucide-react";
@@ -146,12 +147,10 @@ export function QuizzesByDifficulty({ copy }: { copy: PageCopySection }) {
                     </Badge>
                     <div className="flex bg-gradient-to-b from-transparent to-black justify-between items-center gap-2 absolute px-3 pb-3 bottom-0 left-0 right-0">
                       <div className="flex items-center gap-3">
-                        <Image
-                          src={quiz.author?.avatar?.src ?? media["avatars.alex"].src}
-                          width={36}
-                          height={36}
-                          className="size-9 object-cover object-center rounded-full"
-                          alt={quiz.author?.name ?? "creator"}
+                        <GeneratedAvatar
+                          name={quiz.author?.name ?? "creator"}
+                          seed={quiz.author?.id ?? quiz.author?.name ?? "unknown-creator"}
+                          size={36}
                         />
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-white">

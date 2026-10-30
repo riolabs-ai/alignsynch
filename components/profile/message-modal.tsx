@@ -10,15 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Send } from "lucide-react";
-import { media } from "@/data/media";
 
 interface MessageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** Who the message goes to — the two fields the dialog renders, not a whole `User`. */
-  recipient: { name: string; avatar: string };
+  /** Who the message goes to — the fields the dialog renders, not a whole `User`. */
+  recipient: { name: string; seed: string };
 }
 
 export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) {
@@ -50,10 +49,7 @@ export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={recipient.avatar || media.placeholder.src} alt={recipient.name} />
-              <AvatarFallback>{recipient.name.substring(0, 2)}</AvatarFallback>
-            </Avatar>
+            <GeneratedAvatar name={recipient.name} seed={recipient.seed} size={24} />
             Message {recipient.name}
           </DialogTitle>
         </DialogHeader>
@@ -85,13 +81,7 @@ export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) 
           <>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <Avatar>
-                  <AvatarImage
-                    src={recipient.avatar || media.placeholder.src}
-                    alt={recipient.name}
-                  />
-                  <AvatarFallback>{recipient.name.substring(0, 2)}</AvatarFallback>
-                </Avatar>
+                <GeneratedAvatar name={recipient.name} seed={recipient.seed} size={40} />
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-sm">
                     Hi there! Feel free to send me a message about quizzes or anything else.
