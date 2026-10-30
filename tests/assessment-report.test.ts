@@ -33,8 +33,12 @@ vi.mock("@/lib/db/assessments", () => ({
   readAssessmentScreenBySlug: screenFor,
 }));
 
-import AssessmentPage, { dynamic as routeDynamic } from "@/app/(mainlayout)/assessment/[slug]/page";
+import AssessmentPage, {
+  dynamic as routeDynamic,
+  generateMetadata,
+} from "@/app/(mainlayout)/assessment/[slug]/page";
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
+import { DatabaseUnavailableError } from "@/lib/db/client";
 import { gapOf, type Gap } from "@/content/record";
 import { assessmentInstances, assessments } from "@/data/assessments";
 import { assessmentReport, instanceBySlug } from "@/lib/assessment-report";
@@ -202,5 +206,53 @@ describe("the slug", () => {
     expect(html).toContain(escapeHtml(instance.parties[0].name));
     expect(html).toContain(escapeHtml(instance.parties[1].name));
     expect(html).toContain(escapeHtml(template.title));
+  });
+});
+
+/**
+ * The third answer (#204): the database did not answer.
+ *
+ * Before this, that state reached the browser as Next's `<h1>500</h1>` and a digest — no
+ * sentence, no slug, nothing a reader could act on, on the one screen that proves the product
+ * works. The panel is the fix, and these cases are what keep it from regressing into a spinner,
+ * an empty report, or a swallowed defect.
+ */
+describe("when the database does not answer (#204)", () => {
+  const reason =
+    "The assessment database did not answer within 4s. This page reads it on every request, so there is nothing to show until it answers — reload in a moment.";
+
+  it("renders the unreadable panel instead of a 500 with a digest", async () => {
+    screenFor.mockRejectedValueOnce(new DatabaseUnavailableError(reason));
+
+    const html = renderToStaticMarkup(
+      await AssessmentPage({ params: Promise.resolve({ slug: "avery-rowan" }) }),
+    );
+
+    // The panel names the slug it could not read and prints the database layer's sentence.
+    expect(html).toContain('data-assessment-unreadable="avery-rowan"');
+    expect(html).toContain(reason);
+    // No assessment is drawn from a failed read: not a row, and not the "In synch" a Gap of 0
+    // prints, which is what an empty report would have said about two people's answers.
+    expect(html).not.toContain("data-aspect=");
+    expect(html).not.toContain("In synch");
+    // And no spinner: the page is not still coming.
+    expect(html).not.toContain("animate-spin");
+  });
+
+  it("says the same thing in the metadata, instead of claiming the assessment does not exist", async () => {
+    screenFor.mockRejectedValueOnce(new DatabaseUnavailableError(reason));
+
+    const metadata = await generateMetadata({ params: Promise.resolve({ slug: "avery-rowan" }) });
+
+    expect(metadata.title).toBe("This assessment could not be read");
+    expect(metadata.description).toBe(reason);
+  });
+
+  it("still throws a row that does not parse — a defect is not an outage", async () => {
+    screenFor.mockRejectedValueOnce(new Error("assessment instance row failed the model"));
+
+    await expect(
+      AssessmentPage({ params: Promise.resolve({ slug: "avery-rowan" }) }),
+    ).rejects.toThrow("failed the model");
   });
 });
