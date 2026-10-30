@@ -5,7 +5,7 @@
  * fixture produced (`docs/P2-INVENTORY.md` WU-4, issue #49). `+4 from last month` was six
  * characters of JSX, so nothing could disagree with it — not a schema, not a fixture, not a
  * gate. A dashboard could claim a 12% month, a 78.3% completion rate and $124.50 while the
- * analytics entity held per-quiz completion only. The shape of the defect, not the numbers,
+ * analytics entity held per-record completion only. The shape of the defect, not the numbers,
  * is what this module fixes:
  *
  *   1. a **delta is computed** — `previous` + `value`, never an authored `+4` — so a change
