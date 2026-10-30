@@ -14,6 +14,8 @@
     "data:check": "tsc -p tsconfig.datacheck.json && node --test .datacheck/scripts/__tests__/*.test.js && node .datacheck/scripts/data-check.js && node scripts/sample-brand-colors.mjs --check",
     "test": "vitest run",
     "gen": "node scripts/gen-fixtures.mjs",
+    "glossary": "node scripts/gen-glossary.mjs",
+    "glossary:check": "node scripts/gen-glossary.mjs --check",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write .",

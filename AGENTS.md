@@ -23,19 +23,21 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 
 ## Commands (repo root, `pnpm` only — the lockfile is `pnpm-lock.yaml` v9)
 
-| Command                          | Verified             | Notes                                                                                                      |
-| -------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/REPO-LAYERS.md)                                   |
-| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                                                   |
-| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                             |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                              |
-| `pnpm gen`                       | exit 0, ~0.1 s       | `node scripts/gen-fixtures.mjs`; bulk fixtures → `data/generated/` (gitignored, validated by `data:check`) |
-| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 231 warnings, 12 infos                                                        |
-| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 316 files; CI gate                                                                         |
-| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                                                                   |
-| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                              |
-| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                                                    |
-| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                                                        |
+| Command                          | Verified             | Notes                                                                                                            |
+| -------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/REPO-LAYERS.md)                                         |
+| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                                                         |
+| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                                   |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                                    |
+| `pnpm gen`                       | exit 0, ~0.1 s       | `node scripts/gen-fixtures.mjs`; bulk fixtures → `data/generated/` (gitignored, validated by `data:check`)       |
+| `pnpm glossary`                  | exit 0, ~0.1 s       | `node scripts/gen-glossary.mjs`; writes `docs/glossary.md` from the schema comments — never edit the page (#138) |
+| `pnpm glossary:check`            | exit 0, ~0.1 s       | the read-only form the gate runs in every lane; exit 1 plus the first difference when the page is stale          |
+| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 231 warnings, 12 infos                                                              |
+| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 316 files; CI gate                                                                               |
+| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                                                                         |
+| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                                    |
+| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                                                          |
+| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                                                              |
 
 Node must be **≥ 20.9** and the PATH is the only thing that decides which node you get:
 
@@ -54,11 +56,16 @@ bash scripts/verify.sh       # THE gate. ~45 s locally, green = shippable
 ```
 
 It runs, in order, and stops at the first failure (printing the failing step and its exit
-code): `deps (pnpm install --frozen-lockfile)` → `typecheck` (`next typegen && tsc
---noEmit`) → `lint` (`biome check`) → `format:check` (`biome format`) → `data:check` →
-`test` → `build` (`next build`). `data:check` and `test` run only when `package.json`
-defines that script; otherwise they are skipped with a visible `○ … skipped` line, so the
-same script is correct on `main` (no `data:check` yet) and on branches that carry it.
+code): `deps (pnpm install --frozen-lockfile)` → `glossary` (`pnpm glossary:check`) →
+`typecheck` (`next typegen && tsc --noEmit`) → `lint` (`biome check`) → `format:check`
+(`biome format`) → `data:check` → `test` → `build` (`next build`). `data:check` and `test`
+run only when `package.json` defines that script; otherwise they are skipped with a visible
+`○ … skipped` line, so the same script is correct on `main` (no `data:check` yet) and on
+branches that carry it.
+
+`glossary` runs in **every** lane, including docs: `docs/glossary.md` is generated from the
+schema comments, so a stale page is drift no typecheck can see, and the three files it reads
+(`content/*.ts`, `scripts/`, `docs/`) classify into three different lanes. It costs ~0.1 s.
 
 The gate costs what the change costs: it prints `lane=docs|content|config|code` and drops
 the steps that cannot see a file in the diff — a `docs/`-only change is ~2 s, a
@@ -71,6 +78,11 @@ classifier and build semaphore: **`docs/REPO-LAYERS.md`**.
 CI (`.github/workflows/ci.yml`) runs **only** `bash scripts/verify.sh`. Never add a check
 step to the YAML — a check that lives only in CI is a guaranteed red push, and a check
 that lives only in the script is a green CI nobody can reproduce.
+
+The one exception is the `glossary` step (#138): it regenerates `docs/glossary.md` and fails
+on a diff, in the workflow the issue names. It is not a CI-only check — `verify.sh` runs the
+same generator in every lane — it is a second caller of a check that already exists locally,
+placed before the gate so a stale page fails under its own step name. Add no others.
 
 Runtime parity is enforced by the script, not by convention: it refuses to run when the
 shell's Node major disagrees with `.nvmrc` (`24`) or when `pnpm` is not `12.x`.

@@ -28,6 +28,12 @@
 # GATE_LANE=full forces the code lane — use it after a dependency bump, a
 # tsconfig change, or any diff you do not trust the classifier with.
 #
+# THE GLOSSARY STEP IS IN EVERY LANE. `docs/glossary.md` is generated from the
+# schema comments (#138), so a stale page is drift no typecheck can see: the page
+# is docs, the comments are content, the generator is config, and each of those
+# paths selects a different (cheaper) lane. It costs ~0.1 s, so it runs before
+# the lane branch — one check, four depths, no exceptions.
+#
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
@@ -368,6 +374,16 @@ fi
 
 # Order is deliberate: cheap-and-certain first, the build last.
 run_step "deps (pnpm install --frozen-lockfile)" pnpm install --frozen-lockfile || fail
+
+# Generated docs are a drift check, not a compile: `docs/glossary.md` is rebuilt from the
+# schema comments and compared byte for byte (#138). It runs before the lane branch because
+# the three files it reads classify into three different lanes — see the header — so a lane
+# that skipped it would hand a green local gate to a red CI run.
+if has_script "glossary:check"; then
+  run_step "glossary (docs/glossary.md is generated from the schema comments)" pnpm glossary:check || fail
+else
+  skip_step "glossary" "no glossary:check script in package.json"
+fi
 
 if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
