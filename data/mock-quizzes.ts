@@ -5,7 +5,6 @@
  */
 import type { Quiz } from "../content/quiz";
 import { DEMO_NOW_ISO } from "../content/core";
-import { media } from "./media";
 import { AUTHORED_REWARD_WINDOW } from "./reward-windows";
 
 /**
@@ -1541,10 +1540,8 @@ export const mockQuizzes: readonly Quiz[] = [
     // explore-featured/new[2] both promote "Sports Trivia Challenge", so the record
     // carries that card's snapshot (quiz-migration.md §5/§7). The template's
     // settings are untouched — it is still a private template, not a public quiz.
-    cover: {
-      src: media["sports-trivia-quiz"].src,
-      alt: "Sports Trivia Challenge",
-    },
+    // The snapshot's cover was one of the nine copies of `6d0d1561`, deleted by #155:
+    // the card now draws that slot's generated default from the record's own id.
     author: {
       name: "SportsNut",
     },

@@ -387,10 +387,6 @@ export const authoredQuizzes: readonly Quiz[] = [
       rewardCents: 750,
       limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
-    cover: {
-      src: media["world-landmarks"].src,
-      alt: "World Geography Challenge: Capitals & Landmarks",
-    },
     author: {
       name: "GeoExplorer",
     },
@@ -1240,10 +1236,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "BookWorm",
     },
-    cover: {
-      src: media["classic-novels-quiz"].src,
-      alt: "World of Fantasy Literature",
-    },
   },
   {
     id: "quiz-literature-classic-novels",
@@ -1404,10 +1396,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     author: {
       name: "BookWorm",
     },
-    cover: {
-      src: media["classic-novels-quiz"].src,
-      alt: "Literature: Classic Novels",
-    },
   },
   {
     id: "quiz-world-cup-football-history",
@@ -1567,10 +1555,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "SportsNut",
-    },
-    cover: {
-      src: media["sports-trivia-quiz"].src,
-      alt: "World Cup Football History",
     },
   },
   {
@@ -1895,10 +1879,6 @@ export const authoredQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "NatureExplorer",
-    },
-    cover: {
-      src: media["world-landmarks"].src,
-      alt: "Wonders of the Natural World",
     },
   },
   {

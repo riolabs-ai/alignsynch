@@ -6,7 +6,6 @@
 import type { Tip } from "../content/article";
 import type { Category } from "../content/category";
 import { tipCategories as taxonomyTipCategories } from "../content/categories";
-import { media } from "./media";
 
 export const tips: readonly Tip[] = [
   {
@@ -18,10 +17,6 @@ export const tips: readonly Tip[] = [
       "Learn how to craft quiz questions that are clear, engaging, and test knowledge effectively.",
     categoryIds: ["tip-question-writing"],
     tags: [],
-    cover: {
-      src: media["tips.tip-1"].src,
-      alt: "",
-    },
     author: {
       name: "Alex Johnson",
     },
@@ -44,10 +39,6 @@ export const tips: readonly Tip[] = [
       "Discover proven methods to boost participation and keep users coming back to your quizzes.",
     categoryIds: ["tip-engagement"],
     tags: [],
-    cover: {
-      src: media["tips.tip-2"].src,
-      alt: "",
-    },
     author: {
       name: "Sarah Williams",
     },
@@ -68,10 +59,6 @@ export const tips: readonly Tip[] = [
     summary: "Learn different strategies to generate revenue from your quiz content.",
     categoryIds: ["tip-monetization"],
     tags: [],
-    cover: {
-      src: media["tips.tip-3"].src,
-      alt: "",
-    },
     author: {
       name: "Michael Chen",
     },
@@ -94,10 +81,6 @@ export const tips: readonly Tip[] = [
       "Design principles that make your quizzes more effective and enjoyable for participants.",
     categoryIds: ["tip-design"],
     tags: [],
-    cover: {
-      src: media["tips.tip-4"].src,
-      alt: "",
-    },
     author: {
       name: "Emma Rodriguez",
     },
@@ -118,10 +101,6 @@ export const tips: readonly Tip[] = [
     summary: "Learn how to market your quizzes and reach a wider audience.",
     categoryIds: ["tip-promotion"],
     tags: [],
-    cover: {
-      src: media["tips.tip-5"].src,
-      alt: "",
-    },
     author: {
       name: "David Wilson",
     },
@@ -143,10 +122,6 @@ export const tips: readonly Tip[] = [
     summary: "Technical tips to make your quizzes load faster and perform better.",
     categoryIds: ["tip-technical"],
     tags: [],
-    cover: {
-      src: media["tips.tip-5"].src,
-      alt: "",
-    },
     author: {
       name: "Tech Team",
     },

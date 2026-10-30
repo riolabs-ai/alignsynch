@@ -19,10 +19,6 @@ export const newsData: readonly NewsArticle[] = [
       "Learn how to design quizzes that captivate your audience and drive repeat participation with these proven strategies.",
     categoryIds: ["news-quiz-tips", "news-tutorials"],
     tags: [],
-    cover: {
-      src: media["news.news1"].src,
-      alt: "",
-    },
     author: {
       name: "Sarah Johnson",
       role: "Quiz Design Specialist",
@@ -149,10 +145,6 @@ export const newsData: readonly NewsArticle[] = [
       "Our new analytics dashboard provides comprehensive data on quiz performance, player demographics, and engagement patterns.",
     categoryIds: ["news-platform-updates", "news-tutorials"],
     tags: [],
-    cover: {
-      src: media["news.news2"].src,
-      alt: "",
-    },
     author: {
       name: "Michael Chen",
       role: "Product Manager",
@@ -266,10 +258,6 @@ export const newsData: readonly NewsArticle[] = [
       "Learn how history teacher James Wilson built a quiz empire with over 2 million plays and a dedicated following.",
     categoryIds: ["news-community", "news-success-stories"],
     tags: [],
-    cover: {
-      src: media["news.news3"].src,
-      alt: "",
-    },
     author: {
       name: "Elena Rodriguez",
       role: "Community Manager",
@@ -384,10 +372,6 @@ export const newsData: readonly NewsArticle[] = [
       "Learn how to design inclusive quizzes that can be enjoyed by players with disabilities and different learning styles.",
     categoryIds: ["news-tutorials", "news-quiz-tips"],
     tags: [],
-    cover: {
-      src: media["news.news4"].src,
-      alt: "",
-    },
     author: {
       name: "Alex Morgan",
       role: "Accessibility Specialist",
@@ -514,10 +498,6 @@ export const newsData: readonly NewsArticle[] = [
       "Join our biggest quiz competition yet with categories for all interests and skill levels. Registration opens June 1.",
     categoryIds: ["news-events", "news-community"],
     tags: [],
-    cover: {
-      src: media["news.news5"].src,
-      alt: "",
-    },
     author: {
       name: "Daniel Park",
       role: "Events Coordinator",
@@ -644,10 +624,6 @@ export const newsData: readonly NewsArticle[] = [
       "Discover proven approaches to generating revenue from your quizzes, from premium content to sponsorships and beyond.",
     categoryIds: ["news-quiz-tips", "news-industry-news"],
     tags: [],
-    cover: {
-      src: media["news.news6"].src,
-      alt: "",
-    },
     author: {
       name: "Olivia Thompson",
       role: "Business Development Specialist",
@@ -795,10 +771,6 @@ export const newsData: readonly NewsArticle[] = [
       "Explore the latest AI-powered features that are making it easier than ever to create engaging, personalized quizzes.",
     categoryIds: ["news-platform-updates", "news-industry-news"],
     tags: [],
-    cover: {
-      src: media["news.news7"].src,
-      alt: "",
-    },
     author: {
       name: "Ryan Zhang",
       role: "AI Product Specialist",
@@ -948,10 +920,6 @@ export const newsData: readonly NewsArticle[] = [
       "Understand the psychological principles that make quizzes engaging and how to apply them to your own creations.",
     categoryIds: ["news-quiz-tips", "news-tutorials"],
     tags: [],
-    cover: {
-      src: media["news.news8"].src,
-      alt: "",
-    },
     author: {
       name: "Dr. Sophia Williams",
       role: "Cognitive Psychologist",
@@ -1100,10 +1068,6 @@ export const newsData: readonly NewsArticle[] = [
       "Stay ahead of the curve with our analysis of emerging trends in quiz formats, technology, and user preferences.",
     categoryIds: ["news-industry-news"],
     tags: [],
-    cover: {
-      src: media["news.news9"].src,
-      alt: "",
-    },
     author: {
       name: "Jordan Taylor",
       role: "Trend Analyst",

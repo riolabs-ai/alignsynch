@@ -6,11 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatPlayerCount } from "@/content/core";
 import { type RankTitle, rankTitleOf } from "@/content/people";
 import { leaderboardEntries } from "@/lib/players";
-import cardCover from "@/public/card-cover.png";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
+import { remoteMedia } from "@/content/media";
+import { media } from "@/data/media";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Award, ChevronLeft, ChevronRight, Users } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -70,10 +72,14 @@ export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
                 <Card className="overflow-hidden h-full shadow-md hover:shadow-lg transition-shadow">
                   <CardContent className="!p-0">
                     <div className="relative">
-                      <Image
-                        src={cardCover}
+                      <Media
+                        alt=""
                         className="w-full object-cover size-full"
-                        alt="cover img"
+                        entry={entryOf(media["card-cover"])}
+                        height={400}
+                        kind={FALLBACK_KIND.background}
+                        seed="card-cover"
+                        width={340}
                       />
                       {/* Avatar */}
                       <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">
@@ -107,13 +113,17 @@ export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
                       {/* Country */}
                       <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-4 mt-1">
                         {player.countryCode !== undefined && (
-                          <Image
-                            width={16}
-                            height={12}
-                            unoptimized
-                            src={`https://flagcdn.com/16x12/${player.countryCode}.png`}
+                          <Media
                             alt={player.country ?? player.name}
                             className="h-3"
+                            entry={remoteMedia(
+                              `https://flagcdn.com/16x12/${player.countryCode}.png`,
+                              `flag-${player.countryCode}`,
+                              { kind: "illustration", width: 16, height: 12 },
+                            )}
+                            height={12}
+                            seed={`flag-${player.countryCode}`}
+                            width={16}
                           />
                         )}
                         <span>{player.country}</span>

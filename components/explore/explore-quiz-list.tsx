@@ -25,10 +25,10 @@ const progress = (quiz: { stats: { plays: number; capacity?: number } }) =>
   quiz.stats.capacity === undefined || quiz.stats.capacity === 0
     ? 0
     : (quiz.stats.plays / quiz.stats.capacity) * 100;
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useState } from "react";
-import { media } from "@/data/media";
 
 interface ExploreQuizListProps {
   category: string;
@@ -173,12 +173,14 @@ export function ExploreQuizList({
             >
               {/* Image with overlay */}
               <div className="relative h-48">
-                <Image
-                  width={600}
-                  height={350}
-                  src={quiz.cover?.src ?? media.placeholder.src}
+                <Media
                   alt={quiz.cover?.alt || quiz.title}
                   className="h-full w-full object-cover"
+                  entry={entryOf(quiz.cover)}
+                  height={350}
+                  kind={FALLBACK_KIND.quiz}
+                  seed={quiz.id}
+                  width={600}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                   <div className="w-full">
@@ -305,12 +307,14 @@ export function ExploreQuizList({
               <div className="flex flex-col sm:flex-row">
                 {/* Image */}
                 <div className="relative h-48 sm:h-auto sm:w-48 md:w-64">
-                  <Image
-                    width={600}
-                    height={350}
-                    src={quiz.cover?.src ?? media.placeholder.src}
+                  <Media
                     alt={quiz.cover?.alt || quiz.title}
                     className="h-full w-full object-cover"
+                    entry={entryOf(quiz.cover)}
+                    height={350}
+                    kind={FALLBACK_KIND.quiz}
+                    seed={quiz.id}
+                    width={600}
                   />
                   <Badge
                     variant={getDifficultyVariant(quiz.difficulty)}

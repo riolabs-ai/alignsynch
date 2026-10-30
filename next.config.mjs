@@ -58,7 +58,13 @@ const nextConfig = {
       { source: "/earnings", destination: "/dashboard/user?tab=wallet", permanent: true },
       { source: "/analytics", destination: "/dashboard/user?tab=my-quizzes", permanent: true },
       { source: "/signup", destination: "/register", permanent: true },
-      { source: "/testimonials/jessica.png", destination: "/avatars/mind.webp", permanent: true },
+      // `/testimonials/jessica.png` is deliberately NOT redirected any more (issue #155).
+      // It pointed at `/avatars/mind.webp`, one of the nine shared avatar files #152
+      // deleted, so it became a 308 to a 404 — worse than the 404 it replaced, because a
+      // client that follows it spends a round trip to learn nothing. The honest target is
+      // the generated default a person's slot draws, and a drawn default has no URL to
+      // redirect to: it is a gradient and an inline SVG in the markup. The legacy path was
+      // a portrait, and a portrait is what the generated avatar exists not to fabricate.
       /**
        * The tournament CTA band's two buttons (issue #112). They were never tournament
        * ids — they only reached a page because `/tournaments/[id]` answered every value

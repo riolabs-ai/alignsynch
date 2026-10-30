@@ -300,6 +300,12 @@ describe("the quiz detail projection agrees with the card", () => {
     // and the registry deleted them rather than map a key to a missing file. They were
     // dead images on a shipped page; `cover: undefined` renders the placeholder, which
     // is the honest state until someone authors real art.
+    //
+    // `noCover` moved 24 → 47 when #155 phase 1 deleted the last two shared blobs: of the
+    // 62 records here, 23 carried a cover that was one of the nine copies of `6d0d1561` or
+    // one of the twenty-nine of `00c56c3b` (17 browse, 5 authored, 1 mock). A record that
+    // borrowed the same picture as its neighbours has no image of its own, so the cover is
+    // gone and the card draws a generated default seeded by the record's id.
     let noAuthor = 0;
     let noRating = 0;
     let noCover = 0;
@@ -310,6 +316,6 @@ describe("the quiz detail projection agrees with the card", () => {
       if (card.stats.rating === undefined) noRating += 1;
       if (card.cover === undefined) noCover += 1;
     }
-    assert.deepEqual({ noAuthor, noRating, noCover }, { noAuthor: 43, noRating: 38, noCover: 24 });
+    assert.deepEqual({ noAuthor, noRating, noCover }, { noAuthor: 43, noRating: 38, noCover: 47 });
   });
 });

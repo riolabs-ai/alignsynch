@@ -11,10 +11,10 @@ import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { Calendar, ChevronRight, Clock, Filter, Search } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { media } from "@/data/media";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 
 /** Taxonomy id -> display name. The badge labels come from the table, not the record. */
 const categoryName = (id: string) => categories.find((category) => category.id === id)?.name ?? id;
@@ -74,11 +74,13 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
             {featuredArticles.map((article) => (
               <Card key={article.slug} className="overflow-hidden">
                 <div className="relative h-44 xl:h-60 w-full">
-                  <Image
-                    src={article.cover?.src ?? media.placeholder.src}
+                  <Media
                     alt={article.title}
-                    fill
                     className="object-cover aspect-video"
+                    entry={entryOf(article.cover)}
+                    fill
+                    kind={FALLBACK_KIND.news}
+                    seed={article.id}
                   />
                   <div className="absolute top-2 right-2">
                     <Badge variant="secondary" className="bg-primary text-primary-foreground">
@@ -150,11 +152,13 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
             {filteredArticles.map((article) => (
               <Card key={article.slug}>
                 <div className="relative h-44 xl:h-60 w-full">
-                  <Image
-                    src={article.cover?.src ?? media.placeholder.src}
+                  <Media
                     alt={article.title}
-                    fill
                     className="object-cover"
+                    entry={entryOf(article.cover)}
+                    fill
+                    kind={FALLBACK_KIND.news}
+                    seed={article.id}
                   />
                 </div>
                 <CardHeader className="p-4">

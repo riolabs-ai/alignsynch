@@ -12,13 +12,13 @@ import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { ChevronLeft, ChevronRight, Clock, DollarSign, Users } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useState } from "react";
 import { Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Progress } from "../ui/progress";
-import { media } from "@/data/media";
 
 /** Each ladder is the curated shelf for that tab, projected (D2). */
 function ladders(): Record<"easy" | "medium" | "hard", QuizCard[]> {
@@ -135,12 +135,14 @@ export function QuizzesByDifficulty({ copy }: { copy: PageCopySection }) {
               <SwiperSlide key={quiz.id} className="max-w-[306px]">
                 <Card className="overflow-hidden h-full">
                   <div className="relative">
-                    <Image
-                      width={600}
-                      height={350}
-                      src={quiz.cover?.src ?? media.placeholder.src}
+                    <Media
                       alt={quiz.cover?.alt || quiz.title}
                       className="h-40 w-full object-cover"
+                      entry={entryOf(quiz.cover)}
+                      height={350}
+                      kind={FALLBACK_KIND.quiz}
+                      seed={quiz.id}
+                      width={600}
                     />
                     <Badge variant="success" className="absolute top-2 right-2">
                       {itemLabel(copy, "easy")}
@@ -223,12 +225,14 @@ export function QuizzesByDifficulty({ copy }: { copy: PageCopySection }) {
                 >
                   <Card className="overflow-hidden h-full">
                     <div className="relative">
-                      <Image
-                        width={600}
-                        height={350}
-                        src={quiz.cover?.src ?? media.placeholder.src}
+                      <Media
                         alt={quiz.cover?.alt || quiz.title}
                         className="h-40 w-full object-cover"
+                        entry={entryOf(quiz.cover)}
+                        height={350}
+                        kind={FALLBACK_KIND.quiz}
+                        seed={quiz.id}
+                        width={600}
                       />
                       <Badge variant="yellow" className="absolute top-2 right-2">
                         {itemLabel(copy, "medium")}
@@ -291,12 +295,14 @@ export function QuizzesByDifficulty({ copy }: { copy: PageCopySection }) {
                 >
                   <Card className="overflow-hidden h-full">
                     <div className="relative">
-                      <Image
-                        width={600}
-                        height={350}
-                        src={quiz.cover?.src ?? media.placeholder.src}
+                      <Media
                         alt={quiz.cover?.alt || quiz.title}
                         className="h-40 w-full object-cover"
+                        entry={entryOf(quiz.cover)}
+                        height={350}
+                        kind={FALLBACK_KIND.quiz}
+                        seed={quiz.id}
+                        width={600}
                       />
                       <Badge variant="destructive" className="absolute top-2 right-2">
                         {itemLabel(copy, "hard")}
