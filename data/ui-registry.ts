@@ -639,7 +639,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The public profile in ten parts: header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.",
+      "The public profile in ten parts: cover, header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.",
   },
   {
     kind: "domain",
