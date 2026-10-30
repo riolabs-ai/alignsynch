@@ -22,6 +22,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { popularSearches } from "@/content/search";
+import { brand } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndex, searchIndexFor } from "@/data/searchdata";
 import { PLATFORM_VIEWER, viewerWith } from "@/lib/nav";
@@ -72,11 +73,13 @@ describe("the /search body speaks the brand's records", () => {
     const quiz = body("quizhub");
     expect(quiz.label("title")).toBe("Search Results");
     expect(quiz.label("no-query-title")).toBe("Search for quizzes, categories, and more");
-    // "acrossQuizHub." with no space is what the shipped JSX rendered (a `{brand.name}` on its
-    // own line, whose trailing newline JSX trims). Pinned so a tidy-up cannot silently change
-    // the page text; the typo is the quiz brand's, filed rather than fixed here.
+    // "across…" with no space is what the shipped JSX rendered (a `{brand.name}` on its own
+    // line, whose trailing newline JSX trims). Pinned so a tidy-up cannot silently change the
+    // page text; the typo is the quiz brand's, filed rather than fixed here. The brand word is
+    // `brand.name`, not a literal: the gate runs on both brands, so `BRAND=alignsynch` would
+    // (correctly) put AlignSynch in this section's sentence.
     expect(quiz.label("no-query-body")).toBe(
-      "Enter a search term above to find quizzes, categories, creators, and pages acrossQuizHub.",
+      `Enter a search term above to find quizzes, categories, creators, and pages across${brand.name}.`,
     );
     expect(quiz.label("no-results-title")).toBe("No results found");
     expect(quiz.label("no-results-body")).toBe(
