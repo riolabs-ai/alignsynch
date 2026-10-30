@@ -1,16 +1,15 @@
 "use client";
 import { CategoriesCTA } from "@/components/categories/categories-cta";
 import { CategoriesHowItWorks } from "@/components/categories/categories-how-it-works";
+import { CategoryTile } from "@/components/categories/category-tile";
 import { Footer } from "@/components/layout/footer";
 import { Input } from "@/components/ui/input";
 import type { PageCopy } from "@/content/pages";
 import { categories } from "@/data/categories";
 import { fillLabel, pageItemOf, sectionOf } from "@/lib/page-copy";
 import { Search } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { media } from "@/data/media";
 
 /**
  * The `/categories` page. Its words are `data/pages/categories.ts`, resolved here and
@@ -58,12 +57,7 @@ export function CategoriesPage({ copy, shellCopy }: { copy: PageCopy; shellCopy:
               href={`/categories/${slug}`}
               className={`relative overflow-hidden rounded-xl text-white h-[200px] flex justify-between  shadow-sm items-end`}
             >
-              <Image
-                className="size-full object-cover object-center absolute inset-0"
-                src={image?.src ?? media.placeholder.src}
-                alt=""
-                fill
-              />
+              <CategoryTile name={name} slug={slug} src={image?.src} />
               <div className="absolute top-2 right-2 bg-white/40 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs font-medium">
                 {count}
               </div>

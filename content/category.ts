@@ -184,14 +184,34 @@ export function countRows(categories: readonly Category[], content: readonly Cat
 }
 
 /**
- * Renderability — a data:check invariant, not a schema rule. `image` and `iconKey`
- * are independently optional, but a quiz category with neither cannot be drawn
- * anywhere, so the table is reported rather than the row rejected.
+ * Renderability — a data:check invariant, not a schema rule.
+ *
+ * Before issue #130 this reported a quiz category with neither `image` nor `iconKey`:
+ * every subject had to own an asset. That rule is gone with the twenty-three identical
+ * `public/category/*.webp` placeholders — a tile with no artwork is now *drawn*, from a
+ * gradient seeded by the slug and a monogram from the name, and the registry says so with
+ * a `generated: true` entry that has no `src`.
+ *
+ * What is still a defect is a subject nothing can draw: no `image`, and no generated
+ * default for its key. `hasGenerated` is passed in because `data/media.ts` is data, not
+ * content — `data:check` answers it from the registry, and a category with no entry would
+ * otherwise render a blank tile no gate could see.
  */
-export function assertRenderableCategories(categories: readonly Category[]): string[] {
+export function assertRenderableCategories(
+  categories: readonly Category[],
+  hasGenerated: (key: string) => boolean,
+): string[] {
   return categories
-    .filter((category) => category.scope === "quiz" && !category.image && !category.iconKey)
-    .map((category) => `quiz category "${category.id}" has neither image nor iconKey`);
+    .filter(
+      (category) =>
+        category.scope === "quiz" &&
+        category.image === undefined &&
+        !hasGenerated(`category.${category.slug}`),
+    )
+    .map(
+      (category) =>
+        `quiz category "${category.id}" has no tile: no image and no generated media entry "category.${category.slug}"`,
+    );
 }
 
 export function categoryIndex(categories: readonly Category[]): Map<string, Category> {

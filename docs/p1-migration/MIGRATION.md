@@ -681,8 +681,10 @@ delivered with the card that implemented B-01).
   should share one shape, that is a tournament-model change.
 - **Taxonomy** — the quiz scope is A's 22 subjects corrected (`architechture` →
   `architecture`) plus `science`, `history`, `art` from B, 25 total. The asset
-  filename is still misspelled on disk (`public/category/architechture.webp`); the
-  row points at the real file so the tile renders.
+  filename was still misspelled on disk (`public/category/architechture.webp`) until
+  issue #130: every one of those 23 files was the same placeholder PNG, so they were
+  deleted and the tile is generated from the slug — there is no filename left to
+  misspell.
 - **Playable-quiz visibility** is assumed `public`; the fixture never said.
 - **Card detail pages** — `components/my-quizzes/quiz-details.tsx` and
   `components/quiz/quiz-details.tsx` still hold authored data. They are not card

@@ -213,8 +213,9 @@ present on both trees). On `/chat` the server HTML and the hydrated DOM carry th
 (`Today`, `5 minutes ago`, `10/15/30 minutes ago`) — the property `#418` was complaining about.
 
 **Pre-existing, not caused by P1:** `/dashboard` and `/signup` 404 from the sidebar, footer and
-categories CTA; `/testimonials/jessica.png` 404s; all 23 `public/category/*.webp` are the same
-1536×1024 placeholder stamped with its dimensions; `app/(mainlayout)/my-quizzes/[id]/{,statistics/}page.tsx`
+categories CTA; `/testimonials/jessica.png` 404s; all 23 `public/category/*.webp` were the same
+1536×1024 placeholder stamped with its dimensions (issue #130 deleted them and generates the tile
+from the slug); `app/(mainlayout)/my-quizzes/[id]/{,statistics/}page.tsx`
 read `params.id` synchronously (Next 16 requires awaiting `params`), so those pages render without
 an id.
 

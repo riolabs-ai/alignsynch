@@ -72,7 +72,7 @@ import { currentQuiz } from "../data/currentQuiz";
 import { mockQuizzes } from "../data/mock-quizzes";
 import { searchIndex } from "../data/searchdata";
 import { users } from "../lib/data/users";
-import { zMediaRegistry } from "../content/media";
+import { isFileMedia, zMediaRegistry, type MediaEntry } from "../content/media";
 import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
 import { zMetricTable } from "../content/metrics";
 import { media } from "../data/media";
@@ -108,6 +108,7 @@ import {
 import { durationLabels, findMetricLiterals, relativeLabels } from "./metric-refs";
 import {
   danglingEntries,
+  generatedKeys,
   registryProblems,
   unregisteredFiles,
   unregisteredRefs,
@@ -476,7 +477,8 @@ const scopeProblems = assertCategoryScopes(
 );
 for (const problem of scopeProblems) err("E4", problem);
 
-for (const problem of assertRenderableCategories(quizCategoryTable)) warn("W3", problem);
+/* W3 — the tile layer and the taxonomy agree (issue #130); emitted with the media
+ * registry below, because a quiz category is drawable when the registry says so. */
 
 const categoryIds = new Set(categoryTable.map((row) => row.id));
 for (const row of quizCategoryRows) {
@@ -841,7 +843,7 @@ const imageMeasured = imageCensus(imageTags);
  * zero-config check: adding a file is a one-command fix, and forgetting is a red build.
  * ------------------------------------------------------------------ */
 
-const registry = media as unknown as Record<string, (typeof media)[keyof typeof media]>;
+const registry = media as unknown as Record<string, MediaEntry>;
 const parsedRegistry = zMediaRegistry.safeParse(registry);
 if (!parsedRegistry.success) {
   for (const issue of parsedRegistry.error.issues) {
@@ -925,9 +927,44 @@ const fixtureImageRefs = [
   ...imageRefs(conversations, "data/chat-data"),
   ...imageRefs(notificationRecords, "data/notifications"),
   ...imageRefs(promotions, "data/promotions"),
+  /* The category table's `image` is the one a browse tile renders, so a path there is a
+   * request the page makes. #130 deleted the 23 duplicates every subject used to point at,
+   * and this line is why removing one from the registry cannot leave a dangling `image`. */
+  ...imageRefs(taxonomyTable, "content/categories"),
 ].filter((ref) => ref.src.startsWith("/"));
 
 for (const problem of unregisteredRefs(registry, fixtureImageRefs)) err("E19", problem);
+
+/* ------------------------------------------------------------------ *
+ * W3 — the category tile layer and the taxonomy agree (issue #130)
+ *
+ * #130 made a tile drawable without an image: a quiz subject with no file on disk gets a
+ * `generated: true` registry entry and the component draws it from the slug. W3 is the one
+ * join between the two sides, because the registry is generated from the taxonomy and
+ * nothing else reads a category's generated entry:
+ *
+ *   - a subject with no `image` and no generated entry renders a blank tile — the defect
+ *     the old W3 caught in a different shape (it wanted `image` or `iconKey`; a monogram
+ *     tile needs neither);
+ *   - a generated entry whose key names no subject is a default no category can ask for.
+ *
+ * It stays a warning, like the rule it replaces: a tile nobody can draw is a gap, not a
+ * record the model cannot parse.
+ * ------------------------------------------------------------------ */
+
+for (const problem of assertRenderableCategories(
+  quizCategoryTable,
+  (key) => registry[key] !== undefined && !isFileMedia(registry[key]),
+)) {
+  warn("W3", problem);
+}
+
+const generatedTileKeys = new Set(quizCategoryTable.map((category) => `category.${category.slug}`));
+for (const key of generatedKeys(registry)) {
+  if (!generatedTileKeys.has(key)) {
+    warn("W3", `media "${key}" is a generated default no quiz category owns — nothing draws it`);
+  }
+}
 
 /*
  * Five fixture covers retired by E19 when this rule landed, recorded here so the deletion is
