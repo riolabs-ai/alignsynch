@@ -1,5 +1,10 @@
 import { LoginView } from "@/components/auth/login-view";
 import { loginPageCopy } from "@/data/pages/login";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Log In",
+};
 
 /**
  * `/login`. A server module on purpose: the copy is parsed here (import of

@@ -2,7 +2,7 @@ import { NewsPage } from "@/components/news/news-page";
 import { newsPageCopy } from "@/data/pages/news";
 
 export const metadata = {
-  title: "Quiz News & Updates | QuizMaker",
+  title: "Quiz News & Updates",
   description: "Stay updated with the latest quiz trends, updates, and community news.",
 };
 

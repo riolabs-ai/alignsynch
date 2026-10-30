@@ -1,5 +1,10 @@
 import { RegisterView } from "@/components/auth/register-view";
 import { registerPageCopy } from "@/data/pages/register";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Sign Up",
+};
 
 /**
  * `/register`. A server module on purpose: the copy is parsed here (import of

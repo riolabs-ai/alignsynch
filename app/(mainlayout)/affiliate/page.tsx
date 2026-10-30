@@ -11,6 +11,11 @@ import { Footer } from "@/components/layout/footer";
 import { affiliatePageCopy } from "@/data/pages/affiliate";
 import { shellPageCopy } from "@/data/pages/shell";
 import { sectionOf } from "@/lib/page-copy";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Affiliate Program",
+};
 
 /**
  * The affiliate programme. Each band's words come from `data/pages/affiliate.ts`,

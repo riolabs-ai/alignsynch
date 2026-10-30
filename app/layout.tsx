@@ -9,8 +9,26 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
+/**
+ * The document title.
+ *
+ * `QuizHub` is not invented here: it is the product name the repo already ships, and
+ * the sidebar logo and the footer logo render the same word from `data/pages/shell.ts`
+ * (`heading`, and the `footer-legal/copyright` line).
+ *
+ *  - `default` is what a route with no `metadata.title` of its own gets. The string it
+ *    replaces ("Quiz Making Website - Play & Earn Money") was scaffold copy from before
+ *    the brand, and it was the tab title on roughly twenty routes.
+ *  - `template` composes a child route's own title in front of the brand
+ *    ("Explore Quizzes · QuizHub") instead of replacing it. That is why every route
+ *    title below is written brand-free: a title that still carried "| QuizHub" or
+ *    "| QuizMaker" would print the brand twice and disagree with this one.
+ */
 export const metadata: Metadata = {
-  title: "Quiz Making Website - Play & Earn Money",
+  title: {
+    default: "QuizHub",
+    template: "%s · QuizHub",
+  },
   description: "Create quizzes, play games, and earn money with our multi-vendor quiz platform",
 };
 

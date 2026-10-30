@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { use } from "react";
 
 export const metadata: Metadata = {
-  title: "Tournament Details | QuizHub",
+  title: "Tournament Details",
   description: "View details, rules, and standings for this quiz tournament.",
 };
 
