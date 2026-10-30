@@ -1,7 +1,7 @@
 "use client";
 
-import { searchTips, tipCategoryRows, tips } from "@/data/creator-tips-data";
 import type { PageCopySection } from "@/content/pages";
+import { articleCategoryRows, publishedArticles, searchArticles } from "@/lib/article-records";
 import { useState } from "react";
 import CreatorTipsCategories from "./creator-tips-categories";
 import CreatorTipsCta from "./creator-tips-cta";
@@ -21,6 +21,11 @@ interface CreatorTipsPageProps {
  * The index's bands. The page module resolves one section of
  * `data/pages/creator-tips.ts` per band and passes them in; this component only
  * forwards them, so it never picks a fixture itself.
+ *
+ * The tips themselves are article records (issue #165): `publishedArticles("tip")`
+ * is the published list, newest first, and search and the category filter are reads
+ * over that list. There is no second collection — editing a tip's title in
+ * `data/creator-tips-data.ts` changes this page and its detail page together.
  */
 export default function CreatorTipsPage({
   hero,
@@ -32,10 +37,12 @@ export default function CreatorTipsPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+  const tips = publishedArticles("tip");
+
   const filteredTips = searchQuery
-    ? searchTips(searchQuery)
+    ? searchArticles(tips, searchQuery)
     : selectedCategory
-      ? tips.filter((tip) => tip.categoryIds.includes(selectedCategory ?? ""))
+      ? tips.filter((tip) => tip.categoryIds.includes(selectedCategory))
       : tips;
 
   const handleSearch = (query: string) => {
@@ -53,7 +60,7 @@ export default function CreatorTipsPage({
       <CreatorTipsHero onSearch={handleSearch} copy={hero} />
 
       <CreatorTipsCategories
-        categories={tipCategoryRows}
+        categories={articleCategoryRows("tip")}
         selectedCategory={selectedCategory}
         onSelectCategory={handleCategorySelect}
         copy={categories}
@@ -62,7 +69,7 @@ export default function CreatorTipsPage({
       {!searchQuery && !selectedCategory && <FeaturedTips copy={featured} />}
 
       <TipsGrid
-        tips={filteredTips}
+        articles={filteredTips}
         searchQuery={searchQuery}
         selectedCategory={selectedCategory}
         copy={grid}

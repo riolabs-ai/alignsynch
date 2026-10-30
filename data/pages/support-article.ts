@@ -1,13 +1,14 @@
 /**
- * `/support/articles/[id]` — one knowledge-base article's copy.
+ * `/support/articles/[slug]` — one knowledge-base article's copy.
  *
- * The reader's hero is the record (`article.title`, its summary, its body), so the
- * fixture's `heading` and `subtitle` carry the not-found state the view renders when the
- * id resolves to nothing — the only place this route has its own headline. Everything
- * else is `article-detail`'s: the breadcrumb trail, the read-time suffix, the feedback
- * banner, the share/save/print controls and the "Read article" affordance the related
- * cards render (it reads its labels from the same band because both render from one
- * component).
+ * The reader's hero is the record (`article.title`, its summary, its body). The route
+ * resolves the slug against the record store and calls `notFound()` when nothing is
+ * published under it (issue #165), so this fixture no longer has a not-found state to
+ * word: `heading` and `subtitle` are the route's title band like every other surface's.
+ * Everything else is `article-detail`'s: the breadcrumb trail, the read-time suffix, the
+ * feedback banner, the share/save/print controls and the "Read article" affordance the
+ * related cards render (it reads its labels from the same band because both render from
+ * one component).
  *
  * The link destinations stay in JSX: `content/routes.ts` resolves every fixture `href` at
  * build time, and these point at `/support` (twice) and `/support?tab=contact`, a query

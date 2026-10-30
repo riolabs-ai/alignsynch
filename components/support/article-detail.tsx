@@ -4,11 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { articlesData } from "@/data/knowledge-base-data";
-import type { KbArticle } from "@/content/article";
-import { categoryName } from "@/content/categories";
 import type { PageCopy } from "@/content/pages";
 import { ContentBlocks } from "@/components/content/content-blocks";
+import { articlePath, type KbRecord } from "@/lib/article-records";
+import { categoryName } from "@/content/categories";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
   ArrowRight,
@@ -22,83 +21,26 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface ArticleDetailProps {
-  articleId: string;
+  /**
+   * The record, resolved by the route from its slug (issue #165). A slug that is not a
+   * published article is already a 404 before this component mounts, so there is no
+   * empty state here and no lookup in an effect.
+   */
+  article: KbRecord;
+  /** Published articles sharing a category, newest first. Resolved by the route. */
+  relatedArticles: readonly KbRecord[];
   copy: PageCopy;
 }
 
-export function ArticleDetail({ articleId, copy }: ArticleDetailProps) {
-  const [article, setArticle] = useState<KbArticle>();
-  const [loading, setLoading] = useState(true);
+export function ArticleDetail({ article, relatedArticles, copy }: ArticleDetailProps) {
   const [helpful, setHelpful] = useState<boolean | null>(null);
-  const [relatedArticles, setRelatedArticles] = useState<KbArticle[]>([]);
 
   // The article's own words are the record; these are the bands the reader draws around it.
   const detail = sectionOf(copy, "article-detail");
   const relatedCopy = sectionOf(copy, "related-articles");
-
-  useEffect(() => {
-    // Simulate fetching article data
-    const fetchArticle = () => {
-      setLoading(true);
-
-      // Find the article in our data
-      const foundArticle = articlesData.find((article) => article.id === articleId);
-
-      if (foundArticle) {
-        setArticle(foundArticle);
-
-        // Get related articles from the same category
-        const related = articlesData
-          .filter(
-            (a) =>
-              a.id !== articleId &&
-              a.categoryIds.some((id) => foundArticle.categoryIds.includes(id)),
-          )
-          .slice(0, 3);
-
-        setRelatedArticles(related);
-      }
-
-      setLoading(false);
-    };
-
-    fetchArticle();
-  }, [articleId]);
-
-  if (loading) {
-    return (
-      <div className="container max-w-4xl mx-auto py-4">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-6"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-8"></div>
-          <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-8"></div>
-          <div className="h-64 bg-gray-200 rounded w-full mb-8"></div>
-          <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-5/6 mb-4"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!article) {
-    return (
-      <div className="container max-w-4xl mx-auto py-4">
-        <Card className="p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">{copy.heading}</h2>
-          <p className="mb-6">{copy.subtitle}</p>
-          <Button asChild>
-            <Link href="/support">{itemLabel(detail, "back-to-support")}</Link>
-          </Button>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="container max-w-4xl mx-auto py-4 ">
@@ -215,7 +157,7 @@ export function ArticleDetail({ articleId, copy }: ArticleDetailProps) {
                 key={relatedArticle.id}
                 className="overflow-hidden border hover:border-primary/50 transition-colors"
               >
-                <Link href={`/support/articles/${relatedArticle.id}`} className="block p-4">
+                <Link href={articlePath(relatedArticle)} className="block p-4">
                   <div className="flex items-center mb-2">
                     <BookOpen className="h-4 w-4 mr-2 text-primary" />
                     <Badge variant="outline" className="text-xs">

@@ -132,8 +132,8 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/support",
     budget: 0,
   },
-  "/support/articles/[id]": {
-    page: "app/(mainlayout)/support/articles/[id]/page.tsx",
+  "/support/articles/[slug]": {
+    page: "app/(mainlayout)/support/articles/[slug]/page.tsx",
     dirs: ["components/support"],
     fixture: "data/pages/support-article",
     budget: 0,

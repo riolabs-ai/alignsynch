@@ -5,7 +5,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { categories, newsData } from "@/data/news-data";
+import { categories } from "@/data/news-data";
+import { articlePath, publishedArticles } from "@/lib/article-records";
 import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -23,9 +24,16 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
 
-  const featuredArticles = newsData.filter((article) => article.featured).slice(0, 3);
+  /**
+   * The index renders article records (issue #165), not a fixture: published news,
+   * newest first. Search and the category tabs are filters over that one list, so a
+   * title edited in `data/news-data.ts` changes this page and the detail page together.
+   */
+  const articles = publishedArticles("news");
 
-  const filteredArticles = newsData.filter((article) => {
+  const featuredArticles = articles.filter((article) => article.featured).slice(0, 3);
+
+  const filteredArticles = articles.filter((article) => {
     const matchesSearch =
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       article.summary.toLowerCase().includes(searchQuery.toLowerCase());
@@ -82,7 +90,7 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                     <div className="flex items-center">
                       <Calendar className="mr-1 h-3 w-3" />
-                      <span>{article.publishedAt ? formatDate(article.publishedAt) : ""}</span>
+                      <span>{formatDate(article.date)}</span>
                     </div>
                     <div className="flex items-center">
                       <Clock className="mr-1 h-3 w-3" />
@@ -91,7 +99,7 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
                       </span>
                     </div>
                   </div>
-                  <Link href={`/news/${article.slug}`} className="hover:underline">
+                  <Link href={articlePath(article)} className="hover:underline">
                     <h3 className="text-xl font-bold line-clamp-2">{article.title}</h3>
                   </Link>
                 </CardHeader>
@@ -107,7 +115,7 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
                     ))}
                   </div>
                   <Link
-                    href={`/news/${article.slug}`}
+                    href={articlePath(article)}
                     className="text-primary text-sm font-medium flex items-center"
                   >
                     {itemLabel(list, "read-more")} <ChevronRight className="ml-1 h-3 w-3" />
@@ -153,7 +161,7 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                     <div className="flex items-center">
                       <Calendar className="mr-1 h-3 w-3" />
-                      <span>{article.publishedAt ? formatDate(article.publishedAt) : ""}</span>
+                      <span>{formatDate(article.date)}</span>
                     </div>
                     <div className="flex items-center">
                       <Clock className="mr-1 h-3 w-3" />
@@ -162,7 +170,7 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
                       </span>
                     </div>
                   </div>
-                  <Link href={`/news/${article.slug}`} className="hover:underline">
+                  <Link href={articlePath(article)} className="hover:underline">
                     <h3 className="text-lg font-bold line-clamp-2">{article.title}</h3>
                   </Link>
                 </CardHeader>
@@ -178,7 +186,7 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
                     ))}
                   </div>
                   <Link
-                    href={`/news/${article.slug}`}
+                    href={articlePath(article)}
                     className="text-primary text-sm font-medium flex items-center"
                   >
                     {itemLabel(list, "read-more")} <ChevronRight className="ml-1 h-3 w-3" />
