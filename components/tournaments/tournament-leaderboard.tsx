@@ -1,5 +1,6 @@
 "use client";
 
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,11 +22,9 @@ import {
 } from "@/components/ui/table";
 import { formatMetricValue, formatPercentValue } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";
-import { media } from "@/data/media";
 import { metric } from "@/data/metrics";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowDown, ArrowUp, Award, Medal, Minus, Search, Trophy } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 import { Tournament } from "./tournament-detail";
 
@@ -45,7 +44,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 2,
       username: "QuizWizard",
       name: "Alex Johnson",
-      avatar: media["avatars.wizard"].src,
       score: 980,
       accuracy: 98,
       streak: 15,
@@ -56,7 +54,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 1,
       username: "BrainMaster",
       name: "Sarah Chen",
-      avatar: media["avatars.brain"].src,
       score: 945,
       accuracy: 94,
       streak: 12,
@@ -67,7 +64,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 5,
       username: "KnowledgeKing",
       name: "Michael Smith",
-      avatar: media["avatars.king"].src,
       score: 920,
       accuracy: 92,
       streak: 10,
@@ -78,7 +74,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 3,
       username: "QuizChampion",
       name: "Emma Wilson",
-      avatar: media["avatars.champion"].src,
       score: 890,
       accuracy: 89,
       streak: 8,
@@ -89,7 +84,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 4,
       username: "GeniusQuizzer",
       name: "David Lee",
-      avatar: media["avatars.genious"].src,
       score: 875,
       accuracy: 87,
       streak: 7,
@@ -100,7 +94,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 6,
       username: "MindMaster",
       name: "Olivia Brown",
-      avatar: media["avatars.mind"].src,
       score: 840,
       accuracy: 84,
       streak: 6,
@@ -111,7 +104,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 9,
       username: "QuizGuru",
       name: "James Wilson",
-      avatar: media["avatars.guru"].src,
       score: 820,
       accuracy: 82,
       streak: 5,
@@ -122,7 +114,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 7,
       username: "KnowledgeMaster",
       name: "Sophia Garcia",
-      avatar: media["avatars.master"].src,
       score: 795,
       accuracy: 79,
       streak: 4,
@@ -133,7 +124,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 8,
       username: "QuizGenius",
       name: "Daniel Kim",
-      avatar: media["avatars.genious"].src,
       score: 780,
       accuracy: 78,
       streak: 3,
@@ -144,7 +134,6 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
       previousRank: 10,
       username: "BrainWave",
       name: "Ava Martinez",
-      avatar: media["avatars.brain"].src,
       score: 760,
       accuracy: 76,
       streak: 2,
@@ -266,12 +255,7 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="relative h-8 w-8">
-                            <Image
-                              src={player.avatar || media.placeholder.src}
-                              alt={player.username}
-                              fill
-                              className="rounded-full object-cover"
-                            />
+                            <GeneratedAvatar name={player.name} seed={player.username} size={32} />
                             <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white" />
                           </div>
                           <div>
@@ -326,11 +310,12 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="relative h-12 w-12">
-                  <Image
-                    src={media["avatars.alex"].src}
-                    alt="Your Avatar"
-                    fill
-                    className="rounded-full object-cover"
+                  {/* The row's name and seed come from the copy fixture: `/tournaments/[id]`
+                      has a zero page-copy budget, and a demo viewer is a label, not a literal. */}
+                  <GeneratedAvatar
+                    name={itemLabel(copy, "you")}
+                    seed={itemLabel(copy, "you")}
+                    size={48}
                   />
                 </div>
                 <div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Comment } from "@/components/quiz/comment";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Difficulty } from "@/content/core";
 import type { Question } from "@/content/quiz";
 import type { QuizAnswer, QuizCommentThread } from "@/content/quiz-result";
-import { media } from "@/data/media";
 import {
   CheckCircle,
   ChevronDown,
@@ -94,7 +93,6 @@ export function QuestionDiscussion({
         author: {
           id: "current-user",
           name: "You",
-          avatar: { src: media["avatars.master"].src, alt: "You" },
         },
         body: newComment,
         createdAt: new Date().toISOString(),
@@ -259,10 +257,7 @@ export function QuestionDiscussion({
                   <Separator />
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={media["avatars.master"].src} alt="Your Avatar" />
-                        <AvatarFallback>YO</AvatarFallback>
-                      </Avatar>
+                      <GeneratedAvatar name="Your profile" seed="current-user" size={32} />
                       <Textarea
                         placeholder="Add a comment or question..."
                         value={newComment}

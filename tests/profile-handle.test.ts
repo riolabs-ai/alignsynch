@@ -96,7 +96,9 @@ describe("/profile/<username> — the person is the handle, not a literal", () =
     expect(person.name).toBe("Sarah Williams");
     expect(person.id).toBe("player-sarah-williams");
     expect(person.level).toBe(65);
-    expect(person.avatar).toBe("/avatars/sarah.webp");
+    // No avatar on the person: the header draws one from this id (#152), so a file path
+    // here would be a second, drifting answer to "what does Sarah look like".
+    expect(person).not.toHaveProperty("avatar");
     expect(person.country).toBe("Canada");
     // Standing comes from her row on the global board, the board's own unit.
     expect(person.rank).toBe(2);

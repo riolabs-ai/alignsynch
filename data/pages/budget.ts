@@ -198,4 +198,24 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/tournament-detail",
     budget: 0,
   },
+  /**
+   * The marketing landing page (#159) — the first surface in this table that is not a product
+   * route, and the reason `mounts` exists for a second caller.
+   *
+   * Its chrome hangs off `app/(marketing)/layout.tsx`, which is not the page Next renders, so the
+   * layout is a mount: without it the header's CTA label and the footer's two strings would be
+   * attributed to nobody. The one directory it owns is `components/marketing/**`, which the layout
+   * and the page both import.
+   *
+   * Budget 0, measured not assumed: the seven bands' words are `data/pages/marketing.ts`, the brand
+   * name is `brand.name`, the two limits are fixture items, and the only other strings the built
+   * HTML carries are the address (`brand.supportEmail`) and Tailwind class names.
+   */
+  "/welcome": {
+    page: "app/(marketing)/welcome/page.tsx",
+    mounts: ["app/(marketing)/layout.tsx"],
+    dirs: ["components/marketing"],
+    fixture: "data/pages/marketing",
+    budget: 0,
+  },
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { ContentBlocks } from "@/components/content/content-blocks";
 import { formatDate } from "@/content/core";
 import type { PageCopySection } from "@/content/pages";
@@ -80,15 +81,12 @@ export default function TipDetail({ tip, relatedTips, copy, related }: TipDetail
           />
           <div className="flex items-center justify-between flex-wrap gap-3 border-b border-gray-200 dark:border-gray-700 pb-6">
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-                <Image
-                  src={tip.author.avatar?.src ?? media.placeholder.src}
-                  alt={tip.author.name}
-                  width={40}
-                  height={40}
-                  className="object-cover"
-                />
-              </div>
+              <GeneratedAvatar
+                name={tip.author.name}
+                seed={tip.author.id ?? tip.author.name}
+                size={40}
+                className="mr-3"
+              />
               <div>
                 <div className="font-medium">{tip.author.name}</div>
                 <div className="text-sm text-gray-500">{formatDate(tip.date)}</div>

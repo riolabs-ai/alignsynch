@@ -2,15 +2,14 @@
 
 import type React from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { media } from "@/data/media";
 
 export function ProfileSettings() {
   const [isLoading, setIsLoading] = useState(false);
@@ -47,14 +46,7 @@ export function ProfileSettings() {
       </div>
 
       <div className="flex items-center gap-4">
-        <Avatar className="h-24 w-24">
-          <AvatarImage
-            src={media["avatars.alex"].src}
-            className="object-cover object-center"
-            alt="Profile"
-          />
-          <AvatarFallback>AJ</AvatarFallback>
-        </Avatar>
+        <GeneratedAvatar name={formData.name} seed={formData.username} size={96} />
 
         <div className="space-y-2">
           <Button variant="outline" size="sm" className="relative">

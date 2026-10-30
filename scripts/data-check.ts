@@ -1393,8 +1393,8 @@ const e21DebtCopies = fixtureCopies.length - ownedCopies.length;
  * their own records: 107 literals in eight files, and no fixture could reach one of them.
  * `content/people.ts` now owns `Player`, `LeaderboardRow` and `WinEvent`; this is the half a
  * single record cannot prove — that a row's `playerId` is a player, that a win's `quizId` is
- * a quiz, that a player's `avatarKey` is a registered **avatar** file, that a board's ranks
- * match its positions, and that a board carrying movement is ordered by it. Every one of
+ * a quiz, that a board's ranks match its positions, and that a board carrying movement is
+ * ordered by it. Every one of
  * those failures renders a plausible page (a board one person short, a crown on the wrong
  * head, a payout for a quiz nobody can play) which is why they are errors, not warnings.
  *
@@ -1419,11 +1419,6 @@ for (const finding of peopleFindings({
   leaderboards,
   wins: winRecords,
   quizIds: new Set(quizzes.map((quiz) => quiz.id)),
-  media: {
-    entry: (key) => registry[key],
-    /** The registry addresses one file per key (E18); this is the file-exists half. */
-    fileExists: (src) => existsSync(join(process.cwd(), "public", assetOf(src))),
-  },
   nowIso: DEMO_NOW_ISO,
 })) {
   err(finding.rule, finding.message);

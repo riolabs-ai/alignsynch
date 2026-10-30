@@ -1,17 +1,15 @@
 "use client";
 
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
-import { media } from "@/data/media";
 import { itemLabel } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 
 type Testimonial = {
   id: number;
   name: string;
-  avatar: string;
   role: string;
   rating: number;
   text: string;
@@ -25,7 +23,6 @@ export function TournamentTestimonials({ copy }: { copy: PageCopySection }) {
     {
       id: 1,
       name: "Alex Johnson",
-      avatar: media["avatars.alex"].src,
       role: "History Enthusiast",
       rating: 5,
       text: "The World History Tournament was incredibly well-organized! The questions were challenging but fair, and the live competition format kept me on the edge of my seat. I learned so much while having fun.",
@@ -34,7 +31,6 @@ export function TournamentTestimonials({ copy }: { copy: PageCopySection }) {
     {
       id: 2,
       name: "Sarah Williams",
-      avatar: media["avatars.sarah"].src,
       role: "Science Teacher",
       rating: 5,
       text: "As a science teacher, I was impressed by the depth and accuracy of questions in the Science Spectacular tournament. My students and I participated together, and it became a wonderful learning experience for all of us.",
@@ -43,7 +39,6 @@ export function TournamentTestimonials({ copy }: { copy: PageCopySection }) {
     {
       id: 3,
       name: "Michael Chen",
-      avatar: media["avatars.wizard"].src,
       role: "Quiz Champion",
       rating: 4,
       text: "I've participated in dozens of online quiz competitions, and this platform offers the best tournament experience by far. The real-time scoring and global competition make every round exciting!",
@@ -52,7 +47,6 @@ export function TournamentTestimonials({ copy }: { copy: PageCopySection }) {
     {
       id: 4,
       name: "Emily Rodriguez",
-      avatar: media["avatars.guru"].src,
       role: "Literature Lover",
       rating: 5,
       text: "The Classic Literature tournament exceeded my expectations. The questions were thoughtfully crafted and covered a wide range of works. I connected with other book lovers and even won some amazing prizes!",
@@ -61,7 +55,6 @@ export function TournamentTestimonials({ copy }: { copy: PageCopySection }) {
     {
       id: 5,
       name: "David Kim",
-      avatar: media["avatars.king"].src,
       role: "Math Enthusiast",
       rating: 4,
       text: "The Math & Logic tournament was both challenging and rewarding. The timed rounds really tested my problem-solving abilities under pressure. The community is supportive and the prizes were great!",
@@ -70,7 +63,6 @@ export function TournamentTestimonials({ copy }: { copy: PageCopySection }) {
     {
       id: 6,
       name: "Jessica Taylor",
-      avatar: media["avatars.mind"].src,
       role: "Trivia Buff",
       rating: 5,
       text: "I love how the tournaments are structured with qualifying rounds and finals. It gives everyone a fair chance while still rewarding skill and knowledge. The Pop Culture tournament was my favorite so far!",
@@ -140,15 +132,12 @@ export function TournamentTestimonials({ copy }: { copy: PageCopySection }) {
                   className="bg-card rounded-xl shadow-lg p-8 border border-border"
                 >
                   <div className="flex items-center mb-6">
-                    <div className="mr-4">
-                      <Image
-                        src={testimonial.avatar || media.placeholder.src}
-                        width={48}
-                        height={48}
-                        alt={testimonial.name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-primary"
-                      />
-                    </div>
+                    <GeneratedAvatar
+                      name={testimonial.name}
+                      seed={testimonial.name}
+                      size={64}
+                      className="mr-4 border-2 border-primary"
+                    />
                     <div>
                       <h3 className="font-bold text-lg">{testimonial.name}</h3>
                       <p className="text-muted-foreground text-sm">{testimonial.role}</p>
