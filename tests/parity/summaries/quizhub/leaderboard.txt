@@ -1,0 +1,9 @@
+route  /leaderboard
+brand  quizhub
+
+outcome  404 — community.leaderboard is off (data/flags.ts)
+
+This route is in the parity list and currently renders nothing: the surface is flagged
+off, so the page calls notFound() before reading anything. Turning the flag on makes
+this hash move to a rendered page — run `pnpm parity:update --reason "…"` and drop
+`disabledByFlag` from tests/parity/routes.ts.

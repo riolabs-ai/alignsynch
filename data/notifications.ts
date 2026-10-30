@@ -10,6 +10,7 @@
  * the tree ages; see "Generated instants" in MIGRATION.md.
  */
 import type { Notification } from "../content/social";
+import type { BrandId } from "./brand";
 
 export const notifications: readonly Notification[] = [
   {
@@ -73,3 +74,28 @@ export const notifications: readonly Notification[] = [
     link: "/my-quizzes",
   },
 ];
+
+/**
+ * The notifications this brand's drawer shows (issue #156 follow-up).
+ *
+ * Every row above belongs to the quiz product — the "Quiz Master" badge for ten quizzes, a quiz
+ * reward payout, a quiz featured on the quiz homepage — and the badge in the header is chrome on
+ * every route of both builds. On `BRAND=alignsynch` this build has no notification behind it, so
+ * the drawer gets an empty list and draws its empty state (`notifications`' `empty-title` /
+ * `empty-body`), and the header's unread count is 0 rather than a count of quiz events.
+ *
+ * Empty, not a second set of invented alignment events: the same rule as the messages drawer
+ * (`data/chat-data.ts`).
+ */
+export function notificationsFor(brandId: BrandId): readonly Notification[] {
+  switch (brandId) {
+    case "quizhub":
+      return notifications;
+    case "alignsynch":
+      return [];
+    default: {
+      const unhandled: never = brandId;
+      throw new Error(`no notifications drawer for brand ${String(unhandled)}`);
+    }
+  }
+}

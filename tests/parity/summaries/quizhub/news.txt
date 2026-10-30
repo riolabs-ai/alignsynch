@@ -1,0 +1,63 @@
+route  /news
+brand  quizhub
+
+headings (18)
+  h2  "Recent Messages"
+  h2  "Notifications"
+  h3  "New"
+  h3  "Earlier"
+  h1  "Quiz News &amp; Updates"
+  h2  "Featured Articles"
+  h3  "Community Spotlight: Meet the Creator Behind &#x27;History Mysteries&#x27;"
+  h3  "The Psychology of Quiz Design: How to Create Addictive Learning Experiences"
+  h3  "Quiz Trends to Watch in 2025: What&#x27;s Hot and What&#x27;s Next"
+  h3  "10 Strategies for Creating Engaging Quizzes That Keep Players Coming Back"
+  h3  "Introducing Advanced Quiz Analytics: Gain Deeper Insights Into Player Behavior"
+  h3  "Community Spotlight: Meet the Creator Behind &#x27;History Mysteries&#x27;"
+  h3  "Making Your Quizzes Accessible to All: A Comprehensive Guide"
+  h3  "Announcing the 2025 Summer Quiz Championship: $10,000 in Prizes"
+  h3  "Quiz Monetization Strategies That Work in 2025"
+  h3  "How AI is Revolutionizing Quiz Creation: New Tools and Techniques"
+  h3  "The Psychology of Quiz Design: How to Create Addictive Learning Experiences"
+  h3  "Quiz Trends to Watch in 2025: What&#x27;s Hot and What&#x27;s Next"
+
+landmarks (6)
+  banner         1
+  complementary  1
+  main           1
+  navigation     3
+
+links (26 unique, 42 total)
+  #                                                    1
+  /                                                    2
+  /affiliate                                           1
+  /battle                                              1
+  /categories                                          1
+  /chat                                                1
+  /create/editor                                       1
+  /create/generator                                    1
+  /creator-tips                                        1
+  /daily-challenge                                     1
+  /dashboard/user?tab=wallet                           1
+  /explore                                             1
+  /news                                                1
+  /news/10-strategies-for-creating-engaging-quizzes    2
+  /news/ai-powered-quiz-creation-tools                 2
+  /news/new-quiz-analytics-features                    2
+  /news/quiz-accessibility-guidelines                  2
+  /news/quiz-design-psychology                         4
+  /news/quiz-hub-community-spotlight-may               4
+  /news/quiz-monetization-strategies-2025              2
+  /news/quiz-trends-2025                               4
+  /news/summer-quiz-championship-announcement          2
+  /pricing                                             1
+  /quiz-discussions                                    1
+  /support                                             1
+  /tournaments                                         1
+
+counts
+  elements  740
+  images    0
+  buttons   18
+  inputs    2
+  classes   251 (sha 59820b1f8541)
