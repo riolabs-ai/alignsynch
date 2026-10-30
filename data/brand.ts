@@ -101,3 +101,27 @@ export function resolveBrand(id: string | undefined): Brand {
 
 /** The record this build renders: the one import every page and fixture reads. */
 export const brand: Brand = resolveBrand(process.env.BRAND);
+
+/**
+ * The id `resolveBrand` was called with — which key of `brands` this record is.
+ *
+ * `resolveBrand` turns an id into a record; a page that must choose a *composition* needs the
+ * direction back, because the record carries no id of its own (`content/brand.ts` has no `id`
+ * field, and adding one would be a schema change for a value the table already holds as its
+ * key). Identity is the join: the two records are distinct objects, so `brands[key] === record`
+ * is true for exactly one key.
+ *
+ * This is what keeps a brand's *name* out of a `.tsx`: `app/(mainlayout)/page.tsx` switches over
+ * `BrandId` — `"quizhub"`, `"alignsynch"` — and never compares `brand.name` to `"AlignSynch"`,
+ * so renaming a product is a fixture edit and a new brand is a compile error until its front
+ * page is chosen deliberately.
+ */
+export function brandIdOf(record: Brand): BrandId {
+  const id = (Object.keys(brands) as BrandId[]).find((key) => brands[key] === record);
+  if (id === undefined) {
+    throw new Error(
+      "this Brand record is not in data/brand.ts's `brands` table, so it has no BRAND id — a record added without a key cannot choose a composition",
+    );
+  }
+  return id;
+}
