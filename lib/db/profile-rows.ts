@@ -10,7 +10,7 @@
  * owner never chose), so a `NULL` column becomes an *omitted* key here rather than a field with
  * an empty string in it — the same conversion `zProfileFields` performs in the other direction.
  */
-import { zUserProfile, type UserProfile } from "@/content/identity";
+import { type UserRole, zUserProfile, type UserProfile } from "@/content/identity";
 import { isoInstantOf, parseOrThrow } from "./rows";
 
 /** One `user_profile` row, named after its columns. */
@@ -21,6 +21,8 @@ export interface UserProfileRow {
   readonly bio: string | null;
   readonly country: string | null;
   readonly country_code: string | null;
+  /** `member | admin`; the CHECK in `0004_user_profile_role.sql` is the enum (#183). */
+  readonly role: UserRole;
   /** `TIMESTAMPTZ`, so `pg` hands back a `Date`; a string is accepted for script-shaped rows. */
   readonly joined_at: Date | string;
   readonly updated_at: Date | string;
@@ -41,6 +43,7 @@ export function userProfileFromRow(row: UserProfileRow): UserProfile {
       ...(row.bio === null ? {} : { bio: row.bio }),
       ...(row.country === null ? {} : { country: row.country }),
       ...(row.country_code === null ? {} : { countryCode: row.country_code }),
+      role: row.role,
       joinedAt: isoInstantOf(row.joined_at),
       updatedAt: isoInstantOf(row.updated_at),
     },

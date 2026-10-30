@@ -16,9 +16,11 @@
  *   `user_profile` (this module)      what a person says about themselves in public — handle,
  *                                    display name, bio, country. One row per auth user id.
  *
- * So the profile carries no credentials and no role. `MUST NOT` in #164: no role model —
- * "admin" vs "platform user" is a separate decision, and a `role` column here would let #156
- * depend on this card inventing one.
+ * So the profile carries no credentials. It carries one authorization fact, `role`, added by
+ * #183 once "admin vs member" stopped being a decision nobody had made: the demo surface needs
+ * a signed-in admin to mean something, and one named boolean is the whole of it. `role` is
+ * **not** in `PROFILE_FIELDS` — the settings form is a person writing about themselves, and a
+ * field it can set is a field they can promote themselves with.
  *
  * PUBLIC vs OWNER is `publicProfileOf()`, not a UI flag: strangers read the public projection,
  * the owner reads the row plus their session. Dropping `userId` in the projection is what makes
@@ -94,6 +96,34 @@ export const zCountryCode = z
  */
 export const zUserId = z.string().min(1).max(128);
 
+/* ------------------------------------------------------------------ *
+ * Role — one named boolean (#183)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The vocabulary, closed at two. Not a permission system: `admin` means "may reach the surfaces
+ * `lib/auth/require-role.ts` gates", and `member` means everything else — there is no third
+ * value, no rank order (a role is compared for equality, never for `>=`), and no per-resource
+ * grant. A third role is a new decision, and it arrives with the pages that need it.
+ */
+export const USER_ROLES = ["member", "admin"] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
+
+export const zUserRole = z.enum(USER_ROLES);
+
+/**
+ * What a person is when nobody said otherwise — the same value the column's `DEFAULT` carries,
+ * named here so a missing row and a defaulted row answer alike: no `user_profile` row is not a
+ * reason to be an admin, and "the profile write does not mention role" is not either.
+ */
+export const DEFAULT_USER_ROLE: UserRole = "member";
+
+/** Is this role allowed on a surface that requires `needed`? Equality, not a rank. */
+export function roleAdmits(needed: UserRole, viewer: UserRole | null): boolean {
+  return viewer !== null && viewer === needed;
+}
+
 /** Both country fields, or neither — the twin of `zOpinions`' think/guess refinement. */
 export function countryPairProblem(value: {
   country?: string;
@@ -144,6 +174,13 @@ export const zUserProfile = z
   .object({
     userId: zUserId,
     ...PROFILE_FIELDS,
+    /**
+     * The one authorization fact, and the one field here a person may not write. It is read
+     * into the profile rather than passed beside it so that "who is this and what may they do"
+     * is one row and one parse; `publicProfileOf()` drops it, exactly like `userId`, because a
+     * stranger's view has no business knowing who is an admin.
+     */
+    role: zUserRole,
     joinedAt: zIsoDateTime,
     updatedAt: zIsoDateTime,
   })
@@ -157,9 +194,10 @@ export type UserProfile = z.infer<typeof zUserProfile>;
 
 /**
  * What a stranger may see. `userId` is dropped on purpose — it is the join key to the auth
- * table, and a public page has no business carrying it. Everything else here is public by
- * construction, so "public fields" is a type rather than a list of props one view remembers
- * not to pass.
+ * table, and a public page has no business carrying it. `role` is dropped for the same reason
+ * and a sharper one: publishing "this account is an admin" tells an attacker which account to
+ * go after, and no public page reads it. Everything else here is public by construction, so
+ * "public fields" is a type rather than a list of props one view remembers not to pass.
  */
 export const zPublicProfile = z
   .object({
