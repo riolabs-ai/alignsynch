@@ -23,6 +23,7 @@
     "db:migrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-migrate.mjs",
     "db:seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs",
     "db:verify": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-verify.mjs",
+    "flow:e2e": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flow-e2e.mjs",
     "objstore:smoke": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/objstore-smoke.mjs",
     "lint": "biome check",
     "lint:fix": "biome check --write",

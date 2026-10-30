@@ -173,12 +173,22 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * `accept` is the same class of value: a file-picker MIME list
  * (`image/*,.pdf,.doc,.docx,.txt`) that WU-9's contact form carries. A reader never sees
  * it, and moving it into `PageCopy` would put a MIME string in an editor's fixture.
+ *
+ * `method` is the same class again (#146): a form's `method="post"` is how the browser is
+ * told to submit, not a word on the page. The two-party flow's three forms each carry one,
+ * and a copy fixture holding `post` would be a fixture an editor has to keep in sync with
+ * the protocol.
+ *
+ * `autoComplete` joins them for the same reason (issue #164): `"email"` / `"current-password"`
+ * are W3C enumerated tokens a password manager reads, exactly like `type="password"` — not copy.
+ * Counting them also made every login form's budget wrong by the two hints it must carry.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
   "accept",
   "align",
   "alt",
   "asChild",
+  "autoComplete",
   "clipRule",
   "color",
   "dataKey",
@@ -192,6 +202,7 @@ const TECHNICAL_ATTRIBUTES = new Set([
   "htmlFor",
   "id",
   "key",
+  "method",
   "name",
   "orientation",
   "patternUnits",

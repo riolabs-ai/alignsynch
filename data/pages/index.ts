@@ -15,22 +15,28 @@
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { affiliatePageCopy } from "./affiliate";
+import { assessmentPageCopy } from "./assessment";
+import { assessmentInstancePageCopy } from "./assessment-instance";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
 import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
 import { dailyChallengePageCopy } from "./daily-challenge";
+import { dashboardPageCopy } from "./dashboard";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
+import { invitePageCopy } from "./invite";
 import { loginPageCopy } from "./login";
 import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
 import { pricingPageCopy } from "./pricing";
+import { profilePageCopy } from "./profile";
 import { registerPageCopy } from "./register";
+import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
@@ -40,19 +46,25 @@ import { tournamentsPageCopy } from "./tournaments";
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
   "/affiliate": affiliatePageCopy,
+  "/assessment": assessmentPageCopy,
+  "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
   "/categories/[slug]": categoryDetailPageCopy,
   "/creator-tips": creatorTipsPageCopy,
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
   "/daily-challenge": dailyChallengePageCopy,
+  "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
+  "/invite/[token]": invitePageCopy,
   "/login": loginPageCopy,
   "/news": newsPageCopy,
   "/news/[slug]": newsArticlePageCopy,
   "/pricing": pricingPageCopy,
+  "/profile/[username]": profilePageCopy,
   "/register": registerPageCopy,
+  "/settings": settingsPageCopy,
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
   "/tournaments": tournamentsPageCopy,

@@ -78,6 +78,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/daily-challenge",
     budget: 0,
   },
+  "/dashboard/user": {
+    page: "app/(mainlayout)/dashboard/user/page.tsx",
+    dirs: ["components/identity"],
+    fixture: "data/pages/dashboard",
+    budget: 0,
+  },
   "/explore": {
     page: "app/(mainlayout)/explore/page.tsx",
     dirs: ["components/explore"],
@@ -112,6 +118,23 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/pricing/page.tsx",
     dirs: ["components/pricing"],
     fixture: "data/pages/pricing",
+    budget: 0,
+  },
+  "/profile/[username]": {
+    page: "app/(mainlayout)/profile/[username]/page.tsx",
+    // Only the identity components this card added. The demo branch still renders the fixture
+    // profile view (`components/profile/**`), which holds 132 unreviewed literals and several
+    // sentences — attributing that directory here would fail the length rule in this card
+    // instead of leaving it where it is: pre-existing copy debt with its own unit. The ratchet
+    // still applies to everything new, which is what "budget 0" means for this surface.
+    dirs: ["components/identity"],
+    fixture: "data/pages/profile",
+    budget: 0,
+  },
+  "/settings": {
+    page: "app/(mainlayout)/settings/page.tsx",
+    dirs: ["components/identity"],
+    fixture: "data/pages/settings",
     budget: 0,
   },
   "/news": {
@@ -173,6 +196,27 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/tournaments/[id]/page.tsx",
     dirs: ["components/tournaments"],
     fixture: "data/pages/tournament-detail",
+    budget: 0,
+  },
+  // #146 moved the two-party flow's words out as they were written: the three new
+  // surfaces measure 0, and the ratchet starts there rather than at a number a later unit
+  // would have to lower.
+  "/assessment": {
+    page: "app/(mainlayout)/assessment/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment",
+    budget: 0,
+  },
+  "/assessment/instances/[instanceId]": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-instance",
+    budget: 0,
+  },
+  "/invite/[token]": {
+    page: "app/(mainlayout)/invite/[token]/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/invite",
     budget: 0,
   },
   /**

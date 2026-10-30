@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { PageCopy } from "@/content/pages";
+import { authClient } from "@/lib/auth/client";
+import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import {
   ArrowLeft,
@@ -24,6 +27,7 @@ import {
   Gamepad2,
   Globe,
   Link,
+  Loader2,
   Trophy,
   Users,
   type LucideIcon,
@@ -124,6 +128,57 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
   };
 
   const router = useRouter();
+
+  /**
+   * The sign-up itself (issue #164). Until this card the last step's button did nothing at all.
+   *
+   * `name` is the auth user's display name — `zUserProfile.displayName` starts from it on
+   * `/settings`, so a person who never saves a profile still has a name on their page. The
+   * onboarding interests and phone number are not part of the auth user or the profile schema,
+   * so they are not sent anywhere: a form field that silently goes nowhere is worse than one the
+   * product does not ask for yet.
+   */
+  const status = sectionOf(copy, "status");
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState<AuthFailure | null>(null);
+  const [requiredMissing, setRequiredMissing] = useState(false);
+
+  const createAccount = async () => {
+    setFailure(null);
+    setRequiredMissing(false);
+    const name = `${formData.firstName} ${formData.lastName}`.trim();
+    if (name === "" || formData.email.trim() === "" || formData.password === "") {
+      setRequiredMissing(true);
+      return;
+    }
+
+    setPending(true);
+    let result: { error?: unknown } | undefined;
+    try {
+      result = await authClient.signUp.email({
+        email: formData.email.trim(),
+        password: formData.password,
+        name,
+      });
+    } catch (error) {
+      // A thrown value never reached the server — see `lib/auth/errors.ts`.
+      const failureOf = authFailureOf(error);
+      setFailure(failureOf === "unknown" ? "network" : failureOf);
+      setPending(false);
+      return;
+    }
+
+    if (result?.error) {
+      setFailure(authFailureOf(result.error));
+      setPending(false);
+      return;
+    }
+
+    // Into the product, not onto `/`: the session the sign-up just created is what the
+    // account page reads, so this is also the first proof to the person that it worked.
+    router.push("/dashboard/user");
+    router.refresh();
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -447,6 +502,19 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
               )}
 
               {/* Navigation Buttons */}
+              {requiredMissing && (
+                <Alert variant="destructive">
+                  <AlertDescription>{itemLabel(status, "error-required")}</AlertDescription>
+                </Alert>
+              )}
+              {failure !== null && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    {itemLabel(status, authFailureItemId(failure))}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="flex justify-between pt-6">
                 <Button variant="outline" onClick={() => router.push("/login")}>
                   <ArrowLeft className="w-4 h-4" />
@@ -463,8 +531,13 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 ) : (
-                  <Button disabled={!canProceed()}>
-                    <span>{itemLabel(navigation, "create-account")}</span>
+                  <Button onClick={createAccount} disabled={!canProceed() || pending}>
+                    {pending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    <span>
+                      {pending
+                        ? itemLabel(status, "pending")
+                        : itemLabel(navigation, "create-account")}
+                    </span>
                     <Trophy className="w-4 h-4" />
                   </Button>
                 )}
