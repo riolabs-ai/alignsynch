@@ -13,11 +13,11 @@ It has two halves, and each one is owned by a different place:
 
 ## Summary
 
-- routes: **39** — 25 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 224 files under `components/`, 220 of them `.tsx`
+- routes: **41** — 27 static, 14 dynamic, from `app/**/page.tsx`
+- component domains: **32** — 225 files under `components/`, 221 of them `.tsx`
 - route handlers: **5** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 9 · **fixture** 50 · **db** 7 · **live** 5
-- templates: Both templates 19 · AlignSynch 8 · QuizHub 42 · No template yet 2
+- status: **mock** 9 · **fixture** 50 · **db** 9 · **live** 5
+- templates: Both templates 19 · AlignSynch 10 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -81,8 +81,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/auth` — **live**
   - capability: The sign-in and sign-up forms, including pending, invalid-credentials and network states.
-  - files (2): `login-view.tsx`, `register-view.tsx`
-  - routes (2): `/login`, `/register`
+  - files (3): `demo-panel.tsx`, `login-view.tsx`, `register-view.tsx`
+  - routes (3): `/demo`, `/login`, `/register`
 
 - `components/content` — **mock**
   - capability: The block renderer every article record is drawn through: paragraphs, headings, lists, images and quotes.
@@ -128,7 +128,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (34): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]` — and every other route through `app/layout.tsx`
+  - routes (36): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch
@@ -148,8 +148,20 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/assessment/instances/[instanceId]` — **db**
   - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered.
   - components: `components/assessment`, `components/assessment-flow`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `lib/auth/server.ts`
   - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404.
+
+- `/demo` — **db**
+  - capability: A PIN-gated demo panel: three buttons sign a browser in as the seeded Initiator, Counterparty or Admin through a server action, with no password ever sent to the browser.
+  - components: `components/auth`, `components/ui`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: Exists only under DEMO_AUTH=1, and refused when VERCEL_ENV=production unless DEMO_ALLOW_PRODUCTION=1 is also set; outside demo mode the route answers the same 404 a URL that never existed does.
+
+- `/demo/admin` — **db**
+  - capability: The admin-only check behind the demo panel's third button: it prints the session it read from Postgres, and a member account asking for it gets a 404 rather than a 403.
+  - components: `components/ui`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route.
 
 - `/invite/[token]` — **db**
   - capability: What an invitation says, and the button that claims it — a single-use token spent by a POST once the invited party accepts.
