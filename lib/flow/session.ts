@@ -43,5 +43,28 @@ export function flowCookieOptions(maxAgeSeconds: number) {
   };
 }
 
+/**
+ * Every party token this browser holds, one per instance it is a party to (#202).
+ *
+ * The claim needs them. A claim is valid only for a browser that is **not already bound**
+ * to the instance the token names, and the cookie's *name* carries the instance id while
+ * the database can only look up the token's hash. Reading them all and asking the store
+ * "is any of these a party here" is one indexed query and needs no second lookup of which
+ * instance the invitation belongs to — which is also why this is a list and not a getter
+ * by id.
+ *
+ * Typed against the shape Next's `cookies()` returns (`getAll()`), so the route and the
+ * page pass the jar itself and a test passes a literal array.
+ */
+export function partyTokensFrom(jar: {
+  getAll(): readonly { readonly name: string; readonly value: string }[];
+}): string[] {
+  return jar
+    .getAll()
+    .filter((cookie) => cookie.name.startsWith(PARTY_COOKIE_PREFIX))
+    .map((cookie) => cookie.value)
+    .filter((value) => value !== "");
+}
+
 /** Seven days, the invite's own lifetime — the party cookie rides along with it. */
 export const FLOW_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;

@@ -7,7 +7,15 @@
  *
  *   1. create      an Instance from a published Template, over the create form
  *   2. invite      the invitation link is on the screen (no RESEND_API_KEY, so no email)
- *   3. claim       the Counterparty follows the link once; a second claim is refused
+ *   2b. self-claim the Initiator's own browser cannot claim its own invitation: the page
+ *                  names them as the party they already are, the claim is refused with
+ *                  `already-a-party`, and the token stays live (#202)
+ *   3. claim       the Counterparty confirms joining as their own name; a claim that
+ *                  confirms nothing, or the wrong name, is refused with `unconfirmed` and
+ *                  spends nothing; the successful claim happens once (#202)
+ *   3b. named      the instance screen names the answering party on every visit (#202)
+ *   3c. cross-post a session bound as the Initiator that POSTs `role=counterparty` is
+ *                  refused 403 and writes no Counterparty opinion (#202)
  *   4. blind       the Counterparty's screen shows no report and no Gap while only the
  *                  Initiator has answered
  *   5. submit      the Counterparty answers differently on one Aspect
@@ -41,6 +49,21 @@ function check(name, ok, detail = "") {
 function note(text) {
   notes.push(text);
   console.log(`· ${text}`);
+}
+
+/**
+ * The markup a browser paints, with Next's inlined flight payload removed.
+ *
+ * Both `next dev` and `next start` embed the RSC stream in `<script>` tags, and that stream
+ * carries *props* — the copy fixture, the template's rows — that are never on screen. A
+ * negative assertion over the raw response ("the edited prompt is not in the page") therefore
+ * fails on bytes the reader cannot see: proven identical on unmodified `main`, which is how
+ * this helper got here. Anything that asserts what is **absent** from the screen reads
+ * `rendered()`; anything asserting a filled sentence can read the raw HTML, because the
+ * payload carries the fixture's `{placeholders}`, never the filled text.
+ */
+function rendered(html) {
+  return html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
 }
 
 /* ------------------------------------------------------------------ *
@@ -222,6 +245,56 @@ async function main() {
     `${stored.created_at} → ${stored.expires_at}`,
   );
 
+  /* 2b. the Initiator opens their own invitation (#202) -------------- */
+  // The defect: this used to spend the token and silently move the session into the
+  // Counterparty's column. Now it is a refusal, and the link is still good for Rowan.
+  const initiatorInvite = await initiator.get(`/invite/${token}`);
+  check(
+    "the Initiator's own invitation page renders",
+    initiatorInvite.status === 200,
+    `status ${initiatorInvite.status}`,
+  );
+  check(
+    "it names the party this session already answers as",
+    initiatorInvite.html.includes("You are answering as Avery E2E, the Initiator."),
+    "the answering-party band",
+  );
+  check(
+    "it does not offer the claim control to a browser that is already a party",
+    !initiatorInvite.html.includes("Accept and answer"),
+  );
+
+  const selfClaim = await initiator.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  check(
+    "the Initiator's own claim is refused with already-a-party",
+    selfClaim.status === 303 &&
+      (selfClaim.location ?? "").endsWith(`/invite/${token}?claim=already-a-party`),
+    `${selfClaim.status} ${selfClaim.location}`,
+  );
+  const selfRefusal = await initiator.get(`/invite/${token}?claim=already-a-party`);
+  check(
+    "the refusal says nothing was claimed and the link is still unused",
+    selfRefusal.html.includes("Nothing was claimed") &&
+      selfRefusal.html.includes("The link is still unused."),
+  );
+
+  const afterSelfClaim = await db.query(
+    `SELECT iv.claimed_at,
+            (SELECT count(*) FROM party p WHERE p.instance_record_id = iv.instance_record_id)::int AS parties
+       FROM instance_invite iv WHERE iv.instance_record_id = $1`,
+    [instanceId],
+  );
+  check(
+    "the refused claim consumed nothing: token live, one party row",
+    afterSelfClaim.rows[0].claimed_at === null && afterSelfClaim.rows[0].parties === 1,
+    `claimed_at=${afterSelfClaim.rows[0].claimed_at} parties=${afterSelfClaim.rows[0].parties}`,
+  );
+  const stillInitiator = await initiator.get(instancePath);
+  check(
+    "the Initiator's session still answers as the Initiator",
+    stillInitiator.html.includes("You are answering as Avery E2E, the Initiator."),
+  );
+
   /* 3. the stranger, then the claim --------------------------------- */
   const strangerScreen = await stranger.get(instancePath);
   check(
@@ -239,6 +312,14 @@ async function main() {
   check("it names the Initiator", invitePage.html.includes("Avery E2E"));
   check("it names the Template", invitePage.html.includes("Relationship Basics"));
   check(
+    "it says who the visitor is joining as, before anything is claimed",
+    invitePage.html.includes("You are joining as Rowan E2E, the Counterparty."),
+  );
+  check(
+    "it does not name an answering party for a browser that is not one",
+    !rendered(invitePage.html).includes("You are answering as"),
+  );
+  check(
     "the GET did not claim the invite",
     (
       await db.query("SELECT claimed_at FROM instance_invite WHERE instance_record_id = $1", [
@@ -247,7 +328,33 @@ async function main() {
     ).rows[0].claimed_at === null,
   );
 
-  const claim = await counterparty.post(`/invite/${token}/claim`, {});
+  const unconfirmed = await counterparty.post(`/invite/${token}/claim`, {});
+  check(
+    "a claim that confirms nothing is refused with unconfirmed",
+    unconfirmed.status === 303 &&
+      (unconfirmed.location ?? "").endsWith(`/invite/${token}?claim=unconfirmed`),
+    `${unconfirmed.status} ${unconfirmed.location}`,
+  );
+  const wrongName = await counterparty.post(`/invite/${token}/claim`, { confirm: "Avery E2E" });
+  check(
+    "a claim that confirms the other party's name is refused with unconfirmed",
+    wrongName.status === 303 &&
+      (wrongName.location ?? "").endsWith(`/invite/${token}?claim=unconfirmed`),
+    `${wrongName.status} ${wrongName.location}`,
+  );
+  const afterRefusals = await db.query(
+    `SELECT iv.claimed_at,
+            (SELECT count(*) FROM party p WHERE p.instance_record_id = iv.instance_record_id)::int AS parties
+       FROM instance_invite iv WHERE iv.instance_record_id = $1`,
+    [instanceId],
+  );
+  check(
+    "both refused claims consumed nothing: token live, one party row",
+    afterRefusals.rows[0].claimed_at === null && afterRefusals.rows[0].parties === 1,
+    `claimed_at=${afterRefusals.rows[0].claimed_at} parties=${afterRefusals.rows[0].parties}`,
+  );
+
+  const claim = await counterparty.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
   check(
     "claiming answers 303 to the instance screen",
     claim.status === 303 && (claim.location ?? "").includes(instancePath),
@@ -267,16 +374,78 @@ async function main() {
     `parties=${claimed.rows[0].parties}`,
   );
 
-  const secondClaim = await stranger.post(`/invite/${token}/claim`, {});
+  /* 3b. the screen names the answering party, every visit ------------ */
+  const counterpartyScreen = await counterparty.get(instancePath);
   check(
-    "a second claim is refused (redirected back to the invitation's own 'used already' state)",
-    secondClaim.status === 303 && (secondClaim.location ?? "").endsWith(`/invite/${token}`),
+    "the instance screen names the party this session answers as",
+    counterpartyScreen.html.includes("You are answering as Rowan E2E, the Counterparty."),
+    "You are answering as Rowan E2E, the Counterparty.",
+  );
+  const counterpartyRevisit = await counterparty.get(instancePath);
+  check(
+    "and names it again on a later visit (not a one-time notice)",
+    counterpartyRevisit.html.includes("You are answering as Rowan E2E, the Counterparty."),
+  );
+  check(
+    "the two screens disagree about which party they answer as",
+    stillInitiator.html.includes("the Initiator.") &&
+      counterpartyRevisit.html.includes("the Counterparty.") &&
+      !counterpartyRevisit.html.includes("You are answering as Avery E2E"),
+  );
+  note(
+    "rendered: " +
+      (counterpartyRevisit.html.match(/You are answering as [^<]*\./) ?? ["(not found)"])[0],
+  );
+
+  const secondClaim = await stranger.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  check(
+    "a second claim of the spent token is refused",
+    secondClaim.status === 303 &&
+      (secondClaim.location ?? "").endsWith(`/invite/${token}?claim=claimed`),
     `${secondClaim.status} ${secondClaim.location}`,
   );
-  const secondClaimPage = await stranger.get(`/invite/${token}`);
+  const secondClaimPage = await stranger.get(`/invite/${token}?claim=claimed`);
   check(
     "the second claim lands on the 'used already' band",
     secondClaimPage.html.includes("This invitation was used already"),
+  );
+
+  /* 3c. a bound session cannot record the other party's opinion ------ */
+  // Through the form the role is the cookie's; a direct POST that *asserts* the other
+  // party must be refused rather than quietly written under the cookie's role.
+  const crossPost = await initiator.post(`${instancePath}/answers`, {
+    ...answers({ feel: 5, wish: 5 }),
+    role: "counterparty",
+  });
+  check(
+    "a direct POST asserting the Counterparty is refused with 403",
+    crossPost.status === 403,
+    `status ${crossPost.status}`,
+  );
+  check(
+    "the refusal says which party this session answers as",
+    crossPost.html.includes(
+      "this session answers as the initiator; the request asked to answer as the counterparty",
+    ),
+    "reason line",
+  );
+  const counterpartyOpinions = await db.query(
+    "SELECT count(*)::int AS n FROM opinion WHERE instance_record_id = $1 AND role = 'counterparty'",
+    [instanceId],
+  );
+  check(
+    "the refused POST wrote no Counterparty opinion",
+    counterpartyOpinions.rows[0].n === 0,
+    `n=${counterpartyOpinions.rows[0].n}`,
+  );
+  const initiatorAfterRefusal = await db.query(
+    "SELECT count(*)::int AS n FROM opinion WHERE instance_record_id = $1 AND role = 'initiator'",
+    [instanceId],
+  );
+  check(
+    "and no Initiator opinion either — the request was refused, not reinterpreted",
+    initiatorAfterRefusal.rows[0].n === 0,
+    `n=${initiatorAfterRefusal.rows[0].n}`,
   );
 
   /* 4. blind: only the Initiator has answered ----------------------- */
@@ -401,8 +570,8 @@ async function main() {
     const afterEdit = await initiator.get(instancePath);
     check(
       "editing the template afterwards does not change the instance's screen",
-      afterEdit.html.includes(original) &&
-        !afterEdit.html.includes("TEMPLATE EDITED AFTER ANSWERING"),
+      rendered(afterEdit.html).includes(original) &&
+        !rendered(afterEdit.html).includes("TEMPLATE EDITED AFTER ANSWERING"),
       "the original prompt is still drawn",
     );
     const instanceRow = await db.query(
