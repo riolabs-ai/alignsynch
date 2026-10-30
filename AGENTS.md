@@ -57,7 +57,8 @@ bash scripts/verify.sh       # THE gate. ~45 s locally, green = shippable
 
 It runs, in order, and stops at the first failure (printing the failing step and its exit
 code): `deps (pnpm install --frozen-lockfile)` → `glossary` (`pnpm glossary:check`) →
-`typecheck` (`next typegen && tsc --noEmit`) → `lint` (`biome check`) → `format:check`
+`release:check` (`bash scripts/release.sh --check`) → `typecheck` (`next typegen && tsc --noEmit`) →
+`lint` (`biome check`) → `format:check`
 (`biome format`) → `data:check` → `test` → `build` (`next build`). `data:check` and `test`
 run only when `package.json` defines that script; otherwise they are skipped with a visible
 `○ … skipped` line, so the same script is correct on `main` (no `data:check` yet) and on
@@ -66,6 +67,10 @@ branches that carry it.
 `glossary` runs in **every** lane, including docs: `docs/glossary.md` is generated from the
 schema comments, so a stale page is drift no typecheck can see, and the three files it reads
 (`content/*.ts`, `scripts/`, `docs/`) classify into three different lanes. It costs ~0.1 s.
+`release:check` sits beside it for the same reason: `CHANGELOG.md` is generated from the
+commits and is also the published release notes, so an entry that names a version
+`package.json` does not carry, or that has lost its Known limits block, is drift in a document
+people read. The runbook is [`docs/RELEASING.md`](docs/RELEASING.md).
 
 The gate costs what the change costs: it prints `lane=docs|content|config|code` and drops
 the steps that cannot see a file in the diff — a `docs/`-only change is ~2 s, a

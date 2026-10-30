@@ -34,6 +34,12 @@
 # paths selects a different (cheaper) lane. It costs ~0.1 s, so it runs before
 # the lane branch — one check, four depths, no exceptions.
 #
+# THE RELEASE STEP IS IN EVERY LANE, for the same reason (#144). `CHANGELOG.md`
+# is generated from the commits, and it is also the published release notes: an
+# entry that names a version `package.json` does not carry, or that has lost its
+# Known limits block, is drift in a document people read. The file is docs, the
+# script is config, `package.json` is config — three lanes, one check, ~0.1 s.
+#
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
@@ -383,6 +389,18 @@ if has_script "glossary:check"; then
   run_step "glossary (docs/glossary.md is generated from the schema comments)" pnpm glossary:check || fail
 else
   skip_step "glossary" "no glossary:check script in package.json"
+fi
+
+# The CHANGELOG is generated from the commits and is the source of the release notes (#144), so
+# drift here is drift in a published document: `--check` proves the newest entry names the version
+# in `package.json`, that no entry has lost its Known limits block, and — once the version is
+# tagged — that every commit since the previous tag appears in the entry. Same placement as the
+# glossary step and for the same reason: docs, scripts and package.json classify into three
+# different lanes, and a lane that skipped it would be a green local gate over a red CI run.
+if has_script "release:check"; then
+  run_step "release:check (CHANGELOG entry matches the version and the commits)" pnpm release:check || fail
+else
+  skip_step "release:check" "no release:check script in package.json"
 fi
 
 if [ "$LANE" = "config" ]; then
