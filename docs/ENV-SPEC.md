@@ -311,3 +311,63 @@ kanban card each — never a shared branch. Board `alignsynch` is project-scoped
   question, not a P1 one.
 - P2 media registry: **typed TS map** until P3 needs generated manifests, then JSON + zod.
 - P4 second vertical: deliberately unset until P3 passes.
+
+## 9. Feature flags — one surface off, no code change (#175)
+
+Surfaces are in four states (mocked, fixture-backed, database-backed, live) and the only lever that
+shipped or hid one used to be a code edit and a deploy. `data/flags.ts` is the store: eight declared
+surfaces, each `{ default, templates?, note }`, and **every default is `false`** — a mock on by
+default is how a mock reaches a client. `lib/flags.ts` resolves them and exports `isEnabled(name)`.
+It is **server-only**: it throws if it is ever called in a browser, because a flag the client decides
+can neither 404 a route nor stop a query, and hiding a button is not disabling a feature.
+
+Precedence, highest first — `tests/flags.test.ts` proves all three cases:
+
+1. **`FLAG_<NAME>`** — `1` on, `0` off. `community.leaderboard` is `FLAG_COMMUNITY_LEADERBOARD`
+   (dots become underscores, the rest upper-cased). Anything else (`yes`, `true`, `on`) is ignored
+   with one warning per variable: a typo never turns a surface on, and never 500s the shell.
+2. **`templates`** — the per-template on, for a surface one template ships before another. No flag
+   uses it yet; the field is schema, and the resolver's step is tested.
+3. **`default`** — what every other template gets.
+
+A flagged-off surface is off in three places, and a surface is only wired when all three are:
+
+- **nav** — the entry is not drawn. The layout resolves `hiddenNavHrefs()` on the server and the
+  sidebar's `NavItem` takes `hidden`; the href stays a literal so `data:check` E10 still sees it.
+- **route** — it answers **404**, not 403. A 403 admits that the surface exists.
+- **data** — the read happens _after_ the gate, in the route. The leaderboard's boards moved out of
+  the client component's module scope for exactly this reason: a module-scope read runs on import,
+  so no route-level gate could stop it.
+
+### What a flip costs — measured 2026-10-30
+
+The route is request-time (`export const dynamic = "force-dynamic"`, the same lever `/explore` uses),
+so the enforcement half of a flip is **an env change and a restart** — no rebuild. Same build, only
+the env and the process differ:
+
+- `GET /leaderboard` with `FLAG_COMMUNITY_LEADERBOARD` unset → **404**
+- `GET /leaderboard` with `FLAG_COMMUNITY_LEADERBOARD=1` → **200**
+
+The nav is the other half, and it is **prerendered into the shell**: `next build` renders the sidebar
+into each page's HTML, so the entry is fixed at build time. Measured on the build made with the flag
+off, after restarting it with `FLAG_COMMUNITY_LEADERBOARD=1`, `/` still served the same 337,159-byte
+prerendered document with **zero** `/leaderboard` links inside `id="app-sidebar"`.
+
+Plainly, then:
+
+- **turning a surface off** takes effect on a **restart** for the route (a click lands on a 404) and
+  needs a **rebuild** for the nav entry to disappear;
+- **turning one on** needs a **rebuild** for the nav entry to appear.
+
+Restart-only is the safe direction, which is the one an operator wants before a client demo: the
+surface is off immediately and the worst case is an entry that lands on a 404. A rebuild is an env
+change plus `pnpm build` — still no code change, which is the point of the flag. Making the nav
+request-time would mean `force-dynamic` on `app/(mainlayout)/layout.tsx`, turning the 15 prerendered
+shell pages and the six `/creator-tips/[slug]` paths into server renders; that cost is not paid here.
+
+Known gap, deliberately not in this change: four deep links to a gated surface that are not the
+sidebar — the footer column, the home page's "View Full Leaderboard" CTA, the demo profile's
+back-link, and the 404 page's own "Leaderboard" action — still point at `/leaderboard`, so they 404
+while the flag is off (measured on the quizhub build: `/` carries two such links outside
+`id="app-sidebar"`). Wiring every inbound link is its own change; the nav entry and the route are
+what the mechanism owns.
