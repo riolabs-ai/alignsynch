@@ -23,6 +23,11 @@
  *         against `slotShelves` (`data/quiz-catalogue.ts`), its index exists on that
  *         shelf, and that position renders the quiz the overlay names. A campaign on
  *         a slot nobody renders never runs, and nothing else would notice.
+ *   E30 — the window covers the fixture clock: `startsAt <= DEMO_NOW_ISO < effective
+ *         end`. E28 proves a slot renders the campaign; this proves the campaign is
+ *         live when the demo renders it. Issue #110: both bound instants sat in 2025
+ *         while `DEMO_NOW_ISO` is 2026-10-29, so `isPromotionActive()` was false at
+ *         every render instant and both overlays silently fell back to the catalog.
  *   W6  — a campaign staged outside the quiz's published life warns; staging against
  *         a draft is legitimate, so it must not fail the build.
  *
@@ -45,9 +50,10 @@ import {
   type QuizPromotion,
   type QuizStats,
 } from "../content/quiz";
+import { DEMO_NOW_ISO } from "../content/core";
 import { parseSlot, quizShelves, slotShelves } from "../data/quiz-catalogue";
 
-export type PromotionRule = "E14" | "E15" | "E16" | "E28" | "W6";
+export type PromotionRule = "E14" | "E15" | "E16" | "E28" | "E30" | "W6";
 
 export interface PromotionFinding {
   rule: PromotionRule;
@@ -319,6 +325,36 @@ export function promotionFindings(
       error(
         "E28",
         `${label}: slot "${promotion.slot}" renders "${rendered}", not "${promotion.quizId}" — the campaign would never run (curation and the campaign disagree about this position)`,
+      );
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * E30 — the window covers the fixture clock
+   * ---------------------------------------------------------------- */
+
+  // The demo's "now" (`content/core.ts::DEMO_NOW_ISO`), not the wall clock: every
+  // authored instant above it is a countdown and everything below it is a label, and a
+  // campaign is only observable when the two overlap. This is the rule that would have
+  // caught issue #110 — E14/E15/E16/E28 were all green while both overlays rendered
+  // nowhere, because the window had closed 21 months before the render instant.
+  const fixtureClock = Date.parse(DEMO_NOW_ISO);
+  for (const [index, promotion] of parsed.entries()) {
+    const label = labelOf(promotion, index);
+    const quiz = byId.get(promotion.quizId);
+    if (quiz === undefined) continue; // E14 already reported the broken join
+    const startsAt = Date.parse(promotion.startsAt);
+    const endsAt = effectiveEnd(promotion, quiz.stats);
+    if (startsAt > fixtureClock) {
+      error(
+        "E30",
+        `${label}: startsAt (${promotion.startsAt}) is after the fixture clock (${DEMO_NOW_ISO}) — the campaign cannot be live at the demo present, so no slot renders it; author startsAt at the clock, not in the future`,
+      );
+    } else if (endsAt <= fixtureClock) {
+      const closedAt = new Date(endsAt).toISOString();
+      error(
+        "E30",
+        `${label}: the window closed at ${closedAt}, before the fixture clock (${DEMO_NOW_ISO}) — the overlay is dead data: isPromotionActive() is false at every render instant and every slot falls back to the catalog. Move the window into the demo present (the catalog's limitedTimeEndsAt bounds it while endsAt is absent)`,
       );
     }
   }

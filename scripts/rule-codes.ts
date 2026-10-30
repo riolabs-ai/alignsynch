@@ -103,6 +103,7 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
       E15: "the window and the prize: `endsAt > startsAt`, a slot window never extends the catalog's, a prize is bounded",
       E16: "concurrent overlays for one quiz agree on every engagement key they both set",
       E28: "every `promotions[].slot` parses, indexes a position a shelf renders, and that position renders the overlay's quiz",
+      E30: "every promotion's window covers the fixture clock (`startsAt <= DEMO_NOW_ISO < effective end`) — an overlay that is never live renders nowhere",
       W6: "a campaign staged outside the quiz's published life",
     },
   },

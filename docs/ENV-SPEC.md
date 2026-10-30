@@ -123,13 +123,13 @@ WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
 - Gate evidence, `GATE_LANE=full bash scripts/verify.sh` on node `v24.22.0` / pnpm `12.16.1`, run
   repeatedly during this pass. Every run was green and every count was identical: `deps` clean ·
   `typecheck` exit 0 · `lint` 0 errors, 200 warnings, 34 infos (386 files) · `format:check`
-  (384 files) · `data:check` 437/437 cases in 102 suites · `test` 36/36 vitest cases (4 files) ·
+  (384 files) · `data:check` 442/442 cases in 103 suites · `test` 36/36 vitest cases (4 files) ·
   `build` 34 routes, 30 static pages. Wall time is not a property of the tree here: as the load
   average moved over 6.5–20 the same gate took 51 s to 179 s, with `build` 36–76 s of it.
-- The block above is current, not a P1-era snapshot. The test count moved 28 → 33 → 402 → 425 → **437**
+- The block above is current, not a P1-era snapshot. The test count moved 28 → 33 → 402 → 425 → 437 → **442**
   as the P2 work units added suites, WU-11 added the `next/image` suite and the rule-code registry
-  gained its negative cases. The invariant set is `E0`–`E29` plus `W1`–`W6`, of which `E14`–`E16` +
-  `E28` are the promotion overlays and `E17`–`E19` are the media registry. The slot guard was `E17`
+  gained its negative cases. The invariant set is `E0`–`E30` plus `W1`–`W6`, of which `E14`–`E16` +
+  `E28` + `E30` are the promotion overlays and `E17`–`E19` are the media registry. The slot guard was `E17`
   until issue #103 untangled it from the media rule, and the `next/image` rule was `E27` until the same
   pass untangled it from the battle-mode rule; `scripts/rule-codes.ts` keeps one code to one rule now.
 - Landed as PR #16 (`content/zod-model`); the migration is documented in

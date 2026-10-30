@@ -26,8 +26,8 @@ import { mockQuizzes } from "../../data/mock-quizzes";
 import { catalogueAliases, quizShelves, shelvedIds } from "../../data/quiz-catalogue";
 import { quizById, quizBySlug, quizzes } from "../../data/quizzes";
 
-/** The fixture instant (`migrated/facts.json`): the card snapshots were captured here. */
-const NOW = new Date("2025-01-01T00:00:00.000Z");
+/** The fixture clock (`DEMO_NOW_ISO`): the instant every window is measured against. */
+const NOW = new Date("2026-10-29T12:00:00.000Z");
 
 /** §10, in order — ids and slugs are frozen (E8). */
 const AUTHORED = [
@@ -66,7 +66,7 @@ const scienceOverlay = zQuizPromotion.parse({
   id: "promo-science-quiz-space-exploration-1",
   quizId: "quiz-science-quiz-space-exploration",
   slot: "explore-page/popular[1]",
-  startsAt: "2025-01-01T00:00:00.000Z",
+  startsAt: "2026-10-29T12:00:00.000Z",
   plays: 2105,
   capacity: 2500,
   rating: 4.8,
@@ -194,7 +194,7 @@ describe("the Science quiz — the record both overlays join to", () => {
     assert.equal(quiz.stats.rewardCents, 1000);
     assert.equal(quiz.stats.rating, 4.9);
     assert.equal(quiz.stats.badge?.type, "hot");
-    assert.equal(quiz.stats.limitedTimeEndsAt, "2025-01-03T00:00:00.000Z");
+    assert.equal(quiz.stats.limitedTimeEndsAt, "2026-10-31T12:00:00.000Z");
   });
 
   it("names its author in content — MarvelFan, not the merch record's CosmicMind", () => {

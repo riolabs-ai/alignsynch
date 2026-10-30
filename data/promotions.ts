@@ -11,19 +11,29 @@
  *
  *   explore-page/popular[1]     2105/2500 · $7.50 · 4.8 · popular · no countdown
  *   explore-featured/popular[1] 2105/2500 · $7.50 · 4.8 · popular · no countdown
- *   catalog record              2453/3000 · $10.00 · 4.9 · hot · 2025-01-03 window
+ *   catalog record              2453/3000 · $10.00 · 4.9 · hot · 2026-10-31 window
  *
  * Three decisions are encoded in the literals, and none of them is an accident:
  *
  * 1. **No `endsAt`.** The campaign is bounded by the catalog's own window
- *    (`2025-01-03T00:00:00.000Z`); `effectivePromotionEndsAt()` takes the earliest
- *    bound, so an invented end would be a second source of truth for "when does this
- *    stop". A slot may shorten an offer, never extend it (E15 enforces both halves).
+ *    (`2026-10-31T12:00:00.000Z`, the demo epoch plus the authored 48 h);
+ *    `effectivePromotionEndsAt()` takes the earliest bound, so an invented end would
+ *    be a second source of truth for "when does this stop". A slot may shorten an
+ *    offer, never extend it (E15 enforces both halves).
  * 2. **`limitedTimeEndsAt: null`.** That cancels the countdown *display* on these two
  *    cards (the authored cards show `limitedTime: false`); it does **not** cancel the
  *    campaign bound — those are different things and the merge keeps them apart.
  * 3. **`rewardCents: 750` against a catalog `1000`.** A prize override is legal only
  *    while something bounds it, and the catalog window does (E15).
+ *
+ * **`startsAt` is the demo epoch (`DEMO_NOW_ISO`), not the 2025 capture date.** Issue
+ * #110: both literals were left at the 2025 capture instant while the schema's windows
+ * belong on the demo clock, so the campaign's half-open window was
+ * `[2025-01-01, 2025-01-03)` — closed 21 months before the render instant — and the
+ * overlay rendered nowhere. A campaign is authored at the demo present: `startsAt` = the
+ * epoch, the catalog window = epoch + the authored duration. `data:check` **E30** fails
+ * the build when a promotion's window stops covering `DEMO_NOW_ISO`, because an overlay
+ * that cannot be live is a campaign that silently never runs.
  *
  * There is no `labelOverride` and there can be none: a label that differs from the
  * record's title is a presentation problem, not a second title (A4). Every content
@@ -52,7 +62,7 @@ export const promotions: readonly QuizPromotion[] = [
     id: "promo-science-quiz-space-exploration-1",
     quizId: "quiz-science-quiz-space-exploration",
     slot: "explore-page/popular[1]",
-    startsAt: "2025-01-01T00:00:00.000Z",
+    startsAt: "2026-10-29T12:00:00.000Z",
     plays: 2105,
     capacity: 2500,
     rating: 4.8,
@@ -64,7 +74,7 @@ export const promotions: readonly QuizPromotion[] = [
     id: "promo-science-quiz-space-exploration-2",
     quizId: "quiz-science-quiz-space-exploration",
     slot: "explore-featured/popular[1]",
-    startsAt: "2025-01-01T00:00:00.000Z",
+    startsAt: "2026-10-29T12:00:00.000Z",
     plays: 2105,
     capacity: 2500,
     rating: 4.8,

@@ -28,7 +28,7 @@ import { CARD_RECORDS, FIXTURE_NOW, type CardRecordSnapshot } from "./fixtures/c
 /** The migration instant the card snapshots were captured at. */
 const NOW = new Date(FIXTURE_NOW);
 /** The catalog window on the Science quiz: 48 h after the fixture instant. */
-const CATALOG_ENDS = "2025-01-03T00:00:00.000Z";
+const CATALOG_ENDS = "2026-10-31T12:00:00.000Z";
 const SCIENCE = "quiz-science-quiz-space-exploration";
 const SLOTS = ["explore-page/popular[1]", "explore-featured/popular[1]"] as const;
 
