@@ -1,18 +1,19 @@
 import type { PageCopySection } from "@/content/pages";
-import type { Tip } from "@/data/creator-tips-data";
+import type { TipRecord } from "@/lib/article-records";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { FileQuestion } from "lucide-react";
 import TipCard from "./tip-card";
 
 interface TipsGridProps {
-  tips: readonly Tip[];
+  /** The page's published tip records, newest first, already searched/filtered. */
+  articles: readonly TipRecord[];
   searchQuery: string;
   selectedCategory: string | null;
   copy: PageCopySection;
 }
 
-export default function TipsGrid({ tips, searchQuery, selectedCategory, copy }: TipsGridProps) {
-  if (tips.length === 0) {
+export default function TipsGrid({ articles, searchQuery, selectedCategory, copy }: TipsGridProps) {
+  if (articles.length === 0) {
     return (
       <div className="text-center py-12">
         <FileQuestion size={48} className="mx-auto text-gray-400 mb-4" />
@@ -46,8 +47,8 @@ export default function TipsGrid({ tips, searchQuery, selectedCategory, copy }: 
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4 gap-6">
-        {tips.map((tip) => (
-          <TipCard key={tip.id} tip={tip} copy={copy} />
+        {articles.map((article) => (
+          <TipCard key={article.id} tip={article} copy={copy} />
         ))}
       </div>
     </div>

@@ -6,15 +6,22 @@ one profile.
 
 ## 0. Scope gate
 
-| Phase                                 | Allowed                                                  | Blocked                     |
-| ------------------------------------- | -------------------------------------------------------- | --------------------------- |
-| **P1 Data abstraction**               | Quizhub screens, existing `data/*`, schema + validators  | new features, new verticals |
-| **P2 Media & content templatization** | components reading from schema, `public/` media registry | page-specific one-offs      |
-| **P3 Bulk generation / variation**    | generator scripts emitting validated fixtures            | persisted DB, auth          |
-| **P4 Multi-usecase wiring**           | a second vertical config (eLearning or other)            | — (opens only after P1–P3)  |
+| Phase                                 | Allowed                                                  | Blocked                                              |
+| ------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------- |
+| **P1 Data abstraction**               | Quizhub screens, existing `data/*`, schema + validators  | new features, new verticals                          |
+| **P2 Media & content templatization** | components reading from schema, `public/` media registry | page-specific one-offs                               |
+| **P3 Bulk generation / variation**    | generator scripts emitting validated fixtures            | persisted DB, auth — **lifted in v1.1.0, see below** |
+| **P4 Multi-usecase wiring**           | a second vertical config (eLearning or other)            | — (opens only after P1–P3)                           |
 
 Hard non-goals until P3 passes: auth, multi-tenancy, payments, a live database, deployment,
 i18n, and any eLearning/course schema.
+
+**Amendment — v1.1.0 (#145).** The P3 deferral of _persisted DB, auth_ is lifted. One route,
+`/assessment/[slug]`, reads the six content tables in Neon project `fragrant-glade-99460966`
+instead of prerendering fixtures, and Neon's Managed Auth is proxied at `app/api/auth/[...path]`.
+Everything else in the list stands: no multi-tenancy, no payments, no i18n, no course schema, and
+no other route reads the database. The gate is unchanged and stays database-free — CI has no
+connection string, and `pnpm build` passes with `DATABASE_URL` unset.
 
 ## 1. Runtime and profiles
 

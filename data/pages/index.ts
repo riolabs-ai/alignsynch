@@ -54,7 +54,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/pricing": pricingPageCopy,
   "/register": registerPageCopy,
   "/support": supportPageCopy,
-  "/support/articles/[id]": supportArticlePageCopy,
+  "/support/articles/[slug]": supportArticlePageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
   "/welcome": marketingPageCopy,
