@@ -108,8 +108,6 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "quizzes-hint", label: "Your created quizes" },
           { id: "settings", label: "Settings" },
           { id: "settings-hint", label: "Preferences" },
-          { id: "dark-mode", label: "Dark Mode" },
-          { id: "dark-mode-hint", label: "Toggle theme" },
           { id: "logout", label: "Log out" },
         ],
       },
@@ -131,10 +129,6 @@ export function shellCopy(brand: Brand): PageCopy {
         id: "messages",
         heading: "Recent Messages",
         items: [{ id: "view-all", label: "View All" }],
-      },
-      {
-        id: "theme",
-        items: [{ id: "toggle", label: "Toggle theme" }],
       },
       {
         id: "footer-links",

@@ -47,8 +47,8 @@ export default function RootLayout({
    * both `:root` and `.dark` without `!important`, so the skin's `primary` is painted in
    * both modes; and it is empty for the template brand — `{}` becomes `undefined` here, so
    * the default build ships no `style` attribute at all and its markup is unchanged. What
-   * does and does not travel is `lib/brand-theme.ts`'s decision, including why the ground
-   * and the ink stay the theme's.
+   * does and does not travel is `lib/brand-theme.ts`'s decision, and it includes the
+   * ground and the ink when the record's values differ from the theme's.
    */
   const brandVars = brandThemeVars(brand);
   return (
@@ -57,7 +57,15 @@ export default function RootLayout({
       style={Object.keys(brandVars).length > 0 ? (brandVars as React.CSSProperties) : undefined}
     >
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        {/*
+          Light is the default (issue #157). The AlignSynch mark is black ink on white —
+          53.7% of its opaque pixels are pure `#000000` — so a near-black ground erased two
+          thirds of it, and the brand's slate ink measured 1.8:1 against that ground. The
+          brand's own ground and ink now arrive as `brandThemeVars` custom properties, and
+          the toggle is gone: until `app/globals.css`'s `.dark` block learns the brand tokens,
+          flipping the class would paint a light ground with dark component tokens.
+        */}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <TooltipProvider delayDuration={0}>
             <SidebarProvider>
               <Toaster richColors />
