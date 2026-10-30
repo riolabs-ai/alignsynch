@@ -81,7 +81,7 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
       E26: "`data/generated/` holds quizzes only, and they load",
       W1: "a published record with no questions",
       W2: "a published record with no `publishedAt`",
-      W3: "a renderable category with no quizzes",
+      W3: "a quiz category tile the app cannot draw, or a generated default no category owns",
       W4: "a reward with no limited-time window",
       W5: "a browse record no shelf renders (dead card)",
     },

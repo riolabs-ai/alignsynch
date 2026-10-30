@@ -12,14 +12,14 @@
  * placeholder branch is unreachable in a green tree and exists only so a bad deploy renders
  * a face-shaped hole instead of a 500.
  */
-import type { MediaEntry } from "@/content/media";
+import { isFileMedia, type MediaEntry } from "@/content/media";
 import {
   type LeaderboardBoardId,
   type LeaderboardEntry,
   type Player,
   selectLeaderboard,
 } from "@/content/people";
-import { media } from "@/data/media";
+import { media, mediaSrc } from "@/data/media";
 import { leaderboards, playerIndex } from "@/data/players";
 
 const registry: Record<string, MediaEntry> = media;
@@ -31,5 +31,6 @@ export function leaderboardEntries(board: LeaderboardBoardId, limit?: number): L
 
 /** The public path for a player's avatar key (`avatars.alex` -> `/avatars/alex.png`). */
 export function avatarSrcOf(player: Player): string {
-  return registry[player.avatarKey]?.src ?? registry.placeholder.src;
+  const entry = registry[player.avatarKey];
+  return entry !== undefined && isFileMedia(entry) ? entry.src : mediaSrc("placeholder");
 }
