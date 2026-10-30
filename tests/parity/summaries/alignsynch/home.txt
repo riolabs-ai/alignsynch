@@ -3,9 +3,9 @@ brand  alignsynch
 
 headings (17)
   h2  "Recent Messages"
+  h3  "No messages"
   h2  "Notifications"
-  h3  "New"
-  h3  "Earlier"
+  h3  "No notifications"
   h1  "How do you feel, against how they feel?"
   h2  "Two questions, asked of both of you"
   h2  "Four templates"
@@ -27,7 +27,7 @@ landmarks (6)
   main           1
   navigation     2
 
-links (10 unique, 24 total)
+links (9 unique, 23 total)
   #                                                    8
   /                                                    2
   /#questions                                          2
@@ -35,13 +35,12 @@ links (10 unique, 24 total)
   /assessment/avery-rowan                              2
   /assessment/marco-priya                              2
   /assessment/ruth-sam                                 2
-  /chat                                                1
-  /dashboard/user?tab=wallet                           1
+  /settings                                            1
   /support                                             2
 
 counts
-  elements  432
+  elements  314
   images    2
-  buttons   11
+  buttons   10
   inputs    2
-  classes   325 (sha 23f69416db2b)
+  classes   299 (sha 791638aeccaa)

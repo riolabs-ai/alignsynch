@@ -3,9 +3,9 @@ brand  alignsynch
 
 headings (10)
   h2  "Recent Messages"
+  h3  "No messages"
   h2  "Notifications"
-  h3  "New"
-  h3  "Earlier"
+  h3  "No notifications"
   h1  "Relationship Basics"
   h2  "How much time do you spend together in a normal week?"
   h2  "How is the work of the household divided?"
@@ -19,18 +19,17 @@ landmarks (6)
   main           1
   navigation     2
 
-links (7 unique, 8 total)
+links (6 unique, 7 total)
   #                                                    1
   /                                                    2
   /#questions                                          1
   /#templates                                          1
-  /chat                                                1
-  /dashboard/user?tab=wallet                           1
+  /settings                                            1
   /support                                             1
 
 counts
-  elements  565
+  elements  447
   images    1
-  buttons   9
+  buttons   8
   inputs    1
-  classes   224 (sha e0525124f0b6)
+  classes   190 (sha 2b09ccf3c835)

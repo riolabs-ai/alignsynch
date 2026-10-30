@@ -3,9 +3,9 @@ brand  alignsynch
 
 headings (18)
   h2  "Recent Messages"
+  h3  "No messages"
   h2  "Notifications"
-  h3  "New"
-  h3  "Earlier"
+  h3  "No notifications"
   h1  "Quiz News &amp; Updates"
   h2  "Featured Articles"
   h3  "Community Spotlight: Meet the Creator Behind &#x27;History Mysteries&#x27;"
@@ -27,13 +27,11 @@ landmarks (6)
   main           1
   navigation     3
 
-links (16 unique, 32 total)
+links (15 unique, 31 total)
   #                                                    1
   /                                                    2
   /#questions                                          1
   /#templates                                          1
-  /chat                                                1
-  /dashboard/user?tab=wallet                           1
   /news/10-strategies-for-creating-engaging-quizzes    2
   /news/ai-powered-quiz-creation-tools                 2
   /news/new-quiz-analytics-features                    2
@@ -43,11 +41,12 @@ links (16 unique, 32 total)
   /news/quiz-monetization-strategies-2025              2
   /news/quiz-trends-2025                               4
   /news/summer-quiz-championship-announcement          2
+  /settings                                            1
   /support                                             1
 
 counts
-  elements  659
+  elements  541
   images    1
-  buttons   18
+  buttons   17
   inputs    2
-  classes   243 (sha 9561eb182e9e)
+  classes   220 (sha f068b060e823)
