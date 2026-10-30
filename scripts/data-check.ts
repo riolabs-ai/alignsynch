@@ -1024,7 +1024,7 @@ for (const key of generatedKeys(registry)) {
  *
  * E10/E17 proved a *reference* resolves. A number was invisible to every check: `+4 from last
  * month`, `$124.50`, `Save 20%` resolve by definition, so 69 of them sat in JSX while
- * `data/quiz-analytics.ts` carried per-quiz completion only (issue #49, WU-4). Two rules close
+ * `data/quiz-analytics.ts` carried per-record completion only (issue #49, WU-4). Two rules close
  * that, and they are deliberately paired — a rule without a fixture is untestable, a fixture
  * without a rule drifts:
  *
