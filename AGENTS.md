@@ -42,7 +42,7 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 | `pnpm objstore:smoke`            | exit 0, <1 s         | put → get → bytes compared → deleted; reads `NEON_OBJSTORE_*` (falls back to the `AWS_*` names `neon env pull` writes) |
 | `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 195 warnings, 34 infos                                                                    |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 442 files; CI gate                                                                                     |
-| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 27 prerendered pages — `/assessment/[slug]` is request-time since #145                                   |
+| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; `/assessment/[slug]` is request-time since #145 (no `generateStaticParams`, no build-time DB read)       |
 | `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                                          |
 | `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                                                                |
 | `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                                                                    |
