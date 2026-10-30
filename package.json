@@ -17,6 +17,8 @@
     "gen": "node scripts/gen-fixtures.mjs",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",
+    "ui:registry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs",
+    "ui:registry:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs --check",
     "release": "bash scripts/release.sh",
     "release:check": "bash scripts/release.sh --check",
     "db:migrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-migrate.mjs",

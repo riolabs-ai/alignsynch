@@ -1,48 +1,47 @@
 "use client";
-import { cn } from "@/lib/utils";
+import { AppNav, NavRow } from "@/components/layout/nav-menus";
 import type { PageCopy } from "@/content/pages";
+import type { BrandId } from "@/data/brand";
 import type { BrandMark } from "@/lib/brand-mark";
+import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
-import {
-  Award,
-  BookOpen,
-  Compass,
-  DollarSign,
-  FileQuestion,
-  Home,
-  LifeBuoy,
-  Lightbulb,
-  LogOut,
-  Medal,
-  Newspaper,
-  PackagePlus,
-  Sparkles,
-  Swords,
-  Trophy,
-  Users,
-  X,
-} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { BookOpen, LogOut, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import type React from "react";
 import { useSidebar } from "./sidebar-context";
 
 /**
- * The sidebar. Every label resolves an id on `data/pages/shell.ts` (`itemLabel` against
- * the `nav` section); the hrefs stay literal JSX attributes **on purpose** — `data:check`
- * E10 extracts literal `href`s from the tree, so moving them into a const array would take
- * 15 route references out of the link gate without failing anything. Words move into the
- * fixture; destinations stay where the checker can see them.
+ * The sidebar: the brand's mark, the brand's menu, and the sign-out row.
+ *
+ * The menu lives in `components/layout/nav-menus.tsx`, because it is brand-selected and
+ * capability-filtered since issue #156 and keeping it in a hook-free module is what lets a
+ * node test render either brand's destinations. This file owns the *chrome*: the mark, the
+ * rail's collapse state and the mobile drawer. `brandId` and `viewer` arrive from the server
+ * layout (`app/(mainlayout)/layout.tsx`) because both are facts the browser must not decide —
+ * the brand is a build flag, and a viewer's capabilities will be read from a session.
+ *
+ * Every label resolves an id on `data/pages/shell.ts` (`itemLabel` against the `nav`,
+ * `nav-alignsynch` and `logout` ids). The hrefs stay literal JSX attributes **on purpose** —
+ * `data:check` E10 extracts literal `href`s from the tree, so moving them into a const array
+ * would take the route references out of the link gate without failing anything.
  */
-export function AppSidebar({ copy, mark }: { copy: PageCopy; mark?: BrandMark }) {
+export function AppSidebar({
+  copy,
+  mark,
+  brandId,
+  viewer,
+}: {
+  copy: PageCopy;
+  mark?: BrandMark;
+  brandId: BrandId;
+  viewer: NavViewer;
+}) {
   const nav = sectionOf(copy, "nav");
   const pathname = usePathname();
 
   const { collapsed, mobileOpen, closeMobile } = useSidebar();
-  const isActive = (path: string) => {
-    return pathname === path || pathname.startsWith(`${path}/`);
-  };
 
   /**
    * Closed is the CSS default below `xl` — off-canvas *and* `invisible` — so nothing
@@ -115,153 +114,29 @@ export function AppSidebar({ copy, mark }: { copy: PageCopy; mark?: BrandMark })
 
       <div className="flex-1 overflow-auto py-4">
         <nav className="grid gap-1 px-2">
-          <NavItem
-            href="/"
-            icon={<Home className="size-5" />}
-            label={itemLabel(nav, "home")}
-            active={isActive("/")}
-          />
-          <NavItem
-            href="/daily-challenge"
-            icon={<Trophy className="size-5" />}
-            label={itemLabel(nav, "daily-challenge")}
-            active={isActive("/daily-challenge")}
-          />
-          <NavItem
-            href="/categories"
-            icon={<BookOpen className="size-5" />}
-            label={itemLabel(nav, "categories")}
-            active={isActive("/categories")}
-          />
-          <NavItem
-            href="/battle"
-            icon={<Swords className="size-5" />}
-            label={itemLabel(nav, "battle")}
-            active={isActive("/battle")}
-          />
-          <NavItem
-            href="/news"
-            icon={<Newspaper className="size-5" />}
-            label={itemLabel(nav, "news")}
-            active={isActive("/news")}
-          />
-          <NavItem
-            href="/explore"
-            icon={<Compass className="size-5" />}
-            label={itemLabel(nav, "explore")}
-            active={isActive("/explore")}
-          />
-          <NavItem
-            href="/tournaments"
-            icon={<Award className="size-5" />}
-            label={itemLabel(nav, "tournaments")}
-            active={isActive("/tournaments")}
-          />
-          <NavItem
-            href="/leaderboard"
-            icon={<Medal className="size-5" />}
-            label={itemLabel(nav, "leaderboard")}
-            active={isActive("/leaderboard")}
-          />
-          <NavItem
-            href="/creator-tips"
-            icon={<Lightbulb className="size-5" />}
-            label={itemLabel(nav, "creator-tips")}
-            active={isActive("/creator-tips")}
-          />
-          <NavItem
-            href="/quiz-discussions"
-            icon={<FileQuestion className="size-5" />}
-            label={itemLabel(nav, "quiz-discussions")}
-            active={isActive("/quiz-discussions")}
-          />
-          <NavItem
-            href="/create/editor"
-            icon={<PackagePlus className="size-5" />}
-            label={itemLabel(nav, "create-editor")}
-            active={isActive("/create/editor")}
-          />
-          <NavItem
-            href="/create/generator"
-            icon={<Sparkles className="size-5" />}
-            label={itemLabel(nav, "create-generator")}
-            active={isActive("/create/generator")}
-          />
-          <NavItem
-            href="/affiliate"
-            icon={<Users className="size-5" />}
-            label={itemLabel(nav, "affiliate")}
-            active={isActive("/affiliate")}
-          />
-          <NavItem
-            href="/pricing"
-            icon={<DollarSign className="size-5" />}
-            label={itemLabel(nav, "pricing")}
-            active={isActive("/pricing")}
-          />
-          <NavItem
-            href="/support"
-            icon={<LifeBuoy className="size-5" />}
-            label={itemLabel(nav, "support")}
-            active={isActive("/support")}
+          <AppNav
+            brandId={brandId}
+            viewer={viewer}
+            copy={copy}
+            collapsed={collapsed}
+            pathname={pathname}
+            onNavigate={closeMobile}
           />
         </nav>
       </div>
 
       <div className="border-t py-4">
         <nav className="grid gap-1 px-2">
-          <NavItem
+          <NavRow
             href="#"
             icon={<LogOut className="size-5" />}
             label={itemLabel(nav, "logout")}
-            active={isActive("#")}
+            active={false}
+            collapsed={collapsed}
+            onNavigate={closeMobile}
           />
         </nav>
       </div>
     </aside>
-  );
-}
-
-interface NavItemProps {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-  nested?: boolean;
-}
-
-function NavItem({ href, icon, label, active, nested = false }: NavItemProps) {
-  const { collapsed, closeMobile } = useSidebar();
-  if (collapsed) {
-    return (
-      <div className="relative group flex justify-center items-center">
-        <Link
-          href={href}
-          onClick={closeMobile}
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
-            active ? "bg-indigo-500 text-white" : "hover:bg-accent hover:text-accent-foreground",
-            nested && "h-6 w-6",
-          )}
-        >
-          {icon}
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      onClick={closeMobile}
-      className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 xl:py-2.5 text-sm font-medium transition-colors",
-        active ? "bg-indigo-500 text-white" : "hover:bg-accent hover:text-accent-foreground",
-        nested && "pl-6",
-      )}
-    >
-      <span>{icon}</span>
-      <span>{label}</span>
-    </Link>
   );
 }
