@@ -9,12 +9,24 @@
  * `problems` holds the refusals a submit can come back with, one item per code in
  * `SubmissionRejection` (`lib/flow/state.ts`). The screen maps the code to the id, so a
  * refusal is a sentence a reader can act on rather than a status code in a tab.
+ *
+ * `viewer` is the band #202 added: the party this session **answers as**, named in the
+ * header region on every visit. The bug it closes was a session being moved into the other
+ * party's column with nothing on screen saying so, so this is a standing sentence and not a
+ * one-time notice — it is drawn in all three states, before the report and while answering.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
   heading: "Your instance",
   sections: [
+    {
+      id: "viewer",
+      items: [
+        { id: "initiator", label: "You are answering as {name}, the Initiator." },
+        { id: "counterparty", label: "You are answering as {name}, the Counterparty." },
+      ],
+    },
     {
       id: "answer",
       heading: "Answer every Aspect",

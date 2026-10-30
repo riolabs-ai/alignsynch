@@ -15,6 +15,11 @@
  * a redirect; the submit endpoint itself answers 409/403 with `problem-page.tsx`, so an
  * edit after the freeze is an error status and not a page that looks like a success.
  *
+ * **Which party this is, is on the screen.** The band under the header names the viewer and
+ * the role their answers are recorded under, on every visit and in every state (#202) — a
+ * session that finds itself answering as somebody else has no way to notice otherwise, and
+ * that silence is what made a link click able to corrupt a whole instance's Gap.
+ *
  * Literal-free: the words are `data/pages/assessment-instance.ts` (E23).
  */
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
@@ -49,6 +54,7 @@ export function AssessmentInstanceView({
   const reportBand = sectionOf(copy, "report");
   const inviteBand = sectionOf(copy, "invite");
   const problems = sectionOf(copy, "problems");
+  const viewerBand = sectionOf(copy, "viewer");
   const problemLabel = problem === undefined ? undefined : itemLabel(problems, problem);
   const answered = screen.aspects.some((aspect) => aspect.own !== null);
 
@@ -65,6 +71,13 @@ export function AssessmentInstanceView({
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{screen.title}</h1>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>
       </header>
+
+      <p
+        data-answering-as={screen.viewer.role}
+        className="mb-6 rounded-lg border border-gray-200 bg-white p-3 text-sm font-medium text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+      >
+        {fillLabel(itemLabel(viewerBand, screen.viewer.role), { name: screen.viewer.name })}
+      </p>
 
       {problemLabel === undefined ? null : (
         <p
