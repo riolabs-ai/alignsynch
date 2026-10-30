@@ -3,6 +3,7 @@ import { brand, brandIdOf } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndexFor } from "@/data/searchdata";
 import { brandMark } from "@/lib/brand-mark";
+import { hiddenNavHrefs } from "@/lib/flags";
 import { navViewer } from "@/lib/nav";
 import type React from "react";
 
@@ -38,6 +39,7 @@ export default function Layout({
       brandId={brandId}
       viewer={viewer}
       searchIndex={searchIndexFor(brandId, viewer)}
+      hiddenNav={hiddenNavHrefs()}
     >
       {children}
     </MainLayout>

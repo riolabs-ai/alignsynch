@@ -32,11 +32,18 @@ export function AppSidebar({
   mark,
   brandId,
   viewer,
+  hiddenNav,
 }: {
   copy: PageCopy;
   mark?: BrandMark;
   brandId: BrandId;
   viewer: NavViewer;
+  /**
+   * The hrefs a feature flag has turned off (issue #175). Resolved on the server in
+   * `app/(mainlayout)/layout.tsx` — `lib/flags.ts` refuses to run in a browser — and forwarded
+   * to the menu, which draws none of them. Absent means every gated surface is on.
+   */
+  hiddenNav?: readonly string[];
 }) {
   const nav = sectionOf(copy, "nav");
   const pathname = usePathname();
@@ -121,6 +128,7 @@ export function AppSidebar({
             collapsed={collapsed}
             pathname={pathname}
             onNavigate={closeMobile}
+            hidden={hiddenNav}
           />
         </nav>
       </div>

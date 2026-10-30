@@ -243,7 +243,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/leaderboard` — **fixture**
   - capability: The player leaderboard: podium, summary stats and a filterable ranked table.
   - components: `components/leaderboard`, `components/media`, `components/ui`
-  - reads: 2 record fixtures — `data/metrics.ts`, `data/players.ts`
+  - reads: 3 record fixtures — `data/flags.ts`, `data/metrics.ts`, `data/players.ts`
 
 - `/my-quizzes` — **fixture**
   - capability: Your own quizzes — drafts, published and their analytics — as a grid of quiz cards.
