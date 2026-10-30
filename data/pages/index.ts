@@ -25,6 +25,7 @@ import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
 import { loginPageCopy } from "./login";
+import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
@@ -56,6 +57,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/support/articles/[slug]": supportArticlePageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
+  "/welcome": marketingPageCopy,
   shell: shellPageCopy,
   "not-found": notFoundPageCopy,
 });
