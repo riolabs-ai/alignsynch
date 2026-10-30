@@ -35,9 +35,11 @@ interface DemoAccountRow {
 /**
  * The credential for one seeded address, or `null` when the seed has not run.
  *
- * `null` is absence, and the action turns it into the same generic rejection a wrong PIN gets:
- * a demo branch where `db:seed` was never run should say "that PIN is not correct", not "no
- * such account", because the second sentence confirms which addresses exist.
+ * `null` is absence, and the action answers it with its own sentence (`DEMO_NOT_SEEDED`,
+ * `lib/auth/demo-failure.ts`): a demo branch where `db:seed` was never run should not read as
+ * "that PIN is not correct", because the PIN was right and the fix is a reset (#216). The sentence
+ * names the *role* the panel asked for, never an address, so it cannot confirm which of the three
+ * addresses exists, and it is only reachable after the PIN matched.
  *
  * A role outside the model throws (`zUserRole.parse`) instead of defaulting: the CHECK in
  * `0004` makes that impossible, and a row that got past it is a broken database, not a member.
