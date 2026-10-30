@@ -40,6 +40,7 @@ const STATIC_ROUTES = [
   "/settings",
   "/support",
   "/tournaments",
+  "/welcome",
 ] as const;
 
 /** Routes with `[param]` segments, as Next spells them. */
