@@ -113,7 +113,14 @@ record: `selectQuizCard`→`QuizCard`, `selectQuizAuthoringCard`→`QuizAuthorin
 ## Out of scope
 
 - Database / Prisma layer (a later order — do not design here).
-- Tournament domain (`zTournamentRef` is a minimal ref only; `prizeCents` vs `rewardCents` unresolved).
+- Tournament domain — out of scope per WU-11 (#58). The tournaments routes are copy-only: their words
+  are static `PageCopy` fixtures (`data/pages/tournaments.ts`, `data/pages/tournament-detail.ts`; E23
+  budgets both routes at 0/0). No tournament domain is modeled: no `Tournament` entity in `content/`,
+  no bracket type, no standings collection, and none may be inferred from the copy. A surface that
+  can only render with real tournament data renders its copy and leaves its record list — the mock
+  objects already inside the components — exactly as it was. `zTournamentRef` stays a minimal ref
+  (`prizeCents` vs `rewardCents` unresolved); growing it into an entity is a P4 question, not a
+  copy-model one. W9 in docs/P2-INVENTORY.md stands.
 - User / profile domain (`lib/data/users.ts` nested `CreatedQuiz` — a profile-model change).
 - Quiz results / per-question `correctPercentage` tables (observed results, not content).
 - Auth, accounts, route metadata (D14).
