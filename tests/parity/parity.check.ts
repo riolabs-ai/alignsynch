@@ -16,8 +16,9 @@
  *   `pnpm parity`          both brands, two processes — what the gate runs
  *   `pnpm parity:update`   rewrite the snapshots, and print which routes moved
  *
- * `pnpm test` alone skips this file (`PARITY_BRAND` unset): it is one pass per brand, and a
- * single process cannot be both. The gate runs `pnpm parity`, which spawns both.
+ * `pnpm test` does not run this file: it is named `*.check.ts`, not `*.test.ts`, and it needs
+ * its own config (`vitest.parity.mts`) — a brand is a build constant, so both brands need one
+ * process each and `scripts/parity.mjs` is what spawns them.
  *
  * ## Updating a snapshot is a review event, not a refresh
  *
@@ -47,6 +48,12 @@ import { parityRoutes } from "./routes";
  * than picking a brand the caller did not ask for.
  */
 const PARITY_BRAND = process.env.PARITY_BRAND;
+
+if (PARITY_BRAND === undefined) {
+  throw new Error(
+    "PARITY_BRAND is not set: run `pnpm parity` (which runs one process per brand), not vitest directly",
+  );
+}
 
 /** `PARITY_UPDATE=1` rewrites the snapshots instead of comparing them (`pnpm parity:update`). */
 const UPDATE = process.env.PARITY_UPDATE === "1";
@@ -128,6 +135,19 @@ vi.mock("@/lib/db/assessments", async () => {
   };
 });
 
+/**
+ * `/profile/[username]` reads `user_profile` at request time (`readUserProfileByHandle`, #164), and
+ * the gate has no `DATABASE_URL` on purpose — the same reason the assessment read above is answered
+ * from a fixture. `pnpm db:seed` writes assessments and leaves `user_profile` empty, so the answer a
+ * freshly seeded database gives is "no row": the page then renders the demo account its own fixture
+ * holds, which is the surface this snapshot pins. A signed-in profile is a different URL (the
+ * owner's), and `tests/profile-handle.test.ts` covers that path.
+ */
+vi.mock("@/lib/db/user-profiles", () => ({
+  readUserProfileByHandle: async () => null,
+  readUserProfileByUserId: async () => null,
+}));
+
 const SNAPSHOT_ROOT = fileURLToPath(new URL("./snapshots", import.meta.url));
 
 function snapshotFile(brand: string, slug: string): string {
@@ -142,7 +162,7 @@ async function readSnapshot(brand: string, slug: string): Promise<string | undef
   }
 }
 
-describe.skipIf(PARITY_BRAND === undefined)("brand parity", () => {
+describe("brand parity", () => {
   const brand = PARITY_BRAND as BrandId;
 
   it(`this run is ${brand}, and renders that brand's name`, async () => {
@@ -197,9 +217,3 @@ describe.skipIf(PARITY_BRAND === undefined)("brand parity", () => {
     });
   }
 });
-
-if (PARITY_BRAND === undefined) {
-  console.log(
-    "parity: skipped — run `pnpm parity` (one brand per process, so not inside `pnpm test`)",
-  );
-}

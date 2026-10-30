@@ -82,7 +82,16 @@ const alignSynch: Brand = zBrand.parse({
   referralBase: "https://alignsynch.com",
 });
 
-const quizHubRender = render(shellPageCopy);
+/**
+ * The two records this file compares, each named explicitly.
+ *
+ * The pairs below are about *records*, not about the ambient `brand`: the gate's CI matrix builds
+ * **and tests** under `BRAND=alignsynch` as well as `BRAND=quizhub`, and a "QuizHub" half that
+ * quietly read the ambient record would assert the opposite of its own name in that lane. The
+ * ambient record has its own tests: "exports today's shell as the QuizHub instance" and "resolves
+ * the flag" below.
+ */
+const quizHubRender = render(shellCopy(quizHubBrand));
 const alignSynchRender = render(shellCopy(alignSynch));
 
 describe("shell projection — the product name comes from the brand", () => {
@@ -99,7 +108,7 @@ describe("shell projection — the product name comes from the brand", () => {
     expect(alignSynchRender).toBe(
       quizHubRender
         .replaceAll("QuizHub", "AlignSynch")
-        .replaceAll(brand.supportEmail, alignSynch.supportEmail),
+        .replaceAll(quizHubBrand.supportEmail, alignSynch.supportEmail),
     );
   });
 
@@ -124,7 +133,7 @@ describe("the home title and one FAQ read the same record", () => {
   });
 
   it("renders the pricing FAQ in the brand it was given", () => {
-    const quizHubFaq = render(pricingFaqCategories(brand));
+    const quizHubFaq = render(pricingFaqCategories(quizHubBrand));
     const alignSynchFaq = render(pricingFaqCategories(alignSynch));
     expect(quizHubFaq).toContain("What is QuizHub?");
     expect(alignSynchFaq).toContain("What is AlignSynch?");
@@ -132,7 +141,7 @@ describe("the home title and one FAQ read the same record", () => {
     expect(alignSynchFaq).toBe(
       quizHubFaq
         .replaceAll("QuizHub", "AlignSynch")
-        .replaceAll(brand.supportEmail, alignSynch.supportEmail),
+        .replaceAll(quizHubBrand.supportEmail, alignSynch.supportEmail),
     );
   });
 
@@ -140,7 +149,7 @@ describe("the home title and one FAQ read the same record", () => {
     const alignSynchFaq = render(supportFaqGroups(alignSynch));
     expect(alignSynchFaq).toContain("AlignSynch");
     expect(alignSynchFaq).not.toContain("QuizHub");
-    expect(alignSynchFaq).not.toContain(brand.supportEmail);
+    expect(alignSynchFaq).not.toContain(quizHubBrand.supportEmail);
   });
 });
 
@@ -157,12 +166,14 @@ describe("the brand record", () => {
   });
 
   it("carries the values the app paints with today", () => {
-    expect(brand.name).toBe("QuizHub");
-    expect(brand.domain).toBe("quizhub.com");
-    expect(brand.supportEmail).toBe("quizhub@riolabs.ai");
+    // The default record, named explicitly: this pins the transcription of `styles/globals.css`,
+    // which is a fact about QuizHub's record and is the same fact in either build lane.
+    expect(quizHubBrand.name).toBe("QuizHub");
+    expect(quizHubBrand.domain).toBe("quizhub.com");
+    expect(quizHubBrand.supportEmail).toBe("quizhub@riolabs.ai");
     // `styles/globals.css` :root, resolved out of `hsl(var(--token))`.
-    expect(brand.colors.primary).toBe("hsl(0 0% 9%)");
-    expect(brand.colors.background).toBe("hsl(0 0% 100%)");
+    expect(quizHubBrand.colors.primary).toBe("hsl(0 0% 9%)");
+    expect(quizHubBrand.colors.background).toBe("hsl(0 0% 100%)");
   });
 
   it("rejects a token name where a colour belongs", () => {
@@ -188,10 +199,10 @@ describe("the brand record", () => {
 
 describe("the two affiliate strings are fields, not literals", () => {
   it("carries the partner inbox and the referral origin on the record", () => {
-    expect(brand.affiliateEmail).toBe("quizhub@riolabs.ai");
-    expect(brand.referralBase).toBe("https://quizhub.com");
+    expect(quizHubBrand.affiliateEmail).toBe("quizhub@riolabs.ai");
+    expect(quizHubBrand.referralBase).toBe("https://quizhub.com");
     // The origin, not a link: the path and the handle belong to the component.
-    expect(brand.referralBase).not.toContain("/ref");
+    expect(quizHubBrand.referralBase).not.toContain("/ref");
   });
 
   it("prints the record's affiliate address in the /affiliate closing CTA", () => {
@@ -277,7 +288,11 @@ describe("one build flag, one brand", () => {
     expect(resolveBrand("")).toBe(quizHubBrand);
     expect(resolveBrand("quizhub")).toBe(quizHubBrand);
     expect(resolveBrand("alignsynch")).toBe(alignSynchBrand);
-    expect(brand).toBe(quizHubBrand);
+    // `brand` is this process's build constant, so it follows the ambient flag. Both lanes of the
+    // CI matrix run this file (#171): with `BRAND=alignsynch` the module must resolve that record,
+    // and with the flag unset it must still be QuizHub — which is the default the three lines above
+    // pin by name.
+    expect(brand).toBe(process.env.BRAND === "alignsynch" ? alignSynchBrand : quizHubBrand);
   });
 
   it("refuses a brand it does not know instead of rendering a half-swapped tree", () => {

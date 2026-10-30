@@ -56,7 +56,11 @@ for (const brand of BRANDS) {
   process.stdout.write(
     `\n${UPDATE ? "updating" : "parity"}: BRAND=${brand} (${BRANDS.indexOf(brand) + 1}/${BRANDS.length})\n`,
   );
-  const run = spawnSync(process.execPath, [VITEST, "run", "tests/parity/parity.test.ts"], {
+  // `--config vitest.parity.mts`, not the shared `vitest.config.mts`: this is the only suite
+  // that renders pages, so it is the only one that needs `next/headers` answered (there is no
+  // request in a node render). The file is `*.check.ts`, so `pnpm test` never collects it —
+  // a brand is a build constant, and one `vitest run` cannot give it two values.
+  const run = spawnSync(process.execPath, [VITEST, "run", "--config", "vitest.parity.mts"], {
     cwd: ROOT,
     stdio: "inherit",
     env: {
