@@ -599,7 +599,7 @@ function buildQuestions(rng, category, quizId, count, quizArtKeys) {
   });
 }
 
-function buildStats(rng, index, avatarKeys) {
+function buildStats(rng, index) {
   const plays = int(rng, 100, 5000);
   const capacity = int(rng, plays + 50, plays + 2000);
   const hasBadge = index % 2 === 0;
@@ -608,10 +608,7 @@ function buildStats(rng, index, avatarKeys) {
     isTournament: false,
     recentPlayers: shuffle(rng, PLAYER_NAMES)
       .slice(0, int(rng, 3, 4))
-      .map((name) => ({
-        name,
-        avatar: { src: mk(pick(rng, avatarKeys)), alt: name },
-      })),
+      .map((name) => ({ name })),
     plays,
     capacity,
     rating: int(rng, 35, 50) / 10,
@@ -655,14 +652,10 @@ function buildQuiz(rng, template, index, seed, registry) {
   const questionCount = int(rng, 3, 6);
   const category = CATEGORIES.find((entry) => entry.id === template.categoryId);
   const coverKey = category.cover;
-  const avatarKeys = [...registry.values()]
-    .filter((entry) => entry.kind === "avatar")
-    .map((entry) => entry.key);
   const quizArtKeys = [...registry.values()]
     .filter((entry) => entry.kind === "quiz-art")
     .map((entry) => entry.key);
   const authorName = pick(rng, AUTHOR_NAMES);
-  const authorAvatar = pick(rng, avatarKeys);
 
   return {
     id,
@@ -687,8 +680,8 @@ function buildQuiz(rng, template, index, seed, registry) {
       visibility: "public",
     },
     cover: { src: mk(coverKey), alt: template.title },
-    author: { name: authorName, avatar: { src: mk(authorAvatar), alt: authorName } },
-    stats: buildStats(rng, index, avatarKeys),
+    author: { name: authorName },
+    stats: buildStats(rng, index),
   };
 }
 
@@ -747,14 +740,6 @@ function main() {
     console.error("gen: fix the template or run `node scripts/gen-media.mjs`; nothing was written");
     process.exit(1);
   }
-  const avatarKeys = [...registry.values()]
-    .filter((entry) => entry.kind === "avatar")
-    .map((entry) => entry.key);
-  if (avatarKeys.length === 0) {
-    console.error("gen: no avatar images under public/ — the generator has nothing to draw from");
-    process.exit(1);
-  }
-
   const titlePool = buildTitlePool();
   if (args.count > titlePool.length) {
     fail(

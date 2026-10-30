@@ -3,7 +3,6 @@
 import type { BattleModeId } from "@/content/battle";
 import type { PageCopy } from "@/content/pages";
 import { battleMode } from "@/data/battle-modes";
-import { media } from "@/data/media";
 import { sectionOf } from "@/lib/page-copy";
 import { useState } from "react";
 import { ActiveBattle } from "./active-battle";
@@ -29,7 +28,8 @@ export interface BattleState {
 export interface Player {
   id: string;
   name: string;
-  avatar: string;
+  /** Stable id the drawn avatar is seeded from (issue #152). */
+  seed: string;
   score: number;
   rank?: number;
   isReady: boolean;
@@ -69,7 +69,7 @@ export function BattlePage({ copy }: { copy: PageCopy }) {
     {
       id: "1",
       name: "You",
-      avatar: media["avatars.wizard"].src,
+      seed: "battle-1",
       score: 0,
       isReady: true,
       isCurrentUser: true,
@@ -80,7 +80,7 @@ export function BattlePage({ copy }: { copy: PageCopy }) {
     {
       id: "2",
       name: "QuizMaster",
-      avatar: media["avatars.master"].src,
+      seed: "battle-2",
       score: 0,
       isReady: false,
       isCurrentUser: false,
@@ -95,7 +95,7 @@ export function BattlePage({ copy }: { copy: PageCopy }) {
     {
       id: "3",
       name: "BrainGenius",
-      avatar: media["avatars.genious"].src,
+      seed: "battle-3",
       score: 0,
       isReady: false,
       isCurrentUser: false,
@@ -106,7 +106,7 @@ export function BattlePage({ copy }: { copy: PageCopy }) {
     {
       id: "4",
       name: "QuizGuru",
-      avatar: media["avatars.guru"].src,
+      seed: "battle-4",
       score: 0,
       isReady: false,
       isCurrentUser: false,
@@ -117,7 +117,7 @@ export function BattlePage({ copy }: { copy: PageCopy }) {
     {
       id: "5",
       name: "MindChamp",
-      avatar: media["avatars.champion"].src,
+      seed: "battle-5",
       score: 0,
       isReady: false,
       isCurrentUser: false,

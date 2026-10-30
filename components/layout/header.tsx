@@ -1,5 +1,5 @@
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,7 +42,6 @@ import ChatDrawer from "../header/ChatDrawer";
 import NotificationDrawer from "../header/NotificationDrawer";
 import { Badge } from "../ui/badge";
 import { useSidebar } from "./sidebar-context";
-import { media } from "@/data/media";
 
 export function Header({ copy }: { copy: PageCopy }) {
   // The shell's copy, resolved here rather than in each band: `data/pages/shell.ts`
@@ -407,19 +406,21 @@ export function Header({ copy }: { copy: PageCopy }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={media["avatars.brain"].src} alt="User" />
-                  <AvatarFallback>{itemLabel(accountCopy, "initials")}</AvatarFallback>
-                </Avatar>
+                <GeneratedAvatar
+                  name={itemLabel(accountCopy, "display-name")}
+                  seed={itemLabel(accountCopy, "display-handle")}
+                  size={32}
+                />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 p-0">
               <div className="flex flex-col space-y-2 p-4">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={media["avatars.brain"].src} alt="User" />
-                    <AvatarFallback>{itemLabel(accountCopy, "initials")}</AvatarFallback>
-                  </Avatar>
+                  <GeneratedAvatar
+                    name={itemLabel(accountCopy, "display-name")}
+                    seed={itemLabel(accountCopy, "display-handle")}
+                    size={64}
+                  />
                   <div>
                     <h3 className="text-lg font-semibold">
                       {itemLabel(accountCopy, "display-name")}

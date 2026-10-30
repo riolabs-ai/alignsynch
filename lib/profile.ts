@@ -30,7 +30,7 @@
 import { players } from "@/data/players";
 import { type Player } from "@/content/people";
 import { users, type User } from "@/lib/data/users";
-import { avatarSrcOf, leaderboardEntries } from "@/lib/players";
+import { leaderboardEntries } from "@/lib/players";
 
 /**
  * What the header can say about a person from `data/players.ts` alone. Every optional field is
@@ -42,8 +42,6 @@ export interface ProfilePerson {
   /** The URL identity: `/profile/<handle>`. */
   handle: string;
   name: string;
-  /** Public path for the avatar, resolved from the player's registry key. */
-  avatar: string;
   level: number;
   country?: string;
   followers?: number;
@@ -80,7 +78,6 @@ function personOf(player: Player): ProfilePerson {
     id: player.id,
     handle: player.handle,
     name: player.name,
-    avatar: avatarSrcOf(player),
     level: player.level,
     country: player.country,
     followers: player.stats?.followers,
@@ -99,7 +96,6 @@ function detailOf(player: Player, person: ProfilePerson): User | null {
     id: person.id,
     username: person.handle,
     name: person.name,
-    avatar: person.avatar,
     level: person.level,
     country: person.country ?? authored.country,
     badge: player.tier ?? authored.badge,

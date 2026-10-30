@@ -1,7 +1,7 @@
 "use client";
 
 import type { CategoryType } from "@/components/categories/categories-data";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -277,13 +277,11 @@ export function CategoryDetailPage({ categoryName, copy }: CategoryDetailPagePro
                 {/* Creator and category */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage
-                        src={quiz.author?.avatar?.src ?? media.placeholder.src}
-                        alt={quiz.author?.name ?? pageItemOf(copy, "creator-avatar").label}
-                      />
-                      <AvatarFallback>{(quiz.author?.name ?? "?").substring(0, 2)}</AvatarFallback>
-                    </Avatar>
+                    <GeneratedAvatar
+                      name={quiz.author?.name ?? pageItemOf(copy, "creator-avatar").label}
+                      seed={quiz.author?.id ?? quiz.author?.name ?? "unknown-creator"}
+                      size={24}
+                    />
                     <span className="text-sm text-muted-foreground">
                       {quiz.author?.name ?? pageItemOf(copy, "unknown-creator").label}
                     </span>

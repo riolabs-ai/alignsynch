@@ -9,27 +9,22 @@
  * Every `quizId` resolves against `data/quizzes.ts` — E24.
  */
 import type { QuizReview } from "../content/quiz-result";
-import { media } from "./media";
 
 const alex = {
   id: "player-alex-johnson",
   name: "Alex Johnson",
-  avatar: { src: media["avatars.alex"].src, alt: "Alex Johnson" },
 };
 const sarah = {
   id: "player-sarah-williams",
   name: "Sarah Williams",
-  avatar: { src: media["avatars.wizard"].src, alt: "Sarah Williams" },
 };
 const mike = {
   id: "player-mike-brown",
   name: "Mike Brown",
-  avatar: { src: media["avatars.sarah"].src, alt: "Mike Brown" },
 };
 const priya = {
   id: "player-priya-raman",
   name: "Priya Raman",
-  avatar: { src: media["avatars.mind"].src, alt: "Priya Raman" },
 };
 
 export const quizReviews: readonly QuizReview[] = [

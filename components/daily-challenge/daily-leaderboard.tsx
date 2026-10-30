@@ -1,12 +1,12 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { LeaderboardBoardId, LeaderboardEntry } from "@/content/people";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
-import { avatarSrcOf, leaderboardEntries } from "@/lib/players";
+import { leaderboardEntries } from "@/lib/players";
 import { Award, Medal, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -90,10 +90,7 @@ export function DailyLeaderboard({ copy }: { copy: PageCopySection }) {
                       )}
                     </div>
 
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={avatarSrcOf(entry.player)} alt={entry.player.name} />
-                      <AvatarFallback>{entry.player.handle.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
+                    <GeneratedAvatar name={entry.player.name} seed={entry.player.id} size={32} />
 
                     <Link
                       href={`/profile/${entry.player.handle}`}
