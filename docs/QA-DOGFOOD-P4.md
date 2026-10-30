@@ -91,6 +91,20 @@ verdict is against the acceptance criteria (broken / blank / mismatched / 404).
 - **Evidence:** `docs/qa-p4-screenshots/home-390.png` (drawer open, obscuring hero +
   content), plus the live probe: `aside` `left:0 right:250`, `transform` identity despite
   `--tw-translate-x:-100%`.
+- **Root cause (confirmed on fix):** the "Expected" above was too generous. The class and
+  the custom property are both correct; what is missing is a _running_ transition. Below
+  `xl` the panel was only ever hidden by a 300 ms `transition-all` that `SidebarProvider`
+  started **after hydration**, so in any document whose transitions are not advancing
+  (background tab, a screenshot of a non-rendering tab, a page that never hydrates) the
+  transition sits at `currentTime: 0` and the panel stays at `translate(0)`. The closed
+  panel's links also stayed focusable, because a transform moves paint, not focus.
+- **Fixed in #119** — closed is now the CSS default below `xl`
+  (`max-xl:invisible max-xl:-translate-x-full`), the drawer has its own `mobileOpen` state
+  instead of borrowing the desktop rail's `collapsed`, and it gets a backdrop, `Escape`
+  and close-on-navigate. Evidence: `docs/qa-p4-screenshots/sidebar-fix-390-closed.png`,
+  `sidebar-fix-390-drawer-open.png`, `sidebar-fix-768-closed.png`,
+  `sidebar-fix-768-drawer-open.png`, `sidebar-fix-1280-desktop.png`,
+  `sidebar-fix-1440-desktop.png` (desktop boxes unchanged).
 
 ### 2. Campaign promotion overlay never renders (High, Content)
 
