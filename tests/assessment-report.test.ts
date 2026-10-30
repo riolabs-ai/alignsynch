@@ -10,6 +10,12 @@
  * server component with no state, so the markup *is* the screen, and a node environment can
  * read every attribute on it. The page's own `notFound()` is exercised separately, because
  * an unknown slug is a status code, not a text the reader can see.
+ *
+ * The page reads through `lib/db/assessments.ts` (#145). That module is mocked here — one
+ * `readAssessmentScreenBySlug` — so this file stays a test of the **screen**: what it draws
+ * for the rows it is given, and that a slug it cannot resolve is a 404. The read layer's own
+ * behaviour (a row set that fails the schema) is `tests/db-rows.test.ts`, and the live rows are
+ * `pnpm db:verify`.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -21,7 +27,13 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-import AssessmentPage from "@/app/(mainlayout)/assessment/[slug]/page";
+const { screenFor } = vi.hoisted(() => ({ screenFor: vi.fn() }));
+
+vi.mock("@/lib/db/assessments", () => ({
+  readAssessmentScreenBySlug: screenFor,
+}));
+
+import AssessmentPage, { dynamic as routeDynamic } from "@/app/(mainlayout)/assessment/[slug]/page";
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import { gapOf, type Gap } from "@/content/record";
 import { assessmentInstances, assessments } from "@/data/assessments";
@@ -156,10 +168,39 @@ describe("the slug", () => {
     expect(instanceBySlug("avery-rowan", assessmentInstances)?.id).toBe(instance.id);
   });
 
+  /** The read is a request-time database read: no `generateStaticParams`, no prerender (#145). */
+  it("is request-time, so a build never needs a database", () => {
+    expect(routeDynamic).toBe("force-dynamic");
+  });
+
   it("404s an unknown slug instead of rendering an empty assessment", async () => {
-    expect(instanceBySlug("no-such-assessment", assessmentInstances)).toBeUndefined();
+    screenFor.mockResolvedValue(undefined);
+
     await expect(
       AssessmentPage({ params: Promise.resolve({ slug: "no-such-assessment" }) }),
     ).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("404s an instance whose template no longer resolves", async () => {
+    // What the read layer returns for that case is `undefined`: the page has no second source
+    // for the title, so a broken copy is a 404 rather than a report with no words above it.
+    screenFor.mockResolvedValue(undefined);
+
+    await expect(
+      AssessmentPage({ params: Promise.resolve({ slug: "avery-rowan" }) }),
+    ).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("renders both names from the rows it is handed, for the slug it asked for", async () => {
+    screenFor.mockResolvedValue({ instance, template });
+
+    const html = renderToStaticMarkup(
+      await AssessmentPage({ params: Promise.resolve({ slug: "avery-rowan" }) }),
+    );
+
+    expect(screenFor).toHaveBeenCalledWith("avery-rowan");
+    expect(html).toContain(escapeHtml(instance.parties[0].name));
+    expect(html).toContain(escapeHtml(instance.parties[1].name));
+    expect(html).toContain(escapeHtml(template.title));
   });
 });

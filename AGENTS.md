@@ -1,8 +1,12 @@
 # AGENTS.md — quizhub (alignsynch)
 
-Next.js 16 App Router + TypeScript + Tailwind + shadcn/ui quiz platform. **Frontend-only**: no
-`app/api`, no database, no auth backend. `content/` holds the zod content model, `data/` holds the
-fixtures that must satisfy it, and `pnpm data:check` fails the build when a fixture drifts. Remote:
+Next.js 16 App Router + TypeScript + Tailwind + shadcn/ui quiz platform. **Content-first**: every
+product route reads the TypeScript fixtures in `data/`, and exactly one route,
+`/assessment/[slug]`, reads six Postgres tables instead (#145). `app/api/auth/[...path]` proxies
+Neon's Managed Auth; the app owns no users or sessions table. The gate is still database-free —
+`bash scripts/verify.sh` never opens a connection and `pnpm build` passes with `DATABASE_URL`
+unset. `content/` holds the zod content model, `data/` holds the fixtures that must satisfy it,
+and `pnpm data:check` fails the build when a fixture drifts. Remote:
 `github.com/riolabs-ai/alignsynch`.
 
 ## Start every card with a fresh `main`
@@ -23,21 +27,25 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 
 ## Commands (repo root, `pnpm` only — the lockfile is `pnpm-lock.yaml` v9)
 
-| Command                          | Verified             | Notes                                                                                                            |
-| -------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/REPO-LAYERS.md)                                         |
-| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                                                         |
-| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                                   |
-| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                                    |
-| `pnpm gen`                       | exit 0, ~0.1 s       | `node scripts/gen-fixtures.mjs`; bulk fixtures → `data/generated/` (gitignored, validated by `data:check`)       |
-| `pnpm glossary`                  | exit 0, ~0.1 s       | `node scripts/gen-glossary.mjs`; writes `docs/glossary.md` from the schema comments — never edit the page (#138) |
-| `pnpm glossary:check`            | exit 0, ~0.1 s       | the read-only form the gate runs in every lane; exit 1 plus the first difference when the page is stale          |
-| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 231 warnings, 12 infos                                                              |
-| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 316 files; CI gate                                                                               |
-| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 34 routes, 30 static pages                                                                         |
-| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                                    |
-| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                                                          |
-| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                                                              |
+| Command                          | Verified             | Notes                                                                                                                  |
+| -------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/REPO-LAYERS.md)                                               |
+| `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                                                               |
+| `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                                         |
+| `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                                          |
+| `pnpm gen`                       | exit 0, ~0.1 s       | `node scripts/gen-fixtures.mjs`; bulk fixtures → `data/generated/` (gitignored, validated by `data:check`)             |
+| `pnpm glossary`                  | exit 0, ~0.1 s       | `node scripts/gen-glossary.mjs`; writes `docs/glossary.md` from the schema comments — never edit the page (#138)       |
+| `pnpm glossary:check`            | exit 0, ~0.1 s       | the read-only form the gate runs in every lane; exit 1 plus the first difference when the page is stale                |
+| `pnpm db:migrate`                | exit 0, ~1 s         | `node scripts/db-migrate.mjs`; applies `db/migrations/*.sql` in order via `schema_migrations`; wants the unpooled URL  |
+| `pnpm db:seed`                   | exit 0, ~1 s         | mirrors `data/assessments.ts` into the six tables, idempotent, prints counts; removes the temp e2e auth user first     |
+| `pnpm db:verify`                 | exit 0, ~1 s         | the DB port of E31 (drift) plus the party rules, read through `lib/db/**`; exit 1 with a named failure per violation   |
+| `pnpm objstore:smoke`            | exit 0, <1 s         | put → get → bytes compared → deleted; reads `NEON_OBJSTORE_*` (falls back to the `AWS_*` names `neon env pull` writes) |
+| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 195 warnings, 34 infos                                                                    |
+| `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 442 files; CI gate                                                                                     |
+| `pnpm build`                     | exit 0, ~50–76 s     | `next build`; 27 prerendered pages — `/assessment/[slug]` is request-time since #145                                   |
+| `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                                          |
+| `pnpm start`                     | 200 after `build`    | production server, port 3000 by default                                                                                |
+| `pnpm format` / `pnpm lint:fix`  | write modes          | must leave `format:check` at exit 0                                                                                    |
 
 Node must be **≥ 20.9** and the PATH is the only thing that decides which node you get:
 
@@ -97,6 +105,31 @@ nvm use                       # or: export PATH="$HOME/.nvm/versions/node/v24.22
 bash scripts/install-hooks.sh  # once per clone: installs the pre-push hook
 ```
 
+## The database — one route, six tables, no ORM (#145)
+
+Postgres is Neon; the app tables live in `public` and Neon's Managed Auth lives in its own
+`neon_auth` schema, which the app never migrates. The six tables in
+`db/migrations/0001_content_model.sql` mirror `content/record.ts` and `content/assessment.ts`
+(`record`, `item`, `response_option`, `assessment_instance`, `party`, `opinion`) and nothing
+else: every column exists because a schema defines it, and `lib/db/rows.ts` `safeParse`s rows
+back through those schemas, so the model stays the single source of truth.
+
+- **No ORM, no Prisma, no Drizzle.** `pg` is the only driver and `pg` + `@types/pg` are the
+  only dependencies this layer adds.
+- **The Gap is a function**: no `gap` column, table, view or generated column anywhere. A
+  migration that adds one is a defect, and `db:migrate` / `db:verify` both fail on the name.
+- **No build-time database.** `/assessment/[slug]` is `force-dynamic` with no
+  `generateStaticParams()`, so `pnpm build` passes with `DATABASE_URL` unset — the gate and CI
+  have no connection string and must not need one. The `db:*` scripts are **not** gate steps.
+- **Secrets stay server-side.** `DATABASE_URL` and friends are in `.env.local` (gitignored,
+  written by `neon env pull`) and never in `next.config.mjs`'s `env` block, which is inlined
+  into the client bundle.
+- **`pnpm db:seed` reads `data/assessments.ts`**, so a fixture edit is one `db:seed` away from
+  the database; `pnpm db:verify` is what proves the rows still say what the fixture says.
+- The `db:*` scripts import TypeScript source directly through `scripts/ts-modules.mjs` (a node
+  resolve hook for the `@/` alias and extensionless imports), which is why `db:verify` runs the
+  same mapper the page runs instead of a second copy of the rule.
+
 ## Pre-push hook (install path, not an assumption)
 
 ```bash
@@ -152,6 +185,9 @@ process bug.
 - `components/<feature>/` — one directory per feature; `components/ui/` is shadcn primitives.
 - `docs/p1-migration/{MIGRATION.md,ledger.json}` — what the P1 model changed, field by field.
 - Generated, not part of the build: `.next/`, `.datacheck/`, `node_modules/`, `.migration/`.
+- `db/migrations/` — plain SQL, one file per migration; `lib/db/` — the `pg` pool
+  (`client.ts`), the row→model mapping (`rows.ts`, pure and testable) and the assessment reads
+  (`assessments.ts`). `lib/objstore.ts` — the SigV4 client for Neon object storage.
 - `lib/quizhub/` — a **vendored** static HTML template drop (`index.html` + `assets/`, `css/`, `js/`,
   `scss/`), kept as reference and out of the build: nothing imports it. It is listed in `.gitignore`,
   so it never shows in `git status` and `biome check` (`vcs.useIgnoreFile`) never lints it — do not
@@ -238,7 +274,8 @@ process bug.
   date and a reward window, so the census is empty and `W3`/`W5` were already 0. From here a non-zero
   `W` count is a regression, not the baseline: no date, question or window is invented to silence one,
   and the record of what each repair changed is in `docs/p1-migration/MIGRATION.md`.
-- 231 lint warnings / 12 infos are the current baseline. Compare counts, not vibes: a new warning is a
+- 195 lint warnings / 34 infos are the current baseline (measured on `main` at `37c1d7c` and
+  unchanged by #145). Compare counts, not vibes: a new warning is a
   regression even though `pnpm lint` exits 0.
 - Stop `pnpm dev` before `pnpm build` — both write `.next/` and a concurrent run corrupts it.
 
