@@ -1,0 +1,110 @@
+name: Demo reset
+
+# The demo branch, refreshed on a schedule and on every release (#185).
+#
+# What it does is one script: `node scripts/demo-reset.mjs` — reset the `demo` Neon branch from
+# its parent, then reseed it from `data/bundles/demo-dataset.alignsynch.json`. Nothing here is a
+# second definition of that; this file only decides when it runs and whether it is allowed to.
+#
+# **A missing secret is not a failure.** The key has to be supplied by a human (it is a
+# credential, and a credential in this repository would be a defect), so until it is, every
+# scheduled run would be red — a permanently red workflow is noise that trains people to ignore
+# this tab. The first step decides, the rest of the job is skipped with a notice, and the run
+# concludes green. `scripts/demo-reset.mjs` exits 3 with the same explanation when it is run
+# without the key, so the local path and the CI path say the same thing.
+#
+# **The reset is `demo` and the parent is `production`.** The script refuses the project's
+# default branch by id and by name, so a typo here cannot wipe the live branch; this workflow
+# does not need its own copy of that rule and must not grow one.
+
+on:
+  schedule:
+    # Nightly, 08:17 UTC — a few minutes off the hour so it does not queue behind every other
+    # cron on GitHub's scheduler, which is when scheduled events get dropped.
+    - cron: "17 8 * * *"
+  push:
+    tags:
+      # A release refreshes the demo: the tag names the version the bundle's `appVersion` is
+      # stamped from, and the demo should show that version rather than whatever it held.
+      - "v*"
+  # Manual runs are how you refresh the demo after promoting a bundle, without waiting a day.
+  workflow_dispatch:
+
+concurrency:
+  # Two resets at once would reset the same branch twice and reseed it twice; the second is
+  # wasted work at best. Queue them instead of cancelling: a queued release must still land.
+  group: demo-reset
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  reset:
+    # Not a required check, and never a merge gate: it runs after main is already green.
+    name: reset and reseed the demo branch
+    # pinned OS: ubuntu-latest is migrating to Ubuntu 26 during 2026
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      # Secrets cannot be read in a job-level `if:`, so the decision is a step output. `env:`
+      # is the supported way to touch a secret in a step that only inspects it.
+      - name: Is NEON_API_KEY configured?
+        id: key
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: |
+          if [ -n "${NEON_API_KEY}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "NEON_API_KEY is configured — the demo will be reset and reseeded."
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Demo reset skipped"
+              echo ""
+              echo "The repository has no \`NEON_API_KEY\` secret, so this run did not reset anything."
+              echo "That is a configuration gap, not a failure — the job is green on purpose."
+              echo ""
+              echo "To enable the nightly reset: **Settings → Secrets and variables → Actions →"
+              echo "New repository secret**, name \`NEON_API_KEY\`, value a Neon API key with"
+              echo "access to this project. Then re-run this workflow."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice title=Demo reset skipped::NEON_API_KEY is not set — nothing was reset. Add it as a repository secret to enable the nightly demo reset. The job is green on purpose."
+          fi
+
+      - name: Checkout
+        if: steps.key.outputs.present == 'true'
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        if: steps.key.outputs.present == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          # keep in sync with EXPECTED_PNPM in scripts/verify.sh
+          version: 12.16.1
+
+      - name: Set up Node
+        if: steps.key.outputs.present == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # `scripts/demo-reset.mjs` imports `pg` and the bundle reader, so the dependencies are
+      # this step's job; the script itself adds no dependency of its own (it speaks the Neon
+      # REST API with `fetch` and the database with `pg`, both already here).
+      - name: Install dependencies
+        if: steps.key.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Reset and reseed the demo branch
+        if: steps.key.outputs.present == 'true'
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          # The project is not a secret (it is named in docs/ENV-SPEC.md) and is passed
+          # explicitly so the script never has to guess from a list of one.
+          NEON_PROJECT_ID: fragrant-glade-99460966
+          DEMO_BRANCH: demo
+          # A scheduled run has no browser origin; the seed's sign-ups carry the app's own.
+          DEMO_ORIGIN: ${{ vars.DEMO_ORIGIN || 'http://localhost:3000' }}
+        run: node scripts/demo-reset.mjs

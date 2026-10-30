@@ -194,18 +194,19 @@ QuizHub, and 2 by neither yet.
 
 ## Docs
 
-| File                                             | What it answers                                                       |
-| ------------------------------------------------ | --------------------------------------------------------------------- |
-| [AGENTS.md](AGENTS.md)                           | command table with verified results, conventions, pitfalls            |
-| [docs/glossary.md](docs/glossary.md)             | the domain's words, generated from the schema comments                |
-| [docs/ui-registry.md](docs/ui-registry.md)       | every surface, its status, and which template claims it               |
-| [docs/DATA-MODEL.md](docs/DATA-MODEL.md)         | the content model: entities, invariants, strictness                   |
-| [docs/TWO-PARTY-FLOW.md](docs/TWO-PARTY-FLOW.md) | the assessment flow: create, invite, answer, unlock the Gap           |
-| [docs/BUNDLES.md](docs/BUNDLES.md)               | importing and exporting a template or a demo dataset as one file      |
-| [docs/GATE.md](docs/GATE.md)                     | gate baseline, first-pass yield, the required-check ruleset           |
-| [docs/REPO-LAYERS.md](docs/REPO-LAYERS.md)       | lane table, classifier rules, build semaphore                         |
-| [docs/ENV-SPEC.md](docs/ENV-SPEC.md)             | environment, team, integrations, feature flags, the P1–P4 stage gates |
-| [docs/RELEASING.md](docs/RELEASING.md)           | cutting a version: changelog entry, tag, GitHub Release, the deploy   |
+| File                                             | What it answers                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------------- |
+| [AGENTS.md](AGENTS.md)                           | command table with verified results, conventions, pitfalls                |
+| [docs/glossary.md](docs/glossary.md)             | the domain's words, generated from the schema comments                    |
+| [docs/ui-registry.md](docs/ui-registry.md)       | every surface, its status, and which template claims it                   |
+| [docs/DATA-MODEL.md](docs/DATA-MODEL.md)         | the content model: entities, invariants, strictness                       |
+| [docs/TWO-PARTY-FLOW.md](docs/TWO-PARTY-FLOW.md) | the assessment flow: create, invite, answer, unlock the Gap               |
+| [docs/BUNDLES.md](docs/BUNDLES.md)               | importing and exporting a template or a demo dataset as one file          |
+| [docs/DEMO.md](docs/DEMO.md)                     | the demo branch: what a reset is, what it prints, how to promote a bundle |
+| [docs/GATE.md](docs/GATE.md)                     | gate baseline, first-pass yield, the required-check ruleset               |
+| [docs/REPO-LAYERS.md](docs/REPO-LAYERS.md)       | lane table, classifier rules, build semaphore                             |
+| [docs/ENV-SPEC.md](docs/ENV-SPEC.md)             | environment, team, integrations, feature flags, the P1–P4 stage gates     |
+| [docs/RELEASING.md](docs/RELEASING.md)           | cutting a version: changelog entry, tag, GitHub Release, the deploy       |
 
 `AGENTS.md` is the agent-facing companion to this file. The two must agree on commands, the package
 manager and the Node version; a command change belongs in both.
