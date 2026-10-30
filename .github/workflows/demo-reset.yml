@@ -2,9 +2,10 @@ name: Demo reset
 
 # The demo branch, refreshed on a schedule and on every release (#185).
 #
-# What it does is one script: `node scripts/demo-reset.mjs` — reset the `demo` Neon branch from
-# its parent, then reseed it from `data/bundles/demo-dataset.alignsynch.json`. Nothing here is a
-# second definition of that; this file only decides when it runs and whether it is allowed to.
+# What it does is one script: `node scripts/demo-reset.mjs` — migrate the schema-only base
+# `demo-base`, restore the `demo` Neon branch from it, then reseed the branch from
+# `data/bundles/demo-dataset.alignsynch.json`. Nothing here is a second definition of that; this
+# file only decides when it runs and whether it is allowed to.
 #
 # **A missing secret is not a failure.** The key has to be supplied by a human (it is a
 # credential, and a credential in this repository would be a defect), so until it is, every
@@ -13,9 +14,12 @@ name: Demo reset
 # concludes green. `scripts/demo-reset.mjs` exits 3 with the same explanation when it is run
 # without the key, so the local path and the CI path say the same thing.
 #
-# **The reset is `demo` and the parent is `production`.** The script refuses the project's
-# default branch by id and by name, so a typo here cannot wipe the live branch; this workflow
-# does not need its own copy of that rule and must not grow one.
+# **The reset is `demo` and the parent is `demo-base`, never `production`.** The parent is the
+# demo's whole supply of data, so a parent of the live branch would copy production's rows and
+# real accounts onto the branch the public URL serves. The script refuses a parent that is the
+# project's default branch, by id, before writing anything; this workflow does not need its own
+# copy of that rule and must not grow one. The migration into the base is part of the script, not
+# a step here — hence no extra job, and `pnpm install` above is enough.
 
 on:
   schedule:
