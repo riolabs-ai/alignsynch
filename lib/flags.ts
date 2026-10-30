@@ -29,8 +29,23 @@
  * every flag: a flag whose route still renders is a flag that only hides an entry — the exact
  * thing the issue calls out. A surface joins this list (and gets its guard) in the same change or
  * it is declarative only, which is what the other seven are today.
+ *
+ * ## The role bypass (#184), and why the nav does not follow it
+ *
+ * A flag that declares `adminBypass: true` (one, `community.leaderboard`) resolves on for an
+ * `admin` caller even while it is off for everyone else — so a surface the nav hides stays
+ * reachable by the person who has to review it. The role is an argument, never an ambient read:
+ * `isEnabled(name, { role })`, with the role resolved from the request's session by
+ * `lib/auth/flag-gate.ts::enabledForCaller`. Nothing in this module touches a header or a cookie,
+ * so there is no forged-role path through it.
+ *
+ * `hiddenNavHrefs()` deliberately takes **no** role. The sidebar is rendered into a prerendered
+ * shell at build time, so a per-caller nav would either be a request-time shell (a much bigger
+ * change than a flag) or a lie. The bypass makes the surface *reachable*, not *advertised* —
+ * which is the correct reading of "hidden": the URL answers, the catalogue does not list it.
  */
-import { type FlagDefinition, type FlagName, flagDefinition } from "@/data/flags";
+import { flagDefinition, type FlagDefinition, type FlagName } from "@/data/flags";
+import { type UserRole, roleAdmits } from "@/content/identity";
 
 /** Some callers pass a name that only exists at runtime (a test, a config string). */
 type Name = FlagName | (string & {});
@@ -84,27 +99,64 @@ export interface FlagContext {
   readonly template: string;
   /** The environment override, already parsed by `parseOverride`. */
   readonly override?: boolean;
+  /**
+   * The caller's role, resolved server-side from the request's session (#184) — or `null` when
+   * nobody is signed in. **Only consulted by a flag that declares `adminBypass: true`**, and
+   * this resolver never reads it from anywhere else: no header, no cookie, no prop.
+   */
+  readonly role?: UserRole | null;
 }
 
 /**
  * The precedence, as one pure function over a definition and a context. `isEnabled` is this plus
  * the environment; splitting it out is what lets `tests/flags.test.ts` prove all three steps
  * without writing to `process.env` for two of them.
+ *
+ * The role bypass is the one step ahead of the env: a flag that opts in with `adminBypass: true`
+ * is on for an `admin` whatever the operator set, because locking an admin out of the surface
+ * they are reviewing is the bug this exists to fix. A flag without the field never looks at
+ * `context.role`, so its three steps are exactly the ones they were before #184.
  */
 export function resolveFlag(definition: FlagDefinition, context: FlagContext): boolean {
+  if (bypassesForAdmin(definition, context.role ?? null)) return true;
   if (context.override !== undefined) return context.override;
   if (definition.templates?.includes(context.template)) return true;
   return definition.default;
 }
 
 /**
+ * Did this flag opt in, and is the caller the role it opted in for? Both halves, named once, so
+ * the resolver and any caller that wants to know *whether* the session is worth reading agree on
+ * one definition of the bypass.
+ */
+export function bypassesForAdmin(
+  definition: Pick<FlagDefinition, "adminBypass">,
+  role: UserRole | null,
+): boolean {
+  return definition.adminBypass === true && roleAdmits("admin", role);
+}
+
+/**
+ * Does this flag opt in to the admin bypass at all? A flag that does not is decided without a
+ * session, so a caller can skip the auth round trip and the profile read entirely — which is
+ * what keeps `/leaderboard` free of Postgres in a deployment with no auth configured.
+ */
+export function declaresAdminBypass(name: Name): boolean {
+  return flagDefinition(name as FlagName).adminBypass === true;
+}
+
+/**
  * Is this surface on? Server components, route handlers and `generateMetadata` only.
+ *
+ * `options.role` is the caller's role, resolved server-side from the request's session — the one
+ * input a browser cannot supply (#184). Omit it and every flag answers as it did before: a flag
+ * that opts in with `adminBypass: true` is on only when a caller passes `admin`.
  *
  * The browser check is the point: a client component that calls this would compile, but the flag
  * would be decided after the request was already served — so the call throws instead of quietly
  * becoming the "hide the button" flag the issue forbids.
  */
-export function isEnabled(name: Name): boolean {
+export function isEnabled(name: Name, options: { readonly role?: UserRole | null } = {}): boolean {
   if (typeof window !== "undefined") {
     throw new Error(
       `feature flag "${String(name)}" was resolved in a browser — lib/flags.ts is server-only. ` +
@@ -118,7 +170,11 @@ export function isEnabled(name: Name): boolean {
   if (override === undefined && raw !== undefined && raw.trim() !== "") {
     warnUnreadableOverride(variable, raw);
   }
-  return resolveFlag(definition, { template: currentTemplate(), override });
+  return resolveFlag(definition, {
+    template: currentTemplate(),
+    override,
+    role: options.role ?? null,
+  });
 }
 
 /**

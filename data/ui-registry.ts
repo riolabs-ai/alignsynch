@@ -268,7 +268,10 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     surface: "/leaderboard",
     status: "fixture",
     templates: ["quizhub"],
-    capability: "The player leaderboard: podium, summary stats and a filterable ranked table.",
+    capability:
+      "The player leaderboard: podium, summary stats and a filterable ranked table. Not freely available: `community.leaderboard` ships it off for every visitor, and only an admin session reaches it — through the flag's `adminBypass` (#184) — while its rows are still the `data/players.ts` mock.",
+    notes:
+      "The Postgres reach listed here is the flag's role gate (`lib/auth/require-role.ts` reading `user_profile.role`), not the boards: the rows the page renders are still `data/players.ts`, and the read happens before them.",
   },
   {
     kind: "route",
