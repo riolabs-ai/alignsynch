@@ -108,3 +108,25 @@ export function fillLabel(label: string, values: Record<string, string | number>
 export function headingLines(heading: string): string[] {
   return heading.split("\n");
 }
+
+/**
+ * A section whose `cta` is dropped when its destination is one the shell must not draw.
+ *
+ * The fixture keeps its row — `data/pages/home.ts` still says "View Full Leaderboard" — and the
+ * *mount* decides whether it renders (#175 follow-up). That split is deliberate: the fixture is
+ * the record of what the surface says when it is on, so a flag flip back to `1` is a byte-for-byte
+ * return to the page that shipped, and a deleted row could not prove it.
+ *
+ * `hiddenNav` is the list `lib/flags.ts::hiddenNavHrefs()` resolved on the server and passed down,
+ * never a flag read here: this module runs in the browser too, and the resolver throws there. A
+ * section whose cta points anywhere else comes back untouched (the same object, so a render with
+ * every surface on allocates nothing).
+ */
+export function withoutHiddenCta(
+  section: PageCopySection,
+  hiddenNav: readonly string[],
+): PageCopySection {
+  const { cta } = section;
+  if (cta === undefined || !hiddenNav.includes(cta.href)) return section;
+  return { ...section, cta: undefined };
+}

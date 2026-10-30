@@ -19,11 +19,20 @@ import { useState } from "react";
 interface UserProfileProps {
   /** One resolved `/profile/<handle>`, from `lib/profile.ts` — never a literal here. */
   profile: PlayerProfile;
+  /**
+   * The gated hrefs the shell must not draw, resolved on the server by
+   * `lib/flags.ts::hiddenNavHrefs()` (#175 follow-up).
+   *
+   * Required, and a list rather than a boolean, so this component speaks the same vocabulary as
+   * the sidebar and the footer: the page decides once, and every surface it mounts reads the one
+   * answer. This module is `"use client"`, so it cannot resolve the flag itself.
+   */
+  hiddenNav: readonly string[];
 }
 
 const COUNT = new Intl.NumberFormat("en-US");
 
-export function UserProfile({ profile }: UserProfileProps) {
+export function UserProfile({ profile, hiddenNav }: UserProfileProps) {
   const { person, detail } = profile;
   const [isFollowing, setIsFollowing] = useState(false);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
@@ -35,11 +44,17 @@ export function UserProfile({ profile }: UserProfileProps) {
 
   return (
     <div className="container mx-auto max-w-6xl py-6">
-      <div className="mb-6">
-        <Link href="/leaderboard" className="text-sm text-muted-foreground hover:text-primary">
-          ← Back to Leaderboard
-        </Link>
-      </div>
+      {/* The back-link is this page's only leaderboard reference: a demo person is reached from
+          the board, so with `community.leaderboard` off (#175 follow-up) it is not drawn — the
+          header beneath already says whose page this is, and inventing a replacement destination
+          would advertise a surface that answers 404. */}
+      {!hiddenNav.includes("/leaderboard") && (
+        <div className="mb-6">
+          <Link href="/leaderboard" className="text-sm text-muted-foreground hover:text-primary">
+            ← Back to Leaderboard
+          </Link>
+        </div>
+      )}
 
       <ProfileHeader
         person={person}

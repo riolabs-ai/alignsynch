@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FloatingGlyphs } from "@/components/not-found/floating-glyphs";
 import { GoBackButton } from "@/components/not-found/go-back-button";
 import { notFoundPageCopy } from "@/data/pages/not-found";
+import { hiddenNavHrefs } from "@/lib/flags";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
 import { BookOpen, Brain, Home, Search, Trophy } from "lucide-react";
@@ -35,11 +36,20 @@ export const metadata: Metadata = {
  * three gradients here (the `404`'s text fill, the icon disc, the fact panel) went the same way:
  * solid `background` / `white/10` fills. The remaining literals — `text-blue-400`,
  * `text-yellow-400`, `text-gray-200` — are not this card's palette and are untouched.
+ *
+ * The two suggestion links are drawn, the third is drawn when its surface is on (#175
+ * follow-up): `Leaderboard` pointed at `/leaderboard`, which answers 404 while
+ * `community.leaderboard` is off, so the 404 used to hand a visitor a second 404. `hiddenNav` is
+ * resolved here because this is a server module; no replacement link is invented, so the band
+ * keeps exactly the rows the fixture declares and loses the one that cannot resolve. Note that
+ * Next prerenders this body at build time (`/_not-found`), so — exactly like the sidebar — the
+ * flag is a **build-time** value on this surface: a flip needs a rebuild to be visible here.
  */
 export default function NotFound() {
   const message = sectionOf(notFoundPageCopy, "message");
   const fact = sectionOf(notFoundPageCopy, "fact");
   const actions = sectionOf(notFoundPageCopy, "actions");
+  const hiddenNav = hiddenNavHrefs();
 
   return (
     <div className="min-h-screen bg-foreground text-background relative overflow-hidden">
@@ -116,13 +126,15 @@ export default function NotFound() {
                 <Brain className="w-4 h-4 mr-1" />
                 {itemLabel(actions, "categories")}
               </Link>
-              <Link
-                href="/leaderboard"
-                className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center"
-              >
-                <Trophy className="w-4 h-4 mr-1" />
-                {itemLabel(actions, "leaderboard")}
-              </Link>
+              {!hiddenNav.includes("/leaderboard") && (
+                <Link
+                  href="/leaderboard"
+                  className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center"
+                >
+                  <Trophy className="w-4 h-4 mr-1" />
+                  {itemLabel(actions, "leaderboard")}
+                </Link>
+              )}
             </div>
           </div>
         </div>
