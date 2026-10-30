@@ -29,15 +29,15 @@
  * footer logo render, and `footer-legal/copyright` is the same word in a sentence; both
  * read `brand.name` from `data/brand.ts`, so the projection is a function of the brand
  * record (`shellCopy(brand)`) and the two strings a second brand must change are the
- * ones it actually prints. `shellPageCopy` stays the QuizHub instance, so every caller
- * keeps importing a `PageCopy` and nothing else moved. The 94 other `QuizHub` literals
- * in `app/` and `components/` are deliberately untouched — replacing those is the next
- * card, not this one.
+ * ones it actually prints. `shellPageCopy` stays the shipped record's instance, so every
+ * caller keeps importing a `PageCopy` and nothing else moved. Every other rendered
+ * literal in `app/`, `components/` and `data/` reads the same record, so a skin is a
+ * second `Brand` and not a find-and-replace.
  *
- * The addresses in this fixture are copy, not the brand: `display-email` is a demo
- * identity and `footer-contact/email` is the address the footer prints, which the brand
- * record also carries as `supportEmail`. Wiring that one is the reskin's call; doing it
- * here would change a screen this card must not touch.
+ * The two addresses in this fixture are the brand's too: `display-email` (the header's
+ * account block) and `footer-contact/email` (the footer) both read
+ * `brand.supportEmail`, because the record carries one support address and a demo that
+ * printed a second one would be a second source of truth for it.
  */
 import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
@@ -99,7 +99,7 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "initials", label: "JD" },
           { id: "display-name", label: "Jonathan Doe" },
           { id: "display-handle", label: "@johndoe" },
-          { id: "display-email", label: "info@quizhub.com" },
+          { id: "display-email", label: brand.supportEmail },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
@@ -157,7 +157,7 @@ export function shellCopy(brand: Brand): PageCopy {
         items: [
           { id: "address", label: "123 Quiz Street, Knowledge City, QZ 12345" },
           { id: "phone", label: "+1 (555) 123-4567" },
-          { id: "email", label: "support@quizhub.com" },
+          { id: "email", label: brand.supportEmail },
           { id: "cta", label: "Contact Support" },
         ],
       },
@@ -184,7 +184,7 @@ export function shellCopy(brand: Brand): PageCopy {
 }
 
 /**
- * The shell as the app renders it today — the QuizHub instance of `shellCopy`.
+ * The shell as the app renders it today — the shipped record's instance of `shellCopy`.
  *
  * Still a parsed `PageCopy` at module scope, so the layout, the eleven pages that mount
  * the footer, `data/pages/index.ts` and the E23 ratchet need no change: they import a

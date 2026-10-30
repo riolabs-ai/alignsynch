@@ -1,11 +1,12 @@
 /**
- * `Brand` — who the product claims to be. One record, read by the fixtures that print
- * the product's name (`data/pages/shell.ts` today).
+ * `Brand` — who the product claims to be. One record, read by everything that prints the
+ * product's name, its domain or its support address.
  *
- * The failure this exists to prevent is the one the 94 `QuizHub` literals already
- * demonstrate: the product's identity is spelled in every file that renders it, so
- * "the brand is X" is a find-and-replace across the tree instead of a field. A skin is
- * then a second copy of the app, not a record the app reads.
+ * The failure this exists to prevent is the one the tree used to demonstrate: 94
+ * `QuizHub` literals across `app/`, `components/` and `data/`, where "the brand is X" was
+ * a find-and-replace across the tree instead of a field. Every one of them now reads this
+ * record (`rg -l QuizHub app components data` returns `data/brand.ts` alone), so a skin is
+ * a second `Brand` the app reads, not a second copy of the app.
  *
  * Why each field is a field:
  *

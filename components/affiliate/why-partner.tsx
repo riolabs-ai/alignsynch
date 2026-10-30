@@ -7,6 +7,7 @@ import {
   formatWholeCurrency,
 } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";
+import { brand } from "@/data/brand";
 import { media } from "@/data/media";
 import { metric } from "@/data/metrics";
 import { fillLabel, itemLabel, itemValue } from "@/lib/page-copy";
@@ -45,8 +46,7 @@ const BENEFITS = [
 export function WhyPartner({ copy }: { copy: PageCopySection }) {
   const testimonials = [
     {
-      quote:
-        "I've been part of many affiliate programs, but QuizHub's stands out with its high commission rates and reliable tracking. I've earned over $5,000 monthly since joining.",
+      quote: `I've been part of many affiliate programs, but ${brand.name}'s stands out with its high commission rates and reliable tracking. I've earned over $5,000 monthly since joining.`,
       author: "Sarah Johnson",
       role: "Educational Content Creator",
       image: media["avatars.sarah"].src,

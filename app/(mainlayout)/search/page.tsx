@@ -1,9 +1,10 @@
 import { SearchResults } from "@/components/search/search-results";
+import { brand } from "@/data/brand";
 import { searchIndex } from "@/data/searchdata";
 
 export const metadata = {
   title: "Search Results",
-  description: "Search for quizzes, categories, creators, and more on QuizHub.",
+  description: `Search for quizzes, categories, creators, and more on ${brand.name}.`,
 };
 
 export default async function SearchPage({

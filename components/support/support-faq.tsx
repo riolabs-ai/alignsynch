@@ -8,7 +8,9 @@ import {
 } from "@/components/ui/accordion";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { Brand } from "@/content/brand";
 import type { PageCopySection } from "@/content/pages";
+import { brand } from "@/data/brand";
 import { itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
 import { useState } from "react";
@@ -20,10 +22,22 @@ interface SupportFAQProps {
   categoryCopy: PageCopySection;
 }
 
-export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+/** One FAQ row: the question and the answer the accordion shows under it. */
+export type SupportFaqQuestion = { question: string; answer: string };
 
-  const allFaqs = {
+/**
+ * The support FAQ rows, as a function of the brand.
+ *
+ * The rows are record-shaped blocks with no schema in P2, so they stay in this feature
+ * (the same split `components/pricing/pricing-faq.tsx` uses). The product's name and its
+ * support address are not copy: every row that prints one reads it from the record, so
+ * `supportFaqGroups(alignSynch)` differs from the shipped render in those words and
+ * nothing else.
+ */
+export function supportFaqGroups(
+  brand: Pick<Brand, "name" | "supportEmail">,
+): Record<Exclude<SupportCategory, "all">, SupportFaqQuestion[]> {
+  return {
     account: [
       {
         question: "How do I change my username?",
@@ -188,9 +202,8 @@ export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQP
     ],
     general: [
       {
-        question: "What is QuizHub?",
-        answer:
-          "QuizHub is an interactive platform where users can create, share, and take quizzes on various topics. It combines educational content with gamification elements, allowing creators to earn from their quizzes while players can win prizes and climb leaderboards.",
+        question: `What is ${brand.name}?`,
+        answer: `${brand.name} is an interactive platform where users can create, share, and take quizzes on various topics. It combines educational content with gamification elements, allowing creators to earn from their quizzes while players can win prizes and climb leaderboards.`,
       },
       {
         question: "How do I get started?",
@@ -198,22 +211,26 @@ export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQP
           "Sign up for a free account, then explore the platform by taking some featured quizzes. When you're ready to create your own, click 'Create' in the sidebar and follow the guided process. Check out the 'Creator Tips' section for advice on making engaging quizzes.",
       },
       {
-        question: "Is QuizHub available on mobile devices?",
-        answer:
-          "Yes, QuizHub is fully responsive and works on all mobile browsers. We also offer dedicated apps for iOS and Android with additional features like offline quiz taking and push notifications for tournament reminders.",
+        question: `Is ${brand.name} available on mobile devices?`,
+        answer: `Yes, ${brand.name} is fully responsive and works on all mobile browsers. We also offer dedicated apps for iOS and Android with additional features like offline quiz taking and push notifications for tournament reminders.`,
       },
       {
-        question: "Can I use QuizHub for educational purposes?",
-        answer:
-          "Many educators use QuizHub to create engaging learning materials. We offer special educational accounts with features like student progress tracking, classroom management, and the ability to align quizzes with curriculum standards.",
+        question: `Can I use ${brand.name} for educational purposes?`,
+        answer: `Many educators use ${brand.name} to create engaging learning materials. We offer special educational accounts with features like student progress tracking, classroom management, and the ability to align quizzes with curriculum standards.`,
       },
       {
         question: "How do I contact customer support?",
-        answer:
-          "You can contact our support team through the 'Contact Us' tab on this page, by emailing support@quizhub.com, or by using the chat button in the bottom right corner of any page. Our support team is available 24/7 to assist with any questions or issues.",
+        answer: `You can contact our support team through the 'Contact Us' tab on this page, by emailing ${brand.supportEmail}, or by using the chat button in the bottom right corner of any page. Our support team is available 24/7 to assist with any questions or issues.`,
       },
     ],
   };
+}
+
+export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  /** The rows, with the product name and the support address read from the record. */
+  const allFaqs = supportFaqGroups(brand);
 
   // Combine all FAQs for the "all" category
   const allCategoryFaqs = [

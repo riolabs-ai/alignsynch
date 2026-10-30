@@ -1,6 +1,7 @@
 "use client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PageCopy } from "@/content/pages";
+import { brand } from "@/data/brand";
 import { media } from "@/data/media";
 import { pageItemOf, sectionOf } from "@/lib/page-copy";
 import { TournamentDiscussion } from "./tournament-discussion";
@@ -71,7 +72,7 @@ export function TournamentDetail({ id, copy }: TournamentDetailProps) {
     prize: id === "global-championship" ? "$5,000" : "$1,000",
     registrationEnds: id === "global-championship" ? "3 days" : "2 days",
     difficulty: id === "global-championship" ? "Hard" : "Medium",
-    organizer: "QuizHub Official",
+    organizer: `${brand.name} Official`,
     rounds: id === "global-championship" ? 3 : 2,
     questionsPerRound: id === "global-championship" ? 50 : 30,
     timePerQuestion: 60, // seconds

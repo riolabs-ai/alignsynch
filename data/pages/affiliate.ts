@@ -18,8 +18,8 @@
  *    component already computes — `formatPercentValue(affiliate.maxCommission)`, the step index,
  *    the story's `earnings`. No number is spelled into the copy here.
  *  - JSX collapses a source line break to one space, so the strings below carry the spaces that
- *    were explicit in the JSX and would otherwise be lost: `About QuizHub ` (trailing space on the
- *    heading), `promoting QuizHub ` (the `{" "}` in why-partner's body), `on QuizHub ` (the
+ *    were explicit in the JSX and would otherwise be lost: `About ${brand} ` (trailing space on the
+ *    heading), `promoting ${brand} ` (the `{" "}` in why-partner's body), `on ${brand} ` (the
  *    calculator's average-value caption), `Already an affiliate? ` (how-to-start) and
  *    `Contact our affiliate team at ` (the closing CTA). Keep them.
  *  - `affiliate-hero`'s `heading` is spelled with a `\n` not for a line break but because the
@@ -32,6 +32,7 @@
  * record has no schema in P2; those arrays stay in their components and are left for a later
  * fixture (the `Testimonial` row named in `docs/P2-INVENTORY.md`).
  */
+import { brand } from "../brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const affiliatePageCopy: PageCopy = zPageCopy.parse({
@@ -71,7 +72,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "how-to-start",
       heading: "How to Start Earning",
-      body: "Getting started with our affiliate program is simple. Follow these steps and start earning passive income by sharing QuizHub with your audience.",
+      body: `Getting started with our affiliate program is simple. Follow these steps and start earning passive income by sharing ${brand.name} with your audience.`,
       items: [
         { id: "step-label", label: "STEP {step}" },
         {
@@ -112,12 +113,12 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "profit-calculator",
       heading: "Calculate Your Potential Earnings",
-      body: "Use our calculator to estimate how much you could earn as a QuizHub affiliate. Adjust the sliders to match your audience and see your potential earnings.",
+      body: `Use our calculator to estimate how much you could earn as a ${brand.name} affiliate. Adjust the sliders to match your audience and see your potential earnings.`,
       items: [
         { id: "monthly-referrals", label: "Monthly Referrals" },
         {
           id: "monthly-referrals-hint",
-          label: "The number of people you refer to QuizHub each month",
+          label: `The number of people you refer to ${brand.name} each month`,
         },
         { id: "conversion-rate", label: "Conversion Rate" },
         {
@@ -127,7 +128,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
         { id: "average-purchase-value", label: "Average Purchase Value" },
         {
           id: "average-purchase-value-hint",
-          label: "The average amount your referrals spend on QuizHub ",
+          label: `The average amount your referrals spend on ${brand.name} `,
         },
         { id: "earnings-potential", label: "Your Earnings Potential" },
         {
@@ -199,15 +200,14 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "about-quizhub",
-      // The original JSX was `<h2>About QuizHub </h2>` — the trailing space is rendered copy.
-      heading: "About QuizHub ",
+      // The original JSX was `<h2>About {brand}</h2>` — the trailing space is rendered copy.
+      heading: `About ${brand.name} `,
       body: "The leading platform revolutionizing how people create, share, and experience quizzes worldwide",
       items: [
         { id: "our-story", label: "Our Story" },
         {
           id: "story-origin",
-          label:
-            "Founded in 2018, QuizHub began with a simple mission: to transform learning into an engaging, interactive experience. What started as a small project has grown into a global platform used by educators, businesses, and quiz enthusiasts in over 150 countries.",
+          label: `Founded in 2018, ${brand.name} began with a simple mission: to transform learning into an engaging, interactive experience. What started as a small project has grown into a global platform used by educators, businesses, and quiz enthusiasts in over 150 countries.`,
         },
         {
           id: "story-platform",
@@ -229,8 +229,8 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "why-partner",
       heading: "Why Partner With Us?",
-      // The original JSX ended the paragraph with `QuizHub{" "}` — the trailing space is rendered.
-      body: "Join thousands of successful affiliates who are earning substantial income by promoting QuizHub ",
+      // The original JSX ended the paragraph with `{brand}{" "}` — the trailing space is rendered.
+      body: `Join thousands of successful affiliates who are earning substantial income by promoting ${brand.name} `,
       items: [
         {
           id: "high-commission-rates",
@@ -272,7 +272,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
         { id: "join-partners", label: "Join our successful partners today" },
         { id: "compare-heading", label: "How We Compare" },
         { id: "compare-feature-column", label: "Feature" },
-        { id: "compare-quizhub-column", label: "QuizHub Affiliate" },
+        { id: "compare-quizhub-column", label: `${brand.name} Affiliate` },
         { id: "compare-others-column", label: "Other Programs" },
         { id: "row-commission-rate", label: "Commission Rate" },
         { id: "row-commission-quizhub", label: "Up to {percent}" },
@@ -291,8 +291,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "how-it-works",
           label: "How does the affiliate program work?",
-          value:
-            "Our affiliate program is simple: you refer users to QuizHub using your unique link, and you earn a 30% commission on all their subscription payments for as long as they remain a customer. We track all referrals automatically and pay out monthly.",
+          value: `Our affiliate program is simple: you refer users to ${brand.name} using your unique link, and you earn a 30% commission on all their subscription payments for as long as they remain a customer. We track all referrals automatically and pay out monthly.`,
         },
         {
           id: "who-can-join",
@@ -327,8 +326,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "social-media",
           label: "Can I promote the affiliate program on social media?",
-          value:
-            "Social media is one of the best ways to promote QuizHub. You can share your affiliate link on platforms like Twitter, Facebook, Instagram, TikTok, and LinkedIn. We even provide platform-specific content templates in your dashboard.",
+          value: `Social media is one of the best ways to promote ${brand.name}. You can share your affiliate link on platforms like Twitter, Facebook, Instagram, TikTok, and LinkedIn. We even provide platform-specific content templates in your dashboard.`,
         },
         {
           id: "referral-limit",
@@ -343,7 +341,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "success-stories",
       heading: "Success Stories",
-      body: "Hear from our top-performing affiliates who are earning consistent income by promoting QuizHub.",
+      body: `Hear from our top-performing affiliates who are earning consistent income by promoting ${brand.name}.`,
       items: [
         // The badge around each story's `earnings` record field.
         { id: "earning-badge", label: "Earning {earnings}" },
@@ -352,7 +350,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "affiliate-cta",
       heading: "Ready to Start Earning?",
-      body: "Join thousands of successful affiliates who are earning passive income by sharing QuizHub with their audience. It only takes 2 minutes to get started.",
+      body: `Join thousands of successful affiliates who are earning passive income by sharing ${brand.name} with their audience. It only takes 2 minutes to get started.`,
       items: [
         { id: "join-now", label: "Join Now" },
         { id: "learn-more", label: "Learn More" },

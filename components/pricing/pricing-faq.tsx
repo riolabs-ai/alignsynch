@@ -7,30 +7,47 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
+import type { Brand } from "@/content/brand";
 import type { PageCopySection } from "@/content/pages";
+import { brand } from "@/data/brand";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
 import { useState } from "react";
 
-export function PricingFaq({ copy }: { copy: PageCopySection }) {
-  const [searchQuery, setSearchQuery] = useState("");
+/** One group of FAQ rows, as the accordion renders it. */
+export type PricingFaqCategory = {
+  name: string;
+  questions: { question: string; answer: string }[];
+};
 
-  const faqCategories = [
+/**
+ * The FAQ rows, as a function of the brand.
+ *
+ * The rows themselves are record-shaped blocks with no schema in P2 (see
+ * `data/pages/pricing.ts`, "not here, on purpose"), so they stay in this feature. What
+ * they must not own is the product's name: a sentence that spells it is a sentence a
+ * second brand cannot render, so every row below reads `brand.name` (and the contact
+ * line reads `brand.supportEmail`) and the projection is what `tests/brand-shell.test.ts`
+ * renders with a different record.
+ */
+export function pricingFaqCategories(
+  brand: Pick<Brand, "name" | "supportEmail">,
+): PricingFaqCategory[] {
+  return [
     {
       name: "General",
       questions: [
         {
-          question: "What is QuizHub?",
-          answer:
-            "QuizHub is a comprehensive platform that allows users to create, share, and take quizzes on various topics. It's designed for educators, content creators, businesses, and quiz enthusiasts who want to create engaging learning experiences.",
+          question: `What is ${brand.name}?`,
+          answer: `${brand.name} is a comprehensive platform that allows users to create, share, and take quizzes on various topics. It's designed for educators, content creators, businesses, and quiz enthusiasts who want to create engaging learning experiences.`,
         },
         {
-          question: "How do I get started with QuizHub?",
+          question: `How do I get started with ${brand.name}?`,
           answer:
             "Getting started is easy! Simply sign up for a free account, explore the dashboard, and create your first quiz using our intuitive editor. You can also take existing quizzes to get familiar with the platform.",
         },
         {
-          question: "Can I try QuizHub before purchasing?",
+          question: `Can I try ${brand.name} before purchasing?`,
           answer:
             "Yes! We offer a free plan with limited features that you can use indefinitely. Additionally, our paid plans come with a 14-day free trial, no credit card required, so you can explore all features before making a decision.",
         },
@@ -66,8 +83,7 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
       questions: [
         {
           question: "What types of quizzes can I create?",
-          answer:
-            "QuizHub supports multiple quiz formats including multiple choice, true/false, fill-in-the-blank, matching, ranking, and open-ended questions. You can also add images, videos, and audio to your quizzes.",
+          answer: `${brand.name} supports multiple quiz formats including multiple choice, true/false, fill-in-the-blank, matching, ranking, and open-ended questions. You can also add images, videos, and audio to your quizzes.`,
         },
         {
           question: "How does the AI quiz generation work?",
@@ -90,7 +106,7 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
       name: "Account & Security",
       questions: [
         {
-          question: "How secure is my data on QuizHub?",
+          question: `How secure is my data on ${brand.name}?`,
           answer:
             "We take security seriously. All data is encrypted in transit and at rest. We implement industry-standard security practices, regular security audits, and comply with GDPR, CCPA, and other privacy regulations.",
         },
@@ -107,6 +123,13 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
       ],
     },
   ];
+}
+
+export function PricingFaq({ copy }: { copy: PageCopySection }) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  /** The rows, with the product name and the contact address read from the record. */
+  const faqCategories = pricingFaqCategories(brand);
 
   // Filter questions based on search query
   const filteredFaqs = searchQuery
@@ -190,7 +213,7 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
           <p className="text-slate-600 dark:text-slate-400">
             {itemLabel(copy, "contact-prompt")}{" "}
             <a
-              href="mailto:support@quizhub.com"
+              href={`mailto:${brand.supportEmail}`}
               className="text-purple-600 hover:text-purple-700 font-medium"
             >
               {itemLabel(copy, "contact-email")}

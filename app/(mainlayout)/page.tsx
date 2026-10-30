@@ -10,20 +10,22 @@ import { QuizzesByDifficulty } from "@/components/home/quizzes-by-difficulty";
 import { ResourcesAndReferral } from "@/components/home/resources-and-referral";
 import { TopPlayersCarousel } from "@/components/home/top-players-carousel";
 import { Footer } from "@/components/layout/footer";
-import { homePageCopy } from "@/data/pages/home";
+import { homePageCopy, homeTitle } from "@/data/pages/home";
 import { shellPageCopy } from "@/data/pages/shell";
 import { sectionOf } from "@/lib/page-copy";
 import { winFeed } from "@/lib/win-feed";
+import { brand } from "@/data/brand";
 import "swiper/swiper-bundle.css";
 import type { Metadata } from "next";
 
 /**
  * The home page names the product itself, so it uses `absolute`: the root layout's
- * `%s · QuizHub` template would otherwise print "QuizHub — Play, Share, Earn ·
- * QuizHub". The words are the hero's (`data/pages/home.ts`, `heading`).
+ * `%s · <brand>` template would otherwise print the name twice. The title is the brand's
+ * (`homeTitle(brand)`), so the words here are the tagline's and the product name's, and
+ * neither is spelled in this file.
  */
 export const metadata: Metadata = {
-  title: { absolute: "QuizHub — Play, Share, Earn" },
+  title: { absolute: homeTitle(brand) },
 };
 
 /**

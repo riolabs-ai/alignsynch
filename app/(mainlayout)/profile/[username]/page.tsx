@@ -10,7 +10,7 @@ import { notFound } from "next/navigation";
  * how a page rendered the same default person for every URL (#111). An unknown handle is a
  * 404; the page has no default to fall back to.
  *
- * Titles are brand-free on purpose: the root layout's `title.template` (`%s · QuizHub`)
+ * Titles are brand-free on purpose: the root layout's `title.template` (`%s · <brand>`)
  * composes the brand, so a title that carried it here too would print it twice.
  */
 interface ProfilePageProps {

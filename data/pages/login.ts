@@ -9,10 +9,11 @@
  * it. The trailing space after `signup-prompt` is the view's (`{" "}`), not this
  * fixture's: a label with an invisible trailing space is a fixture nobody can review.
  */
+import { brand } from "../brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const loginPageCopy: PageCopy = zPageCopy.parse({
-  heading: "Welcome to QuizHub",
+  heading: `Welcome to ${brand.name}`,
   subtitle: "Challenge your mind with thousands of engaging quizzes across multiple categories",
   sections: [
     {

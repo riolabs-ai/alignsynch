@@ -6,6 +6,7 @@
 import type { NewsArticle } from "../content/article";
 import type { Category } from "../content/category";
 import { newsCategories } from "../content/categories";
+import { brand } from "./brand";
 import { media } from "./media";
 
 export const newsData: readonly NewsArticle[] = [
@@ -159,7 +160,7 @@ export const newsData: readonly NewsArticle[] = [
     author: {
       name: "Michael Chen",
       role: "Product Manager",
-      bio: "Michael leads product development at QuizHub, focusing on creating features that help quiz creators succeed.",
+      bio: `Michael leads product development at ${brand.name}, focusing on creating features that help quiz creators succeed.`,
       avatar: {
         src: media["avatars.wizard"].src,
         alt: "Michael Chen",
@@ -280,7 +281,7 @@ export const newsData: readonly NewsArticle[] = [
     author: {
       name: "Elena Rodriguez",
       role: "Community Manager",
-      bio: "Elena manages the QuizHub community, highlighting success stories and fostering connections between creators.",
+      bio: `Elena manages the ${brand.name} community, highlighting success stories and fostering connections between creators.`,
       avatar: {
         src: media["avatars.wizard"].src,
         alt: "Elena Rodriguez",
@@ -297,7 +298,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "When James Wilson first created a quiz on ancient civilizations for his high school history class, he never imagined it would lead to a side career as one of QuizHub's most successful creators.",
+        text: `When James Wilson first created a quiz on ancient civilizations for his high school history class, he never imagined it would lead to a side career as one of ${brand.name}'s most successful creators.`,
       },
       {
         type: "paragraph",
@@ -507,7 +508,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "heading",
-        text: "Implementing Accessibility on QuizHub",
+        text: `Implementing Accessibility on ${brand.name}`,
         level: 2,
       },
       {
@@ -536,7 +537,7 @@ export const newsData: readonly NewsArticle[] = [
     author: {
       name: "Daniel Park",
       role: "Events Coordinator",
-      bio: "Daniel organizes QuizHub's tournaments and special events, bringing the community together for friendly competition.",
+      bio: `Daniel organizes ${brand.name}'s tournaments and special events, bringing the community together for friendly competition.`,
       avatar: {
         src: media["avatars.wizard"].src,
         alt: "Daniel Park",
@@ -603,7 +604,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Beyond cash prizes, winners will receive exclusive digital badges, custom profile features, and opportunities to contribute to official QuizHub content.",
+        text: `Beyond cash prizes, winners will receive exclusive digital badges, custom profile features, and opportunities to contribute to official ${brand.name} content.`,
       },
       {
         type: "image",
@@ -624,7 +625,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "To register, simply log in to your QuizHub account and visit the 'Championships' tab in the main menu. Basic participation is free, with optional premium features available for subscribers.",
+        text: `To register, simply log in to your ${brand.name} account and visit the 'Championships' tab in the main menu. Basic participation is free, with optional premium features available for subscribers.`,
       },
       {
         type: "heading",
@@ -825,7 +826,7 @@ export const newsData: readonly NewsArticle[] = [
     author: {
       name: "Ryan Zhang",
       role: "AI Product Specialist",
-      bio: "Ryan specializes in AI applications for content creation and helps develop QuizHub's AI-powered features.",
+      bio: `Ryan specializes in AI applications for content creation and helps develop ${brand.name}'s AI-powered features.`,
       avatar: {
         src: media["avatars.wizard"].src,
         alt: "Ryan Zhang",
@@ -958,7 +959,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "QuizHub now offers a suite of AI tools integrated directly into our platform. Premium and Business subscribers can access these features from the 'AI Assistant' tab in the quiz creation interface.",
+        text: `${brand.name} now offers a suite of AI tools integrated directly into our platform. Premium and Business subscribers can access these features from the 'AI Assistant' tab in the quiz creation interface.`,
       },
       {
         type: "paragraph",

@@ -25,7 +25,24 @@
  * winners, testimonials, tips) belong to the Player/Testimonial units, and this
  * file carries words, not rows.
  */
+import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
+
+/**
+ * The `/` document title — `"<brand> — Play, Share, Earn"`.
+ *
+ * `app/(mainlayout)/page.tsx` exports it as `metadata.title.absolute`, because this page
+ * names the product itself: the root layout's `%s · <brand>` template would otherwise
+ * print the name twice (`"<brand> — Play, Share, Earn · <brand>"`).
+ *
+ * A function of the brand, not a string, for the same reason the shell is: the title is
+ * the product's own name in front of the route's tagline, so a different record must
+ * print a different title with no `.tsx` edit. The tagline stays here, where the rest of
+ * the route's words live.
+ */
+export function homeTitle(brand: Pick<Brand, "name">): string {
+  return `${brand.name} — Play, Share, Earn`;
+}
 
 export const homePageCopy: PageCopy = zPageCopy.parse({
   heading: "Your Quiz Adventure Starts Here: \n Play, Share, Earn!",

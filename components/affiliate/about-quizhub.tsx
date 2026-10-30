@@ -1,6 +1,7 @@
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PageCopySection } from "@/content/pages";
+import { brand } from "@/data/brand";
 import { media } from "@/data/media";
 import { itemLabel, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
@@ -24,7 +25,7 @@ const STATS = [
   },
 ] as const;
 
-export function AboutQuizHub({ copy }: { copy: PageCopySection }) {
+export function AboutBrand({ copy }: { copy: PageCopySection }) {
   return (
     <section className="py-10 xl:py-20 sm:px-4 xl:px-8 bg-slate-50 dark:bg-slate-800 overflow-hidden">
       <div className="container px-4 mx-auto">
@@ -55,7 +56,7 @@ export function AboutQuizHub({ copy }: { copy: PageCopySection }) {
             <div className="relative z-10 rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700">
               <Image
                 src={media["about-affiliate"].src}
-                alt="QuizHub Platform"
+                alt={`${brand.name} Platform`}
                 width={600}
                 height={400}
                 className="w-full h-auto"

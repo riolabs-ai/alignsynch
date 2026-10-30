@@ -19,6 +19,7 @@
  * are coarse onboarding buckets, and rendering the 25-subject taxonomy here would be a
  * different product decision.
  */
+import { brand } from "../brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const registerPageCopy: PageCopy = zPageCopy.parse({
@@ -27,7 +28,7 @@ export const registerPageCopy: PageCopy = zPageCopy.parse({
   sections: [
     {
       id: "mobile",
-      heading: "Join QuizHub",
+      heading: `Join ${brand.name}`,
       body: "Create your account and start your quiz adventure",
     },
     {

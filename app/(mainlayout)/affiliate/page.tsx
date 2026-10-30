@@ -1,4 +1,4 @@
-import { AboutQuizHub } from "@/components/affiliate/about-quizhub";
+import { AboutBrand } from "@/components/affiliate/about-quizhub";
 import { AffiliateCta } from "@/components/affiliate/affiliate-cta";
 import { AffiliateFAQ } from "@/components/affiliate/affiliate-faq";
 import { AffiliateHero } from "@/components/affiliate/affiliate-hero";
@@ -28,7 +28,7 @@ export default function AffiliatePage() {
       <HowToStart copy={sectionOf(affiliatePageCopy, "how-to-start")} />
       <ProfitCalculator copy={sectionOf(affiliatePageCopy, "profit-calculator")} />
       <ProgramFeatures copy={sectionOf(affiliatePageCopy, "program-features")} />
-      <AboutQuizHub copy={sectionOf(affiliatePageCopy, "about-quizhub")} />
+      <AboutBrand copy={sectionOf(affiliatePageCopy, "about-quizhub")} />
       <WhyPartner copy={sectionOf(affiliatePageCopy, "why-partner")} />
       <AffiliateFAQ copy={sectionOf(affiliatePageCopy, "affiliate-faq")} />
       <SuccessStories copy={sectionOf(affiliatePageCopy, "success-stories")} />
