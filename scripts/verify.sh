@@ -28,9 +28,13 @@
 # GATE_LANE=full forces the code lane — use it after a dependency bump, a
 # tsconfig change, or any diff you do not trust the classifier with.
 #
-# CI resolves auto -> code on purpose: actions/checkout fetches one commit, so
-# there is no origin/main to diff against, and no evidence means no shortcut.
-# The lanes relieve local worker contention, which CI does not have.
+# CI classifies too, and only because it pays for the base ref: ci.yml checks
+# out full history and fetches origin/main, so GATE_REF resolves there (a
+# depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
+# logged "no origin/main to diff against — full gate (conservative)"). The
+# fallback is unchanged and stays conservative: no ref, or an empty diff — a
+# push to main, where HEAD *is* origin/main — means the full gate, because "I
+# could not tell what changed" is never evidence that a change is cheap.
 #
 # BUILD SEMAPHORE — the build is 90 % of the code lane, and eight workers each
 # compiling 34 routes took load average from ~6 to 39.5 on this 8-core box,
