@@ -37,6 +37,48 @@ export function searchSectionFor(copy: PageCopy, brandId: BrandId): PageCopySect
 }
 
 /**
+ * The footer's three brand-owned sections (issue #188, stage S3).
+ *
+ * The footer is chrome on every page, and three of its sentences are product vocabulary:
+ * the line under the wordmark, the street line in the contact block, and the newsletter
+ * pitch. Until this existed they were one string each in the shared fixture, so
+ * `BRAND=alignsynch` printed "quizzes", "quiz creators", "quiz tips" and "123 Quiz Street"
+ * in the footer of every page it served — copy no route budget could see and no link could
+ * reach.
+ *
+ * One call, three sections, one exhaustive switch: the ids are literal at the `sectionOf`
+ * call so E23 can see them, and a brand added to `data/brand.ts` without its three
+ * sections fails `tsc` on the `never` below rather than falling back to the quiz words.
+ * The *heading*, the field placeholder and the button are the same section pairs' shared
+ * halves — `footerContactFor`-style duplication would make the next brand a second copy of
+ * "Contact" — so callers read those ids out of the returned section, not out of a literal.
+ */
+export function footerCopyFor(
+  copy: PageCopy,
+  brandId: BrandId,
+): { brand: PageCopySection; contact: PageCopySection; newsletter: PageCopySection } {
+  switch (brandId) {
+    case "quizhub":
+      return {
+        brand: sectionOf(copy, "footer-brand"),
+        contact: sectionOf(copy, "footer-contact"),
+        newsletter: sectionOf(copy, "footer-newsletter"),
+      };
+    case "alignsynch":
+      return {
+        brand: sectionOf(copy, "footer-brand-alignsynch"),
+        contact: sectionOf(copy, "footer-contact-alignsynch"),
+        newsletter: sectionOf(copy, "footer-newsletter-alignsynch"),
+      };
+    default: {
+      // A brand added to `data/brand.ts` without footer words lands here and fails `tsc`.
+      const unhandled: never = brandId;
+      throw new Error(`no footer copy for brand ${String(unhandled)}`);
+    }
+  }
+}
+
+/**
  * The `/search` page's tabs, in the order the page renders them (issue #156 follow-up).
  *
  * `all` is first and always present; a group tab is listed only when the index the page was

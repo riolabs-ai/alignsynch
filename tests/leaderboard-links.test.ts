@@ -72,9 +72,13 @@ if (PROFILE === undefined) {
  */
 const SITES: readonly { site: string; html: (hiddenNav: readonly string[]) => string }[] = [
   {
+    // `brandId` is stated, not ambient: this file is about the quiz brand's Quick Links column,
+    // and a `BRAND=alignsynch pnpm test` (the matrix leg) must check the same row.
     site: "the footer",
     html: (hiddenNav) =>
-      renderToStaticMarkup(createElement(Footer, { copy: shellPageCopy, hiddenNav })),
+      renderToStaticMarkup(
+        createElement(Footer, { copy: shellPageCopy, hiddenNav, brandId: "quizhub" }),
+      ),
   },
   {
     site: "the demo profile",

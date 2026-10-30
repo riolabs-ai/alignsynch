@@ -637,6 +637,30 @@ export async function roleForToken(
 }
 
 /**
+ * The role a **signed-in account** is on one instance, or `undefined` (#183, part 2).
+ *
+ * The second way to be a party, beside the bearer token. `0005_demo_account.sql` gives a party
+ * `user_id`, and the demo panel signs in as a person rather than handing out a link, so the
+ * screen has to be able to answer "which party is this session" — otherwise a demo sign-in as
+ * Counterparty would land on a 404 and prove nothing about the blind rule.
+ *
+ * The token is still asked first (`readFlowScreen` below): a browser that carries the cookie
+ * keeps the identity the invitation gave it, and a session is the fallback, not an override.
+ * Both resolve to a `PartyRole` from Postgres; neither reads a claim out of the request.
+ */
+export async function roleForUser(
+  instanceRecordId: string,
+  userId: string | null | undefined,
+): Promise<PartyRole | undefined> {
+  if (userId === null || userId === undefined || userId === "") return undefined;
+  const [row] = await query<{ role: PartyRole }>(
+    "SELECT role FROM party WHERE instance_record_id = $1 AND user_id = $2",
+    [instanceRecordId, userId],
+  );
+  return row?.role;
+}
+
+/**
  * The screen for one viewer, or `undefined` when the browser is not a party to it.
  *
  * The opinions are read **after** the status is known, and only for the roles
@@ -648,8 +672,15 @@ export async function readFlowScreen(input: {
   token: string | undefined;
   /** The raw invitation token, held by the Initiator's own browser, if it still has it. */
   inviteToken?: string | null;
+  /**
+   * The signed-in account, when there is one (#183, part 2). Consulted only if the cookie
+   * resolved nothing, so an invited party keeps the identity its link gave it.
+   */
+  viewerUserId?: string | null;
 }): Promise<FlowScreen | undefined> {
-  const viewerRole = await roleForToken(input.instanceRecordId, input.token);
+  const viewerRole =
+    (await roleForToken(input.instanceRecordId, input.token)) ??
+    (await roleForUser(input.instanceRecordId, input.viewerUserId));
   if (viewerRole === undefined) return undefined;
 
   const bundle = await readInstanceBundle(input.instanceRecordId);

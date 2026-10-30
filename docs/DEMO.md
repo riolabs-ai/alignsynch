@@ -11,11 +11,13 @@ pnpm demo:reset        # reset `demo` from its parent, then reseed it from the b
 
 Three demo accounts (`initiator@`, `counterparty@`, `admin@demo.alignsynch.test`) are created by
 that reseed, through the demo branch's own sign-up endpoint — see
-[DEMO-AUTH.md](DEMO-AUTH.md) for the credentials' shape and how the role field works.
+[DEMO-AUTH.md](DEMO-AUTH.md) for the credentials' shape, how the role field works, and `/demo`,
+the PIN-gated panel that signs a browser in as one of them (`DEMO_AUTH=1` plus a `DEMO_PIN`;
+refused in production without `DEMO_ALLOW_PRODUCTION=1` as well).
 
 ## What a reset is
 
-Two operations, in this order, and nothing else:
+Three operations, in this order, and nothing else:
 
 1. **Reset the branch from its parent.** One call — `POST /projects/<id>/branches/<branch>/restore`
    with `source_branch_id` = the branch's parent, which is what `neon branches reset <branch>
@@ -23,7 +25,18 @@ Two operations, in this order, and nothing else:
    gone. A script of `DELETE`s would have as many half-finished states as it has statements, and
    one of them always looks like a valid demo until you read it.
 
-2. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
+   The reset brings the parent's **data** with it, and the parent is the live branch: it holds the
+   assessment rows the app creates at runtime (two people starting one is enough) and the accounts
+   that created them. Neither belongs in a public demo, so:
+
+2. **Empty the branch's content, in one transaction.** The six content tables, `user_profile`,
+   `demo_account` and `neon_auth`'s users go, in dependency order, inside one `BEGIN … COMMIT` on a
+   branch that is already valid. This is not the reset — the reset already happened, atomically —
+   and it is deliberately here rather than in `db-seed`, whose refusal to delete a row it did not
+   author is the right rule on **production** and the wrong one on a demo. A failure here rolls the
+   transaction back and leaves the parent's copy, which also serves.
+
+3. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
    `DEMO_AUTH=1`, pointed at _that branch's_ connection string and _that branch's_ auth host. The
    seed reads the bundle through the importer's own reader, asserts it is still the canonical export
    of `data/assessments.ts` (E32's rule, at the point of use), writes the six content tables and
@@ -35,23 +48,25 @@ The reset is the **only** bound on the demo. There is no session expiry and no T
 
 ## What it prints
 
-Row counts before the reset, after the reset, and after the reseed; then the six counts the bundle
-itself declares, compared against the branch; then a verdict. Measured on the real demo branch:
+Row counts before the reset, after the reset, after the emptying and after the reseed; then the six
+counts the bundle itself declares, compared against the branch; then a verdict. Measured on the real
+demo branch — its parent's copy carried 10 records (two of them created at runtime) and three real
+accounts, none of which survive:
 
 ```
-▶ before                                  ▶ after the reseed
-  record                       8            record                       8
-  item                         40           item                         40
-  response_option              0            response_option              0
-  assessment_instance          4            assessment_instance          4
-  party                        8            party                        8
-  opinion                      40           opinion                      40
-  demo_account                 3            demo_account                 3
+▶ before                    ▶ after the emptying        ▶ after the reseed
+  record                 10   record                  0   record                 8
+  item                   50   item                    0   item                  40
+  opinion                60   opinion                 0   opinion               40
+  party                  12   party                   0   party                  8
+  demo_account            0   demo_account            0   demo_account           3
+  neon_auth user          3   neon_auth user          0   neon_auth user         3
 
 ▶ the seeded rows against data/bundles/demo-dataset.alignsynch.json
   record                       8      bundle says 8
   …
   row-set     matches the bundle
+  accounts    3 demo account(s), one profile and one auth user each
 ```
 
 ## Running it
@@ -91,10 +106,14 @@ A failed reset leaves a branch that still serves, and the script says what it ho
 
 - **The reset itself fails** (bad key, API error, a refused target): nothing was written. The
   branch is exactly as it was.
-- **The reset lands and the reseed fails** (a bad origin, an auth endpoint that is down, a bundle
-  that drifted): the branch holds its parent's data with no demo accounts — valid, not half-wiped —
-  and the next run rebuilds it. `pnpm db:verify` against the branch is green in that state
-  (measured: `4 instance(s) checked, 4 template(s) resolved, no Gap column, no drift`).
+- **The emptying fails** (a lock, a connection dropped): the transaction rolls back, so the branch
+  is still the parent's copy — valid, just not yet the demo.
+- **The emptying lands and the reseed fails** (a bad origin, an auth endpoint that is down, a
+  bundle that drifted): the branch holds the schema and no rows — an empty demo, not a half-wiped
+  one — and the next run rebuilds it. `pnpm db:verify` against that state is green (measured on the
+  emptied branch: `0 instance(s) checked, 0 template(s) resolved, no Gap column, no drift`), and
+  green again on a branch holding the parent's copy (`4 instance(s) checked, 4 template(s)
+  resolved`).
 
 ## In CI
 
@@ -106,6 +125,11 @@ until it exists every scheduled run would be red, and a permanently red workflow
 learn to ignore. The first step decides, the rest is skipped with a notice and a summary, and the
 run concludes successfully. Add the secret under **Settings → Secrets and variables → Actions** to
 turn the reset on; the project id and branch name are passed by the workflow and are not secrets.
+
+The secret is set on this repository, so the job really runs. Its first run is what found the
+emptying step: the parent's head carried two assessment records the app had created at runtime and
+three real accounts, and `db-seed` refused the rows — correctly, because that refusal protects
+production. The demo's answer is step 2 above, not a looser seed.
 
 ## Promoting a bundle
 
