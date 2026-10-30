@@ -1,4 +1,3 @@
-import { notifications } from "@/data/notifications";
 import type { Notification } from "@/content/social";
 import type { PageCopySection } from "@/content/pages";
 import { formatRelative } from "@/content/core";
@@ -10,6 +9,13 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 type Props = {
   copy: PageCopySection;
+  /**
+   * The rows this brand's drawer shows — `notificationsFor(brandId)` reads them
+   * (`data/notifications.ts`). A brand with nothing behind the drawer (the alignment build)
+   * passes none, and the empty state below is the screen it draws rather than another
+   * product's events (issue #156 follow-up).
+   */
+  notifications: readonly Notification[];
   isNotificationsDrawerOpen: boolean;
   setIsNotificationsDrawerOpen: (isOpen: boolean) => void;
   handleNotificationClick: (notification: Notification) => void;
@@ -17,6 +23,7 @@ type Props = {
 };
 const NotificationDrawer = ({
   copy,
+  notifications,
   handleNotificationClick,
   isNotificationsDrawerOpen,
   markAllNotificationsAsRead,
@@ -29,15 +36,18 @@ const NotificationDrawer = ({
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="text-lg font-semibold">{copy.heading}</h2>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={markAllNotificationsAsRead}
-          >
-            <Check className="h-4 w-4" />
-            <span>{itemLabel(copy, "mark-all")}</span>
-          </Button>
+          {/* Nothing to mark when the drawer has no notification (the alignment build). */}
+          {notifications.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={markAllNotificationsAsRead}
+            >
+              <Check className="h-4 w-4" />
+              <span>{itemLabel(copy, "mark-all")}</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"

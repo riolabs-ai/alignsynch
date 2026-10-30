@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input";
 import type { SearchIndex } from "@/content/search";
 import { formatMetricValue } from "@/content/metrics";
 import type { PageCopy, PageCopySection } from "@/content/pages";
-import { recentMessages } from "@/data/chat-data";
+import { recentMessagesFor } from "@/data/chat-data";
 import type { BrandId } from "@/data/brand";
 import { metric } from "@/data/metrics";
-import { notifications } from "@/data/notifications";
+import { notificationsFor } from "@/data/notifications";
 import { querySearchIndex } from "@/content/search";
+import { type NavViewer, seesQuizProduct } from "@/lib/nav";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { searchSectionFor } from "@/lib/shell-copy";
 import {
@@ -48,10 +49,21 @@ import { useSidebar } from "./sidebar-context";
 export function Header({
   copy,
   brandId,
+  viewer,
   searchIndex,
 }: {
   copy: PageCopy;
   brandId: BrandId;
+  /**
+   * What the person looking at the header may see (`lib/nav.ts`, issue #156). The header is
+   * chrome on every route, and two of its pieces are the quiz product's: the wallet chip in the
+   * account row, and the account menu's quiz rows. None of them are deleted — the quiz brand
+   * renders exactly what it shipped (its brand *is* the product), and on the alignment brand a
+   * viewer carrying `quiz-surfaces` gets them back. `seesQuizProduct` is that decision, in one
+   * place, because a bare `sees(...)` here would have stripped the quiz build's own wallet
+   * (`navViewer()` grants nothing today).
+   */
+  viewer: NavViewer;
   /** The brand's own search catalog, built on the server (`data/searchdata.ts`). */
   searchIndex: SearchIndex;
 }) {
@@ -62,6 +74,15 @@ export function Header({
   const accountCopy = sectionOf(copy, "account");
   const notificationsCopy = sectionOf(copy, "notifications");
   const messagesCopy = sectionOf(copy, "messages");
+
+  /**
+   * The drawers' content for this brand (`data/chat-data.ts`, `data/notifications.ts`). Both
+   * fixtures are the quiz product's; the alignment build has nothing behind either drawer, so it
+   * gets empty lists and the drawers draw their own empty states instead of another product's
+   * conversations and badges (issue #156 follow-up).
+   */
+  const messages = recentMessagesFor(brandId);
+  const notifications = notificationsFor(brandId);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -125,7 +146,7 @@ export function Header({
   }, [isNotificationsDrawerOpen]);
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
-  const unreadMessagesCount = recentMessages.filter((m) => m.unread).length;
+  const unreadMessagesCount = messages.filter((m) => m.unread).length;
 
   const handleMessageClick = (conversationId: string) => {
     router.push(`/chat?conversation=${conversationId}`);
@@ -404,15 +425,33 @@ export function Header({
             )}
           </Button>
 
-          <Link
-            href="/dashboard/user?tab=wallet"
-            className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden"
-          >
-            <span className="text-sm font-medium">
-              {formatMetricValue(metric("dashboard.balance"))}
-            </span>
-            <span className="text-green-500">💰</span>
-          </Link>
+          {/*
+            The account row's first chip. On the quiz product it is the wallet balance and it
+            opens the quiz dashboard's wallet tab; an alignment visitor has no wallet there, and
+            `/dashboard/user` is that product's account home, so their chip is the brand's own
+            account route instead (`/settings`, in `lib/nav.ts`'s ALIGNMENT_ROUTES). Both routes
+            are session-gated; neither is deleted, and the elevated viewer keeps the wallet word
+            for word.
+          */}
+          {seesQuizProduct(brandId, viewer) ? (
+            <Link
+              href="/dashboard/user?tab=wallet"
+              className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden"
+            >
+              <span className="text-sm font-medium">
+                {formatMetricValue(metric("dashboard.balance"))}
+              </span>
+              <span className="text-green-500">💰</span>
+            </Link>
+          ) : (
+            <Link
+              href="/settings"
+              className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="text-sm font-medium">{itemLabel(accountCopy, "settings")}</span>
+            </Link>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -450,45 +489,56 @@ export function Header({
               <DropdownMenuSeparator />
 
               <div className="p-2">
-                <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                  <Link href="/profile/alexjohnson">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
-                      <User className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span>{itemLabel(accountCopy, "profile")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {itemLabel(accountCopy, "profile-hint")}
-                      </span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                  <Link href="/dashboard/user">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100">
-                      <TrendingUp className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span>{itemLabel(accountCopy, "dashboard")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {itemLabel(accountCopy, "dashboard-hint")}
-                      </span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                  <Link href="/my-quizzes">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
-                      <MessageCircleQuestion className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span>{itemLabel(accountCopy, "quizzes")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {itemLabel(accountCopy, "quizzes-hint")}
-                      </span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
+                {/*
+                  The account menu's three quiz rows: the demo creator's profile, the quiz
+                  dashboard and the quiz author's own list. They are the quiz product's
+                  destinations, so an alignment visitor does not get them — the Settings row
+                  below stays on both brands, because a preference page is an account action
+                  rather than a product surface.
+                */}
+                {seesQuizProduct(brandId, viewer) && (
+                  <>
+                    <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
+                      <Link href="/profile/alexjohnson">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
+                          <User className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span>{itemLabel(accountCopy, "profile")}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {itemLabel(accountCopy, "profile-hint")}
+                          </span>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
+                      <Link href="/dashboard/user">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100">
+                          <TrendingUp className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span>{itemLabel(accountCopy, "dashboard")}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {itemLabel(accountCopy, "dashboard-hint")}
+                          </span>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
+                      <Link href="/my-quizzes">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
+                          <MessageCircleQuestion className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span>{itemLabel(accountCopy, "quizzes")}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {itemLabel(accountCopy, "quizzes-hint")}
+                          </span>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
 
                 <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
                   <Link href="/settings">
@@ -530,6 +580,7 @@ export function Header({
       {/* Messages Drawer */}
       <ChatDrawer
         copy={messagesCopy}
+        messages={messages}
         setIsMessagesDrawerOpen={setIsMessagesDrawerOpen}
         isMessagesDrawerOpen={isMessagesDrawerOpen}
         handleMessageClick={handleMessageClick}
@@ -538,6 +589,7 @@ export function Header({
       {/* Notifications Drawer */}
       <NotificationDrawer
         copy={notificationsCopy}
+        notifications={notifications}
         handleNotificationClick={handleNotificationClick}
         isNotificationsDrawerOpen={isNotificationsDrawerOpen}
         markAllNotificationsAsRead={markAllNotificationsAsRead}

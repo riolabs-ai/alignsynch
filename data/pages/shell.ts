@@ -157,6 +157,48 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "view-all", label: 'View all results for "{query}"' },
         ],
       },
+      /**
+       * The `/search` page's tab strip (issue #156 follow-up).
+       *
+       * The strip is the same four groups the palette shows, filterable, and until now their
+       * names were written into `components/search/search-results.tsx` — which put "Quizzes"
+       * and "Categories" on the alignment build's page as tabs filtering 0 rows, because the
+       * index behind them (`searchIndexFor`) holds no quiz, category or creator there.
+       *
+       * A second section rather than more items on `search`/`search-alignsynch`: the palette's
+       * group headings and this page's tab labels are the same *groups* but not the same job —
+       * a palette heading over zero hits is never drawn (the header hides an empty group), a
+       * tab with a count is. The alignment build keeps the tab for the one group it has and
+       * drops the tabs for the groups it does not (`searchTabIds` in `lib/shell-copy.ts`), so
+       * the words below are only ever asked for by a brand that can show them.
+       */
+      {
+        id: "search-tabs",
+        items: [
+          { id: "all", label: "All Results ({count})" },
+          { id: "quizzes", label: "Quizzes ({count})" },
+          { id: "categories", label: "Categories ({count})" },
+          { id: "creators", label: "Creators ({count})" },
+          { id: "pages", label: "Pages ({count})" },
+        ],
+      },
+      /**
+       * The alignment build's tab words — the two tabs its index can fill.
+       *
+       * `all` is the same tab on both brands; `pages` is what `searchIndexFor` really holds on
+       * this build (the instances in `data/assessments.ts` and the three `ALIGNMENT_ROUTES`),
+       * and `search-alignsynch`'s `group-pages` already words that group the same way. There is
+       * no `quizzes`, `categories` or `creators` item: no tab renders them here, and a label
+       * for a filter with no rows behind it is the defect this section deletes rather than a
+       * word to translate.
+       */
+      {
+        id: "search-tabs-alignsynch",
+        items: [
+          { id: "all", label: "All Results ({count})" },
+          { id: "pages", label: "Assessments & pages ({count})" },
+        ],
+      },
       {
         id: "account",
         items: [
@@ -192,7 +234,11 @@ export function shellCopy(brand: Brand): PageCopy {
       {
         id: "messages",
         heading: "Recent Messages",
-        items: [{ id: "view-all", label: "View All" }],
+        items: [
+          { id: "view-all", label: "View All" },
+          { id: "empty-title", label: "No messages" },
+          { id: "empty-body", label: "Conversations will appear here." },
+        ],
       },
       {
         id: "footer-links",
