@@ -87,7 +87,7 @@ describe("the four templates, and the one nobody answered", () => {
 
     const blank = bySlug.get("blank-template");
     expect(blank?.link).toBeUndefined();
-    expect(blank?.note?.body).toContain("nobody has answered it");
+    expect(blank?.note?.body).toContain("Nobody has answered this template yet");
 
     // Every link the page draws names a slug the route can prerender.
     for (const template of model.templates.items) {
