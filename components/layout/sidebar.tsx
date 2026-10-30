@@ -1,5 +1,4 @@
 "use client";
-import { useWindowSize } from "@/hooks/use-window";
 import { cn } from "@/lib/utils";
 import type { PageCopy } from "@/content/pages";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -38,17 +37,26 @@ export function AppSidebar({ copy }: { copy: PageCopy }) {
   const nav = sectionOf(copy, "nav");
   const pathname = usePathname();
 
-  const { collapsed, setCollapsed } = useSidebar();
+  const { collapsed, mobileOpen, closeMobile } = useSidebar();
   const isActive = (path: string) => {
     return pathname === path || pathname.startsWith(`${path}/`);
   };
 
+  /**
+   * Closed is the CSS default below `xl` — off-canvas *and* `invisible` — so nothing
+   * bleeds through before hydration and the panel's links leave the tab order while it is
+   * dismissed; only `mobileOpen` slides it in. Desktop (`xl:`) is untouched by both
+   * classes, so the rail keeps its 250px/70px behaviour.
+   */
   return (
     <aside
+      id="app-sidebar"
       className={cn(
         "max-xl:fixed max-xl:top-0 max-xl:left-0 max-xl:h-full xl:sticky top-0 flex h-screen flex-col border-r bg-background transition-all duration-300",
         collapsed ? "w-[250px] xl:w-[70px]" : "w-[250px]",
-        collapsed ? "max-xl:-translate-x-full" : "max-xl:translate-x-0",
+        mobileOpen
+          ? "max-xl:visible max-xl:translate-x-0 max-xl:shadow-2xl"
+          : "max-xl:invisible max-xl:-translate-x-full",
       )}
     >
       <div
@@ -58,7 +66,12 @@ export function AppSidebar({ copy }: { copy: PageCopy }) {
           <BookOpen className="h-6 w-6 text-primary" />
           {!collapsed && <span className="text-xl font-bold">{copy.heading}</span>}
         </Link>
-        <button className="xl:hidden" onClick={() => setCollapsed(!collapsed)}>
+        <button
+          type="button"
+          className="xl:hidden"
+          onClick={closeMobile}
+          aria-label="Close navigation"
+        >
           <X className="size-5" />
         </button>
       </div>
@@ -181,18 +194,13 @@ interface NavItemProps {
 }
 
 function NavItem({ href, icon, label, active, nested = false }: NavItemProps) {
-  const { collapsed, setCollapsed } = useSidebar();
-  const { width } = useWindowSize();
-  const handleClick = () => {
-    if (width < 1280) {
-      setCollapsed(true);
-    }
-  };
+  const { collapsed, closeMobile } = useSidebar();
   if (collapsed) {
     return (
       <div className="relative group flex justify-center items-center">
         <Link
           href={href}
+          onClick={closeMobile}
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
             active ? "bg-indigo-500 text-white" : "hover:bg-accent hover:text-accent-foreground",
@@ -208,7 +216,7 @@ function NavItem({ href, icon, label, active, nested = false }: NavItemProps) {
   return (
     <Link
       href={href}
-      onClick={handleClick}
+      onClick={closeMobile}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 xl:py-2.5 text-sm font-medium transition-colors",
         active ? "bg-indigo-500 text-white" : "hover:bg-accent hover:text-accent-foreground",
