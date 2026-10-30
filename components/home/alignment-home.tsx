@@ -5,12 +5,18 @@ import Link from "next/link";
 /**
  * The AlignSynch front page, drawn — the other composition of `/` (issue #143).
  *
- * This file holds no words and no ids. Every string it prints arrives in the model
+ * This file holds no words. Every string it prints arrives in the model
  * (`lib/alignment-home.ts`), which joins `data/pages/home-alignsynch.ts` with
  * `data/assessments.ts`, and every colour and the mark arrive on the same object, read from
  * `data/brand.ts` — so a skin is a record, and this component cannot pick a palette or spell a
  * product name. `data:check` E23 counts the leaf literals in `components/home/**` and holds
  * them at 0; a sentence or a label typed here is a red build, not a review comment.
+ *
+ * The three anchor ids on the bands below (`questions`, `templates`, `families`) are the one
+ * thing it does name, because an anchor target is markup rather than copy (E23's
+ * `TECHNICAL_ATTRIBUTES`): the shell's AlignSynch menu links to `/#templates` and
+ * `/#questions` (issue #156), and `tests/nav-brand.test.ts` holds every `/#…` href to an `id`
+ * this page emits, so a band cannot be renamed out from under a link.
  *
  * The page is the product's argument in three bands, in this order: the two questions both
  * parties answer, the four templates that ask them, and the two families those templates cover.
@@ -94,7 +100,11 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800">
+      {/* The `#questions` band: "How it works" in the shell's nav points here. */}
+      <section
+        id="questions"
+        className="scroll-mt-24 space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800"
+      >
         {model.questions.heading && (
           <h2 className="text-2xl font-bold tracking-tight">{model.questions.heading}</h2>
         )}
@@ -133,7 +143,11 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800">
+      {/* The `#templates` band: "Templates" in the shell's nav points here. */}
+      <section
+        id="templates"
+        className="scroll-mt-24 space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800"
+      >
         {model.templates.heading && (
           <h2 className="text-2xl font-bold tracking-tight">{model.templates.heading}</h2>
         )}
@@ -197,7 +211,10 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         </ul>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800">
+      <section
+        id="families"
+        className="scroll-mt-24 space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800"
+      >
         {model.families.heading && (
           <h2 className="text-2xl font-bold tracking-tight">{model.families.heading}</h2>
         )}

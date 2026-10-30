@@ -78,6 +78,40 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "logout", label: "Logout" },
         ],
       },
+      /**
+       * The AlignSynch navigation (issue #156) — the alignment product's own destinations.
+       *
+       * It is a *second section in the same fixture*, not a second fixture: E23 resolves every
+       * `itemLabel()` a component asks for against the one instance this module exports, so a
+       * menu that only existed when `BRAND=alignsynch` would fail the gate that runs on the
+       * default brand. The view picks the section by brand (`components/layout/nav-menus.tsx`),
+       * and the words are here either way.
+       *
+       * Only destinations that exist today, and each one is honest:
+       *
+       *   Home         `/`               the alignment front page
+       *   Templates    the `#templates` band of `/` — the four records' own heading
+       *   How it works the `#questions` band of `/` — how the two questions are asked
+       *   Support      `/support`        the shell's existing support route, brand-projected
+       *
+       * There is no About: no route answers "about this company", and the closest thing
+       * (`/welcome`, the marketing page) is a landing page, not an About page. Pointing at
+       * either would be the wrong link this issue exists to delete, so the item is omitted
+       * rather than aimed somewhere it does not belong.
+       *
+       * `quiz-tools` is the heading over the quiz product's own menu, which an elevated viewer
+       * gets below the alignment menu (see `lib/nav.ts` for the capability and its stub).
+       */
+      {
+        id: "nav-alignsynch",
+        items: [
+          { id: "home", label: "Home" },
+          { id: "templates", label: "Templates" },
+          { id: "how-it-works", label: "How it works" },
+          { id: "support", label: "Support" },
+          { id: "quiz-tools", label: "Quiz tools" },
+        ],
+      },
       {
         id: "search",
         items: [
@@ -89,6 +123,36 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "group-categories", label: "Categories" },
           { id: "group-creators", label: "Creators" },
           { id: "group-pages", label: "Pages" },
+          { id: "count-quizzes", label: "{count} quizzes" },
+          { id: "view-all", label: 'View all results for "{query}"' },
+        ],
+      },
+      /**
+       * The alignment build's search words (issue #156).
+       *
+       * The header palette is chrome, so its placeholder is on every AlignSynch page, and it
+       * used to promise a search over quizzes on a page that has none. The words now match
+       * what the palette actually searches on this brand: the assessment *instances* in
+       * `data/assessments.ts` and the three pages an alignment visitor can reach
+       * (`lib/nav.ts`'s `ALIGNMENT_ROUTES`). `data/searchdata.ts` builds that index; the
+       * placeholder and the group heading below are its description.
+       *
+       * The ids are the `search` section's ids, so `components/layout/header.tsx` resolves the
+       * same ids against whichever section its brand selects and cannot ask for a label that
+       * only exists on one brand. The quiz groups are worded for the viewer who can still see
+       * them — an elevated viewer gets the quiz rows back under these headings.
+       */
+      {
+        id: "search-alignsynch",
+        items: [
+          { id: "placeholder", label: "Search assessments and pages..." },
+          { id: "hint", label: "Find an assessment by person or template, or a page by name." },
+          { id: "empty-title", label: 'No results found for "{query}"' },
+          { id: "empty-hint", label: "Try a different name — a template, a person, or a page." },
+          { id: "group-quizzes", label: "Quizzes" },
+          { id: "group-categories", label: "Categories" },
+          { id: "group-creators", label: "Creators" },
+          { id: "group-pages", label: "Assessments & pages" },
           { id: "count-quizzes", label: "{count} quizzes" },
           { id: "view-all", label: 'View all results for "{query}"' },
         ],
@@ -139,6 +203,23 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "leaderboard", label: "Leaderboard" },
           { id: "affiliate", label: "Affiliate Program" },
           { id: "pricing", label: "Pricing" },
+        ],
+      },
+      /**
+       * The AlignSynch footer's link column (issue #156) — the same destinations as the
+       * sidebar's `nav-alignsynch`, minus Home (a footer column whose first row is the page
+       * you are on is furniture, not navigation). The quiz Quick Links and the quiz subject
+       * column replace nothing here: on the alignment brand they are not rendered at all
+       * (`components/layout/footer.tsx` switches on the brand), and an elevated viewer gets
+       * them back below this column.
+       */
+      {
+        id: "footer-links-alignsynch",
+        heading: "Quick Links",
+        items: [
+          { id: "templates", label: "Templates" },
+          { id: "how-it-works", label: "How it works" },
+          { id: "support", label: "Support" },
         ],
       },
       {

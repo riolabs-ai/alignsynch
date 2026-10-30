@@ -1,7 +1,9 @@
 import { MainLayout } from "@/components/layout/main-layout";
-import { brand } from "@/data/brand";
+import { brand, brandIdOf } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
+import { searchIndexFor } from "@/data/searchdata";
 import { brandMark } from "@/lib/brand-mark";
+import { navViewer } from "@/lib/nav";
 import type React from "react";
 
 /**
@@ -15,14 +17,28 @@ import type React from "react";
  * the server and only the three fields `next/image` needs cross over. It is `undefined` for a
  * brand whose logo is a placeholder — see `lib/brand-mark.ts` — and the sidebar then draws the
  * icon it has always drawn.
+ *
+ * `brandId` and `viewer` are the navigation's two inputs (issue #156). The brand is a build
+ * flag, so the id — not the record — is what the client switch reads; `navViewer()` is the
+ * capability stub documented in `lib/nav.ts`, and **this is the line a role model replaces**:
+ * it becomes `navViewer(await currentUser())`, which is why it is resolved here, on the
+ * server, and never in the sidebar.
  */
 export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const brandId = brandIdOf(brand);
+  const viewer = navViewer();
   return (
-    <MainLayout copy={shellPageCopy} mark={brandMark(brand.logo)}>
+    <MainLayout
+      copy={shellPageCopy}
+      mark={brandMark(brand.logo)}
+      brandId={brandId}
+      viewer={viewer}
+      searchIndex={searchIndexFor(brandId, viewer)}
+    >
       {children}
     </MainLayout>
   );

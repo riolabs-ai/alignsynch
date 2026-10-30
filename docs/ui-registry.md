@@ -14,7 +14,7 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **39** — 25 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 222 files under `components/`, 218 of them `.tsx`
+- component domains: **32** — 223 files under `components/`, 219 of them `.tsx`
 - route handlers: **5** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 9 · **fixture** 50 · **db** 7 · **live** 5
 - templates: Both templates 19 · AlignSynch 8 · QuizHub 42 · No template yet 2
@@ -102,7 +102,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/layout` — **fixture**
   - capability: The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.
-  - files (5): `footer.tsx`, `header.tsx`, `main-layout.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
+  - files (6): `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
   - routes (7): `/`, `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/pricing`, `/tournaments` — and every other route through `app/layout.tsx`
 
 - `components/media` — **mock**
@@ -299,7 +299,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/search` — **fixture**
   - capability: Search the built index over quizzes and categories, rendering hits as quiz cards.
   - components: `components/search`, `components/ui`
-  - reads: 10 record fixtures — `data/authored-quizzes.ts`, `data/browse-quizzes.ts`, `data/categories.ts` (+7 more)
+  - reads: 11 record fixtures — `data/assessments.ts`, `data/authored-quizzes.ts`, `data/browse-quizzes.ts` (+8 more)
 
 - `/tournaments` — **fixture**
   - capability: Quiz tournaments: the featured championship, the full list, categories, how it works and a CTA.
