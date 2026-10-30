@@ -188,7 +188,7 @@ export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQP
     ],
     general: [
       {
-        question: "What is QuizHub ?",
+        question: "What is QuizHub?",
         answer:
           "QuizHub is an interactive platform where users can create, share, and take quizzes on various topics. It combines educational content with gamification elements, allowing creators to earn from their quizzes while players can win prizes and climb leaderboards.",
       },
@@ -198,14 +198,14 @@ export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQP
           "Sign up for a free account, then explore the platform by taking some featured quizzes. When you're ready to create your own, click 'Create' in the sidebar and follow the guided process. Check out the 'Creator Tips' section for advice on making engaging quizzes.",
       },
       {
-        question: "Is QuizHub  available on mobile devices?",
+        question: "Is QuizHub available on mobile devices?",
         answer:
-          "Yes, QuizHub  is fully responsive and works on all mobile browsers. We also offer dedicated apps for iOS and Android with additional features like offline quiz taking and push notifications for tournament reminders.",
+          "Yes, QuizHub is fully responsive and works on all mobile browsers. We also offer dedicated apps for iOS and Android with additional features like offline quiz taking and push notifications for tournament reminders.",
       },
       {
-        question: "Can I use QuizHub  for educational purposes?",
+        question: "Can I use QuizHub for educational purposes?",
         answer:
-          "Many educators use QuizHub  to create engaging learning materials. We offer special educational accounts with features like student progress tracking, classroom management, and the ability to align quizzes with curriculum standards.",
+          "Many educators use QuizHub to create engaging learning materials. We offer special educational accounts with features like student progress tracking, classroom management, and the ability to align quizzes with curriculum standards.",
       },
       {
         question: "How do I contact customer support?",

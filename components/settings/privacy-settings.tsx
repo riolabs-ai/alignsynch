@@ -64,7 +64,7 @@ export function PrivacySettings() {
       <div>
         <h3 className="text-lg font-medium">Privacy Settings</h3>
         <p className="text-sm text-muted-foreground">
-          Control your privacy and how your information is shared on QuizHub .
+          Control your privacy and how your information is shared on QuizHub.
         </p>
       </div>
 
@@ -216,7 +216,7 @@ export function PrivacySettings() {
       <Card>
         <CardHeader>
           <CardTitle>Data Privacy</CardTitle>
-          <CardDescription>Control how your data is used on QuizHub .</CardDescription>
+          <CardDescription>Control how your data is used on QuizHub.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">

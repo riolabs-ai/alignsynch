@@ -46,7 +46,7 @@ export function WhyPartner({ copy }: { copy: PageCopySection }) {
   const testimonials = [
     {
       quote:
-        "I've been part of many affiliate programs, but QuizHub 's stands out with its high commission rates and reliable tracking. I've earned over $5,000 monthly since joining.",
+        "I've been part of many affiliate programs, but QuizHub's stands out with its high commission rates and reliable tracking. I've earned over $5,000 monthly since joining.",
       author: "Sarah Johnson",
       role: "Educational Content Creator",
       image: media["avatars.sarah"].src,
