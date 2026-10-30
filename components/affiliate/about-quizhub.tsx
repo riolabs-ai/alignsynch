@@ -59,7 +59,7 @@ export function AboutBrand({ copy }: { copy: PageCopySection }) {
                 className="w-full h-auto"
                 height={400}
                 kind={FALLBACK_KIND.illustration}
-                seed="about-affiliate"
+                seed={brand.domain}
                 width={600}
               />
             </div>
