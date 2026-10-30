@@ -75,10 +75,9 @@ export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
                       <Media
                         alt=""
                         className="w-full object-cover size-full"
-                        entry={entryOf(media["card-cover"])}
+                        entry={media["card-cover"]}
                         height={400}
                         kind={FALLBACK_KIND.background}
-                        seed="card-cover"
                         width={340}
                       />
                       {/* Avatar */}
