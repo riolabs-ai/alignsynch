@@ -9,7 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { formatMetricValue } from "@/content/metrics";
 import type { PageCopy } from "@/content/pages";
 import { recentMessages } from "@/data/chat-data";
@@ -27,7 +26,6 @@ import {
   Menu,
   MessageCircleQuestion,
   MessageSquare,
-  Moon,
   PanelLeftClose,
   PanelRightClose,
   Search,
@@ -37,13 +35,11 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import ChatDrawer from "../header/ChatDrawer";
 import NotificationDrawer from "../header/NotificationDrawer";
-import { ThemeToggle } from "../header/ThemeToggle";
 import { Badge } from "../ui/badge";
 import { useSidebar } from "./sidebar-context";
 import { media } from "@/data/media";
@@ -54,12 +50,10 @@ export function Header({ copy }: { copy: PageCopy }) {
   // (E23) and a blank header would be the alternative.
   const searchCopy = sectionOf(copy, "search");
   const accountCopy = sectionOf(copy, "account");
-  const themeCopy = sectionOf(copy, "theme");
   const notificationsCopy = sectionOf(copy, "notifications");
   const messagesCopy = sectionOf(copy, "messages");
 
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const router = useRouter();
   const { toggleCollapsed, collapsed, toggleMobile, mobileOpen } = useSidebar();
   const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
@@ -400,8 +394,6 @@ export function Header({ copy }: { copy: PageCopy }) {
             )}
           </Button>
 
-          <ThemeToggle label={itemLabel(themeCopy, "toggle")} />
-
           <Link
             href="/dashboard/user?tab=wallet"
             className="flex items-center gap-2 rounded-full border px-3 py-1.5 max-sm:hidden"
@@ -498,24 +490,6 @@ export function Header({ copy }: { copy: PageCopy }) {
                       </span>
                     </div>
                   </Link>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem className="flex items-center justify-between p-3">
-                  <div className="flex gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100">
-                      <Moon className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span>{itemLabel(accountCopy, "dark-mode")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {itemLabel(accountCopy, "dark-mode-hint")}
-                      </span>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={theme === "dark"}
-                    onCheckedChange={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  />
                 </DropdownMenuItem>
               </div>
 
