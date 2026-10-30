@@ -205,10 +205,12 @@ process bug.
   catalogs survived two migrations.
 - **`public/category/*.webp` are placeholders:** all 23 files are the same 1536×1024 PNG stamped
   with its own dimensions. Category art is a content task, not a styling bug.
-- `pnpm data:check` prints **98** warnings and no errors on the current tree: `W1` 24 (a published
-  record with no questions), `W2` 42 (no `publishedAt`), `W4` 32 (a prize with no window); `W3`/`W5`
-  are 0. No date, question or window is invented to silence one — the census and the reason each
-  survives are in `docs/p1-migration/MIGRATION.md`.
+- `pnpm data:check` prints **0** warnings and no errors on the current tree. It printed 98 before
+  #124 repaired the published fixtures (`W1` 24 — a published record with no questions; `W2` 42 — no
+  `publishedAt`; `W4` 32 — a prize with no window); every published quiz now carries its questions, a
+  date and a reward window, so the census is empty and `W3`/`W5` were already 0. From here a non-zero
+  `W` count is a regression, not the baseline: no date, question or window is invented to silence one,
+  and the record of what each repair changed is in `docs/p1-migration/MIGRATION.md`.
 - 231 lint warnings / 12 infos are the current baseline. Compare counts, not vibes: a new warning is a
   regression even though `pnpm lint` exits 0.
 - Stop `pnpm dev` before `pnpm build` — both write `.next/` and a concurrent run corrupts it.
