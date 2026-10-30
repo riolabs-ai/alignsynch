@@ -186,8 +186,10 @@ describe("shell projection — the product name comes from the brand", () => {
   });
 
   it("prints the record's support address in every block that prints one", () => {
+    // The header's account block used to be one of these (`display-email`) — it printed the
+    // brand's support mailbox as if it were the signed-in person's own address. Since #212 that
+    // block prints the session's address, so the two footer bands are the blocks that print one.
     const blocks: { section: string; id: string }[] = [
-      { section: "account", id: "display-email" },
       { section: "footer-contact", id: "email" },
       { section: "footer-contact-alignsynch", id: "email" },
     ];

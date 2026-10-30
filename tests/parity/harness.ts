@@ -150,6 +150,14 @@ export async function renderRoute(
         )
   ) as React.ReactNode;
 
+  // The layout is awaited for the same reason, and it became `async` in #212: the shell renders
+  // the signed-in person, which the layout resolves from the request before it hands the header
+  // its props. `shellAccount()` answers `null` here — this process has no auth environment and no
+  // request, which is the shell's signed-out state — so the snapshot is the same on every run.
+  const shell = (await (
+    Layout as unknown as (props: { children: React.ReactNode }) => Promise<React.ReactNode>
+  )({ children: body })) as React.ReactElement;
+
   return await renderToHtml(
     React.createElement(
       "div",
@@ -160,11 +168,7 @@ export async function renderRoute(
       React.createElement(
         SidebarProvider as unknown as React.ComponentType<{ children: React.ReactNode }>,
         null,
-        React.createElement(
-          Layout as unknown as React.ComponentType<{ children: React.ReactNode }>,
-          null,
-          body,
-        ),
+        shell,
       ),
     ),
   );
