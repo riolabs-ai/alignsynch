@@ -6,7 +6,7 @@ Each entry names the file its prose came from.
 
 ## Record
 
-id, slug, type, status, date — the post.
+id, slug, type, status, date — the record.
 
 Source: [content/record.ts](../content/record.ts).
 
