@@ -1,5 +1,5 @@
 /**
- * `/login` — the sign-in page's copy (WU-7, issue #54).
+ * `/login` — the sign-in page's copy (WU-7, issue #54; brand-selected by issue #225).
  *
  * The route's surface is `app/(auth)/login/page.tsx` (a server module that parses this
  * fixture) plus `components/auth/login-view.tsx`, which is the client component that
@@ -8,46 +8,109 @@
  * `sign-in` is the card; the root `heading`/`subtitle` are the illustration panel beside
  * it. The trailing space after `signup-prompt` is the view's (`{" "}`), not this
  * fixture's: a label with an invisible trailing space is a fixture nobody can review.
+ *
+ * ## Two brands, one card (issue #225)
+ *
+ * The card is shared — its field labels, its error states and its two buttons are the
+ * product's, not a skin's — so only the sentences that *are* the brand get a second
+ * section. `hero-alignsynch` and `sign-in-alignsynch` carry the alignment build's words
+ * and `lib/auth-copy.ts::loginCopyFor` merges each into the shared section, so the view
+ * resolves one set of ids either way. The quiz build's fields stay page-level and are
+ * byte for byte what shipped.
+ *
+ * ## The two tiles hold statements, not statistics
+ *
+ * The quiz build's tiles are a count (`platform.activePlayers`, which the view formats
+ * from `data/metrics.ts`) and the category total. The alignment build's two tiles are
+ * **sentences**: two people, one set of questions, the distance between the answers is
+ * the Gap. There is no number to put there and nothing on this page may invent one — a
+ * smaller count, a `0` or a dash would each be a fabricated claim about a product whose
+ * demo has three accounts. So `stats-alignsynch` carries no `{count}` placeholder, and
+ * the view fills one only where a fixture asks for it.
  */
-import { brand } from "../brand";
+import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { brand } from "../brand";
 
-export const loginPageCopy: PageCopy = zPageCopy.parse({
-  heading: `Welcome to ${brand.name}`,
-  subtitle: "Challenge your mind with thousands of engaging quizzes across multiple categories",
-  sections: [
-    {
-      id: "sign-in",
-      heading: "Welcome Back",
-      body: "Sign in to continue your quiz journey",
-      items: [
-        { id: "email", label: "Email" },
-        { id: "email-placeholder", label: "Enter your email" },
-        { id: "password", label: "Password" },
-        { id: "password-placeholder", label: "Enter your password" },
-        { id: "remember", label: "Remember me" },
-        { id: "forgot", label: "Forgot password?" },
-        { id: "submit", label: "Sign In" },
-        { id: "pending", label: "Signing in…" },
-        { id: "error-invalid-credentials", label: "Invalid email or password" },
-        { id: "error-network", label: "Couldn't reach the server. Check your connection." },
-        {
-          id: "error-origin",
-          label:
-            "This site's address isn't authorised to sign in. Open the app at the address it was set up for.",
-        },
-        { id: "error-unknown", label: "Something went wrong. Sign in again." },
-        { id: "error-required", label: "Enter your email and password." },
-        { id: "signup-prompt", label: "Don't have an account?" },
-        { id: "signup-action", label: "Sign up here" },
-      ],
-    },
-    {
-      id: "stats",
-      items: [
-        { id: "players", label: "Active Players" },
-        { id: "categories", label: "Quiz Categories" },
-      ],
-    },
-  ],
-});
+export function loginCopy(record: Pick<Brand, "name">): PageCopy {
+  return zPageCopy.parse({
+    heading: `Welcome to ${record.name}`,
+    subtitle: "Challenge your mind with thousands of engaging quizzes across multiple categories",
+    sections: [
+      /**
+       * The illustration panel's sentence, for the alignment build only: the heading above
+       * is `Welcome to <brand>` and is true of both. `loginCopyFor` puts this where
+       * `subtitle` sits, so the panel has one paragraph either way.
+       */
+      {
+        id: "hero-alignsynch",
+        body: "The same questions for both of you. Where your answers part is the Gap, and the Gap is the conversation worth having.",
+      },
+      {
+        id: "sign-in",
+        heading: "Welcome Back",
+        body: "Sign in to continue your quiz journey",
+        items: [
+          { id: "email", label: "Email" },
+          { id: "email-placeholder", label: "Enter your email" },
+          { id: "password", label: "Password" },
+          { id: "password-placeholder", label: "Enter your password" },
+          { id: "remember", label: "Remember me" },
+          { id: "forgot", label: "Forgot password?" },
+          { id: "submit", label: "Sign In" },
+          { id: "pending", label: "Signing in…" },
+          { id: "error-invalid-credentials", label: "Invalid email or password" },
+          { id: "error-network", label: "Couldn't reach the server. Check your connection." },
+          {
+            id: "error-origin",
+            label:
+              "This site's address isn't authorised to sign in. Open the app at the address it was set up for.",
+          },
+          { id: "error-unknown", label: "Something went wrong. Sign in again." },
+          { id: "error-required", label: "Enter your email and password." },
+          { id: "signup-prompt", label: "Don't have an account?" },
+          { id: "signup-action", label: "Sign up here" },
+        ],
+      },
+      /**
+       * The same card's one line of description, for the alignment build. `loginCopyFor`
+       * merges it into `sign-in` rather than the fixture declaring a second card: a
+       * section pair would duplicate fifteen field labels, and two copies of a label is
+       * two places a typo can hide.
+       */
+      {
+        id: "sign-in-alignsynch",
+        body: "Sign in to see your assessments.",
+      },
+      {
+        id: "stats",
+        items: [
+          /**
+           * `{count}` is the view's (`fillLabel`): the number is
+           * `data/metrics.ts::platform.activePlayers` and `content/metrics.ts` decides its
+           * shape, so it is never typed here. The `+` is the fixture's — punctuation on
+           * the claim, not part of the measurement.
+           */
+          { id: "players", label: "Active Players", value: "{count}+" },
+          /** Carried verbatim from the view this fixture replaced (WU-7). */
+          { id: "categories", label: "Quiz Categories", value: "500+" },
+        ],
+      },
+      /**
+       * The alignment build's two tiles: statements, in the slots the quiz build fills
+       * with a count. No placeholder, no number, no dash — both parties answer the same
+       * questions, and the Gap is the distance between their answers.
+       */
+      {
+        id: "stats-alignsynch",
+        items: [
+          { id: "sides", label: "One set of questions", value: "Two answers" },
+          { id: "gap", label: "The distance between them", value: "The Gap" },
+        ],
+      },
+    ],
+  });
+}
+
+/** The instance the build ships: this fixture, for the brand `BRAND` selected. */
+export const loginPageCopy: PageCopy = loginCopy(brand);
