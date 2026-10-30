@@ -4,11 +4,12 @@ One typed model: `content/*.ts` zod schemas are the single source of truth; type
 every `data/*` fixture is validated at build by `pnpm data:check` (134 tests, exit 0). A drift is a
 red build. `content/` has no React/Next import. Full history: docs/p1-migration/MIGRATION.md.
 
-## Inventory — every `data/*` module → entity (62 quizzes · 9 news · 6 tips · 8 kb · 5 contacts · 5 conv · 6 notifs)
+## Inventory — every `data/*` module → entity (62 quizzes · 1 assessment template + 1 instance · 9 news · 6 tips · 8 kb · 5 contacts · 5 conv · 6 notifs)
 
 | module                      | entity (count)                                                           | storage / view                        |
 | --------------------------- | ------------------------------------------------------------------------ | ------------------------------------- |
 | data/quizzes.ts             | Quiz ×62 (mock 20 + currentQuiz 1 + created 5 + authored 16 + browse 20) | THE one list; `quizById`/`quizBySlug` |
+| data/assessments.ts         | Assessment ×1 template + AssessmentInstance ×1 (two parties)             | storage (record model, issue #128)    |
 | data/mock-quizzes.ts        | Quiz ×20 generator templates (draft, private)                            | storage                               |
 | data/currentQuiz.ts         | Quiz ×1 playable                                                         | storage                               |
 | data/created-quizzes.ts     | Quiz ×5 (§7; published, no questions)                                    | storage                               |
@@ -41,6 +42,36 @@ Demoted to views, not retired: `quiz-catalogue.ts` (was a 40-record second colle
 - `ImageRef`/`PersonRef` — primitives; no JSX / `StaticImageData` in data.
 - `SearchIndex`/`RouteManifest` — derived / declarative; never authored.
 
+## The record — one root content type, two templates (issue #128)
+
+A quiz and an assessment are both **records**. `content/record.ts` is the shared shape, beside
+`content/core.ts`: a record holds **items**, an item carries a **response scale**, and a response is
+a value on that scale. Neither template imports the other — `content/quiz.ts` and
+`content/assessment.ts` both import `content/record.ts`, so a field one template owns can never leak
+into the other.
+
+- `Record` — `id`, `slug`, `type`, `status`, `date`, `title`, `summary`. The post. `type` is
+  `quiz | assessment | article` (a database column may be `record_type`; the model's word is `type`).
+- `Template` — a `Record` that holds `items` and **has no parties**: `strict()` rejects a `parties`
+  key, so an instance can never be mistaken for its template.
+- `Item` — `id`, `prompt`, `scale`. A question, an Aspect. `scale` is a discriminated union:
+  `{kind: "options", options: [{id, text}]}` (a response is an option id) or
+  `{kind: "score", min: 1, max: 5}` (a response is a score). `isResponseOn(scale, response)` is the
+  one place the pair is compared.
+- `Gap` — a difference of Opinion. **A function, never a field**: `gapOf(left, right)` is
+  `|left − right|`, 0 (In Synch) to 4. No record carries a gap, so no copy can drift from the scores
+  it was computed from. The eight gap _types_ the glossary names are not modelled here.
+- `Assessment` (`content/assessment.ts`) — `Template` + `Aspect` items + `zOpinions`. An `Aspect` is an
+  `Item` with a fixed 1..5 scale and the two named ends `leftValue` (notch 1) / `rightValue` (notch 5).
+  A party answers two to four opinions per Aspect: `feel` + `wish` required (Basic), `think` + `guess`
+  optional **as a pair** (Advanced). The schema allows all four; it computes none of them.
+- `AssessmentInstance` — the template **copied** and given two parties (`initiator`, `counterparty`),
+  each answering every Aspect exactly once. The copy is a copy: E31 fails one that drifted.
+- `Quiz` — still a `Quiz`, and now provably a record: `quizAsTemplate(quiz)` projects it to a
+  `Template` and `zQuiz`'s refinement rejects a quiz that projection cannot express (that is what keeps
+  "both are records" a check instead of a sentence). `correctOptionId` and the score stay on the quiz;
+  the record has no notion of a right answer.
+
 ## Invariants (`data:check`; E = hard, W = declared drift — each names its proving test)
 
 | code        | invariant                                                                                                                                                                          | proven by                                                                        |
@@ -60,6 +91,7 @@ Demoted to views, not retired: `quiz-catalogue.ts` (was a 40-record second colle
 | E13         | every analytics key names a real quiz record                                                                                                                                       | data-check.ts analytics check                                                    |
 | E14/E15/E16 | promotion join+identity; window and prize; one quiz advertises one set of numbers (issue #27 called these E11–E13; those codes were taken)                                         | data-check-promotions.ts; promotion.test.ts / promotion-invariants.test.ts       |
 | E28/E30     | promotion slot is a position a shelf renders; promotion window covers the fixture clock (`startsAt <= DEMO_NOW_ISO < effective end`, issue #110)                                   | data-check-promotions.ts; promotion-invariants.ts / promotion-slots.test.ts      |
+| E31         | an assessment instance names a template that exists and its Aspects are that template's Aspects — a copy that drifted is not a copy (issue #128)                                   | data-check.ts `instanceTemplateProblems`; record-model.test.ts                   |
 | W1          | published quiz, no questions — 0 (was 24: the 5 `CreatedQuiz` records + 19 browse cards, repaired from the generator templates in `data/question-templates.ts`)                    | data-check.ts warn                                                               |
 | W2          | published quiz, no `publishedAt` — 0 (was 42; each record takes its own `stats.updatedAt`/`createdAt`, else `DEMO_NOW_ISO`)                                                        | data-check.ts warn                                                               |
 | W3          | renderable quiz category with neither `image` nor `iconKey` — 0: `content/categories.ts` (science/history/art carry `iconKey` only)                                                | data-check.ts `assertRenderableCategories`                                       |
@@ -69,10 +101,10 @@ Demoted to views, not retired: `quiz-catalogue.ts` (was a 40-record second colle
 
 ## Strictness
 
-| object                                                                                                                                                                                    | mode                   | unknown key                                          |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------- |
-| every `z*` schema in `content/` (Quiz, Question, QuizStats, QuizPromotion, Category, ContentBlock, Article, Contact, Message, Conversation, Notification, SearchIndex rows, RoutePattern) | strict                 | reject — validation error                            |
-| legacy input interfaces `content/blocks.ts` (`LegacyNewsSection`, `LegacyKbSection`)                                                                                                      | n/a (boundary adapter) | not parsed; converted losslessly to `ContentBlock[]` |
+| object                                                                                                                                                                                                                                                              | mode                   | unknown key                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------- |
+| every `z*` schema in `content/` (Quiz, Question, QuizStats, QuizPromotion, Category, ContentBlock, Article, Contact, Message, Conversation, Notification, Record, Item, Template, Assessment, Aspect, Opinions, AssessmentInstance, SearchIndex rows, RoutePattern) | strict                 | reject — validation error                            |
+| legacy input interfaces `content/blocks.ts` (`LegacyNewsSection`, `LegacyKbSection`)                                                                                                                                                                                | n/a (boundary adapter) | not parsed; converted losslessly to `ContentBlock[]` |
 
 `featured` is omit-or-true: `featured: false` is unrepresentable. No object is passthrough.
 

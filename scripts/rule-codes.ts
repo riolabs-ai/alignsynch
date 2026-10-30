@@ -135,6 +135,13 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
       E29: "every `<Image>` has exactly one size source, and never `fill` beside `width`/`height`",
     },
   },
+  {
+    owner: "the record model — one record type, two templates (issue #128)",
+    files: ["data-check.ts"],
+    codes: {
+      E31: "an assessment instance names a template that exists, and its Aspects are that template's Aspects — a copy that drifted is not a copy",
+    },
+  },
 ];
 
 /**

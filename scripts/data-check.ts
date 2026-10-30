@@ -17,6 +17,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { createRequire } from "node:module";
 
+import { instanceTemplateProblems, zAssessment, zAssessmentInstance } from "../content/assessment";
 import { zArticleCollection, zKbArticle, zNewsArticle, zTip } from "../content/article";
 import {
   assertCategoryScopes,
@@ -53,6 +54,7 @@ import {
   type RouteResolution,
 } from "../content/social";
 import { DEMO_NOW_ISO } from "../content/core";
+import { assessmentInstances, assessments } from "../data/assessments";
 import { categories as quizCategoryRows } from "../data/categories";
 import { contacts as modelContacts, conversations as modelConversations } from "../data/chat-data";
 import { categories as tipCategoryTable, tips } from "../data/creator-tips-data";
@@ -200,6 +202,17 @@ const notificationRecords = validateCollection("E0", "notification", zNotificati
   ...notifications,
 ]);
 
+/**
+ * The record model's two template collections (issue #128). An assessment is a
+ * template — Items, no parties; an instance is that template copied and given two
+ * parties, so the Opinions live on the instance. Neither carries a Gap: the Gap is
+ * `gapOf(one, other)` over two scores, and there is no field to drift.
+ */
+const assessmentRecords = validateCollection("E0", "assessment", zAssessment, [...assessments]);
+const instanceRecords = validateCollection("E0", "assessment instance", zAssessmentInstance, [
+  ...assessmentInstances,
+]);
+
 /* the whole taxonomy table, in one pass */
 const categoryTable: readonly Category[] = taxonomyTable;
 const parsedTable = zCategories.safeParse(categoryTable);
@@ -293,6 +306,42 @@ assertUnique(
   (row) => `${row.kind}/${row.slug}`,
 );
 assertUnique("E1", "category ids", categoryTable, (row) => row.id);
+
+/**
+ * The record model's identity rules (issue #128). A record's id is globally unique
+ * like every other content id, and `type/slug` is its URL identity — `type` is the
+ * field the lexicon names, so the rule reads the field the model reads instead of
+ * re-deriving a `kind` for it.
+ */
+assertUnique(
+  "E1",
+  "all record ids",
+  [...allQuizzes, ...assessmentRecords, ...instanceRecords],
+  (row) => row.id,
+);
+assertUnique("E2", "assessment slugs", assessmentRecords, (row) => `${row.type}/${row.slug}`);
+assertUnique(
+  "E2",
+  "assessment instance slugs",
+  instanceRecords,
+  (row) => `${row.type}/${row.slug}`,
+);
+
+/* ------------------------------------------------------------------ *
+ * E31 — an instance is a copy of a template, and that template resolves
+ *
+ * A template is copied and given parties; the instance holds the copy. Two things
+ * can go wrong without any single record being invalid: the template it names is not
+ * in the collection (a rename that forgot the instances), or the copy has drifted
+ * (an Aspect edited on one side only). Either way the parties are answering Aspects
+ * nobody else holds, and nothing renders the difference — so it fails here, against
+ * the collection, via `instanceTemplateProblems` (content/assessment.ts), which is
+ * pure so the negative case can violate it without a filesystem.
+ * ------------------------------------------------------------------ */
+
+for (const problem of instanceTemplateProblems(assessmentRecords, instanceRecords)) {
+  err("E31", problem);
+}
 
 /* ------------------------------------------------------------------ *
  * E3 — the collections the UI joins on
@@ -1379,6 +1428,7 @@ const deadLinks = notificationRecords.filter((record) => !resolveRoute(record.li
 const counts = [
   `${quizzes.length} quizzes`,
   `${questionOwners.size} questions`,
+  `${assessmentRecords.length} assessment${assessmentRecords.length === 1 ? "" : "s"}, ${instanceRecords.length} assessment instance${instanceRecords.length === 1 ? "" : "s"}`,
   `${news.length} news`,
   `${tipRecords.length} tips`,
   `${kbRecords.length} kb`,

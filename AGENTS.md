@@ -106,11 +106,14 @@ process bug.
 
 ## Layout
 
-- `content/` — schemas (`quiz`, `article`, `blocks`, `category`, `categories`, `social`, `search`,
-  `routes`) and the derivations over them. **Never import React or Next here**: `data:check`
+- `content/` — schemas (`quiz`, `record`, `assessment`, `article`, `blocks`, `category`, `categories`,
+  `social`, `search`, `routes`) and the derivations over them. `record.ts` is the one root content
+  type (a quiz and an assessment are both records); `quiz.ts` and `assessment.ts` import it and never
+  each other. **Never import React or Next here**: `data:check`
   compiles it with `tsconfig.datacheck.json` into `.datacheck/` and runs it under plain node.
-- `data/` — the fixture modules (quizzes, promotions, news, tips, kb, social, notifications, search,
-  current quiz, categories). Card shapes are projections (`selectQuizCard`), never authored arrays;
+- `data/` — the fixture modules (quizzes, assessments, promotions, news, tips, kb, social,
+  notifications, search, current quiz, categories). Card shapes are projections (`selectQuizCard`),
+  never authored arrays;
   a per-slot campaign is an engagement-only overlay (`data/promotions.ts`), never a second record.
 - `scripts/data-check.ts` — the validator: per-record schema pass, then collection invariants
   E0–E21 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
