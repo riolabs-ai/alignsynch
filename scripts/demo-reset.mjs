@@ -2,7 +2,7 @@
 /**
  * `pnpm demo:reset` — the demo branch, back to the demo dataset (#185).
  *
- * The demo is one Neon branch (`demo`) whose parent is the project's default branch. Two
+ * The demo is one Neon branch (`demo`) whose parent is the project's default branch. Three
  * operations, in this order, and nothing else:
  *
  *   1. **Reset the branch from its parent.** One API call — `POST …/branches/<id>/restore`
@@ -12,7 +12,15 @@
  *      has as many half-finished states as it has statements, and one of them always looks like
  *      a valid demo until you read it.
  *
- *   2. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
+ *   2. **Empty the branch's content, in one transaction** (`resetContent`). The reset brings the
+ *      parent's *data* with it, and the parent is the live branch: it holds the rows the app
+ *      created at runtime and the accounts that created them. A demo holds the bundle and the
+ *      three accounts, nothing else — so they go, and they go inside one transaction on a branch
+ *      that is already valid. This is not the reset (see the comment on `resetContent`): it is
+ *      the demo's content contract, and it is deliberately here rather than in `db-seed`, whose
+ *      refusal to delete un-authored rows is the right rule on the production branch.
+ *
+ *   3. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
  *      branch's* connection string and *this branch's* auth host. The seed reads
  *      `data/bundles/demo-dataset.alignsynch.json` as the bundle it is (asserting it is still
  *      the canonical export), writes the six content tables, and creates the three demo
@@ -377,7 +385,6 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 /* ------------------------------------------------------------------ *\
  * Counts — read from the branch, never assumed
  * ------------------------------------------------------------------ */
-
 /**
  * The counts #185 reports on. Each one is optional: a branch that diverged before a migration
  * (the demo branch itself was three migrations behind when this card started) has no
@@ -502,6 +509,87 @@ async function bundleCounts() {
   const expected = {};
   for (const [key, count] of Object.entries(BUNDLE_KEYS)) expected[key] = count(payload);
   return { expected, appVersion: parsed.bundle.appVersion, path: BUNDLE };
+}
+
+/* ------------------------------------------------------------------ *\
+ * The demo's content: the bundle, and nothing else
+ * ------------------------------------------------------------------ */
+
+/**
+ * Empties the demo branch's content and its accounts, in **one transaction**, so the reseed can
+ * install the bundle into a branch that holds nothing else.
+ *
+ * Why this exists (#185, found in the first real run of `.github/workflows/demo-reset.yml`): a
+ * reset from the parent gives the demo the parent's *data*, and the parent is the live branch —
+ * which accumulates rows the app creates at runtime (two users starting an assessment is enough)
+ * and the real auth users who created them. A demo must not show either. `db-seed` is right to
+ * refuse those rows ("record holds assessment row(s) this seed does not author") because on the
+ * **production** branch that refusal is a safety rule: a row someone meant is not silently
+ * deleted. On the demo branch the contract is the opposite one — it holds the bundle and the
+ * three accounts, nothing else — so the removal happens here, in the demo script, and never in
+ * the seed.
+ *
+ * This is not the reset, and the distinction is the point of #185: the reset is still one atomic
+ * `restore` (a Neon storage operation that cannot leave a half-wiped branch). This step runs
+ * *after* that, on a branch that is already valid, inside a single transaction — so a failure
+ * here rolls back to the parent's copy, which also serves. Nothing is truncated: `DELETE` in
+ * dependency order, so the schema and every foreign key stay exactly as the migration left them.
+ */
+async function resetContent(connectionString) {
+  const client = await connect(connectionString, "demo-reset:content");
+  const removed = {};
+  try {
+    await client.query("BEGIN");
+
+    const tableExists = async (qualified) =>
+      (await client.query("SELECT to_regclass($1) IS NOT NULL AS present", [qualified])).rows[0]
+        .present;
+
+    // Dependency order: opinion → party → instance_invite → assessment_instance → item
+    // (cascades response_option) → record. `assessment_instance.template_record_id` has no
+    // ON DELETE CASCADE, so the instance rows have to go before the records they name.
+    const statements = [
+      ["opinion", "public.opinion", "DELETE FROM opinion"],
+      ["party", "public.party", "DELETE FROM party"],
+      ["instance_invite", "public.instance_invite", "DELETE FROM instance_invite"],
+      ["assessment_instance", "public.assessment_instance", "DELETE FROM assessment_instance"],
+      ["item", "public.item", "DELETE FROM item"],
+      ["response_option", "public.response_option", "DELETE FROM response_option"],
+      ["record", "public.record", "DELETE FROM record"],
+      ["user_profile", "public.user_profile", "DELETE FROM user_profile"],
+      ["demo_account", "public.demo_account", "DELETE FROM demo_account"],
+    ];
+
+    for (const [label, qualified, sql] of statements) {
+      if (!(await tableExists(qualified))) {
+        removed[label] = "n/a (table absent)";
+        continue;
+      }
+      removed[label] = (await client.query(sql)).rowCount ?? 0;
+    }
+
+    // Neon Auth's own rows (`neon_auth`), so the demo's accounts are the three the seed creates
+    // and no other sign-in survives. `session`, `account`, `member` and `invitation` cascade
+    // from `user`.
+    const authUsers = (
+      await client.query(
+        `SELECT table_name FROM information_schema.tables
+          WHERE table_schema = 'neon_auth' AND table_name IN ('user', 'users')`,
+      )
+    ).rows[0]?.table_name;
+    removed["auth user"] =
+      authUsers === undefined
+        ? "n/a (schema absent)"
+        : ((await client.query(`DELETE FROM neon_auth."${authUsers}"`)).rowCount ?? 0);
+
+    await client.query("COMMIT");
+    return removed;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    await client.end();
+  }
 }
 
 /* ------------------------------------------------------------------ *\
@@ -671,14 +759,39 @@ async function main() {
   );
 
   if (!options.skipSeed) {
-    reseed({ branch, connectionStrings, authBaseUrl, database, resetRan: !options.skipReset });
+    // The parent's rows are not the demo's rows: the branch is emptied (one transaction) and the
+    // bundle installs into it, so what visitors see is the dataset and nothing else.
+    step(`empty ${branch.name} — the demo holds the bundle and the three accounts`);
+    const removed = await resetContent(connectionStrings.direct);
+    for (const [label, count] of Object.entries(removed)) {
+      say(`  ${label.padEnd(28)} ${String(count)} removed`);
+    }
+    printCounts("after emptying (before the reseed)", await counts(connectionStrings.direct));
+
+    reseed({
+      branch,
+      connectionStrings,
+      authBaseUrl,
+      database,
+      resetRan: !options.skipReset,
+    });
   }
 
   const afterSeed = await counts(connectionStrings.direct);
   printCounts("after the reseed", afterSeed);
 
   const bundle = await bundleCounts();
-  const mismatches = printBundleComparison(afterSeed, bundle.expected);
+  let mismatches = printBundleComparison(afterSeed, bundle.expected);
+
+  // The accounts are the seed's own half of the demo; the bundle says nothing about them. The
+  // invariant that holds them to the file is structural: one credential, one profile, one auth
+  // user per demo account — no more (a leftover copy of the parent's users) and no fewer.
+  const accountsAgree =
+    typeof afterSeed.demo_account === "number" &&
+    afterSeed.demo_account > 0 &&
+    afterSeed.demo_account === afterSeed.user_profile &&
+    afterSeed.demo_account === afterSeed["neon_auth user"];
+  if (!accountsAgree) mismatches += 1;
 
   step("verdict");
   say(`  bundle      ${bundle.path} (appVersion ${bundle.appVersion})`);
@@ -686,7 +799,13 @@ async function main() {
     `  reset       ${options.skipReset ? "skipped" : `restore from parent ${branch.parentName ?? branch.parentId}`}`,
   );
   say(
+    `  emptied     ${options.skipSeed ? "skipped (--skip-seed)" : "the parent's rows, in one transaction"}`,
+  );
+  say(
     `  row-set     ${mismatches === 0 ? "matches the bundle" : `${mismatches} count(s) do not match the bundle`}`,
+  );
+  say(
+    `  accounts    ${afterSeed.demo_account} demo account(s), ${accountsAgree ? "one profile and one auth user each" : "INCONSISTENT with the seed's accounts"}`,
   );
   say(`  elapsed     ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
