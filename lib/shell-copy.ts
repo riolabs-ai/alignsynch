@@ -85,3 +85,27 @@ export function searchTabsFor(copy: PageCopy, brandId: BrandId): PageCopySection
     }
   }
 }
+
+/**
+ * The `/search` page's own body words — title, result count, empty states, no-query state
+ * (issue #156 follow-up).
+ *
+ * A third selector rather than more items on `search`: the palette and the page share their
+ * *group headings* (the page resolves `group-quizzes` … `group-pages` out of the section
+ * `searchSectionFor` returns, so the same group cannot be worded twice), but the page's empty
+ * states and its no-query sentence are states the palette never draws. Keeping them in their own
+ * section means the page can word a group's empty state without putting a sentence in the
+ * palette's heading list, and vice versa.
+ */
+export function searchBodyFor(copy: PageCopy, brandId: BrandId): PageCopySection {
+  switch (brandId) {
+    case "quizhub":
+      return sectionOf(copy, "search-body");
+    case "alignsynch":
+      return sectionOf(copy, "search-body-alignsynch");
+    default: {
+      const unhandled: never = brandId;
+      throw new Error(`no search body copy for brand ${String(unhandled)}`);
+    }
+  }
+}
