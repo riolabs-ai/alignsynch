@@ -40,3 +40,8 @@ next-env.d.ts
 
 # P3 fixture generator output (gitignored; validated by data:check when present)
 data/generated/
+
+# brand-parity failure artifacts (#171): the full HTML of a render that did not match
+# tests/parity/manifest.txt. Written only when a route fails, uploaded by CI on a red
+# leg, never committed — the committed half is the manifest and the summaries.
+tests/parity/artifacts/

@@ -67,10 +67,10 @@ It runs, in order, and stops at the first failure (printing the failing step and
 code): `deps (pnpm install --frozen-lockfile)` → `glossary` (`pnpm glossary:check`) →
 `release:check` (`bash scripts/release.sh --check`) → `typecheck` (`next typegen && tsc --noEmit`) →
 `lint` (`biome check`) → `format:check`
-(`biome format`) → `data:check` → `test` → `build` (`next build`). `data:check` and `test`
-run only when `package.json` defines that script; otherwise they are skipped with a visible
-`○ … skipped` line, so the same script is correct on `main` (no `data:check` yet) and on
-branches that carry it.
+(`biome format`) → `data:check` → `test` → `parity` → `build` (`next build`). `data:check`,
+`test` and `parity` run only when `package.json` defines that script; otherwise they are
+skipped with a visible `○ … skipped` line, so the same script is correct on `main` (no
+`data:check` yet) and on branches that carry it.
 
 `glossary` runs in **every** lane, including docs: `docs/glossary.md` is generated from the
 schema comments, so a stale page is drift no typecheck can see, and the three files it reads
@@ -96,6 +96,18 @@ The one exception is the `glossary` step (#138): it regenerates `docs/glossary.m
 on a diff, in the workflow the issue names. It is not a CI-only check — `verify.sh` runs the
 same generator in every lane — it is a second caller of a check that already exists locally,
 placed before the gate so a stale page fails under its own step name. Add no others.
+
+**Two brands, one gate (#171).** The repo ships `BRAND=quizhub` and `BRAND=alignsynch` from one
+tree, and CI now builds both: the job is a matrix over `brand`, so the two lanes are
+`typecheck / lint / build (quizhub)` and `… (alignsynch)`. Because GitHub suffixes a matrix
+leg's check-run name, the required context `typecheck / lint / build` is reported by a `gate`
+job that only collects `needs: [verify]` — do not rename it, and add no step to it. Keeping
+QuizHub identical is `pnpm parity`: seven routes rendered under both brands, hashed into
+`tests/parity/manifest.txt` (`route | brand | sha256`) and described in
+`tests/parity/summaries/`. Full HTML is never committed — a mismatch writes the render to
+`tests/parity/artifacts/` and CI uploads it. A hash is rewritten with
+`pnpm parity:update --reason "…"` and the PR says which routes moved and why; never widen the
+harness to make one match ([`tests/parity/README.md`](tests/parity/README.md)).
 
 Runtime parity is enforced by the script, not by convention: it refuses to run when the
 shell's Node major disagrees with `.nvmrc` (`24`) or when `pnpm` is not `12.x`.

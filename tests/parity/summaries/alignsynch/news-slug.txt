@@ -1,0 +1,51 @@
+route  /news/[slug]
+brand  alignsynch
+
+headings (22)
+  h2  "Recent Messages"
+  h2  "Notifications"
+  h3  "New"
+  h3  "Earlier"
+  h2  "10 Strategies for Creating Engaging Quizzes That Keep Players Coming Back"
+  h2  "Why Quiz Engagement Matters"
+  h2  "Strategy #1: Start With a Compelling Title"
+  h2  "Strategy #2: Design Questions That Provoke Thought"
+  h2  "Strategy #3: Use Visuals Strategically"
+  h2  "Strategy #4: Provide Meaningful Feedback"
+  h2  "Strategy #5: Optimize for Social Sharing"
+  h2  "Implementing These Strategies"
+  h3  "Comments (12)"
+  h4  "User Name 1"
+  h4  "User Name 2"
+  h4  "User Name 3"
+  h3  "About the Author"
+  h3  "Related Articles"
+  h4  "Introducing Advanced Quiz Analytics: Gain Deeper Insights Into Player Behavior"
+  h4  "Making Your Quizzes Accessible to All: A Comprehensive Guide"
+  h4  "Quiz Monetization Strategies That Work in 2025"
+  h3  "Subscribe to Our Newsletter"
+
+landmarks (5)
+  banner         1
+  complementary  1
+  main           1
+  navigation     2
+
+links (10 unique, 11 total)
+  #                                                    1
+  /                                                    2
+  /#questions                                          1
+  /#templates                                          1
+  /chat                                                1
+  /dashboard/user?tab=wallet                           1
+  /news/new-quiz-analytics-features                    1
+  /news/quiz-accessibility-guidelines                  1
+  /news/quiz-monetization-strategies-2025              1
+  /support                                             1
+
+counts
+  elements  445
+  images    7
+  buttons   26
+  inputs    3
+  classes   245 (sha 79903efb50da)

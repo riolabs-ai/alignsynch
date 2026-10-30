@@ -13,6 +13,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "data:check": "tsc -p tsconfig.datacheck.json && node --test .datacheck/scripts/__tests__/*.test.js && node .datacheck/scripts/data-check.js && node scripts/sample-brand-colors.mjs --check",
     "test": "vitest run",
+    "parity": "node scripts/parity.mjs",
+    "parity:update": "node scripts/parity.mjs --update",
     "gen": "node scripts/gen-fixtures.mjs",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",

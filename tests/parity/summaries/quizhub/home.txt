@@ -1,0 +1,172 @@
+route  /
+brand  quizhub
+
+headings (74)
+  h2  "Recent Messages"
+  h2  "Notifications"
+  h3  "New"
+  h3  "Earlier"
+  h2  "Your Quiz Adventure Starts Here: Play, Share, Earn!"
+  h2  "Quiz Categories"
+  h2  "Latest Quizzes"
+  h3  "World Geography Challenge"
+  h3  "Science Quiz: Space Exploration"
+  h3  "History: Ancient Civilizations"
+  h3  "Mathematical Puzzles"
+  h2  "Featured Quizzes"
+  h3  "Science Quiz: Space Exploration"
+  h3  "World Geography Challenge: Capitals &amp; Landmarks"
+  h3  "Brain Teasers &amp; Logic Puzzles"
+  h3  "History&#x27;s Greatest Mysteries"
+  h2  "Top Players"
+  h3  "Alex Johnson"
+  h3  "Sarah Williams"
+  h3  "Michael Brown"
+  h3  "Emily Davis"
+  h3  "David Wilson"
+  h3  "Jessica Taylor"
+  h3  "Ryan Martinez"
+  h3  "Olivia Anderson"
+  h2  "Quizzes by Difficulty"
+  h3  "General Knowledge Basics"
+  h3  "Pop Culture Essentials"
+  h3  "Science for Beginners"
+  h3  "Sports Fundamentals"
+  h3  "Geography Starters"
+  h3  "History Basics"
+  h3  "Mathematics Basics"
+  h3  "History Through the Ages"
+  h3  "Science &amp; Technology"
+  h3  "World Literature Classics"
+  h3  "Mathematical Challenges"
+  h3  "Music Through the Decades"
+  h3  "Geography Adventures"
+  h3  "Advanced Quantum Physics"
+  h3  "Ancient Civilizations Deep Dive"
+  h3  "Complex Mathematical Theories"
+  h3  "Philosophy &amp; Ethics"
+  h3  "Advanced Programming Concepts"
+  h3  "World History Through Time"
+  h2  "Live Winners"
+  h3  "Alex Johnson"
+  h3  "Sarah Williams"
+  h3  "Michael Brown"
+  h3  "Emily Davis"
+  h3  "David Wilson"
+  h3  "Jessica Taylor"
+  h3  "Ryan Martinez"
+  h3  "Olivia Anderson"
+  h2  "How It Works"
+  h3  "Browse Categories"
+  h3  "Take Quizzes"
+  h3  "Earn Rewards"
+  h2  "Success Stories"
+  h3  "Sarah Johnson"
+  h3  "Sarah Johnson"
+  h2  "Refer &amp; Earn"
+  h2  "Quiz Creator Tips"
+  h3  "How to create high-converting quizzes"
+  h3  "Top quiz formats that boost earnings"
+  h3  "Writing questions that keep players coming back"
+  h3  "Quiz design best practices"
+  h3  "Optimizing quiz length for maximum engagement"
+  h3  "Effective strategies for promoting your quiz"
+  h2  "Get Quiz Insights Weekly"
+  h3  "Quick Links"
+  h3  "Categories"
+  h3  "Contact"
+  h3  "Subscribe to our newsletter"
+
+landmarks (6)
+  banner         1
+  complementary  1
+  contentinfo    1
+  main           1
+  navigation     2
+
+links (78 unique, 108 total)
+  #                                                    8
+  /                                                    2
+  /affiliate                                           2
+  /battle                                              2
+  /categories                                          1
+  /categories/animal                                   1
+  /categories/architecture                             1
+  /categories/art                                      1
+  /categories/business                                 1
+  /categories/coding                                   1
+  /categories/comics                                   1
+  /categories/fashion                                  1
+  /categories/food                                     1
+  /categories/general-knowledge                        1
+  /categories/geography                                1
+  /categories/health                                   1
+  /categories/history                                  2
+  /categories/language                                 1
+  /categories/literature                               2
+  /categories/math                                     2
+  /categories/movies                                   1
+  /categories/music                                    1
+  /categories/politics                                 1
+  /categories/puzzle                                   1
+  /categories/science                                  2
+  /categories/space                                    1
+  /categories/sports                                   2
+  /categories/technology                               1
+  /categories/trivia                                   1
+  /categories/video-game                               1
+  /chat                                                1
+  /create/editor                                       3
+  /create/generator                                    1
+  /creator-tips                                        1
+  /daily-challenge                                     1
+  /dashboard/user                                      1
+  /dashboard/user?tab=wallet                           1
+  /explore                                             2
+  /leaderboard                                         3
+  /news                                                1
+  /pricing                                             2
+  /profile/alexjohnson                                 2
+  /profile/davidwilson                                 2
+  /profile/emilydavis                                  2
+  /profile/jessicataylor                               2
+  /profile/michaelbrown                                2
+  /profile/oliviaanderson                              2
+  /profile/ryanmartinez                                2
+  /profile/sarahwilliams                               2
+  /quiz-discussions                                    1
+  /quiz/quiz-advanced-programming-concepts             1
+  /quiz/quiz-advanced-quantum-physics                  1
+  /quiz/quiz-ancient-civilizations-deep-dive           1
+  /quiz/quiz-brain-teasers-logic-puzzles               1
+  /quiz/quiz-complex-mathematical-theories             1
+  /quiz/quiz-general-knowledge-basics                  1
+  /quiz/quiz-geography-adventures                      1
+  /quiz/quiz-geography-starters                        1
+  /quiz/quiz-history-ancient-civilizations             1
+  /quiz/quiz-history-basics                            1
+  /quiz/quiz-history-through-the-ages                  1
+  /quiz/quiz-historys-greatest-mysteries               1
+  /quiz/quiz-mathematical-challenges                   1
+  /quiz/quiz-mathematical-puzzles                      1
+  /quiz/quiz-mathematics-basics                        1
+  /quiz/quiz-music-through-the-decades                 1
+  /quiz/quiz-philosophy-and-ethics                     1
+  /quiz/quiz-pop-culture-essentials                    1
+  /quiz/quiz-science-and-technology                    1
+  /quiz/quiz-science-for-beginners                     1
+  /quiz/quiz-science-quiz-space-exploration            2
+  /quiz/quiz-sports-fundamentals                       1
+  /quiz/quiz-world-geography-challenge                 1
+  /quiz/quiz-world-geography-challenge-capitals-landmarks 1
+  /quiz/quiz-world-history-through-time                1
+  /quiz/quiz-world-literature-classics                 1
+  /support                                             1
+  /tournaments                                         1
+
+counts
+  elements  2426
+  images    71
+  buttons   42
+  inputs    3
+  classes   599 (sha 916f242487e9)
