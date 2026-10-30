@@ -24,6 +24,7 @@ import {
   FileText,
   LogOut,
   Mail,
+  Menu,
   MessageCircleQuestion,
   MessageSquare,
   Moon,
@@ -60,7 +61,7 @@ export function Header({ copy }: { copy: PageCopy }) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
-  const { toggleCollapsed, collapsed } = useSidebar();
+  const { toggleCollapsed, collapsed, toggleMobile, mobileOpen } = useSidebar();
   const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
   const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState(false);
 
@@ -142,7 +143,27 @@ export function Header({ copy }: { copy: PageCopy }) {
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={toggleCollapsed}>
+          {/* Two toggles, one per layout: below `xl` the sidebar is an overlay drawer, so
+              this opens it; at `xl` and up it is the rail collapse that has always been
+              here. Both are `size="icon"` buttons at the same position, so the desktop
+              header is unchanged. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="xl:hidden"
+            onClick={toggleMobile}
+            aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={mobileOpen}
+            aria-controls="app-sidebar"
+          >
+            <Menu className="!text-3xl" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden xl:inline-flex"
+            onClick={toggleCollapsed}
+          >
             {collapsed ? (
               <PanelRightClose className="!text-3xl" />
             ) : (
