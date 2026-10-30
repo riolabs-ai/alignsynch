@@ -34,6 +34,7 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                                         |
 | `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                                          |
 | `pnpm gen`                       | exit 0, ~0.1 s       | `node scripts/gen-fixtures.mjs`; bulk fixtures → `data/generated/` (gitignored, validated by `data:check`)             |
+| `pnpm bundles <cmd>`             | exit 0, ~4 s         | `scripts/bundles.ts`; export/import a template or the demo dataset (#147) — see [BUNDLES](docs/BUNDLES.md)             |
 | `pnpm glossary`                  | exit 0, ~0.1 s       | `node scripts/gen-glossary.mjs`; writes `docs/glossary.md` from the schema comments — never edit the page (#138)       |
 | `pnpm glossary:check`            | exit 0, ~0.1 s       | the read-only form the gate runs in every lane; exit 1 plus the first difference when the page is stale                |
 | `pnpm db:migrate`                | exit 0, ~1 s         | `node scripts/db-migrate.mjs`; applies `db/migrations/*.sql` in order via `schema_migrations`; wants the unpooled URL  |
@@ -178,6 +179,12 @@ process bug.
   arrays and fixture text pasted into a component. It binds `components/search/**`,
   `components/chat/**` and the header palette; copies still sitting in the other feature
   directories are counted on the summary line every run instead of being allowed silently.
+- `content/bundle.ts` + `scripts/bundles.ts` — the bundle (#147): a template or a demo dataset as
+  one versioned JSON document, and the CLI that exports and imports it. The canonical demo
+  bundle is committed at `data/bundles/demo-dataset.alignsynch.json`; an import writes the tenant
+  store to `data/generated/assessments.json` (gitignored, the active set when present). Refusals
+  are `B1`–`B6`, and `data:check` E32 keeps the committed bundle equal to the fixtures. Read
+  `docs/BUNDLES.md` before changing either.
 - `app/(mainlayout)/**` — every product page behind the header/sidebar shell; `app/(auth)/**` —
   login/register, no shell. Dynamic segments: `quiz/[id]/{play,discussion}`,
   `my-quizzes/[id]/{statistics}`, `categories/[slug]`, `news/[slug]`, `creator-tips/[slug]`,

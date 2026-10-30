@@ -140,15 +140,38 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     files: ["data-check.ts"],
     codes: {
       E31: "an assessment instance names a template that exists, and its Aspects are that template's Aspects — a copy that drifted is not a copy",
+      E32: "the committed demo bundle is the canonical export of `data/assessments.ts`",
+      E33: "an imported tenant store parses, and the active assessment set passes E0/E1/E2/E31 against itself",
+    },
+  },
+  {
+    owner: "bundle import/export (scripts/bundles.ts, content/bundle.ts — issue #147)",
+    // Two files, because the refusal is authored in the model and raised by the CLI: the
+    // codes are *minted* where the rule lives (`content/bundle.ts` detects B1–B4/B6) and B5
+    // is the one the CLI mints, because a bundle cannot collide with a store it does not
+    // know. Declaring both keeps "one code, one owner" true without pretending the model
+    // module is a script.
+    files: ["bundles.ts", "../content/bundle.ts"],
+    codes: {
+      B1: "envelope shape — not one JSON object, a bad `format`/`kind`/`appVersion`, an unknown top-level key",
+      B2: "payload record — a `zAssessment` / `zAssessmentInstance` issue, or an unknown key on one, path included",
+      B3: "dataset collection — an id or a slug twice, a `templateId` outside the bundle, or a copy that drifted",
+      B4: "forbidden key — a key that names a credential (`token`, `secret`, `password`, `apiKey`, `key`), wherever it sits",
+      B5: "a template import colliding with the active store's id or `type/slug` — the import refuses rather than rewriting",
+      B6: "`bundleVersion` — this build reads exactly 1",
     },
   },
 ];
 
 /**
  * A quoted code literal — the shape every emit site uses, the first argument of
- * `err()` / `error()` / `warn()`.
+ * `err()` / `error()` / `warn()` / `formatBundleIssue()`.
+ *
+ * `B*` is the bundle group (#147): those codes are minted in `content/bundle.ts`, which the
+ * registry scans alongside `scripts/*.ts` (see `scripts/__tests__/rule-codes.test.ts`), so
+ * the same one-code-one-rule property holds for a refusal a person reads as `[B4] …`.
  */
-const CODE_LITERAL = /"(E[0-9]+|W[0-9]+)"/g;
+const CODE_LITERAL = /"(E[0-9]+|W[0-9]+|B[0-9]+)"/g;
 
 /**
  * Every quoted code literal in the given sources. Comment lines — a leading `//`,
@@ -181,6 +204,9 @@ export function ruleCodeProblems(
 ): string[] {
   const problems: string[] = [];
   const owners = new Map<string, string[]>();
+  /** `data-check.ts` → `scripts/data-check.ts`; a model module keeps its own path. */
+  const sourceName = (file: string): string =>
+    file.startsWith("../") ? file.slice(3) : `scripts/${file}`;
 
   for (const group of groups) {
     for (const code of Object.keys(group.codes)) {
@@ -213,13 +239,13 @@ export function ruleCodeProblems(
     const declared = declaredFiles.get(mention.code);
     if (declared === undefined) {
       problems.push(
-        `scripts/${mention.file}:${mention.line} emits "${mention.code}", which no rule-code group declares — add it to scripts/rule-codes.ts with its owner`,
+        `${sourceName(mention.file)}:${mention.line} emits "${mention.code}", which no rule-code group declares — add it to scripts/rule-codes.ts with its owner`,
       );
       continue;
     }
     if (!declared.files.includes(mention.file)) {
       problems.push(
-        `scripts/${mention.file}:${mention.line} emits "${mention.code}", which belongs to ${declared.owners.join(" / ")} (${declared.files.map((file) => `scripts/${file}`).join(", ")}) — a second rule cannot share the code`,
+        `${sourceName(mention.file)}:${mention.line} emits "${mention.code}", which belongs to ${declared.owners.join(" / ")} (${declared.files.map(sourceName).join(", ")}) — a second rule cannot share the code`,
       );
     }
   }
