@@ -53,7 +53,7 @@ export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
   heading: "How do you feel, against how they feel?",
   subtitle:
-    "Two people answer the same five Aspects: how it is now, and how you each wish it to be. Where the answers part is the Gap, and the Gap is the conversation worth having.",
+    "You both answer the same five Aspects, twice over: how it is now, and how you each want it to be. The answers rarely match, and the distance between them is the Gap.",
   cta: { label: "Read Avery and Rowan", href: "/assessment/avery-rowan" },
   items: [
     /** The two sides of every Aspect. A reader's own answer, and the other party's. */
@@ -65,7 +65,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     {
       id: "template-unplayed",
       label: "No relationship yet",
-      body: "This template is the user's to name and overwrite, so nobody has answered it and there is nothing to read.",
+      body: "Nobody has answered this template yet. Copy it, name it, and its five Aspects become yours.",
     },
     /** One row of a template: how many Aspects it asks, counted from the record. */
     { id: "aspects", label: "{count} Aspects" },
@@ -73,32 +73,32 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
   sections: [
     {
       id: "questions",
-      heading: "Two questions, asked of both of you",
-      body: "Every Aspect is asked twice. The two answers are not a score to win: one says where the relationship is, the other says where each of you wants it to go.",
+      heading: "The same question, answered twice",
+      body: "Every Aspect gets two answers, one from each of you. Neither is a score to chase. One says where the relationship is today; the other says where you each want it to go.",
       items: [
         {
           id: "question-feel",
           label: "How does it feel to you?",
           value: "How does it feel to them?",
-          body: "The same Aspect from each side. The difference between the two scores is the Feel Gap.",
+          body: "The same Aspect from both sides. Subtract one score from the other and you have the Feel Gap.",
         },
         {
           id: "question-wish",
           label: "How do you wish it to be?",
           value: "How do they wish it to be?",
-          body: "What each of you wants next, on the same Aspect. The Wish Gap is where those two wishes have drifted apart.",
+          body: "What each of you wants next, on the same Aspect. The Wish Gap is how far those two wishes sit apart.",
         },
       ],
     },
     {
       id: "templates",
       heading: "Four templates",
-      body: "A template is copied into a Relationship — two people who answer its five Aspects — before it has anything to read. The worked example with answers is {title}, answered by {left} and {right}.",
+      body: "A template does nothing until two people copy it and answer its five Aspects. {title}, answered by {left} and {right}, is the one with answers to read.",
     },
     {
       id: "families",
       heading: "Two families",
-      body: "Every Relationship Type the templates cover, and no more than that. A type with no template behind it is not a door.",
+      body: "Every Relationship Type the templates cover. If no template backs a type, it isn't offered.",
     },
   ],
 });
