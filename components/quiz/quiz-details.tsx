@@ -1,7 +1,7 @@
 "use client";
 
 import { ReviewModal } from "@/components/quiz/review-modal";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -90,7 +90,8 @@ interface DetailView {
   featured: boolean;
   badge?: { label: string };
   authorName: string;
-  authorAvatar?: string;
+  /** Stable id the author avatar is seeded from (issue #152) — the PersonRef id, or the name. */
+  authorSeed: string;
   /**
    * The creator panel's stats. Only the template has them: "42 quizzes" is not in the
    * content model, so the real record's panel shows the author's name and nothing it
@@ -138,7 +139,6 @@ const quizData = {
   requirements: "Basic knowledge of Marvel movies and TV shows. No specific preparation needed.",
   creator: {
     name: "MarvelFan2023",
-    avatar: media["avatars.alex"].src,
     level: "Expert Quiz Creator",
     quizzes: 42,
     lastUpdate: "2023-10-15",
@@ -146,50 +146,52 @@ const quizData = {
   tags: ["Marvel", "Superheroes", "Movies", "MCU", "Avengers"],
   // The template's own rows, in the model's row shape: `percent` and `seconds` are
   // data, the tab formats them (`formatStopwatch`). 12:45 = 765 s, 13:20 = 800 s, …
+  // `seed` is the row's identity for its drawn avatar (issue #152) — a template row has
+  // no record id, so its handle is the seed.
   leaderboard: [
-    { rank: 1, name: "ThorFan", avatar: media["avatars.wizard"].src, percent: 98, seconds: 765 },
+    { rank: 1, name: "ThorFan", seed: "ThorFan", percent: 98, seconds: 765 },
     {
       rank: 2,
       name: "IronManRules",
-      avatar: media["avatars.sarah"].src,
+      seed: "IronManRules",
       percent: 95,
       seconds: 800,
     },
     {
       rank: 3,
       name: "CaptainAmerica",
-      avatar: media["avatars.king"].src,
+      seed: "CaptainAmerica",
       percent: 92,
       seconds: 845,
     },
     {
       rank: 4,
       name: "BlackWidow",
-      avatar: media["avatars.champion"].src,
+      seed: "BlackWidow",
       percent: 90,
       seconds: 930,
     },
-    { rank: 5, name: "HulkSmash", avatar: media["avatars.mind"].src, percent: 88, seconds: 975 },
+    { rank: 5, name: "HulkSmash", seed: "HulkSmash", percent: 88, seconds: 975 },
   ],
   reviews: [
     {
       id: "template-review-marvelfan",
       name: "MarvelFan",
-      avatar: media["avatars.genious"].src,
+      seed: "MarvelFan",
       rating: 5,
       body: "Excellent quiz! Really tests your knowledge of the MCU.",
     },
     {
       id: "template-review-quizlover",
       name: "QuizLover",
-      avatar: media["avatars.brain"].src,
+      seed: "QuizLover",
       rating: 4,
       body: "Good variety of questions, some were quite challenging.",
     },
     {
       id: "template-review-avenger",
       name: "Avenger",
-      avatar: media["avatars.guru"].src,
+      seed: "Avenger",
       rating: 5,
       body: "Perfect for Marvel fans. I learned some new facts too!",
     },
@@ -236,7 +238,7 @@ const templateView: DetailView = {
   featured: true,
   badge: { label: "Popular" },
   authorName: quizData.creator.name,
-  authorAvatar: quizData.creator.avatar,
+  authorSeed: quizData.creator.name,
   authorStats: {
     level: quizData.creator.level,
     quizzes: quizData.creator.quizzes,
@@ -299,7 +301,7 @@ function modelView(detail: QuizDetailModel): DetailView {
     featured: card.featured === true,
     ...(stats.badge === undefined ? {} : { badge: { label: stats.badge.label } }),
     authorName: card.author?.name ?? "Unknown creator",
-    ...(card.author?.avatar === undefined ? {} : { authorAvatar: card.author.avatar.src }),
+    authorSeed: card.author?.id ?? card.author?.name ?? "Unknown creator",
     summary: card.summary,
     leaderboard: detail.leaderboard,
     reviews: detail.reviews,
@@ -352,7 +354,7 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
       {
         id: `local-review-${previous.length + 1}`,
         name: "You",
-        avatar: media["avatars.master"].src,
+        seed: "current-user",
         rating: review.rating,
         body: review.comment,
       },
@@ -520,13 +522,7 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
                         <div key={player.rank} className="grid grid-cols-12 p-3 text-sm border-t">
                           <div className="col-span-1 text-center font-medium">{player.rank}</div>
                           <div className="col-span-5 flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage
-                                src={player.avatar || media.placeholder.src}
-                                alt={player.name}
-                              />
-                              <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
-                            </Avatar>
+                            <GeneratedAvatar name={player.name} seed={player.seed} size={32} />
                             <span>{player.name}</span>
                           </div>
                           <div className="col-span-3 text-center">{player.percent}%</div>
@@ -550,13 +546,7 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
                       <Card key={review.id}>
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
-                            <Avatar>
-                              <AvatarImage
-                                src={review.avatar || media.placeholder.src}
-                                alt={review.name}
-                              />
-                              <AvatarFallback>{review.name.substring(0, 2)}</AvatarFallback>
-                            </Avatar>
+                            <GeneratedAvatar name={review.name} seed={review.seed} size={40} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
                                 <h3 className="font-medium">{review.name}</h3>
@@ -644,13 +634,7 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
 
                 <div className="rounded-lg border p-4">
                   <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage
-                        src={view.authorAvatar || media.placeholder.src}
-                        alt={view.authorName}
-                      />
-                      <AvatarFallback>{view.authorName.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
+                    <GeneratedAvatar name={view.authorName} seed={view.authorSeed} size={40} />
                     <div>
                       <div className="font-medium">{view.authorName}</div>
                       {view.authorStats && (
