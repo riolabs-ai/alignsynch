@@ -17,6 +17,7 @@
     "data/**/*.ts",
     "lib/quiz-cards.ts",
     "lib/quiz-detail.ts",
+    "scripts/bundles.ts",
     "scripts/data-check*",
     "scripts/rule-codes.ts",
     "scripts/ui-refs.ts",

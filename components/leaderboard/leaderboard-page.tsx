@@ -22,22 +22,28 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
+import type { LeaderboardEntry } from "@/content/people";
 import { LeaderboardFilters } from "./leaderboard-filters";
 import { LeaderboardPodium } from "./leaderboard-podium";
 import { LeaderboardStats } from "./leaderboard-stats";
 import { LeaderboardTable } from "./leaderboard-table";
-import { leaderboardEntries } from "@/lib/players";
 
 /**
- * The three boards this page shows, projected once at import from `data/players.ts`.
- * What used to live here was a 15-record array of names, avatars, scores and streaks — a
- * second copy of the people model that no fixture could edit (WU-1).
+ * The three boards `/leaderboard` shows — the surface's query output, handed down as a prop.
+ *
+ * They used to be projected here, at module scope, from `data/players.ts`. That made the read
+ * ungateable: a module-scope call runs when the route's module is imported, so a flag checked in
+ * the page body came too late to stop it (issue #175). The join still belongs to
+ * `lib/players.ts` and the board order to `content/people.ts` — what moved is *where* it is
+ * called: `app/(mainlayout)/leaderboard/page.tsx`, after the flag.
  */
-const globalBoard = leaderboardEntries("global");
-const scienceBoard = leaderboardEntries("science", 5);
-const trendingBoard = leaderboardEntries("trending", 5);
+export interface LeaderboardBoards {
+  readonly global: LeaderboardEntry[];
+  readonly science: LeaderboardEntry[];
+  readonly trending: LeaderboardEntry[];
+}
 
-export function LeaderboardPage() {
+export function LeaderboardPage({ boards }: { boards: LeaderboardBoards }) {
   const [timeFilter, setTimeFilter] = useState("all-time");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,7 +102,7 @@ export function LeaderboardPage() {
                   categoryFilter={categoryFilter}
                   setCategoryFilter={setCategoryFilter}
                 />
-                <LeaderboardPodium entries={globalBoard.slice(0, 3)} />
+                <LeaderboardPodium entries={boards.global.slice(0, 3)} />
               </TabsContent>
               <TabsContent value="categories" className="pt-4">
                 <div className="mb-6 flex items-center justify-between">
@@ -106,7 +112,7 @@ export function LeaderboardPage() {
                     This Month
                   </Button>
                 </div>
-                <LeaderboardTable entries={scienceBoard} />
+                <LeaderboardTable entries={boards.science} />
               </TabsContent>
               <TabsContent value="trending" className="pt-4">
                 <div className="mb-6 flex items-center justify-between">
@@ -116,7 +122,7 @@ export function LeaderboardPage() {
                     This Week
                   </Button>
                 </div>
-                <LeaderboardTable entries={trendingBoard} />
+                <LeaderboardTable entries={boards.trending} />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -205,7 +211,7 @@ export function LeaderboardPage() {
 
           <div className="rounded-xl border bg-card shadow-sm">
             <LeaderboardTable
-              entries={globalBoard.filter((entry) =>
+              entries={boards.global.filter((entry) =>
                 entry.player.name.toLowerCase().includes(searchQuery.toLowerCase()),
               )}
               showPagination

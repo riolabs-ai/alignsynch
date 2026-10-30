@@ -65,6 +65,16 @@ export interface NavRenderProps {
   pathname: string;
   /** Called when a row is followed — the mobile drawer closes itself on this. */
   onNavigate: () => void;
+  /**
+   * The hrefs whose destination is powered off by a feature flag (issue #175). Absent means
+   * "nothing is gated off", which is the pre-flag menu — the shell resolves this on the server
+   * (`lib/flags.ts` is server-only) and hands it down, so a client component never decides it.
+   *
+   * A row carrying one of these is not rendered at all: not `hidden` classes, not `aria-hidden`.
+   * An entry that is only visually gone is still in the tab order and still announced, and the
+   * route behind it answers 404 — a link to a page that says it does not exist.
+   */
+  hidden?: readonly string[];
 }
 
 function isActive(pathname: string, path: string): boolean {
@@ -78,6 +88,8 @@ export interface NavRowProps {
   active?: boolean;
   collapsed: boolean;
   onNavigate: () => void;
+  /** Flagged off: draw nothing (issue #175). See `NavRenderProps.hidden`. */
+  hidden?: boolean;
 }
 
 /**
@@ -85,7 +97,8 @@ export interface NavRowProps {
  * is an account action on both brands rather than a destination in either menu — so that row
  * keeps exactly the markup it had before this module existed.
  */
-export function NavRow({ href, icon, label, active, collapsed, onNavigate }: NavRowProps) {
+export function NavRow({ href, icon, label, active, collapsed, onNavigate, hidden }: NavRowProps) {
+  if (hidden) return null;
   if (collapsed) {
     return (
       <div className="relative group flex justify-center items-center">
@@ -126,7 +139,7 @@ export function NavRow({ href, icon, label, active, collapsed, onNavigate }: Nav
  * byte what it was: the brand switch below picks this branch, and the labels still resolve
  * against the `nav` section of the same fixture.
  */
-function QuizHubMenu({ copy, collapsed, pathname, onNavigate }: NavRenderProps) {
+function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRenderProps) {
   const nav = sectionOf(copy, "nav");
   return (
     <>
@@ -193,6 +206,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate }: NavRenderProps) 
         active={isActive(pathname, "/leaderboard")}
         collapsed={collapsed}
         onNavigate={onNavigate}
+        hidden={hidden?.includes("/leaderboard")}
       />
       <NavRow
         href="/creator-tips"

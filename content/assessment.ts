@@ -230,7 +230,7 @@ export function instanceTemplateProblems(
     const template = byId.get(instance.templateId);
     if (template === undefined) {
       problems.push(
-        `instance "${instance.id}" names template "${instance.templateId}", which is not a record in data/assessments.ts`,
+        `instance "${instance.id}" names template "${instance.templateId}", which is not a record in this collection`,
       );
       continue;
     }

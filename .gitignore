@@ -41,6 +41,11 @@ next-env.d.ts
 # P3 fixture generator output (gitignored; validated by data:check when present)
 data/generated/
 
+# bundle exports (#147). `pnpm bundles export` writes here; the artifact worth
+# shipping is committed under data/bundles/, and a default export must not dirty
+# the tree.
+/exports/
+
 # brand-parity failure artifacts (#171): the full HTML of a render that did not match
 # tests/parity/manifest.txt. Written only when a route fails, uploaded by CI on a red
 # leg, never committed — the committed half is the manifest and the summaries.

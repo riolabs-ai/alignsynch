@@ -15,6 +15,7 @@
     "test": "vitest run",
     "parity": "node scripts/parity.mjs",
     "parity:update": "node scripts/parity.mjs --update",
+    "bundles": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/bundles.js",
     "gen": "node scripts/gen-fixtures.mjs",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",
