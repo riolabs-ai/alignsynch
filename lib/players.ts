@@ -12,7 +12,11 @@
  * `GeneratedAvatar name={player.name} seed={player.id}` — which needs nothing from this
  * module and no file from `public/`.
  */
-import { type LeaderboardBoardId, type LeaderboardEntry, selectLeaderboard } from "@/content/people";
+import {
+  type LeaderboardBoardId,
+  type LeaderboardEntry,
+  selectLeaderboard,
+} from "@/content/people";
 import { leaderboards, playerIndex } from "@/data/players";
 
 /** One board, joined to its players, in rank order. `limit` is the surface's slice, not a re-sort. */

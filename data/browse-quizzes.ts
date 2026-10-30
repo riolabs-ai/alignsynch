@@ -256,11 +256,7 @@ export const browseQuizzes: readonly Quiz[] = [
       rewardCents: 500,
       limitedTimeEndsAt: rewardWindow(8),
       updatedAt: "2023-10-12T08:30:00Z",
-      recentPlayers: [
-        { name: "Ryan M." },
-        { name: "Olivia A." },
-        { name: "James K." },
-      ],
+      recentPlayers: [{ name: "Ryan M." }, { name: "Olivia A." }, { name: "James K." }],
     }),
   },
   {
@@ -288,11 +284,7 @@ export const browseQuizzes: readonly Quiz[] = [
       rewardCents: 800,
       limitedTimeEndsAt: rewardWindow(9),
       updatedAt: "2023-12-05T13:40:00Z",
-      recentPlayers: [
-        { name: "Sophia L." },
-        { name: "Noah P." },
-        { name: "Emma R." },
-      ],
+      recentPlayers: [{ name: "Sophia L." }, { name: "Noah P." }, { name: "Emma R." }],
     }),
   },
   {
