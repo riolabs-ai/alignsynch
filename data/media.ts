@@ -4,17 +4,19 @@
  * Storage, not a projection: a component asks for a key and gets the one thing it names,
  * so no `.tsx` holds a literal `/image.png` any more (E17).
  *
- * Two kinds of entry live here, and `content/media.ts` is the union:
+ * TWO OF THE THREE TIERS LIVE HERE. An entry is either a **file** under `public/` (key
+ * derived from the path, never invented, so key <-> file is a bijection and both directions
+ * are checked — E18) or a **generated default** (`generated: true`, a `seed`, no `src`, no
+ * size). The third tier — a **remote** URL (`content/media.ts::zRemoteMediaEntry`) — is never
+ * stored here: it addresses somebody else's server, so it is built at the call site from the
+ * record it belongs to (`remoteMedia(player.countryCode …)`) and carries its own
+ * `fallbackSeed`.
  *
- *   - a **file** under `public/`. Keys are derived from the path, never invented
- *     (`mediaKeyOf` in `scripts/media-refs.ts`), so key <-> file is a bijection and both
- *     directions are checked (E18). `ImageRef.src` in `data/` stays a path in P2
- *     (D-P2-1) and must equal an entry's `src` (E19).
- *   - a **generated default** — `generated: true`, no `src`, no size. Issue #130 deleted
- *     the twenty-three identical `public/category/*.webp` placeholders (one blob,
- *     `df44187d`); a quiz subject's tile is now a gradient seeded by its slug plus a
- *     monogram from its name, drawn by `components/categories/category-tile.tsx`. No
- *     bytes, so nothing for the build to request.
+ * Issue #130 deleted the twenty-three identical `public/category/*.webp` placeholders (one
+ * blob, `df44187d`); a quiz subject's tile is now a gradient seeded by its slug plus a
+ * monogram from its name, drawn by `components/categories/category-tile.tsx`. Issue #155
+ * deleted the last two shared blobs, so every slot those files filled is drawn by
+ * `components/media/media.tsx` from a seed instead of borrowing one picture.
  *
  * GENERATED — do not hand-edit. `node scripts/gen-media.mjs` rewrites this file from
  * `public/` plus `content/category.ts`; `pnpm data:check` is what fails when the two
@@ -28,13 +30,6 @@
 import type { MediaEntry } from "@/content/media";
 
 export const media = {
-  "about-affiliate": {
-    src: "/about-affiliate.png",
-    alt: "About Affiliate",
-    width: 1024,
-    height: 1024,
-    kind: "illustration",
-  },
   "abstract-geometric-shapes": {
     src: "/abstract-geometric-shapes.png",
     alt: "Abstract Geometric Shapes",
@@ -48,13 +43,6 @@ export const media = {
     width: 1024,
     height: 440,
     kind: "illustration",
-  },
-  "avatars.champion": {
-    src: "/avatars/champion.png",
-    alt: "Champion avatar",
-    width: 1024,
-    height: 1024,
-    kind: "avatar",
   },
   "brain-teasers-puzzles": {
     src: "/brain-teasers-puzzles.png",
@@ -86,148 +74,159 @@ export const media = {
   },
   "category.animal": {
     generated: true,
+    seed: "animal",
     alt: "",
     kind: "category-art",
   },
   "category.architecture": {
     generated: true,
+    seed: "architecture",
     alt: "",
     kind: "category-art",
   },
   "category.art": {
     generated: true,
+    seed: "art",
     alt: "",
     kind: "category-art",
   },
   "category.business": {
     generated: true,
+    seed: "business",
     alt: "",
     kind: "category-art",
   },
   "category.coding": {
     generated: true,
+    seed: "coding",
     alt: "",
     kind: "category-art",
   },
   "category.comics": {
     generated: true,
+    seed: "comics",
     alt: "",
     kind: "category-art",
   },
   "category.fashion": {
     generated: true,
+    seed: "fashion",
     alt: "",
     kind: "category-art",
   },
   "category.food": {
     generated: true,
+    seed: "food",
     alt: "",
     kind: "category-art",
   },
   "category.general-knowledge": {
     generated: true,
+    seed: "general-knowledge",
     alt: "",
     kind: "category-art",
   },
   "category.geography": {
     generated: true,
+    seed: "geography",
     alt: "",
     kind: "category-art",
   },
   "category.health": {
     generated: true,
+    seed: "health",
     alt: "",
     kind: "category-art",
   },
   "category.history": {
     generated: true,
+    seed: "history",
     alt: "",
     kind: "category-art",
   },
   "category.language": {
     generated: true,
+    seed: "language",
     alt: "",
     kind: "category-art",
   },
   "category.literature": {
     generated: true,
+    seed: "literature",
     alt: "",
     kind: "category-art",
   },
   "category.math": {
     generated: true,
+    seed: "math",
     alt: "",
     kind: "category-art",
   },
   "category.movies": {
     generated: true,
+    seed: "movies",
     alt: "",
     kind: "category-art",
   },
   "category.music": {
     generated: true,
+    seed: "music",
     alt: "",
     kind: "category-art",
   },
   "category.politics": {
     generated: true,
+    seed: "politics",
     alt: "",
     kind: "category-art",
   },
   "category.puzzle": {
     generated: true,
+    seed: "puzzle",
     alt: "",
     kind: "category-art",
   },
   "category.science": {
     generated: true,
+    seed: "science",
     alt: "",
     kind: "category-art",
   },
   "category.space": {
     generated: true,
+    seed: "space",
     alt: "",
     kind: "category-art",
   },
   "category.sports": {
     generated: true,
+    seed: "sports",
     alt: "",
     kind: "category-art",
   },
   "category.technology": {
     generated: true,
+    seed: "technology",
     alt: "",
     kind: "category-art",
   },
   "category.trivia": {
     generated: true,
+    seed: "trivia",
     alt: "",
     kind: "category-art",
   },
   "category.video-game": {
     generated: true,
+    seed: "video-game",
     alt: "",
     kind: "category-art",
-  },
-  "classic-novels-quiz": {
-    src: "/classic-novels-quiz.png",
-    alt: "Classic Novels Quiz",
-    width: 1024,
-    height: 1024,
-    kind: "illustration",
   },
   "earn-reward": {
     src: "/earn-reward.png",
     alt: "Earn Reward",
     width: 2048,
     height: 2048,
-    kind: "illustration",
-  },
-  "gift-box-coins": {
-    src: "/gift-box-coins.png",
-    alt: "Gift Box Coins",
-    width: 1024,
-    height: 1024,
     kind: "illustration",
   },
   "hero-bg": {
@@ -258,20 +257,6 @@ export const media = {
     height: 604,
     kind: "illustration",
   },
-  "how-it-works.earn-rewards": {
-    src: "/how-it-works/earn-rewards.png",
-    alt: "Earn Rewards",
-    width: 1024,
-    height: 1024,
-    kind: "illustration",
-  },
-  "marvel-cinematic-universe": {
-    src: "/marvel-cinematic-universe.png",
-    alt: "Marvel Cinematic Universe",
-    width: 1024,
-    height: 1024,
-    kind: "illustration",
-  },
   "math-puzzles-quiz": {
     src: "/math-puzzles-quiz.png",
     alt: "Math Puzzles Quiz",
@@ -285,69 +270,6 @@ export const media = {
     width: 1024,
     height: 510,
     kind: "illustration",
-  },
-  "news.news1": {
-    src: "/news/news1.png",
-    alt: "News article image 1",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
-  },
-  "news.news2": {
-    src: "/news/news2.png",
-    alt: "News article image 2",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
-  },
-  "news.news3": {
-    src: "/news/news3.png",
-    alt: "News article image 3",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
-  },
-  "news.news4": {
-    src: "/news/news4.png",
-    alt: "News article image 4",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
-  },
-  "news.news5": {
-    src: "/news/news5.png",
-    alt: "News article image 5",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
-  },
-  "news.news6": {
-    src: "/news/news6.png",
-    alt: "News article image 6",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
-  },
-  "news.news7": {
-    src: "/news/news7.png",
-    alt: "News article image 7",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
-  },
-  "news.news8": {
-    src: "/news/news8.png",
-    alt: "News article image 8",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
-  },
-  "news.news9": {
-    src: "/news/news9.png",
-    alt: "News article image 9",
-    width: 1280,
-    height: 720,
-    kind: "news-art",
   },
   "newsletter-bg": {
     src: "/newsletter-bg.png",
@@ -398,88 +320,11 @@ export const media = {
     height: 664,
     kind: "illustration",
   },
-  "quiz-banner": {
-    src: "/quiz-banner.png",
-    alt: "Quiz Banner",
-    width: 1280,
-    height: 720,
-    kind: "illustration",
-  },
-  "quiz-design-strategies": {
-    src: "/quiz-design-strategies.png",
-    alt: "Quiz Design Strategies",
-    width: 1024,
-    height: 1024,
-    kind: "illustration",
-  },
-  "quiz.marvel": {
-    src: "/quiz/marvel.png",
-    alt: "Marvel quiz artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
   "quiz.q1": {
     src: "/quiz/q1.jpg",
     alt: "Quiz question 1 artwork",
     width: 896,
     height: 504,
-    kind: "quiz-art",
-  },
-  "quiz.q10": {
-    src: "/quiz/q10.png",
-    alt: "Quiz question 10 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q11": {
-    src: "/quiz/q11.png",
-    alt: "Quiz question 11 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q12": {
-    src: "/quiz/q12.png",
-    alt: "Quiz question 12 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q13": {
-    src: "/quiz/q13.png",
-    alt: "Quiz question 13 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q14": {
-    src: "/quiz/q14.png",
-    alt: "Quiz question 14 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q15": {
-    src: "/quiz/q15.png",
-    alt: "Quiz question 15 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q17": {
-    src: "/quiz/q17.png",
-    alt: "Quiz question 17 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q18": {
-    src: "/quiz/q18.png",
-    alt: "Quiz question 18 artwork",
-    width: 1280,
-    height: 720,
     kind: "quiz-art",
   },
   "quiz.q2": {
@@ -510,34 +355,6 @@ export const media = {
     height: 504,
     kind: "quiz-art",
   },
-  "quiz.q6": {
-    src: "/quiz/q6.png",
-    alt: "Quiz question 6 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q7": {
-    src: "/quiz/q7.png",
-    alt: "Quiz question 7 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q8": {
-    src: "/quiz/q8.png",
-    alt: "Quiz question 8 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
-  "quiz.q9": {
-    src: "/quiz/q9.png",
-    alt: "Quiz question 9 artwork",
-    width: 1280,
-    height: 720,
-    kind: "quiz-art",
-  },
   "refer-bg": {
     src: "/refer-bg.png",
     alt: "",
@@ -552,13 +369,6 @@ export const media = {
     height: 681,
     kind: "illustration",
   },
-  "sports-trivia-quiz": {
-    src: "/sports-trivia-quiz.png",
-    alt: "Sports Trivia Quiz",
-    width: 1024,
-    height: 1024,
-    kind: "illustration",
-  },
   "take-quiz": {
     src: "/take-quiz.png",
     alt: "Take Quiz",
@@ -571,55 +381,6 @@ export const media = {
     alt: "Technology Quiz",
     width: 1024,
     height: 508,
-    kind: "illustration",
-  },
-  "tips.tip-1": {
-    src: "/tips/tip-1.png",
-    alt: "Creator tip illustration 1",
-    width: 1280,
-    height: 720,
-    kind: "tip-art",
-  },
-  "tips.tip-2": {
-    src: "/tips/tip-2.png",
-    alt: "Creator tip illustration 2",
-    width: 1280,
-    height: 720,
-    kind: "tip-art",
-  },
-  "tips.tip-3": {
-    src: "/tips/tip-3.png",
-    alt: "Creator tip illustration 3",
-    width: 1280,
-    height: 720,
-    kind: "tip-art",
-  },
-  "tips.tip-4": {
-    src: "/tips/tip-4.png",
-    alt: "Creator tip illustration 4",
-    width: 1280,
-    height: 720,
-    kind: "tip-art",
-  },
-  "tips.tip-5": {
-    src: "/tips/tip-5.png",
-    alt: "Creator tip illustration 5",
-    width: 1280,
-    height: 720,
-    kind: "tip-art",
-  },
-  "tips.tip-6": {
-    src: "/tips/tip-6.png",
-    alt: "Creator tip illustration 6",
-    width: 1280,
-    height: 720,
-    kind: "tip-art",
-  },
-  "world-landmarks": {
-    src: "/world-landmarks.png",
-    alt: "World Landmarks",
-    width: 1024,
-    height: 1024,
     kind: "illustration",
   },
   "world-map-quiz": {

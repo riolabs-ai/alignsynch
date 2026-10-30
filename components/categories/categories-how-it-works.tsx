@@ -1,4 +1,6 @@
 "use client";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import browse from "@/public/browse-category.png";
 import earnReward from "@/public/earn-reward.png";
 import takequiz from "@/public/take-quiz.png";
@@ -6,8 +8,6 @@ import type { PageCopySection } from "@/content/pages";
 import { itemOf, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { Award, BookOpen, Search } from "lucide-react";
-import Image from "next/image";
-import { media } from "@/data/media";
 
 /**
  * The how-it-works band. It renders on `/` and on `/categories`, so it takes its
@@ -92,12 +92,14 @@ export function CategoriesHowItWorks({ copy }: { copy: PageCopySection }) {
 
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className=" relative">
-                  <Image
-                    src={step.img || media.placeholder.src}
+                  <Media
                     alt={step.item.label}
-                    width={300}
-                    height={200}
                     className="object-cover aspect-[16/10] w-full border-b object-center"
+                    entry={entryOf(step.img)}
+                    height={200}
+                    kind={FALLBACK_KIND.illustration}
+                    seed={step.item.label}
+                    width={300}
                   />
                   <div className="absolute top-4 left-4">
                     <div

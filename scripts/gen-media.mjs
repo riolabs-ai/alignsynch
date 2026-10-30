@@ -261,13 +261,15 @@ if (broken.length > 0) {
 /**
  * A quiz subject with no file on disk draws the generated default instead. The `alt` is
  * empty because the tile is decoration — the subject's name is rendered as the tile's own
- * label, so describing a gradient to a screen reader would read the same thing twice.
+ * label, so describing a gradient to a screen reader would read the same thing twice. The
+ * `seed` is the slug, which is the same identity `CategoryTile` seeds its gradient with: a
+ * drawn default is only reproducible if the entry carries what it is drawn from.
  */
 const generated = [];
 for (const slug of quizCategorySlugs()) {
   const key = `category.${slug}`;
   if (entries.some((entry) => entry.key === key)) continue;
-  generated.push({ key, generated: true, alt: "", kind: "category-art" });
+  generated.push({ key, generated: true, seed: slug, alt: "", kind: "category-art" });
 }
 
 entries.push(...generated);
@@ -279,17 +281,19 @@ const header = `/**
  * Storage, not a projection: a component asks for a key and gets the one thing it names,
  * so no \`.tsx\` holds a literal \`/image.png\` any more (E17).
  *
- * Two kinds of entry live here, and \`content/media.ts\` is the union:
+ * TWO OF THE THREE TIERS LIVE HERE. An entry is either a **file** under \`public/\` (key
+ * derived from the path, never invented, so key <-> file is a bijection and both directions
+ * are checked — E18) or a **generated default** (\`generated: true\`, a \`seed\`, no \`src\`, no
+ * size). The third tier — a **remote** URL (\`content/media.ts::zRemoteMediaEntry\`) — is never
+ * stored here: it addresses somebody else's server, so it is built at the call site from the
+ * record it belongs to (\`remoteMedia(player.countryCode …)\`) and carries its own
+ * \`fallbackSeed\`.
  *
- *   - a **file** under \`public/\`. Keys are derived from the path, never invented
- *     (\`mediaKeyOf\` in \`scripts/media-refs.ts\`), so key <-> file is a bijection and both
- *     directions are checked (E18). \`ImageRef.src\` in \`data/\` stays a path in P2
- *     (D-P2-1) and must equal an entry's \`src\` (E19).
- *   - a **generated default** — \`generated: true\`, no \`src\`, no size. Issue #130 deleted
- *     the twenty-three identical \`public/category/*.webp\` placeholders (one blob,
- *     \`df44187d\`); a quiz subject's tile is now a gradient seeded by its slug plus a
- *     monogram from its name, drawn by \`components/categories/category-tile.tsx\`. No
- *     bytes, so nothing for the build to request.
+ * Issue #130 deleted the twenty-three identical \`public/category/*.webp\` placeholders (one
+ * blob, \`df44187d\`); a quiz subject's tile is now a gradient seeded by its slug plus a
+ * monogram from its name, drawn by \`components/categories/category-tile.tsx\`. Issue #155
+ * deleted the last two shared blobs, so every slot those files filled is drawn by
+ * \`components/media/media.tsx\` from a seed instead of borrowing one picture.
  *
  * GENERATED — do not hand-edit. \`node scripts/gen-media.mjs\` rewrites this file from
  * \`public/\` plus \`content/category.ts\`; \`pnpm data:check\` is what fails when the two
@@ -309,6 +313,7 @@ const body = entries
     entry.src === undefined
       ? `  ${keyText(entry.key)}: {
     generated: true,
+    seed: ${JSON.stringify(entry.seed)},
     alt: ${JSON.stringify(entry.alt)},
     kind: ${JSON.stringify(entry.kind)},
   },`

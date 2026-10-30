@@ -1,14 +1,13 @@
 "use client";
 
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useState } from "react";
-import Image from "next/image";
 import type { Message } from "./chat-page";
 import { formatClockTime, formatDateTimeLong } from "@/content/core";
 import { Check, CheckCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { GeneratedAvatar } from "@/components/media/generated-avatar";
-import { media } from "@/data/media";
 
 interface ChatMessageProps {
   message: Message;
@@ -20,6 +19,9 @@ interface ChatMessageProps {
 export function ChatMessage({ message, isOwn, contactName, contactSeed }: ChatMessageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  /** The registry entry behind a shared image; `undefined` means the slot draws its own. */
+  const sharedEntry = entryOf(message.image);
 
   const formatTime = (timestamp: string) => {
     return formatClockTime(timestamp);
@@ -47,7 +49,13 @@ export function ChatMessage({ message, isOwn, contactName, contactSeed }: ChatMe
       {!isOwn && (
         <div className="flex-shrink-0">
           <div className="relative w-7 h-7">
-            <GeneratedAvatar name={contactName} seed={contactSeed} size={28} />
+            <Media
+              alt={contactName}
+              height={28}
+              kind={FALLBACK_KIND.avatar}
+              seed={contactSeed}
+              width={28}
+            />
           </div>
         </div>
       )}
@@ -68,21 +76,27 @@ export function ChatMessage({ message, isOwn, contactName, contactSeed }: ChatMe
                 )}
                 {message.image && (
                   <div className="relative mt-1 overflow-hidden rounded-lg">
-                    <div
-                      className={cn(
-                        "absolute inset-0 flex items-center justify-center bg-muted/50 z-10",
-                        imageLoaded ? "hidden" : "block",
-                      )}
-                    >
-                      <span className="text-xs">Loading image...</span>
-                    </div>
-                    <Image
-                      src={message.image || media.placeholder.src}
+                    {/* The overlay is for bytes that are on their way. A generated default
+                        has nothing to load and paints immediately, so it never spins. */}
+                    {sharedEntry !== undefined && (
+                      <div
+                        className={cn(
+                          "absolute inset-0 flex items-center justify-center bg-muted/50 z-10",
+                          imageLoaded ? "hidden" : "block",
+                        )}
+                      >
+                        <span className="text-xs">Loading image...</span>
+                      </div>
+                    )}
+                    <Media
                       alt="Shared image"
-                      width={300}
-                      height={200}
                       className="rounded-lg max-w-full object-contain"
+                      entry={sharedEntry}
+                      height={200}
+                      kind={FALLBACK_KIND.illustration}
                       onLoad={() => setImageLoaded(true)}
+                      seed={message.id}
+                      width={300}
                     />
                   </div>
                 )}

@@ -23,7 +23,14 @@
  * The shape itself (`MediaEntry`, its kinds) lives in `content/media.ts` with the rest of
  * the model; this module is the derivation and comparison over it.
  */
-import { isFileMedia, MEDIA_KINDS, type MediaEntry, type MediaRegistry } from "../content/media";
+import {
+  isFileMedia,
+  isGeneratedMedia,
+  isRemoteMedia,
+  MEDIA_KINDS,
+  type MediaEntry,
+  type MediaRegistry,
+} from "../content/media";
 
 export type { MediaEntry, MediaRegistry };
 
@@ -72,9 +79,28 @@ export function registryProblems(registry: MediaRegistry): string[] {
       problems.push(`media "${key}": kind "${entry.kind}" is not one of ${MEDIA_KINDS.join(", ")}`);
     }
 
+    if (isRemoteMedia(entry)) {
+      if (!/^https:\/\//.test(entry.url)) {
+        problems.push(
+          `media "${key}": url "${entry.url}" must be https (an http image is blocked on a TLS page)`,
+        );
+      }
+      if (typeof entry.fallbackSeed !== "string" || entry.fallbackSeed.trim() === "") {
+        problems.push(
+          `media "${key}": a remote entry needs a fallbackSeed — the generated default that replaces it when it fails`,
+        );
+      }
+      continue;
+    }
+
     if (!isFileMedia(entry)) {
       if (!entry.generated) {
         problems.push(`media "${key}": an entry with no src must be a generated default`);
+      }
+      if (typeof entry.seed !== "string" || entry.seed.trim() === "") {
+        problems.push(
+          `media "${key}": a generated default needs a seed — the input its drawing is a function of`,
+        );
       }
       continue;
     }
@@ -182,7 +208,7 @@ export function unregisteredRefs(
  */
 export function generatedKeys(registry: MediaRegistry): string[] {
   return Object.entries(registry)
-    .filter(([, entry]) => !isFileMedia(entry))
+    .filter(([, entry]) => isGeneratedMedia(entry))
     .map(([key]) => key)
     .sort();
 }

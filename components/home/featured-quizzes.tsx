@@ -12,10 +12,10 @@ import type { QuizBadgeType } from "@/content/quiz";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { Award, Clock, Crown, Flame, Star, TrendingUp } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useState } from "react";
-import { media } from "@/data/media";
 
 /** The band's curation tabs, in render order: the fixture owns the words, this owns the values. */
 const TABS = [
@@ -104,12 +104,14 @@ export function FeaturedQuizzes({ copy }: { copy: PageCopySection }) {
           return (
             <Card key={quiz.id} className="overflow-hidden group">
               <div className="relative overflow-hidden">
-                <Image
-                  width={600}
-                  height={350}
-                  src={quiz.cover?.src ?? media.placeholder.src}
+                <Media
                   alt={quiz.cover?.alt || quiz.title}
                   className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  entry={entryOf(quiz.cover)}
+                  height={350}
+                  kind={FALLBACK_KIND.quiz}
+                  seed={quiz.id}
+                  width={600}
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">

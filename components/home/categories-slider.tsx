@@ -2,12 +2,12 @@
 import { categories } from "@/data/categories";
 import type { PageCopySection } from "@/content/pages";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Button } from "../ui/button";
-import { media } from "@/data/media";
 export function CategoriesSlider({ copy }: { copy: PageCopySection }) {
   return (
     <section className="space-y-4">
@@ -38,11 +38,13 @@ export function CategoriesSlider({ copy }: { copy: PageCopySection }) {
               href={`/categories/${slug}`}
               className={`relative overflow-hidden rounded-xl text-white h-[200px] flex justify-between  shadow-sm items-end`}
             >
-              <Image
-                className="size-full object-cover object-center absolute inset-0"
-                src={image?.src ?? media.placeholder.src}
+              <Media
                 alt=""
+                className="size-full object-cover object-center absolute inset-0"
+                entry={entryOf(image)}
                 fill
+                kind={FALLBACK_KIND.category}
+                seed={slug}
               />
               <div className="absolute top-2 right-2 bg-white/40 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs font-medium">
                 {count}

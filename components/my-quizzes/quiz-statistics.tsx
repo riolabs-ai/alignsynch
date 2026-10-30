@@ -26,8 +26,10 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
+import { media } from "@/data/media";
 import { useState } from "react";
 import {
   Area,
@@ -49,7 +51,6 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
-import { media } from "@/data/media";
 
 // Mock data for the quiz
 const getQuizData = (id: string) => {
@@ -360,11 +361,13 @@ export function QuizStatistics({ id }: { id: string }) {
       <Card className="mb-6">
         <div className="flex flex-col md:flex-row">
           <div className="relative h-48 w-full md:h-auto md:w-64">
-            <Image
-              src={quiz.image || media.placeholder.src}
+            <Media
               alt={quiz.title}
-              fill
               className="object-cover md:rounded-l-lg"
+              entry={entryOf(quiz.image)}
+              fill
+              kind={FALLBACK_KIND.quiz}
+              seed={quiz.id}
             />
           </div>
           <div className="flex flex-1 flex-col p-6">

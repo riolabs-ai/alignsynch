@@ -23,7 +23,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, formatDate } from "@/content/core";
 import { spotsLeftOf, type Quiz, type QuizAnalytics } from "@/content/quiz";
 import type { QuizPlayersRow } from "@/content/quiz-result";
-import { media } from "@/data/media";
 import {
   AlertCircle,
   ArrowLeft,
@@ -41,8 +40,9 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useState } from "react";
 
 interface MyQuizDetailsProps {
@@ -164,11 +164,13 @@ export function QuizDetails({
       {/* Quiz header */}
       <div className="relative rounded-xl overflow-hidden">
         <div className="relative h-64 w-full">
-          <Image
-            src={quiz.cover?.src ?? media.placeholder.src}
+          <Media
             alt={quiz.title}
             className="h-full w-full object-cover"
+            entry={entryOf(quiz.cover)}
             fill
+            kind={FALLBACK_KIND.quiz}
+            seed={quiz.id}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-end p-6">
             <div className="flex flex-wrap gap-2 mb-3">

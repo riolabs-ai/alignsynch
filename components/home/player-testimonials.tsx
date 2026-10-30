@@ -1,8 +1,9 @@
 "use client";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
 import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
@@ -98,11 +99,13 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                 <div className="absolute -top-6 -left-6">
                   <Quote className="h-12 w-12 text-indigo-200 dark:text-indigo-800 rotate-180" />
                 </div>
-                <GeneratedAvatar
-                  name={testimonials[activeIndex].name}
-                  seed={testimonials[activeIndex].name}
-                  size={256}
+                <Media
+                  alt={testimonials[activeIndex].name}
                   className="border-4 border-white shadow-lg dark:border-slate-800"
+                  height={256}
+                  kind={FALLBACK_KIND.avatar}
+                  seed={testimonials[activeIndex].name}
+                  width={256}
                 />
                 <Badge className="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5">
                   {testimonials[activeIndex].role}
@@ -158,11 +161,13 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
             <Card className="border-2 border-indigo-100 dark:border-indigo-900/30 overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex justify-center mb-6">
-                  <GeneratedAvatar
-                    name={testimonials[activeIndex].name}
-                    seed={testimonials[activeIndex].name}
-                    size={96}
+                  <Media
+                    alt={testimonials[activeIndex].name}
                     className="border-4 border-white shadow-md dark:border-slate-800"
+                    height={96}
+                    kind={FALLBACK_KIND.avatar}
+                    seed={testimonials[activeIndex].name}
+                    width={96}
                   />
                 </div>
 

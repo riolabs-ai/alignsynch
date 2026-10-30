@@ -2,7 +2,6 @@
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Progress } from "@/components/ui/progress";
 import type { LeaderboardEntry, PlayerTier } from "@/content/people";
 import { cn } from "@/lib/utils";
@@ -15,6 +14,8 @@ import {
   Trophy,
 } from "lucide-react";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useState } from "react";
 
 interface LeaderboardTableProps {
@@ -95,10 +96,8 @@ export function LeaderboardTable({
             </div>
             <div className="col-span-3 flex items-center gap-3">
               <Link href={`/profile/${entry.player.handle}`} className="block">
-                <GeneratedAvatar
-                  name={entry.player.name}
-                  seed={entry.player.id}
-                  size={40}
+                <Media
+                  alt={entry.player.name}
                   className={
                     entry.rank <= 3
                       ? `ring-2 ring-offset-2 ${
@@ -110,6 +109,10 @@ export function LeaderboardTable({
                         }`
                       : undefined
                   }
+                  height={40}
+                  kind={FALLBACK_KIND.avatar}
+                  seed={entry.player.id}
+                  width={40}
                 />
               </Link>
               <div>

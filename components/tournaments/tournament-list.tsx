@@ -1,14 +1,15 @@
 "use client";
 
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
+import { media } from "@/data/media";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import type { PageCopySection } from "@/content/pages";
-import { media } from "@/data/media";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowRight, CalendarDays, Clock, Trophy, Users } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -83,7 +84,6 @@ export function TournamentList({ activeCategory, activeFilter, copy }: Tournamen
       title: "Sports Spectacular",
       description:
         "From football to Olympics, test your knowledge of sporting events and athletes.",
-      image: media["sports-trivia-quiz"].src, // Using existing sports quiz image
       category: "sports",
       status: "registration",
       dates: "June 15 - July 1, 2023",
@@ -144,11 +144,13 @@ export function TournamentList({ activeCategory, activeFilter, copy }: Tournamen
           {filteredTournaments.map((tournament) => (
             <Card key={tournament.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="relative h-48">
-                <Image
-                  src={tournament.image || media.placeholder.src}
+                <Media
                   alt={tournament.title}
-                  fill
                   className="object-cover"
+                  entry={entryOf(tournament.image)}
+                  fill
+                  kind={FALLBACK_KIND.quiz}
+                  seed={tournament.id}
                 />
                 <div className="absolute top-2 right-2">
                   <Badge className={`${statusColors[tournament.status]} text-white`}>

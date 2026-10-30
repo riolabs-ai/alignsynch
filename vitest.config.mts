@@ -9,13 +9,18 @@ import { defineConfig } from "vitest/config";
  * `pnpm data:check`, because it exists to prove the content model. Those tests are
  * not rewritten here. This config is for tests that import the *app* side
  * (`lib/quiz-cards.ts`, `data/searchdata.ts`) and need the `@/` alias resolved.
+ *
+ * `.tsx` is included for the one test that needs a DOM: the media resolver's `onError` is a
+ * browser event, so `tests/media-fallback.test.tsx` opts into `jsdom` with its own
+ * `@vitest-environment` docblock and dispatches a real `error` on the `<img>` the component
+ * rendered (#155). Every other file stays on node, which is the cheap default.
  */
 export default defineConfig({
   resolve: {
     alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
   },
   test: {
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     environment: "node",
   },
 });

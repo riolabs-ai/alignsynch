@@ -1,6 +1,7 @@
 "use client";
 
-import { GeneratedAvatar } from "@/components/media/generated-avatar";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/content/core";
@@ -42,11 +43,13 @@ export function ProfileHeader({
   return (
     <div className="rounded-xl bg-gradient-to-r from-purple-100 to-blue-100 p-6 shadow-sm dark:from-purple-950/30 dark:to-blue-950/30">
       <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-        <GeneratedAvatar
-          name={person.name}
-          seed={person.id}
-          size={96}
+        <Media
+          alt={person.name}
           className="border-4 border-background"
+          height={96}
+          kind={FALLBACK_KIND.avatar}
+          seed={person.id}
+          width={96}
         />
 
         <div className="flex-1">

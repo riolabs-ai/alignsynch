@@ -8,9 +8,9 @@ import type { PublishStatus } from "@/content/core";
 import type { QuizAuthoringCard } from "@/content/quiz";
 import { shelfAuthoringCards } from "@/lib/quiz-cards";
 import { Copy, Eye, Trash2 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { media } from "@/data/media";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 
 const STATUS_LABEL: Record<PublishStatus, string> = {
   published: "Active",
@@ -123,11 +123,13 @@ function DashboardQuizRow({ quiz }: { quiz: QuizAuthoringCard }) {
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg">
       <div className="relative w-full md:w-24 h-24 rounded-md overflow-hidden">
-        <Image
-          src={quiz.cover?.src ?? media.placeholder.src}
+        <Media
           alt={quiz.cover?.alt || quiz.title}
-          fill
           className="object-cover"
+          entry={entryOf(quiz.cover)}
+          fill
+          kind={FALLBACK_KIND.quiz}
+          seed={quiz.id}
         />
       </div>
 

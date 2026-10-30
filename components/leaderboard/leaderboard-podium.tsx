@@ -1,4 +1,5 @@
-import { GeneratedAvatar } from "@/components/media/generated-avatar";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";
 import type { LeaderboardEntry } from "@/content/people";
 import { Crown, Medal, Star } from "lucide-react";
@@ -28,11 +29,13 @@ export function LeaderboardPodium({ entries }: LeaderboardPodiumProps) {
           return (
             <div key={player.id} className="flex flex-col items-center">
               <div className="relative mb-2">
-                <GeneratedAvatar
-                  name={player.name}
-                  seed={player.id}
-                  size={avatarSizes[i]}
+                <Media
+                  alt={player.name}
                   className={`ring-2 ring-offset-2 ${borderColors[i]}`}
+                  height={avatarSizes[i]}
+                  kind={FALLBACK_KIND.avatar}
+                  seed={player.id}
+                  width={avatarSizes[i]}
                 />
                 {i === 1 && (
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2">

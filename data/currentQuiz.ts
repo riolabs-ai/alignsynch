@@ -5,7 +5,6 @@
  */
 import type { Quiz } from "../content/quiz";
 import { DEMO_NOW_ISO } from "../content/core";
-import { media } from "./media";
 
 /**
  * The one playable quiz. Was data/currentQuiz.tsx (5 StaticImageData question images).
@@ -50,10 +49,6 @@ export const currentQuiz: Quiz = {
       correctOptionId: "b",
       explanation:
         "The Lighthouse of Alexandria was one of the Seven Wonders of the Ancient World, built around 280 BC.",
-      media: {
-        src: media["quiz.q13"].src,
-        alt: "",
-      },
     },
     {
       id: "quiz-ultimate-world-history-trivia-q2",
@@ -79,10 +74,6 @@ export const currentQuiz: Quiz = {
       correctOptionId: "b",
       explanation:
         "World War II ended in 1945, with Germany surrendering in May and Japan surrendering in September.",
-      media: {
-        src: media["quiz.q6"].src,
-        alt: "",
-      },
     },
     {
       id: "quiz-ultimate-world-history-trivia-q3",
@@ -108,10 +99,6 @@ export const currentQuiz: Quiz = {
       correctOptionId: "d",
       explanation:
         "While Magellan started the voyage, Juan Sebastián Elcano completed the first circumnavigation after Magellan's death in 1522.",
-      media: {
-        src: media["quiz.q12"].src,
-        alt: "",
-      },
     },
     {
       id: "quiz-ultimate-world-history-trivia-q4",
@@ -137,10 +124,6 @@ export const currentQuiz: Quiz = {
       correctOptionId: "c",
       explanation:
         "Julius Caesar was a Roman general and statesman who played a critical role in the transformation of the Roman Republic into the Roman Empire.",
-      media: {
-        src: media["quiz.q15"].src,
-        alt: "",
-      },
     },
     {
       id: "quiz-ultimate-world-history-trivia-q5",
@@ -166,10 +149,6 @@ export const currentQuiz: Quiz = {
       correctOptionId: "c",
       explanation:
         "The Renaissance began in Italy during the 14th century, particularly in Florence, before spreading throughout Europe.",
-      media: {
-        src: media["quiz.q17"].src,
-        alt: "",
-      },
     },
   ],
   settings: {

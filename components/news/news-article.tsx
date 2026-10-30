@@ -30,12 +30,13 @@ import {
   ThumbsUp,
   Twitter,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { media } from "@/data/media";
 
 /**
@@ -160,11 +161,13 @@ export function NewsArticle({
 
       {/* Featured Image */}
       <div className="relative h-[300px] md:h-[400px] w-full mb-8 rounded-lg overflow-hidden">
-        <Image
-          src={article.cover?.src ?? media.placeholder.src}
+        <Media
           alt={article.title}
-          fill
           className="object-cover"
+          entry={entryOf(article.cover)}
+          fill
+          kind={FALLBACK_KIND.news}
+          seed={article.id}
         />
       </div>
 
@@ -360,11 +363,13 @@ export function NewsArticle({
                 <Card key={related.slug}>
                   <div className="flex">
                     <div className="relative h-24 w-24">
-                      <Image
-                        src={related.cover?.src ?? media.placeholder.src}
+                      <Media
                         alt={related.title}
-                        fill
                         className="object-cover"
+                        entry={entryOf(related.cover)}
+                        fill
+                        kind={FALLBACK_KIND.news}
+                        seed={related.id}
                       />
                     </div>
                     <div className="flex-1 p-3">

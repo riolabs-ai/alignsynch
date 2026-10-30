@@ -14,7 +14,7 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **39** — 25 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 223 files under `components/`, 219 of them `.tsx`
+- component domains: **32** — 224 files under `components/`, 220 of them `.tsx`
 - route handlers: **5** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 9 · **fixture** 50 · **db** 7 · **live** 5
 - templates: Both templates 19 · AlignSynch 8 · QuizHub 42 · No template yet 2
@@ -106,9 +106,9 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - routes (7): `/`, `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/pricing`, `/tournaments` — and every other route through `app/layout.tsx`
 
 - `components/media` — **mock**
-  - capability: The generated avatar: initials on a gradient seeded from the handle, with no image file behind it.
-  - files (1): `generated-avatar.tsx`
-  - routes (21): `/`, `/affiliate`, `/battle`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes/[id]`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/settings`, `/tournaments`, `/tournaments/[id]`
+  - capability: The one media resolver: a file, a remote URL or a generated default drawn from a seed, in that order, with a fallback on error and no image file behind the last tier.
+  - files (2): `generated-avatar.tsx`, `media.tsx`
+  - routes (25): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/settings`, `/tournaments`, `/tournaments/[id]`
 
 - `components/not-found` — **mock**
   - capability: The 404 body: floating glyph decoration and a go-back button.
@@ -196,7 +196,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/categories` — **fixture**
   - capability: Every quiz category as a tile generated from its slug, with a how-it-works block and a closing CTA.
-  - components: `components/categories`, `components/layout`, `components/ui`
+  - components: `components/categories`, `components/layout`, `components/media`, `components/ui`
   - reads: 9 record fixtures — `data/authored-quizzes.ts`, `data/browse-quizzes.ts`, `data/categories.ts` (+6 more)
 
 - `/categories/[slug]` — **fixture**
@@ -247,7 +247,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/my-quizzes` — **fixture**
   - capability: Your own quizzes — drafts, published and their analytics — as a grid of quiz cards.
-  - components: `components/my-quizzes`, `components/ui`
+  - components: `components/media`, `components/my-quizzes`, `components/ui`
   - reads: 11 record fixtures — `data/authored-quizzes.ts`, `data/browse-quizzes.ts`, `data/created-quizzes.ts` (+8 more)
 
 - `/my-quizzes/[id]` — **fixture**
@@ -257,13 +257,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/my-quizzes/[id]/statistics` — **mock**
   - capability: Per-quiz statistics: completion, question-level correct rates, time spent and a leaderboard of players.
-  - components: `components/my-quizzes`, `components/ui`
+  - components: `components/media`, `components/my-quizzes`, `components/ui`
   - reads: 1 fixture module of page copy and assets only
   - notes: The numbers are literals inside components/my-quizzes/quiz-statistics.tsx, headed 'Mock data for the quiz' — no fixture backs them, and this entry records the mock rather than fixing it.
 
 - `/news` — **fixture**
   - capability: Product news and updates, featured first, as article records.
-  - components: `components/news`, `components/ui`
+  - components: `components/media`, `components/news`, `components/ui`
   - reads: 4 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` (+1 more)
 
 - `/news/[slug]` — **fixture**
