@@ -16,8 +16,9 @@ import type {
   QuizReviewRowModel,
 } from "@/lib/quiz-detail";
 import { ArrowLeft, Award, Bookmark, Clock, Share2, Star, Users } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -107,7 +108,7 @@ interface DetailView {
   requirements?: string;
   tags?: string[];
   /** Template-only related cards — they name other records, so only the template has them. */
-  related?: Array<{ id: number; title: string; image: string; difficulty: string }>;
+  related?: Array<{ id: number; title: string; image?: string; difficulty: string }>;
   /**
    * The quiz's attempts, ranked — from `selectQuizLeaderboard` for a record, or the
    * template's own five rows. Empty means the tab is not rendered at all.
@@ -124,7 +125,6 @@ interface DetailView {
 const quizData = {
   id: "1",
   title: "Space Exploration Quiz",
-  image: media["quiz.q17"].src,
   category: "Science & Technology",
   difficulty: "Medium",
   timeLimit: 20,
@@ -200,7 +200,6 @@ const quizData = {
     {
       id: 2,
       title: "DC Extended Universe Quiz",
-      image: media["world-landmarks"].src,
       difficulty: "Hard",
     },
     {
@@ -221,7 +220,6 @@ const quizData = {
 /** The template card, used only when the id is not a record. */
 const templateView: DetailView = {
   title: quizData.title,
-  image: quizData.image,
   category: quizData.category,
   difficulty: quizData.difficulty,
   timeLimit: `${quizData.timeLimit} min`,
@@ -406,12 +404,14 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
             {view.related.map((quiz) => (
               <Card key={quiz.id} className="overflow-hidden">
                 <div className="relative h-32">
-                  <Image
-                    width={600}
-                    height={350}
-                    src={quiz.image || media.placeholder.src}
+                  <Media
                     alt={quiz.title}
                     className="w-full h-full object-cover"
+                    entry={entryOf(quiz.image)}
+                    height={350}
+                    kind={FALLBACK_KIND.quiz}
+                    seed={String(quiz.id)}
+                    width={600}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
                     <div>
@@ -444,11 +444,13 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
         </Button>
 
         <div className="relative h-64 md:h-80 rounded-xl overflow-hidden mb-6">
-          <Image
-            src={view.image || media.placeholder.src}
+          <Media
             alt={view.title}
             className="w-full h-full object-cover"
+            entry={entryOf(view.image)}
             fill
+            kind={FALLBACK_KIND.quiz}
+            seed={view.title}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4 md:p-6">
             <div className="flex flex-wrap gap-2 mb-3">

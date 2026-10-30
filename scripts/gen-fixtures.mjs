@@ -224,7 +224,14 @@ const LIMITED_TIME_ENDS = [
   "2027-01-05T00:00:00.000Z",
 ];
 
-/** category id → title topics, canonical cover key, and a question bank. */
+/**
+ * category id → title topics, canonical cover key, and a question bank.
+ *
+ * `cover` is optional (issue #155): a category whose cover file was one of the two shared
+ * blobs has no image, and the record is emitted without a `cover` so its card draws the
+ * generated default from the quiz's own id. A key that is present must still resolve — the
+ * check in `main` is what keeps a typo from becoming a 404.
+ */
 const CATEGORIES = [
   {
     id: "space",
@@ -353,7 +360,6 @@ const CATEGORIES = [
   {
     id: "literature",
     topics: ["Classic Novels", "Famous Authors"],
-    cover: "classic-novels-quiz",
     questions: [
       {
         prompt: "Who wrote 'Pride and Prejudice'?",
@@ -384,7 +390,6 @@ const CATEGORIES = [
   {
     id: "movies",
     topics: ["Blockbusters", "Directors"],
-    cover: "marvel-cinematic-universe",
     questions: [
       {
         prompt: "Who directed 'Jurassic Park' (1993)?",
@@ -446,7 +451,6 @@ const CATEGORIES = [
   {
     id: "sports",
     topics: ["Football", "The Olympics"],
-    cover: "sports-trivia-quiz",
     questions: [
       {
         prompt: "How many players start a football (soccer) match per side?",
@@ -679,7 +683,7 @@ function buildQuiz(rng, template, index, seed, registry) {
       allowRetakes: true,
       visibility: "public",
     },
-    cover: { src: mk(coverKey), alt: template.title },
+    ...(coverKey === undefined ? {} : { cover: { src: mk(coverKey), alt: template.title } }),
     author: { name: authorName },
     stats: buildStats(rng, index),
   };
@@ -730,7 +734,9 @@ function main() {
   const registry = registryFromDisk();
   const registryKeys = new Set(registry.keys());
 
-  const missingCovers = CATEGORIES.filter((category) => !registryKeys.has(category.cover));
+  const missingCovers = CATEGORIES.filter(
+    (category) => category.cover !== undefined && !registryKeys.has(category.cover),
+  );
   if (missingCovers.length > 0) {
     for (const category of missingCovers) {
       console.error(

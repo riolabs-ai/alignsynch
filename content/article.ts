@@ -253,7 +253,17 @@ export const zArticle = zContentBase
     publishedAt: zIsoDateTime,
     readMinutes: z.number().int().positive(),
     author: zEditorialAuthor,
-    cover: zImageRef,
+    /**
+     * Optional again, as it is on `zContentBase` (issue #155, phase 1).
+     *
+     * It was required while every article could point at one of two shared blobs: nine
+     * news heroes and six tip heroes were all `/news/news1.png` or `/tips/tip-1.png`, so
+     * "required" only ever meant "borrow the same picture". Those files are deleted, and
+     * the honest record is the one that says it has no image — the card draws the
+     * generated default from the article's own id. This is *not* the record-owned `media`
+     * field: no article carries a `MediaEntry`, that field is phase 2, after the backend.
+     */
+    cover: zImageRef.optional(),
     body: zArticleBody,
   });
 

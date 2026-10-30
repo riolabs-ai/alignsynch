@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Clock, DollarSign, Filter, Search, SortAsc, Target, Users } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import {
   DIFFICULTIES,
   formatCurrency,
@@ -28,7 +29,6 @@ import type { QuizCard } from "@/content/quiz";
 import { fillLabel, itemLabel, pageItemOf, sectionOf } from "@/lib/page-copy";
 import { shelfCards } from "@/lib/quiz-cards";
 import { useEffect, useState } from "react";
-import { media } from "@/data/media";
 
 /** The card prints minutes; the model stores seconds. */
 const minutes = (quiz: QuizCard) => Math.round(quiz.timeLimitSeconds / 60);
@@ -245,12 +245,14 @@ export function CategoryDetailPage({ categoryName, copy }: CategoryDetailPagePro
             >
               {/* Image with overlay */}
               <div className="relative h-48">
-                <Image
-                  width={1000}
-                  height={500}
-                  src={quiz.cover?.src ?? media.placeholder.src}
+                <Media
                   alt={quiz.cover?.alt || quiz.title}
                   className="h-full w-full object-cover"
+                  entry={entryOf(quiz.cover)}
+                  height={500}
+                  kind={FALLBACK_KIND.quiz}
+                  seed={quiz.id}
+                  width={1000}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
                   <div className="w-full">

@@ -10,11 +10,11 @@ import type { TipRecord } from "@/lib/article-records";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Bookmark, Clock, Share2, ThumbsUp } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useState } from "react";
 import RelatedTips from "./related-tips";
-import { media } from "@/data/media";
 
 interface TipDetailProps {
   /**
@@ -72,12 +72,14 @@ export default function TipDetail({ tip, relatedTips, copy, related }: TipDetail
           <h1 className="text-2xl md:text-3xl xl:text-4xl font-bold mb-4">{tip.title}</h1>
 
           <p className="text-xl text-gray-600 dark:text-gray-50 mb-6">{tip.summary}</p>
-          <Image
-            src={tip.cover?.src ?? media.placeholder.src}
+          <Media
             alt={tip.title}
-            width={1000}
-            height={300}
             className="object-cover aspect-[16/6] mb-6"
+            entry={entryOf(tip.cover)}
+            height={300}
+            kind={FALLBACK_KIND.tip}
+            seed={tip.id}
+            width={1000}
           />
           <div className="flex items-center justify-between flex-wrap gap-3 border-b border-gray-200 dark:border-gray-700 pb-6">
             <div className="flex items-center">

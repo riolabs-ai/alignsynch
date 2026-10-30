@@ -4,9 +4,9 @@ import { tipCategoryName } from "@/data/creator-tips-data";
 import { articlePath, publishedArticles } from "@/lib/article-records";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowRight, Clock } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { media } from "@/data/media";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 
 /** The featured tips are the published records that carry `featured: true`. */
 export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
@@ -28,11 +28,13 @@ export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
             className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 hover:border-purple-300 hover:shadow-md transition-all"
           >
             <div className="aspect-video relative">
-              <Image
-                src={tip.cover?.src ?? media.placeholder.src}
+              <Media
                 alt={tip.title}
-                fill
                 className="object-cover"
+                entry={entryOf(tip.cover)}
+                fill
+                kind={FALLBACK_KIND.tip}
+                seed={tip.id}
               />
             </div>
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -41,10 +43,8 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { media } from "@/data/media";
 
 interface ProfileCreatedQuizzesProps {
   user: User;
@@ -446,11 +446,13 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
           {previewQuiz && (
             <div className="max-h-[70vh] overflow-y-auto">
               <div className="relative aspect-video w-full">
-                <Image
-                  src={previewQuiz.image || media.placeholder.src}
+                <Media
                   alt={previewQuiz.title}
-                  fill
                   className="rounded-md object-cover"
+                  entry={entryOf(previewQuiz.image)}
+                  fill
+                  kind={FALLBACK_KIND.quiz}
+                  seed={previewQuiz.id}
                 />
               </div>
 
@@ -598,11 +600,13 @@ function ProfileQuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: Pro
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video">
-        <Image
-          src={quiz.image || media.placeholder.src}
+        <Media
           alt={quiz.title}
-          fill
           className="object-cover"
+          entry={entryOf(quiz.image)}
+          fill
+          kind={FALLBACK_KIND.quiz}
+          seed={quiz.id}
         />
         {quiz.featured && (
           <div className="absolute left-2 top-2">
@@ -733,11 +737,13 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
     <Card>
       <div className="flex flex-col sm:flex-row">
         <div className="relative h-40 w-full sm:h-auto sm:w-48">
-          <Image
-            src={quiz.image || media.placeholder.src}
+          <Media
             alt={quiz.title}
-            fill
             className="object-cover sm:rounded-l-lg"
+            entry={entryOf(quiz.image)}
+            fill
+            kind={FALLBACK_KIND.quiz}
+            seed={quiz.id}
           />
           {quiz.featured && (
             <div className="absolute left-2 top-2">

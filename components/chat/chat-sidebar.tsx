@@ -1,6 +1,7 @@
 "use client";
 
-import { GeneratedAvatar } from "@/components/media/generated-avatar";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -157,7 +158,13 @@ export function ChatSidebar({
                   onClick={() => onConversationSelect(conversation.id)}
                 >
                   <div className="relative flex-shrink-0">
-                    <GeneratedAvatar name={contact.name} seed={contact.id} size={48} />
+                    <Media
+                      alt={contact.name}
+                      height={48}
+                      kind={FALLBACK_KIND.avatar}
+                      seed={contact.id}
+                      width={48}
+                    />
                     <span
                       className={cn(
                         "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background",
@@ -255,7 +262,13 @@ export function ChatSidebar({
                     onClick={() => handleNewConversation(contact.id)}
                   >
                     <div className="relative">
-                      <GeneratedAvatar name={contact.name} seed={contact.id} size={40} />
+                      <Media
+                        alt={contact.name}
+                        height={40}
+                        kind={FALLBACK_KIND.avatar}
+                        seed={contact.id}
+                        width={40}
+                      />
                       <span
                         className={cn(
                           "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",

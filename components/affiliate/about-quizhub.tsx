@@ -1,12 +1,12 @@
 "use client";
+import { Media } from "@/components/media/media";
+import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
-import { media } from "@/data/media";
 import { itemLabel, itemValue } from "@/lib/page-copy";
 import { motion } from "framer-motion";
 import { Award, BookOpen, Globe, Users } from "lucide-react";
-import Image from "next/image";
 
 /** Which stat card renders where; the caption and the figure are the fixture's pair. */
 const STATS = [
@@ -54,12 +54,13 @@ export function AboutBrand({ copy }: { copy: PageCopySection }) {
             className="relative"
           >
             <div className="relative z-10 rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700">
-              <Image
-                src={media["about-affiliate"].src}
+              <Media
                 alt={`${brand.name} Platform`}
-                width={600}
-                height={400}
                 className="w-full h-auto"
+                height={400}
+                kind={FALLBACK_KIND.illustration}
+                seed={brand.domain}
+                width={600}
               />
             </div>
             {/* Decorative elements */}

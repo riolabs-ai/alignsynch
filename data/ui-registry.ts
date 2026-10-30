@@ -603,7 +603,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "mock",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The generated avatar: initials on a gradient seeded from the handle, with no image file behind it.",
+      "The one media resolver: a file, a remote URL or a generated default drawn from a seed, in that order, with a fallback on error and no image file behind the last tier.",
   },
   {
     kind: "domain",
