@@ -79,6 +79,21 @@ export function itemValue(section: PageCopySection, id: string): string {
 }
 
 /**
+ * The paragraph a *band* carries, under its heading (`"Every Aspect is asked twice. …"`).
+ *
+ * The section-level twin of `itemBody`, and the same contract: a band whose description is
+ * optional in the schema but required by the view that renders it fails here, at the fixture
+ * read, instead of drawing an empty paragraph. Placeholders are not filled — the caller runs
+ * `fillLabel` when the band's words meet a record.
+ */
+export function sectionBody(section: PageCopySection): string {
+  if (section.body === undefined) {
+    throw new Error(`PageCopy: section "${section.id}" has no body`);
+  }
+  return section.body;
+}
+
+/**
  * Replace `{name}` placeholders with what the record supplies, e.g.
  * `"Only {count} spots left"` + `{ count: 12 }`. An unknown placeholder is left as
  * written, so it renders (and shows up in a screenshot) instead of becoming "".
