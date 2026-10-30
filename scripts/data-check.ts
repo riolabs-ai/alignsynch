@@ -55,6 +55,7 @@ import {
 } from "../content/social";
 import { DEMO_NOW_ISO } from "../content/core";
 import { assessmentInstances, assessments } from "../data/assessments";
+import { demoBundleProblems, readStore } from "./bundles";
 import { categories as quizCategoryRows } from "../data/categories";
 import { contacts as modelContacts, conversations as modelConversations } from "../data/chat-data";
 import { categories as tipCategoryTable, tips } from "../data/creator-tips-data";
@@ -208,11 +209,53 @@ const notificationRecords = validateCollection("E0", "notification", zNotificati
  * template — Items, no parties; an instance is that template copied and given two
  * parties, so the Opinions live on the instance. Neither carries a Gap: the Gap is
  * `gapOf(one, other)` over two scores, and there is no field to drift.
+ *
+ * These are the **fixtures**, and they are validated whatever else is installed: they are
+ * the demo bundle's source, so a fixture that stops parsing is a red build even when a
+ * tenant store is active (E33 below).
  */
 const assessmentRecords = validateCollection("E0", "assessment", zAssessment, [...assessments]);
 const instanceRecords = validateCollection("E0", "assessment instance", zAssessmentInstance, [
   ...assessmentInstances,
 ]);
+
+/* ------------------------------------------------------------------ *
+ * E32 — the shipped demo bundle is the canonical export of the fixtures
+ *
+ * `data/bundles/demo-dataset.alignsynch.json` is the artifact a tenant installs (#147), so
+ * it is generated and gated the way `docs/glossary.md` is: `pnpm bundles export --dataset
+ * --fix` writes it, and this compares the committed bytes with a fresh canonical export of
+ * `data/assessments.ts`. A fixture edited without regenerating the bundle is drift in a
+ * file other people import, and nothing else in the gate can see it — the records are
+ * valid, the bundle is valid, and they say different things.
+ * ------------------------------------------------------------------ */
+
+for (const problem of demoBundleProblems()) {
+  err("E32", problem);
+}
+
+/* ------------------------------------------------------------------ *
+ * E33 — the tenant store, when one has been imported
+ *
+ * `data/generated/assessments.json` is where `pnpm bundles import` writes (gitignored), and
+ * when it exists it is **the active set**: it supersedes the fixtures for the app-facing
+ * collections and for E1/E2/E31 below. It is absent on a fresh clone, which is why the demo
+ * bundle and the fixtures still matter — deleting the store resets the tenant to them.
+ *
+ * A store is validated as what an import validated: the dataset payload shape (E0 per
+ * record), then the collection rules (E1/E2/E31 shape). One store in one file, so the same
+ * three rules are the whole contract.
+ * ------------------------------------------------------------------ */
+
+const store = readStore();
+if (store.kind === "invalid") {
+  for (const problem of store.problems) err("E33", problem);
+}
+
+/** The active assessment collections: the store when it is valid, the fixtures when absent. */
+const activeAssessmentRecords =
+  store.kind === "valid" ? store.records.templates : assessmentRecords;
+const activeInstanceRecords = store.kind === "valid" ? store.records.instances : instanceRecords;
 
 /* the whole taxonomy table, in one pass */
 const categoryTable: readonly Category[] = taxonomyTable;
@@ -317,14 +360,14 @@ assertUnique("E1", "category ids", categoryTable, (row) => row.id);
 assertUnique(
   "E1",
   "all record ids",
-  [...allQuizzes, ...assessmentRecords, ...instanceRecords],
+  [...allQuizzes, ...activeAssessmentRecords, ...activeInstanceRecords],
   (row) => row.id,
 );
-assertUnique("E2", "assessment slugs", assessmentRecords, (row) => `${row.type}/${row.slug}`);
+assertUnique("E2", "assessment slugs", activeAssessmentRecords, (row) => `${row.type}/${row.slug}`);
 assertUnique(
   "E2",
   "assessment instance slugs",
-  instanceRecords,
+  activeInstanceRecords,
   (row) => `${row.type}/${row.slug}`,
 );
 
@@ -340,7 +383,7 @@ assertUnique(
  * pure so the negative case can violate it without a filesystem.
  * ------------------------------------------------------------------ */
 
-for (const problem of instanceTemplateProblems(assessmentRecords, instanceRecords)) {
+for (const problem of instanceTemplateProblems(activeAssessmentRecords, activeInstanceRecords)) {
   err("E31", problem);
 }
 
@@ -1460,7 +1503,7 @@ const deadLinks = notificationRecords.filter((record) => !resolveRoute(record.li
 const counts = [
   `${quizzes.length} quizzes`,
   `${questionOwners.size} questions`,
-  `${assessmentRecords.length} assessment${assessmentRecords.length === 1 ? "" : "s"}, ${instanceRecords.length} assessment instance${instanceRecords.length === 1 ? "" : "s"}`,
+  `${activeAssessmentRecords.length} assessment${activeAssessmentRecords.length === 1 ? "" : "s"}${store.kind === "valid" ? " (from the imported store)" : " (fixtures)"}, ${activeInstanceRecords.length} assessment instance${activeInstanceRecords.length === 1 ? "" : "s"}`,
   `${news.length} news`,
   `${tipRecords.length} tips`,
   `${kbRecords.length} kb`,

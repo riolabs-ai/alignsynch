@@ -29,17 +29,32 @@ import {
 } from "../rule-codes";
 
 /**
- * The real emit sites: every top-level `scripts/*.ts`. Non-recursive on purpose —
- * `scripts/__tests__/` may name a code in an assertion without emitting it.
+ * The real emit sites: every top-level `scripts/*.ts`, plus the model modules that mint
+ * codes a script raises.
+ *
+ * `content/bundle.ts` is the second kind (#147): the bundle's `B1`–`B4`/`B6` refusals are
+ * authored where the schema lives, and `scripts/bundles.ts` is what prints them. A registry
+ * that only scanned `scripts/` would either have to pretend the model codes are emitted
+ * nowhere or accept a literal table in the CLI that emits nothing — so the scan reads the
+ * module the group declares, by the path the group spells (`../content/bundle.ts`).
+ * Non-recursive on purpose — `scripts/__tests__/` may name a code in an assertion without
+ * emitting it.
  */
-const scriptSources = () =>
-  readdirSync(join(process.cwd(), "scripts"))
+const MODEL_SOURCES = ["../content/bundle.ts"];
+
+const scriptSources = () => [
+  ...readdirSync(join(process.cwd(), "scripts"))
     .filter((entry) => entry.endsWith(".ts"))
     .sort()
     .map((entry) => ({
       file: entry,
       source: readFileSync(join(process.cwd(), "scripts", entry), "utf8"),
-    }));
+    })),
+  ...MODEL_SOURCES.map((file) => ({
+    file,
+    source: readFileSync(join(process.cwd(), "scripts", file), "utf8"),
+  })),
+];
 
 const problems = () => ruleCodeProblems(RULE_CODE_GROUPS, codeMentions(scriptSources()));
 
@@ -62,6 +77,8 @@ describe("the rule-code registry matches the validator it documents", () => {
       "data-check-people.ts",
       "copy-refs.ts",
       "mode-invariants.ts",
+      "bundles.ts",
+      "../content/bundle.ts",
     ]) {
       assert.ok(files.has(file), `${file} emits codes and must be scanned`);
     }
