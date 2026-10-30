@@ -180,6 +180,31 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/shell",
     budget: 0,
   },
+  /**
+   * `/search` — the one route whose copy lives in the shell's fixture (issue #156 follow-up).
+   *
+   * The search field, the four result-group headings and the page's own empty states are one
+   * vocabulary: the palette and the route word the same groups, and two fixtures would let
+   * "Pages" and "Assessments & pages" describe the same rows. So the surface names
+   * `data/pages/shell` as its fixture, exactly as the two `search` / `search-alignsynch` sections
+   * are shared today, and E23 attributes this route's own component directory
+   * (`components/search/**`) to it. `data/pages/index.ts` maps `"/search"` to the same instance
+   * for the same reason — a budget with no copy entry is a stale slot, and the copy it points at
+   * is the instance the page renders.
+   *
+   * Budget 0, measured: the body's title, result count, empty states, no-query state and the
+   * difficulty filter's options were all literals in `components/search/search-results.tsx`
+   * before this card, and the tabs had already moved out one card earlier. The two quiz-only
+   * count labels (`{n} quiz` / `{n} quizzes`) inside the category and creator cards are
+   * string literals in an *expression*, which E23's leaf rule does not read; they are on the
+   * list for the card that gives an alignment build a category or a creator.
+   */
+  "/search": {
+    page: "app/(mainlayout)/search/page.tsx",
+    dirs: ["components/search"],
+    fixture: "data/pages/shell",
+    budget: 0,
+  },
   "not-found": {
     page: "app/not-found.tsx",
     dirs: ["components/not-found"],

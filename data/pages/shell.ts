@@ -226,6 +226,116 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "pages", label: "Assessments & pages ({count})" },
         ],
       },
+      /**
+       * The `/search` page's own body (issue #156 follow-up).
+       *
+       * The tab strip became brand-aware one card ago; the page under it still said "Search for
+       * quizzes, categories, and more", promised "quizzes, categories, creators, and pages" in its
+       * first sentence, and headed its result groups `Quizzes`, `Categories`, `Creators`, `Pages` —
+       * the tab defect again, one band lower, plus a `Pages` heading that disagreed with the
+       * `Assessments & pages` tab directly above it.
+       *
+       * Two sections under one id set, like `search` / `search-alignsynch`: the *view* asks for
+       * `empty-pages-title` and each brand words it. The result-group headings are deliberately
+       * **not** here — `components/search/search-results.tsx` resolves `group-quizzes` … `group-pages`
+       * out of the selected `search` section, so a heading the palette prints and a heading the page
+       * prints for the same group are one string. This section owns only the words the page says that
+       * the palette does not: its title, its result count, its empty states and its no-query state.
+       *
+       * The alignment section carries no `difficulty*` items: the filter narrows the quiz rows of the
+       * index (`querySearchIndex` applies it to quizzes only), the alignment index has none, and the
+       * page does not draw a control that can only ever return the rows it already had. It carries no
+       * `empty-quizzes-title`-style pairs either, because the strip above it has no such tab
+       * (`search-tabs-alignsynch`) — the ids below are exactly the states this build can reach.
+       */
+      {
+        id: "search-body",
+        items: [
+          { id: "title", label: "Search Results" },
+          { id: "submit", label: "Search" },
+          { id: "difficulty", label: "Difficulty" },
+          { id: "difficulty-all", label: "All Difficulties" },
+          { id: "difficulty-easy", label: "Easy" },
+          { id: "difficulty-medium", label: "Medium" },
+          { id: "difficulty-hard", label: "Hard" },
+          { id: "results-count", label: '{count} results for "{query}"' },
+          { id: "view-all", label: "View all ({count})" },
+          { id: "popular-heading", label: "Popular searches" },
+          { id: "no-query-title", label: "Search for quizzes, categories, and more" },
+          /**
+           * `across${brand.name}` — no space — is the sentence the quiz build has always
+           * rendered: the JSX this section replaced put `{brand.name}` on its own line and JSX
+           * trims a text node's trailing newline, so the page says "acrossQuizHub.". Kept
+           * verbatim because this card's bar is a byte-identical QuizHub page; the missing space
+           * is the quiz brand's copy to fix, not this card's to smuggle in.
+           */
+          {
+            id: "no-query-body",
+            label: `Enter a search term above to find quizzes, categories, creators, and pages across${brand.name}.`,
+          },
+          { id: "no-results-title", label: "No results found" },
+          {
+            id: "no-results-body",
+            label:
+              'We couldn\'t find anything matching "{query}". Try different keywords or check your spelling.',
+          },
+          { id: "empty-quizzes-title", label: "No quizzes found" },
+          {
+            id: "empty-quizzes-body",
+            label: 'We couldn\'t find any quizzes matching "{query}".',
+          },
+          { id: "empty-categories-title", label: "No categories found" },
+          {
+            id: "empty-categories-body",
+            label: 'We couldn\'t find any categories matching "{query}".',
+          },
+          { id: "empty-creators-title", label: "No creators found" },
+          {
+            id: "empty-creators-body",
+            label: 'We couldn\'t find any creators matching "{query}".',
+          },
+          { id: "empty-pages-title", label: "No pages found" },
+          {
+            id: "empty-pages-body",
+            label: 'We couldn\'t find any pages matching "{query}".',
+          },
+        ],
+      },
+      /**
+       * The alignment build's `/search` body.
+       *
+       * `no-results-body` and `empty-pages-body` keep the second sentence the palette's own
+       * `empty-hint` prints ("Try a different name — a template, a person, or a page."), so the
+       * palette and the page do not explain the same empty state two different ways.
+       */
+      {
+        id: "search-body-alignsynch",
+        items: [
+          { id: "title", label: "Search Results" },
+          { id: "submit", label: "Search" },
+          { id: "results-count", label: '{count} results for "{query}"' },
+          { id: "view-all", label: "View all ({count})" },
+          { id: "popular-heading", label: "Popular searches" },
+          { id: "no-query-title", label: "Search assessments and pages" },
+          {
+            id: "no-query-body",
+            label:
+              "Enter a search term above to find an assessment by person or template, or a page by name.",
+          },
+          { id: "no-results-title", label: "No results found" },
+          {
+            id: "no-results-body",
+            label:
+              'Nothing here matches "{query}". Try a different name — a template, a person, or a page.',
+          },
+          { id: "empty-pages-title", label: "No assessments or pages found" },
+          {
+            id: "empty-pages-body",
+            label:
+              'Nothing here matches "{query}". Try a different name — a template, a person, or a page.',
+          },
+        ],
+      },
       {
         id: "account",
         items: [

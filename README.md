@@ -120,6 +120,42 @@ build. Nothing below is needed by `pnpm build`.
 | `RESEND_FROM`             | `lib/flow/email.ts`                | the sender address; defaults to Resend's `onboarding@resend.dev` development sender                   |
 | `FLAG_<NAME>`             | `lib/flags.ts`                     | `1` on, `0` off, for one of the eight declared surfaces — read per request, so a flip needs a restart |
 
+### `127.0.0.1` is not `localhost` — the auth server's trusted origins
+
+Neon Auth checks the request's `Origin` against the branch's trusted-domain list before it reads a
+password, and answers **`403 INVALID_ORIGIN`** when the address is not on it. The auth service
+pre-approves `localhost` on **any** port, so `http://localhost:3000` needs no configuration;
+`http://127.0.0.1:3000` is a different origin and is **not** pre-approved. That is the whole reason
+the same form can work at one loopback address and fail at the other — and because the SDK throws a
+normalized error for every non-2xx answer, an origin rejection arrives in the same `catch` as a dead
+connection unless it is classified (it is: `lib/auth/errors.ts`). Measured against the `demo`
+branch's auth server:
+
+| `Origin`                | Before the trusted domain | After |
+| ----------------------- | ------------------------- | ----- |
+| `http://localhost:3000` | 200                       | 200   |
+| `http://localhost:4000` | 200 (any port is allowed) | 200   |
+| `http://127.0.0.1:3000` | 403 `INVALID_ORIGIN`      | 200   |
+| `https://evil.example`  | 403 `INVALID_ORIGIN`      | 403   |
+
+The **`demo`** branch trusts `http://127.0.0.1:3000`. The **`production`** branch deliberately does
+not, and must not: a loopback address is a developer's machine, not an origin the product is served
+from. So pull `.env.local` from a dev branch when you want to work at `127.0.0.1`, or open
+`http://localhost:3000` while you are linked to `production`. To give another dev branch the same
+origin (include the protocol, no trailing slash):
+
+```bash
+# Console: Project → Branch → Auth → Configuration → Domains — or:
+curl -X POST "https://console.neon.tech/api/v2/projects/$PROJECT_ID/branches/$BRANCH_ID/auth/domains" \
+  -H "Authorization: Bearer $NEON_API_KEY" -H "Content-Type: application/json" \
+  -d '{"domain": "http://127.0.0.1:3000", "auth_provider": "better_auth"}'
+# read the list back: GET the same path; also `neon neon-auth domain add http://127.0.0.1:3000`
+```
+
+A GET (`/get-session`) is not origin-checked — only state-changing requests are — so an untrusted
+origin can still _look_ signed in while every sign-up and sign-in from it is refused. Do not read a
+session as proof that the address is authorised.
+
 Flags are the lever for shipping or hiding one surface without a code change. `data/flags.ts`
 declares eight, `lib/flags.ts` resolves them, and every default is `false`: a surface that is still a
 mock must not be on by default. The resolver is server-only on purpose — a flag the browser decides
