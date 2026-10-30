@@ -23,4 +23,19 @@ export async function register(): Promise<void> {
 
   const { demoMode, demoModeLogLine } = await import("./lib/auth/demo-mode");
   console.info(demoModeLogLine(demoMode()));
+
+  // The database handshake belongs to boot, not to the first visitor (#204). A cold render used
+  // to spend its first ~1.2 s opening a socket, and the Neon branch scales to zero, so the first
+  // query after a quiet period also waited for the compute to resume — on the only screen that
+  // proves the product works. Warming here moves both costs off the request path.
+  //
+  // Two guards, both deliberate: `next build` imports the route (and so this file) with no
+  // intention of touching a database, so `phase-production-build` skips it; and a missing
+  // `DATABASE_URL` skips it rather than failing boot, because the gate and CI build and run with
+  // no connection string at all. `warmPool()` swallows its own errors — a database that is down
+  // at boot must still leave a server that answers honestly.
+  if (process.env.NEXT_PHASE !== "phase-production-build" && process.env.DATABASE_URL?.trim()) {
+    const { warmPool } = await import("./lib/db/client");
+    await warmPool();
+  }
 }
