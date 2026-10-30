@@ -38,6 +38,30 @@
  * account block) and `footer-contact/email` (the footer) both read
  * `brand.supportEmail`, because the record carries one support address and a demo that
  * printed a second one would be a second source of truth for it.
+ *
+ * THE FOOTER'S THREE SENTENCES ARE THE BRAND'S VOCABULARY, NOT THE TEMPLATE'S (issue
+ * #188, stage S3). `Brand` carries a name, an address and a domain; it does not carry a
+ * *product category*, and on `BRAND=alignsynch` this file printed "quizzes", "quiz
+ * creators", "quiz tips" and "123 Quiz Street" in the chrome of every page — the words
+ * a reskin cannot reach because they are fixtures, not routes. The blurb, the contact
+ * address and the newsletter line are therefore one *section pair* each, with the same
+ * ids on both sides, exactly like `nav`/`nav-alignsynch`:
+ *
+ *   footer-brand              / footer-brand-alignsynch             the sentence under the wordmark
+ *   footer-contact            / footer-contact-alignsynch          street, phone, mailbox, CTA
+ *   footer-newsletter         / footer-newsletter-alignsynch       heading, body, field, button
+ *
+ * `footerCopyFor` in `lib/shell-copy.ts` is the switch, and it is exhaustive over
+ * `BrandId`, so a third brand fails `tsc` until its three sections exist. The alignment
+ * sections are written out rather than derived from the quiz ones: a paragraph, a street
+ * address and a newsletter pitch are copy an editor writes, and a placeholder swapped
+ * into the quiz sentence (`"…and alignment tips"`) would be the same string with a
+ * different noun, which is what a re-skin must stop being.
+ *
+ * What stays shared is everything the two products genuinely share — the column
+ * headings, the field placeholder, the button, "Contact", the legal line, the drawer
+ * empty states. Those are shell furniture, not product vocabulary, and duplicating them
+ * would make the next brand a six-section copy of a five-word heading.
  */
 import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
@@ -50,12 +74,15 @@ import { brand } from "../brand";
  */
 export function shellCopy(brand: Brand): PageCopy {
   return zPageCopy.parse({
-    /** The brand word: the sidebar logo and the footer logo render it. */
+    /**
+     * The brand word: the sidebar logo and the footer logo render it.
+     *
+     * There is no `subtitle` here: the sentence under the wordmark is the footer's, it is
+     * product vocabulary, and it is brand-selected below (`footer-brand` /
+     * `footer-brand-alignsynch`). `PageCopy.subtitle` is the *route* hero's field.
+     */
     heading: brand.name,
 
-    /** The footer's brand sentence. */
-    subtitle:
-      "Create engaging quizzes, challenge others, and earn rewards for your knowledge. Join our community of quiz creators and players today.",
     sections: [
       {
         id: "nav",
@@ -210,8 +237,15 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
           { id: "dashboard-hint", label: "Your activity and stats" },
-          { id: "quizzes", label: "My Quizes" },
-          { id: "quizzes-hint", label: "Your created quizes" },
+          /**
+           * "My Quizzes" / "Your created quizzes". Both said "Quizes" until #188 — a
+           * misspelling that shipped to every brand, because a typo is not a brand decision
+           * and the fix is the same word on both. The rows are the quiz product's and only
+           * render for a viewer who may see it, so the *word* stays quiz; it is its spelling
+           * that moved.
+           */
+          { id: "quizzes", label: "My Quizzes" },
+          { id: "quizzes-hint", label: "Your created quizzes" },
           { id: "settings", label: "Settings" },
           { id: "settings-hint", label: "Preferences" },
           { id: "logout", label: "Log out" },
@@ -239,6 +273,23 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "empty-title", label: "No messages" },
           { id: "empty-body", label: "Conversations will appear here." },
         ],
+      },
+      /**
+       * The sentence under the wordmark — the footer's own line, and the brand's.
+       *
+       * It reads as the product's promise, so it names the product's subject: quizzes and
+       * quiz creators here, the two people and the Gap on the alignment brand. This is the
+       * string issue #188 was filed on: it was the fixture's top-level `subtitle`, which the
+       * projection could not select, so `BRAND=alignsynch` printed the quiz pitch in the
+       * footer of every page.
+       */
+      {
+        id: "footer-brand",
+        body: "Create engaging quizzes, challenge others, and earn rewards for your knowledge. Join our community of quiz creators and players today.",
+      },
+      {
+        id: "footer-brand-alignsynch",
+        body: "The same five Aspects, answered by both of you: how it is now, and how you each wish it to be. Where the answers part is the Gap — and the Gap is the conversation worth having.",
       },
       {
         id: "footer-links",
@@ -282,10 +333,47 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "cta", label: "Contact Support" },
         ],
       },
+      /**
+       * The alignment brand's contact block — the same four ids, because the footer resolves
+       * one set of ids whichever section the brand picked.
+       *
+       * Only the street line differs: a quiz template's demo address is not a fact about this
+       * product, and `123 Quiz Street` was the fourth quiz string on every AlignSynch page.
+       * The phone is the demo's own 555 number (no product in it) and the mailbox is the
+       * record's, read twice on purpose — the two brands route to different inboxes and the
+       * address is a field, not a literal. The postal line is authored demo copy like the one
+       * above it; a real address is the brand's to supply, and nothing derives it.
+       */
+      {
+        id: "footer-contact-alignsynch",
+        heading: "Contact",
+        items: [
+          { id: "address", label: "123 Alignment Way, Insight City, AL 12345" },
+          { id: "phone", label: "+1 (555) 123-4567" },
+          { id: "email", label: brand.supportEmail },
+          { id: "cta", label: "Contact Support" },
+        ],
+      },
       {
         id: "footer-newsletter",
         heading: "Subscribe to our newsletter",
         body: "Get the latest news, updates and quiz tips delivered directly to your inbox.",
+        items: [
+          { id: "placeholder", label: "Enter your email" },
+          { id: "subscribe", label: "Subscribe" },
+        ],
+      },
+      /**
+       * The alignment brand's newsletter band — the heading, the field and the button are the
+       * shell's (a subscribed reader is the same reader), the promise is the brand's.
+       *
+       * "quiz tips" was the third string this card moved: an alignment visitor was being
+       * offered tips about a product their build does not ship.
+       */
+      {
+        id: "footer-newsletter-alignsynch",
+        heading: "Subscribe to our newsletter",
+        body: "Get the latest news, updates and notes on the Gap delivered directly to your inbox.",
         items: [
           { id: "placeholder", label: "Enter your email" },
           { id: "subscribe", label: "Subscribe" },

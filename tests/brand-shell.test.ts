@@ -10,9 +10,17 @@
  * So the two claims are pairs, in this file:
  *
  *   1. the AlignSynch render says AlignSynch and does not say QuizHub;
- *   2. it is the QuizHub render with the name swapped — byte for byte — which is the
- *      stronger half: it proves the projection reads `brand.name` in exactly the places
- *      it prints the product name and nowhere else, so a reskin cannot drag copy with it.
+ *   2. outside the footer's three brand-owned sections, it is the QuizHub render with the
+ *      name and the address swapped — byte for byte — which is the stronger half: it proves
+ *      the projection reads `brand.name` in exactly the places it prints the product name and
+ *      nowhere else, so a reskin cannot drag copy with it.
+ *
+ * Claim 2 used to cover the whole projection, including the footer's blurb, street line and
+ * newsletter pitch. Those three are the brand's vocabulary now (#188, stage S3): the quiz
+ * build's footer advertised "quizzes", "quiz creators", "quiz tips" and "123 Quiz Street" on
+ * every page of the alignment build, because a sentence about the product is not a string the
+ * name substitution can reach. They are excluded from claim 2 and pinned separately below —
+ * the quiz side byte for byte, the alignment side against the quiz vocabulary.
  *
  * "Renders" here means the projection's own text: a `PageCopy` is words with no markup,
  * the components that draw it get it as a prop, and a node environment has no DOM. Every
@@ -31,13 +39,15 @@ import { describe, expect, it } from "vitest";
 import { pricingFaqCategories } from "@/components/pricing/pricing-faq";
 import { supportFaqGroups } from "@/components/support/support-faq";
 import { zBrand, type Brand } from "@/content/brand";
+import type { PageCopy } from "@/content/pages";
 import { brand, quizHubBrand, resolveBrand } from "@/data/brand";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { media } from "@/data/media";
 import { affiliatePageCopy } from "@/data/pages/affiliate";
 import { homePageCopy, homeTitle } from "@/data/pages/home";
 import { shellCopy, shellPageCopy } from "@/data/pages/shell";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { footerCopyFor } from "@/lib/shell-copy";
 
 /** Every string a projection carries, in the order it declares them. */
 function render(value: unknown): string {
@@ -94,6 +104,31 @@ const alignSynch: Brand = zBrand.parse({
 const quizHubRender = render(shellCopy(quizHubBrand));
 const alignSynchRender = render(shellCopy(alignSynch));
 
+/**
+ * The footer sections whose words are the brand's product vocabulary rather than a name or an
+ * address (#188). They are the only part of the projection where the two brands' renders are
+ * allowed to differ by more than the name and the mailbox — so they are the only part claim 2
+ * below excludes, and each one is pinned explicitly in its own case.
+ */
+const BRAND_OWNED_FOOTER_SECTIONS = new Set([
+  "footer-brand",
+  "footer-brand-alignsynch",
+  "footer-contact",
+  "footer-contact-alignsynch",
+  "footer-newsletter",
+  "footer-newsletter-alignsynch",
+]);
+
+/** A projection's text with the brand-owned footer sections removed. */
+function sharedRender(copy: PageCopy): string {
+  return render({
+    ...copy,
+    sections: (copy.sections ?? []).filter(
+      (section) => !BRAND_OWNED_FOOTER_SECTIONS.has(section.id),
+    ),
+  });
+}
+
 describe("shell projection — the product name comes from the brand", () => {
   it("renders the brand it was given", () => {
     expect(quizHubRender).toContain("QuizHub");
@@ -105,17 +140,61 @@ describe("shell projection — the product name comes from the brand", () => {
   });
 
   it("is the QuizHub render with the name and the address swapped, and nothing else", () => {
-    expect(alignSynchRender).toBe(
-      quizHubRender
+    expect(sharedRender(shellCopy(alignSynch))).toBe(
+      sharedRender(shellCopy(quizHubBrand))
         .replaceAll("QuizHub", "AlignSynch")
         .replaceAll(quizHubBrand.supportEmail, alignSynch.supportEmail),
     );
   });
 
-  it("prints the record's support address in both of the shell's addresses", () => {
-    const rendered = render(shellPageCopy);
-    expect(rendered.split(brand.supportEmail).length - 1).toBe(2);
-    expect(rendered).not.toContain("info@");
+  /**
+   * The three sentences #188 moved, pinned from both ends.
+   *
+   * The quiz build's wording is byte for byte what it shipped (that is the deploy-safety half:
+   * a reskin must not move the template's copy), and the alignment build's carries none of the
+   * quiz vocabulary that was being printed on a page with no quizzes in it. Both brands read
+   * the same ids through `footerCopyFor`, which is what keeps the footer's three bands
+   * addressable — a section that lost an id is a throw at render, not a blank line.
+   */
+  it("keeps the quiz build's footer wording exactly as shipped", () => {
+    const footer = footerCopyFor(shellCopy(quizHubBrand), "quizhub");
+    expect(sectionBody(footer.brand)).toBe(
+      "Create engaging quizzes, challenge others, and earn rewards for your knowledge. Join our community of quiz creators and players today.",
+    );
+    expect(itemLabel(footer.contact, "address")).toBe("123 Quiz Street, Knowledge City, QZ 12345");
+    expect(sectionBody(footer.newsletter)).toBe(
+      "Get the latest news, updates and quiz tips delivered directly to your inbox.",
+    );
+  });
+
+  it("gives the alignment build footer words with no quiz vocabulary in them", () => {
+    const footer = footerCopyFor(shellCopy(alignSynch), "alignsynch");
+    const words = render(footer);
+    expect(words.length).toBeGreaterThan(0);
+    expect(words).not.toMatch(/\bquiz/i);
+    // The three strings #188 was filed on, named so a regression says which one came back.
+    expect(words).not.toContain("quiz creators");
+    expect(words).not.toContain("quiz tips");
+    expect(words).not.toContain("Quiz Street");
+    // Same ids, different words: the footer resolves one set of ids per brand.
+    for (const id of ["address", "phone", "email", "cta"]) {
+      expect(itemLabel(footer.contact, id).length).toBeGreaterThan(0);
+    }
+    for (const id of ["placeholder", "subscribe"]) {
+      expect(itemLabel(footer.newsletter, id).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("prints the record's support address in every block that prints one", () => {
+    const blocks: { section: string; id: string }[] = [
+      { section: "account", id: "display-email" },
+      { section: "footer-contact", id: "email" },
+      { section: "footer-contact-alignsynch", id: "email" },
+    ];
+    for (const block of blocks) {
+      expect(itemLabel(sectionOf(shellPageCopy, block.section), block.id)).toBe(brand.supportEmail);
+    }
+    expect(render(shellPageCopy)).not.toContain("info@");
   });
 
   it("exports today's shell as the QuizHub instance", () => {

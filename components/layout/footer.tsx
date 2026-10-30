@@ -4,7 +4,8 @@ import type { PageCopy, PageCopySection } from "@/content/pages";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
 import { brandMark } from "@/lib/brand-mark";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { footerCopyFor } from "@/lib/shell-copy";
+import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -57,11 +58,16 @@ export function Footer({
   /** Overridable for the node test that proves both brands' columns; a page never passes it. */
   brandId?: BrandId;
 }) {
+  /**
+   * The footer's brand-selected sections (issue #188, stage S3). The line under the wordmark,
+   * the contact block and the newsletter band are one pair each, and this is the only place
+   * the choice is made — the same shape as `searchSectionFor`, so the header palette and this
+   * footer cannot disagree about which brand they are.
+   */
+  const { brand: brandBlurb, contact, newsletter } = footerCopyFor(copy, brandId);
   const links = sectionOf(copy, "footer-links");
   const alignLinks = sectionOf(copy, "footer-links-alignsynch");
   const categories = sectionOf(copy, "footer-categories");
-  const contact = sectionOf(copy, "footer-contact");
-  const newsletter = sectionOf(copy, "footer-newsletter");
   const legal = sectionOf(copy, "footer-legal");
 
   /**
@@ -129,7 +135,7 @@ export function Footer({
               <span className="text-2xl font-bold text-action">{copy.heading}</span>
             </div>
             <p className="text-slate-600 dark:text-slate-400 max-w-xs leading-relaxed">
-              {copy.subtitle}
+              {sectionBody(brandBlurb)}
             </p>
 
             <div className="flex space-x-3">
