@@ -1,8 +1,8 @@
 /**
  * The account the shell's header renders — the session's own identity, never a fixture (#212).
  *
- * The header used to print a hardcoded demo person: initials `JD`, the name "Jonathan Doe", the
- * handle `@johndoe`, out of `data/pages/shell.ts`. Signed in as the demo **Admin**, `/leaderboard`
+ * The header used to print a hardcoded demo person: a placeholder monogram, a made-up name and a
+ * made-up handle, out of `data/pages/shell.ts`. Signed in as the demo **Admin**, `/leaderboard`
  * and every other page behind the shell announced a stranger — the chrome disagreed with the
  * session it was rendered inside. A copy fixture is the wrong place to store a person, so the
  * person is not stored at all: this module reads the request's session and derives the three

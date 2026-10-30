@@ -97,7 +97,8 @@ export function Header({
    * session by `lib/auth/shell-account.ts` and passed down through the layout, because a client
    * component cannot read a session and an identity the browser supplied is not one.
    *
-   * This used to be copy — `JD`, "Jonathan Doe", "@johndoe" out of `data/pages/shell.ts` — so
+   * This used to be copy — a placeholder monogram `JD`, a made-up name, a made-up handle and the
+   * brand's support mailbox, out of `data/pages/shell.ts` — so
    * every page behind the shell announced a stranger, including a demo Admin's own board. The
    * three lines below are the whole rendering of a person now: the monogram and gradient come
    * from `GeneratedAvatar` (`name` + the handle as its seed), which is the one avatar path

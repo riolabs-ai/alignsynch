@@ -1,7 +1,8 @@
 /**
  * The shell's account derives from the session, and can never invent a person (issue #212).
  *
- * The defect was a copy fixture: the header rendered `JD` / "Jonathan Doe" / "@johndoe" on every
+ * The defect was a copy fixture: the header rendered one placeholder person (`JD` and a made-up
+ * name and handle) on every
  * page behind the shell, so a demo Admin's own board announced a stranger. The fix is a pure
  * function of a `SessionUser` and (optionally) the person's `user_profile` row, and this file
  * pins the whole of it:

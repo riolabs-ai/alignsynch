@@ -21,8 +21,9 @@
  *    below matches `NAV` in `components/layout/sidebar.tsx` id-for-id. A renamed id
  *    is a red build (E23) rather than a blank link.
  *
- * The account block holds **no person** (issue #212). It carried a demo identity — `JD`,
- * "Jonathan Doe", "@johndoe" — that the header painted onto every page behind the shell, so a
+ * The account block holds **no person** (issue #212). It carried a placeholder identity — the
+ * monogram `JD`, a made-up name and handle, and the brand's support mailbox — that the header
+ * painted onto every page behind the shell, so a
  * signed-in demo admin's own board announced a stranger. A person is session data, not copy:
  * `lib/auth/shell-account.ts` resolves the signed-in name, handle and address from the request,
  * and `components/layout/header.tsx` draws `GeneratedAvatar` from them. What stays here is the
@@ -346,9 +347,9 @@ export function shellCopy(brand: Brand): PageCopy {
            * The account slot's *signed-out* state (#212). It is the only word the slot still
            * needs here: the signed-in person's name, handle and address come from that
            * request's session (`lib/auth/shell-account.ts`), because a copy fixture is the
-           * wrong place to store a person — the four items this replaced (`initials` "JD",
-           * `display-name` "Jonathan Doe", `display-handle` "@johndoe", `display-email`) painted
-           * a stranger over every page behind the shell, including a demo admin's own board.
+           * wrong place to store a person — the four items this replaced (`initials`,
+           * `display-name`, `display-handle`, `display-email`) painted a stranger over every page
+           * behind the shell, including a demo admin's own board.
            */
           { id: "signed-out", label: "Sign in" },
           { id: "profile", label: "My Profile" },
