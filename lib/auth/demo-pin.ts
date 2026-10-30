@@ -10,11 +10,14 @@
  * the PIN's length. Two 32-byte digests are always comparable, and the time taken depends on
  * neither the PIN nor how much of it was guessed.
  *
- * **One message.** `PIN_REJECTION` is what a wrong PIN gets, and it is also what a missing
- * account, a failed sign-in and a refused role get — the panel answers the same sentence for
- * every failure, so a response cannot be used to learn which part was wrong. The one exception
- * is `PIN_RATE_LIMITED`, which says "too many attempts" and nothing about the PIN: a rate limit
- * describes the caller's history, not the secret.
+ * **One sentence per cause, and one shared.** `PIN_REJECTION` is what a wrong PIN gets, and it is
+ * also what a button value that is not one of the three gets — the same sentence for both, so a
+ * response cannot be used to learn whether an account exists behind a button. The refusals that
+ * happen *after* the PIN matched have their own sentences in `lib/auth/demo-failure.ts` (#216): a
+ * missing `demo_account` row and a sign-in the auth server refused are different problems with
+ * different fixes, and answering "that PIN is not correct" for either sends the reader to the one
+ * thing that was right. The one exception here is `RATE_LIMITED`, which says "too many attempts"
+ * and nothing about the PIN: a rate limit describes the caller's history, not the secret.
  *
  * The limiter is in-memory and per process. That is the honest shape for a demo panel behind
  * one server: a shared store would be a dependency and a schema, and the failure mode of a
@@ -23,7 +26,7 @@
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 
-/** The sentence a wrong PIN, a missing account and a failed sign-in all answer. */
+/** The sentence a wrong PIN and an unknown button value both answer. */
 export const PIN_REJECTION = "That PIN is not correct.";
 
 /** The sentence a caller gets once the window's attempts are spent. Says nothing about the PIN. */
