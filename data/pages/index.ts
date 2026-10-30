@@ -64,6 +64,16 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/pricing": pricingPageCopy,
   "/profile/[username]": profilePageCopy,
   "/register": registerPageCopy,
+  /**
+   * `/search` is the one route that points at the shell's fixture (issue #156 follow-up).
+   *
+   * Its field, its result-group headings and its empty states are the search vocabulary the
+   * palette already speaks, and the palette is chrome — so the words live in `data/pages/shell.ts`
+   * under `search` / `search-alignsynch` / `search-body` / `search-body-alignsynch`, and this
+   * entry is what gives the route's own component directory a budget (`data/pages/budget.ts`).
+   * Two fixtures for one field is the drift the shell's search sections exist to prevent.
+   */
+  "/search": shellPageCopy,
   "/settings": settingsPageCopy,
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
