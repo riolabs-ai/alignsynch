@@ -8,15 +8,17 @@
  *   data/creator-tips-data.ts categories (6), data/news-data.ts categories (7),
  *   data/knowledge-base-data.ts article.category (7)
  *
- * Field provenance per row: `image` = A's asset, `iconKey`/`description` = B's copy,
- * `featured` = B's flag. Rows A never had and B never had (`science`,`history`,`art`)
- * take B's copy and carry no image — B already had all three.
+ * Field provenance per row: `iconKey`/`description` = B's copy, `featured` = B's flag.
+ * `image` = A's asset — and since issue #130 no quiz row carries one: the twenty-three
+ * `public/category/*.webp` placeholders were one and the same PNG (blob `df44187d`), so
+ * they were deleted and every subject's tile is now generated from its slug
+ * (`components/categories/category-tile.tsx`). The field stays on the schema: a real,
+ * distinct image is what earns an entry, and adding one is a data change plus
+ * `node scripts/gen-media.mjs`.
  *
  * `count` is absent everywhere by design: see deriveCategoryCounts().
  */
 import { type Category, makeCategoryNameResolver, type QuizCategorySlug } from "./category";
-
-const img = (src: string) => ({ src, alt: "" });
 
 /** 25 canonical quiz subjects, in A's browse order, with the 3 added subjects last. */
 export const quizCategories: readonly Category[] = [
@@ -25,7 +27,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "animal",
     name: "Animal",
-    image: img("/category/animal.webp"),
     featured: false,
   },
   {
@@ -35,9 +36,6 @@ export const quizCategories: readonly Category[] = [
     name: "Architecture",
     description:
       "Explore questions about famous buildings, architectural styles, and renowned architects.",
-    // A's asset filename is still misspelled: public/category/architechture.webp
-    // (see docs/p1-migration/MIGRATION.md#deferred)
-    image: img("/category/architechture.webp"),
     iconKey: "building-2",
     featured: false,
   },
@@ -48,7 +46,6 @@ export const quizCategories: readonly Category[] = [
     name: "Business",
     description:
       "Challenge yourself with questions about economics, companies, entrepreneurs, and financial concepts.",
-    image: img("/category/business.webp"),
     iconKey: "wallet",
     featured: false,
   },
@@ -57,7 +54,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "coding",
     name: "Coding",
-    image: img("/category/coding.webp"),
     featured: false,
   },
   {
@@ -65,7 +61,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "comics",
     name: "Comics",
-    image: img("/category/comics.webp"),
     featured: false,
   },
   {
@@ -73,7 +68,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "fashion",
     name: "Fashion",
-    image: img("/category/fashion.webp"),
     featured: false,
   },
   {
@@ -83,7 +77,6 @@ export const quizCategories: readonly Category[] = [
     name: "Food",
     description:
       "Test your knowledge of cuisines, ingredients, cooking techniques, and famous chefs.",
-    image: img("/category/food.webp"),
     iconKey: "utensils",
     featured: false,
   },
@@ -92,7 +85,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "general-knowledge",
     name: "General Knowledge",
-    image: img("/category/general-knowledge.webp"),
     featured: false,
   },
   {
@@ -102,7 +94,6 @@ export const quizCategories: readonly Category[] = [
     name: "Geography",
     description:
       "Test your knowledge of countries, capitals, landmarks, and geographical features.",
-    image: img("/category/geography.webp"),
     iconKey: "globe",
     featured: false,
   },
@@ -111,7 +102,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "health",
     name: "Health",
-    image: img("/category/health.webp"),
     featured: false,
   },
   {
@@ -119,7 +109,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "language",
     name: "Language",
-    image: img("/category/language.webp"),
     featured: false,
   },
   {
@@ -128,7 +117,6 @@ export const quizCategories: readonly Category[] = [
     slug: "literature",
     name: "Literature",
     description: "Test your knowledge of books, authors, and literary works.",
-    image: img("/category/literature.webp"),
     iconKey: "book-open",
     featured: true,
   },
@@ -138,7 +126,6 @@ export const quizCategories: readonly Category[] = [
     slug: "math",
     name: "Math",
     description: "Challenge yourself with math problems, puzzles, and concepts.",
-    image: img("/category/math.webp"),
     iconKey: "lightbulb",
     featured: true,
   },
@@ -148,7 +135,6 @@ export const quizCategories: readonly Category[] = [
     slug: "movies",
     name: "Movies",
     description: "Test your knowledge of films, TV shows, actors, directors, and pop culture.",
-    image: img("/category/movies.webp"),
     iconKey: "popcorn",
     featured: false,
   },
@@ -159,7 +145,6 @@ export const quizCategories: readonly Category[] = [
     name: "Music",
     description:
       "Challenge yourself with questions about artists, songs, instruments, and music history.",
-    image: img("/category/music.webp"),
     iconKey: "music",
     featured: false,
   },
@@ -168,7 +153,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "politics",
     name: "Politics",
-    image: img("/category/politics.webp"),
     featured: false,
   },
   {
@@ -176,7 +160,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "puzzle",
     name: "Puzzle",
-    image: img("/category/puzzle.webp"),
     featured: false,
   },
   {
@@ -185,7 +168,6 @@ export const quizCategories: readonly Category[] = [
     slug: "space",
     name: "Space",
     description: "Test your knowledge of astronomy, space exploration, planets, and the universe.",
-    image: img("/category/space.webp"),
     iconKey: "rocket",
     featured: false,
   },
@@ -196,7 +178,6 @@ export const quizCategories: readonly Category[] = [
     name: "Sports",
     description:
       "Challenge yourself with questions about various sports, athletes, and competitions.",
-    image: img("/category/sports.webp"),
     iconKey: "dumbbell",
     featured: true,
   },
@@ -206,7 +187,6 @@ export const quizCategories: readonly Category[] = [
     slug: "technology",
     name: "Technology",
     description: "Explore questions about computers, gadgets, programming, and tech innovations.",
-    image: img("/category/technology.webp"),
     iconKey: "code",
     featured: false,
   },
@@ -215,7 +195,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "trivia",
     name: "Trivia",
-    image: img("/category/trivia.webp"),
     featured: false,
   },
   {
@@ -223,7 +202,6 @@ export const quizCategories: readonly Category[] = [
     scope: "quiz",
     slug: "video-game",
     name: "Video Game",
-    image: img("/category/video-game.webp"),
     featured: false,
   },
   // --- the three subjects the content actually uses; B had all three, A had none ---

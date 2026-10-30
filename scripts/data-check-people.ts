@@ -43,10 +43,14 @@ export interface PeopleFinding {
 /**
  * What the media registry knows about a key. Supplied by the caller so this module stays
  * filesystem-free: the registry itself is `data/media.ts` and the file test is `public/`.
+ *
+ * `src` is optional because the registry has two kinds of entry since issue #130: a file,
+ * which has a path, and a generated default (`generated: true`), which has none. An avatar
+ * is a face someone uploaded, so a generated entry can never satisfy one.
  */
 export interface MediaFacts {
   /** The registry entry a key addresses, or `undefined` when the key is not registered. */
-  entry: (key: string) => { src: string; kind: string } | undefined;
+  entry: (key: string) => { src?: string; kind: string } | undefined;
   /** Whether the file a registry entry addresses exists under `public/`. */
   fileExists: (src: string) => boolean;
 }
@@ -96,6 +100,11 @@ export function peopleFindings(input: PeopleInput): PeopleFinding[] {
       findings.push({
         rule: "E24",
         message: `player "${player.id}": avatarKey "${player.avatarKey}" is not in the media registry (data/media.ts) — run \`node scripts/gen-media.mjs\` if the file is missing`,
+      });
+    } else if (entry.src === undefined) {
+      findings.push({
+        rule: "E24",
+        message: `player "${player.id}": avatarKey "${player.avatarKey}" is a generated default (no file) — a player avatar has to be artwork, not a drawn placeholder`,
       });
     } else if (entry.kind !== "avatar") {
       findings.push({
