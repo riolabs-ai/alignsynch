@@ -19,6 +19,7 @@ import { zRouteManifest, type RouteManifest } from "./route-manifest";
 const STATIC_ROUTES = [
   "/",
   "/affiliate",
+  "/assessment",
   "/battle",
   "/categories",
   "/chat",
@@ -45,8 +46,10 @@ const STATIC_ROUTES = [
 /** Routes with `[param]` segments, as Next spells them. */
 const DYNAMIC_ROUTES = [
   "/assessment/[slug]",
+  "/assessment/instances/[instanceId]",
   "/categories/[slug]",
   "/creator-tips/[slug]",
+  "/invite/[token]",
   "/my-quizzes/[id]",
   "/my-quizzes/[id]/statistics",
   "/news/[slug]",

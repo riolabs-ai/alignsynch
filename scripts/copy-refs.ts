@@ -173,6 +173,11 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * `accept` is the same class of value: a file-picker MIME list
  * (`image/*,.pdf,.doc,.docx,.txt`) that WU-9's contact form carries. A reader never sees
  * it, and moving it into `PageCopy` would put a MIME string in an editor's fixture.
+ *
+ * `method` is the same class again (#146): a form's `method="post"` is how the browser is
+ * told to submit, not a word on the page. The two-party flow's three forms each carry one,
+ * and a copy fixture holding `post` would be a fixture an editor has to keep in sync with
+ * the protocol.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
   "accept",
@@ -192,6 +197,7 @@ const TECHNICAL_ATTRIBUTES = new Set([
   "htmlFor",
   "id",
   "key",
+  "method",
   "name",
   "orientation",
   "patternUnits",

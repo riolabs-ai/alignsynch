@@ -175,4 +175,25 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/tournament-detail",
     budget: 0,
   },
+  // #146 moved the two-party flow's words out as they were written: the three new
+  // surfaces measure 0, and the ratchet starts there rather than at a number a later unit
+  // would have to lower.
+  "/assessment": {
+    page: "app/(mainlayout)/assessment/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment",
+    budget: 0,
+  },
+  "/assessment/instances/[instanceId]": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-instance",
+    budget: 0,
+  },
+  "/invite/[token]": {
+    page: "app/(mainlayout)/invite/[token]/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/invite",
+    budget: 0,
+  },
 });
