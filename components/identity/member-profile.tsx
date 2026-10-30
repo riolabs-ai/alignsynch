@@ -1,4 +1,5 @@
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
+import { ProfileCover } from "@/components/profile/profile-cover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,24 +37,32 @@ export function MemberProfile({
 
   return (
     <div className="container mx-auto max-w-3xl space-y-6 py-6">
-      <header className="flex flex-col gap-4 rounded-xl bg-gradient-to-r from-purple-100 to-blue-100 p-6 sm:flex-row sm:items-center dark:from-purple-950/30 dark:to-blue-950/30">
-        <GeneratedAvatar name={profile.displayName} seed={profile.handle} size={88} />
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold">{profile.displayName}</h1>
-            {isOwner && <Badge variant="secondary">{itemLabel(owner, "owner-note")}</Badge>}
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-            <span>
-              {itemLabel(member, "handle-label")}: {itemLabel(member, "handle-prefix")}
-              {profile.handle}
-            </span>
-            <span>
-              {fillLabel(itemLabel(member, "joined-label"), {
-                date: formatDate(profile.joinedAt),
-              })}
-            </span>
-            {profile.country !== undefined && <span>{profile.country}</span>}
+      <header className="overflow-hidden rounded-xl shadow-sm">
+        <ProfileCover handle={profile.handle} />
+        <div className="flex flex-col gap-4 bg-gradient-to-r from-purple-100 to-blue-100 px-6 pb-6 sm:flex-row sm:items-start dark:from-purple-950/30 dark:to-blue-950/30">
+          <GeneratedAvatar
+            className="-mt-11 relative z-10 shrink-0 border-4 border-background"
+            name={profile.displayName}
+            seed={profile.handle}
+            size={88}
+          />
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold">{profile.displayName}</h1>
+              {isOwner && <Badge variant="secondary">{itemLabel(owner, "owner-note")}</Badge>}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <span>
+                {itemLabel(member, "handle-label")}: {itemLabel(member, "handle-prefix")}
+                {profile.handle}
+              </span>
+              <span>
+                {fillLabel(itemLabel(member, "joined-label"), {
+                  date: formatDate(profile.joinedAt),
+                })}
+              </span>
+              {profile.country !== undefined && <span>{profile.country}</span>}
+            </div>
           </div>
         </div>
       </header>

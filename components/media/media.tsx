@@ -13,7 +13,12 @@ import {
   type MediaKind,
   pickMedia,
 } from "@/content/media";
-import { avatarGradient, initialsOf, seedHash } from "@/components/media/generated-avatar";
+import {
+  avatarGradient,
+  type AvatarGradient,
+  initialsOf,
+  seedHash,
+} from "@/components/media/generated-avatar";
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,8 +31,10 @@ import { cn } from "@/lib/utils";
  *
  *   file  -> the image on disk, at its intrinsic size or filling the slot
  *   remote -> somebody else's URL, with a neutral generated plate behind the failure
- *   generated -> an inline SVG over a CSS gradient, drawn from the seed. No bytes, no
- *                request of its own
+ *   generated -> a CSS gradient plus a motif drawn from the seed: an inline SVG mark for a
+ *                tile, initials for an avatar, CSS layers for a `background` surface (a band
+ *                is wide, and a square mark cropped to it reads as an accident). No bytes,
+ *                no request of its own
  *
  * TIER ORDER. `pickMedia` picks file over remote over generated, so a call site never
  * orders them: give it what the record carries (`entry`) and what the record would fall
@@ -107,6 +114,12 @@ function GeneratedMedia({
 }) {
   const gradient = avatarGradient(entry.seed);
   const initials = entry.kind === "avatar" ? initialsOf(alt) : undefined;
+  /**
+   * A `background` slot is a **surface**, not artwork (issue #130): it paints the same seeded
+   * gradient with its motif as CSS layers instead of the square inline SVG, so the band keeps
+   * its proportions at a wide aspect ratio rather than cropping two big circles into arcs.
+   */
+  const surface = entry.kind === "background";
   const described = alt.trim() !== "";
 
   return (
@@ -123,21 +136,53 @@ function GeneratedMedia({
       data-seed={entry.seed}
       role="img"
       style={{
-        backgroundImage: gradient.css,
+        backgroundImage: surface ? surfaceLayers(entry.seed, gradient) : gradient.css,
         color: gradient.ink,
         ...(fill ? {} : { width: width ?? "100%", height: height ?? "100%" }),
         ...(initials === undefined ? {} : { fontSize: Math.round((height ?? width ?? 40) * 0.42) }),
       }}
     >
-      {initials === undefined ? (
-        <MediaMark seed={entry.seed} />
-      ) : (
+      {initials !== undefined ? (
         <span aria-hidden="true" className="font-semibold leading-none">
           {initials}
         </span>
+      ) : surface ? null : (
+        <MediaMark seed={entry.seed} />
       )}
     </span>
   );
+}
+
+/**
+ * The surface motif: a soft pool of light and a rake of hairlines, both described in the
+ * gradient's own ink at low alpha, layered over the seeded gradient.
+ *
+ * `MediaMark` is drawn in a 100×100 viewBox and sliced to the slot, which is right for a tile
+ * or an avatar and wrong for a banner: on a 6:1 band the same rings become two cropped arcs
+ * that read as an accident, and a percentage-sized ring reads as a smudge at that width. The
+ * pool is percentage-sized so it keeps its proportion, and the rake is measured in pixels so a
+ * one-pixel rule stays one pixel instead of scaling into a band. Both are still pure functions
+ * of the seed (FNV-1a slices, no clock, no `Math.random()`), so a screenshot diff cannot drift.
+ *
+ * The tint is the gradient's own `ink`: white on the dark theme and near-black on the pale one,
+ * which is the colour already computed for maximum contrast against both stops.
+ */
+function surfaceLayers(seed: string, gradient: AvatarGradient): string {
+  const hash = seedHash(seed);
+  const poolX = 10 + (hash % 44); // 10–53 %
+  const poolY = 15 + ((hash >>> 6) % 40); // 15–54 %
+  const poolRadius = 30 + ((hash >>> 13) % 18); // 30–47 %
+  const poolHeight = Math.round(poolRadius * 1.8); // an ellipse, so it stays soft on a band
+  const angle = 25 + ((hash >>> 9) % 50); // 25–74 deg — a rake, never a random direction
+  const gap = 18 + ((hash >>> 15) % 14); // 18–31 px between rules
+  const pool = `${gradient.ink}1c`; // ~11 % — a lift in the gradient, never a second colour
+  const hairline = `${gradient.ink}17`; // ~9 %
+
+  return [
+    `repeating-linear-gradient(${angle}deg, transparent 0 ${gap}px, ${hairline} ${gap}px ${gap + 1}px)`,
+    `radial-gradient(${poolRadius}% ${poolHeight}% at ${poolX}% ${poolY}%, ${pool} 0%, transparent 72%)`,
+    gradient.css,
+  ].join(", ");
 }
 
 /**
