@@ -125,6 +125,8 @@ invariant **E29** (`scripts/image-refs.ts`) scans every `<Image>` tag in `app/`,
 | [docs/GATE.md](docs/GATE.md)                                     | gate baseline, first-pass yield, required-check ruleset                  |
 | [docs/REPO-LAYERS.md](docs/REPO-LAYERS.md)                       | lane table, classifier rules, build semaphore                            |
 | [docs/DATA-MODEL.md](docs/DATA-MODEL.md)                         | the content model: entities, invariants, strictness                      |
+| [docs/DEMO.md](docs/DEMO.md)                                     | the demo branch: what a reset is, what it prints, how to run and promote |
+| [docs/DEMO-AUTH.md](docs/DEMO-AUTH.md)                           | the three demo accounts and the `user_profile.role` gate                 |
 | [docs/P2-INVENTORY.md](docs/P2-INVENTORY.md)                     | every hardcoded string and media literal P2 has to retire                |
 | [docs/p1-migration/MIGRATION.md](docs/p1-migration/MIGRATION.md) | the P1 model, field by field                                             |
 
