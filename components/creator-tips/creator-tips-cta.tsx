@@ -7,7 +7,7 @@ import Link from "next/link";
 export default function CreatorTipsCta({ copy }: { copy: PageCopySection }) {
   return (
     <section className="my-20">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-action shadow-xl">
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-full h-full">
           <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-white/10 blur-2xl"></div>
@@ -22,43 +22,46 @@ export default function CreatorTipsCta({ copy }: { copy: PageCopySection }) {
             </div>
 
             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-              {copy.heading} <span className="text-purple-200">{itemLabel(copy, "today")}</span>
+              {copy.heading}{" "}
+              <span className="text-action-foreground/90">{itemLabel(copy, "today")}</span>
             </h2>
 
-            <p className="text-purple-100 text-lg max-w-md">{copy.body}</p>
+            <p className="text-action-foreground/80 text-lg max-w-md">{copy.body}</p>
 
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 mt-1">
                   <div className="p-1.5 rounded-full bg-white/20">
-                    <Sparkles className="h-4 w-4 text-purple-100" />
+                    <Sparkles className="h-4 w-4 text-action-foreground/80" />
                   </div>
                 </div>
-                <p className="text-purple-100">{itemLabel(copy, "perk-question-types")}</p>
+                <p className="text-action-foreground/80">
+                  {itemLabel(copy, "perk-question-types")}
+                </p>
               </div>
 
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 mt-1">
                   <div className="p-1.5 rounded-full bg-white/20">
-                    <Target className="h-4 w-4 text-purple-100" />
+                    <Target className="h-4 w-4 text-action-foreground/80" />
                   </div>
                 </div>
-                <p className="text-purple-100">{itemLabel(copy, "perk-audience")}</p>
+                <p className="text-action-foreground/80">{itemLabel(copy, "perk-audience")}</p>
               </div>
 
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 mt-1">
                   <div className="p-1.5 rounded-full bg-white/20">
-                    <Lightbulb className="h-4 w-4 text-purple-100" />
+                    <Lightbulb className="h-4 w-4 text-action-foreground/80" />
                   </div>
                 </div>
-                <p className="text-purple-100">{itemLabel(copy, "perk-monetize")}</p>
+                <p className="text-action-foreground/80">{itemLabel(copy, "perk-monetize")}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-4 pt-2">
               {copy.cta && (
-                <Button asChild size="lg" className="bg-white text-purple-600 hover:bg-purple-50">
+                <Button asChild size="lg" className="bg-white text-action hover:bg-white/90">
                   <Link href={copy.cta.href}>
                     {copy.cta.label} <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
@@ -85,17 +88,17 @@ export default function CreatorTipsCta({ copy }: { copy: PageCopySection }) {
             </div>
 
             <div className="relative z-10 transform rotate-6 hover:rotate-0 transition-transform duration-300">
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-purple-100/20">
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-border/20">
                 <div className="space-y-4">
-                  <div className="h-4 w-3/4 rounded bg-purple-200"></div>
+                  <div className="h-4 w-3/4 rounded bg-action/20"></div>
                   <div className="space-y-2">
-                    <div className="h-3 w-full rounded bg-purple-100"></div>
-                    <div className="h-3 w-5/6 rounded bg-purple-100"></div>
-                    <div className="h-3 w-4/6 rounded bg-purple-100"></div>
+                    <div className="h-3 w-full rounded bg-action/10"></div>
+                    <div className="h-3 w-5/6 rounded bg-action/10"></div>
+                    <div className="h-3 w-4/6 rounded bg-action/10"></div>
                   </div>
                   <div className="flex space-x-2">
-                    <div className="h-8 w-8 rounded-full bg-purple-300"></div>
-                    <div className="h-8 w-8 rounded-full bg-indigo-300"></div>
+                    <div className="h-8 w-8 rounded-full bg-action/30"></div>
+                    <div className="h-8 w-8 rounded-full bg-action/20"></div>
                     <div className="h-8 w-8 rounded-full bg-pink-300"></div>
                   </div>
                 </div>
@@ -103,14 +106,14 @@ export default function CreatorTipsCta({ copy }: { copy: PageCopySection }) {
             </div>
 
             <div className="absolute bottom-8 right-8 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-4 border border-purple-100/20">
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-4 border border-border/20">
                 <div className="flex items-center space-x-3">
                   <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
                     <span className="text-green-600 text-xs font-bold">+1</span>
                   </div>
                   <div className="space-y-1">
-                    <div className="h-3 w-24 rounded bg-purple-100"></div>
-                    <div className="h-2 w-16 rounded bg-purple-50"></div>
+                    <div className="h-3 w-24 rounded bg-action/10"></div>
+                    <div className="h-2 w-16 rounded bg-action/5"></div>
                   </div>
                 </div>
               </div>

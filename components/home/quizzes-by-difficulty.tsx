@@ -147,7 +147,7 @@ export function QuizzesByDifficulty({ copy }: { copy: PageCopySection }) {
                     <Badge variant="success" className="absolute top-2 right-2">
                       {itemLabel(copy, "easy")}
                     </Badge>
-                    <div className="flex bg-gradient-to-b from-transparent to-black justify-between items-center gap-2 absolute px-3 pb-3 bottom-0 left-0 right-0">
+                    <div className="flex bg-gradient-to-b from-transparent to-foreground justify-between items-center gap-2 absolute px-3 pb-3 bottom-0 left-0 right-0">
                       <div className="flex items-center gap-3">
                         <GeneratedAvatar
                           name={quiz.author?.name ?? "creator"}
@@ -202,7 +202,7 @@ export function QuizzesByDifficulty({ copy }: { copy: PageCopySection }) {
                   </CardContent>
 
                   <CardFooter className="p-4 !pt-0">
-                    <Button className="w-full" asChild>
+                    <Button variant="action" className="w-full" asChild>
                       <Link href={quiz.href} className="w-full">
                         {itemLabel(copy, "start-quiz")}
                       </Link>
@@ -271,7 +271,7 @@ export function QuizzesByDifficulty({ copy }: { copy: PageCopySection }) {
                     </CardContent>
 
                     <CardFooter className="p-4 !pt-0">
-                      <Button className="w-full" asChild>
+                      <Button variant="action" className="w-full" asChild>
                         <Link href={quiz.href} className="w-full">
                           {itemLabel(copy, "start-quiz")}
                         </Link>
@@ -353,7 +353,7 @@ export function QuizzesByDifficulty({ copy }: { copy: PageCopySection }) {
                     </CardContent>
 
                     <CardFooter className="p-4 !pt-0">
-                      <Button className="w-full" asChild>
+                      <Button variant="action" className="w-full" asChild>
                         <Link href={quiz.href} className="w-full">
                           {itemLabel(copy, "start-quiz")}
                         </Link>
