@@ -65,6 +65,25 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # Issue #138: `docs/glossary.md` is generated from the schema comments, so a comment
+      # edited without regenerating the page is drift CI can see and no local typecheck can.
+      # This step *regenerates* the page and fails on any byte that differs — the issue's
+      # requested step, in the existing workflow.
+      #
+      # It is not CI-only, which is the rule the next comment guards: `bash scripts/verify.sh`
+      # runs the same generator in every lane (`pnpm glossary:check` — the read-only form of
+      # the diff below), so a developer cannot be handed a green local gate for a page CI
+      # rejects. It sits *before* the gate so a stale page fails under its own step name
+      # instead of disappearing inside the verify step's output.
+      - name: glossary (docs/glossary.md regenerates to itself)
+        run: |
+          node scripts/gen-glossary.mjs
+          if [ -n "$(git status --porcelain -- docs/glossary.md)" ]; then
+            git --no-pager diff -- docs/glossary.md
+            echo "::error title=glossary::docs/glossary.md is stale — the schema comments changed. Run \"pnpm glossary\" and commit the page."
+            exit 1
+          fi
+
       # The gate. Nothing above or below this line may run a check: CI runs what
       # `bash scripts/verify.sh` runs, in the same order, on the same pinned
       # runtime. A check that exists only in this file is a red push; a check that

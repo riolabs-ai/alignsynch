@@ -9,12 +9,12 @@ that `lint` or `format:check` failed was after the push. CI is ~55 s; the loop a
 
 ## What exists now
 
-| File                         | Role                                                                                                                                   |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/verify.sh`          | the gate: `deps → typecheck → lint → format:check → data:check → test → build`, depth by lane, stops at the first failure and names it |
-| `.github/workflows/ci.yml`   | sets up pnpm + Node from `.nvmrc`, then runs `bash scripts/verify.sh`. No check steps of its own                                       |
-| `scripts/git-hooks/pre-push` | execs `scripts/verify.sh`; no checks of its own                                                                                        |
-| `scripts/install-hooks.sh`   | `git config core.hooksPath scripts/git-hooks` — versioned hooks, no stale copies                                                       |
+| File                         | Role                                                                                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `scripts/verify.sh`          | the gate: `deps → glossary → typecheck → lint → format:check → data:check → test → build`, depth by lane, stops at the first failure and names it      |
+| `.github/workflows/ci.yml`   | sets up pnpm + Node from `.nvmrc`, regenerates `docs/glossary.md` and fails on a diff (#138), then runs `bash scripts/verify.sh`. No other check steps |
+| `scripts/git-hooks/pre-push` | execs `scripts/verify.sh`; no checks of its own                                                                                                        |
+| `scripts/install-hooks.sh`   | `git config core.hooksPath scripts/git-hooks` — versioned hooks, no stale copies                                                                       |
 
 `data:check` and `test` are conditional on `package.json` having that script. On `main`
 today neither exists (they arrive with the content-model stack), so the gate prints

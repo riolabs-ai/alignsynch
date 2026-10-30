@@ -67,6 +67,7 @@ the commit) classifies what it is about to push. `GATE_REF` defaults to
 | Step                 | docs | content | config | code |
 | -------------------- | ---- | ------- | ------ | ---- |
 | `deps`               | ✓    | ✓       | ✓      | ✓    |
+| `glossary`           | ✓    | ✓       | ✓      | ✓    |
 | `bash -n` scripts    |      |         | ✓      |      |
 | `whitespace`         | ✓    |         |        |      |
 | `links`              | ✓    |         |        |      |
@@ -98,6 +99,11 @@ Two deviations from the layer table, both in the same direction — a lane may b
   nothing that matters: 328 files cost 0.6 s + 0.2 s for `format:check`. The
   lane decides whether the _build_ runs, and biome is two orders of magnitude
   cheaper than that.
+- **`glossary` runs in every lane.** `docs/glossary.md` is generated from the schema
+  comments (#138), and the three things it reads classify into three different lanes —
+  the page is `docs/`, the comments are `content/`, the generator is `scripts/`. A lane
+  that dropped it would hand a green local gate to a stale page in CI, which is the loop
+  this file exists to delete. It costs ~0.1 s, so it runs before the lane branch.
 - **config runs `typecheck` and `data:check`.** The card's config row is
   "meta" only, but `tsconfig.json`, `package.json` and `scripts/data-check.ts`
   are precisely the files typecheck exists to catch — the cheap lane there
