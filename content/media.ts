@@ -63,7 +63,7 @@ export type MediaKind = z.infer<typeof zMediaKind>;
 export const zFileMediaEntry = z
   .object({
     /**
-     * Public URL path exactly as `next/image` wants it: `/avatars/champion.png`. A
+     * Public URL path exactly as `next/image` wants it: `/how-it-works/create-quiz.png`. A
      * generated entry has no `src` at all — see the `generated` literal below.
      */
     src: z.string().regex(/^\/[^?#\s]*\.(?:png|jpe?g|webp|svg|gif|avif|ico)$/i, {
