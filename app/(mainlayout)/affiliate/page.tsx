@@ -10,6 +10,7 @@ import { WhyPartner } from "@/components/affiliate/why-partner";
 import { Footer } from "@/components/layout/footer";
 import { affiliatePageCopy } from "@/data/pages/affiliate";
 import { shellPageCopy } from "@/data/pages/shell";
+import { hiddenNavHrefs } from "@/lib/flags";
 import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
 
@@ -33,7 +34,7 @@ export default function AffiliatePage() {
       <AffiliateFAQ copy={sectionOf(affiliatePageCopy, "affiliate-faq")} />
       <SuccessStories copy={sectionOf(affiliatePageCopy, "success-stories")} />
       <AffiliateCta copy={sectionOf(affiliatePageCopy, "affiliate-cta")} />
-      <Footer copy={shellPageCopy} />
+      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
     </div>
   );
 }
