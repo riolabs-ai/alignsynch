@@ -9,9 +9,8 @@ import { leaderboardEntries } from "@/lib/players";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
 import { remoteMedia } from "@/content/media";
-import { media } from "@/data/media";
+import { coverSeedOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Media } from "@/components/media/media";
-import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Award, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import Link from "next/link";
 import { Autoplay, Navigation } from "swiper/modules";
@@ -75,9 +74,9 @@ export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
                       <Media
                         alt=""
                         className="w-full object-cover size-full"
-                        entry={media["card-cover"]}
                         height={400}
                         kind={FALLBACK_KIND.background}
+                        seed={coverSeedOf(player.handle)}
                         width={340}
                       />
                       {/* Avatar */}

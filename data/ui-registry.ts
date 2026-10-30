@@ -242,6 +242,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/demo",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "A PIN-gated demo panel: three buttons sign a browser in as the seeded Initiator, Counterparty or Admin through a server action, with no password ever sent to the browser.",
+    notes:
+      "Exists only under DEMO_AUTH=1, and refused when VERCEL_ENV=production unless DEMO_ALLOW_PRODUCTION=1 is also set; outside demo mode the route answers the same 404 a URL that never existed does.",
+  },
+  {
+    kind: "route",
+    surface: "/demo/admin",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The admin-only check behind the demo panel's third button: it prints the session it read from Postgres, and a member account asking for it gets a 404 rather than a 403.",
+    notes:
+      "The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route.",
+  },
+  {
+    kind: "route",
     surface: "/explore",
     status: "fixture",
     templates: ["quizhub"],
@@ -642,7 +662,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The public profile in ten parts: header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.",
+      "The public profile in ten parts: cover, header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.",
   },
   {
     kind: "domain",

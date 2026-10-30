@@ -52,3 +52,18 @@ export const FALLBACK_KIND = {
   quiz: "quiz-art",
   tip: "tip-art",
 } as const satisfies Record<string, MediaKind>;
+
+/**
+ * The seed a person's **cover** is drawn from — the handle, one domain over from the avatar's
+ * (issue #130).
+ *
+ * The avatar is seeded with the bare handle and the cover with `<handle>:cover`, so a profile
+ * paints both from the same identity without painting the same picture twice: a disc sitting on
+ * an identical gradient is invisible, and a banner in the disc's two colours reads as a mis-take
+ * rather than as a surface. A suffix is still a pure function of the handle — no index, no clock,
+ * no `Math.random()` — so the same person is the same banner everywhere that renders it, and two
+ * handles can only collide if their FNV-1a hashes do.
+ */
+export function coverSeedOf(handle: string): string {
+  return `${handle}:cover`;
+}

@@ -1,6 +1,8 @@
-# Demo auth — a role, a gate, and three seeded accounts
+# Demo auth — a role, a gate, a panel, and three seeded accounts
 
-Part 1 of #183 (data and roles only). Part 2 builds the PIN-gated panel that uses them.
+Parts 1 and 2 of #183. Part 1 is the data and the roles (`user_profile.role`,
+`lib/auth/require-role.ts`, the three seeded accounts); part 2 is `/demo`, the PIN-gated panel
+that signs a browser in as one of them.
 
 ## The role
 
@@ -73,10 +75,11 @@ pnpm db:seed                                              # delete, create none
   the accounts and their roles and no credential. Re-seeding replaces the three, which is why the
   counts are identical on every run.
 
-### Reading the credential server-side (part 2)
+### Reading the credential server-side
 
-The panel must sign a browser in **without ever sending it a password**. The server action reads
-the row and presents it to Neon Auth itself:
+The panel must sign a browser in **without ever sending it a password**. The server action
+(`app/(auth)/demo/actions.ts`) reads the row through `lib/db/demo-accounts.ts` and presents it to
+Neon Auth itself:
 
 ```sql
 SELECT da.email, da.password, up.role
@@ -88,3 +91,86 @@ SELECT da.email, da.password, up.role
 endpoint, and an env var cannot be generated per seed run). It is a credential for a fake person
 in a table that only exists to be read under `DEMO_AUTH=1`; the CHECK pins the address domain to
 `@demo.alignsynch.test` so a real person's credential cannot land in it.
+
+**Why the plaintext stayed, and what was considered instead.** The alternative is a password
+derived on demand from a server-side secret (`DEMO_PIN` or a dedicated `DEMO_ACCOUNT_SECRET`)
+and the address, through a slow KDF, so `demo_account` holds no password column at all. It is
+strictly better against a dump of that table, and it was rejected for two costs that are real in
+this tree:
+
+- **It adds a third credential to get a demo running.** The seed and the server must hold the
+  _same_ secret, so `pnpm demo:reset` on a branch and a serve of that branch now both depend on a
+  variable that `.env.local` does not have. Rotating or losing it strands all three accounts
+  until the next reseed — a failure mode with a confusing message ("the PIN is right and the
+  sign-in still fails") on a surface whose whole job is to be reliable during a client demo.
+- **The threat it removes is not the one this surface has.** The table is read only under
+  `DEMO_AUTH=1` (enforced in the reader, not at the call site), the addresses cannot leave
+  `@demo.alignsynch.test`, and the accounts own nothing: they are created and deleted by
+  `db:seed`, and the password is regenerated on every run. A dump that reaches `demo_account`
+  has reached the six content tables and the `neon_auth` schema in the same database.
+
+What is _not_ accepted is any of that being assumed. The password never reaches a browser, a log
+line, a fixture or a commit, and the built output is grepped for each one in the gate's own
+acceptance (`grep -r` over `.next` for every `demo_account.password`: zero matches).
+
+## The panel (`/demo`, part 2)
+
+```bash
+DEMO_AUTH=1 DEMO_PIN=… pnpm dev          # http://localhost:3000/demo
+```
+
+| Variable                  | What it does                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `DEMO_AUTH=1`             | mounts `/demo` and `/demo/admin`; anything else (unset, `true`, `yes`) is off |
+| `DEMO_PIN`                | the PIN every sign-in must carry; empty or unset **refuses** demo mode        |
+| `DEMO_ALLOW_PRODUCTION=1` | the second variable a production deployment needs (`VERCEL_ENV=production`)   |
+
+**The guard.** `DEMO_AUTH=1` with `VERCEL_ENV=production` and no `DEMO_ALLOW_PRODUCTION=1` is
+`refused`, not off: the page and the action both answer the 404 a URL that never existed returns,
+and startup logs `[demo-auth] mode=refused — …`. Two variables to enable a demo login in
+production is the point — nobody sets both by accident. `DEMO_ALLOW_PRODUCTION=1` **without**
+`DEMO_AUTH=1` enables nothing, so a stray second variable is not a second chance.
+
+**The route is the gate.** Unless the mode is `demo`, `/demo` and `/demo/admin` call
+`notFound()` before anything else — no banner, no disabled form, no "demo auth is off"
+placeholder. Both routes are `force-dynamic`: the mode is read per request, so setting the
+variable and restarting is the whole operation in both directions, and a build made under one
+setting can never ship the other.
+
+**The action is a second gate.** A server action is a public POST endpoint; the page being a 404
+does not close it. `signInAsDemo` asks the mode again and answers `notFound()` too.
+
+**The PIN.** Compared with `pinMatches()` (`lib/auth/demo-pin.ts`), which hashes both sides with
+SHA-256 and compares the digests with `timingSafeEqual` — digesting first is what makes the
+comparison length-independent, so neither the PIN's value nor its length is observable in the
+time taken. A wrong PIN, an unknown button value and a missing account share **one** sentence
+("That PIN is not correct."), and the credential is not read until the PIN matches.
+
+**The limit.** Five attempts a minute per caller (`x-forwarded-for`, else one shared bucket),
+fixed window with pruning; a refused attempt is not recorded, so knocking does not extend the
+ban. A successful sign-in resets the caller. The one different message — "Too many attempts" —
+describes the caller's history, not the secret, and carries the retry in seconds.
+
+**Where each button lands.**
+
+| Button       | Signs in as                         | Lands on                                                |
+| ------------ | ----------------------------------- | ------------------------------------------------------- |
+| Initiator    | `initiator@demo.alignsynch.test`    | `/assessment/instances/assessment-instance-avery-rowan` |
+| Counterparty | `counterparty@demo.alignsynch.test` | the same screen, as Rowan                               |
+| Admin        | `admin@demo.alignsynch.test`        | `/demo/admin`                                           |
+
+The instance screen resolves its viewer from the party cookie **first** and from the signed-in
+account second (`lib/flow/store.ts::roleForUser`): the demo binds Avery and Rowan by
+`party.user_id`, so a demo sign-in shows that party's blind view without handing out an
+invitation token, and a browser that already holds a party cookie keeps the identity its link
+gave it.
+
+**`/demo/admin` is the admin check.** It is the first caller of `requireAdmin()`: an `admin`
+session sees it, a member gets the same 404 a missing page gets (never a 403), and a signed-out
+visitor is redirected to `/login`. The role it prints was read from Postgres for that request;
+no header, cookie or query value is consulted.
+
+**Startup logs one line.** `instrumentation.ts` prints `[demo-auth] mode=…` once per server
+process — `demo`, `off`, or `refused` with the reason. It names variables and the mode, never a
+value. `mode=off` says the panel is not mounted; there is no line claiming a demo login exists
+when there is none.
