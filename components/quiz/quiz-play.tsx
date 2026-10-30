@@ -3,20 +3,19 @@ import { QuizHeader } from "@/components/quiz/quiz-header";
 import { QuizQuestion } from "@/components/quiz/quiz-question";
 import { QuizResults } from "@/components/quiz/quiz-results";
 import { QuizTimer } from "@/components/quiz/quiz-timer";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { categoryName } from "@/content/categories";
-import { selectQuizForPlay, type QuizForPlay } from "@/content/quiz";
-import { currentQuiz } from "@/data/currentQuiz";
+import type { QuizForPlay } from "@/content/quiz";
 
 /**
- * The play surface reads `selectQuizForPlay()` directly: `categoryLabel` is resolved
- * from the taxonomy and questions keep the model's `prompt`/`media` names, so there
- * is no second `Quiz` shape here (D1/D2).
+ * The play surface renders the record it is handed: `categoryLabel` is resolved by
+ * the route (`selectQuizForPlay`) and questions keep the model's `prompt`/`media`
+ * names, so there is no second `Quiz` shape here (D1/D2). It used to import
+ * `data/currentQuiz.ts` at module scope and ignore the route param, which is why
+ * every `/quiz/<id>/play` played one quiz — the record is a prop now, and the route
+ * is what resolves it (and what 404s an unknown or empty one).
  */
-const playableQuiz: QuizForPlay = selectQuizForPlay(currentQuiz, categoryName);
 
 /** One answered question, local to the play surface (UI state, not content). */
 interface Answer {
@@ -26,16 +25,14 @@ interface Answer {
   timeSpent: number;
 }
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 
 // Types for the quiz state
 interface QuizState {
-  quiz: QuizForPlay | null;
-  loading: boolean;
-  error: string | null;
+  quiz: QuizForPlay;
   currentQuestionIndex: number;
   answers: Answer[];
   quizStartTime: number | null;
@@ -51,9 +48,6 @@ interface QuizState {
 
 // Action types
 type QuizAction =
-  | { type: "SET_LOADING"; payload: boolean }
-  | { type: "SET_ERROR"; payload: string | null }
-  | { type: "SET_QUIZ"; payload: QuizForPlay }
   | { type: "SET_CURRENT_QUESTION_INDEX"; payload: number }
   | { type: "SET_DIRECTION"; payload: number }
   | { type: "SET_QUIZ_START_TIME"; payload: number }
@@ -72,41 +66,29 @@ type QuizAction =
   | { type: "RESTART_QUIZ"; payload: { timeLimit: number | null } }
   | { type: "START_REVIEW" };
 
-// Initial state
-const initialState: QuizState = {
-  quiz: null,
-  loading: true,
-  error: null,
-  currentQuestionIndex: 0,
-  answers: [],
-  quizStartTime: null,
-  quizEndTime: null,
-  questionStartTime: null,
-  timeRemaining: null,
-  isQuizCompleted: false,
-  isReviewMode: false,
-  showFeedback: false,
-  lastAnswerCorrect: null,
-  direction: 0,
-};
+// The record arrives as a prop from the route, so there is no "loading a quiz"
+// pass and `quiz` is never null: `createInitialState` seeds it on the first render.
+/** The state a play starts in: the quiz given, its own time limit, nothing answered. */
+function createInitialState(quiz: QuizForPlay): QuizState {
+  return {
+    quiz,
+    currentQuestionIndex: 0,
+    answers: [],
+    quizStartTime: null,
+    quizEndTime: null,
+    questionStartTime: null,
+    timeRemaining: quiz.timeLimitSeconds,
+    isQuizCompleted: false,
+    isReviewMode: false,
+    showFeedback: false,
+    lastAnswerCorrect: null,
+    direction: 0,
+  };
+}
 
 // Reducer function
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
   switch (action.type) {
-    case "SET_LOADING":
-      return { ...state, loading: action.payload };
-
-    case "SET_ERROR":
-      return { ...state, error: action.payload, loading: false };
-
-    case "SET_QUIZ":
-      return {
-        ...state,
-        quiz: action.payload,
-        timeRemaining: action.payload.timeLimitSeconds,
-        loading: false,
-      };
-
     case "SET_CURRENT_QUESTION_INDEX":
       return { ...state, currentQuestionIndex: action.payload };
 
@@ -196,37 +178,23 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
   }
 }
 
-export function QuizPlay({ id }: { id: string }) {
+export function QuizPlay({ quiz }: { quiz: QuizForPlay }) {
   const router = useRouter();
-  const [state, dispatch] = useReducer(quizReducer, initialState);
+  const [state, dispatch] = useReducer(quizReducer, quiz, createInitialState);
   const questionContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch quiz data
+  // Start the clock on the first render — the quiz is already here.
   useEffect(() => {
-    const getQuiz = async () => {
-      try {
-        dispatch({ type: "SET_LOADING", payload: true });
-        dispatch({ type: "SET_QUIZ", payload: playableQuiz });
-      } catch (err) {
-        dispatch({ type: "SET_ERROR", payload: "Failed to load quiz. Please try again later." });
-      }
-    };
-
-    getQuiz();
-  }, [id]);
-
-  // Start quiz timer when quiz is loaded
-  useEffect(() => {
-    if (state.quiz && !state.quizStartTime && !state.isQuizCompleted) {
+    if (!state.quizStartTime && !state.isQuizCompleted) {
       const startTime = Date.now();
       dispatch({ type: "SET_QUIZ_START_TIME", payload: startTime });
       dispatch({ type: "SET_QUESTION_START_TIME", payload: startTime });
     }
-  }, [state.quiz, state.quizStartTime, state.isQuizCompleted]);
+  }, [state.quizStartTime, state.isQuizCompleted]);
 
   // Timer effect
   useEffect(() => {
-    if (!state.quiz || state.isQuizCompleted || !state.timeRemaining || state.isReviewMode) return;
+    if (state.isQuizCompleted || !state.timeRemaining || state.isReviewMode) return;
 
     const timer = setInterval(() => {
       if (state.timeRemaining && state.timeRemaining <= 1) {
@@ -238,7 +206,7 @@ export function QuizPlay({ id }: { id: string }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [state.quiz, state.isQuizCompleted, state.timeRemaining, state.isReviewMode]);
+  }, [state.isQuizCompleted, state.timeRemaining, state.isReviewMode]);
 
   // Scroll to top of question container when changing questions
   useEffect(() => {
@@ -252,7 +220,7 @@ export function QuizPlay({ id }: { id: string }) {
     (questionId: string, optionId: string) => {
       if (state.isReviewMode || state.showFeedback) return;
 
-      const currentQuestion = state.quiz?.questions[state.currentQuestionIndex];
+      const currentQuestion = state.quiz.questions[state.currentQuestionIndex];
       if (!currentQuestion || !state.questionStartTime) return;
 
       const timeSpent = Math.floor((Date.now() - state.questionStartTime) / 1000);
@@ -285,7 +253,7 @@ export function QuizPlay({ id }: { id: string }) {
       setTimeout(() => {
         dispatch({ type: "SET_SHOW_FEEDBACK", payload: false });
 
-        if (state.currentQuestionIndex < (state.quiz?.questions.length || 0) - 1) {
+        if (state.currentQuestionIndex < state.quiz.questions.length - 1) {
           dispatch({
             type: "NAVIGATE_QUESTION",
             payload: { direction: 1, index: state.currentQuestionIndex + 1 },
@@ -309,13 +277,13 @@ export function QuizPlay({ id }: { id: string }) {
 
   // Navigate to next question (in review mode)
   const handleNextQuestion = useCallback(() => {
-    if (state.currentQuestionIndex < (state.quiz?.questions.length || 0) - 1) {
+    if (state.currentQuestionIndex < state.quiz.questions.length - 1) {
       dispatch({
         type: "NAVIGATE_QUESTION",
         payload: { direction: 1, index: state.currentQuestionIndex + 1 },
       });
     }
-  }, [state.currentQuestionIndex, state.quiz]);
+  }, [state.currentQuestionIndex, state.quiz.questions.length]);
 
   // Navigate to previous question (in review mode)
   const handlePrevQuestion = useCallback(() => {
@@ -335,15 +303,13 @@ export function QuizPlay({ id }: { id: string }) {
   };
 
   // Calculate progress percentage
-  const progressPercentage = state.quiz
-    ? ((state.currentQuestionIndex + 1) / state.quiz.questions.length) * 100
-    : 0;
+  const progressPercentage = ((state.currentQuestionIndex + 1) / state.quiz.questions.length) * 100;
 
   // Handle quiz restart
   const handleRestartQuiz = () => {
     dispatch({
       type: "RESTART_QUIZ",
-      payload: { timeLimit: state.quiz?.timeLimitSeconds || null },
+      payload: { timeLimit: state.quiz.timeLimitSeconds || null },
     });
   };
 
@@ -354,13 +320,11 @@ export function QuizPlay({ id }: { id: string }) {
 
   // Handle exit quiz
   const handleExitQuiz = () => {
-    router.push(`/quiz/${id}`);
+    router.push(`/quiz/${quiz.id}`);
   };
 
   // Calculate quiz results
   const calculateResults = () => {
-    if (!state.quiz) return null;
-
     const totalQuestions = state.quiz.questions.length;
     const correctAnswers = state.answers.filter((a) => a.isCorrect).length;
     const score = Math.round((correctAnswers / totalQuestions) * 100);
@@ -377,32 +341,6 @@ export function QuizPlay({ id }: { id: string }) {
       answers: state.answers,
     };
   };
-
-  // Loading state
-  if (state.loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg font-medium">Loading quiz...</p>
-      </div>
-    );
-  }
-
-  // Error state
-  if (state.error || !state.quiz) {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-5 w-5" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {state.error || "Failed to load quiz. Please try again later."}
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => router.push("/explore")}>Back to Explore</Button>
-      </div>
-    );
-  }
 
   // Quiz completed - show results
   if (state.isQuizCompleted) {
@@ -463,7 +401,7 @@ export function QuizPlay({ id }: { id: string }) {
               <p>
                 {state.lastAnswerCorrect
                   ? "Great job! Moving to next question..."
-                  : `The correct answer was: ${state.quiz.questions[state.currentQuestionIndex].options.find((o) => o.id === state.quiz!.questions[state.currentQuestionIndex].correctOptionId)?.text}`}
+                  : `The correct answer was: ${currentQuestion.options.find((o) => o.id === currentQuestion.correctOptionId)?.text}`}
               </p>
             </div>
           </div>
