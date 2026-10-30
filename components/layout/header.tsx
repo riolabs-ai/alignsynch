@@ -17,6 +17,7 @@ import type { BrandId } from "@/data/brand";
 import { metric } from "@/data/metrics";
 import { notificationsFor } from "@/data/notifications";
 import { querySearchIndex } from "@/content/search";
+import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { type NavViewer, seesQuizProduct } from "@/lib/nav";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -116,6 +117,18 @@ export function Header({
   const accountCopy = sectionOf(copy, "account");
   const notificationsCopy = sectionOf(copy, "notifications");
   const messagesCopy = sectionOf(copy, "messages");
+
+  /**
+   * The account menu's "My Profile" row (#226).
+   *
+   * The row's target is the session's own handle and nothing else: `accountProfileHref` answers
+   * `null` when nobody is signed in, and the row is then **not rendered**. It used to be a fixture
+   * player's profile, which is a valid route — so no link check could see it — on every screen this
+   * menu appears on: the whole quiz brand, and an alignment admin carrying `quiz-surfaces`. A link
+   * to a stranger is not a link to "my" anything, and hiding the row is the honest state rather
+   * than pointing it at whichever person the fixtures happen to name.
+   */
+  const profileHref = accountProfileHref(account);
 
   /**
    * The drawers' content for this brand (`data/chat-data.ts`, `data/notifications.ts`). Both
@@ -539,27 +552,34 @@ export function Header({
 
               <div className="p-2">
                 {/*
-                  The account menu's three quiz rows: the demo creator's profile, the quiz
+                  The account menu's quiz rows: the signed-in person's own profile, the quiz
                   dashboard and the quiz author's own list. They are the quiz product's
                   destinations, so an alignment visitor does not get them — the Settings row
                   below stays on both brands, because a preference page is an account action
                   rather than a product surface.
+
+                  "My Profile" is the one row of the three that is about *this* person rather than
+                  a product surface, so it is conditional on there being one (#226): with no
+                  session there is no profile to open, and the row is absent instead of opening
+                  somebody else's. The other two are product destinations and stay.
                 */}
                 {seesQuizProduct(brandId, viewer) && (
                   <>
-                    <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                      <Link href="/profile/alexjohnson">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
-                          <User className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span>{itemLabel(accountCopy, "profile")}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {itemLabel(accountCopy, "profile-hint")}
-                          </span>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
+                    {profileHref !== null && (
+                      <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
+                        <Link href={profileHref}>
+                          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
+                            <User className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span>{itemLabel(accountCopy, "profile")}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {itemLabel(accountCopy, "profile-hint")}
+                            </span>
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
                       <Link href="/dashboard/user">
                         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
