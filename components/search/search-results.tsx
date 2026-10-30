@@ -16,7 +16,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { popularSearches, querySearchIndex, type SearchIndex } from "@/content/search";
 import type { PageCopySection } from "@/content/pages";
-import { brand } from "@/data/brand";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { type SearchTabId, searchTabIds } from "@/lib/shell-copy";
 import { FileQuestion, FileText, Filter, Search, Tag, User, UserCheck } from "lucide-react";
@@ -38,22 +37,35 @@ import { useEffect, useState } from "react";
  * (and the "Most Played"/"Highest Rated" sort that ordered them), `followers` and `bio` on a
  * creator, and a `description` on a page. What is left is either stored or counted.
  *
- * The tab strip is chrome on two brands now (issue #156 follow-up). Its labels are the brand's
- * (`data/pages/shell.ts` sections `search-tabs` / `search-tabs-alignsynch`, resolved by
- * `searchTabsFor`) and its *ids* are the index's own groups (`searchTabIds`), so the alignment
- * build renders "All Results" and "Assessments & pages" over the four records its index holds
- * instead of the five quiz-shaped tabs it used to spell in this file.
+ * The words are the brand's (issue #156 and its follow-up). Three sections of
+ * `data/pages/shell.ts` arrive as props and `lib/shell-copy.ts` chose each one on the server:
+ *
+ *   `groups`  the palette's search section — the placeholder and the four group headings. The
+ *             page resolves the *same ids* the header does, so "Pages" in the palette and
+ *             "Assessments & pages" over the alignment build's one result group are one string
+ *             and cannot drift.
+ *   `tabs`    the tab strip's labels (`search-tabs` / `search-tabs-alignsynch`); which tabs
+ *             render is `searchTabIds(index)`, the index's own groups.
+ *   `copy`    this page's own body words (`search-body` / `search-body-alignsynch`): its title,
+ *             its result count, its per-group empty states and its no-query state.
+ *
+ * Before the follow-up the body spelled the quiz product by hand — "Search for quizzes,
+ * categories, and more", a `Pages` heading under an `Assessments & pages` tab — on a build whose
+ * index holds no quiz, category or creator row.
  */
 export function SearchResults({
   query,
   index,
-  placeholder,
+  copy,
+  groups,
   tabs,
 }: {
   query: string;
   index: SearchIndex;
-  /** The brand's own words for the field — `lib/shell-copy.ts` picks the section (issue #156). */
-  placeholder: string;
+  /** This page's body words for this brand — `lib/shell-copy.ts` selects the section. */
+  copy: PageCopySection;
+  /** The palette's search words: the field's placeholder and the group headings. */
+  groups: PageCopySection;
   /**
    * The brand's words for the tab strip (`search-tabs` / `search-tabs-alignsynch`). Which tabs
    * render is `searchTabIds(index)`, not the brand: a tab with no record behind it is a filter
@@ -96,26 +108,29 @@ export function SearchResults({
     pages: results.pages.length,
   };
 
+  /** One of this brand's body words — a missing id throws here instead of drawing nothing. */
+  const words = (id: string) => itemLabel(copy, id);
+
   /** `hard` is the stored value; `Hard` is what the badge prints. No other casing is stored. */
   const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-6">Search Results</h1>
+        <h1 className="text-3xl font-bold mb-6">{words("title")}</h1>
 
         <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder={placeholder}
+              placeholder={itemLabel(groups, "placeholder")}
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button type="submit">Search</Button>
+          <Button type="submit">{words("submit")}</Button>
         </form>
       </div>
 
@@ -123,28 +138,38 @@ export function SearchResults({
         <>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <p className="text-muted-foreground">
-              {results.total} results for "{searchQuery}"
+              {fillLabel(words("results-count"), {
+                count: results.total,
+                query: searchQuery,
+              })}
             </p>
 
-            <div className="flex flex-wrap gap-2">
-              <Select
-                value={difficultyFilter}
-                onValueChange={(value) =>
-                  setDifficultyFilter(value as "all" | "easy" | "medium" | "hard")
-                }
-              >
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Difficulty" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Difficulties</SelectItem>
-                  <SelectItem value="easy">Easy</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="hard">Hard</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/**
+             * The difficulty filter narrows the quiz rows (`querySearchIndex` applies it to
+             * quizzes only). A build whose index has none gets no filter: a control that can
+             * only return the rows already shown is the dead tab's defect in a dropdown.
+             */}
+            {index.quizzes.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <Select
+                  value={difficultyFilter}
+                  onValueChange={(value) =>
+                    setDifficultyFilter(value as "all" | "easy" | "medium" | "hard")
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder={words("difficulty")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{words("difficulty-all")}</SelectItem>
+                    <SelectItem value="easy">{words("difficulty-easy")}</SelectItem>
+                    <SelectItem value="medium">{words("difficulty-medium")}</SelectItem>
+                    <SelectItem value="hard">{words("difficulty-hard")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-8">
@@ -163,11 +188,11 @@ export function SearchResults({
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold flex items-center gap-2">
                       <FileQuestion className="h-5 w-5" />
-                      Quizzes
+                      {itemLabel(groups, "group-quizzes")}
                     </h2>
                     {results.quizzes.length > 4 && (
                       <Button variant="ghost" size="sm" onClick={() => setActiveTab("quizzes")}>
-                        View all ({results.quizzes.length})
+                        {fillLabel(words("view-all"), { count: results.quizzes.length })}
                       </Button>
                     )}
                   </div>
@@ -202,11 +227,11 @@ export function SearchResults({
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold flex items-center gap-2">
                       <Tag className="h-5 w-5" />
-                      Categories
+                      {itemLabel(groups, "group-categories")}
                     </h2>
                     {results.categories.length > 3 && (
                       <Button variant="ghost" size="sm" onClick={() => setActiveTab("categories")}>
-                        View all ({results.categories.length})
+                        {fillLabel(words("view-all"), { count: results.categories.length })}
                       </Button>
                     )}
                   </div>
@@ -239,11 +264,11 @@ export function SearchResults({
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold flex items-center gap-2">
                       <User className="h-5 w-5" />
-                      Creators
+                      {itemLabel(groups, "group-creators")}
                     </h2>
                     {results.creators.length > 2 && (
                       <Button variant="ghost" size="sm" onClick={() => setActiveTab("creators")}>
-                        View all ({results.creators.length})
+                        {fillLabel(words("view-all"), { count: results.creators.length })}
                       </Button>
                     )}
                   </div>
@@ -279,11 +304,11 @@ export function SearchResults({
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold flex items-center gap-2">
                       <FileText className="h-5 w-5" />
-                      Pages
+                      {itemLabel(groups, "group-pages")}
                     </h2>
                     {results.pages.length > 3 && (
                       <Button variant="ghost" size="sm" onClick={() => setActiveTab("pages")}>
-                        View all ({results.pages.length})
+                        {fillLabel(words("view-all"), { count: results.pages.length })}
                       </Button>
                     )}
                   </div>
@@ -309,175 +334,193 @@ export function SearchResults({
               {results.total === 0 && (
                 <div className="text-center py-12">
                   <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h2 className="text-2xl font-semibold mb-2">No results found</h2>
+                  <h2 className="text-2xl font-semibold mb-2">{words("no-results-title")}</h2>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    We couldn't find anything matching "{searchQuery}". Try different keywords or
-                    check your spelling.
+                    {fillLabel(words("no-results-body"), { query: searchQuery })}
                   </p>
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="quizzes">
-              {results.quizzes.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {results.quizzes.map((quiz) => (
-                    <Link key={quiz.id} href={quiz.path} className="block">
-                      <Card className="h-full hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg line-clamp-2">{quiz.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="flex flex-wrap gap-2">
-                            {quiz.categoryNames.map((name) => (
-                              <Badge key={name} variant="outline">
-                                {name}
-                              </Badge>
-                            ))}
-                            <Badge variant="outline">{titleCase(quiz.difficulty)}</Badge>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="font-mono text-xs text-muted-foreground">
-                          {quiz.path}
-                        </CardFooter>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <FileQuestion className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h2 className="text-xl font-semibold mb-2">No quizzes found</h2>
-                  <p className="text-muted-foreground">
-                    We couldn't find any quizzes matching "{searchQuery}".
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="categories">
-              {results.categories.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {results.categories.map((category) => (
-                    <Link key={category.id} href={category.path} className="block">
-                      <Card className="h-full hover:shadow-md transition-shadow">
-                        <CardContent className="flex items-center gap-4 p-6">
-                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                            <Tag className="h-8 w-8 text-primary" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-semibold">{category.name}</h3>
-                            <p className="text-muted-foreground">
-                              {category.count} {category.count === 1 ? "quiz" : "quizzes"}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Tag className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h2 className="text-xl font-semibold mb-2">No categories found</h2>
-                  <p className="text-muted-foreground">
-                    We couldn't find any categories matching "{searchQuery}".
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="creators">
-              {results.creators.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {results.creators.map((creator) => (
-                    <Link key={creator.id} href={creator.path} className="block">
-                      <Card className="h-full hover:shadow-md transition-shadow">
-                        <CardContent className="flex items-center gap-4 p-6">
-                          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600">
-                            <User className="h-10 w-10" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-xl font-semibold">{creator.name}</h3>
-                            <p className="text-muted-foreground mb-3">@{creator.username}</p>
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <UserCheck className="h-4 w-4" />
-                              <span>
-                                {creator.quizCount} {creator.quizCount === 1 ? "quiz" : "quizzes"}
-                              </span>
+            {/**
+             * Each group tab is mounted only when the index has that group. Radix evaluates
+             * every `TabsContent` child it is handed, so a tab body left in for a group with no
+             * rows would ask the fixture for that group's empty state — a word this brand does
+             * not carry, and a panel that can never be opened.
+             */}
+            {tabIds.includes("quizzes") && (
+              <TabsContent value="quizzes">
+                {results.quizzes.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {results.quizzes.map((quiz) => (
+                      <Link key={quiz.id} href={quiz.path} className="block">
+                        <Card className="h-full hover:shadow-md transition-shadow">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg line-clamp-2">{quiz.title}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex flex-wrap gap-2">
+                              {quiz.categoryNames.map((name) => (
+                                <Badge key={name} variant="outline">
+                                  {name}
+                                </Badge>
+                              ))}
+                              <Badge variant="outline">{titleCase(quiz.difficulty)}</Badge>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h2 className="text-xl font-semibold mb-2">No creators found</h2>
-                  <p className="text-muted-foreground">
-                    We couldn't find any creators matching "{searchQuery}".
-                  </p>
-                </div>
-              )}
-            </TabsContent>
+                          </CardContent>
+                          <CardFooter className="font-mono text-xs text-muted-foreground">
+                            {quiz.path}
+                          </CardFooter>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <FileQuestion className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h2 className="text-xl font-semibold mb-2">{words("empty-quizzes-title")}</h2>
+                    <p className="text-muted-foreground">
+                      {fillLabel(words("empty-quizzes-body"), { query: searchQuery })}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
 
-            <TabsContent value="pages">
-              {results.pages.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {results.pages.map((page) => (
-                    <Link key={page.id} href={page.path} className="block">
-                      <Card className="h-full hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-purple-100 mb-4">
-                            <FileText className="h-6 w-6 text-purple-600" />
-                          </div>
-                          <h3 className="text-xl font-semibold mb-2">{page.title}</h3>
-                          <p className="font-mono text-muted-foreground">{page.path}</p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h2 className="text-xl font-semibold mb-2">No pages found</h2>
-                  <p className="text-muted-foreground">
-                    We couldn't find any pages matching "{searchQuery}".
-                  </p>
-                </div>
-              )}
-            </TabsContent>
+            {tabIds.includes("categories") && (
+              <TabsContent value="categories">
+                {results.categories.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {results.categories.map((category) => (
+                      <Link key={category.id} href={category.path} className="block">
+                        <Card className="h-full hover:shadow-md transition-shadow">
+                          <CardContent className="flex items-center gap-4 p-6">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                              <Tag className="h-8 w-8 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-semibold">{category.name}</h3>
+                              <p className="text-muted-foreground">
+                                {category.count} {category.count === 1 ? "quiz" : "quizzes"}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Tag className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h2 className="text-xl font-semibold mb-2">
+                      {words("empty-categories-title")}
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {fillLabel(words("empty-categories-body"), { query: searchQuery })}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
+
+            {tabIds.includes("creators") && (
+              <TabsContent value="creators">
+                {results.creators.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {results.creators.map((creator) => (
+                      <Link key={creator.id} href={creator.path} className="block">
+                        <Card className="h-full hover:shadow-md transition-shadow">
+                          <CardContent className="flex items-center gap-4 p-6">
+                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600">
+                              <User className="h-10 w-10" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="text-xl font-semibold">{creator.name}</h3>
+                              <p className="text-muted-foreground mb-3">@{creator.username}</p>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <UserCheck className="h-4 w-4" />
+                                <span>
+                                  {creator.quizCount} {creator.quizCount === 1 ? "quiz" : "quizzes"}
+                                </span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h2 className="text-xl font-semibold mb-2">{words("empty-creators-title")}</h2>
+                    <p className="text-muted-foreground">
+                      {fillLabel(words("empty-creators-body"), { query: searchQuery })}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
+
+            {tabIds.includes("pages") && (
+              <TabsContent value="pages">
+                {results.pages.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {results.pages.map((page) => (
+                      <Link key={page.id} href={page.path} className="block">
+                        <Card className="h-full hover:shadow-md transition-shadow">
+                          <CardContent className="p-6">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-purple-100 mb-4">
+                              <FileText className="h-6 w-6 text-purple-600" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">{page.title}</h3>
+                            <p className="font-mono text-muted-foreground">{page.path}</p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h2 className="text-xl font-semibold mb-2">{words("empty-pages-title")}</h2>
+                    <p className="text-muted-foreground">
+                      {fillLabel(words("empty-pages-body"), { query: searchQuery })}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
           </Tabs>
         </>
       ) : (
         <div className="text-center py-16">
           <Search className="h-16 w-16 mx-auto mb-6 text-muted-foreground opacity-30" />
-          <h2 className="text-2xl font-semibold mb-3">Search for quizzes, categories, and more</h2>
-          <p className="text-muted-foreground max-w-md mx-auto mb-8">
-            Enter a search term above to find quizzes, categories, creators, and pages across
-            {brand.name}.
-          </p>
+          <h2 className="text-2xl font-semibold mb-3">{words("no-query-title")}</h2>
+          <p className="text-muted-foreground max-w-md mx-auto mb-8">{words("no-query-body")}</p>
 
-          <div className="max-w-3xl mx-auto">
-            <h3 className="text-lg font-medium mb-4">Popular searches</h3>
-            <div className="flex flex-wrap justify-center gap-2">
-              {suggestions.map((term) => (
-                <Button
-                  key={term}
-                  variant="outline"
-                  onClick={() => {
-                    setSearchQuery(term);
-                    router.push(`/search?q=${encodeURIComponent(term)}`);
-                  }}
-                >
-                  {term}
-                </Button>
-              ))}
+          {/**
+           * `popularSearches` is derived from the index's own categories, so a build whose index
+           * carries none has no chip to offer — and draws no heading over an empty row either.
+           */}
+          {suggestions.length > 0 && (
+            <div className="max-w-3xl mx-auto">
+              <h3 className="text-lg font-medium mb-4">{words("popular-heading")}</h3>
+              <div className="flex flex-wrap justify-center gap-2">
+                {suggestions.map((term) => (
+                  <Button
+                    key={term}
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery(term);
+                      router.push(`/search?q=${encodeURIComponent(term)}`);
+                    }}
+                  >
+                    {term}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

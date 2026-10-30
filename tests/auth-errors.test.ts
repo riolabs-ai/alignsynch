@@ -40,6 +40,38 @@ describe("authFailureOf", () => {
     expect(authFailureOf({ code: "NETWORK_TIMEOUT" })).toBe("network");
   });
 
+  it("calls an origin rejection an origin rejection, never a network failure (#203)", () => {
+    // What Neon Auth sends, if the code survives.
+    expect(authFailureOf({ code: "INVALID_ORIGIN", status: 403 })).toBe("origin");
+    expect(authFailureOf({ code: "MISSING_ORIGIN", status: 400 })).toBe("origin");
+    expect(authFailureOf({ code: "INVALID_CALLBACK_URL", status: 403 })).toBe("origin");
+
+    // What actually reaches the view: `@neon/auth`'s fetch implementation throws a normalized
+    // `AuthApiError` for every non-2xx answer, remapping `INVALID_ORIGIN` to its own
+    // `feature_not_supported` and keeping Better Auth's message. Measured against the demo
+    // branch's auth server: `403 {"message":"Invalid origin","code":"INVALID_ORIGIN"}`.
+    expect(
+      authFailureOf({
+        name: "AuthApiError",
+        message: "Invalid origin",
+        status: 403,
+        code: "feature_not_supported",
+      }),
+    ).toBe("origin");
+
+    // And a 403 with no code and no message is still the proxy refusing the request, not the
+    // network dropping it.
+    expect(authFailureOf({ status: 403 })).toBe("origin");
+  });
+
+  it("never reports a non-auth 4xx as unreachable", () => {
+    // The defect this file exists to prevent: an unmapped refusal is `unknown`, whose copy says
+    // something went wrong — it is not the network message.
+    expect(authFailureOf({ code: "SOMETHING_ELSE", status: 429 })).toBe("unknown");
+    expect(authFailureOf({ code: "SOMETHING_ELSE", status: 422 })).toBe("unknown");
+    expect(authFailureItemId("unknown")).not.toBe(authFailureItemId("network"));
+  });
+
   it("falls back to unknown for anything it does not recognise", () => {
     expect(authFailureOf(undefined)).toBe("unknown");
     expect(authFailureOf(null)).toBe("unknown");
