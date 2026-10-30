@@ -65,13 +65,6 @@ export const media = {
     height: 2048,
     kind: "illustration",
   },
-  "card-cover": {
-    src: "/card-cover.png",
-    alt: "Card Cover",
-    width: 300,
-    height: 100,
-    kind: "illustration",
-  },
   "category.animal": {
     generated: true,
     seed: "animal",
