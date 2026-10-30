@@ -60,7 +60,7 @@ const referrals: Referral[] = [
 ];
 
 export function AffiliateDashboard() {
-  const referralLink = "https://quizmaker.com/ref/username123";
+  const referralLink = "https://quizhub.com/ref/username123";
 
   const totalReferrals = referrals.length;
   const activeReferrals = referrals.filter((r) => r.status === "active").length;

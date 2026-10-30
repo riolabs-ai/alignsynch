@@ -23,11 +23,11 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Welcome to QuizHub , the premier platform for creating, sharing, and participating in quizzes across a wide range of topics. Whether you're an educator looking to engage your students, a content creator wanting to connect with your audience, or simply a quiz enthusiast, our platform offers all the tools you need to succeed.",
+        text: "Welcome to QuizHub, the premier platform for creating, sharing, and participating in quizzes across a wide range of topics. Whether you're an educator looking to engage your students, a content creator wanting to connect with your audience, or simply a quiz enthusiast, our platform offers all the tools you need to succeed.",
       },
       {
         type: "paragraph",
-        text: "This guide will walk you through the basics of getting started with QuizHub , from setting up your account to creating your first quiz and exploring the community.",
+        text: "This guide will walk you through the basics of getting started with QuizHub, from setting up your account to creating your first quiz and exploring the community.",
       },
       {
         type: "heading",
@@ -36,7 +36,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "To get started with QuizHub , you'll need to create an account. Visit our homepage and click on the 'Sign Up' button in the top right corner. You can register using your email address, or sign up with your Google, Facebook, or Apple account for a quicker process.",
+        text: "To get started with QuizHub, you'll need to create an account. Visit our homepage and click on the 'Sign Up' button in the top right corner. You can register using your email address, or sign up with your Google, Facebook, or Apple account for a quicker process.",
       },
       {
         type: "list",
@@ -55,7 +55,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Once you've created your account, you'll be taken to your dashboard. This is your personal hub where you can see your recent activity, track your progress, and access all the features of QuizHub .",
+        text: "Once you've created your account, you'll be taken to your dashboard. This is your personal hub where you can see your recent activity, track your progress, and access all the features of QuizHub.",
       },
       {
         type: "list",
@@ -131,7 +131,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "A complete account setup ensures you get the most out of QuizHub . This guide will walk you through all the steps to fully configure your account, from basic profile information to advanced settings and preferences.",
+        text: "A complete account setup ensures you get the most out of QuizHub. This guide will walk you through all the steps to fully configure your account, from basic profile information to advanced settings and preferences.",
       },
       {
         type: "paragraph",
@@ -144,7 +144,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Your profile is your identity on QuizHub . A complete profile helps others recognize you and builds trust in the community.",
+        text: "Your profile is your identity on QuizHub. A complete profile helps others recognize you and builds trust in the community.",
       },
       {
         type: "list",
@@ -228,7 +228,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Connect your social media accounts to enhance your QuizHub  experience. This allows for easier sharing of content and finding friends who are already on the platform.",
+        text: "Connect your social media accounts to enhance your QuizHub experience. This allows for easier sharing of content and finding friends who are already on the platform.",
       },
       {
         type: "list",
@@ -282,7 +282,7 @@ export const articlesData: readonly KbArticle[] = [
       {
         type: "list",
         items: [
-          "Log in to your QuizHub  account",
+          "Log in to your QuizHub account",
           "Click on your profile picture in the top right corner",
           "Select 'Settings' from the dropdown menu",
           "Navigate to the 'Subscription & Billing' tab",
@@ -422,7 +422,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Creating engaging quizzes is both an art and a science. Whether you're an educator looking to test knowledge, a content creator wanting to engage your audience, or someone who loves sharing interesting challenges, this guide will walk you through the process of creating effective quizzes on QuizHub .",
+        text: "Creating engaging quizzes is both an art and a science. Whether you're an educator looking to test knowledge, a content creator wanting to engage your audience, or someone who loves sharing interesting challenges, this guide will walk you through the process of creating effective quizzes on QuizHub.",
       },
       {
         type: "paragraph",
@@ -460,7 +460,7 @@ export const articlesData: readonly KbArticle[] = [
       {
         type: "list",
         items: [
-          "Log in to your QuizHub  account",
+          "Log in to your QuizHub account",
           "Click the 'Create' button in the top navigation",
           "Select 'New Quiz' from the dropdown menu",
           "Enter a title, description, and category for your quiz",
@@ -604,7 +604,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "This guide will walk you through the process of creating and managing your first tournament on QuizHub .",
+        text: "This guide will walk you through the process of creating and managing your first tournament on QuizHub.",
       },
       {
         type: "heading",
@@ -639,7 +639,7 @@ export const articlesData: readonly KbArticle[] = [
       {
         type: "list",
         items: [
-          "Log in to your QuizHub  account",
+          "Log in to your QuizHub account",
           "Navigate to the 'Tournaments' section",
           "Click 'Create Tournament' button",
           "Enter a compelling title and detailed description",
@@ -689,7 +689,7 @@ export const articlesData: readonly KbArticle[] = [
         items: [
           "Create new quizzes specifically for the tournament",
           "Select from your existing quizzes",
-          "Import quizzes from the QuizHub  library (premium feature)",
+          "Import quizzes from the QuizHub library (premium feature)",
           "Invite other creators to contribute quizzes (collaboration feature)",
           "Use AI-generated quizzes based on your specifications",
         ],
@@ -843,7 +843,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "At QuizHub , we understand the importance of privacy and giving you control over your personal information and content. This guide explains all the privacy settings available on our platform and how to configure them to match your preferences.",
+        text: "At QuizHub, we understand the importance of privacy and giving you control over your personal information and content. This guide explains all the privacy settings available on our platform and how to configure them to match your preferences.",
       },
       {
         type: "paragraph",
@@ -861,7 +861,7 @@ export const articlesData: readonly KbArticle[] = [
       {
         type: "list",
         items: [
-          "Log in to your QuizHub  account",
+          "Log in to your QuizHub account",
           "Click on your profile picture in the top right corner",
           "Select 'Settings' from the dropdown menu",
           "Navigate to the 'Privacy' tab",
@@ -1004,7 +1004,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "To maintain optimal privacy on QuizHub , we recommend:",
+        text: "To maintain optimal privacy on QuizHub, we recommend:",
       },
       {
         type: "paragraph",
@@ -1223,7 +1223,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "These guidelines outline our expectations for all community members to ensure everyone has a positive experience. By using QuizHub , you agree to follow these guidelines in all interactions.",
+        text: "These guidelines outline our expectations for all community members to ensure everyone has a positive experience. By using QuizHub, you agree to follow these guidelines in all interactions.",
       },
       {
         type: "heading",

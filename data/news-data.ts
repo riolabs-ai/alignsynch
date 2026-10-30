@@ -159,7 +159,7 @@ export const newsData: readonly NewsArticle[] = [
     author: {
       name: "Michael Chen",
       role: "Product Manager",
-      bio: "Michael leads product development at QuizMaker, focusing on creating features that help quiz creators succeed.",
+      bio: "Michael leads product development at QuizHub, focusing on creating features that help quiz creators succeed.",
       avatar: {
         src: media["avatars.wizard"].src,
         alt: "Michael Chen",
@@ -265,9 +265,9 @@ export const newsData: readonly NewsArticle[] = [
     ],
   },
   {
-    id: "news-quiz-maker-community-spotlight-may",
+    id: "news-quiz-hub-community-spotlight-may",
     kind: "news",
-    slug: "quiz-maker-community-spotlight-may",
+    slug: "quiz-hub-community-spotlight-may",
     title: "Community Spotlight: Meet the Creator Behind 'History Mysteries'",
     summary:
       "Learn how history teacher James Wilson built a quiz empire with over 2 million plays and a dedicated following.",
@@ -280,7 +280,7 @@ export const newsData: readonly NewsArticle[] = [
     author: {
       name: "Elena Rodriguez",
       role: "Community Manager",
-      bio: "Elena manages the QuizMaker community, highlighting success stories and fostering connections between creators.",
+      bio: "Elena manages the QuizHub community, highlighting success stories and fostering connections between creators.",
       avatar: {
         src: media["avatars.wizard"].src,
         alt: "Elena Rodriguez",
@@ -297,7 +297,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "When James Wilson first created a quiz on ancient civilizations for his high school history class, he never imagined it would lead to a side career as one of QuizMaker's most successful creators.",
+        text: "When James Wilson first created a quiz on ancient civilizations for his high school history class, he never imagined it would lead to a side career as one of QuizHub's most successful creators.",
       },
       {
         type: "paragraph",
@@ -507,7 +507,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "heading",
-        text: "Implementing Accessibility on QuizMaker",
+        text: "Implementing Accessibility on QuizHub",
         level: 2,
       },
       {
@@ -536,7 +536,7 @@ export const newsData: readonly NewsArticle[] = [
     author: {
       name: "Daniel Park",
       role: "Events Coordinator",
-      bio: "Daniel organizes QuizMaker's tournaments and special events, bringing the community together for friendly competition.",
+      bio: "Daniel organizes QuizHub's tournaments and special events, bringing the community together for friendly competition.",
       avatar: {
         src: media["avatars.wizard"].src,
         alt: "Daniel Park",
@@ -603,7 +603,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Beyond cash prizes, winners will receive exclusive digital badges, custom profile features, and opportunities to contribute to official QuizMaker content.",
+        text: "Beyond cash prizes, winners will receive exclusive digital badges, custom profile features, and opportunities to contribute to official QuizHub content.",
       },
       {
         type: "image",
@@ -624,7 +624,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "To register, simply log in to your QuizMaker account and visit the 'Championships' tab in the main menu. Basic participation is free, with optional premium features available for subscribers.",
+        text: "To register, simply log in to your QuizHub account and visit the 'Championships' tab in the main menu. Basic participation is free, with optional premium features available for subscribers.",
       },
       {
         type: "heading",
@@ -825,7 +825,7 @@ export const newsData: readonly NewsArticle[] = [
     author: {
       name: "Ryan Zhang",
       role: "AI Product Specialist",
-      bio: "Ryan specializes in AI applications for content creation and helps develop QuizMaker's AI-powered features.",
+      bio: "Ryan specializes in AI applications for content creation and helps develop QuizHub's AI-powered features.",
       avatar: {
         src: media["avatars.wizard"].src,
         alt: "Ryan Zhang",
@@ -958,7 +958,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "QuizMaker now offers a suite of AI tools integrated directly into our platform. Premium and Business subscribers can access these features from the 'AI Assistant' tab in the quiz creation interface.",
+        text: "QuizHub now offers a suite of AI tools integrated directly into our platform. Premium and Business subscribers can access these features from the 'AI Assistant' tab in the quiz creation interface.",
       },
       {
         type: "paragraph",

@@ -292,7 +292,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
           id: "how-it-works",
           label: "How does the affiliate program work?",
           value:
-            "Our affiliate program is simple: you refer users to QuizHub  using your unique link, and you earn a 30% commission on all their subscription payments for as long as they remain a customer. We track all referrals automatically and pay out monthly.",
+            "Our affiliate program is simple: you refer users to QuizHub using your unique link, and you earn a 30% commission on all their subscription payments for as long as they remain a customer. We track all referrals automatically and pay out monthly.",
         },
         {
           id: "who-can-join",
@@ -328,7 +328,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
           id: "social-media",
           label: "Can I promote the affiliate program on social media?",
           value:
-            "Social media is one of the best ways to promote QuizHub . You can share your affiliate link on platforms like Twitter, Facebook, Instagram, TikTok, and LinkedIn. We even provide platform-specific content templates in your dashboard.",
+            "Social media is one of the best ways to promote QuizHub. You can share your affiliate link on platforms like Twitter, Facebook, Instagram, TikTok, and LinkedIn. We even provide platform-specific content templates in your dashboard.",
         },
         {
           id: "referral-limit",
@@ -343,7 +343,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "success-stories",
       heading: "Success Stories",
-      body: "Hear from our top-performing affiliates who are earning consistent income by promoting QuizHub .",
+      body: "Hear from our top-performing affiliates who are earning consistent income by promoting QuizHub.",
       items: [
         // The badge around each story's `earnings` record field.
         { id: "earning-badge", label: "Earning {earnings}" },

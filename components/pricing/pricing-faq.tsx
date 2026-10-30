@@ -20,17 +20,17 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
       name: "General",
       questions: [
         {
-          question: "What is QuizHub ?",
+          question: "What is QuizHub?",
           answer:
             "QuizHub is a comprehensive platform that allows users to create, share, and take quizzes on various topics. It's designed for educators, content creators, businesses, and quiz enthusiasts who want to create engaging learning experiences.",
         },
         {
-          question: "How do I get started with QuizHub ?",
+          question: "How do I get started with QuizHub?",
           answer:
             "Getting started is easy! Simply sign up for a free account, explore the dashboard, and create your first quiz using our intuitive editor. You can also take existing quizzes to get familiar with the platform.",
         },
         {
-          question: "Can I try QuizHub  before purchasing?",
+          question: "Can I try QuizHub before purchasing?",
           answer:
             "Yes! We offer a free plan with limited features that you can use indefinitely. Additionally, our paid plans come with a 14-day free trial, no credit card required, so you can explore all features before making a decision.",
         },
@@ -90,7 +90,7 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
       name: "Account & Security",
       questions: [
         {
-          question: "How secure is my data on QuizHub ?",
+          question: "How secure is my data on QuizHub?",
           answer:
             "We take security seriously. All data is encrypted in transit and at rest. We implement industry-standard security practices, regular security audits, and comply with GDPR, CCPA, and other privacy regulations.",
         },

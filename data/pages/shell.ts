@@ -150,7 +150,7 @@ export const shellPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "footer-legal",
       items: [
-        { id: "copyright", label: "QuizHub . All rights reserved." },
+        { id: "copyright", label: "QuizHub. All rights reserved." },
         { id: "privacy", label: "Privacy Policy" },
         { id: "terms", label: "Terms of Service" },
         { id: "cookies", label: "Cookie Policy" },

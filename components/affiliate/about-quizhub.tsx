@@ -55,7 +55,7 @@ export function AboutQuizHub({ copy }: { copy: PageCopySection }) {
             <div className="relative z-10 rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700">
               <Image
                 src={media["about-affiliate"].src}
-                alt="QuizMaker Platform"
+                alt="QuizHub Platform"
                 width={600}
                 height={400}
                 className="w-full h-auto"

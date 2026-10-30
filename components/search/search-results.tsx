@@ -418,7 +418,7 @@ export function SearchResults({ query, index }: { query: string; index: SearchIn
           <h2 className="text-2xl font-semibold mb-3">Search for quizzes, categories, and more</h2>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
             Enter a search term above to find quizzes, categories, creators, and pages across
-            QuizMaker.
+            QuizHub.
           </p>
 
           <div className="max-w-3xl mx-auto">

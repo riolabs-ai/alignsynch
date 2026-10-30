@@ -62,7 +62,7 @@ export function NotificationSettings() {
       <div>
         <h3 className="text-lg font-medium">Notification Preferences</h3>
         <p className="text-sm text-muted-foreground">
-          Manage how and when you receive notifications from QuizHub .
+          Manage how and when you receive notifications from QuizHub.
         </p>
       </div>
 
