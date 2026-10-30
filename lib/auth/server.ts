@@ -1,5 +1,7 @@
 import { createNeonAuth } from "@neon/auth/next/server";
 
+import { AUTH_ENV_BASE_URL, AUTH_ENV_COOKIE_SECRET } from "@/lib/auth/config";
+
 /**
  * Neon Auth (Managed Better Auth) for this app.
  *
@@ -36,8 +38,8 @@ function required(name: string): string {
 export function neonAuth(): AuthServer {
   if (cached === undefined) {
     cached = createNeonAuth({
-      baseUrl: required("NEON_AUTH_BASE_URL"),
-      cookies: { secret: required("NEON_AUTH_COOKIE_SECRET") },
+      baseUrl: required(AUTH_ENV_BASE_URL),
+      cookies: { secret: required(AUTH_ENV_COOKIE_SECRET) },
     });
   }
   return cached;
