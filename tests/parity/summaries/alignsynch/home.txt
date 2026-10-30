@@ -7,7 +7,7 @@ headings (17)
   h2  "Notifications"
   h3  "No notifications"
   h1  "How do you feel, against how they feel?"
-  h2  "Two questions, asked of both of you"
+  h2  "The same question, answered twice"
   h2  "Four templates"
   h3  "Relationship Basics"
   h3  "Staff &amp; Manager"
