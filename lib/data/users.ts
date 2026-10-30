@@ -463,7 +463,9 @@ export const users: User[] = [
         type: "followed_user",
         content: "Started following Sarah Williams",
         timestamp: "2023-05-03T09:10:00Z",
-        relatedId: "2",
+        // A `followed_user` activity links to `/profile/<handle>`, so this is the handle — not
+        // the record's local id, which addressed a profile that never existed.
+        relatedId: "sarahwilliams",
         relatedName: "Sarah Williams",
       },
     ],

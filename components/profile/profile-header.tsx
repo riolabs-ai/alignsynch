@@ -1,43 +1,56 @@
 "use client";
 
-import type { User } from "@/lib/data/users";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { formatDate } from "@/content/core";
+import type { User } from "@/lib/data/users";
+import type { ProfilePerson } from "@/lib/profile";
 import { CalendarDays, Flag, MessageSquare, Star, UserCheck, UserPlus } from "lucide-react";
-import { media } from "@/data/media";
 
 interface ProfileHeaderProps {
-  user: User;
+  /** Identity and standing from `data/players.ts` — always present. */
+  person: ProfilePerson;
+  /** The `/profile` detail record when the fixture authors one; `null` otherwise. */
+  detail: User | null;
   isFollowing: boolean;
   onFollowToggle: () => void;
   onMessageClick: () => void;
 }
 
+/**
+ * Counts are formatted with an explicit locale and an em dash for "not measured": two of the
+ * ten players carry no follower totals, and `0` would be a claim the fixture does not make.
+ * The join date goes through `formatDate` (UTC-pinned) rather than `toLocaleDateString()`,
+ * which renders a different day on a server in UTC and a browser west of it.
+ */
+const COUNT = new Intl.NumberFormat("en-US");
+
+function count(value: number | undefined): string {
+  return value === undefined ? "—" : COUNT.format(value);
+}
+
 export function ProfileHeader({
-  user,
+  person,
+  detail,
   isFollowing,
   onFollowToggle,
   onMessageClick,
 }: ProfileHeaderProps) {
-  const joinedDate = new Date(user.joinedDate).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const joinedDate = detail?.joinedDate ? formatDate(detail.joinedDate) : undefined;
 
   return (
     <div className="rounded-xl bg-gradient-to-r from-purple-100 to-blue-100 p-6 shadow-sm dark:from-purple-950/30 dark:to-blue-950/30">
       <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
         <Avatar className="h-24 w-24 border-4 border-background">
-          <AvatarImage src={user.avatar || media.placeholder.src} alt={user.name} />
-          <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+          <AvatarImage src={person.avatar} alt={person.name} />
+          <AvatarFallback>{person.name.substring(0, 2)}</AvatarFallback>
         </Avatar>
 
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold">{user.name}</h1>
-            {user.isVerified && (
+            <h1 className="text-2xl font-bold">{person.name}</h1>
+            {detail?.isVerified && (
               <Badge variant="secondary" className="h-5 gap-1 px-1.5 py-0">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -57,41 +70,49 @@ export function ProfileHeader({
             )}
             <Badge variant="outline" className="gap-1 text-xs">
               <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-              Level {user.level}
+              Level {person.level}
             </Badge>
           </div>
 
-          <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-            <span>@{user.username}</span>
-            <span>•</span>
-            <div className="flex items-center gap-1">
-              <Flag className="h-3.5 w-3.5" />
-              <span>{user.country}</span>
-            </div>
-            <span>•</span>
-            <div className="flex items-center gap-1">
-              <CalendarDays className="h-3.5 w-3.5" />
-              <span>Joined {joinedDate}</span>
-            </div>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>@{person.handle}</span>
+            {person.country && (
+              <>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <Flag className="h-3.5 w-3.5" />
+                  <span>{person.country}</span>
+                </div>
+              </>
+            )}
+            {joinedDate && (
+              <>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  <span>Joined {joinedDate}</span>
+                </div>
+              </>
+            )}
           </div>
 
-          <p className="mt-2 text-sm">{user.bio}</p>
+          {detail?.bio && <p className="mt-2 text-sm">{detail.bio}</p>}
 
           <div className="mt-3 flex flex-wrap gap-4 text-sm">
             <div>
-              <span className="font-semibold">{user.quizzesTaken.toLocaleString()}</span>
+              <span className="font-semibold">{count(person.quizzesTaken)}</span>
               <span className="ml-1 text-muted-foreground">Quizzes Taken</span>
             </div>
             <div>
-              <span className="font-semibold">{user.quizzesCreated.toLocaleString()}</span>
+              <span className="font-semibold">{count(detail?.quizzesCreated)}</span>
               <span className="ml-1 text-muted-foreground">Quizzes Created</span>
             </div>
             <div>
-              <span className="font-semibold">{user.followers.toLocaleString()}</span>
+              <span className="font-semibold">{count(person.followers)}</span>
               <span className="ml-1 text-muted-foreground">Followers</span>
             </div>
             <div>
-              <span className="font-semibold">{user.following.toLocaleString()}</span>
+              <span className="font-semibold">{count(person.following)}</span>
               <span className="ml-1 text-muted-foreground">Following</span>
             </div>
           </div>

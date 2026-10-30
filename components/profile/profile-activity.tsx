@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { formatClockTime, formatMonthDay } from "@/content/core";
 import type { Activity } from "@/lib/data/users";
 import { Award, CheckCircle, Clock, PenTool, TrendingUp, UserPlus } from "lucide-react";
 import Link from "next/link";
@@ -25,15 +26,11 @@ export function ProfileActivity({ activities }: ProfileActivityProps) {
     }
   };
 
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  // `May 1, 02:30 PM` — both halves are UTC-pinned (`content/core.ts`). A
+  // `toLocaleDateString()` here renders the server's timezone in the HTML and the visitor's
+  // after hydration, which is a React #418 mismatch on every profile with an activity feed.
+  const formatTimestamp = (timestamp: string) =>
+    `${formatMonthDay(timestamp)}, ${formatClockTime(timestamp)}`;
 
   const getActivityLink = (activity: Activity) => {
     switch (activity.type) {

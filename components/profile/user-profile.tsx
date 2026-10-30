@@ -9,17 +9,22 @@ import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileQuizHistory } from "@/components/profile/profile-quiz-history";
 import { ProfileStats } from "@/components/profile/profile-stats";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { User } from "@/lib/data/users";
+import type { PlayerProfile } from "@/lib/profile";
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 interface UserProfileProps {
-  user: User;
+  /** One resolved `/profile/<handle>`, from `lib/profile.ts` — never a literal here. */
+  profile: PlayerProfile;
 }
 
-export function UserProfile({ user }: UserProfileProps) {
+const COUNT = new Intl.NumberFormat("en-US");
+
+export function UserProfile({ profile }: UserProfileProps) {
+  const { person, detail } = profile;
   const [isFollowing, setIsFollowing] = useState(false);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
@@ -37,7 +42,8 @@ export function UserProfile({ user }: UserProfileProps) {
       </div>
 
       <ProfileHeader
-        user={user}
+        person={person}
+        detail={detail}
         isFollowing={isFollowing}
         onFollowToggle={handleFollowToggle}
         onMessageClick={() => setIsMessageModalOpen(true)}
@@ -45,35 +51,59 @@ export function UserProfile({ user }: UserProfileProps) {
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Tabs defaultValue="activity" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="quizzes">Quizzes Taken</TabsTrigger>
-              <TabsTrigger value="created">Created Quizzes</TabsTrigger>
-              <TabsTrigger value="followers">Followers</TabsTrigger>
-              <TabsTrigger value="following">Following</TabsTrigger>
-            </TabsList>
-            <TabsContent value="activity" className="mt-4">
-              <ProfileActivity activities={user.recentActivity} />
-            </TabsContent>
-            <TabsContent value="quizzes" className="mt-4">
-              <ProfileQuizHistory quizHistory={user.quizHistory} />
-            </TabsContent>
-            <TabsContent value="created" className="mt-4">
-              <ProfileCreatedQuizzes user={user} />
-            </TabsContent>
-            <TabsContent value="followers" className="mt-4">
-              <ProfileFollowers userId={user.id} />
-            </TabsContent>
-            <TabsContent value="following" className="mt-4">
-              <ProfileFollowing userId={user.id} />
-            </TabsContent>
-          </Tabs>
+          {detail ? (
+            <Tabs defaultValue="activity" className="w-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+                <TabsTrigger value="quizzes">Quizzes Taken</TabsTrigger>
+                <TabsTrigger value="created">Created Quizzes</TabsTrigger>
+                <TabsTrigger value="followers">Followers</TabsTrigger>
+                <TabsTrigger value="following">Following</TabsTrigger>
+              </TabsList>
+              <TabsContent value="activity" className="mt-4">
+                <ProfileActivity activities={detail.recentActivity} />
+              </TabsContent>
+              <TabsContent value="quizzes" className="mt-4">
+                <ProfileQuizHistory quizHistory={detail.quizHistory} />
+              </TabsContent>
+              <TabsContent value="created" className="mt-4">
+                <ProfileCreatedQuizzes user={detail} />
+              </TabsContent>
+              <TabsContent value="followers" className="mt-4">
+                <ProfileFollowers userId={person.id} />
+              </TabsContent>
+              <TabsContent value="following" className="mt-4">
+                <ProfileFollowing userId={person.id} />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  Activity, quiz history, created quizzes, achievements and performance stats are
+                  per-player fixture records. None are authored for @{person.handle} yet, so only
+                  the standing below is shown.
+                </p>
+                {person.rank !== undefined && person.score !== undefined && (
+                  <p className="font-medium text-foreground">
+                    Global rank #{person.rank} · {COUNT.format(person.score)} points
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
-          <ProfileStats stats={user.stats} />
-          <ProfileAchievements achievements={user.achievements} />
+          {detail ? (
+            <>
+              <ProfileStats stats={detail.stats} />
+              <ProfileAchievements achievements={detail.achievements} />
+            </>
+          ) : null}
 
           <div className="rounded-lg border bg-card p-4 shadow-sm">
             <h3 className="mb-3 font-semibold">Contact</h3>
@@ -92,7 +122,7 @@ export function UserProfile({ user }: UserProfileProps) {
       <MessageModal
         isOpen={isMessageModalOpen}
         onClose={() => setIsMessageModalOpen(false)}
-        recipient={user}
+        recipient={{ name: person.name, avatar: person.avatar }}
       />
     </div>
   );
