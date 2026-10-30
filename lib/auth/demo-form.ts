@@ -17,11 +17,12 @@ export const DEMO_ROLE_FIELD = "as";
 /**
  * What a submission answers.
  *
- * `idle` is the panel before anything was submitted; `rejected` carries the one generic
- * sentence a wrong PIN, a missing account and a failed sign-in all produce; `limited` is the
- * rate limit, which says "too many attempts" and nothing about the PIN. There is deliberately
- * no `ok` branch: a successful sign-in redirects, so a state the browser could render as
- * "signed in" would be a second answer to the same question.
+ * `idle` is the panel before anything was submitted; `rejected` carries the sentence for the cause
+ * the server identified (`lib/auth/demo-failure.ts`: a wrong PIN or unknown role, a missing
+ * `demo_account` row, or a refused sign-in — #216); `limited` is the rate limit, which says "too
+ * many attempts" and nothing about the PIN. There is deliberately no `ok` branch: a successful
+ * sign-in redirects, so a state the browser could render as "signed in" would be a second answer
+ * to the same question.
  */
 export interface DemoFormState {
   readonly status: "idle" | "rejected" | "limited";

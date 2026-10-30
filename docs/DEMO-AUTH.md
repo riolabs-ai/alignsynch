@@ -143,12 +143,30 @@ does not close it. `signInAsDemo` asks the mode again and answers `notFound()` t
 **The PIN.** Compared with `pinMatches()` (`lib/auth/demo-pin.ts`), which hashes both sides with
 SHA-256 and compares the digests with `timingSafeEqual` — digesting first is what makes the
 comparison length-independent, so neither the PIN's value nor its length is observable in the
-time taken. A wrong PIN, an unknown button value and a missing account share **one** sentence
-("That PIN is not correct."), and the credential is not read until the PIN matches.
+time taken. The credential is not read until the PIN matches.
+
+**A refusal names its cause.** Four outcomes, and the sentence is chosen by the one the reader
+can act on (`lib/auth/demo-failure.ts`, #216) — the sign-in refusal splitting only where the app
+already has words for the cause:
+
+| Outcome                                        | Sentence                                                                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| A wrong PIN, or a button value that is not one | "That PIN is not correct." — **one** sentence for both, so a reply cannot say whether an account exists |
+| `demo_account` has no row for that role        | "No demo account is seeded for that role. Run the demo reset, then try again."                          |
+| The auth server refused the sign-in            | "The PIN was accepted, but the auth server refused the sign-in. …"                                      |
+| …and the cause is the browser's origin         | the login page's own `error-origin` line, read through `authFailureItemId()` rather than re-worded      |
+| …and the cause is the transport                | the login page's own `error-network` line, read the same way                                            |
+
+The reply never carries a password, a token or the provider's message — `authFailureOf()`
+(`lib/auth/errors.ts`) classifies the error and only a string chosen by that classification is
+rendered. Each case logs its own line (`PIN rejected for …`, `no seeded demo account for …`,
+`sign-in refused for … (origin)`), so the diagnosis is in the server log while the panel stays
+short. Every row after the first is only reachable after the PIN matched, which is what keeps them
+from answering "does this address exist?".
 
 **The limit.** Five attempts a minute per caller (`x-forwarded-for`, else one shared bucket),
 fixed window with pruning; a refused attempt is not recorded, so knocking does not extend the
-ban. A successful sign-in resets the caller. The one different message — "Too many attempts" —
+ban. A successful sign-in resets the caller. One further message — "Too many attempts" —
 describes the caller's history, not the secret, and carries the retry in seconds.
 
 **Where each button lands.**
