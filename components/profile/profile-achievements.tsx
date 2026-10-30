@@ -1,6 +1,7 @@
 import type { Achievement } from "@/lib/data/users";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/content/core";
 import { Award, Book, FlaskRoundIcon as Flask, Pencil, Search, Star, Trophy } from "lucide-react";
 
 interface ProfileAchievementsProps {
@@ -67,7 +68,7 @@ export function ProfileAchievements({ achievements }: ProfileAchievementsProps) 
                 </div>
                 <p className="text-sm text-muted-foreground">{achievement.description}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Earned on {new Date(achievement.earnedAt).toLocaleDateString()}
+                  Earned on {formatDate(achievement.earnedAt)}
                 </p>
               </div>
             </div>

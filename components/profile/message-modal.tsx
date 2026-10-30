@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { User } from "@/lib/data/users";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,8 @@ import { media } from "@/data/media";
 interface MessageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  recipient: User;
+  /** Who the message goes to — the two fields the dialog renders, not a whole `User`. */
+  recipient: { name: string; avatar: string };
 }
 
 export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) {

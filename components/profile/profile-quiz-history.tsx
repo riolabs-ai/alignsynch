@@ -3,6 +3,7 @@ import type { QuizHistoryItem } from "@/lib/data/users";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { formatDate } from "@/content/core";
 import { Clock, FileQuestion } from "lucide-react";
 
 interface ProfileQuizHistoryProps {
@@ -14,15 +15,6 @@ export function ProfileQuizHistory({ quizHistory }: ProfileQuizHistoryProps) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}m ${remainingSeconds}s`;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   const getDifficultyColor = (difficulty: string) => {
