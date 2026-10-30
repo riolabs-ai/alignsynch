@@ -1,14 +1,14 @@
 import type { PageCopySection } from "@/content/pages";
-import type { Tip } from "@/data/creator-tips-data";
+import type { TipRecord } from "@/lib/article-records";
 import TipCard from "./tip-card";
 
 interface RelatedTipsProps {
-  tips: readonly Tip[];
+  articles: readonly TipRecord[];
   copy: PageCopySection;
 }
 
-export default function RelatedTips({ tips, copy }: RelatedTipsProps) {
-  if (tips.length === 0) {
+export default function RelatedTips({ articles, copy }: RelatedTipsProps) {
+  if (articles.length === 0) {
     return null;
   }
 
@@ -17,8 +17,8 @@ export default function RelatedTips({ tips, copy }: RelatedTipsProps) {
       <h2 className="text-2xl font-bold mb-6">{copy.heading}</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tips.map((tip) => (
-          <TipCard key={tip.id} tip={tip} copy={copy} />
+        {articles.map((article) => (
+          <TipCard key={article.id} tip={article} copy={copy} />
         ))}
       </div>
     </div>

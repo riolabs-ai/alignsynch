@@ -1,13 +1,15 @@
-import { getFeaturedTips, tipCategoryName } from "@/data/creator-tips-data";
 import type { PageCopySection } from "@/content/pages";
+import { tipCategoryName } from "@/data/creator-tips-data";
+import { articlePath, publishedArticles } from "@/lib/article-records";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowRight, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { media } from "@/data/media";
 
+/** The featured tips are the published records that carry `featured: true`. */
 export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
-  const featuredTips = getFeaturedTips();
+  const featuredTips = publishedArticles("tip").filter((tip) => tip.featured);
 
   if (featuredTips.length === 0) {
     return null;
@@ -20,7 +22,7 @@ export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 xxl:grid-cols-4 gap-6">
         {featuredTips.map((tip) => (
           <Link
-            href={`/creator-tips/${tip.slug}`}
+            href={articlePath(tip)}
             key={tip.id}
             className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 hover:border-purple-300 hover:shadow-md transition-all"
           >
