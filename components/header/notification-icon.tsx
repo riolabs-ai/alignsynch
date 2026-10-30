@@ -16,6 +16,13 @@
  *
  * Class strings are byte-identical to the ones the fixture carried — changing them
  * changes the drawer's appearance, which is a design decision, not a migration.
+ *
+ * One colour has since changed, and it is the brand's (issue #187): `calendar` was the purple
+ * 500 step, the one hue in this categorical set that was not a signal colour
+ * (yellow/blue/green/red/amber are the notification kinds) but a palette literal, and the drawer
+ * is mounted by the chrome on every page. It reads `text-action` now — the brand's interactive
+ * colour, which is `#6366f1` on QuizHub (indigo, a step away from the purple it replaces) and
+ * the sampled blue on AlignSynch.
  */
 import type { NotificationIconKey } from "@/content/social";
 import { isNotificationIconKey } from "@/content/social";
@@ -36,7 +43,7 @@ export const NOTIFICATION_ICON_CLASS: Record<NotificationIconKey, string> = {
   trophy: "h-5 w-5 text-yellow-500",
   users: "h-5 w-5 text-blue-500",
   gift: "h-5 w-5 text-green-500",
-  calendar: "h-5 w-5 text-purple-500",
+  calendar: "h-5 w-5 text-action",
   "alert-circle": "h-5 w-5 text-red-500",
   star: "h-5 w-5 text-amber-500",
 };

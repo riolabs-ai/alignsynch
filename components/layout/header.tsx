@@ -341,8 +341,8 @@ export function Header({
                                     setSearchQuery("");
                                   }}
                                 >
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100">
-                                    <FileText className="h-4 w-4 text-purple-600" />
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+                                    <FileText className="h-4 w-4 text-action" />
                                   </div>
                                   <p className="font-medium">{page.title}</p>
                                 </Link>
@@ -465,8 +465,8 @@ export function Header({
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
                   <Link href="/dashboard/user">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100">
-                      <TrendingUp className="h-4 w-4 text-purple-600" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+                      <TrendingUp className="h-4 w-4 text-action" />
                     </div>
                     <div className="flex flex-col">
                       <span>{itemLabel(accountCopy, "dashboard")}</span>

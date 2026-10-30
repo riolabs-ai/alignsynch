@@ -37,6 +37,16 @@ const config: Config = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        // The brand's interactive colour (#187): `--primary` is the template's ink and
+        // `--accent` is shadcn's subtle hover surface, so a CTA had no token to name and was
+        // typed as `bg-purple-600` in every feature. `tailwindcss/plugin` is not involved:
+        // `bg-action`, `text-action`, `bg-action/90` and `bg-nav-active` are ordinary
+        // colours, resolved out of the two custom properties `lib/brand-theme.ts` paints.
+        action: {
+          DEFAULT: "hsl(var(--action))",
+          foreground: "hsl(var(--action-foreground))",
+        },
+        "nav-active": "hsl(var(--nav-active))",
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
