@@ -3,6 +3,7 @@ import { brand, brandIdOf } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndexFor } from "@/data/searchdata";
 import { brandMark } from "@/lib/brand-mark";
+import { shellAccount } from "@/lib/auth/shell-account";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { navViewer } from "@/lib/nav";
 import type React from "react";
@@ -24,20 +25,29 @@ import type React from "react";
  * capability stub documented in `lib/nav.ts`, and **this is the line a role model replaces**:
  * it becomes `navViewer(await currentUser())`, which is why it is resolved here, on the
  * server, and never in the sidebar.
+ *
+ * `account` is the header's third input and the one identity the shell renders (issue #212).
+ * It is a plain `{ name, handle, email }` or `null`, resolved from **this request's** session
+ * by `lib/auth/shell-account.ts` — the same server/client boundary the copy crosses, for the
+ * same reason: a client component cannot call `currentUser()`, and an identity the browser
+ * supplied is not one. `null` is a real state (signed out), and the header draws a neutral disc
+ * for it; what it never does is fall back to a fixture person.
  */
-export default function Layout({
+export default async function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const brandId = brandIdOf(brand);
   const viewer = navViewer();
+  const account = await shellAccount();
   return (
     <MainLayout
       copy={shellPageCopy}
       mark={brandMark(brand.logo)}
       brandId={brandId}
       viewer={viewer}
+      account={account}
       searchIndex={searchIndexFor(brandId, viewer)}
       hiddenNav={hiddenNavHrefs()}
     >
