@@ -21,7 +21,7 @@
  *
  * Deliberately static and structural, like `ui-refs.ts` and `island-refs.ts`: no TypeScript
  * program, no evaluation, no filesystem. Dimensions a static import carries are respected —
- * `import cover from "@/public/card-cover.png"` is a `StaticImageData`, so `src={cover}` is a
+ * `import cover from "@/public/example-cover.png"` is a `StaticImageData`, so `src={cover}` is a
  * legitimate size source and must not be flagged; `cover.src` is a plain string and is not.
  */
 import type { SourceFile } from "./ui-refs";
@@ -72,7 +72,7 @@ export interface ImageCensus {
 /** `<Image` that is not `<ImageTag`: the word boundary excludes a longer component name. */
 const OPEN_TAG = /<Image\b/g;
 
-/** `import cover from "@/public/card-cover.png"` — the default import is a StaticImageData. */
+/** `import cover from "@/public/example-cover.png"` — the default import is a StaticImageData. */
 const STATIC_IMPORT = /import\s+([A-Za-z_$][\w$]*)\s*(?:,\s*\{[^}]*\})?\s+from\s*["']([^"']+)["']/g;
 const IMAGE_FILE = /\.(?:png|jpe?g|webp|gif|svg|avif)(?:[?#][^"']*)?$/i;
 
