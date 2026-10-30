@@ -4,7 +4,9 @@
  * comes from the schema, so a field can never drift from the model.
  */
 import type { Quiz } from "../content/quiz";
+import { DEMO_NOW_ISO } from "../content/core";
 import { media } from "./media";
+import { AUTHORED_REWARD_WINDOW } from "./reward-windows";
 
 /**
  * The 20 quiz-generator templates (settings.visibility: private).
@@ -13,6 +15,11 @@ import { media } from "./media";
  * exception is `quiz-11` (`Sports Trivia Challenge`), which two explore card
  * records promote — its status and engagement snapshot are lifted onto the
  * record, so the card projects instead of orphaning (quiz-migration.md §5).
+ *
+ * `quiz-11` is the one template that has to satisfy the published-record rules, so it
+ * carries the two fields the 19 drafts may go without: `publishedAt` (the fixture clock —
+ * the old fixture kept no publication instant) and a window on the reward it offered with
+ * no deadline (`data/reward-windows.ts`), which `data:check` reports as `W2`/`W4`.
  */
 export const mockQuizzes: readonly Quiz[] = [
   {
@@ -1546,6 +1553,7 @@ export const mockQuizzes: readonly Quiz[] = [
       },
     },
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     difficulty: "easy",
     questions: [
       {
@@ -1691,6 +1699,7 @@ export const mockQuizzes: readonly Quiz[] = [
         label: "New ✨",
       },
       rewardCents: 300,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
       isTournament: false,
       recentPlayers: [],
     },

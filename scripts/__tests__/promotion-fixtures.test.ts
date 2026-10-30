@@ -9,6 +9,11 @@
  * The snapshot in `fixtures/card-records.ts` is the migration harness's
  * `cards.json` committed in-repo, so this runs in `data:check` and cannot drift
  * silently when the harness disappears.
+ *
+ * One divergence is recorded rather than absorbed: the v1 data repair gives 13 of these
+ * catalog records the reward window their own authored card named but did not render, so
+ * 21 of the 31 rows now project `limitedTime: true` where the authored flag says false.
+ * `REPAIRED_WINDOWS` below is the whole of that divergence, and the test asserts its size.
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -31,6 +36,40 @@ const NOW = new Date(FIXTURE_NOW);
 const CATALOG_ENDS = "2026-10-31T12:00:00.000Z";
 const SCIENCE = "quiz-science-quiz-space-exploration";
 const SLOTS = ["explore-page/popular[1]", "explore-featured/popular[1]"] as const;
+
+/**
+ * The catalog records the v1 data repair gave a window, and the instant it closes.
+ *
+ * Every one of these authored cards carried `expiresInSeconds: 172800` while its
+ * `limitedTime` flag said false: a deadline the card held back, which is the card-side
+ * shape `data:check` W4 reports on the record (a prize with no `limitedTimeEndsAt`). The
+ * repair puts the authored duration on the record — `FIXTURE_NOW` + those seconds — so the
+ * projection now renders the countdown the card did not. The snapshot rows keep their
+ * authored `limitedTime` because the snapshot is the migration's evidence, not a place to
+ * retro-fit an answer; this map is where the one intentional divergence lives, and the
+ * count is asserted below rather than absorbed.
+ */
+const REPAIRED_WINDOWS: Readonly<Record<string, string>> = {
+  "quiz-world-geography-challenge-capitals-landmarks": "2026-10-31T12:00:00.000Z",
+  "quiz-historys-greatest-mysteries": "2026-10-31T12:00:00.000Z",
+  "quiz-mathematical-puzzles-brain-teasers": "2026-10-31T12:00:00.000Z",
+  "quiz-literature-classic-novels": "2026-10-31T12:00:00.000Z",
+  "quiz-world-cup-football-history": "2026-10-31T12:00:00.000Z",
+  "quiz-blockbuster-movies-trivia": "2026-10-31T12:00:00.000Z",
+  "quiz-wonders-of-the-natural-world": "2026-10-31T12:00:00.000Z",
+  "quiz-music-through-the-decades": "2026-10-31T12:00:00.000Z",
+  "quiz-technology-gadgets": "2026-10-31T12:00:00.000Z",
+  "quiz-culinary-world-tour": "2026-10-31T12:00:00.000Z",
+  "quiz-artistic-masterpieces": "2026-10-31T12:00:00.000Z",
+  "quiz-famous-inventors-discoveries": "2026-10-31T12:00:00.000Z",
+  "quiz-11": "2026-10-31T12:00:00.000Z",
+};
+
+/** The countdown state the catalog now projects: the repair's window over the authored flag. */
+function limitedTimeOf(row: CardRecordSnapshot): boolean {
+  const window = REPAIRED_WINDOWS[row.quizId];
+  return window === undefined ? row.limitedTime : Date.parse(window) > NOW.getTime();
+}
 
 const overlaysBySlot = new Map<string, QuizPromotion>(
   promotions.map((promotion) => [promotion.slot, promotion]),
@@ -57,7 +96,7 @@ function authoredStats(row: CardRecordSnapshot) {
     rewardCents: authored.rewardCents ?? null,
     badge: authored.badge ?? null,
     spotsLeft: authored.spotsLeft ?? null,
-    limitedTime: row.limitedTime,
+    limitedTime: limitedTimeOf(row),
     // Only the home grid authored `almostFull`; elsewhere it is derived and the
     // snapshot holds no ground truth, so the key is absent rather than guessed.
     ...(authored.almostFull === undefined ? {} : { almostFull: authored.almostFull }),
@@ -131,6 +170,17 @@ describe("the 31 card records", () => {
   it("produce valid cards: 31/31", () => {
     for (const row of CARD_RECORDS) {
       assert.equal(zQuizCard.safeParse(cardForRecord(row)).success, true, row.key);
+    }
+  });
+
+  it("render the countdown the v1 repair added to 13 authored records (21 of 31 rows)", () => {
+    const repaired = CARD_RECORDS.filter((row) => REPAIRED_WINDOWS[row.quizId] !== undefined);
+    assert.equal(new Set(repaired.map((row) => row.quizId)).size, 13);
+    assert.equal(repaired.length, 21);
+    for (const row of repaired) {
+      // The authored flag still says false; the record's window is what the card renders.
+      assert.equal(row.limitedTime, false, `${row.key}: the snapshot must keep the authored flag`);
+      assert.equal(cardForRecord(row).stats.limitedTime, true, row.key);
     }
   });
 

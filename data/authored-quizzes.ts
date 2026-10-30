@@ -15,7 +15,7 @@
  * per-slot overlay (B-01, `zQuizPromotion`), never a second record for the same
  * subject — E10 forbids a duplicate record and A4 forbids a shadow identity.
  *
- * **The four `limitedTimeEndsAt` values are demo-epoch-relative, not capture dates.**
+ * **The `limitedTimeEndsAt` values are demo-epoch-relative, not capture dates.**
  * The authored cards said `expiresIn: 172800 / 129600 / 86400 / 43200` (48 h, 36 h,
  * 24 h, 12 h); `DEMO_NOW_ISO` (`content/core.ts`) + that duration is the instant each
  * window closes, exactly as MIGRATION.md's field table specifies. They were left on
@@ -24,9 +24,20 @@
  * `data/promotions.ts` campaigns, which are bounded by the Science quiz's window and
  * therefore never ran (issue #110). `data:check` E30 now fails the build when a
  * campaign's window stops covering the fixture clock.
+ *
+ * **`publishedAt` and the remaining windows (the v1 data repair).** Every one of these
+ * records was `published` with no publication instant (`W2`) and 12 of them offered a
+ * prize with no deadline (`W4`). `publishedAt` is the latest instant the record itself
+ * carries (`stats.updatedAt`), so a record is never published after it was last edited;
+ * where it carries none, `DEMO_NOW_ISO` — the fixture clock — is the instant the demo
+ * snapshot speaks for. A missing window is `AUTHORED_REWARD_WINDOW`
+ * (`data/reward-windows.ts`): the 48 h these cards' own `expiresIn: 172800` named while
+ * their `limitedTime` flag said false. No date is generated, and no clock is read.
  */
 import type { Quiz } from "../content/quiz";
+import { DEMO_NOW_ISO } from "../content/core";
 import { media } from "./media";
+import { AUTHORED_REWARD_WINDOW } from "./reward-windows";
 
 export const authoredQuizzes: readonly Quiz[] = [
   {
@@ -40,6 +51,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: "2024-12-27T00:00:00.000Z",
     questions: [
       {
         id: "quiz-science-quiz-space-exploration-q1",
@@ -237,6 +249,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "easy",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-world-geography-challenge-capitals-landmarks-q1",
@@ -408,6 +421,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Editor's Choice ✨",
       },
       rewardCents: 750,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     cover: {
       src: media["world-landmarks"].src,
@@ -432,6 +446,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-brain-teasers-logic-puzzles-q1",
@@ -628,6 +643,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "hard",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-historys-greatest-mysteries-q1",
@@ -801,6 +817,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Top Rated ⭐",
       },
       rewardCents: 650,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     cover: {
       src: media["history-mysteries"].src,
@@ -825,6 +842,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: "2024-12-25T00:00:00.000Z",
     questions: [
       {
         id: "quiz-ancient-civilizations-egypt-greece-rome-q1",
@@ -993,6 +1011,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: "2024-12-18T00:00:00.000Z",
     questions: [
       {
         id: "quiz-mathematical-puzzles-brain-teasers-q1",
@@ -1135,6 +1154,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Trending 📈",
       },
       rewardCents: 650,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
       updatedAt: "2024-12-18T00:00:00.000Z",
     },
     author: {
@@ -1160,6 +1180,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-world-of-fantasy-literature-q1",
@@ -1327,6 +1348,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-literature-classic-novels-q1",
@@ -1469,6 +1491,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Top Rated ⭐",
       },
       rewardCents: 500,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "BookWorm",
@@ -1493,6 +1516,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-world-cup-football-history-q1",
@@ -1635,6 +1659,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Popular 👑",
       },
       rewardCents: 850,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "SportsNut",
@@ -1659,6 +1684,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "easy",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-blockbuster-movies-trivia-q1",
@@ -1801,6 +1827,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Top Rated ⭐",
       },
       rewardCents: 950,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "MovieBuff",
@@ -1825,6 +1852,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "easy",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-wonders-of-the-natural-world-q1",
@@ -1967,6 +1995,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "Popular 👑",
       },
       rewardCents: 600,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "NatureExplorer",
@@ -1991,6 +2020,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "easy",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-music-through-the-decades-q1",
@@ -2133,6 +2163,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "New ✨",
       },
       rewardCents: 550,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "MusicMaestro",
@@ -2157,6 +2188,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "easy",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-technology-gadgets-q1",
@@ -2299,6 +2331,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "New ✨",
       },
       rewardCents: 700,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "TechGuru",
@@ -2323,6 +2356,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "easy",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-culinary-world-tour-q1",
@@ -2465,6 +2499,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "New ✨",
       },
       rewardCents: 450,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "FoodieChef",
@@ -2484,6 +2519,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-artistic-masterpieces-q1",
@@ -2626,6 +2662,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "New ✨",
       },
       rewardCents: 400,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "ArtLover",
@@ -2646,6 +2683,7 @@ export const authoredQuizzes: readonly Quiz[] = [
     tags: [],
     difficulty: "medium",
     status: "published",
+    publishedAt: DEMO_NOW_ISO,
     questions: [
       {
         id: "quiz-famous-inventors-discoveries-q1",
@@ -2788,6 +2826,7 @@ export const authoredQuizzes: readonly Quiz[] = [
         label: "New ✨",
       },
       rewardCents: 500,
+      limitedTimeEndsAt: AUTHORED_REWARD_WINDOW,
     },
     author: {
       name: "ScienceGeek",

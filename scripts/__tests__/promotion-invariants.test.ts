@@ -58,6 +58,21 @@ const datedQuiz = (overrides: Record<string, unknown> = {}): Quiz =>
 const joined = (record: Record<string, unknown>, quiz: Quiz) =>
   promotionFindings([record], [...quizzes, quiz]).filter((finding) => finding.rule === "W6");
 
+/**
+ * A published quiz whose prize has no window — the `W4` shape, which the v1 data repair
+ * removed from every shipped record. The prize is deliberately not the overlay's 500¢, so
+ * an override against it is exactly the "differs from the catalog and nothing bounds it"
+ * case E15 exists for. The overlay's `endsAt` is the only thing that can bound it.
+ */
+const unboundedQuiz = (): Quiz =>
+  datedQuiz({
+    id: "quiz-unbounded",
+    slug: "unbounded",
+    title: "Unbounded Quiz",
+    publishedAt: undefined,
+    stats: { plays: 10, capacity: 2000, rewardCents: 900 },
+  });
+
 /* ================================================================== *
  * E14 — one quiz, one record per slot, engagement only
  * ================================================================== */
@@ -130,20 +145,22 @@ describe("E15 — window validity and a bounded prize", () => {
   });
 
   it("reports a reward override with no bound at all", () => {
-    // `World Geography` carries 750¢ and no window, so a 500¢ override is unbounded.
-    const findings = byRule(
+    // A prize with no window is the shape the v1 data repair removed from every shipped
+    // record, so the rule is proven the way the other negative cases are: a copy of the
+    // catalog record with the window taken away.
+    const findings = promotionFindings(
       [
         overlay({
           id: "promo-unbounded",
-          quizId: "quiz-world-geography-challenge-capitals-landmarks",
+          quizId: "quiz-unbounded",
           slot: "explore-page/popular[0]",
           plays: 1872,
           capacity: 2000,
           rewardCents: 500,
         }),
       ],
-      "E15",
-    );
+      [...quizzes, unboundedQuiz()],
+    ).filter((finding) => finding.rule === "E15");
     assert.equal(findings.length, 1);
     assert.match(findings[0].message, /endsAt|window/);
   });
@@ -151,14 +168,17 @@ describe("E15 — window validity and a bounded prize", () => {
   it("accepts the same override once it names an endsAt", () => {
     const bounded = overlay({
       id: "promo-unbounded",
-      quizId: "quiz-world-geography-challenge-capitals-landmarks",
+      quizId: "quiz-unbounded",
       slot: "explore-page/popular[0]",
       plays: 1872,
       capacity: 2000,
       rewardCents: 500,
       endsAt: "2026-10-30T00:00:00.000Z",
     });
-    assert.deepEqual(byRule([bounded], "E15"), []);
+    const findings = promotionFindings([bounded], [...quizzes, unboundedQuiz()]).filter(
+      (finding) => finding.rule === "E15",
+    );
+    assert.deepEqual(findings, []);
   });
 
   it("reports a $0.00 prize — 0 is the absence of a prize, not a prize", () => {

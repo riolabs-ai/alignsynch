@@ -4,9 +4,15 @@
  * comes from the schema, so a field can never drift from the model.
  */
 import type { Quiz } from "../content/quiz";
+import { DEMO_NOW_ISO } from "../content/core";
 import { media } from "./media";
 
-/** The one playable quiz. Was data/currentQuiz.tsx (5 StaticImageData question images). */
+/**
+ * The one playable quiz. Was data/currentQuiz.tsx (5 StaticImageData question images).
+ *
+ * `publishedAt` is the fixture clock: the record carries no date of its own, and this is
+ * the demo snapshot's instant — `data:check` W2 reports a published record without one.
+ */
 export const currentQuiz: Quiz = {
   id: "quiz-ultimate-world-history-trivia",
   kind: "quiz",
@@ -17,6 +23,7 @@ export const currentQuiz: Quiz = {
   categoryIds: ["history"],
   tags: ["history", "world events"],
   status: "published",
+  publishedAt: DEMO_NOW_ISO,
   difficulty: "medium",
   questions: [
     {
