@@ -11,7 +11,9 @@ pnpm demo:reset        # reset `demo` from its parent, then reseed it from the b
 
 Three demo accounts (`initiator@`, `counterparty@`, `admin@demo.alignsynch.test`) are created by
 that reseed, through the demo branch's own sign-up endpoint — see
-[DEMO-AUTH.md](DEMO-AUTH.md) for the credentials' shape and how the role field works.
+[DEMO-AUTH.md](DEMO-AUTH.md) for the credentials' shape, how the role field works, and `/demo`,
+the PIN-gated panel that signs a browser in as one of them (`DEMO_AUTH=1` plus a `DEMO_PIN`;
+refused in production without `DEMO_ALLOW_PRODUCTION=1` as well).
 
 ## What a reset is
 
