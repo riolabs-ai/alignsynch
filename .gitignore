@@ -40,3 +40,8 @@ next-env.d.ts
 
 # P3 fixture generator output (gitignored; validated by data:check when present)
 data/generated/
+
+# bundle exports (#147). `pnpm bundles export` writes here; the artifact worth
+# shipping is committed under data/bundles/, and a default export must not dirty
+# the tree.
+/exports/
