@@ -206,8 +206,15 @@ process bug.
   `data/searchdata.ts`, which is `buildSearchIndex()` over the real collections; a row that only
   exists in a component cannot be edited by changing a fixture, which is how two unrelated search
   catalogs survived two migrations.
-- **`public/category/*.webp` are placeholders:** all 23 files are the same 1536×1024 PNG stamped
-  with its own dimensions. Category art is a content task, not a styling bug.
+- **`public/category/` no longer exists, on purpose.** All 23 files were the same 1536×1024 PNG
+  stamped with its own dimensions (blob `df44187d`); issue #130 deleted them and every quiz
+  subject's tile is generated from its slug (`lib/category-gradient.ts` +
+  `components/categories/category-tile.tsx`) with a monogram from the name. The registry keeps a
+  `generated: true` entry per subject in `data/media.ts` (no `src`, no size), which is why
+  `media[<category key>].src` does not typecheck — take `FileMediaKey`/`mediaSrc()` for anything
+  that needs a path. A real, distinct image is still the winning case: drop the file under
+  `public/category/`, add `image` to the row in `content/categories.ts`, run
+  `node scripts/gen-media.mjs`.
 - `pnpm data:check` prints **0** warnings and no errors on the current tree. It printed 98 before
   #124 repaired the published fixtures (`W1` 24 — a published record with no questions; `W2` 42 — no
   `publishedAt`; `W4` 32 — a prize with no window); every published quiz now carries its questions, a

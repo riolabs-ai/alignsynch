@@ -145,7 +145,7 @@ describe("the home title and one FAQ read the same record", () => {
 
 describe("the brand record", () => {
   it("points `logo` at a file the media registry already carries", () => {
-    const srcs = Object.values(media).map((entry) => entry.src);
+    const srcs = Object.values(media).flatMap((entry) => ("src" in entry ? [entry.src] : []));
     expect(srcs).toContain(brand.logo);
     // Both records, because the skin's mark is a real file now and not the template's
     // placeholder: `data:check` E18 proves the registry matches `public/`, this proves the

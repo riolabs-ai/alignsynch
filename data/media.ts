@@ -1,19 +1,29 @@
 /**
- * The media registry — every file under `public/`, addressed by a path-derived key.
+ * The media registry — every thing a component draws, addressed by a key.
  *
- * Storage, not a projection: a component asks for a key and gets the one file it names,
- * so no `.tsx` holds a literal `/image.png` any more (E17). Keys are derived from the
- * path, never invented (`mediaKeyOf` in `scripts/media-refs.ts`), so key <-> file is a
- * bijection and both directions are checked (E18). `ImageRef.src` in `data/` stays a
- * path in P2 (D-P2-1) and must equal an entry's `src` (E19).
+ * Storage, not a projection: a component asks for a key and gets the one thing it names,
+ * so no `.tsx` holds a literal `/image.png` any more (E17).
+ *
+ * Two kinds of entry live here, and `content/media.ts` is the union:
+ *
+ *   - a **file** under `public/`. Keys are derived from the path, never invented
+ *     (`mediaKeyOf` in `scripts/media-refs.ts`), so key <-> file is a bijection and both
+ *     directions are checked (E18). `ImageRef.src` in `data/` stays a path in P2
+ *     (D-P2-1) and must equal an entry's `src` (E19).
+ *   - a **generated default** — `generated: true`, no `src`, no size. Issue #130 deleted
+ *     the twenty-three identical `public/category/*.webp` placeholders (one blob,
+ *     `df44187d`); a quiz subject's tile is now a gradient seeded by its slug plus a
+ *     monogram from its name, drawn by `components/categories/category-tile.tsx`. No
+ *     bytes, so nothing for the build to request.
  *
  * GENERATED — do not hand-edit. `node scripts/gen-media.mjs` rewrites this file from
- * `public/`; `pnpm data:check` is what fails when the two disagree. A JSON manifest is a
- * P3 decision, not a P2 one (ENV-SPEC §7).
+ * `public/` plus `content/category.ts`; `pnpm data:check` is what fails when the two
+ * disagree. A JSON manifest is a P3 decision, not a P2 one (ENV-SPEC §7).
  *
  * `kind` is what the media is *for* — a component switches on it (avatar vs background is
  * layout, not styling). `width`/`height` are read from the file's bytes, because
- * `next/image` needs an intrinsic size and dev renders a 500 without one.
+ * `next/image` needs an intrinsic size and dev renders a 500 without one; a generated
+ * entry has neither, because it has no file to size.
  */
 import type { MediaEntry } from "@/content/media";
 
@@ -138,164 +148,128 @@ export const media = {
     kind: "illustration",
   },
   "category.animal": {
-    src: "/category/animal.webp",
-    alt: "Animal category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
-  "category.architechture": {
-    src: "/category/architechture.webp",
-    alt: "Architechture category artwork",
-    width: 1536,
-    height: 1024,
+  "category.architecture": {
+    generated: true,
+    alt: "",
+    kind: "category-art",
+  },
+  "category.art": {
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.business": {
-    src: "/category/business.webp",
-    alt: "Business category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.coding": {
-    src: "/category/coding.webp",
-    alt: "Coding category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.comics": {
-    src: "/category/comics.webp",
-    alt: "Comics category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.fashion": {
-    src: "/category/fashion.webp",
-    alt: "Fashion category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.food": {
-    src: "/category/food.webp",
-    alt: "Food category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.general-knowledge": {
-    src: "/category/general-knowledge.webp",
-    alt: "General Knowledge category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.geography": {
-    src: "/category/geography.webp",
-    alt: "Geography category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.health": {
-    src: "/category/health.webp",
-    alt: "Health category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
+    kind: "category-art",
+  },
+  "category.history": {
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.language": {
-    src: "/category/language.webp",
-    alt: "Language category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.literature": {
-    src: "/category/literature.webp",
-    alt: "Literature category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.math": {
-    src: "/category/math.webp",
-    alt: "Math category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.movies": {
-    src: "/category/movies.webp",
-    alt: "Movies category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.music": {
-    src: "/category/music.webp",
-    alt: "Music category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.politics": {
-    src: "/category/politics.webp",
-    alt: "Politics category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.puzzle": {
-    src: "/category/puzzle.webp",
-    alt: "Puzzle category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
+    kind: "category-art",
+  },
+  "category.science": {
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.space": {
-    src: "/category/space.webp",
-    alt: "Space category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.sports": {
-    src: "/category/sports.webp",
-    alt: "Sports category artwork",
-    width: 1536,
-    height: 1024,
-    kind: "category-art",
-  },
-  "category.tech": {
-    src: "/category/tech.webp",
-    alt: "Tech category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.technology": {
-    src: "/category/technology.webp",
-    alt: "Technology category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.trivia": {
-    src: "/category/trivia.webp",
-    alt: "Trivia category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "category.video-game": {
-    src: "/category/video-game.webp",
-    alt: "Video Game category artwork",
-    width: 1536,
-    height: 1024,
+    generated: true,
+    alt: "",
     kind: "category-art",
   },
   "classic-novels-quiz": {
@@ -723,12 +697,21 @@ export const media = {
 /** Every key the registry can address. A typo is a type error, not a 404. */
 export type MediaKey = keyof typeof media;
 
+/**
+ * The keys that address a file on disk — every key except a generated default (#130).
+ * A component that needs a path (an `Image`, an avatar) takes this, so passing a generated
+ * tile is a type error rather than an `undefined` src at runtime.
+ */
+export type FileMediaKey = {
+  [K in MediaKey]: (typeof media)[K] extends { readonly src: string } ? K : never;
+}[MediaKey];
+
 /** The entry for a key. Exists so a component can take a `MediaKey` instead of a path. */
 export function mediaEntry(key: MediaKey): MediaEntry {
   return media[key];
 }
 
-/** The public path for a key — the one string `next/image` needs. */
-export function mediaSrc(key: MediaKey): string {
+/** The public path for a file-backed key — the one string `next/image` needs. */
+export function mediaSrc(key: FileMediaKey): string {
   return media[key].src;
 }
