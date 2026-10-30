@@ -5,6 +5,11 @@ import { Footer } from "@/components/layout/footer";
 import { pricingPageCopy } from "@/data/pages/pricing";
 import { shellPageCopy } from "@/data/pages/shell";
 import { sectionOf } from "@/lib/page-copy";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Pricing Plans",
+};
 
 /**
  * The pricing route. Each band's words come from `data/pages/pricing.ts`,

@@ -19,9 +19,9 @@ import { quizzesFor, type QuizShelf } from "@/data/quiz-catalogue";
 import { promotions } from "@/data/promotions";
 
 /** The instant the card fixtures were captured — inside both campaign windows. */
-const NOW = new Date("2025-01-01T00:00:00.000Z");
+const NOW = new Date("2026-10-29T12:00:00.000Z");
 /** One millisecond before the campaigns start. */
-const BEFORE = new Date("2024-12-31T23:59:59.999Z");
+const BEFORE = new Date("2026-10-29T11:59:59.999Z");
 
 const MERCHANDISED = "quiz-science-quiz-space-exploration";
 

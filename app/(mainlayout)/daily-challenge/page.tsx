@@ -2,7 +2,7 @@ import DailyChallengePage from "@/components/daily-challenge/daily-challenge-pag
 import { dailyChallengePageCopy } from "@/data/pages/daily-challenge";
 
 export const metadata = {
-  title: "Daily Challenge | Quizhub",
+  title: "Daily Challenge",
   description:
     "Take on today's quiz challenge and compete with others for the top spot on the leaderboard.",
 };

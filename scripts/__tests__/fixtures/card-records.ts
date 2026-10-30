@@ -16,8 +16,17 @@
  * `createdBy` is the card's author. Two records name `CosmicMind` while the catalog
  * record says `MarvelFan`: that is the shadow-identity case B-01 exists to prevent, and
  * the overlay is what must NOT fix it.
+ *
+ * **`FIXTURE_NOW` is the demo epoch (`DEMO_NOW_ISO`), not the 2025 capture date.** The
+ * harness captured these cards at `2025-01-01T00:00:00.000Z`; that instant is not in the
+ * model any more. Every instant behind these rows — the four `limitedTimeEndsAt` windows,
+ * the two campaign `startsAt` values — is anchored at the demo epoch + the authored
+ * duration (issue #110), so the projection instant has to be the same epoch for the
+ * derived fields (`limitedTime`, the campaign merge) to mean what the snapshot says they
+ * mean. `expiresInSeconds` therefore reads as "the authored duration", measured from
+ * `FIXTURE_NOW`; the catalog window it implies is `FIXTURE_NOW + expiresInSeconds`.
  */
-export const FIXTURE_NOW = "2025-01-01T00:00:00.000Z";
+export const FIXTURE_NOW = "2026-10-29T12:00:00.000Z";
 
 /**
  * One authored card, in the model's terms.

@@ -30,10 +30,10 @@ import { quizById, quizzes } from "../../data/quizzes";
 import { quizCard, quizDetailCard, shelfCards } from "../../lib/quiz-cards";
 import { promotionFindings } from "../data-check-promotions";
 
-/** The instant the B-01 card snapshot was captured at (48 h before the window closes). */
-const NOW = new Date("2025-01-01T00:00:00.000Z");
-/** The catalog's own window on the Science quiz. */
-const CATALOG_ENDS = "2025-01-03T00:00:00.000Z";
+/** The fixture clock (`DEMO_NOW_ISO`) — the instant the campaigns are authored at. */
+const NOW = new Date("2026-10-29T12:00:00.000Z");
+/** The catalog's own window on the Science quiz: the clock + the authored 48 h. */
+const CATALOG_ENDS = "2026-10-31T12:00:00.000Z";
 const SCIENCE = "quiz-science-quiz-space-exploration";
 
 /** The two slots B-01 authored, each with the shelf that renders it. */
@@ -183,7 +183,7 @@ describe("both explore surfaces render the campaign at the slot they advertise",
 
   it("renders the campaign only while it is live", () => {
     for (const { shelf } of CAMPAIGN_SLOTS) {
-      const before = shelfCards(shelf, new Date("2024-12-31T23:59:59.000Z"))[1];
+      const before = shelfCards(shelf, new Date("2026-10-29T11:59:59.000Z"))[1];
       const after = shelfCards(shelf, new Date(CATALOG_ENDS))[1];
       assert.equal(statsOf(before).rewardCents, CATALOG.rewardCents);
       assert.equal(statsOf(after).rewardCents, CATALOG.rewardCents);
@@ -270,7 +270,7 @@ describe("the quiz detail projection agrees with the card", () => {
   });
 
   it("falls back to the catalog once the campaign is over", () => {
-    const detail = quizDetailCard(mustQuiz(SCIENCE), new Date("2025-01-04T00:00:00.000Z"));
+    const detail = quizDetailCard(mustQuiz(SCIENCE), new Date("2026-11-01T00:00:00.000Z"));
     assert.equal(detail.stats.rewardCents, CATALOG.rewardCents);
     assert.equal(detail.stats.plays, CATALOG.plays);
     assert.equal(detail.stats.limitedTime, false);

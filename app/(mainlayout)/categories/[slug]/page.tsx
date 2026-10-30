@@ -19,13 +19,13 @@ export async function generateMetadata({
 
   if (!category) {
     return {
-      title: "Category Not Found | QuizHub",
+      title: "Category Not Found",
       description: "The requested category could not be found.",
     };
   }
 
   return {
-    title: `${category.name} Quizzes | QuizHub`,
+    title: `${category.name} Quizzes`,
     description: `Browse and play ${category.name.toLowerCase()} quizzes. ${category.description}`,
   };
 }

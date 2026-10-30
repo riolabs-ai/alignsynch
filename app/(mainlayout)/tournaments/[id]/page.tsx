@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { use } from "react";
 
 export const metadata: Metadata = {
-  title: "Tournament Details | QuizHub",
+  title: "Tournament Details",
   description: "View details, rules, and standings for this quiz tournament.",
 };
 

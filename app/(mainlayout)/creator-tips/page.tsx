@@ -6,7 +6,7 @@ import { shellPageCopy } from "@/data/pages/shell";
 import { sectionOf } from "@/lib/page-copy";
 
 export const metadata: Metadata = {
-  title: "Quiz Creator Tips - Learn How to Create Better Quizzes",
+  title: "Quiz Creator Tips",
   description:
     "Discover tips, strategies, and best practices for creating engaging and effective quizzes.",
 };

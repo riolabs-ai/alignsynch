@@ -59,6 +59,7 @@ Demoted to views, not retired: `quiz-catalogue.ts` (was a 40-record second colle
 | E12         | one record per subject (normalised title unique), and a `catalogueAlias` is never a record of its own                                                                              | data-check.ts `subjectKey`/`assertUnique`; quiz-collection.test.ts               |
 | E13         | every analytics key names a real quiz record                                                                                                                                       | data-check.ts analytics check                                                    |
 | E14/E15/E16 | promotion join+identity; window and prize; one quiz advertises one set of numbers (issue #27 called these E11–E13; those codes were taken)                                         | data-check-promotions.ts; promotion.test.ts / promotion-invariants.test.ts       |
+| E28/E30     | promotion slot is a position a shelf renders; promotion window covers the fixture clock (`startsAt <= DEMO_NOW_ISO < effective end`, issue #110)                                   | data-check-promotions.ts; promotion-invariants.ts / promotion-slots.test.ts      |
 | W1          | published quiz, no questions — 24: `data/created-quizzes.ts:30` `questions: []` (+19 browse)                                                                                       | data-check.ts warn                                                               |
 | W2          | published quiz, no `publishedAt` — 42: `data/created-quizzes.ts:16-49` (published, no date)                                                                                        | data-check.ts warn                                                               |
 | W3          | renderable quiz category with neither `image` nor `iconKey` — 0: `content/categories.ts` (science/history/art carry `iconKey` only)                                                | data-check.ts `assertRenderableCategories`                                       |
@@ -88,6 +89,7 @@ record: `selectQuizCard`→`QuizCard`, `selectQuizAuthoringCard`→`QuizAuthorin
 - Key `(quizId, slot)`; id `promo-<kebab>`; `quizId` resolves to a `Quiz` (join key, not a copy).
 - Field-wise merge into `QuizStats`: `undefined` **inherits** the catalog value, `null` **cancels** (`limitedTimeEndsAt` only). Content keys are unrepresentable — no `labelOverride`, no shadow identity.
 - Window: applies iff `status === "published"` AND `now >= publishedAt` AND `startsAt <= now < effectiveEnd` (half-open), `effectiveEnd = min(endsAt, catalog.limitedTimeEndsAt, overlay.limitedTimeEndsAt)`; a slot may shorten an offer, never extend it.
+- The window must cover the fixture clock: `startsAt <= DEMO_NOW_ISO < effectiveEnd` (`E30`, issue #110). A campaign outside it is dead data — `isPromotionActive()` is false at every render instant, so the card silently shows the catalog. Both shipped overlays start at the clock and are bounded by the catalog's `2026-10-31T12:00:00.000Z` (clock + the authored 48 h).
 - After merge `spotsLeft`/`almostFull`/`limitedTime` are recomputed; `plays <= capacity` re-checked, violation **throws**.
 - Edge cases — expired/future-dated: outside the window the card is the catalog projection field for field (no error, no half-applied merge); duplicate: `(quizId, slot)` unique (E13), one prize per quiz via `activePromotionFor` (first in collection order).
 
@@ -99,7 +101,7 @@ record: `selectQuizCard`→`QuizCard`, `selectQuizAuthoringCard`→`QuizAuthorin
 4. `content/social.ts` → E5/E6.
 5. `content/search.ts` + `content/route-manifest.ts` + `content/routes.ts` → E7/E8.
 6. `data/*` fixtures (already ported) → E0–E11.
-7. Promotion fixture `data/promotions.ts` → E14–E16/W6 in `data:check` (landed, B-01).
+7. Promotion fixture `data/promotions.ts` → E14–E16/E28/E30/W6 in `data:check` (landed, B-01; E30 added by issue #110).
    Adding content: add to the right `data/` module, run `data:check`; widen a schema **before** a fixture, never silently.
 
 ## P3 variation dimensions

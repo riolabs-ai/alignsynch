@@ -168,11 +168,15 @@ fixtures never had to make: **a date is not a time.** Precisely:
   drew the newest two rows as `"in 1 hour"` and `"in 22 minutes"`. `E9`-style enforcement
   is not available here (the anchor is a policy, not a schema), so this paragraph is the
   rule: author instants backwards from the migration instant, never forwards from it.
-  **The one exception is an expiry.** `data/quiz-catalogue`'s `limitedTimeEndsAt`
-  values are anchored at the same instant and deliberately point forward (12h, 24h,
-  36h, 48h after it), because a window that had already closed would render every
-  limited-time card as expired. A future _expiry_ is a countdown; a future
-  _presence_ or _creation_ instant is the D9 bug this paragraph forbids.
+  **The one exception is an expiry.** The four `limitedTimeEndsAt` values
+  (`data/authored-quizzes.ts`) are anchored at the **fixture clock**,
+  `content/core.ts::DEMO_NOW_ISO` = `2026-10-29T12:00:00.000Z`, and deliberately point
+  forward (48 h, 36 h, 24 h, 12 h after it), because a window that had already closed
+  would render every limited-time card as expired. They sat on the 2025 capture dates
+  until issue #110, which is why every window had closed at the clock: no countdown
+  rendered anywhere, and the two `data/promotions.ts` campaigns — bounded by the Science
+  quiz's window — never ran. A future _expiry_ is a countdown; a future _presence_ or
+  _creation_ instant is the D9 bug this paragraph forbids.
 - **The anchor ages.** These are static fixtures and `formatRelative` runs at render time,
   so today's `"10m ago"` reads `"3 weeks ago"` next month. That is the honest reading of a
   frozen snapshot; the alternative — computing `Date.now()` at module import — makes the
@@ -382,6 +386,7 @@ Collection-level:
 | `E15`       | `endsAt > startsAt` when present; a slot window never extends the catalog window; a `rewardCents` that differs from the catalog is bounded by it, and `0` is rejected                                         |
 | `E16`       | overlays that are live at the same time for one quiz agree field-wise on every engagement key they both set (sequential campaigns may differ)                                                                 |
 | `E28`       | every `promotions[].slot` parses canonically, indexes a position a shelf actually produces, and that position renders the quiz the overlay names (a slot nobody renders fails the build, not silently no-ops) |
+| `E30`       | every promotion's window covers the fixture clock — `startsAt <= DEMO_NOW_ISO < effective end` — so an overlay that can never be live (the issue #110 state) fails the build instead of rendering nowhere     |
 | `E17–E19`   | the media registry: no `components/**` or `app/**` file writes a `public/` asset path, registry ⇄ disk is a bijection, and every fixture `ImageRef.src` equals a registry `src`                               |
 
 Warnings are advisory and do not fail the build: `W1` published quiz with no
@@ -442,15 +447,15 @@ card-local override and must not be a second record (that is `E12`). It is a thi
 **engagement-only** record: `data/promotions.ts`, keyed `(quizId, slot)`,
 `strict()`, with no key that can carry content.
 
-| what                              | value                                                                                                                                    |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| records                           | 2 (`promo-science-quiz-space-exploration-1`/`-2`), one per slot, identical                                                               |
-| window                            | `startsAt: 2025-01-01T00:00:00.000Z`, **no `endsAt`** — bounded by the catalog's `2025-01-03T00:00:00.000Z`, so no end date was invented |
-| countdown                         | `limitedTimeEndsAt: null` cancels the **display** only; the campaign stays bounded                                                       |
-| prize                             | `rewardCents: 750` against a catalog `1000` — legal because the window bounds it (`E15`)                                                 |
-| `author`                          | **not overridable**: the record keeps `MarvelFan`, the authored card said `CosmicMind`, and no overlay key can carry an author           |
-| fidelity                          | **31/31** authored card records reproduce their stats through `selectQuizCard` with the 2 overlays, **29/31** without them               |
-| C1 `W4` (two records disagreeing) | **0** (was 2). This validator's `W4` is a different code and stays 32 — see above                                                        |
+| what                              | value                                                                                                                                                                                    |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| records                           | 2 (`promo-science-quiz-space-exploration-1`/`-2`), one per slot, identical                                                                                                               |
+| window                            | `startsAt: 2026-10-29T12:00:00.000Z` (the fixture clock), **no `endsAt`** — bounded by the catalog's `2026-10-31T12:00:00.000Z` (clock + the authored 48 h), so no end date was invented |
+| countdown                         | `limitedTimeEndsAt: null` cancels the **display** only; the campaign stays bounded                                                                                                       |
+| prize                             | `rewardCents: 750` against a catalog `1000` — legal because the window bounds it (`E15`)                                                                                                 |
+| `author`                          | **not overridable**: the record keeps `MarvelFan`, the authored card said `CosmicMind`, and no overlay key can carry an author                                                           |
+| fidelity                          | **31/31** authored card records reproduce their stats through `selectQuizCard` with the 2 overlays, **29/31** without them                                                               |
+| C1 `W4` (two records disagreeing) | **0** (was 2). This validator's `W4` is a different code and stays 32 — see above                                                                                                        |
 
 Rules: the overlay applies iff `startsAt ≤ now < min(endsAt, catalog window, overlay
 countdown)` **and** the quiz is `published` and past `publishedAt`; outside the window
@@ -458,20 +463,30 @@ the card equals the catalog projection field for field. Concurrent overlays of o
 must agree (`E16`), and the seat rule is re-checked **after** the merge (a merged
 `plays > capacity` throws rather than rendering a negative `spotsLeft`).
 
-**The window has already closed at the render clock, so the campaign is inert in the app.** The
-overlay carries no `endsAt` and is bounded by the catalog's `2025-01-03T00:00:00.000Z`, while every
-page renders at `DEMO_NOW_ISO` = `2026-10-29T12:00:00.000Z`. Projecting the record through
-`selectQuizCard()` at three instants says exactly that:
+**The window was stale, not the projection — fixed in issue #110.** The two overlays were
+authored at the 2025 capture instant (`startsAt: 2025-01-01`) and bounded by a catalog window
+that ended `2025-01-03`, while every page projects at `DEMO_NOW_ISO` =
+`2026-10-29T12:00:00.000Z`. The campaign's half-open window therefore closed **21 months before
+the render instant**, `isPromotionActive()` was false everywhere, and both slots — plus
+`/quiz/<id>` — printed the catalog numbers. The projection was never the broken half:
+`isPromotionActive()` implements exactly the rule below and its boundary cases are pinned in
+`tests/promotion-window.test.ts`. The data was: the field table above anchors
+`limitedTimeEndsAt` at the demo epoch + the authored duration (48 h / 36 h / 24 h / 12 h), and
+neither the four catalog windows nor the two `startsAt` values had ever been moved off the
+capture dates. Issue #110 re-anchored them — `startsAt` = the clock, the Science window =
+clock + 48 h = `2026-10-31T12:00:00.000Z` — so `selectQuizCard()` at the fixture clock prints:
 
 ```
-2025-01-01T00:00:00.000Z  2105/2500  $7.50  4.8  popular
-2025-01-02T12:00:00.000Z  2105/2500  $7.50  4.8  popular
-2026-10-29T12:00:00.000Z  2453/3000  $10.00 4.9  hot
+2026-10-29T12:00:00.000Z  2105/2500  $7.50  4.8  popular
+2026-10-30T12:00:00.000Z  2105/2500  $7.50  4.8  popular
+2026-10-31T12:00:00.000Z  2453/3000  $10.00 4.9  hot
 ```
 
-So **31/31 is a claim about the harness instant**. The join and both screens are wired correctly, and
-both currently render the catalog numbers: the fidelity is real, the campaign is not live. Moving the
-window is a data change with a rendered-output proof attached (see "still P3" below), not a code fix.
+**`E30` is the guard that keeps it fixed.** A promotion whose window does not cover
+`DEMO_NOW_ISO` — it starts later, or its derived end (the catalog window, while `endsAt` is
+absent) closed earlier — fails `data:check`: that is exactly a campaign that renders nowhere,
+and no other rule can see it. The `31/31` fidelity claim is unchanged, projected at
+`FIXTURE_NOW`, which is now the fixture clock.
 
 How it reaches a page (P3). Overlays are keyed by **slot string**, shelves by **name**, and
 neither derives from the other, so the join is written down once as data:
@@ -532,17 +547,21 @@ B-01 number:
   `/quiz/q16.png`) were retired rather than invented: `cover` is optional, so each record kept its
   identity and lost a reference that was already a 404.
 - **The invariant numbering is two sets, and no code is shared.** `E14`–`E16` + `W6` are the collection
-  rules one overlay cannot see; the slot guard that arrived with the join is `E28`; `E17`–`E19` are the
+  rules one overlay cannot see; the slot guard that arrived with the join is `E28`, and the
+  fixture-clock guard issue #110 added is `E30`; `E17`–`E19` are the
   media registry. The slot guard was numbered `E17` until issue #103 collided it with the media rule —
   recorded above, and now enforced by `scripts/rule-codes.ts`.
 
 Still P3:
 
-1. **Re-anchor the campaign window.** The overlay is bounded by a 2025 catalog window, so at
-   `DEMO_NOW_ISO` both slots project the catalog (see the table above). Until a campaign covers the
-   render instant, no shipped page renders a live campaign: the overlay is exercised only inside
-   `data:check`, where `promotion-fixtures.test.ts` projects it at `FIXTURE_NOW` and `E28` guards its
-   slot.
+1. ~~**Re-anchor the campaign window.**~~ **Done — issue #110.** The overlay was bounded by a 2025
+   catalog window, so at `DEMO_NOW_ISO` both slots projected the catalog. The window (and the two
+   `startsAt` values) now sit on the fixture clock, `E30` fails the build when a campaign's window
+   stops covering it, and `promotion-slots.test.ts` / `card-projection.test.ts` assert the rendered
+   numbers at that instant. The render clock itself is still the server request instant (P3b, so a
+   build inside the window cannot freeze catalog numbers); a wall-clock render outside the window
+   would fall back to the catalog again, which is a property of a frozen demo timeline, not of the
+   join.
 2. **`ImageRef.src` → `{ key }`.** The fixture still holds a path (`D-P2-1`); the JSON manifest the
    registry becomes is a P3 change (`ENV-SPEC` §8). `E19` keeps the path honest until then.
 3. **A second campaign, and the content overrides that stay impossible.** One subject is

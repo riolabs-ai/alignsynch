@@ -133,13 +133,34 @@ not split into a docs job and a code job, and it will not be:
 - a matrix (`.github/workflows` `strategy:`) has the same problem: the required
   context is the job name, and one job name per lane means renaming the
   requirement;
-- CI has no contention to relieve. The lanes exist to stop eight local workers
-  from compiling in parallel; a GitHub runner is already one build at a time.
+- CI has no contention to relieve. The lanes were built because eight local
+  workers compiling at once saturated this box; on a GitHub runner the win is
+  the required check's wall time (19 s docs vs 59 s code, measured in
+  `docs/GATE.md`), not throughput — which is another reason it belongs inside
+  the job rather than in a second one.
 
-On CI `auto` therefore resolves to **code**: `actions/checkout` fetches a
-single commit, `origin/main` does not exist in that clone, and no diff base
-means the full gate. That is the conservative, intended behaviour — the required
-check keeps meaning what it always meant.
+On CI `auto` could not classify at all until the `ci.yml` checkout was fixed,
+and that failure mode is worth keeping in view: `actions/checkout` fetches a
+single commit by default, so `origin/main` did not exist in the clone, `GATE_REF`
+never resolved, and every run logged
+
+```
+ lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no origin/main to diff against — full gate (conservative))
+```
+
+`ci.yml` now checks out with `fetch-depth: 0` and explicitly fetches
+`+refs/heads/main:refs/remotes/origin/main` before setting up pnpm, so the
+three-dot diff has both the ref and a merge base. The fallback is unchanged and
+is the reason the old behaviour was safe rather than silent: no ref, no
+computable diff, or an empty diff still means `lane=code` and the full gate. A
+`push` to `main` lands exactly there — `HEAD` _is_ `origin/main`, so the diff is
+empty and the post-merge run pays for everything. That is deliberate: the PR
+run is where the flake-free lane evidence exists, and the merge head is not a
+place to buy speed.
+
+The fetch step is not fatal if it fails: it prints a `::warning` and the gate
+falls back to the full gate. A red run on a network hiccup would be a worse
+trade than the 60 s of build it saves.
 
 ## The build semaphore
 
@@ -195,7 +216,9 @@ Measured lane costs and how to re-measure them are in `docs/GATE.md`.
   parent's commits, so `origin/main...HEAD` can contain an `app/` change the
   child never made and the child pays the code lane. Always safe, sometimes
   slower; set `GATE_REF=<parent-tip>` when it matters.
-- **CI does not use the lanes.** By design, see above: CI is the last gate and
-  it runs everything.
+- **CI classifies against `origin/main`, not against the PR's base branch.** A
+  stacked PR therefore over-classifies in CI exactly the way it does locally,
+  and a `push` to `main` has an empty diff, so the post-merge run still pays for
+  the full gate.
 - **The build is still 90 % of the code lane.** Lanes decide whether you pay
   for it; nothing here makes `next build` faster.

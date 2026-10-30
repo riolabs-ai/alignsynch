@@ -3,6 +3,11 @@ import { selectQuizDiscussions } from "@/content/quiz-result";
 import { quizComments } from "@/data/quiz-comments";
 import { quizResults } from "@/data/quiz-results";
 import { quizzes } from "@/data/quizzes";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Quiz Discussions",
+};
 
 /**
  * `/quiz-discussions` — one collection, three views. The rows are projected here

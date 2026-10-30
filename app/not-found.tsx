@@ -4,8 +4,19 @@ import { FloatingGlyphs } from "@/components/not-found/floating-glyphs";
 import { GoBackButton } from "@/components/not-found/go-back-button";
 import { notFoundPageCopy } from "@/data/pages/not-found";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
+import type { Metadata } from "next";
 import { BookOpen, Brain, Home, Search, Trophy } from "lucide-react";
 import Link from "next/link";
+
+/**
+ * Next 16 reads `metadata` from the root `app/not-found.tsx`, so the 404 carries a
+ * title of its own instead of the root default. It is not a route — the words stay in
+ * `data/pages/not-found.ts` (`COPY` surface `not-found`) — but the document name is the
+ * one string the fixture does not own, exactly as for every other route here.
+ */
+export const metadata: Metadata = {
+  title: "Page Not Found",
+};
 
 /**
  * The 404. Not a route — Next renders this for any path that matches nothing, which is
