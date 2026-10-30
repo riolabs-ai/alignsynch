@@ -4,7 +4,7 @@
  *
  * Every "must not" case is here for a reason: this scanner is wired into `data:check`, so a
  * false positive is a red build on correct code. The static-import case is the one that
- * matters — `import cover from "@/public/card-cover.png"` carries its own dimensions, and a
+ * matters — `import cover from "@/public/example-cover.png"` carries its own dimensions, and a
  * check that flags it would have to be deleted or suppressed within a week.
  */
 import assert from "node:assert/strict";
@@ -26,7 +26,7 @@ describe("staticImageImports", () => {
     const bindings = staticImageImports(
       [
         'import Image from "next/image";',
-        'import cover from "@/public/card-cover.png";',
+        'import cover from "@/public/example-cover.png";',
         'import avatar from "../../public/avatars/sarah.webp";',
         'import logo from "./logo.svg";',
         'import { media } from "@/data/media";',
@@ -38,7 +38,7 @@ describe("staticImageImports", () => {
   });
 
   it("ignores a named import of an image, which is not a StaticImageData", () => {
-    const bindings = staticImageImports('import { cover } from "@/public/card-cover.png";');
+    const bindings = staticImageImports('import { cover } from "@/public/example-cover.png";');
     assert.equal(bindings.size, 0);
   });
 });
@@ -181,7 +181,7 @@ describe("imageProblems — missing dimension (E451)", () => {
 
   it("flags `imported.src`, which is the string and not the sized value", () => {
     const source = [
-      'import cover from "@/public/card-cover.png";',
+      'import cover from "@/public/example-cover.png";',
       "<Image src={cover.src} />",
     ].join("\n");
     assert.deepEqual(problemsIn(source), ["missing-dimension"]);
@@ -229,7 +229,7 @@ describe("imageProblems — the shapes that are legal", () => {
 
   it("accepts a static import, whose dimensions travel with the value", () => {
     const source = [
-      'import cardCover from "@/public/card-cover.png";',
+      'import cardCover from "@/public/example-cover.png";',
       '<Image src={cardCover} className="w-full object-cover size-full" alt="cover img" />',
     ].join("\n");
     assert.deepEqual(problemsIn(source), []);
@@ -260,7 +260,7 @@ describe("imageCensus", () => {
           '<Image src="/a.png" width={40} height={40} />',
           '<Image src="/b.png" fill className="object-cover" />',
           '<Image src="/c.png" fill sizes="100vw" className="object-cover" />',
-          'import cover from "@/public/card-cover.png";',
+          'import cover from "@/public/example-cover.png";',
           '<Image src={cover} alt="" />',
           '<Image src="/d.png" />',
           '<Image src="/e.png" fill width={4} height={4} />',
