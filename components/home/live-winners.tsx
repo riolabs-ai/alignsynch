@@ -51,7 +51,7 @@ export function LiveWinners({ copy, wins }: LiveWinnersProps) {
           {wins.map(({ event, player, quizTitle, highValue }) => (
             <SwiperSlide key={event.id} className="flex-shrink-0 max-w-[256px]">
               <Card
-                className={`relative w-64 p-4 backdrop-blur-sm ${highValue ? "bg-amber-50 dark:bg-amber-950/30" : "bg-muted"} rounded-xl shadow-md hover:shadow-lg transition-all`}
+                className={`relative w-64 p-4 backdrop-blur-sm ${highValue ? "bg-action/10" : "bg-muted"} rounded-xl shadow-md hover:shadow-lg transition-all`}
               >
                 {highValue && (
                   <div className="absolute top-4 right-2 animate-bounce">
