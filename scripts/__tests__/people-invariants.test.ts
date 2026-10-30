@@ -8,8 +8,8 @@
  * one person short, a crown on the wrong head, a payout for a quiz nobody can play — so a
  * green build is the only place they can be caught.
  *
- * No filesystem here on purpose: `data-check.ts` supplies the real `public/` existence test,
- * this file supplies the registry facts it needs (and can lie about them deliberately).
+ * No filesystem and no media registry here on purpose: issue #152 removed the avatar key a
+ * player used to carry, so this module needs no registry facts at all.
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -23,18 +23,10 @@ import {
   selectLeaderboard,
   selectWinEvents,
 } from "../../content/people";
-import type { MediaEntry } from "../../content/media";
-import { media } from "../../data/media";
 import { leaderboards, playerIndex, players, winEvents } from "../../data/players";
 import { quizzes } from "../../data/quizzes";
 import { DEMO_NOW_ISO } from "../../content/core";
-import { type MediaFacts, type PeopleInput, peopleFindings } from "../data-check-people";
-
-/** The real registry, plus a controllable answer to "does that file exist?". */
-const realMedia = (fileExists: (src: string) => boolean): MediaFacts => ({
-  entry: (key) => (media as Record<string, MediaEntry>)[key],
-  fileExists,
-});
+import { type PeopleInput, peopleFindings } from "../data-check-people";
 
 const quizIds = new Set(quizzes.map((quiz) => quiz.id));
 
@@ -44,7 +36,6 @@ const authored = (overrides: Partial<PeopleInput> = {}): PeopleInput => ({
   leaderboards,
   wins: winEvents,
   quizIds,
-  media: realMedia(() => true),
   nowIso: DEMO_NOW_ISO,
   ...overrides,
 });
@@ -82,35 +73,6 @@ describe("E24 — the authored people fixture", () => {
       "science",
       "trending",
     ]);
-  });
-});
-
-/* ================================================================== *
- * Avatars — a key that addresses a face
- * ================================================================== */
-
-describe("E24 — every avatar key resolves to an avatar file", () => {
-  it("reports a key the registry does not hold", () => {
-    const input = authored({
-      players: playerWith("player-alex-johnson", { avatarKey: "avatars.nobody" }),
-    });
-    assert.match(
-      messages(input).join("\n"),
-      /avatarKey "avatars\.nobody" is not in the media registry/,
-    );
-  });
-
-  it("reports a key that addresses an illustration, not an avatar", () => {
-    const input = authored({
-      players: playerWith("player-daniel-thomas", { avatarKey: "abstract-geometric-shapes" }),
-    });
-    assert.match(messages(input).join("\n"), /addresses a "illustration" .*not an avatar/);
-  });
-
-  it("reports a key whose file is not under public/", () => {
-    const input = authored({ media: realMedia(() => false) });
-    const found = messages(input);
-    assert.ok(found.some((message) => /is not a file under public\//.test(message)));
   });
 });
 

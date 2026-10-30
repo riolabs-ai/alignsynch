@@ -178,12 +178,17 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * told to submit, not a word on the page. The two-party flow's three forms each carry one,
  * and a copy fixture holding `post` would be a fixture an editor has to keep in sync with
  * the protocol.
+ *
+ * `autoComplete` joins them for the same reason (issue #164): `"email"` / `"current-password"`
+ * are W3C enumerated tokens a password manager reads, exactly like `type="password"` — not copy.
+ * Counting them also made every login form's budget wrong by the two hints it must carry.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
   "accept",
   "align",
   "alt",
   "asChild",
+  "autoComplete",
   "clipRule",
   "color",
   "dataKey",

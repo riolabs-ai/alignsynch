@@ -2,11 +2,10 @@ import { recentMessages } from "@/data/chat-data";
 import { formatRelative } from "@/content/core";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { media } from "@/data/media";
 type Props = {
   copy: PageCopySection;
   isMessagesDrawerOpen: boolean;
@@ -51,14 +50,7 @@ const ChatDrawer = ({
             onClick={() => handleMessageClick(message.conversationId)}
           >
             <div className="relative">
-              <Avatar className="size-10">
-                <AvatarImage
-                  className="size-10 rounded-full object-cover object-center"
-                  src={message.avatar || media.placeholder.src}
-                  alt={message.sender}
-                />
-                <AvatarFallback>{message.sender.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <GeneratedAvatar name={message.sender} seed={message.conversationId} size={40} />
               {message.unread && (
                 <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary border-2 border-background" />
               )}

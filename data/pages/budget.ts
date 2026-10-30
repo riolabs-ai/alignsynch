@@ -78,6 +78,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/daily-challenge",
     budget: 0,
   },
+  "/dashboard/user": {
+    page: "app/(mainlayout)/dashboard/user/page.tsx",
+    dirs: ["components/identity"],
+    fixture: "data/pages/dashboard",
+    budget: 0,
+  },
   "/explore": {
     page: "app/(mainlayout)/explore/page.tsx",
     dirs: ["components/explore"],
@@ -112,6 +118,23 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/pricing/page.tsx",
     dirs: ["components/pricing"],
     fixture: "data/pages/pricing",
+    budget: 0,
+  },
+  "/profile/[username]": {
+    page: "app/(mainlayout)/profile/[username]/page.tsx",
+    // Only the identity components this card added. The demo branch still renders the fixture
+    // profile view (`components/profile/**`), which holds 132 unreviewed literals and several
+    // sentences — attributing that directory here would fail the length rule in this card
+    // instead of leaving it where it is: pre-existing copy debt with its own unit. The ratchet
+    // still applies to everything new, which is what "budget 0" means for this surface.
+    dirs: ["components/identity"],
+    fixture: "data/pages/profile",
+    budget: 0,
+  },
+  "/settings": {
+    page: "app/(mainlayout)/settings/page.tsx",
+    dirs: ["components/identity"],
+    fixture: "data/pages/settings",
     budget: 0,
   },
   "/news": {
@@ -194,6 +217,26 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/invite/[token]/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/invite",
+    budget: 0,
+  },
+  /**
+   * The marketing landing page (#159) — the first surface in this table that is not a product
+   * route, and the reason `mounts` exists for a second caller.
+   *
+   * Its chrome hangs off `app/(marketing)/layout.tsx`, which is not the page Next renders, so the
+   * layout is a mount: without it the header's CTA label and the footer's two strings would be
+   * attributed to nobody. The one directory it owns is `components/marketing/**`, which the layout
+   * and the page both import.
+   *
+   * Budget 0, measured not assumed: the seven bands' words are `data/pages/marketing.ts`, the brand
+   * name is `brand.name`, the two limits are fixture items, and the only other strings the built
+   * HTML carries are the address (`brand.supportEmail`) and Tailwind class names.
+   */
+  "/welcome": {
+    page: "app/(marketing)/welcome/page.tsx",
+    mounts: ["app/(marketing)/layout.tsx"],
+    dirs: ["components/marketing"],
+    fixture: "data/pages/marketing",
     budget: 0,
   },
 });

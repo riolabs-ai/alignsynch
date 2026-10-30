@@ -1547,10 +1547,6 @@ export const mockQuizzes: readonly Quiz[] = [
     },
     author: {
       name: "SportsNut",
-      avatar: {
-        src: media["avatars.guru"].src,
-        alt: "SportsNut",
-      },
     },
     status: "published",
     publishedAt: DEMO_NOW_ISO,

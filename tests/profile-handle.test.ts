@@ -1,45 +1,92 @@
 /**
- * `/profile/<username>` follows the username (issue #111).
+ * `/profile/<username>` follows the username (issues #111 and #164).
  *
- * The failure this pins down: the page carried a module-scope `const user` (Alex Johnson) and
- * never read `params.username`, so `/profile/sarahwilliams` answered 200 with Alex's profile,
- * his level (42, while `data/players.ts` says 78) and his follower count (1 243 vs 1 248), and
- * `/profile/nonexistent-user` answered 200 with the same person. A page that renders *someone*
- * for *every* URL cannot report its own miss, so the gate is the lookup: `profileByHandle`
- * returns `undefined` and the page calls `notFound()`.
+ * Two failures are pinned here, for the one URL that now has two kinds of person behind it:
  *
- * The page is exercised directly — mocked `notFound` and a stubbed `UserProfile` — so the
- * assertions are about resolution, not about the client component tree: which person the page
- * hands down, which fields come from the fixture (not from the legacy `lib/data/users.ts`
- * literal), and that an unknown handle is a 404 rather than a fallback.
+ *   - the #111 defect: the page carried a module-scope `const user` (Alex Johnson) and never read
+ *     `params.username`, so `/profile/sarahwilliams` answered 200 with Alex's profile and
+ *     `/profile/nonexistent-user` answered 200 with the same person. A page that renders
+ *     *someone* for every URL cannot report its own miss, so the gate is the lookup:
+ *     `profileByHandle` returns `undefined` and the page calls `notFound()`.
+ *   - the #164 rule: a **member** row wins over the fixture, the member branch hands down the
+ *     *public* projection (no auth user id), the demo branch is labelled as a demo account, and
+ *     the owner's affordance is decided from the session — server-side — rather than from the URL.
+ *
+ * The page is exercised directly with the database and session mocked, so the assertions are
+ * about resolution, not about a component tree: which person the page handed to which view, and
+ * which branch a handle took. JSX is not rendered, so each view is a stub whose identity the
+ * harness can match on.
  */
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { notFound } = vi.hoisted(() => ({
+const { notFound, readUserProfileByHandle, currentUser, stubs } = vi.hoisted(() => ({
   notFound: vi.fn((): never => {
     throw new Error("NEXT_NOT_FOUND");
   }),
+  readUserProfileByHandle: vi.fn(async (_handle: string) => null as unknown),
+  currentUser: vi.fn(async () => null as unknown),
+  stubs: {
+    fixture: (props: unknown) => ({ props }),
+    member: (props: unknown) => ({ props }),
+    demo: (props: unknown) => ({ props }),
+  },
 }));
 
 vi.mock("next/navigation", () => ({ notFound }));
 
-/** The client tree is not what this test is about: hand the props straight back. */
-vi.mock("@/components/profile/user-profile", () => ({
-  UserProfile: (props: { profile: unknown }) => props,
+/** The database is a stub: `user_profile` rows arrive as the model's shape (or `null`). */
+vi.mock("@/lib/db/user-profiles", () => ({
+  readUserProfileByHandle,
+  readUserProfileByUserId: vi.fn(async () => null),
+  writeUserProfile: vi.fn(async () => ({ ok: true })),
 }));
+
+/**
+ * The session is a stub too, and that is deliberate: importing the real module pulls
+ * `@neon/auth/next/server` (and `next/headers`) into a plain-node test run, which cannot resolve
+ * it. The branch under test is "did the page ask who is looking", not how a cookie is parsed.
+ */
+vi.mock("@/lib/auth/session", () => ({ currentUser }));
+
+/* The three views are identities the harness can match on — the page's props are the assertion. */
+vi.mock("@/components/profile/user-profile", () => ({ UserProfile: stubs.fixture }));
+vi.mock("@/components/identity/member-profile", () => ({ MemberProfile: stubs.member }));
+vi.mock("@/components/identity/demo-account-notice", () => ({ DemoAccountNotice: stubs.demo }));
 
 import ProfilePage, { generateMetadata } from "@/app/(mainlayout)/profile/[username]/page";
 import type { PlayerProfile } from "@/lib/profile";
 
 const paramsOf = (username: string) => ({ params: Promise.resolve({ username }) });
 
-/** The profile the page handed to `UserProfile`, read off the stubbed component's props. */
-async function resolved(username: string): Promise<PlayerProfile> {
-  const element = (await ProfilePage(paramsOf(username))) as unknown as {
-    props: { profile: PlayerProfile };
-  };
-  return element.props.profile;
+interface Element {
+  type: unknown;
+  props: Record<string, unknown>;
 }
+
+/** The elements the page returned: one view for a member, a fragment for a demo person. */
+async function elementsOf(username: string): Promise<Element[]> {
+  const element = (await ProfilePage(paramsOf(username))) as unknown as Element;
+  if (element.type === stubs.fixture || element.type === stubs.member) return [element];
+  const children = element.props.children;
+  return Array.isArray(children) ? (children as Element[]) : [];
+}
+
+/** The profile the demo branch handed to `UserProfile`. */
+async function resolved(username: string): Promise<PlayerProfile> {
+  const element = (await elementsOf(username)).find(
+    (candidate) => candidate.type === stubs.fixture,
+  );
+  if (element === undefined) throw new Error(`no fixture profile rendered for "${username}"`);
+  return element.props.profile as PlayerProfile;
+}
+
+beforeEach(() => {
+  readUserProfileByHandle.mockReset();
+  readUserProfileByHandle.mockImplementation(async () => null);
+  currentUser.mockReset();
+  currentUser.mockImplementation(async () => null);
+  notFound.mockClear();
+});
 
 describe("/profile/<username> — the person is the handle, not a literal", () => {
   it("/profile/sarahwilliams is Sarah, read from data/players.ts", async () => {
@@ -49,7 +96,9 @@ describe("/profile/<username> — the person is the handle, not a literal", () =
     expect(person.name).toBe("Sarah Williams");
     expect(person.id).toBe("player-sarah-williams");
     expect(person.level).toBe(65);
-    expect(person.avatar).toBe("/avatars/sarah.webp");
+    // No avatar on the person: the header draws one from this id (#152), so a file path
+    // here would be a second, drifting answer to "what does Sarah look like".
+    expect(person).not.toHaveProperty("avatar");
     expect(person.country).toBe("Canada");
     // Standing comes from her row on the global board, the board's own unit.
     expect(person.rank).toBe(2);
@@ -95,14 +144,71 @@ describe("/profile/<username> — the person is the handle, not a literal", () =
   it("is case- and whitespace-insensitive, and nothing else", async () => {
     expect((await resolved("SarahWilliams")).person.handle).toBe("sarahwilliams");
     expect((await resolved(" sarahwilliams ")).person.handle).toBe("sarahwilliams");
+    // The same normalisation is applied to the database lookup, so the two branches agree.
+    expect(readUserProfileByHandle).toHaveBeenCalledWith("sarahwilliams");
   });
 
   it("404s an unknown handle — there is no default person to fall back to", async () => {
-    notFound.mockClear();
     await expect(ProfilePage(paramsOf("nonexistent-user"))).rejects.toThrow("NEXT_NOT_FOUND");
     expect(notFound).toHaveBeenCalledTimes(1);
   });
 
+  it("labels a demo person as a demo account (no fabricated member data)", async () => {
+    const elements = await elementsOf("alexjohnson");
+    expect(elements.some((element) => element.type === stubs.demo)).toBe(true);
+    expect(elements.some((element) => element.type === stubs.fixture)).toBe(true);
+  });
+});
+
+describe("/profile/<username> — a member row wins over the fixture", () => {
+  const PROFILE = {
+    userId: "auth-user-1",
+    handle: "ada-lovelace",
+    displayName: "Ada Lovelace",
+    bio: "Analyst, engines.",
+    country: "United Kingdom",
+    countryCode: "gb",
+    joinedAt: "2026-10-30T12:00:00.000Z",
+    updatedAt: "2026-10-30T12:00:00.000Z",
+  };
+
+  it("renders the member branch, with the public projection and no auth user id", async () => {
+    readUserProfileByHandle.mockImplementation(async () => PROFILE);
+    const elements = await elementsOf("ada-lovelace");
+
+    const member = elements.find((element) => element.type === stubs.member);
+    expect(member).toBeDefined();
+    expect(elements.some((element) => element.type === stubs.fixture)).toBe(false);
+
+    const props = member?.props as { profile: Record<string, unknown>; isOwner: boolean };
+    expect(props.profile.displayName).toBe("Ada Lovelace");
+    expect(props.profile).not.toHaveProperty("userId");
+    // A stranger, because no session was stubbed.
+    expect(props.isOwner).toBe(false);
+  });
+
+  it("adds the owner's affordance only for the person whose session matches the row", async () => {
+    readUserProfileByHandle.mockImplementation(async () => PROFILE);
+    currentUser.mockImplementation(async () => ({
+      userId: "auth-user-1",
+      email: "ada@example.com",
+      name: "Ada",
+    }));
+
+    const elements = await elementsOf("ada-lovelace");
+    const props = elements.find((element) => element.type === stubs.member)?.props as {
+      isOwner: boolean;
+    };
+    expect(props.isOwner).toBe(true);
+  });
+
+  it("does not resolve a session for a demo person's profile", async () => {
+    await resolved("sarahwilliams");
+    expect(currentUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("/profile/<username> — metadata", () => {
   it("gives an unknown handle its own brand-free title, and the player theirs", async () => {
     await expect(generateMetadata(paramsOf("sarahwilliams"))).resolves.toEqual({
       title: "Sarah Williams's Profile",
@@ -114,5 +220,18 @@ describe("/profile/<username> — the person is the handle, not a literal", () =
     // The root layout's template composes the brand: a page title that carries it too prints
     // "… · QuizHub · QuizHub".
     expect(JSON.stringify(missing)).not.toContain("QuizHub");
+  });
+
+  it("titles a member's page from their saved display name", async () => {
+    readUserProfileByHandle.mockImplementation(async () => ({
+      userId: "auth-user-1",
+      handle: "ada-lovelace",
+      displayName: "Ada Lovelace",
+      joinedAt: "2026-10-30T12:00:00.000Z",
+      updatedAt: "2026-10-30T12:00:00.000Z",
+    }));
+
+    const metadata = await generateMetadata(paramsOf("ada-lovelace"));
+    expect(metadata.title).toBe("Ada Lovelace's Profile");
   });
 });

@@ -1,11 +1,11 @@
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatPlayerCount } from "@/content/core";
 import { type RankTitle, rankTitleOf } from "@/content/people";
-import { avatarSrcOf, leaderboardEntries } from "@/lib/players";
+import { leaderboardEntries } from "@/lib/players";
 import cardCover from "@/public/card-cover.png";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
@@ -77,16 +77,12 @@ export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
                       />
                       {/* Avatar */}
                       <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-10">
-                        <Avatar className="h-20 w-20 border-4 border-white shadow-md bg-background">
-                          <AvatarImage
-                            src={avatarSrcOf(player)}
-                            className="object-cover object-center"
-                            alt={player.name}
-                          />
-                          <AvatarFallback>
-                            {player.name.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <GeneratedAvatar
+                          name={player.name}
+                          seed={player.id}
+                          size={80}
+                          className="border-4 border-white shadow-md"
+                        />
                       </div>
 
                       {/* Badge */}

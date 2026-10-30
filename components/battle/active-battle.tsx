@@ -1,12 +1,11 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { PageCopySection } from "@/content/pages";
-import { media } from "@/data/media";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { AlertCircle, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useEffect, useReducer } from "react";
@@ -28,7 +27,8 @@ interface Question {
 interface Player {
   id: string;
   name: string;
-  avatar?: string;
+  /** Stable id the drawn avatar is seeded from (issue #152), same as `battle-page`'s Player. */
+  seed: string;
   score: number;
   streak: number;
   isCurrentUser: boolean;
@@ -320,10 +320,7 @@ export function ActiveBattle({ copy, battleState, onBattleComplete }: ActiveBatt
                 className={`flex flex-col items-center p-2 rounded-lg border ${player.isCurrentUser ? "border-primary bg-primary/5" : "border-border"}`}
               >
                 <div className="relative">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={player.avatar || media.placeholder.src} alt={player.name} />
-                    <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
+                  <GeneratedAvatar name={player.name} seed={player.seed} size={40} />
                   <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-bold">
                     {index + 1}
                   </div>

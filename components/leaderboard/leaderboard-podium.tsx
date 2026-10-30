@@ -1,7 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import type { LeaderboardEntry } from "@/content/people";
-import { avatarSrcOf } from "@/lib/players";
 import { Crown, Medal, Star } from "lucide-react";
 
 interface LeaderboardPodiumProps {
@@ -13,7 +12,8 @@ export function LeaderboardPodium({ entries }: LeaderboardPodiumProps) {
 
   const podiumOrder = [1, 0, 2]; // 2nd, 1st, 3rd places
   const podiumHeights = ["h-28", "h-36", "h-24"];
-  const avatarSizes = ["h-16 w-16", "h-24 w-24", "h-14 w-14"];
+  /** Podium avatar diameter in px: runner-up, champion, third (issue #152). */
+  const avatarSizes = [64, 96, 56];
   const borderColors = ["ring-gray-300", "ring-amber-500", "ring-amber-700"];
   const bgColors = ["bg-gray-300", "bg-amber-500", "bg-amber-700"];
   const textSizes = ["text-lg", "text-xl", "text-base"];
@@ -28,14 +28,12 @@ export function LeaderboardPodium({ entries }: LeaderboardPodiumProps) {
           return (
             <div key={player.id} className="flex flex-col items-center">
               <div className="relative mb-2">
-                <Avatar className={`${avatarSizes[i]} ring-2 ring-offset-2 ${borderColors[i]}`}>
-                  <AvatarImage
-                    src={avatarSrcOf(player)}
-                    className="object-cover object-center"
-                    alt={player.name}
-                  />
-                  <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
-                </Avatar>
+                <GeneratedAvatar
+                  name={player.name}
+                  seed={player.id}
+                  size={avatarSizes[i]}
+                  className={`ring-2 ring-offset-2 ${borderColors[i]}`}
+                />
                 {i === 1 && (
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2">
                     <Crown className="h-8 w-8 text-amber-500" />

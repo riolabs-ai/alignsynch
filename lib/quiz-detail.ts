@@ -43,8 +43,8 @@ export interface QuizLeaderboardRowModel {
   /** 1-based position in THIS quiz's board (`selectQuizLeaderboard`). */
   rank: number;
   name: string;
-  /** The player's avatar source, absent when the `PersonRef` carries none. */
-  avatar?: string;
+  /** Stable id the avatar gradient is seeded from (issue #152) — `player.id`, or the name. */
+  seed: string;
   /** Percent correct, `0`–`100` — `scorePercent`'s single rounding. */
   percent: number;
   /** Wall-clock time on the quiz. The tab formats it (`mm:ss`); the model keeps data. */
@@ -56,7 +56,8 @@ export interface QuizReviewRowModel {
   /** The `QuizReview.id` — a stable React key, never an array index. */
   id: string;
   name: string;
-  avatar?: string;
+  /** Stable id the avatar gradient is seeded from (issue #152) — `author.id`, or the name. */
+  seed: string;
   rating: number;
   body: string;
 }
@@ -82,7 +83,7 @@ export interface QuizActivityCollections {
 const leaderboardRow = (row: QuizLeaderboardRow): QuizLeaderboardRowModel => ({
   rank: row.rank,
   name: row.player.name,
-  ...(row.player.avatar === undefined ? {} : { avatar: row.player.avatar.src }),
+  seed: row.player.id ?? row.player.name,
   percent: row.percent,
   seconds: row.seconds,
 });
@@ -90,7 +91,7 @@ const leaderboardRow = (row: QuizLeaderboardRow): QuizLeaderboardRowModel => ({
 const reviewRow = (review: QuizReview): QuizReviewRowModel => ({
   id: review.id,
   name: review.author.name,
-  ...(review.author.avatar === undefined ? {} : { avatar: review.author.avatar.src }),
+  seed: review.author.id ?? review.author.name,
   rating: review.rating,
   body: review.body,
 });

@@ -6,7 +6,6 @@ export interface User {
   id: string;
   username: string;
   name: string;
-  avatar: string;
   bio: string;
   level: number;
   score: number;
@@ -104,7 +103,6 @@ export const users: User[] = [
     id: "1",
     username: "alexjohnson",
     name: "Alex Johnson",
-    avatar: media["avatars.alex"].src,
     bio: "Quiz enthusiast and knowledge seeker. I love challenging myself with difficult quizzes!",
     level: 42,
     score: 9850,
@@ -346,7 +344,6 @@ export const users: User[] = [
     id: "2",
     username: "sarahwilliams",
     name: "Sarah Williams",
-    avatar: media["avatars.sarah"].src,
     bio: "Trivia lover and quiz creator. Follow me for the best science quizzes!",
     level: 38,
     score: 8720,
@@ -435,7 +432,6 @@ export const users: User[] = [
     id: "3",
     username: "michaelbrown",
     name: "Michael Brown",
-    avatar: media["avatars.brain"].src,
     bio: "History buff and trivia enthusiast. Always looking for challenging quizzes!",
     level: 35,
     score: 7640,

@@ -2,14 +2,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCountRange, formatMetricValue, formatPercentValue } from "@/content/metrics";
 import { Copy, DollarSign, ExternalLink, LinkIcon, Share2, TrendingUp, Users } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { brand } from "@/data/brand";
-import { media } from "@/data/media";
 import { affiliateTiers, currentAffiliateTier, metric } from "@/data/metrics";
 type Referral = {
   id: number;
@@ -18,7 +17,6 @@ type Referral = {
   date: string;
   status: string;
   earnings: number;
-  avatar: string;
 };
 // Sample data
 const referrals: Referral[] = [
@@ -29,7 +27,6 @@ const referrals: Referral[] = [
     date: "2023-05-15",
     status: "active",
     earnings: 12.5,
-    avatar: media["avatars.alex"].src,
   },
   {
     id: 2,
@@ -38,7 +35,6 @@ const referrals: Referral[] = [
     date: "2023-05-10",
     status: "active",
     earnings: 8.75,
-    avatar: media["avatars.sarah"].src,
   },
   {
     id: 3,
@@ -47,7 +43,6 @@ const referrals: Referral[] = [
     date: "2023-05-03",
     status: "inactive",
     earnings: 5.25,
-    avatar: media["avatars.brain"].src,
   },
   {
     id: 4,
@@ -56,7 +51,6 @@ const referrals: Referral[] = [
     date: "2023-04-28",
     status: "active",
     earnings: 6.0,
-    avatar: media["avatars.guru"].src,
   },
 ];
 
@@ -283,14 +277,7 @@ function ReferralCard({ referral }: { referral: Referral }) {
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg">
       <div className="flex items-center gap-3">
-        <div className="relative w-10 h-10 rounded-full overflow-hidden">
-          <Image
-            src={referral.avatar || media.placeholder.src}
-            alt={referral.name}
-            fill
-            className="object-cover"
-          />
-        </div>
+        <GeneratedAvatar name={referral.name} seed={referral.username} size={40} />
 
         <div>
           <p className="font-medium">{referral.name}</p>

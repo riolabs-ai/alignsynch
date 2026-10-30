@@ -23,16 +23,20 @@ import { categoryDetailPageCopy } from "./category-detail";
 import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
 import { dailyChallengePageCopy } from "./daily-challenge";
+import { dashboardPageCopy } from "./dashboard";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
 import { invitePageCopy } from "./invite";
 import { loginPageCopy } from "./login";
+import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
 import { pricingPageCopy } from "./pricing";
+import { profilePageCopy } from "./profile";
 import { registerPageCopy } from "./register";
+import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
@@ -50,6 +54,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/creator-tips": creatorTipsPageCopy,
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
   "/daily-challenge": dailyChallengePageCopy,
+  "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
   "/invite/[token]": invitePageCopy,
@@ -57,11 +62,14 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/news": newsPageCopy,
   "/news/[slug]": newsArticlePageCopy,
   "/pricing": pricingPageCopy,
+  "/profile/[username]": profilePageCopy,
   "/register": registerPageCopy,
+  "/settings": settingsPageCopy,
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
+  "/welcome": marketingPageCopy,
   shell: shellPageCopy,
   "not-found": notFoundPageCopy,
 });
