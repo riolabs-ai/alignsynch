@@ -27,8 +27,9 @@
  * Differ", "Desires To Change", "Prediction Gaps & Analysis"), never additional kinds.
  * Surprise and Doubt are the same four prediction kinds read at different times ("upon
  * first showing" vs "after and beyond"); they need an opinion history and are not
- * modelled here. The Soft/Full setting and the Gap Flag colours are display settings
- * over these numbers, not arithmetic.
+ * modelled here. The Soft/Full Setting is the lens over these numbers — it changes which
+ * Gaps are tolerated, never the numbers themselves (`gapMeetsSetting`, below). The Gap
+ * Flag colours are display over the same numbers.
  *
  * The four Advanced kinds exist only where the prediction does: Basic Mode asks Feel and
  * Wish, so an Aspect of a Basic instance has four Gaps and no prediction to measure.
@@ -42,7 +43,13 @@
  * `db:migrate` and `db:verify` both fail on a `public` column named like one.
  */
 import { z } from "zod";
-import type { OpinionKind, Opinions, PartyRole } from "./assessment";
+import {
+  SETTING_GAP_LIMITS,
+  type AlignmentSetting,
+  type OpinionKind,
+  type Opinions,
+  type PartyRole,
+} from "./assessment";
 import { gapOf, type Gap, type Score } from "./record";
 
 /* ------------------------------------------------------------------ *
@@ -206,4 +213,78 @@ export function gapKindsOf(initiator: Opinions, counterparty: Opinions): GapKind
 /** The kinds one Aspect actually has, in glossary order — four, or eight in Advanced Mode. */
 export function gapKindsIn(gaps: GapKinds): GapKind[] {
   return GAP_KINDS.filter((kind) => gaps[kind] !== undefined);
+}
+
+/* ------------------------------------------------------------------ *
+ * The Setting — what counts as aligned
+ * ------------------------------------------------------------------ */
+
+/**
+ * One Aspect's Gaps, named, so an unmet Gap can be reported against the Aspect it sits on
+ * instead of as one anonymous number.
+ */
+export interface AspectGaps {
+  /** The Aspect's id — the same join key the report row uses. */
+  readonly itemId: string;
+  readonly gaps: GapKinds;
+}
+
+/** One Gap the instance's Setting does not tolerate. */
+export interface UnmetGap {
+  readonly itemId: string;
+  readonly kind: GapKind;
+  /** `gapOf`'s output for the two Opinions this kind compares — never a stored value. */
+  readonly gap: Gap;
+}
+
+/**
+ * The answer to "is this instance aligned under its Setting".
+ *
+ * `limit` is the widest tolerated Gap (`content/assessment.ts::SETTING_GAP_LIMITS`) and is
+ * carried so a caller can say *why* — "a Gap of 2 exceeds Full's 0" — without importing the
+ * threshold table a second time.
+ */
+export interface AlignmentVerdict {
+  readonly setting: AlignmentSetting;
+  readonly limit: Gap;
+  /** Soft and Full never disagree about a Gap of 0, and Full is a subset of Soft. */
+  readonly aligned: boolean;
+  /** Every present Gap wider than `limit`, Aspect by Aspect. Empty ⇔ aligned. */
+  readonly unmet: readonly UnmetGap[];
+}
+
+/**
+ * Does one Gap meet the Setting? Soft: `gap <= 1` — the glossary's "Small Gap (1) OK"
+ * (a Gap of 1 is the yellow Small Gap; 2..4 are the Big Gaps). Full: `gap === 0` — "No
+ * Gap OK". The threshold is a constant from the schema, never a column, and this is the
+ * only comparison in the codebase that reads it.
+ */
+export function gapMeetsSetting(gap: Gap, setting: AlignmentSetting): boolean {
+  return gap <= SETTING_GAP_LIMITS[setting];
+}
+
+/**
+ * Is the instance aligned under its Setting — derived from the Gaps on every call.
+ *
+ * Aligned means **every Gap the instance actually has** meets the Setting. A kind that is
+ * *absent* is never unmet: a Basic instance has four kinds and no prediction to measure, so
+ * reading its absence as a Gap of 0 would report In Synch about a question nobody asked
+ * (the same reason `gapKindsOf` omits it). Nothing here is stored: no `aligned` column, no
+ * `gap` column, no per-kind flag — the answer is a function of the opinion rows, so it
+ * cannot drift from the numbers it is derived from.
+ */
+export function instanceAlignment(
+  aspects: readonly AspectGaps[],
+  setting: AlignmentSetting,
+): AlignmentVerdict {
+  const limit = SETTING_GAP_LIMITS[setting];
+  const unmet: UnmetGap[] = [];
+  for (const aspect of aspects) {
+    for (const kind of gapKindsIn(aspect.gaps)) {
+      const gap = aspect.gaps[kind];
+      if (gap === undefined) continue;
+      if (!gapMeetsSetting(gap, setting)) unmet.push({ itemId: aspect.itemId, kind, gap });
+    }
+  }
+  return { setting, limit, aligned: unmet.length === 0, unmet };
 }

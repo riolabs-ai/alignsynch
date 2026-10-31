@@ -116,7 +116,12 @@ function rowsWith(
     },
     items,
     options: [],
-    instance: { record_id: INSTANCE_ID, template_record_id: template?.id ?? "", mode },
+    instance: {
+      record_id: INSTANCE_ID,
+      template_record_id: template?.id ?? "",
+      mode,
+      setting: "soft",
+    },
     parties,
     opinions,
     answerCounts: answered,

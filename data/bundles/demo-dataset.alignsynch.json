@@ -338,6 +338,7 @@
         ],
         "templateId": "assessment-relationship-basics",
         "mode": "basic",
+        "setting": "soft",
         "parties": [
           {
             "role": "initiator",
@@ -490,6 +491,7 @@
         ],
         "templateId": "assessment-personal-parent-child",
         "mode": "basic",
+        "setting": "soft",
         "parties": [
           {
             "role": "initiator",
@@ -642,6 +644,7 @@
         ],
         "templateId": "assessment-business-staff-manager",
         "mode": "basic",
+        "setting": "soft",
         "parties": [
           {
             "role": "initiator",
@@ -794,6 +797,7 @@
         ],
         "templateId": "assessment-personal-parent-child",
         "mode": "advanced",
+        "setting": "full",
         "parties": [
           {
             "role": "initiator",

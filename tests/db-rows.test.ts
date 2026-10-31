@@ -54,6 +54,7 @@ function instanceRows(instance: AssessmentInstance): AssessmentInstanceRows {
       record_id: instance.id,
       template_record_id: instance.templateId,
       mode: instance.mode,
+      setting: instance.setting,
     },
     parties: instance.parties.map((party) => ({
       instance_record_id: instance.id,
