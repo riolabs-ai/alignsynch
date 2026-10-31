@@ -101,6 +101,20 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/dashboard",
     budget: 0,
   },
+  /**
+   * `/dashboard` — the console's Overview (Console 2/5), and the first surface whose four figures
+   * are counts rather than authored metrics. Budget 0 from the first commit: the card labels, the
+   * three one-line explanations, the empty band and the failure panel are all
+   * `data/pages/overview.ts`, so the next sentence written in `components/console/**` is a red
+   * build. `dirs` is only the new domain — `/dashboard/user`'s `components/identity` stays
+   * attributed to that surface, and the two consoles cannot lend each other words.
+   */
+  "/dashboard": {
+    page: "app/(mainlayout)/dashboard/page.tsx",
+    dirs: ["components/console"],
+    fixture: "data/pages/overview",
+    budget: 0,
+  },
   "/explore": {
     page: "app/(mainlayout)/explore/page.tsx",
     dirs: ["components/explore"],
