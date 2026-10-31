@@ -105,6 +105,8 @@ const screen = projectScreen({
     counterpartyName: "Rowan",
     expiresAt: "2026-11-06T12:00:00.000Z",
     state: "unclaimed" as const,
+    resentAt: null,
+    resentCount: 0,
     link: LINK,
   },
 });

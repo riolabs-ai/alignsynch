@@ -39,6 +39,10 @@
  *       are one list" a check rather than a claim: the rows are seeded from the fixture, a
  *       surface renders the rows, and a hand-edited price fails here by name instead of becoming
  *       a charge nobody authored.
+ *   V14 the re-invite's history (#275): `resent_at` and `resent_count` agree about whether the
+ *       invitation was ever re-sent, and a reissue never predates the invitation it reissues —
+ *       the two columns are one fact, and a row where they disagree cannot be measured against
+ *       the cooldown or the cap. (Numbered after #289's V13, which landed first.)
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -199,7 +203,11 @@ async function main() {
       // `instanceStatusOf()` is the same function the screen uses.
       const { rows: inviteRows } = await client.query(
         `SELECT claimed_at, expires_at > created_at AS sane_window,
-                token_hash ~ '^[0-9a-f]{64}$' AS hashed
+                token_hash ~ '^[0-9a-f]{64}$' AS hashed,
+                resent_at IS NULL AS never_resent,
+                resent_count,
+                (resent_at IS NULL) = (resent_count = 0) AS resent_consistent,
+                resent_at IS NULL OR resent_at >= created_at AS resent_after_creation
            FROM instance_invite WHERE instance_record_id = $1`,
         [listed.recordId],
       );
@@ -234,6 +242,20 @@ async function main() {
       }
       if (invite !== undefined && !invite.sane_window) {
         fail("V8", `instance "${listed.slug}": the invitation expires before it was created`);
+      }
+      // V14 — the re-invite's two columns (#275). They are one fact recorded twice — "a re-invite
+      // happened" — so a row where they disagree is drift no screen can draw honestly: a count
+      // with no instant cannot be measured against the cooldown, and an instant with a zero count
+      // says the token was reissued without ever counting it against the cap. V13 is #289's plan
+      // check, which landed while this card was open.
+      if (invite !== undefined && !invite.resent_consistent) {
+        fail(
+          "V14",
+          `instance "${listed.slug}": instance_invite.resent_at and resent_count disagree about whether the invitation was re-sent (resent_at null=${invite.never_resent}, count=${invite.resent_count})`,
+        );
+      }
+      if (invite !== undefined && !invite.resent_after_creation) {
+        fail("V14", `instance "${listed.slug}": the invitation was re-sent before it was created`);
       }
 
       const { rows: answerCounts } = await client.query(

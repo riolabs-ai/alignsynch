@@ -151,8 +151,49 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "expired",
           label:
-            "This invitation expired on {date}. The link no longer works, so {counterparty} cannot claim it.",
+            "This invitation expired on {date}. The link no longer works — send {counterparty} a new one below.",
         },
+        // #275 — the re-invite. One action, and it is revoke-and-replace: the new link is the only
+        // live one, so the panel says the old link dies rather than leaving the Initiator to
+        // assume two links now work. The budget (`{count} of {cap}`) is drawn because a refusal
+        // that arrives as a surprise is the thing the issue's copy guidance forbids; the refusals
+        // themselves are below, one item per code in `RESEND_REFUSALS` and keyed by that code, so
+        // the panel looks up the sentence the store's refusal named.
+        { id: "resend-heading", label: "Send {counterparty} a new invitation" },
+        { id: "resend-email", label: "Their email address" },
+        { id: "resend-submit", label: "Send a new link" },
+        {
+          id: "resend-note",
+          label:
+            "The new link replaces the one in the last email: the old link stops working as soon as you send this.",
+        },
+        { id: "resend-count", label: "Re-invitations sent: {count} of {cap}" },
+        {
+          id: "cooldown",
+          label:
+            "A new invitation went out less than 24 hours ago, so this one was not sent. You can send another a day after that.",
+        },
+        {
+          id: "cap-reached",
+          label:
+            "This invitation has been sent three times, which is as many as this app allows. Start a new instance with {counterparty} instead.",
+        },
+        {
+          id: "already-claimed",
+          label:
+            "This invitation has already been claimed, so there is nothing to send again — the link is spent.",
+        },
+        {
+          id: "instance-complete",
+          label:
+            "Both of you have answered, so this invitation is finished and there is nothing left to send.",
+        },
+        {
+          id: "invalid-email",
+          label: "That is not an address a message can be sent to. Check it and send again.",
+        },
+        { id: "not-initiator", label: "Only the Initiator can send a new invitation." },
+        { id: "no-invite", label: "This instance has no invitation to send again." },
       ],
     },
     {

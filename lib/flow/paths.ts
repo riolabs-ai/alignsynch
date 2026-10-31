@@ -54,6 +54,17 @@ export function answersPath(instanceRecordId: string): string {
   return `${instancePath(instanceRecordId)}/answers`;
 }
 
+/**
+ * The re-invite endpoint — a POST, so a GET never reissues a token (#275).
+ *
+ * A child of the instance's own address rather than a sibling: the invitation belongs to that
+ * instance, and the form that posts here is drawn on that instance's screen. Like the other two
+ * POST-only endpoints it is a route handler, not a page, so the manifest does not list it.
+ */
+export function reinvitePath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/invite`;
+}
+
 export function invitePath(token: string): string {
   return `/invite/${token}`;
 }
