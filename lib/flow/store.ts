@@ -9,6 +9,12 @@
  *   submitAnswers                write one party's whole sheet, or refuse
  *   readFlowScreen               rows + viewer → the view model the screen draws
  *
+ * …plus one recovery write (#275): `resendInvite` reissues an unclaimed invitation — a new token,
+ * a new seven-day window, the old link dead — inside the same transaction, behind a 24 h cooldown
+ * and a lifetime cap of 3. It is not a second "create": the invitation row is one row per instance
+ * (its primary key), so reissuing is an UPDATE of that row's token rather than an insert, and
+ * "one live token per relationship" stays a property of the schema.
+ *
  * …plus one mark (#252): `markUnlockSeen` records that one party has opened a complete instance,
  * which is the only fact the list's "complete since you last looked" marker needs and the one
  * thing no opinion row carries. It is a single-row UPDATE, not an operation on the flow.
@@ -64,6 +70,7 @@ import {
 import { invitationLink } from "@/lib/flow/email";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
+import { emailLooksDeliverable, resendRefusal, type ResendRefusal } from "@/lib/flow/resend";
 import {
   instanceStatusOf,
   parseSubmission,
@@ -179,13 +186,6 @@ function required(value: string, field: string): string {
   const text = value.trim();
   if (text === "") throw new FlowError("invalid-input", `${field} is required`);
   return text;
-}
-
-function emailLooksDeliverable(value: string): boolean {
-  // One `@`, something before it, a dot after it: the same bar the SQL CHECK sets, kept in
-  // the same place a reader looks for validation. Not RFC 5322 — an invitation does not
-  // need to know more than "can a message be addressed here".
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 /**
@@ -584,6 +584,229 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
 }
 
 /* ------------------------------------------------------------------ *\
+ * Re-invite
+ * ------------------------------------------------------------------ */
+
+export interface ResendInput {
+  /** The instance whose invitation is being reissued. */
+  readonly instanceRecordId: string;
+  /**
+   * A corrected address for the Counterparty, or absent to keep the one on the row.
+   *
+   * This is the common case the action exists for (#275): the first invitation went to a typo.
+   * An empty post is the same as no post — a form left blank is not a request to erase the
+   * address the invitation already carries.
+   */
+  readonly email?: string | null;
+  /** Every `flow_party_*` token this browser holds (`partyTokensFrom()`). */
+  readonly viewerTokens?: readonly string[];
+  /** The signed-in account, when there is one — the claim's second reading of who is asking. */
+  readonly viewerUserId?: string | null;
+  /** A clock, injectable so a test can pin the cooldown and the new `expires_at`. */
+  readonly now?: Date;
+}
+
+export type ResendResult =
+  | {
+      readonly ok: true;
+      readonly instanceRecordId: string;
+      /** The new raw token — the caller emails it and puts it in the Initiator's cookie. */
+      readonly inviteToken: string;
+      /** The address the new invitation is addressed to (corrected, or the row's own). */
+      readonly email: string;
+      /** The three facts `invitationMessage()` needs, read in this transaction. */
+      readonly initiatorName: string;
+      readonly counterpartyName: string;
+      readonly templateTitle: string;
+      readonly expiresAt: Date;
+      /** `resent_count` after this write — 1 on the first re-invite. */
+      readonly resentCount: number;
+    }
+  | { readonly ok: false; readonly code: ResendRefusal; readonly reason: string };
+
+/**
+ * Reissue an unclaimed invitation: a new token, a new seven-day window, and the old link dead
+ * (#275).
+ *
+ * **Revoke and replace, never extend.** The row's `token_hash` is overwritten in the same
+ * transaction that writes `expires_at`, so the link the last email carried stops naming an
+ * invitation at this instant and `previewInvite()` answers `unknown` for it — the truth, since it
+ * no longer exists. Extending the old token would leave a working link in every mailbox that ever
+ * received it, including the wrong one, which is the case this action is for.
+ *
+ * **One transaction, and only a success writes.** The row is read `FOR UPDATE` (so two re-invites
+ * cannot both pass the cooldown against the same `resent_at`), the instance is read under the same
+ * lock, and `resendRefusal()` decides from those facts. Every refusal rolls back and returns its
+ * code; the caller renders the sentence, and `claimed_at` / `expires_at` / `token_hash` are
+ * untouched, so a refused re-invite leaves the live link exactly as it was.
+ *
+ * **The token is never stored raw**: `token_hash` gets `hashToken(newToken)`, the same rule
+ * `createInstanceFromTemplate` and `claimInvite` follow.
+ *
+ * `resent_at` / `resent_count` are the two columns `0010_invite_resend.sql` added: the cooldown
+ * compares the first with `now`, the cap compares the second with `RESEND_LIFETIME_CAP`.
+ * `created_at` is not touched — it is the instance's own fact — and `claimed_at` stays NULL,
+ * because an unclaimed invitation is still unclaimed after a reissue.
+ *
+ * The email is **not** sent here. The route that calls this sends it after the commit, with the
+ * same `sendInvitation()` and the same `sent|unset|failed` vocabulary the creation uses; a failed
+ * send never fails the reissue, and the screen still draws the new link (#220).
+ */
+export async function resendInvite(input: ResendInput): Promise<ResendResult> {
+  const now = input.now ?? new Date();
+  const posted = (input.email ?? "").trim();
+  const corrected = posted === "" ? null : posted;
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query<{
+      email: string;
+      counterparty_name: string;
+      claimed_at: Date | null;
+      expires_at: Date;
+      resent_at: Date | null;
+      resent_count: number;
+      initiator_name: string | null;
+      title: string;
+    }>(
+      `SELECT iv.email, iv.counterparty_name, iv.claimed_at, iv.expires_at,
+              iv.resent_at, iv.resent_count,
+              (SELECT p.name FROM party p
+                WHERE p.instance_record_id = iv.instance_record_id AND p.role = 'initiator') AS initiator_name,
+              t.title
+         FROM instance_invite iv
+         JOIN assessment_instance ai ON ai.record_id = iv.instance_record_id
+         JOIN record t ON t.id = ai.template_record_id
+        WHERE iv.instance_record_id = $1
+          FOR UPDATE OF iv, ai`,
+      [input.instanceRecordId],
+    );
+    const invite = found.rows[0];
+
+    // Who is asking, by the same two readings the claim uses: this browser's party cookies, then
+    // the signed-in account. A role out of Postgres, never a field in the post.
+    const viewerRole =
+      (await partyRoleForTokens(client, input.instanceRecordId, input.viewerTokens ?? [])) ??
+      (await partyRoleForUser(
+        client,
+        input.instanceRecordId,
+        normalizedUserId(input.viewerUserId),
+      ));
+
+    // `complete` is derived, not stored: both parties answered every Aspect of the instance's own
+    // copy. Only asked when there is an invitation to reissue — an instance with no invite row is
+    // already the `no-invite` refusal and the two counts would be spent on a refusal.
+    let complete = false;
+    if (invite !== undefined) {
+      const aspects = await client.query<{ n: number }>(
+        "SELECT count(*)::int AS n FROM item WHERE record_id = $1",
+        [input.instanceRecordId],
+      );
+      const progress = await progressOfClient(
+        client,
+        input.instanceRecordId,
+        aspects.rows[0]?.n ?? 0,
+      );
+      complete = instanceStatusOf(progress) === "complete";
+    }
+
+    const refusal = resendRefusal(
+      {
+        viewerRole,
+        inviteExists: invite !== undefined,
+        complete,
+        claimed: invite === undefined ? false : invite.claimed_at !== null,
+        resentAt: invite?.resent_at ?? null,
+        resentCount: invite?.resent_count ?? 0,
+        email: corrected,
+      },
+      now,
+    );
+
+    if (invite === undefined || refusal !== undefined) {
+      await client.query("ROLLBACK");
+      const code: ResendRefusal = refusal ?? "no-invite";
+      return { ok: false, code, reason: resendReason(code, invite, viewerRole, corrected, now) };
+    }
+
+    const inviteToken = mintToken();
+    const email = corrected ?? invite.email;
+    const expiresAt = inviteExpiry(now);
+    await client.query(
+      `UPDATE instance_invite
+          SET token_hash = $2, email = $3, expires_at = $4, resent_at = $5,
+              resent_count = resent_count + 1
+        WHERE instance_record_id = $1`,
+      [
+        input.instanceRecordId,
+        hashToken(inviteToken),
+        email,
+        expiresAt.toISOString(),
+        now.toISOString(),
+      ],
+    );
+    await client.query("COMMIT");
+    return {
+      ok: true,
+      instanceRecordId: input.instanceRecordId,
+      inviteToken,
+      email,
+      initiatorName: invite.initiator_name ?? "",
+      counterpartyName: invite.counterparty_name,
+      templateTitle: invite.title,
+      expiresAt,
+      resentCount: invite.resent_count + 1,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * The refusal's own sentence, for the server log and for a caller that is not the screen.
+ *
+ * The screen does **not** print this: it maps the code to a `data/pages/assessment-instance.ts`
+ * item, because copy belongs in the fixture (E23). This is the diagnostic — it names the instant
+ * the cooldown is measured from, which is the fact an operator asking "why did this refuse" needs
+ * and which a reader does not.
+ */
+function resendReason(
+  code: ResendRefusal,
+  invite:
+    | {
+        readonly claimed_at: Date | null;
+        readonly resent_at: Date | null;
+        readonly resent_count: number;
+      }
+    | undefined,
+  viewerRole: PartyRole | undefined,
+  email: string | null,
+  now: Date,
+): string {
+  switch (code) {
+    case "not-initiator":
+      return viewerRole === undefined
+        ? "this browser is not a party to that instance, so it cannot re-invite"
+        : `this browser answers as the ${viewerRole}; only the Initiator can send a new invitation`;
+    case "no-invite":
+      return "that instance has no invitation to reissue";
+    case "instance-complete":
+      return "both parties have answered that instance; there is nothing left to invite anybody to";
+    case "already-claimed":
+      return `that invitation was claimed at ${invite?.claimed_at?.toISOString() ?? "an unknown instant"}; the seat is taken`;
+    case "cap-reached":
+      return `that invitation has been resent ${invite?.resent_count ?? 0} times, which is the lifetime cap`;
+    case "cooldown":
+      return `the last re-invite was at ${invite?.resent_at?.toISOString() ?? "an unknown instant"}, less than 24 hours before ${now.toISOString()}`;
+    case "invalid-email":
+      return `"${email ?? ""}" is not an address a message can be sent to`;
+  }
+}
+
+/* ------------------------------------------------------------------ *\
  * Submit
  * ------------------------------------------------------------------ */
 
@@ -845,6 +1068,16 @@ export interface InstanceBundle {
      * invitation had expired and presented a link that no longer worked, forever.
      */
     readonly expiresAt: Date;
+    /**
+     * `resent_at` — when a re-invite last issued the live token, or `null` for the original (#275).
+     *
+     * Read so the panel can say a re-invite has happened (and, later, so a cooldown could be drawn
+     * without asking the store again). It is **not** compared with a clock here: the cooldown is
+     * decided inside `resendInvite()`'s transaction, where the write would happen, not on a read.
+     */
+    readonly resentAt: Date | null;
+    /** `resent_count` — lifetime re-invites, the fact `RESEND_LIFETIME_CAP` compares against. */
+    readonly resentCount: number;
   } | null;
   readonly answerCounts: Readonly<Record<PartyRole, number>>;
 }
@@ -883,8 +1116,10 @@ export async function readInstanceBundle(
     counterparty_name: string;
     claimed_at: Date | null;
     expires_at: Date;
+    resent_at: Date | null;
+    resent_count: number;
   }>(
-    `SELECT email, counterparty_name, claimed_at, expires_at FROM instance_invite WHERE instance_record_id = $1`,
+    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM instance_invite WHERE instance_record_id = $1`,
     [instanceRecordId],
   );
   const counts = await query<{ role: PartyRole; answered: number }>(
@@ -916,6 +1151,8 @@ export async function readInstanceBundle(
             counterpartyName: invite.counterparty_name,
             claimed: invite.claimed_at !== null,
             expiresAt: invite.expires_at,
+            resentAt: invite.resent_at,
+            resentCount: invite.resent_count,
           },
     answerCounts: { initiator: answered("initiator"), counterparty: answered("counterparty") },
   };
@@ -1181,6 +1418,10 @@ export async function readFlowScreen(input: {
           counterpartyName: bundle.invite.counterpartyName,
           expiresAt: bundle.invite.expiresAt.toISOString(),
           state: inviteStateOf(bundle.invite, now),
+          // #275 — the re-invite history, drawn as a sentence ("2 of 3 sent") rather than acted
+          // on: whether another re-invite may happen is decided inside `resendInvite()`.
+          resentAt: bundle.invite.resentAt === null ? null : bundle.invite.resentAt.toISOString(),
+          resentCount: bundle.invite.resentCount,
         };
 
   return projectScreen({

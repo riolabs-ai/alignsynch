@@ -56,7 +56,7 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "expired",
       heading: "This invitation has expired",
-      body: "Invitations last seven days. Ask {initiator} to start a new instance with you.",
+      body: "Invitations last seven days. Ask {initiator} to send you a new one.",
     },
     {
       id: "unknown",

@@ -36,12 +36,16 @@ import { AssessmentInstanceView } from "@/components/assessment-flow/instance-vi
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { invitePageCopy } from "@/data/pages/invite";
 import { assessments } from "@/data/assessments";
+import type { ResendRefusal } from "@/lib/flow/resend";
+import { reinvitePath } from "@/lib/flow/paths";
+import { RESEND_LIFETIME_CAP } from "@/lib/flow/tokens";
 import type { Assessment } from "@/content/assessment";
 import type { ItemRow, OpinionRow, OptionRow, PartyRow, RecordRow } from "@/lib/db/rows";
 import { INVITE_STATES, inviteStateOf } from "@/lib/flow/invite-state";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { readFlowScreen } from "@/lib/flow/store";
 import { mintToken } from "@/lib/flow/tokens";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
 /* ------------------------------------------------------------------ *\
  * The rows
@@ -130,6 +134,8 @@ const stub = vi.hoisted(() => {
     readonly counterparty_name: string;
     readonly claimed_at: Date | null;
     readonly expires_at: Date;
+    readonly resent_at: Date | null;
+    readonly resent_count: number;
   }
 
   const calls: Call[] = [];
@@ -283,6 +289,8 @@ function unclaimedInvitation(over: Partial<NonNullable<(typeof stub.state)["invi
     counterparty_name: "Rowan",
     claimed_at: null,
     expires_at: EXPIRES_AT,
+    resent_at: null,
+    resent_count: 0,
     ...over,
   };
   stub.state.parties = [{ instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" }];
@@ -298,7 +306,7 @@ describe("the instance bundle reads the invitation's deadline", () => {
     await initiatorScreen(BEFORE_EXPIRY);
 
     const [bundleQuery] = callsMatching(
-      /^SELECT email, counterparty_name, claimed_at, expires_at FROM instance_invite/,
+      /^SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM instance_invite/,
     );
     expect(bundleQuery).toBeDefined();
     expect(bundleQuery.values).toEqual([INSTANCE_ID]);
@@ -375,7 +383,7 @@ describe("the Initiator's screen draws three states", () => {
 
     expect(panel.state).toBe("expired");
     expect(panel.sentence).toBe(
-      `This invitation expired on ${EXPIRY_DATE}. The link no longer works, so Rowan cannot claim it.`,
+      `This invitation expired on ${EXPIRY_DATE}. The link no longer works — send Rowan a new one below.`,
     );
     // Red panel, not the neutral one: the state is meant to be readable before the sentence is.
     expect(render(await initiatorScreen(AFTER_EXPIRY))).toContain("bg-red-50");
@@ -459,14 +467,101 @@ describe("the blind rule survives the new read", () => {
  * ------------------------------------------------------------------ */
 
 describe("the Recipient's page is untouched", () => {
-  it("still says the four words it always did, with the same sentence for expired", () => {
-    // The copy the Recipient reads lives in `data/pages/invite.ts` and is asserted here by value:
-    // #266 changes the Initiator's panel only, and this line is the proof it did not move.
+  it("still says the four words it always did, and now points at a re-send", () => {
+    // The copy the Recipient reads lives in `data/pages/invite.ts` and is asserted here by value.
+    // #266 changed the Initiator's panel only and left this sentence alone; #275 changed it on
+    // purpose, by one clause: re-invite now exists, so "start a new instance" stopped being the
+    // honest next step — the same invitation can be reissued. The heading and the seven-day fact
+    // are unchanged.
     const expired = invitePageCopy.sections?.find((entry) => entry.id === "expired");
 
     expect(expired?.heading).toBe("This invitation has expired");
     expect(expired?.body).toBe(
-      "Invitations last seven days. Ask {initiator} to start a new instance with you.",
+      "Invitations last seven days. Ask {initiator} to send you a new one.",
     );
+  });
+});
+
+/* ------------------------------------------------------------------ *\
+ * The re-invite control (#275)
+ * ------------------------------------------------------------------ */
+
+describe("the Initiator's panel offers one recovery action", () => {
+  const renderWith = (screen: FlowScreen, resendRefusal?: ResendRefusal): string =>
+    renderToStaticMarkup(
+      createElement(AssessmentInstanceView, {
+        screen,
+        copy: assessmentInstancePageCopy,
+        ...(resendRefusal === undefined ? {} : { resendRefusal }),
+      }),
+    );
+
+  const SENTENCE = (code: ResendRefusal): string =>
+    fillLabel(itemLabel(sectionOf(assessmentInstancePageCopy, "invite"), code), {
+      counterparty: "Rowan",
+    });
+
+  it("is drawn while the invitation is unclaimed, pre-filled with the address on the row", async () => {
+    unclaimedInvitation();
+    const markup = renderWith(await initiatorScreen(BEFORE_EXPIRY));
+
+    expect(markup).toContain("data-reinvite-form");
+    expect(markup).toContain(`action="${reinvitePath(INSTANCE_ID)}"`);
+    expect(markup).toContain('name="email"');
+    expect(markup).toContain('value="rowan@example.com"');
+    // No refusal on a plain visit: the alert is the redirect's fact, not a standing panel.
+    expect(markup).not.toContain("data-resend-refusal");
+  });
+
+  it("is drawn on an expired invitation too — the dead end the action exists for", async () => {
+    unclaimedInvitation();
+    const markup = renderWith(await initiatorScreen(AFTER_EXPIRY));
+
+    expect(markup).toContain("data-reinvite-form");
+    // And the sentence it sits under now points at the form rather than at a new instance.
+    expect(markup).toContain("send Rowan a new one below");
+  });
+
+  it("is not drawn once the invitation is claimed — the seat is taken", async () => {
+    unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
+    stub.state.parties = [
+      { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+      { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+    ];
+
+    const markup = renderWith(await initiatorScreen(AFTER_EXPIRY));
+    expect(markup).toContain('data-invite-state="claimed"');
+    expect(markup).not.toContain("data-reinvite-form");
+  });
+
+  it("draws the budget once the invitation has been re-sent", async () => {
+    unclaimedInvitation({
+      resent_at: new Date("2026-11-05T12:00:00.000Z"),
+      resent_count: 2,
+    });
+    const markup = renderWith(await initiatorScreen(BEFORE_EXPIRY));
+
+    expect(markup).toContain('data-resend-count="2"');
+    expect(markup).toContain(`Re-invitations sent: 2 of ${RESEND_LIFETIME_CAP}`);
+  });
+
+  it("draws no budget before the first re-invite", async () => {
+    unclaimedInvitation();
+    expect(renderWith(await initiatorScreen(BEFORE_EXPIRY))).not.toContain("data-resend-count");
+  });
+
+  it("renders each refusal as its own sentence, above the panels", async () => {
+    unclaimedInvitation();
+    const screen = await initiatorScreen(BEFORE_EXPIRY);
+
+    for (const code of ["cooldown", "cap-reached", "already-claimed"] as const) {
+      const markup = renderWith(screen, code);
+      expect(markup).toContain(`data-resend-refusal="${code}"`);
+      expect(markup).toContain(SENTENCE(code));
+      // Above the invitation panel: the alert is drawn before the section in document order.
+      expect(markup.indexOf("data-resend-refusal")).toBeLessThan(
+        markup.indexOf("data-invite-state"),
+      );
+    }
   });
 });

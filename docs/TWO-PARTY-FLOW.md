@@ -14,6 +14,7 @@ at the instant both have submitted.
 | `/assessment/new`                            | POST   | create an Instance (one transaction), then 303 to the screen              |
 | `/assessment/instances/[instanceId]`         | GET    | the one screen both parties share — answer, waiting, or report            |
 | `/assessment/instances/[instanceId]/answers` | POST   | one party's whole sheet, or **409** when the answers are frozen           |
+| `/assessment/instances/[instanceId]/invite`  | POST   | reissue an unclaimed invitation: new token, old link dead (**#275**)      |
 | `/invite/[token]`                            | GET    | what the invitation says; **claims nothing**                              |
 | `/invite/[token]/claim`                      | POST   | spend the single-use invitation, bind the Counterparty, 303 to the screen |
 
@@ -44,6 +45,20 @@ Both seats ask the same function — the Recipient's page maps `unclaimed` to it
 `claimable` — so the two screens cannot disagree about whether a link still works. The Initiator's
 panel draws all three, names the deadline (`Nov 6, 2026`), and withholds the URL once the state is
 `expired`, because a link the claim path refuses is not one to offer for copying.
+
+**Re-invite is revoke-and-replace** (#275, `docs/specs/flow-reinvite.md`). While an invitation is
+unclaimed — expired or not — the Initiator's panel offers one action, "send a new invitation", with
+the address pre-filled and optionally corrected. It mints a **new** token and overwrites
+`token_hash`, `expires_at` (`now + 7 days`) and `email` in one transaction, so the previous link
+stops naming an invitation and the Recipient's page answers `unknown` for it — not `expired`, which
+would claim the link exists and ran out. Two guards live inside that transaction, next to the write
+they protect (`lib/flow/resend.ts`): a **24 h cooldown** per instance and a **lifetime cap of 3**,
+refused as `cooldown` and `cap-reached`; `already-claimed` and `instance-complete` cover the states
+where there is nothing left to send. `0010_invite_resend.sql` adds the two columns those rules need
+(`resent_at`, `resent_count`) and nothing else — one live token per relationship stays structural
+(the PK allows one row, `UNIQUE(token_hash)` forbids a repeat hash, and the reissue is an `UPDATE`).
+No new email: a re-invite **is** an invitation, so it reuses the `invite` sender and the existing
+`sent|unset|failed` notice.
 
 **The copy is `INSERT … SELECT`.** Creating an Instance copies the Template's `item` rows into rows
 owned by the instance record (#145 already made a record own its items). Nothing joins an instance's
