@@ -27,7 +27,7 @@ landmarks (6)
   main           1
   navigation     3
 
-links (15 unique, 31 total)
+links (16 unique, 32 total)
   #                                                    1
   /                                                    2
   /#questions                                          1
@@ -43,10 +43,11 @@ links (15 unique, 31 total)
   /news/summer-quiz-championship-announcement          2
   /settings                                            1
   /support                                             1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 1
 
 counts
-  elements  543
+  elements  545
   images    1
   buttons   17
   inputs    2
-  classes   220 (sha 2cbb12fb0955)
+  classes   225 (sha 2b9ec31bb260)
