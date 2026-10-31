@@ -81,8 +81,17 @@ function isActive(pathname: string, path: string): boolean {
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
-export interface NavRowProps {
-  href: string;
+/**
+ * Where a row goes, or what it does — exactly one of the two (issue #272).
+ *
+ * A row that would have been a link with nothing behind it is not a link: sign-out revokes a
+ * session, so it is a control. The union is what stops a caller supplying both, or neither.
+ */
+type NavRowTarget =
+  | { href: string; onSelect?: undefined }
+  | { onSelect: () => void; href?: undefined };
+
+export type NavRowProps = {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
@@ -90,49 +99,56 @@ export interface NavRowProps {
   onNavigate: () => void;
   /** Flagged off: draw nothing (issue #175). See `NavRenderProps.hidden`. */
   hidden?: boolean;
-}
+} & NavRowTarget;
 
 /**
- * One row of the rail. Exported for the one link the sidebar owns itself — sign-out, which
- * is an account action on both brands rather than a destination in either menu — so that row
- * keeps exactly the markup it had before this module existed.
+ * One row of the rail. Exported for the one row the sidebar owns itself — sign-out, which is an
+ * account action on both brands rather than a destination in either menu — so that row keeps
+ * exactly the markup it had before this module existed.
+ *
+ * **An action row is a `<button>`, not a link with an empty `href` (issue #272).** The sign-out
+ * row carried a bare hash: it rendered, took focus, announced as a link and did nothing, which is
+ * worse than an absent row because it says the session ended when it did not. `onSelect` is
+ * that row; every destination row is still a `Link`, class for class, so the menus this module
+ * draws are byte-for-byte what they were.
  */
-export function NavRow({ href, icon, label, active, collapsed, onNavigate, hidden }: NavRowProps) {
+export function NavRow(props: NavRowProps) {
+  const { icon, label, active, collapsed, onNavigate, hidden } = props;
   if (hidden) return null;
-  if (collapsed) {
-    return (
-      <div className="relative group flex justify-center items-center">
-        <Link
-          href={href}
-          onClick={onNavigate}
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
-            active
-              ? "bg-nav-active text-action-foreground"
-              : "hover:bg-accent hover:text-accent-foreground",
-          )}
-        >
-          {icon}
-        </Link>
-      </div>
-    );
-  }
 
-  return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      className={cn(
+  const tone = active
+    ? "bg-nav-active text-action-foreground"
+    : "hover:bg-accent hover:text-accent-foreground";
+
+  const className = collapsed
+    ? cn("flex h-10 w-10 items-center justify-center rounded-md transition-colors", tone)
+    : cn(
         "flex items-center gap-3 rounded-md px-3 py-2 xl:py-2.5 text-sm font-medium transition-colors",
-        active
-          ? "bg-nav-active text-action-foreground"
-          : "hover:bg-accent hover:text-accent-foreground",
-      )}
-    >
+        tone,
+      );
+
+  const content = collapsed ? (
+    icon
+  ) : (
+    <>
       <span>{icon}</span>
       <span>{label}</span>
-    </Link>
+    </>
   );
+
+  const row =
+    props.onSelect === undefined ? (
+      <Link href={props.href} onClick={onNavigate} className={className}>
+        {content}
+      </Link>
+    ) : (
+      <button type="button" onClick={props.onSelect} className={className}>
+        {content}
+      </button>
+    );
+
+  if (!collapsed) return row;
+  return <div className="relative group flex justify-center items-center">{row}</div>;
 }
 
 /**

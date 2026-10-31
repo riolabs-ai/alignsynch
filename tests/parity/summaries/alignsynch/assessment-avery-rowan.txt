@@ -19,8 +19,7 @@ landmarks (6)
   main           1
   navigation     2
 
-links (7 unique, 8 total)
-  #                                                    1
+links (6 unique, 7 total)
   /                                                    2
   /#questions                                          1
   /#templates                                          1
@@ -31,6 +30,6 @@ links (7 unique, 8 total)
 counts
   elements  761
   images    1
-  buttons   8
+  buttons   9
   inputs    1
   classes   197 (sha 554c6b23bb44)

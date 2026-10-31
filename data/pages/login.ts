@@ -59,7 +59,6 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "password", label: "Password" },
           { id: "password-placeholder", label: "Enter your password" },
           { id: "remember", label: "Remember me" },
-          { id: "forgot", label: "Forgot password?" },
           { id: "submit", label: "Sign In" },
           { id: "pending", label: "Signing in…" },
           { id: "error-invalid-credentials", label: "Invalid email or password" },
