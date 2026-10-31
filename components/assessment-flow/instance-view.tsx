@@ -49,12 +49,15 @@
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
 import { InviteLink } from "@/components/assessment-flow/invite-link";
+import { ReinviteForm } from "@/components/assessment-flow/reinvite-form";
 import { MODE_LABELS } from "@/content/assessment";
 import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { answersPath } from "@/lib/flow/paths";
+import { answersPath, reinvitePath } from "@/lib/flow/paths";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
+import type { ResendRefusal } from "@/lib/flow/resend";
+import { RESEND_LIFETIME_CAP } from "@/lib/flow/tokens";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { relationshipStage, stageCopyId } from "@/lib/flow/stage";
 
@@ -106,12 +109,20 @@ export function AssessmentInstanceView({
   copy,
   problem,
   inviteNotice,
+  resendRefusal,
 }: {
   screen: FlowScreen;
   copy: PageCopy;
   problem?: ProblemCode;
   /** `sent` / `unset` / `failed` from the creation redirect; absent on a later visit. */
   inviteNotice?: InviteNotice;
+  /**
+   * The re-invite's refusal code, from `?resend=` (#275). Rendered as the fixture's sentence for
+   * that code, above the panels and never inside them: `instance-complete` arrives on an instance
+   * whose screen is the report, where the invitation panel is not drawn at all, so a sentence
+   * placed inside the panel would be a refusal nobody could read.
+   */
+  resendRefusal?: ResendRefusal;
 }) {
   const waiting = sectionOf(copy, "waiting");
   const reportBand = sectionOf(copy, "report");
@@ -120,7 +131,20 @@ export function AssessmentInstanceView({
   const viewerBand = sectionOf(copy, "viewer");
   const stageBand = sectionOf(copy, "stage");
   const problemLabel = problem === undefined ? undefined : itemLabel(problems, problem);
+  const resendLabel =
+    resendRefusal === undefined
+      ? undefined
+      : fillLabel(itemLabel(inviteBand, resendRefusal), {
+          counterparty: screen.invite?.counterpartyName ?? screen.counterpartyName ?? "",
+        });
   const answered = screen.aspects.some((aspect) => aspect.own !== null);
+  // The re-invite is the Initiator's action, and only while the invitation is unclaimed: `claimed`
+  // is terminal (the seat is taken), so the panel says so and offers nothing. The store is the
+  // authority — this only decides what is drawn.
+  const canReinvite =
+    screen.invite !== null &&
+    screen.invite.state !== "claimed" &&
+    screen.viewer.role === "initiator";
 
   const names = screen.waiting.map((role) =>
     role === "initiator" ? screen.initiatorName : (screen.counterpartyName ?? ""),
@@ -177,6 +201,16 @@ export function AssessmentInstanceView({
         </p>
       )}
 
+      {resendLabel === undefined ? null : (
+        <p
+          role="alert"
+          data-resend-refusal={resendRefusal}
+          className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+        >
+          {resendLabel}
+        </p>
+      )}
+
       {screen.report === null ? (
         <>
           {screen.invite === null ? null : (
@@ -217,6 +251,28 @@ export function AssessmentInstanceView({
                   />
                 </p>
               )}
+
+              {/* #275 — the budget, drawn before the button rather than after a refusal: three
+                  is the lifetime cap, and a reader who can see "2 of 3" is not surprised by it. */}
+              {screen.invite.resentCount === 0 ? null : (
+                <p className="mt-2 text-xs" data-resend-count={screen.invite.resentCount}>
+                  {fillLabel(itemLabel(inviteBand, "resend-count"), {
+                    count: screen.invite.resentCount,
+                    cap: RESEND_LIFETIME_CAP,
+                  })}
+                </p>
+              )}
+
+              {/* The one action this panel offers (#275). It reissues the token, so the old link
+                  dies; `resend-note` says so before the click, not after. */}
+              {canReinvite ? (
+                <ReinviteForm
+                  copy={copy}
+                  action={reinvitePath(screen.instanceRecordId)}
+                  email={screen.invite.email}
+                  counterpartyName={screen.invite.counterpartyName}
+                />
+              ) : null}
             </section>
           )}
 
