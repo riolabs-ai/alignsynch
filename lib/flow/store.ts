@@ -54,6 +54,9 @@
  */
 import type { Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
 import { DEFAULT_ALIGNMENT_SETTING, zAssessmentMode } from "@/content/assessment";
+import { entitlementForAccount } from "@/lib/billing";
+import { instanceGateRefusal } from "@/lib/billing/entitlements";
+import { activeInstanceCount } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import {
   assessmentTemplateFromRows,
@@ -86,12 +89,21 @@ import type { PoolClient } from "pg";
 
 /** A refusal a caller must surface. Never thrown for "not found" — that is `undefined`. */
 export class FlowError extends Error {
-  constructor(
-    readonly code: FlowErrorCode,
-    message: string,
-  ) {
+  /**
+   * The refusal's code — the route answers `{error: code}`, and tests assert on it.
+   *
+   * Declared and assigned rather than written as a constructor parameter property: Node's
+   * strip-only TypeScript loader cannot compile that syntax, and `scripts/billing-smoke.mjs`
+   * imports this module to drive the create path against the real database (#289). A parameter
+   * property here would make the store unloadable from a script, which is a strange way to lose
+   * the only live proof of the gate.
+   */
+  readonly code: FlowErrorCode;
+
+  constructor(code: FlowErrorCode, message: string) {
     super(message);
     this.name = "FlowError";
+    this.code = code;
   }
 }
 
@@ -100,7 +112,12 @@ export type FlowErrorCode =
   | "unknown-template"
   | "template-not-published"
   | "template-has-no-aspects"
-  | "record-is-an-instance";
+  | "record-is-an-instance"
+  // The billing gate's two refusals (#289). They are flow refusals because this store is where an
+  // instance comes into being, and the route that calls it already answers `{error, message}` for
+  // every `FlowError` — a second error type would be a second branch that could be forgotten.
+  | "instance-limit"
+  | "mode-not-entitled";
 
 /* ------------------------------------------------------------------ *\
  * Create
@@ -227,6 +244,25 @@ export async function createInstanceFromTemplate(
 
   const now = input.now ?? new Date();
   const initiatorUserId = normalizedUserId(input.viewerUserId);
+
+  // THE BILLING GATE (#289). Before the transaction, because a refusal must cost nothing: no
+  // record, no items, no party row, no invitation. Both questions are asked in one place — the
+  // active count and the mode — because a caller that enforced one and forgot the other is the
+  // exact defect `instanceGateRefusal` exists to make impossible.
+  //
+  // A signed-out create is not gated: there is no account to hold a plan, and the anonymous flow
+  // is the pre-#213 behaviour the product still supports. That is also why the gate cannot be
+  // escaped by logging out into a paying account's limit — the count is per `party.user_id`, and
+  // an unbound instance belongs to nobody.
+  if (initiatorUserId !== null) {
+    const entitlement = await entitlementForAccount(initiatorUserId);
+    const refusal = instanceGateRefusal({
+      entitlement,
+      activeInstances: await activeInstanceCount(initiatorUserId),
+      mode: mode.data,
+    });
+    if (refusal !== null) throw new FlowError(refusal.code, refusal.message);
+  }
   // #258 — the address the unlock notice will reach the Initiator at, or NULL when nobody signed
   // in to create this instance. Written on the invitation row, in the same transaction that
   // writes the Initiator's seat, for the same reason `user_id` is: an instance must not exist

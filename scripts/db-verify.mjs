@@ -33,10 +33,16 @@
  *       authors — one line per seeded instance, so which they are never has to be guessed
  *       from a DEFAULT. It is a lens over the Gaps and not a Gap, so this check adds no
  *       `%gap%` name (V2 keeps that rule) and no stored verdict.
- *   V13 the re-invite's history (#275): `resent_at` and `resent_count` agree about whether the
+ *   V13 the plans (#289): `billing_plan` holds exactly the rows `data/billing-plans.ts` authors —
+ *       same tiers, same intervals, same cents, same names, same `active` flag — and the table
+ *       holds no row the fixture stopped authoring. This is what makes "the page and the database
+ *       are one list" a check rather than a claim: the rows are seeded from the fixture, a
+ *       surface renders the rows, and a hand-edited price fails here by name instead of becoming
+ *       a charge nobody authored.
+ *   V14 the re-invite's history (#275): `resent_at` and `resent_count` agree about whether the
  *       invitation was ever re-sent, and a reissue never predates the invitation it reissues —
  *       the two columns are one fact, and a row where they disagree cannot be measured against
- *       the cooldown or the cap.
+ *       the cooldown or the cap. (Numbered after #289's V13, which landed first.)
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -237,18 +243,19 @@ async function main() {
       if (invite !== undefined && !invite.sane_window) {
         fail("V8", `instance "${listed.slug}": the invitation expires before it was created`);
       }
-      // V13 — the re-invite's two columns (#275). They are one fact recorded twice — "a re-invite
+      // V14 — the re-invite's two columns (#275). They are one fact recorded twice — "a re-invite
       // happened" — so a row where they disagree is drift no screen can draw honestly: a count
       // with no instant cannot be measured against the cooldown, and an instant with a zero count
-      // says the token was reissued without ever counting it against the cap.
+      // says the token was reissued without ever counting it against the cap. V13 is #289's plan
+      // check, which landed while this card was open.
       if (invite !== undefined && !invite.resent_consistent) {
         fail(
-          "V13",
+          "V14",
           `instance "${listed.slug}": instance_invite.resent_at and resent_count disagree about whether the invitation was re-sent (resent_at null=${invite.never_resent}, count=${invite.resent_count})`,
         );
       }
       if (invite !== undefined && !invite.resent_after_creation) {
-        fail("V13", `instance "${listed.slug}": the invitation was re-sent before it was created`);
+        fail("V14", `instance "${listed.slug}": the invitation was re-sent before it was created`);
       }
 
       const { rows: answerCounts } = await client.query(
@@ -499,6 +506,74 @@ async function main() {
       ? await client.query("SELECT count(*)::int AS n FROM party WHERE unlock_seen_at IS NOT NULL")
       : [{ n: 0 }];
 
+    /* V13 — the plans (#289).
+     *
+     * Equality in both directions: every fixture row is present with the fixture's cents, name
+     * and `active` flag, and the table holds no row the fixture stopped authoring (an old price
+     * sitting there is exactly the drift a second list would have caused, caught one layer down).
+     */
+    const { billingPlanRows, billingPlanProblems } = await import("@/data/billing-plans.ts");
+    for (const problem of billingPlanProblems()) fail("V13", problem);
+
+    let billingPlansChecked = 0;
+    let liveSubscriptions = 0;
+    const { rows: billingTable } = await client.query(
+      "SELECT to_regclass('public.billing_plan') IS NOT NULL AS present",
+    );
+    if (billingTable[0]?.present !== true) {
+      fail("V13", "public.billing_plan does not exist — run `pnpm db:migrate`");
+    } else {
+      const { rows: planRows } = await client.query(
+        "SELECT id, interval, name, price_cents, active FROM billing_plan ORDER BY id, interval",
+      );
+      const byKey = new Map(planRows.map((row) => [`${row.id}/${row.interval}`, row]));
+      for (const fixture of billingPlanRows()) {
+        const key = `${fixture.id}/${fixture.interval}`;
+        const row = byKey.get(key);
+        billingPlansChecked += 1;
+        if (row === undefined) {
+          fail(
+            "V13",
+            `billing_plan has no row for ${key} — the fixture offers it and a surface may render it (run \`pnpm db:seed\`)`,
+          );
+          continue;
+        }
+        if (row.price_cents !== fixture.priceCents) {
+          fail(
+            "V13",
+            `billing_plan ${key}: ${row.price_cents} cents in the database, ${fixture.priceCents} cents in data/billing-plans.ts — the page and a checkout would disagree`,
+          );
+        }
+        if (row.name !== fixture.name) {
+          fail(
+            "V13",
+            `billing_plan ${key}: named "${row.name}" in the database and "${fixture.name}" in the fixture`,
+          );
+        }
+        if (row.active !== fixture.active) {
+          fail(
+            "V13",
+            `billing_plan ${key}: active=${row.active} in the database, ${fixture.active} in the fixture`,
+          );
+        }
+      }
+      const fixtureKeys = new Set(billingPlanRows().map((row) => `${row.id}/${row.interval}`));
+      for (const row of planRows) {
+        if (!fixtureKeys.has(`${row.id}/${row.interval}`)) {
+          fail(
+            "V13",
+            `billing_plan holds ${row.id}/${row.interval}, which data/billing-plans.ts no longer authors — a second price list`,
+          );
+        }
+      }
+
+      const { rows: live } = await client.query(
+        `SELECT count(*)::int AS n FROM billing_subscription
+          WHERE status IN ('active', 'trialing', 'past_due')`,
+      );
+      liveSubscriptions = live[0]?.n ?? 0;
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -514,7 +589,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
