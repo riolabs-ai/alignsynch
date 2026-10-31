@@ -1,3 +1,4 @@
+import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimInvite } from "@/lib/flow/store";
 import { instancePath, invitePath } from "@/lib/flow/paths";
 import {
@@ -12,7 +13,7 @@ import { NextResponse } from "next/server";
 /**
  * `POST /invite/[token]/claim` — spend the invitation, exactly once (#146, #202).
  *
- * Three things are read off the request before the store is asked anything, and each one
+ * Four things are read off the request before the store is asked anything, and each one
  * exists because the claim is the only write that binds a browser to a party:
  *
  *   the token          from the path, never from the body
@@ -21,6 +22,12 @@ import { NextResponse } from "next/server";
  *                      invitation — that was the defect QA found: an Initiator following
  *                      their own link spent the token and their session silently became the
  *                      Counterparty, so one person filled both columns
+ *   the session        `currentUserIfConfigured()` — the account claiming, resolved from the
+ *                      request's own cookies and written on the Counterparty's party row, so
+ *                      the claimed instance turns up in the claimer's `/assessment/instances`
+ *                      list (#213 follow-up). Nothing posted by the form can name it. Signed
+ *                      out, this is `null` and the claim is unchanged: a link-bound browser
+ *                      with no account
  *   the confirmation   `confirm`, the counterparty's name: the checkbox the page renders
  *                      beside "You are joining as Rowan, the Counterparty"
  *
@@ -44,10 +51,12 @@ export async function POST(
 
   const form = await request.formData().catch(() => undefined);
   const posted = form?.get("confirm");
+  const viewer = await currentUserIfConfigured();
 
   const result = await claimInvite({
     token,
     viewerTokens: partyTokensFrom(jar),
+    viewerUserId: viewer?.userId ?? null,
     confirm: typeof posted === "string" ? posted : null,
   });
 
