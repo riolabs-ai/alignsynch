@@ -45,6 +45,7 @@ import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { Client } from "pg";
+import { syncBillingPlans } from "./billing-plans.mjs";
 import { loadEnv, repoRoot, requireVariable, writeDatabaseUrl } from "./load-env.mjs";
 
 /** The auth proof's throwaway account (issue #145 comment, confirmed by Jaden). */
@@ -526,6 +527,7 @@ const COUNT_SQL = {
   assessment_instance: "SELECT count(*)::int AS n FROM assessment_instance",
   party: "SELECT count(*)::int AS n FROM party",
   opinion: "SELECT count(*)::int AS n FROM opinion",
+  billing_plan: "SELECT count(*)::int AS n FROM billing_plan",
 };
 
 async function counts(client) {
@@ -547,6 +549,12 @@ async function main() {
   const { assessments, assessmentInstances } = demoDataset
     ? { assessments: demoDataset.templates, assessmentInstances: demoDataset.instances }
     : await import("../data/assessments.ts");
+
+  // #289 — the billing plan rows come from the same fixture a pricing surface renders, so the
+  // table and the page cannot hold two prices. `checkedPlanRows()` throws on a fixture that
+  // contradicts itself before any SQL runs.
+  const { billingPlanRows } = await import("../data/billing-plans.ts");
+  const billingFixtures = billingPlanRows();
 
   const expected = {
     record: assessments.length + assessmentInstances.length,
@@ -570,6 +578,8 @@ async function main() {
         total + instance.parties.reduce((count, party) => count + party.opinions.length, 0),
       0,
     ),
+    // #289 — one row per tier × interval, from `data/billing-plans.ts`.
+    billing_plan: billingFixtures.length,
   };
 
   const client = new Client({ connectionString: writeDatabaseUrl(), application_name: "db:seed" });
@@ -621,6 +631,10 @@ async function main() {
 
     for (const template of assessments) await seedTemplate(client, template);
     for (const instance of assessmentInstances) await seedInstance(client, instance);
+    // #289 — the plan rows, from the same fixture a pricing surface renders. Seeded here and not
+    // in the migration: a migration is DDL and cannot import the fixture, and a price typed into
+    // SQL would be a second copy of the number the page renders.
+    await syncBillingPlans(client, billingFixtures);
 
     // "Only seeded rows": an assessment record this seed does not author is drift, and the
     // honest move is to name it rather than to delete a row someone may have meant.
