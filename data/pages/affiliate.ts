@@ -212,7 +212,7 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "story-platform",
           label:
-            "Our platform combines cutting-edge technology with user-friendly design to make quiz creation and participation accessible to everyone. With AI-powered tools and a vibrant community, we're redefining how knowledge is shared and tested online.",
+            "Our platform combines cutting-edge technology with user-friendly design to make quiz creation and participation accessible to everyone. With a template library to start from and a vibrant community, we're redefining how knowledge is shared and tested online.",
         },
         { id: "our-mission", label: "Our Mission" },
         {
