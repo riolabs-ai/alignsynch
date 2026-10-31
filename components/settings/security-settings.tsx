@@ -14,10 +14,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { AlertTriangle, Loader2, LogOut, Shield } from "lucide-react";
+import { AlertTriangle, Loader2, LogOut, Mail, Shield } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
+import { brand } from "@/data/brand";
 import { media } from "@/data/media";
 
 export function SecuritySettings() {
@@ -192,11 +193,17 @@ export function SecuritySettings() {
               <div>
                 <p className="font-medium">Delete Account</p>
                 <p className="text-sm text-muted-foreground">
-                  Permanently delete your account and all associated data.
+                  Account deletion isn&apos;t available in-app yet. To delete your account, email{" "}
+                  {brand.supportEmail} and we&apos;ll remove it.
                 </p>
               </div>
             </div>
-            <Button variant="destructive">Delete Account</Button>
+            <Button variant="outline" asChild>
+              <a href={`mailto:${brand.supportEmail}`}>
+                <Mail className="mr-2 h-4 w-4" />
+                Email Support
+              </a>
+            </Button>
           </div>
         </CardContent>
       </Card>
