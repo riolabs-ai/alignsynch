@@ -90,11 +90,11 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Ready to create your first quiz? Click on the 'Create Quiz' button in the top navigation bar or on your dashboard. You'll be presented with two options: create from scratch or use our AI-powered quiz generator.",
+        text: "Ready to create your first quiz? Click on the 'Create Quiz' button in the top navigation bar or on your dashboard. You'll be presented with two options: write the quiz from scratch in the editor, or start from a template with the quiz generator.",
       },
       {
         type: "paragraph",
-        text: "For beginners, we recommend starting with the AI generator. Simply enter a topic, select the difficulty level and number of questions, and our system will generate a complete quiz for you. You can then edit and customize it to your liking.",
+        text: "For beginners, we recommend starting with the generator. Enter a topic, pick a difficulty and choose how many drafts you want, and it builds them from the built-in template library, retitling each one with your topic. You can then edit the questions and customize the draft to your liking.",
       },
       {
         type: "note",
@@ -710,7 +710,7 @@ export const articlesData: readonly KbArticle[] = [
           "Select from your existing quizzes",
           `Import quizzes from the ${brand.name} library (premium feature)`,
           "Invite other creators to contribute quizzes (collaboration feature)",
-          "Use AI-generated quizzes based on your specifications",
+          "Start a quiz from a draft the generator built out of a template",
         ],
         ordered: false,
       },
