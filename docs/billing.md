@@ -1,11 +1,11 @@
-# Billing — the port, the two drivers, and the gate (#289, cards 1 and 2 of 3)
+# Billing — the port, the two drivers, the gate and the pricing CTA (#289, cards 1–3)
 
 Billing is an **integration of our own**, not an auth plugin: Neon's managed Better Auth exposes a
 fixed plugin subset and hosts no payment provider, so the app owns the tables, the checkout entry
 point, the webhook receiver and the entitlement read.
 
-This document describes what cards 1 and 2 shipped — the model, the offline adapter, the hosted
-test-mode adapter with its webhook, and the gate — and where card 3 attaches.
+This document describes what #289 shipped — the model, the offline adapter, the hosted test-mode
+adapter with its webhook, the gate, and the pricing page's buttons — and what is deliberately absent.
 
 ## The shape
 
@@ -18,9 +18,12 @@ lib/billing/adapters/stripe.ts  hosted, test mode: Checkout Session + signed web
 lib/billing/entitlements.ts     plan → what the server allows; the refusal sentences
 lib/billing/index.ts            the composition root: which adapter answers (BILLING_PROVIDER)
 lib/db/billing.ts              the SQL: plans, one live subscription, webhook idempotency, counts
+lib/billing/catalogue.ts       the plan grid: billing_plan rows joined to the fixture's words
 data/billing-plans.ts           the four tiers — one authored list
 db/migrations/0009_billing.sql  billing_plan, billing_subscription, billing_event
+app/api/billing/checkout/route.ts POST only: a card's purchase, through the port
 app/api/billing/webhook/route.ts  POST only: verify, map, apply once
+components/pricing/plan-checkout-button.tsx  the button that follows the route's answer
 scripts/billing-smoke.mjs       the live proof, keyless (`pnpm billing:smoke`)
 scripts/stripe-smoke.mjs        the live proof, test mode (`pnpm billing:stripe:smoke`)
 ```
@@ -81,13 +84,34 @@ prints the `billing_event` count, the subscription row and the entitlement befor
 wrote. Card payments in test mode move no money; the card is `4242 4242 4242 4242`, any future date,
 any CVC.
 
-## Where card 3 attaches
+## The pricing page — one list, and a real checkout (card 3)
 
-- **Card 3 (the pricing CTA).** `lib/db/billing.ts::readBillingPlans()` returns the rows; a server
-  component passes them down as props (`import type` across the client boundary — a client module
-  that value-imports `lib/db/**` fails `data:check` E34 and 500s at request time). The page's
-  `PLANS_DATA` then goes away, and `tests/billing-plans.test.ts` switches from reconciling the two
-  lists to asserting no price literal remains in `components/pricing/**`.
+`/pricing` is request-time (`export const dynamic = "force-dynamic"`), because two of its facts
+belong to the request: which rows `billing_plan` holds, and which plan the viewer is entitled to.
+
+- **Rows.** `lib/billing/catalogue.ts::readPricingPlanRows()` reads `billing_plan` through
+  `lib/db/billing.ts` when `DATABASE_URL` is set, and answers the authored `billingPlanRows()` when
+  it is not (the gate, a build, a laptop with no `neon env pull`) — the same list `db:seed` writes
+  and V13 compares back. A read that throws is logged and degrades the same way.
+- **Cards.** `pricingPlans()` joins those rows to `data/billing-plans.ts`: the fixture owns the
+  words, the row owns the money and whether it is live. `components/pricing/pricing-plans.tsx`
+  carries no price, no bullet and no CTA label of its own, and `tests/billing-plans.test.ts` fails
+  the build if a price literal reappears under `components/pricing/`.
+- **No row, no button.** `active = false` — or no row at all — at an interval means that card
+  prints the not-available line instead of a button at that interval, so a retired `basic/year`
+  still sells `basic/month`. A `source: "fixture"` render sells nothing at all, because a tree with
+  no database cannot write a subscription.
+- **A click.** `POST /api/billing/checkout` takes `{ planId, interval }`, resolves the account from
+  the session (`currentUserIfConfigured()` — never the body), and calls `startCheckout()` on
+  whichever adapter `BILLING_PROVIDER` selects. It answers `{ url, provider, completed }` (200),
+  `{ signInUrl }` (401), a `BillingRefusal` sentence (400, or 503 when the adapter has no
+  credentials) or `billing-unavailable` (502). The mock completes inline and the browser reloads
+  `/pricing`; the hosted adapter sends it to its own page. `tests/pricing-catalogue.test.ts` drives
+  the projection and the body parser with no Postgres and no browser.
+- **Current plan.** The page reads the entitlement on the server and marks the entitled card; a
+  query string decides nothing, so a refresh after a checkout shows the plan that was bought.
+- **Test mode is labelled.** `billingTestMode()` is true when the hosted adapter is selected (it
+  refuses anything but a test key), and the band prints one line saying no card is charged.
 
 ## The hosted adapter — test mode, and only test mode
 
@@ -160,7 +184,9 @@ in who writes the row.
 The release candidate runs `BILLING_PROVIDER=stripe` on Preview and Production with test keys, so a
 completed checkout in production creates a **test-mode** subscription and no money moves. Any surface
 that could be read as "you are being billed" needs the smallest honest marker — one line, test mode,
-no charge. That surface is `components/pricing/**`, which card 3 owns; this card does not touch it.
+no charge. That surface is `components/pricing/**`: card 3 of #289 has the band print the
+`test-mode` line from `data/pages/pricing.ts` whenever `billingTestMode()` is true, and the button
+next to it is a real checkout on a test key.
 
 ## Deliberately absent
 

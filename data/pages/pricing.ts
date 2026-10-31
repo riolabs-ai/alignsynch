@@ -13,12 +13,17 @@
  *    typed here as well would be a second source of truth for a metric.
  *  - `no-results` carries `{query}`; the view fills it from the live search box.
  *
- * `price-note` is the line that makes a published price honest before billing
- * exists. Jaden ruled on 2026-10-31 that the four tiers and every price stay
- * (they become `billing_plan` rows in #289), so the page cannot stop showing a
- * number — it has to say what the number is: the intended rate, with no way to
- * buy it today. The plan rows' CTAs point at `/register` and at the support
- * mailbox for the same reason; there is no checkout to point them at yet.
+ * `price-note` is the line that makes a published price honest now that billing is open. Jaden
+ * ruled on 2026-10-31 that the four tiers and every price stay (they are `billing_plan` rows in
+ * #289), so the page cannot stop showing a number — it has to say what the number is: US dollars,
+ * monthly or yearly, through a card checkout, with the Free plan working today. `test-mode` is
+ * the second half of that honesty: the release candidate runs the hosted adapter on test keys, so
+ * the band says on one line that nothing is charged. Both are rendered by the plan band from this
+ * fixture, and neither is a claim the code does not keep.
+ *
+ * The plan rows themselves are not here on purpose: their words live in `data/billing-plans.ts`
+ * (the plan fixture) and their figures in `billing_plan`, so the grid reads one list rather than
+ * a second copy under `data/pages/`.
  *
  * `heading` is the route's page heading and the plan band renders it as its `h1`:
  * on this route the first band *is* the hero, so the page line and the section
@@ -47,9 +52,17 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "price-note",
           label:
-            "These are the intended prices and plan contents — billing is not open yet, so nothing on this page can be purchased today.",
+            "Prices are in US dollars. The Free plan works today; the paid plans are billed monthly or yearly through a card checkout.",
+        },
+        {
+          id: "test-mode",
+          label: "Test mode: the card checkout runs on test keys, so no card is charged.",
         },
         { id: "most-popular", label: "Recommended" },
+        { id: "current-plan", label: "Your current plan" },
+        { id: "not-available", label: "Not available to buy right now." },
+        { id: "checkout-busy", label: "Opening checkout…" },
+        { id: "checkout-error", label: "Checkout did not start — try again" },
         { id: "whats-included", label: "WHAT'S INCLUDED:" },
         { id: "limitations", label: "LIMITATIONS:" },
         { id: "price-per-month", label: "mo" },
@@ -79,10 +92,10 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "cta",
       heading: "Ready to create amazing quizzes?",
-      body: "The free plan works today. The paid plans open when billing lands, and the prices above are what they will cost.",
+      body: "The free plan works today. A paid plan starts as soon as you choose one above — card checkout, monthly or yearly.",
       items: [
         { id: "perk-free", label: "Free plan, usable today" },
-        { id: "perk-billing", label: "Paid plans open when billing lands" },
+        { id: "perk-billing", label: "Paid plans are billed monthly or yearly" },
         { id: "get-started", label: "Get Started Free" },
         { id: "view-demo", label: "View Demo" },
       ],

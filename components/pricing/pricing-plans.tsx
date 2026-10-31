@@ -1,5 +1,6 @@
 "use client";
 
+import { PlanCheckoutButton } from "@/components/pricing/plan-checkout-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,226 +14,174 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatCurrencyAmount, formatPercentValue } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";
-import { formatPercentValue } from "@/content/metrics";
 import { brand } from "@/data/brand";
+import type { BillingInterval } from "@/data/billing-plans";
 import { metric } from "@/data/metrics";
+import type { PricingPlanView } from "@/lib/billing/catalogue";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Check, HelpCircle } from "lucide-react";
 import Link from "next/link";
-import { type JSX, memo, useCallback, useMemo, useState } from "react";
-
-// Type definitions
-type BillingCycle = "monthly" | "yearly";
-
-interface PlanPrice {
-  monthly: number;
-  yearly: number;
-}
-
-interface PlanCta {
-  label: string;
-  /** A route or a `mailto:` — every plan CTA has a destination, because a dead button is a bug. */
-  href: string;
-}
-
-interface Plan {
-  name: string;
-  description: string;
-  price: PlanPrice;
-  features: string[];
-  limitations: string[];
-  cta: PlanCta;
-  popular: boolean;
-}
-
-interface FeatureListProps {
-  features: string[];
-}
-
-interface LimitationsListProps {
-  limitations: string[];
-  copy: PageCopySection;
-}
-
-interface PricingCardProps {
-  plan: Plan;
-  billingCycle: BillingCycle;
-  copy: PageCopySection;
-}
-
-interface CardContentData {
-  cardClassName: string;
-  buttonClassName: string;
-  priceDisplay: string;
-}
-
-interface LabelClasses {
-  monthly: string;
-  yearly: string;
-}
+import { type JSX, memo, useCallback, useState } from "react";
 
 /**
- * The four plans, as the page states them.
+ * The plan grid — four cards, rendered from `billing_plan` (#289, card 3 of 3).
  *
- * What a row may say is decided by what the tree does, not by what a pricing table
- * usually promises (Jaden, 2026-10-31). Every row below is either verifiable today —
- * an instance's mode is fixed at creation (`content/assessment.ts`), the report prints
- * one line per Gap (`components/assessment/assessment-report.tsx`), a party comes back
- * to their assessments at `/assessment/instances`, and the other party is invited by
- * link (`/invite/[token]`) — or it is one of the two facts #289's gate will enforce
- * (paid = unlimited active assessments + Advanced Mode), which is what the `price-note`
- * under the toggle declares the page to be describing.
+ * **This component owns no price, no bullet and no label for a tier.** Every card is a
+ * `PricingPlanView` the server built from `data/billing-plans.ts` (the words) and `billing_plan`
+ * (the money, and whether the row is live), which is what replaced the `PLANS_DATA` copy that
+ * used to live here. `formatCurrencyAmount` is the only thing that turns cents into a figure, and
+ * `tests/billing-plans.test.ts` fails the build if a price literal reappears under
+ * `components/pricing/`. What a row may *say* is still decided by what the tree does, not by what
+ * a pricing table usually promises (Jaden, 2026-10-31) — the bullets themselves are authored in
+ * the fixture, with the reasoning for each removal recorded there.
  *
- * Removed, and why: quiz-creation caps and AI quotas (nothing enforces a limit, and the
- * generator draws from `data/mock-quizzes`); ad-supported / ad-free (no ad code);
- * basic/advanced analytics (a fixture); support tiers (one mailbox, `brand.supportEmail`);
- * custom branding and quiz customization (the build-time brand, not a per-user setting);
- * team collaboration and seats (no organisation model); API access and embeds (neither
- * exists); SSO and "advanced security" (auth is Neon's managed Better Auth); CSV export
- * and integrations (no export path); and the Enterprise list — SLA, account manager,
- * custom reporting, custom integrations, onboarding — which are not offerings.
+ * **Sellability is per interval.** `billing_plan` keys on (tier, interval), so `basic/month` can
+ * be live while `basic/year` is retired: the card's button follows the toggle, and the interval
+ * whose row is inactive (or missing) prints the not-available line instead. That is the card's
+ * honesty rule — a button that cannot work must not render as if it does — enforced by data, not
+ * by a flag in this file.
  *
- * Basic and Pro carry the same rows. #289 gates paid plans as "unlimited active
- * assessments + Advanced Mode" and nothing else in the tree separates the two, so the
- * tier and its price stay (D1) and the rows do not invent a difference to justify one.
+ * **The account's own plan says so.** `current` comes from the server's entitlement read, never
+ * from a query string: after a successful checkout the page reloads, reads the subscription, and
+ * the card that was bought loses its button and gains the current-plan marker. Nothing in the
+ * browser decides which plan someone is on.
+ *
+ * **Test mode is labelled.** When the deployment sells through the hosted adapter's test mode the
+ * band says so on one line — the release candidate runs test keys in production, and a page that
+ * reads as "you are being billed" without saying this would be the one false claim left.
+ *
+ * The support address is built from `brand.supportEmail` at render time, so neither build pins
+ * the other brand's mailbox; the fixture stores the word `"support"` rather than an address.
  */
 const SUPPORT_MAILTO = `mailto:${brand.supportEmail}`;
 
-const PLANS_DATA: readonly Plan[] = [
-  {
-    name: "Free",
-    description: "For trying the assessment format",
-    price: {
-      monthly: 0,
-      yearly: 0,
-    },
-    features: [
-      "Basic Mode: Feel and Wish on every Aspect",
-      "The report, one line per Gap",
-      "Your assessments in one list",
-      "Invite the other party by link",
-    ],
-    limitations: ["One active assessment at a time", "Advanced Mode needs a paid plan"],
-    cta: { label: "Start free", href: "/register" },
-    popular: false,
-  },
-  {
-    name: "Basic",
-    description: "For a two-party practice",
-    price: {
-      monthly: 9.99,
-      yearly: 7.99,
-    },
-    features: [
-      "Unlimited active assessments",
-      "Basic Mode and Advanced Mode",
-      "The report, one line per Gap",
-      "Your assessments in one list",
-      "Invite the other party by link",
-    ],
-    limitations: [],
-    cta: { label: "Talk to us", href: SUPPORT_MAILTO },
-    popular: false,
-  },
-  {
-    name: "Pro",
-    description: "For a busier two-party practice",
-    price: {
-      monthly: 19.99,
-      yearly: 16.99,
-    },
-    features: [
-      "Unlimited active assessments",
-      "Basic Mode and Advanced Mode",
-      "The report, one line per Gap",
-      "Your assessments in one list",
-      "Invite the other party by link",
-    ],
-    limitations: [],
-    cta: { label: "Talk to us", href: SUPPORT_MAILTO },
-    popular: true,
-  },
-  {
-    name: "Enterprise",
-    description: "For organisations that want to agree terms first",
-    price: {
-      monthly: 49.99,
-      yearly: 39.99,
-    },
-    features: ["Everything in Pro", "Volume, procurement and terms, agreed by email"],
-    limitations: ["SSO, team management, custom reporting and integrations are not built"],
-    cta: { label: "Contact us", href: SUPPORT_MAILTO },
-    popular: false,
-  },
-] as const;
+/** The copy id for the "/mo" and "/mo, billed yearly" suffixes, per interval. */
+const PRICE_SUFFIX_ITEM: Readonly<Record<BillingInterval, string>> = {
+  month: "price-per-month",
+  year: "price-per-month-yearly",
+};
 
-// Memoized feature list component
+interface FeatureListProps {
+  features: readonly string[];
+}
+
+interface LimitationsListProps {
+  limitations: readonly string[];
+  copy: PageCopySection;
+}
+
+/** The features a card lists, one bullet each. */
 const FeatureList = memo<FeatureListProps>(({ features }) => {
-  return useMemo(
-    () => (
-      <ul className="space-y-3">
-        {features.map((feature: string) => (
-          <li key={feature} className="flex items-start">
-            <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-            <span className="text-sm">{feature}</span>
-          </li>
-        ))}
-      </ul>
-    ),
-    [features],
+  return (
+    <ul className="space-y-3">
+      {features.map((feature: string) => (
+        <li key={feature} className="flex items-start">
+          <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+          <span className="text-sm">{feature}</span>
+        </li>
+      ))}
+    </ul>
   );
 });
 
 FeatureList.displayName = "FeatureList";
 
-// Memoized limitations list component
+/** The limitations a card lists, when it has any. */
 const LimitationsList = memo<LimitationsListProps>(({ limitations, copy }) => {
   if (limitations.length === 0) return null;
 
-  return useMemo(
-    () => (
-      <div className="mt-6">
-        <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
-          {itemLabel(copy, "limitations")}
-        </h4>
-        <ul className="space-y-3">
-          {limitations.map((limitation: string) => (
-            <li key={limitation} className="flex items-start">
-              <span className="h-5 w-5 text-slate-400 mr-2 flex-shrink-0 mt-0.5">•</span>
-              <span className="text-sm text-slate-600 dark:text-slate-400">{limitation}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ),
-    [limitations, copy],
+  return (
+    <div className="mt-6">
+      <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
+        {itemLabel(copy, "limitations")}
+      </h4>
+      <ul className="space-y-3">
+        {limitations.map((limitation: string) => (
+          <li key={limitation} className="flex items-start">
+            <span className="h-5 w-5 text-slate-400 mr-2 flex-shrink-0 mt-0.5">•</span>
+            <span className="text-sm text-slate-600 dark:text-slate-400">{limitation}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 });
 
 LimitationsList.displayName = "LimitationsList";
 
-// Memoized pricing card component
-const PricingCard = memo<PricingCardProps>(({ plan, billingCycle, copy }) => {
-  const cardContent: CardContentData = useMemo(() => {
-    const cardClassName: string = `relative flex flex-col border-2 ${plan.popular ? "border-action dark:border-action shadow-lg" : "border-slate-200 dark:border-slate-800"}`;
+/**
+ * The card's footer: one of four things, in this order.
+ *
+ *   current      the account is on this tier — a marker, and nothing to buy
+ *   checkout     a live row at this interval — the button that posts to `/api/billing/checkout`
+ *   unavailable  a checkout tier with no live row — a line, not a disabled button (a disabled
+ *                button still reads as a control that would work under other circumstances)
+ *   link         `/register` or the support mailbox — an ordinary destination
+ */
+const PlanFooter = memo<{ plan: PricingPlanView; cycle: BillingInterval; copy: PageCopySection }>(
+  ({ plan, cycle, copy }) => {
+    const buttonClassName = `w-full ${plan.popular ? "bg-action hover:bg-action/90 text-white border-0" : ""}`;
+    const variant = plan.popular ? "default" : "outline";
 
-    const buttonClassName: string = `w-full ${plan.popular ? "bg-action hover:bg-action/90 text-white border-0" : ""}`;
+    if (plan.current) {
+      return (
+        <Badge variant="secondary" className="w-full justify-center py-2">
+          {itemLabel(copy, "current-plan")}
+        </Badge>
+      );
+    }
 
-    const priceDisplay: string =
-      billingCycle === "monthly"
-        ? itemLabel(copy, "price-per-month")
-        : itemLabel(copy, "price-per-month-yearly");
+    if (plan.cta.href === "checkout") {
+      const interval = plan.intervals[cycle];
+      if (interval === null || !interval.sellable) {
+        return (
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {itemLabel(copy, "not-available")}
+          </p>
+        );
+      }
+      return (
+        <PlanCheckoutButton
+          planId={plan.id}
+          interval={cycle}
+          label={plan.cta.label}
+          busyLabel={itemLabel(copy, "checkout-busy")}
+          errorLabel={itemLabel(copy, "checkout-error")}
+          className={buttonClassName}
+          variant={variant}
+        />
+      );
+    }
 
-    return {
-      cardClassName,
-      buttonClassName,
-      priceDisplay,
-    };
-  }, [plan.popular, billingCycle, copy]);
+    return (
+      <Button asChild className={buttonClassName} variant={variant}>
+        <Link href={plan.cta.href === "support" ? SUPPORT_MAILTO : plan.cta.href}>
+          {plan.cta.label}
+        </Link>
+      </Button>
+    );
+  },
+);
+
+PlanFooter.displayName = "PlanFooter";
+
+/** One card: the tier's words, its price for the selected interval, and its footer. */
+const PricingCard = memo<{
+  plan: PricingPlanView;
+  cycle: BillingInterval;
+  copy: PageCopySection;
+}>(({ plan, cycle, copy }) => {
+  const cardClassName = `relative flex flex-col border-2 ${
+    plan.popular
+      ? "border-action dark:border-action shadow-lg"
+      : "border-slate-200 dark:border-slate-800"
+  }`;
+  const interval = plan.intervals[cycle];
 
   return (
-    <Card key={plan.name} className={cardContent.cardClassName}>
+    <Card className={cardClassName}>
       {plan.popular && (
         <div className="absolute -top-4 left-0 right-0 flex justify-center">
           <Badge className="bg-action hover:bg-action/90 px-3 py-1 text-white border-0">
@@ -247,10 +196,11 @@ const PricingCard = memo<PricingCardProps>(({ plan, billingCycle, copy }) => {
       <CardContent className="flex-grow">
         <div className="mb-6">
           <div className="flex items-baseline">
-            <span className="text-3xl font-bold">$</span>
-            <span className="text-5xl font-bold">{plan.price[billingCycle]}</span>
+            <span className="text-5xl font-bold">
+              {interval === null ? "—" : formatCurrencyAmount(interval.displayCents)}
+            </span>
             <span className="text-slate-500 dark:text-slate-400 ml-2">
-              /{cardContent.priceDisplay}
+              /{itemLabel(copy, PRICE_SUFFIX_ITEM[cycle])}
             </span>
           </div>
         </div>
@@ -264,13 +214,7 @@ const PricingCard = memo<PricingCardProps>(({ plan, billingCycle, copy }) => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button
-          asChild
-          className={cardContent.buttonClassName}
-          variant={plan.popular ? "default" : "outline"}
-        >
-          <Link href={plan.cta.href}>{plan.cta.label}</Link>
-        </Button>
+        <PlanFooter plan={plan} cycle={cycle} copy={copy} />
       </CardFooter>
     </Card>
   );
@@ -278,29 +222,25 @@ const PricingCard = memo<PricingCardProps>(({ plan, billingCycle, copy }) => {
 
 PricingCard.displayName = "PricingCard";
 
-export function PricingPlans({ copy }: { copy: PageCopySection }): JSX.Element {
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+export function PricingPlans({
+  copy,
+  plans,
+  testMode,
+}: {
+  copy: PageCopySection;
+  plans: readonly PricingPlanView[];
+  testMode: boolean;
+}): JSX.Element {
+  const [cycle, setCycle] = useState<BillingInterval>("month");
 
-  // Memoized billing toggle handler
   const handleBillingToggle = useCallback((checked: boolean): void => {
-    setBillingCycle(checked ? "yearly" : "monthly");
+    setCycle(checked ? "year" : "month");
   }, []);
 
-  // Memoized pricing cards
-  const pricingCards = useMemo((): JSX.Element[] => {
-    return PLANS_DATA.map((plan: Plan) => (
-      <PricingCard key={plan.name} plan={plan} billingCycle={billingCycle} copy={copy} />
-    ));
-  }, [billingCycle, copy]);
-
-  // Memoized label classes
-  const labelClasses: LabelClasses = useMemo(
-    () => ({
-      monthly: billingCycle === "monthly" ? "font-medium" : "text-slate-500",
-      yearly: billingCycle === "yearly" ? "font-medium" : "text-slate-500",
-    }),
-    [billingCycle],
-  );
+  const labelClasses = {
+    monthly: cycle === "month" ? "font-medium" : "text-slate-500",
+    yearly: cycle === "year" ? "font-medium" : "text-slate-500",
+  };
 
   return (
     <section className="py-10 xl:py-20">
@@ -317,7 +257,7 @@ export function PricingPlans({ copy }: { copy: PageCopySection }): JSX.Element {
             </Label>
             <Switch
               id="billing-toggle"
-              checked={billingCycle === "yearly"}
+              checked={cycle === "year"}
               onCheckedChange={handleBillingToggle}
             />
             <div className="flex items-center gap-1.5">
@@ -338,9 +278,18 @@ export function PricingPlans({ copy }: { copy: PageCopySection }): JSX.Element {
           <p className="mt-4 text-sm text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
             {itemLabel(copy, "price-note")}
           </p>
+          {testMode && (
+            <p className="mt-2 text-sm font-medium text-amber-700 dark:text-amber-500 max-w-2xl mx-auto">
+              {itemLabel(copy, "test-mode")}
+            </p>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">{pricingCards}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {plans.map((plan) => (
+            <PricingCard key={plan.id} plan={plan} cycle={cycle} copy={copy} />
+          ))}
+        </div>
 
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full">
