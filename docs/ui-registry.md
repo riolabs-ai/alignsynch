@@ -13,11 +13,11 @@ It has two halves, and each one is owned by a different place:
 
 ## Summary
 
-- routes: **43** — 29 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 235 files under `components/`, 230 of them `.tsx`
+- routes: **45** — 31 static, 14 dynamic, from `app/**/page.tsx`
+- component domains: **33** — 236 files under `components/`, 231 of them `.tsx`
 - route handlers: **7** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 10 · **fixture** 51 · **db** 9 · **live** 5
-- templates: Both templates 19 · AlignSynch 12 · QuizHub 42 · No template yet 2
+- status: **mock** 11 · **fixture** 53 · **db** 9 · **live** 5
+- templates: Both templates 22 · AlignSynch 12 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -47,6 +47,11 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/auth`, `components/layout`, `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/client.ts`, `lib/auth/server.ts`
 
+- `/privacy` — **fixture**
+  - capability: The draft privacy policy: what the build actually collects, why, where it lives and what the reader can ask for, behind a draft notice that cannot be dismissed.
+  - components: `components/layout`, `components/legal`, `components/ui`
+  - reads: 1 record fixture — `data/flags.ts`
+
 - `/profile/[username]` — **db**
   - capability: A public profile read from Postgres: header, stats, achievements, followers, quiz history and created quizzes.
   - components: `components/identity`, `components/media`, `components/profile`, `components/ui`
@@ -71,6 +76,11 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: One help article from the knowledge base, with related articles and a 'was this helpful?' prompt.
   - components: `components/content`, `components/support`, `components/ui`
   - reads: 4 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` (+1 more)
+
+- `/terms` — **fixture**
+  - capability: The draft terms of service: the rules for using the product, its liability and dispute clauses, and a draft notice that cannot be dismissed.
+  - components: `components/layout`, `components/legal`, `components/ui`
+  - reads: 1 record fixture — `data/flags.ts`
 
 ### Component domains
 
@@ -104,7 +114,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/layout` — **fixture**
   - capability: The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.
   - files (7): `app-version.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
-  - routes (8): `/`, `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/pricing`, `/tournaments` — and every other route through `app/layout.tsx`
+  - routes (10): `/`, `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/pricing`, `/privacy`, `/terms`, `/tournaments` — and every other route through `app/layout.tsx`
+
+- `components/legal` — **mock**
+  - capability: The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.
+  - files (1): `legal-page.tsx`
+  - routes (2): `/privacy`, `/terms`
+  - notes: The copy arrives as a prop from `data/pages/legal` (the two route entries claim it), so this domain reads no data module of its own.
 
 - `components/media` — **mock**
   - capability: The one media resolver: a file, a remote URL or a generated default drawn from a seed, in that order, with a fallback on error and no image file behind the last tier.
@@ -129,7 +145,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (36): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]` — and every other route through `app/layout.tsx`
+  - routes (38): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/privacy`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/terms`, `/tournaments`, `/tournaments/[id]` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch

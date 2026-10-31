@@ -46,20 +46,31 @@ const mark = createElement("svg", { "aria-hidden": true });
 
 describe("the footer claims no social presence it cannot back", () => {
   for (const brandId of ["quizhub", "alignsynch"] as const) {
-    it(`${brandId}: draws no social icon, and the only '#' anchors left are the legal three`, () => {
+    it(`${brandId}: draws no social icon, and no '#' anchor is left anywhere`, () => {
       const html = footer(brandId);
       for (const label of SOCIAL_LABELS) {
         expect(html).not.toContain(`aria-label="${label}"`);
       }
       /**
-       * Named, not counted: the bottom row's Privacy / Terms / Cookie links are still `#`
-       * because the pages behind them do not exist yet and issue #270 owns pointing them at
-       * `/terms` and `/privacy`. Anything else `#` — a social icon above all — is this issue.
+       * The three legal links were the last `#` anchors in the shell, and they are gone too
+       * (issue #270): Privacy and Terms point at the routes that now exist, and Cookie Policy
+       * points at `/privacy`, whose §9 is the cookie policy. A third `/cookies` route is a route
+       * nobody asked for, so the label keeps its place and the destination is the honest one.
+       *
+       * Named, not counted: nothing `#` at all is the claim, and the three destinations are
+       * asserted by label so a future fourth row cannot take a `#` and pass.
        */
-      const dead = [...html.matchAll(/<a[^>]*href="#"[\s\S]*?<\/a>/g)]
-        .map((match) => match[0].replace(/<[^>]*>/g, "").trim())
-        .sort();
-      expect(dead).toEqual(["Cookie Policy", "Privacy Policy", "Terms of Service"]);
+      expect(html).not.toContain('href="#"');
+      const legalRow = [...html.matchAll(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g)]
+        .map(([, href, inner]) => ({ href, label: inner.replace(/<[^>]*>/g, "").trim() }))
+        .filter((anchor) =>
+          ["Cookie Policy", "Privacy Policy", "Terms of Service"].includes(anchor.label),
+        );
+      expect(legalRow).toEqual([
+        { href: "/privacy", label: "Privacy Policy" },
+        { href: "/terms", label: "Terms of Service" },
+        { href: "/privacy", label: "Cookie Policy" },
+      ]);
     });
 
     it(`${brandId}: prints no invented street line, telephone number or subscribe box`, () => {
