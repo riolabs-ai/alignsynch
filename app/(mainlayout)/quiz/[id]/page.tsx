@@ -1,5 +1,6 @@
 import { QuizDetails } from "@/components/quiz/quiz-details";
 import { quizById } from "@/data/quizzes";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import { quizDetailModel, type QuizDetailModel } from "@/lib/quiz-detail";
 import type { Metadata } from "next";
 import { use } from "react";
@@ -43,6 +44,9 @@ export async function generateMetadata({
  * source of truth.
  */
 export default function QuizPage({ params }: { params: Promise<{ id: string }> }) {
+  // Quiz-only (#300): a quiz record is the one thing this product does not have on the alignment
+  // build, so the gate is ahead of the params and of the projection below.
+  requireQuizProduct();
   const { id } = use(params);
   const now = new Date();
   const record = quizById(id);

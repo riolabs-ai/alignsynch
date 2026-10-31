@@ -2,6 +2,7 @@ import TipDetail from "@/components/creator-tips/tip-detail";
 import { Footer } from "@/components/layout/footer";
 import { creatorTipsDetailPageCopy } from "@/data/pages/creator-tips-detail";
 import { shellPageCopy } from "@/data/pages/shell";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { publishedArticle, publishedArticles, relatedArticles } from "@/lib/article-records";
 import { sectionOf } from "@/lib/page-copy";
@@ -12,6 +13,11 @@ import { use } from "react";
 /**
  * The tips a build prerenders. Published only: an unpublished tip has no URL, so it has
  * no static param either (issue #165).
+ *
+ * The list is the same on both brands, deliberately: on the alignment build each of these paths
+ * is prerendered into the page's own 404 (`requireQuizProduct()` throws during the render), which
+ * is cheaper to reason about than a brand branch here — and a route whose param list changed with
+ * the brand would be a second place that knows which product a build is.
  */
 export async function generateStaticParams() {
   return publishedArticles("tip").map((tip) => ({
@@ -49,6 +55,8 @@ export async function generateMetadata({
  * 404 here, which is what keeps a draft out of the reader's way.
  */
 export default function TipPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Quiz-only (#300), ahead of the slug: on the alignment build no slug is a tip.
+  requireQuizProduct();
   const { slug } = use(params);
   const tip = publishedArticle("tip", slug);
 

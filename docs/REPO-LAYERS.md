@@ -90,7 +90,10 @@ alias with no build step and asserts what the pages actually render. ~1.3 s for 
 docs.
 
 `parity` is `pnpm parity` — the seven routes in `tests/parity/routes.ts` rendered under
-**both** brands and compared to a hash manifest plus a committed structural summary (#171).
+**both** brands and compared to a hash manifest plus a committed structural summary (#171),
+plus the brand-boundary assertion over the twenty-two quiz-only routes in
+`tests/parity/boundary.ts` (#300): each one renders on `quizhub` and answers `404` on
+`alignsynch`, so "does this brand serve this surface at all" is a gate and not a convention.
 It is a second process per brand (`data/brand.ts` resolves `BRAND` at import, which is what
 makes a brand a build constant), so the step is ~13 s. It rides in the same lanes as `test`
 for the same reason: a `content/` or `data/` edit changes rendered text exactly as a

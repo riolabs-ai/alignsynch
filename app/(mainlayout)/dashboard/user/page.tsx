@@ -19,6 +19,7 @@ import { publicProfileOf } from "@/content/identity";
 import { dashboardPageCopy } from "@/data/pages/dashboard";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import { readUserProfileByUserId } from "@/lib/db/user-profiles";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -30,6 +31,11 @@ export const metadata: Metadata = {
 };
 
 export default async function Dashboard() {
+  // Quiz-only (#300), and the gate comes before the session: the account home this route draws
+  // is the quiz dashboard (balance, recent quizzes, quiz stats), and the alignment shell's account
+  // chip points at `/settings` instead. A 404 here also means an alignment visitor is never
+  // redirected to `/login` for a surface their product does not have.
+  requireQuizProduct();
   const user = await currentUser();
   if (user === null) redirect(loginPathFor("/dashboard/user"));
 

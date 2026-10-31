@@ -3,6 +3,7 @@ import { selectCommentThreads, selectViewerResult } from "@/content/quiz-result"
 import { quizComments } from "@/data/quiz-comments";
 import { quizResults } from "@/data/quiz-results";
 import { quizById } from "@/data/quizzes";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { use } from "react";
@@ -27,6 +28,9 @@ export async function generateMetadata({
 }
 
 export default function QuizDiscussionPage({ params }: { params: Promise<{ id: string }> }) {
+  // Quiz-only (#300): the gate is ahead of the id, so the alignment build never builds the
+  // per-question thread map below.
+  requireQuizProduct();
   const { id } = use(params);
   const record = quizById(id);
   if (record === undefined) notFound();

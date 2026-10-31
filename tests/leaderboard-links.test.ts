@@ -31,7 +31,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children?: ReactNode }) =>
@@ -47,6 +47,17 @@ import { shellPageCopy } from "@/data/pages/shell";
 import { hiddenNavHrefs, isEnabled } from "@/lib/flags";
 import { sectionOf, withoutHiddenCta } from "@/lib/page-copy";
 import { profileByHandle } from "@/lib/profile";
+
+/**
+ * The quiz template, stated rather than inherited (#300). This file is about the four sites that
+ * advertise `community.leaderboard`, so it must assert the same four rows on both matrix legs. The
+ * brand boundary hides twenty more hrefs (the quiz product's) on `BRAND=alignsynch`, and a suite
+ * that read the ambient template would be asserting the brand boundary's answer under a name that
+ * says "leaderboard" — the row would go red in the leg that is not being tested.
+ */
+beforeEach(() => {
+  vi.stubEnv("BRAND", "quizhub");
+});
 
 afterEach(() => {
   vi.unstubAllEnvs();

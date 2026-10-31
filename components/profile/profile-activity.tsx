@@ -6,9 +6,20 @@ import Link from "next/link";
 
 interface ProfileActivityProps {
   activities: Activity[];
+  /**
+   * The gated hrefs and route patterns the shell must not draw, resolved on the server by
+   * `lib/flags.ts::hiddenNavHrefs()` (#175 follow-up, #300).
+   *
+   * Required, and the same list every other link surface reads. This feed builds a **concrete**
+   * `/quiz/<id>`, so it asks about the pattern (`/quiz/[id]`) rather than the href: on the
+   * alignment build the quiz product is gated, and a row that linked into it would be a click
+   * straight into a 404 (`scripts/` acceptance crawl, #300). The row still renders — the words are
+   * the activity's — it just stops being a link.
+   */
+  hiddenNav: readonly string[];
 }
 
-export function ProfileActivity({ activities }: ProfileActivityProps) {
+export function ProfileActivity({ activities, hiddenNav }: ProfileActivityProps) {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "quiz_completed":
@@ -36,7 +47,8 @@ export function ProfileActivity({ activities }: ProfileActivityProps) {
     switch (activity.type) {
       case "quiz_completed":
       case "quiz_created":
-        return activity.relatedId ? `/quiz/${activity.relatedId}` : undefined;
+        if (activity.relatedId === undefined || hiddenNav.includes("/quiz/[id]")) return undefined;
+        return `/quiz/${activity.relatedId}`;
       case "followed_user":
         return activity.relatedId ? `/profile/${activity.relatedId}` : undefined;
       default:
