@@ -37,7 +37,12 @@ export function ProfileAchievements({ achievements }: ProfileAchievementsProps) 
       case "rare":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "epic":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
+        // Purple was the game-rarity hue, not a brand colour (#187 stage 3), so "epic" rides the
+        // brand's action token the way stage 2 moved the Grandmaster rank. The scale keeps its other
+        // four steps — gray, green, blue, amber — and the cost is stated rather than hidden: on
+        // AlignSynch, whose accent *is* blue, epic and rare are now the same hue family and read
+        // apart only by weight. One accent per brand cannot also be five rarity hues.
+        return "bg-action/10 text-action";
       case "legendary":
         return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
       default:

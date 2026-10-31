@@ -18,9 +18,9 @@ export function ProfileActivity({ activities }: ProfileActivityProps) {
       case "level_up":
         return <TrendingUp className="h-4 w-4 text-blue-500" />;
       case "quiz_created":
-        return <PenTool className="h-4 w-4 text-purple-500" />;
+        return <PenTool className="h-4 w-4 text-action" />;
       case "followed_user":
-        return <UserPlus className="h-4 w-4 text-indigo-500" />;
+        return <UserPlus className="h-4 w-4 text-action" />;
       default:
         return <Clock className="h-4 w-4 text-gray-500" />;
     }

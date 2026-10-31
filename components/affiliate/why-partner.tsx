@@ -26,11 +26,11 @@ const BENEFITS = [
   },
   {
     id: "fast-payouts",
-    icon: <Clock className="h-6 w-6 text-purple-600 dark:text-purple-500" />,
+    icon: <Clock className="h-6 w-6 text-action" />,
   },
   {
     id: "dedicated-support",
-    icon: <LifeBuoy className="h-6 w-6 text-indigo-600 dark:text-indigo-500" />,
+    icon: <LifeBuoy className="h-6 w-6 text-action" />,
   },
   {
     id: "exclusive-promotions",
@@ -68,7 +68,7 @@ export function WhyPartner({ copy }: { copy: PageCopySection }) {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">{copy.heading}</h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-green-600 to-teal-600 mx-auto mb-6"></div>
+            <div className="w-24 h-1 bg-action mx-auto mb-6"></div>
             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
               {copy.body}
             </p>
@@ -107,7 +107,7 @@ export function WhyPartner({ copy }: { copy: PageCopySection }) {
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
         >
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-4 md:p-8 xl:p-12">
+          <div className="bg-muted rounded-2xl p-4 md:p-8 xl:p-12">
             <h3 className="text-2xl font-bold mb-8 text-center">
               {itemLabel(copy, "stories-heading")}
             </h3>
