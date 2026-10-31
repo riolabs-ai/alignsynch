@@ -2,6 +2,7 @@ import { QuizPlay } from "@/components/quiz/quiz-play";
 import { categoryName } from "@/content/categories";
 import { selectQuizForPlay } from "@/content/quiz";
 import { quizById } from "@/data/quizzes";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -37,6 +38,9 @@ export async function generateMetadata({
  * and checks each one against the question's `correctOptionId`.
  */
 export default async function QuizPlayPage({ params }: { params: Promise<{ id: string }> }) {
+  // Quiz-only (#300), ahead of the id and its two not-found cases: on the alignment build the
+  // route does not exist at all, whatever the id.
+  requireQuizProduct();
   const { id } = await params;
   const record = quizById(id);
   if (record === undefined || record.questions.length === 0) notFound();

@@ -76,7 +76,7 @@ export function UserProfile({ profile, hiddenNav }: UserProfileProps) {
                 <TabsTrigger value="following">Following</TabsTrigger>
               </TabsList>
               <TabsContent value="activity" className="mt-4">
-                <ProfileActivity activities={detail.recentActivity} />
+                <ProfileActivity activities={detail.recentActivity} hiddenNav={hiddenNav} />
               </TabsContent>
               <TabsContent value="quizzes" className="mt-4">
                 <ProfileQuizHistory quizHistory={detail.quizHistory} />

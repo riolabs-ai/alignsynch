@@ -199,24 +199,48 @@ export function summarize(html: string, route: string, brand: string): string {
  * reviewer reads. Both name the flag, so the pair is a statement of *why* there is no page — and
  * the day the flag is turned on, the hash moves and the summary's `outcome` line changes from a
  * 404 to headings, which is the diff that asks for a decision rather than hiding one.
+ *
+ * `off` says which of the two ways a surface can be missing this is, because they are different
+ * facts and the artifact has to state the right one (#300):
+ *
+ *   `"flag"`   the flag is off **on this build**, for everybody — `/leaderboard` today (#175).
+ *   `"brand"`  the flag is off **because this brand does not ship the product** — the boundary
+ *              `/quiz/[id]` crosses on the alignment build (#300).
+ *
+ * The document is identical in both cases (route, brand, outcome, flag — the hash is a function of
+ * what the surface is, not of the sentence explaining it), and the summary differs only in that
+ * sentence, so a reviewer reading the pair gets the reason without having to hold two formats.
  */
 export function absentRender(
   route: string,
   brand: string,
   flag: string,
+  off: "flag" | "brand" = "flag",
 ): { document: string; summary: string } {
   const document = `route  ${route}\nbrand  ${brand}\noutcome  404\nflag  ${flag}\n`;
-  const summary = [
-    `route  ${route}`,
-    `brand  ${brand}`,
-    "",
-    `outcome  404 — ${flag} is off (data/flags.ts)`,
-    "",
-    "This route is in the parity list and currently renders nothing: the surface is flagged",
-    "off, so the page calls notFound() before reading anything. Turning the flag on makes",
-    'this hash move to a rendered page — run `pnpm parity:update --reason "…"` and drop',
-    "`disabledByFlag` from tests/parity/routes.ts.",
-  ].join("\n");
+
+  const reason =
+    off === "brand"
+      ? `outcome  404 — ${flag} is off on the ${brand} build (data/flags.ts)`
+      : `outcome  404 — ${flag} is off (data/flags.ts)`;
+
+  const advice =
+    off === "brand"
+      ? [
+          "This route is in the parity list and renders nothing on this brand: the quiz product",
+          "ships on the quiz template only, so the page calls notFound() before reading anything",
+          "(`lib/brand-boundary.ts`). It is not a mock gate — the surface exists, one brand just",
+          "does not sell it. If this brand should ship it, change `templates` in data/flags.ts",
+          'and run `pnpm parity:update --reason "…"`.',
+        ]
+      : [
+          "This route is in the parity list and currently renders nothing: the surface is flagged",
+          "off, so the page calls notFound() before reading anything. Turning the flag on makes",
+          'this hash move to a rendered page — run `pnpm parity:update --reason "…"` and drop',
+          "`disabledByFlag` from tests/parity/routes.ts.",
+        ];
+
+  const summary = [`route  ${route}`, `brand  ${brand}`, "", reason, "", ...advice].join("\n");
 
   return { document, summary: `${summary}\n` };
 }

@@ -65,9 +65,15 @@ export function currentTemplate(): string {
 /**
  * `community.leaderboard` -> `FLAG_COMMUNITY_LEADERBOARD`. One spelling, derived, so an operator
  * never guesses an env name and two surfaces cannot collide on one variable.
+ *
+ * `-` becomes `_` as well as `.` (#300). A hyphen is legal in a flag name and not exportable in a
+ * shell, so a flag called `product.quiz-surfaces` would otherwise answer to `FLAG_PRODUCT_QUIZ-SURFACES`
+ * — a variable `export` cannot set, which would quietly turn the operator's escape hatch into
+ * documentation. The mapping stays one-to-one: two flag names that differ only in `.` versus `-`
+ * would collide, so do not spell two flags that way.
  */
 export function envNameFor(name: string): string {
-  return `FLAG_${name.replace(/\./g, "_").toUpperCase()}`;
+  return `FLAG_${name.replace(/[.-]/g, "_").toUpperCase()}`;
 }
 
 /**
@@ -186,9 +192,47 @@ export function isEnabled(name: Name, options: { readonly role?: UserRole | null
  *
  * The hrefs are literals on purpose — E10 scans them in the sidebar, and a map like this one is
  * exactly where a nav entry should be readable.
+ *
+ * **The quiz product's routes are the second class (#300).** They are gated by
+ * `product.quiz-surfaces`, which resolves on for `BRAND=quizhub` and off for `BRAND=alignsynch`, so
+ * this one list gives both halves of the boundary: on the quiz build `hiddenNavHrefs()` shrinks to
+ * `["/leaderboard"]` (every quiz href resolves on), and on the alignment build it carries all the
+ * quiz roots — which is what the sidebar, the footer, the 404's suggestion row and the profile page
+ * read instead of growing a brand check each. `tests/flags.test.ts` pins both answers per brand.
+ *
+ * It lists the **static roots** and the **route patterns** that a component matches a concrete
+ * href against. A nav or footer row is always a concrete href (`/quiz/<id>`, `/categories/<slug>`),
+ * which an exact-string list cannot answer for, and the surfaces that *draw* one of those — the
+ * quiz cards, the footer's subject column, the profile's activity feed — need to know whether the
+ * pattern behind it is gated. So both spellings live here, and a caller uses the one it has:
+ * the sidebar asks about `/categories`, `components/profile/profile-activity.tsx` asks about
+ * `/quiz/[id]` before building `/quiz/<relatedId>` (#300). Two vocabularies in one list beat a
+ * second list that could disagree with this one.
+ *
+ * `/leaderboard` stays on its own flag: it is off on **both** brands until the boards are real, so
+ * it is a mock gate as well as a quiz surface, and the brand gate is not what closes it.
  */
 export const navSurfaces: Readonly<Record<string, FlagName>> = {
   "/leaderboard": "community.leaderboard",
+  "/daily-challenge": "product.quiz-surfaces",
+  "/categories": "product.quiz-surfaces",
+  "/categories/[slug]": "product.quiz-surfaces",
+  "/battle": "product.quiz-surfaces",
+  "/explore": "product.quiz-surfaces",
+  "/explore/featured": "product.quiz-surfaces",
+  "/tournaments": "product.quiz-surfaces",
+  "/tournaments/[id]": "product.quiz-surfaces",
+  "/creator-tips": "product.quiz-surfaces",
+  "/creator-tips/[slug]": "product.quiz-surfaces",
+  "/quiz-discussions": "product.quiz-surfaces",
+  "/quiz/[id]": "product.quiz-surfaces",
+  "/create/editor": "product.quiz-surfaces",
+  "/create/generator": "product.quiz-surfaces",
+  "/affiliate": "product.quiz-surfaces",
+  "/chat": "product.quiz-surfaces",
+  "/dashboard/user": "product.quiz-surfaces",
+  "/my-quizzes": "product.quiz-surfaces",
+  "/my-quizzes/[id]": "product.quiz-surfaces",
 };
 
 /** The hrefs the shell must not draw. Empty when every gated surface is on. */

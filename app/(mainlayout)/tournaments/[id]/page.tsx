@@ -1,6 +1,7 @@
 import { TournamentDetail } from "@/components/tournaments/tournament-detail";
 import { isTournamentId } from "@/components/tournaments/tournament-ids";
 import { tournamentDetailPageCopy } from "@/data/pages/tournament-detail";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { use } from "react";
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
  * real routes in `next.config.mjs`.
  */
 export default function TournamentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  // The brand boundary (#300) is checked before the id: on the alignment build no id is a
+  // tournament, so the id gate below would answer 404 for the wrong reason.
+  requireQuizProduct();
   const { id } = use(params);
 
   if (!isTournamentId(id)) notFound();

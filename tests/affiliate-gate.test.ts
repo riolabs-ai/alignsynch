@@ -54,6 +54,10 @@ describe("/affiliate with commerce.affiliate off", () => {
 
 describe("/affiliate with commerce.affiliate on", () => {
   it("renders the programme — the gate is the flag, not a page that never works", () => {
+    // The template is stated, not inherited (#300): the page carries a second gate (the brand
+    // boundary), so a `BRAND=alignsynch` run would answer 404 before this flag was consulted and
+    // this case would be asserting the wrong closed surface. This file is about the mock flag.
+    vi.stubEnv("BRAND", "quizhub");
     vi.stubEnv("FLAG_COMMERCE_AFFILIATE", "1");
 
     const html = renderToStaticMarkup(createElement(AffiliatePage));

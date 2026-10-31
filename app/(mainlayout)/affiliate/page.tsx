@@ -38,6 +38,7 @@ import { WhyPartner } from "@/components/affiliate/why-partner";
 import { Footer } from "@/components/layout/footer";
 import { affiliatePageCopy } from "@/data/pages/affiliate";
 import { shellPageCopy } from "@/data/pages/shell";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import { hiddenNavHrefs, isEnabled } from "@/lib/flags";
 import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
@@ -53,8 +54,20 @@ export const dynamic = "force-dynamic";
 /**
  * The affiliate programme. Each band's words come from `data/pages/affiliate.ts`,
  * resolved here and passed down — no affiliate component holds its own copy (E23).
+ *
+ * Two gates, and they answer different questions (#291, #300):
+ *
+ *   1. `requireQuizProduct()` — the **brand boundary**: this is the *quiz creator* programme, so a
+ *      build that does not sell the quiz product answers 404 before a band is mounted. (The issue's
+ *      trap is about `/pricing`, which stays — a price is a page any product has.)
+ *   2. `commerce.affiliate` — the **mock gate**: the programme pays nobody on any build, so it is
+ *      off everywhere until the payout path exists.
+ *
+ * The order is deliberate: the brand check is the outer one, so on the alignment build the surface
+ * is closed whether or not the mock flag is on.
  */
 export default function AffiliatePage() {
+  requireQuizProduct();
   /** Flagged off → 404, before a single band is resolved or rendered (#291). */
   if (!isEnabled("commerce.affiliate")) notFound();
 
