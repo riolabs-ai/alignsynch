@@ -175,10 +175,24 @@ describe("the record", () => {
 describe("the nav and the browser", () => {
   it("hides the gated href when its flag is off, and shows it when on", () => {
     expect(navSurfaces["/leaderboard"]).toBe("community.leaderboard");
-    expect(hiddenNavHrefs()).toEqual(["/leaderboard"]);
+    // Both gated surfaces are off by default, in the order `navSurfaces` declares them.
+    expect(hiddenNavHrefs()).toEqual(["/leaderboard", "/affiliate"]);
 
     vi.stubEnv("FLAG_COMMUNITY_LEADERBOARD", "1");
+    expect(hiddenNavHrefs()).toEqual(["/affiliate"]);
+
+    vi.stubEnv("FLAG_COMMERCE_AFFILIATE", "1");
     expect(hiddenNavHrefs()).toEqual([]);
+  });
+
+  it("names /affiliate, the surface whose route 404s while commerce.affiliate is off (#291)", () => {
+    // The route gates itself, so the shell has to agree: a nav that draws this href is a nav
+    // that hands out a 404 (`tests/affiliate-links.test.ts` proves the four consumers drop it).
+    expect(navSurfaces["/affiliate"]).toBe("commerce.affiliate");
+    expect(hiddenNavHrefs()).toContain("/affiliate");
+
+    vi.stubEnv("FLAG_COMMERCE_AFFILIATE", "1");
+    expect(hiddenNavHrefs()).not.toContain("/affiliate");
   });
 
   it("refuses to resolve in a browser — a flag the client decides enforces nothing", () => {

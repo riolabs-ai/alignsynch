@@ -31,7 +31,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children?: ReactNode }) =>
@@ -47,6 +47,14 @@ import { shellPageCopy } from "@/data/pages/shell";
 import { hiddenNavHrefs, isEnabled } from "@/lib/flags";
 import { sectionOf, withoutHiddenCta } from "@/lib/page-copy";
 import { profileByHandle } from "@/lib/profile";
+
+beforeEach(() => {
+  // `/affiliate` joined `navSurfaces` in #291's follow-up, so a default build hides two hrefs.
+  // This file is the leaderboard's proof: pinning the sibling surface on keeps every list and
+  // every render below about one flag, without weakening the assertion that the leaderboard's
+  // own row is gone. The affiliate half lives in `tests/affiliate-links.test.ts`.
+  vi.stubEnv("FLAG_COMMERCE_AFFILIATE", "1");
+});
 
 afterEach(() => {
   vi.unstubAllEnvs();

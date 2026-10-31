@@ -189,6 +189,13 @@ export function isEnabled(name: Name, options: { readonly role?: UserRole | null
  */
 export const navSurfaces: Readonly<Record<string, FlagName>> = {
   "/leaderboard": "community.leaderboard",
+  /**
+   * `/affiliate` joined the list when its route started gating on `commerce.affiliate` (#291):
+   * the page calls `notFound()` while the flag is off, so the four surfaces that still drew a
+   * row to it were handing a member a 404. The fixture, the route and `components/affiliate/**`
+   * all stay — the programme is a catalogue asset; it is only unadvertised.
+   */
+  "/affiliate": "commerce.affiliate",
 };
 
 /** The hrefs the shell must not draw. Empty when every gated surface is on. */
