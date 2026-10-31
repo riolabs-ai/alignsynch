@@ -62,10 +62,24 @@ show the link when no email was sent.
 ## Email
 
 `lib/flow/email.ts` posts to Resend when `RESEND_API_KEY` is set (`RESEND_FROM`, default
-`onboarding@resend.dev`; `NEXT_PUBLIC_BASE_URL`, default `http://localhost:3000`). With no key it
-returns `{ sent: false, reason }`, the creation redirect says `?invite=unsent`, and the instance
-screen prints the link. Email is never allowed to block the flow: it is attempted after the
-transaction commits, and a Resend failure is a degraded path, not a failed creation.
+`onboarding@resend.dev`; `NEXT_PUBLIC_BASE_URL`, default `http://localhost:3000`). A send has
+three outcomes, and the creation redirect carries whichever one happened as
+`?invite=sent|unset|failed` (#220):
+
+- `sent` — the provider accepted the message; the screen names the address it went to.
+- `unset` — no credential is configured on this deployment, so **no send was attempted**. The
+  screen says there is no mail sender here and offers the link; it never names the variable,
+  which is a deployment detail a reader cannot act on.
+- `failed` — a send **was** attempted and refused (a non-2xx, or the provider unreachable). The
+  screen says only that the invitation could not be sent: it does not guess a cause, because a
+  429, an unverified sending domain and a bad recipient are indistinguishable to the reader.
+
+`unset` and `failed` are kept apart because they need opposite responses from whoever debugs
+them, and the server gets one log line with the fact: the provider's status (`HTTP 429`) or the
+transport's error code (`ECONNREFUSED`), never the response body (it can echo the request),
+never the token and never the link. The instance screen prints the invitation link in all three
+outcomes — email is attempted after the transaction commits, so a mailer that breaks is a
+degraded path, never a failed creation and never an unshareable invitation.
 
 ## The proof
 

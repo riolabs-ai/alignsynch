@@ -24,7 +24,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import {
+  AssessmentInstanceView,
+  type InviteNotice,
+} from "@/components/assessment-flow/instance-view";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { PartyRole } from "@/content/assessment";
@@ -308,5 +311,88 @@ describe("an Advanced instance", () => {
     expect(serialized).not.toContain('"guess":2');
     // The only party in the projection is the viewer; nobody else's role is carried.
     expect(serialized).not.toContain('"role":"counterparty"');
+  });
+});
+
+/**
+ * The invite notice, as the reader sees it (#220).
+ *
+ * The bug this closes was a sentence, so the proof is markup: an invitation with a live link,
+ * rendered once per outcome. Two claims:
+ *
+ *   * the reader is never told an environment variable's name, and `failed` never guesses a
+ *     cause — a 429, an unverified domain and a bad recipient are all `failed`, so the copy
+ *     cannot name any of them;
+ *   * the link is drawn in all three, because a mailer that breaks must not make the
+ *     invitation unshareable.
+ */
+describe("the invite notice", () => {
+  const TOKEN = "t".repeat(43);
+  const link = `http://localhost:3000/invite/${TOKEN}`;
+  const unclaimed = { email: "rowan@example.com", counterpartyName: "Rowan", claimed: false, link };
+
+  const render = (inviteNotice: InviteNotice | undefined): string => {
+    const screen = projectScreen({
+      rows: rowsWith([], { initiator: 0, counterparty: 0 }),
+      template,
+      viewerRole: "initiator",
+      invite: unclaimed,
+    });
+    return renderToStaticMarkup(
+      createElement(AssessmentInstanceView, {
+        screen,
+        copy: assessmentInstancePageCopy,
+        inviteNotice,
+      }),
+    );
+  };
+
+  const unset = render("unset");
+  const failed = render("failed");
+  const sent = render("sent");
+
+  it("never names an environment variable in any of the three", () => {
+    for (const html of [unset, failed, sent]) {
+      expect(html).not.toContain("RESEND");
+      expect(html).not.toContain("API_KEY");
+      expect(html).not.toContain("process.env");
+    }
+  });
+
+  it("says the mailer is absent for `unset`, and does not guess a cause for `failed`", () => {
+    expect(unset).toContain('data-invite-notice="unset"');
+    expect(unset).toContain("this deployment has no mail sender configured");
+    expect(unset).toContain("Send this link yourself");
+
+    expect(failed).toContain('data-invite-notice="failed"');
+    expect(failed).toContain("The invitation could not be sent");
+    // No cause is named: the reader cannot act on one, and the assertion is the point.
+    for (const guess of ["429", "rate limit", "domain", "key", "configured"]) {
+      expect(failed.toLowerCase()).not.toContain(guess);
+    }
+  });
+
+  it("gives the two not-sent outcomes different sentences", () => {
+    const sentence = (html: string) =>
+      html.slice(html.indexOf("data-invite-notice=")).split("</p>")[0];
+    expect(sentence(unset)).not.toBe(sentence(failed));
+  });
+
+  it("says who the invitation was emailed to when it was sent", () => {
+    expect(sent).toContain('data-invite-notice="sent"');
+    expect(sent).toContain("Invitation emailed to rowan@example.com");
+  });
+
+  it("renders the link, unresolved, in all three — the flow stays shareable", () => {
+    for (const html of [unset, failed, sent]) {
+      expect(html).toContain(`<code class="break-all text-xs text-primary">${link}</code>`);
+      expect(html).toContain('data-invite-link="true"');
+    }
+  });
+
+  it("renders no notice for a value this build does not know, and still shows the link", () => {
+    const html = render(undefined);
+    expect(html).not.toContain("data-invite-notice=");
+    expect(html).toContain(link);
   });
 });
