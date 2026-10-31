@@ -24,6 +24,16 @@
  * never a silent no-op. The lock is what makes two simultaneous submits serialise instead
  * of both reading "answering" and both writing.
  *
+ * **Who is signed in is a column, written once.** `createInstanceFromTemplate` and
+ * `claimInvite` both take the caller's **user id** and write it on the party row they are
+ * creating, in the transaction that creates it (#213 follow-up). The id is an argument the
+ * route resolved from the request's session cookies; there is no field, query parameter or
+ * header in this module that could carry one, so a browser cannot claim to be an account
+ * (`lib/auth/session.ts` documents the rule, `#202` is the incident). Writing it is what puts
+ * an instance created through the product into its creator's `/assessment/instances` list:
+ * that list filters `party.user_id`, and before this the only writer of that column was
+ * `scripts/db-seed.mjs`.
+ *
  * No `gap` is written anywhere: the report is `gapOf()` over two opinion rows, computed by
  * `lib/assessment-report.ts` on every render.
  */
@@ -95,6 +105,20 @@ export interface CreateInstanceInput {
    * on one report.
    */
   readonly mode: string;
+  /**
+   * The signed-in account creating the instance, when the request has one (#213 follow-up).
+   *
+   * Resolved by the route from the request's **session cookies** (`currentUser()`), never from
+   * the form: nothing posted by a browser reaches this property, and the store reads no such
+   * field. It is written on the Initiator's party row inside the same transaction that writes
+   * the row, so a creator who is signed in finds the instance in `/assessment/instances`
+   * immediately.
+   *
+   * `null`/absent is the signed-out create, unchanged: a link-bound browser with no account,
+   * `party.user_id` NULL. The **Counterparty is not bound here** — they are not the person
+   * creating the instance; their binding is the claim's to write.
+   */
+  readonly viewerUserId?: string | null;
   /** A clock, injectable so a test can pin `expires_at`. */
   readonly now?: Date;
 }
@@ -124,6 +148,23 @@ function emailLooksDeliverable(value: string): boolean {
 }
 
 /**
+ * The account id a party row stores, or `null` for "nobody signed in" (#213 follow-up).
+ *
+ * Trimmed, and whitespace becomes NULL rather than an empty string: `party_instance_user_key`
+ * is partial (`WHERE user_id IS NOT NULL`), so a row bound to `""` would be a binding that
+ * matches no account while still counting as one on every read of that column — the worse of
+ * the two wrong answers. The value itself is never validated into a shape here: it is Neon
+ * Auth's identifier, not one this repo authors (`0005_demo_account.sql` says the same about
+ * `user_profile.user_id`), and a binding to an account that does not exist is caught by
+ * `db:verify`'s V10 on the rows rather than by a regex on the way in.
+ */
+function normalizedUserId(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const text = value.trim();
+  return text === "" ? null : text;
+}
+
+/**
  * Create an instance from a published template, in one transaction.
  *
  * The template must be a **published assessment record with no instance row**. A draft
@@ -145,6 +186,7 @@ export async function createInstanceFromTemplate(
   }
 
   const now = input.now ?? new Date();
+  const initiatorUserId = normalizedUserId(input.viewerUserId);
   const initiatorToken = mintToken();
   const inviteToken = mintToken();
   const instanceRecordId = cryptoRandomId();
@@ -233,10 +275,16 @@ export async function createInstanceFromTemplate(
       [instanceRecordId, found.id, mode.data],
     );
 
+    // The Initiator's seat. `user_id` is the session's account when there is one, and NULL when
+    // the creator is signed out (#213 follow-up) — the same row, the same transaction, so an
+    // instance can never exist with a creator who was signed in and a party row that says
+    // nobody was. It is an INSERT of a row that cannot pre-exist (the table's key is
+    // `(instance_record_id, role)` on a fresh id), so writing the binding here cannot overwrite
+    // one: the "never rebind a bound row" rule has nothing to rebind.
     await client.query(
-      `INSERT INTO party (instance_record_id, role, name, access_token_hash)
-       VALUES ($1, 'initiator', $2, $3)`,
-      [instanceRecordId, initiatorName, hashToken(initiatorToken)],
+      `INSERT INTO party (instance_record_id, role, name, access_token_hash, user_id)
+       VALUES ($1, 'initiator', $2, $3, $4)`,
+      [instanceRecordId, initiatorName, hashToken(initiatorToken), initiatorUserId],
     );
 
     await client.query(
@@ -286,6 +334,21 @@ export interface ClaimInput {
    * only valid for a browser that is not already bound to this instance (#202).
    */
   readonly viewerTokens?: readonly string[];
+  /**
+   * The signed-in account claiming, when the request has one (#213 follow-up).
+   *
+   * The claim's second identity, beside the cookie: resolved by the route from the request's
+   * **session cookies**, written on the Counterparty's party row in the same transaction that
+   * writes the row, so the person who claims an invitation finds the instance in their
+   * `/assessment/instances` list without needing the link again. A signed-out claim is
+   * unchanged — a link-bound browser with no account, `party.user_id` NULL.
+   *
+   * It also *refuses*: an account that already answers as a party to this instance cannot
+   * claim the other seat (`already-a-party`), because one account cannot be both parties
+   * (`party_instance_user_key`) and filling both columns with one person is the defect #202
+   * fixed for the cookie. Nothing posted by the browser reaches this property.
+   */
+  readonly viewerUserId?: string | null;
   /** What the claim form posted as its confirmation: the counterparty's name. */
   readonly confirm?: string | null;
   readonly now?: Date;
@@ -309,11 +372,12 @@ export type ClaimResult =
  *   unknown          no invitation carries that token
  *   claimed          the token was spent by the claim that succeeded
  *   expired          past `expires_at`
- *   already-a-party  this browser already holds a party token for this instance. This is
- *                    the defect QA found: an Initiator following their own link used to
+ *   already-a-party  this browser already holds a party token for this instance, or the
+ *                    signed-in account already answers as one of its parties (#213 follow-up).
+ *                    This is the defect QA found: an Initiator following their own link used to
  *                    spend the invitation and have their session silently become the
- *                    Counterparty, so one person filled both columns and the Gap was
- *                    computed between them. A refusal here leaves `claimed_at` NULL.
+ *                    Counterparty, so one person filled both columns and the Gap was computed
+ *                    between them. A refusal here leaves `claimed_at` NULL.
  *   already-bound    the instance already has both party rows (a seeded instance, or a
  *                    claim that raced this one)
  *   unconfirmed      the post did not name the party it is joining, or named another one
@@ -326,6 +390,7 @@ export type ClaimResult =
 export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
   const { token } = input;
   const now = input.now ?? new Date();
+  const claimerUserId = normalizedUserId(input.viewerUserId);
   if (!tokenIsWellFormed(token)) {
     return { ok: false, code: "unknown", reason: "that token is not an invitation token" };
   }
@@ -369,11 +434,16 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     // The caller's own binding, read before anything is written: a claim is for a party
     // that is not already bound, and the Initiator opening their own link is a refusal
     // rather than a seat swap. The session keeps answering as whoever it already is.
-    const viewerRole = await partyRoleForTokens(
-      client,
-      invite.instance_record_id,
-      input.viewerTokens ?? [],
-    );
+    //
+    // Two readings, one question: what this browser's cookies say (`partyRoleForTokens`), and
+    // what the signed-in account says (`partyRoleForUser`, #213 follow-up). The second is not
+    // redundant now that a party row carries `user_id` — a person can open their own
+    // invitation in a browser holding no `flow_party_*` cookie, and without this the insert
+    // below would either fill both columns with one person or collide with
+    // `party_instance_user_key` and answer a 500 instead of a refusal.
+    const viewerRole =
+      (await partyRoleForTokens(client, invite.instance_record_id, input.viewerTokens ?? [])) ??
+      (await partyRoleForUser(client, invite.instance_record_id, claimerUserId));
     if (viewerRole !== undefined) {
       await client.query("ROLLBACK");
       return {
@@ -394,11 +464,16 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     }
 
     const sessionToken = mintToken();
+    // The Counterparty's seat, with the claimer's account on it when the browser is signed in
+    // (#213 follow-up). `user_id` rides in the INSERT for the same reason the Initiator's does:
+    // the row is being created here, so there is no existing binding to overwrite. Everything a
+    // refusal protects (`claimed_at`, a bound seat) is decided above this line; the
+    // `ON CONFLICT DO NOTHING` still answers a race with a refusal, never an update.
     const inserted = await client.query(
-      `INSERT INTO party (instance_record_id, role, name, access_token_hash)
-       VALUES ($1, 'counterparty', $2, $3)
+      `INSERT INTO party (instance_record_id, role, name, access_token_hash, user_id)
+       VALUES ($1, 'counterparty', $2, $3, $4)
        ON CONFLICT (instance_record_id, role) DO NOTHING`,
-      [invite.instance_record_id, invite.counterparty_name, hashToken(sessionToken)],
+      [invite.instance_record_id, invite.counterparty_name, hashToken(sessionToken), claimerUserId],
     );
     if (inserted.rowCount === 0) {
       await client.query("ROLLBACK");
@@ -603,6 +678,30 @@ async function partyRoleForTokens(
     `SELECT role FROM party
       WHERE instance_record_id = $1 AND access_token_hash = ANY($2::text[])`,
     [instanceRecordId, hashes],
+  );
+  return found.rows[0]?.role;
+}
+
+/**
+ * The party a **signed-in account** already answers as on one instance, inside a transaction
+ * (#213 follow-up).
+ *
+ * The claim's second reading of "am I already bound here": `partyRoleForTokens` asks what the
+ * browser's cookies say, this asks what the account says, and `party` is where both end up —
+ * `user_id` is the same column `/assessment/instances` filters by, so a refusal here and a row
+ * in someone's list are the same fact. `null` is "nobody signed in", which is the signed-out
+ * claim and answers `undefined` without a query.
+ */
+async function partyRoleForUser(
+  client: PoolClient,
+  instanceRecordId: string,
+  userId: string | null,
+): Promise<PartyRole | undefined> {
+  if (userId === null) return undefined;
+  const found = await client.query<{ role: PartyRole }>(
+    `SELECT role FROM party
+      WHERE instance_record_id = $1 AND user_id = $2`,
+    [instanceRecordId, userId],
   );
   return found.rows[0]?.role;
 }
@@ -919,11 +1018,22 @@ export interface InvitePreview {
  * A GET must not spend the token — a mail client's link preview would burn an invitation
  * the person has not opened yet. So the page asks this, and the button posts. `viewerRole`
  * is the same question the claim asks before it writes: the page renders the answer, the
- * store refuses on it, and one query answers both (#202).
+ * store refuses on it, and one query answers both (#202). Since #213's follow-up that question
+ * has two halves — the browser's party cookies and the signed-in account — and both are asked
+ * here, so the claim page never offers a control the claim would refuse.
  */
 export async function previewInvite(
   token: string,
-  options: { readonly viewerTokens?: readonly string[]; readonly now?: Date } = {},
+  options: {
+    readonly viewerTokens?: readonly string[];
+    /**
+     * The signed-in account, when there is one (#213 follow-up). The claim refuses an account
+     * that already answers as a party, so the preview has to see it too — otherwise the page
+     * would offer a claim control the POST is certain to refuse.
+     */
+    readonly viewerUserId?: string | null;
+    readonly now?: Date;
+  } = {},
 ): Promise<InvitePreview> {
   const now = options.now ?? new Date();
   const empty = {
@@ -959,7 +1069,9 @@ export async function previewInvite(
       : row.expires_at.getTime() <= now.getTime()
         ? "expired"
         : "claimable";
-  const viewerRole = await viewerRoleOf(row.instance_record_id, options.viewerTokens ?? []);
+  const viewerRole =
+    (await viewerRoleOf(row.instance_record_id, options.viewerTokens ?? [])) ??
+    (await roleForUser(row.instance_record_id, options.viewerUserId));
   return {
     state,
     initiatorName: row.initiator_name,

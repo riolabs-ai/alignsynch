@@ -1,5 +1,6 @@
 import { InviteView } from "@/components/assessment-flow/invite-view";
 import { invitePageCopy } from "@/data/pages/invite";
+import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimRefusalOf } from "@/lib/flow/claim";
 import { partyTokensFrom } from "@/lib/flow/session";
 import { previewInvite } from "@/lib/flow/store";
@@ -16,13 +17,17 @@ import type { Metadata } from "next";
  * A token that is not even the right shape never reaches the database: `previewInvite()`
  * returns `unknown` for it, which is the same band a real-but-unknown token gets.
  *
- * Two facts come from the request rather than the token, and both are read here so the page
+ * Three facts come from the request rather than the token, and all are read here so the page
  * can draw them:
  *
  *   the party cookies   `partyTokensFrom()` — which party this browser already answers as on
  *                       that instance. A page that does not ask this cannot warn an
  *                       Initiator that the invitation is their own, and that silence is the
  *                       defect #202 filed.
+ *   the session         `currentUserIfConfigured()` — the same question for a signed-in
+ *                       account, because since #213's follow-up the claim refuses an account
+ *                       that already answers as a party. The preview and the store ask it in
+ *                       the same terms, so the page cannot offer a control the POST refuses.
  *   `?claim=`           the code a refused claim redirected with, so the refusal the store
  *                       just gave is the sentence the page shows.
  */
@@ -42,8 +47,12 @@ export default async function InvitePage({
   const { token } = await params;
   const { claim } = await searchParams;
   const jar = await cookies();
+  const viewer = await currentUserIfConfigured();
 
-  const preview = await previewInvite(token, { viewerTokens: partyTokensFrom(jar) });
+  const preview = await previewInvite(token, {
+    viewerTokens: partyTokensFrom(jar),
+    viewerUserId: viewer?.userId ?? null,
+  });
   const refusal = claimRefusalOf(claim);
 
   return (
