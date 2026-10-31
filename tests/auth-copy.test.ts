@@ -13,11 +13,13 @@
  *   2. the alignment build's *page* carries no quiz vocabulary, no product name from the other
  *      brand and no count — its two tiles are sentences, not a smaller number;
  *   3. the parts that belong to the *card*, not the skin (the fourteen field labels, the error
- *      states, the wizard's three steps and its fields) are byte-identical on both brands, so
+ *      states, the form's two steps and its fields) are byte-identical on both brands, so
  *      "this demo is AlignSynch now" moved the words it was supposed to move and nothing else;
- *   4. the wizard is untouched in particular: it is a follow-up card's decision, not this one's,
- *      and the strings that remain on the alignment build are pinned by name so the gap is
- *      measured rather than assumed.
+ *   4. the form asks no quiz question on either brand (issue #291): the quiz-interests and
+ *      quiz-skill step that both builds used to render is gone, and so is the newsletter
+ *      opt-in for a newsletter that has never existed. This file used to *pin* those strings
+ *      as a measured gap; the card that closed the gap inverted the assertion instead of
+ *      deleting it, so a later fixture edit cannot quietly bring them back.
  *
  * The records are named explicitly rather than read from the ambient `brand`: CI builds and
  * tests under `BRAND=alignsynch` as well as `BRAND=quizhub`, and a "QuizHub" half that quietly
@@ -103,26 +105,31 @@ describe("the alignment build speaks its own product", () => {
   });
 
   /**
-   * The measured gap, pinned so it cannot be mistaken for finished work.
+   * The quiz step is gone on both brands (issue #291).
    *
-   * `/register`'s *wizard* is not copy a skin picks: its first step is a quiz-topic checklist, its
-   * second asks for a quiz skill level, and the form asks for a date of birth and a phone number
-   * that the alignment product has no use for. Replacing it is a product decision with its own
-   * card — so this card brand-selected the page's words and left the fields alone, and the five
-   * strings below are exactly what the alignment build still says. When that follow-up lands,
-   * delete this case with the wizard.
+   * This file used to *pin* the gap — its first step was a quiz-topic checklist, its second
+   * asked for a quiz skill level, and the last offered a newsletter that has never existed.
+   * The card that owned replacing it removed the step outright, so the assertion inverts: no
+   * brand's form asks a quiz question, and the newsletter opt-in is gone with it. The phone
+   * number and date of birth are still asked and still unread — a separate defect, pinned by
+   * nothing here.
    */
-  it("still renders the quiz wizard on /register — a follow-up card owns replacing it", () => {
-    const wizard = render(
-      ["steps", "interests", "skill", "details", "account"].map((id) =>
-        sectionOf(registerCopyFor(registerCopy(alignSynch), "alignsynch"), id),
+  it("asks no quiz question on either brand", () => {
+    const forms = (["quizhub", "alignsynch"] as const).map((id) =>
+      render(
+        ["steps", "details", "account"].map((sectionId) =>
+          sectionOf(
+            registerCopyFor(registerCopy(id === "quizhub" ? quizHub : alignSynch), id),
+            sectionId,
+          ),
+        ),
       ),
     );
-    expect(wizard).toContain("Quiz Interests");
-    expect(wizard).toContain("What types of quizzes interest you? *");
-    expect(wizard).toContain("What's your quiz skill level? *");
-    expect(wizard).toContain("Expert - Quiz master level");
-    expect(wizard).toContain("Subscribe to our newsletter for quiz updates and tips");
+
+    for (const form of forms) {
+      expect(form).not.toMatch(/quiz skill|quiz interest|newsletter/i);
+    }
+    expect(forms[0]).toBe(forms[1]);
   });
 
   it("carries no fabricated social proof: no player count, no magnitude, no rating", () => {
@@ -172,14 +179,14 @@ describe("the card and the wizard are shared, not skinned", () => {
     expect(card("alignsynch", alignSynch)).toEqual(card("quizhub", quizHub));
   });
 
-  it("leaves the wizard's steps, interests, skill levels and details exactly as they were", () => {
-    const wizard = (copy: ReturnType<typeof registerCopy>) =>
-      ["steps", "interests", "skill", "details", "account", "navigation", "status"].map((id) =>
+  it("leaves the form's steps, details and account fields exactly as they were", () => {
+    const form = (copy: ReturnType<typeof registerCopy>) =>
+      ["steps", "details", "account", "navigation", "status"].map((id) =>
         render(sectionOf(copy, id)),
       );
 
-    expect(wizard(registerCopyFor(registerCopy(alignSynch), "alignsynch"))).toEqual(
-      wizard(registerCopyFor(registerCopy(quizHub), "quizhub")),
+    expect(form(registerCopyFor(registerCopy(alignSynch), "alignsynch"))).toEqual(
+      form(registerCopyFor(registerCopy(quizHub), "quizhub")),
     );
   });
 });

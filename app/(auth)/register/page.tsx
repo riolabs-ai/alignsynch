@@ -15,9 +15,9 @@ export const metadata: Metadata = {
  * to the `/register` surface.
  *
  * The brand is resolved here too (issue #225), exactly like `/login`: `registerCopyFor`
- * swaps the hero and the mobile header's line for the build's brand and leaves the wizard
- * alone — its steps, its interests, its skill level are one product's onboarding, and
- * replacing them is a product decision with its own card.
+ * swaps the hero and the mobile header's line for the build's brand and leaves the form
+ * alone — its two steps and its fields are one product's sign-up, shared by both brands.
+ * The quiz-interests and quiz-skill step that used to open the flow was removed in #291.
  */
 export default function AuthPage() {
   return <RegisterView copy={registerCopyFor(registerPageCopy, brandIdOf(brand))} />;

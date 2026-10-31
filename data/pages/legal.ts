@@ -300,7 +300,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "wizard",
             label: "2.2 Onboarding questions",
-            body: "The sign-up wizard asks about interests, skill level, phone number and date of birth. In the current build, only your name, email and password are transmitted anywhere: the other wizard fields are not sent to any server and are not stored by us.",
+            body: "The sign-up form asks for a phone number and a date of birth. In the current build, only your name, email and password are transmitted anywhere: those two fields are not sent to any server and are not stored by us.",
           },
           {
             id: "assessment",
