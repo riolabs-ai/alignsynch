@@ -22,7 +22,12 @@
  * Pure: no `pg`, no `process.env`, no clock. `tests/flow-state.test.ts` drives every
  * branch without a database, and the DB port (`lib/flow/store.ts`) supplies the counts.
  */
-import { zOpinions, type Opinions, type PartyRole } from "@/content/assessment";
+import {
+  zOpinions,
+  type AssessmentMode,
+  type Opinions,
+  type PartyRole,
+} from "@/content/assessment";
 
 /* ------------------------------------------------------------------ *\
  * Status
@@ -107,7 +112,12 @@ export type SubmissionParse =
   | { readonly ok: false; readonly problems: string[] };
 
 /** One raw value per (Aspect, kind), as a form post supplies them: text, always. */
-export type RawAnswer = { readonly feel?: string; readonly wish?: string };
+export type RawAnswer = {
+  readonly feel?: string;
+  readonly wish?: string;
+  readonly think?: string;
+  readonly guess?: string;
+};
 
 /**
  * Form text → `zOpinions`, through the schema the model has always used.
@@ -117,13 +127,21 @@ export type RawAnswer = { readonly feel?: string; readonly wish?: string };
  * place the fixtures do. Every Aspect the instance holds must arrive exactly once —
  * a submit is the party's whole sheet, not a patch, so a missing Aspect is a refusal and
  * not a partial write.
+ *
+ * **The mode is an argument, never a form field.** `submitAnswers` passes the value it read
+ * from the locked `assessment_instance` row, so the sheet a post is parsed against cannot be
+ * chosen by the post. Basic refuses a Think/Guess value outright (a field nobody reads is the
+ * silent success the freeze rule exists to prevent); Advanced requires the pair on every
+ * Aspect, because that is the sheet its mode asks.
  */
 export function parseSubmission(
   aspectIds: readonly string[],
   raw: ReadonlyMap<string, RawAnswer>,
+  mode: AssessmentMode,
 ): SubmissionParse {
   const problems: string[] = [];
   const answers: ParsedAnswers[] = [];
+  const advanced = mode === "advanced";
 
   for (const itemId of aspectIds) {
     const entry = raw.get(itemId);
@@ -131,9 +149,25 @@ export function parseSubmission(
       problems.push(`${itemId}: no answer — a submit carries every Aspect`);
       continue;
     }
+    if (!advanced && (entry.think !== undefined || entry.guess !== undefined)) {
+      const kind = entry.think !== undefined ? "think" : "guess";
+      problems.push(`${itemId}.${kind}: "${kind}" is not a Basic Mode opinion kind`);
+      continue;
+    }
+    if (advanced && (entry.think === undefined || entry.guess === undefined)) {
+      problems.push(
+        `${itemId}.think: Think and Guess come together: Advanced Mode adds the pair, so one of them alone is not a mode`,
+      );
+      continue;
+    }
+
     const feel = toScore(entry.feel);
     const wish = toScore(entry.wish);
-    const parsed = zOpinions.safeParse({ feel, wish });
+    const parsed = zOpinions.safeParse(
+      advanced
+        ? { feel, wish, think: toScore(entry.think), guess: toScore(entry.guess) }
+        : { feel, wish },
+    );
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         problems.push(`${itemId}.${issue.path.join(".") || "opinions"}: ${issue.message}`);

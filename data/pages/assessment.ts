@@ -22,6 +22,14 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
       heading: "Start an instance",
       body: "You answer first. They see none of it until they have answered too — and you see none of theirs.",
       items: [
+        { id: "mode-label", label: "Which mode?" },
+        { id: "mode-basic", label: "Basic Mode — Feel and Wish" },
+        { id: "mode-advanced", label: "Advanced Mode — Feel, Wish, Think and Guess" },
+        {
+          id: "mode-help",
+          label:
+            "The mode is chosen now and fixed for this instance: both of you answer the same sheet, and it cannot be switched later.",
+        },
         { id: "initiator-name", label: "Your name" },
         { id: "initiator-placeholder", label: "Avery" },
         { id: "counterparty-name", label: "Their name" },

@@ -13,7 +13,14 @@
  * rows, including the two-answer arithmetic (Feel 2 against Feel 5 is a Gap of 3) and the
  * blind state (no report, no counterparty score, whatever the markup is asked for).
  */
-import { zOpinions, type Assessment, type Opinions, type PartyRole } from "@/content/assessment";
+import {
+  zAssessmentMode,
+  zOpinions,
+  type Assessment,
+  type AssessmentMode,
+  type Opinions,
+  type PartyRole,
+} from "@/content/assessment";
 import type { Score } from "@/content/record";
 import { SCORE_MAX, SCORE_MIN } from "@/content/record";
 import type { AssessmentReport } from "@/lib/assessment-report";
@@ -65,6 +72,12 @@ export interface FlowScreen {
   readonly title: string;
   readonly summary: string;
   readonly status: InstanceStatus;
+  /**
+   * The mode this instance was played in — the same value the report carries, so the screen
+   * can name it and the answer sheet can ask exactly the kinds it defines. Parsed from the
+   * row (`zAssessmentMode.parse`): a value the model rejects is drift, never a default.
+   */
+  readonly mode: AssessmentMode;
   readonly viewer: { readonly role: PartyRole; readonly name: string };
   readonly aspects: readonly FlowAspect[];
   readonly initiatorName: string;
@@ -172,6 +185,7 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     title: template.title,
     summary: template.summary,
     status,
+    mode: zAssessmentMode.parse(rows.instance.mode),
     viewer: { role: viewerRole, name: viewerRow.name },
     aspects: orderedItems(rows.items).map((item) => ({
       itemId: item.item_id,
