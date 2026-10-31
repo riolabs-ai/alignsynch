@@ -68,6 +68,20 @@ export function databaseUrl(): string {
   return url;
 }
 
+/**
+ * Could this deployment reach a database at all?
+ *
+ * The same question `databaseUrl()` answers by throwing, asked without the throw, for the one
+ * caller that must keep rendering on a tree with no database (#289's pricing page): a page that
+ * cannot bill renders its authored rows and no checkout, rather than a 500 that hides why.
+ * Asking up front is not swallowing an error — a configured database that is *down* still fails
+ * at the query, and the log line says so.
+ */
+export function databaseConfigured(): boolean {
+  const url = process.env.DATABASE_URL?.trim();
+  return url !== undefined && url !== "";
+}
+
 /** The one pool. Pooled URL at runtime; `db:migrate` / `db:seed` use the unpooled one. */
 export function getPool(): Pool {
   if (pool === undefined) {

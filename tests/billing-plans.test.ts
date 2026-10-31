@@ -2,23 +2,22 @@
  * The plan fixture and the pricing page are one list (#289).
  *
  * The card asks for `billing_plan` to be seeded "from the same fixture the pricing page reads, so
- * the page and the model cannot diverge". This card may not touch `components/pricing/**` (the
- * CTA card does that), so the page still carries its own `PLANS_DATA` — and "cannot diverge" has
- * to be a check rather than an intention. That is this file:
+ * the page and the model cannot diverge". Card 1 could not touch `components/pricing/**` (the CTA
+ * card owns it), so it added a reconciliation between the page's own `PLANS_DATA` and this file;
+ * card 3 then moved the page onto the rows, and this file kept its promise — it now proves the
+ * *other* direction instead of going vacuous:
  *
  *   - `billingPlanProblems()` proves the fixture is coherent with itself (integer cents, a zero
  *     free tier, whole months, no duplicate tier);
  *   - `billingPlanRows()` is what `db:seed` writes and V13 compares, so the rows carry exactly the
  *     fixture's names and cents;
- *   - the reconciliation below reads the page's own source and fails when a name, description,
- *     a price, a feature bullet, a limitation, a CTA or the ribbon disagrees with the fixture.
+ *   - the page suite proves the grid has no second list and no price literal: it imports the
+ *     fixture, carries no `PLANS_DATA`, and nothing under `components/pricing/` types a `$9.99`.
  *
- * **It is not a leftover, and it does not go vacuous when the page moves.** Card 3 makes the plan
- * table read `billing_plan`; when the component imports `@/data/billing-plans` the second list is
- * gone, and this file switches to asserting that no price literal remains in the page. Either way
- * the test is about the same fact: the page has one source for a price.
+ * `tests/pricing-catalogue.test.ts` proves the rows themselves: which card gets a checkout button,
+ * and which one prints the not-available line because its `billing_plan` row is retired.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -34,10 +33,14 @@ import {
 const PAGE_PATH = "components/pricing/pricing-plans.tsx";
 const pageSource = readFileSync(join(process.cwd(), PAGE_PATH), "utf8");
 
-/** `999` → `"9.99"`, the string the card renders under a `$`. */
-function major(cents: number): string {
-  return String(cents / 100);
-}
+/** Every component the plan band renders, read as source — the acceptance's tree, as a test. */
+const PRICING_DIR = "components/pricing";
+const pricingSources = readdirSync(join(process.cwd(), PRICING_DIR))
+  .filter((file) => file.endsWith(".tsx"))
+  .map((file) => ({
+    file: `${PRICING_DIR}/${file}`,
+    source: readFileSync(join(process.cwd(), PRICING_DIR, file), "utf8"),
+  }));
 
 describe("the fixture is coherent", () => {
   it("has no problems", () => {
@@ -111,62 +114,28 @@ describe("the rows db:seed writes and db:verify compares", () => {
 });
 
 describe("the pricing page reads one list", () => {
-  it("either imports the fixture, or carries a PLANS_DATA that matches it row for row", () => {
-    const readsFixture = /from\s+["']@\/data\/billing-plans["']/.test(pageSource);
+  it("imports the fixture, and carries no PLANS_DATA of its own", () => {
+    expect(pageSource).toMatch(/from\s+["']@\/data\/billing-plans["']/);
+    // Strip comments first: the doc comment records *why* the old `PLANS_DATA` array was removed,
+    // and that explanation is not a second list. Assert on the code the browser receives.
+    const pageCode = pageSource.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    expect(pageCode).not.toContain("PLANS_DATA");
+    expect(pageCode).not.toMatch(/monthly:\s*\d/);
+    expect(pageCode).not.toMatch(/yearly:\s*\d/);
+  });
 
-    if (readsFixture) {
-      // Card 3's world: the page renders the rows, so there is no second list to compare. The one
-      // thing that must not survive is a price typed into the component.
-      expect(pageSource).not.toMatch(/monthly:\s*\d/);
-      expect(pageSource).not.toMatch(/yearly:\s*\d/);
-      return;
-    }
-
-    // This card's world: the page still owns `PLANS_DATA`, so the two lists are compared.
-    const start = pageSource.indexOf("const PLANS_DATA");
-    expect(start).toBeGreaterThan(-1);
-    const end = pageSource.indexOf("] as const;", start);
-    expect(end).toBeGreaterThan(start);
-    const region = pageSource.slice(start, end);
-
-    const pageNames = [...region.matchAll(/\n\s+name: "([^"]+)",/g)].map((match) => match[1]);
-    expect(pageNames).toEqual(billingPlans.map((plan) => plan.name));
-
-    for (const plan of billingPlans) {
-      const block = region.match(
-        new RegExp(`\\{\\s*name: "${plan.name}",[\\s\\S]*?\\n  \\},`),
-      )?.[0];
-      expect(block, `the page has no PLANS_DATA block for "${plan.name}"`).toBeDefined();
-      if (block === undefined) continue;
-
-      const where = `${PAGE_PATH} (${plan.name})`;
-      expect(block, `${where}: description`).toContain(
-        `description: ${JSON.stringify(plan.description)}`,
-      );
-      // The card prints a major-unit number; the fixture holds cents. Yearly is the amount charged
-      // once a year divided by twelve, which is what the "/mo, billed yearly" line means.
-      expect(block, `${where}: monthly price`).toContain(`monthly: ${major(plan.monthlyCents)}`);
-      expect(block, `${where}: yearly price`).toContain(`yearly: ${major(plan.yearlyCents / 12)}`);
-      for (const feature of plan.features) {
-        expect(block, `${where}: feature "${feature}"`).toContain(JSON.stringify(feature));
-      }
-      for (const limitation of plan.limitations) {
-        expect(block, `${where}: limitation "${limitation}"`).toContain(JSON.stringify(limitation));
-      }
-      expect(block, `${where}: CTA label`).toContain(`label: ${JSON.stringify(plan.cta.label)}`);
-      // `/register` is a route; the support destination is the page's per-brand mailto constant,
-      // which is why the fixture stores the word "support" rather than an address.
-      expect(block, `${where}: CTA destination`).toContain(
-        plan.cta.href === "/register" ? 'href: "/register"' : "href: SUPPORT_MAILTO",
-      );
-      expect(block, `${where}: ribbon`).toContain(`popular: ${plan.popular}`);
-    }
+  it("types no price under components/pricing — the card's grep, as a test", () => {
+    // The card's criterion is `rg -n '\$[0-9]+\.' components/pricing/` returning zero. A figure is
+    // printed from a row (`formatCurrencyAmount(interval.displayCents)`), never written down.
+    const offenders = pricingSources
+      .filter(({ source }) => /\$[0-9]+\./.test(source))
+      .map(({ file }) => file);
+    expect(offenders).toEqual([]);
   });
 
   it("names the support destination through the brand, not a pinned address", () => {
-    if (!pageSource.includes("SUPPORT_MAILTO")) return;
-    // The page builds the address from the brand at render time; the fixture stores the word
-    // "support" so neither build pins the other's mailbox.
+    // The fixture stores the word "support"; the page builds the address from the brand at render
+    // time, so neither build pins the other's mailbox.
     expect(pageSource).toContain(`mailto:\${brand.supportEmail}`);
   });
 });
