@@ -11,8 +11,8 @@
 / | alignsynch | 7451936ed8f3e9abfc1d501511ff3b38e079841e637c048cb2bb5850fc9f94bb
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
-/news | quizhub | 4c781eedea0bca906a8a936c8f202e0565972737ae02f2c0f7f5e0718968ce25
-/news | alignsynch | a08079bb66f0d34f7a2ac98bbbbd51c3dd2d8a9dc312e99274f92daa02f8e6d0
+/news | quizhub | db1ce47e92a55869ee54be91e21e67661a2412348f3e2e420ce8b230e5ac9abd
+/news | alignsynch | 6fd32a6432584ffa05ddfcbcf1ab623349f18793254855fa497226ce67da17a5
 /news/[slug] | quizhub | f4cd759ac71847c3c1c3944533bbc645e0329dc1d2bd7ad3952fb56cb36e7b35
 /news/[slug] | alignsynch | 7aae9bd5d0364e12462571716f71f4163795e8990fbdf2f2e90a866effcfe7b3
 /quiz/[id] | quizhub | 43b5abb41f28ea472af52cde2afa00e3c7479bf43c7b24be7f93385deb0b47a3
