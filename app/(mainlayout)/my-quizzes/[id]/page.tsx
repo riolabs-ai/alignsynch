@@ -20,25 +20,25 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const quiz = quizById(id);
-  return quiz === undefined
+  const record = quizById(id);
+  return record === undefined
     ? { title: "My Quizzes" }
-    : { title: quiz.title, description: quiz.summary };
+    : { title: record.title, description: record.summary };
 }
 
 export default async function QuizDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const quiz = quizById(id);
-  if (quiz === undefined) notFound();
+  const record = quizById(id);
+  if (record === undefined) notFound();
 
-  const primaryCategory = quiz.categoryIds[0];
+  const primaryCategory = record.categoryIds[0];
 
   return (
     <QuizDetails
-      quiz={quiz}
-      analytics={analyticsFor(quiz.id)}
-      players={selectQuizResults(quizResults, quiz, 5)}
-      questionAccuracy={Object.fromEntries(selectQuestionAccuracy(quizResults, quiz.id))}
+      quiz={record}
+      analytics={analyticsFor(record.id)}
+      players={selectQuizResults(quizResults, record, 5)}
+      questionAccuracy={Object.fromEntries(selectQuestionAccuracy(quizResults, record.id))}
       categoryLabel={primaryCategory === undefined ? "—" : (categoryName(primaryCategory) ?? "—")}
     />
   );

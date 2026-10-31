@@ -14,10 +14,10 @@ interface LiveWinnersProps {
   /** The band's words, from the home `PageCopy` fixture (WU-6) — never a literal in this view. */
   copy: PageCopySection;
   /**
-   * The newest wins, already joined to their player and quiz title. The home page is a server
+   * The newest wins, already joined to their player and record title. The home page is a server
    * component and resolves them (`lib/win-feed.ts`), so this surface reads the fixture without
-   * shipping the quiz collection to the browser. What used to be here was an eight-record
-   * `initialWinners` array with its own avatars, invented quiz titles and a `new Date("2025-…")`
+   * shipping the record collection to the browser. What used to be here was an eight-record
+   * `initialWinners` array with its own avatars, invented record titles and a `new Date("2025-…")`
    * per row — a third roster that no fixture could edit.
    */
   wins: WinEventRow[];
