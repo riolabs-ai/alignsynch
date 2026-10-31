@@ -30,6 +30,7 @@ import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
 import { invitePageCopy } from "./invite";
+import { legalPages } from "./legal";
 import { loginPageCopy } from "./login";
 import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
@@ -66,6 +67,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/news": newsPageCopy,
   "/news/[slug]": newsArticlePageCopy,
   "/pricing": pricingPageCopy,
+  "/privacy": legalPages.privacy,
   "/profile/[username]": profilePageCopy,
   "/register": registerPageCopy,
   /**
@@ -81,6 +83,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/settings": settingsPageCopy,
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
+  "/terms": legalPages.terms,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
   "/welcome": marketingPageCopy,

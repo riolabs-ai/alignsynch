@@ -34,6 +34,28 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         { id: "counterparty", label: "You are answering as {name}, the Counterparty." },
       ],
     },
+    // #274 — the one stage sentence, and the only place the four stage names are authored on
+    // this screen. `lib/flow/stage.ts` decides which row is drawn; it can never draw
+    // "Aligned", because that is a verdict over the finished Gap and belongs on the report.
+    // No sentence names a count: `{names}` is who has not answered, which the waiting band
+    // already says, and "3 of 5 answered" is the blind-rule leak this product refuses.
+    {
+      id: "stage",
+      items: [
+        { id: "invited", label: "Invited — waiting for {counterparty} to accept the invitation." },
+        {
+          id: "invited-expired",
+          label:
+            "Invited — the invitation to {counterparty} has expired, so they cannot accept it.",
+        },
+        { id: "connected", label: "Connected — {names} still to answer." },
+        {
+          id: "connected-unknown",
+          label: "Connected — you both have a seat; the answers are not both in yet.",
+        },
+        { id: "sharing", label: "Sharing — the report is open to both of you." },
+      ],
+    },
     {
       id: "answer",
       heading: "Answer every Aspect",

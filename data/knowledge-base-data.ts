@@ -1219,7 +1219,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "note",
-        text: "Our support team typically responds within 24 hours on business days. Premium users receive priority support.",
+        text: `There is no ticket queue: write to ${brand.supportEmail} with what you were doing, what you expected, and the URL you were on. Replies come when they can — not on a fixed schedule.`,
       },
     ],
   },

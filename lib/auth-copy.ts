@@ -69,6 +69,13 @@ function signInPage(
        * so this is the line a green build could not tell you about.
        */
       sectionOf(copy, "version"),
+      /**
+       * The legal row (issue #270). Same trap as the line above, one card later: this projection
+       * rebuilds the section list, so a shared section the view resolves has to be named here or
+       * it is dropped and `LoginView` throws `PageCopy: no section "legal"` at request time —
+       * with `next build` still green, because it never renders `/login`.
+       */
+      sectionOf(copy, "legal"),
     ],
   };
 }
