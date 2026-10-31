@@ -74,8 +74,7 @@ export function demoCopyFor(
   copy: PageCopy,
   fixture: PageCopy = copy,
 ): PageCopy {
-  const isDemo = (id: string): boolean =>
-    (DEMO_COPY_SECTIONS as readonly string[]).includes(id);
+  const isDemo = (id: string): boolean => (DEMO_COPY_SECTIONS as readonly string[]).includes(id);
   const drop =
     surface.kind === "off"
       ? new Set<string>(DEMO_COPY_SECTIONS)

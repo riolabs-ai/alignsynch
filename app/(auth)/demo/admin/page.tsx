@@ -8,7 +8,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 /**
- * `/demo/admin` — the admin-only server check the panel's third button proves (#183, part 2).
+ * `/demo/admin` — the admin-only server check the `/login` role buttons prove (#183, part 2; the
+ * buttons moved to `/login` in #218).
  *
  * This is the first caller of `requireAdmin()`, and it exists because the demo needs a surface
  * that answers differently for the two roles **on the server**: the two member accounts reach it
@@ -66,7 +67,7 @@ export default async function DemoAdminPage() {
             header or cookie can claim it.
           </p>
           <Button asChild variant="outline" className="w-full">
-            <Link href="/demo">Back to the demo panel</Link>
+            <Link href="/login">Back to the demo accounts</Link>
           </Button>
         </CardContent>
       </Card>
