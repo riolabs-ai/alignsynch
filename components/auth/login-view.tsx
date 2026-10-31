@@ -11,11 +11,27 @@ import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { BookOpen, Loader2, Trophy } from "lucide-react";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
+import { BookOpen, Loader2, Scale, Trophy, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+
+/**
+ * The mark each stat tile draws, by the id the build's fixture declares.
+ *
+ * An icon is chrome, not copy, so it stays in the view — but which tile is which belongs
+ * to the fixture's ids, and a brand may word a tile the quiz build fills with a count
+ * (`stats-alignsynch`). An id this map does not know gets the neutral mark rather than a
+ * quiz trophy: the tiles are the same shape on both brands, and only the words move.
+ */
+const STAT_MARKS: Record<string, { icon: LucideIcon; tone: string }> = {
+  players: { icon: Trophy, tone: "text-yellow-400" },
+  categories: { icon: BookOpen, tone: "text-green-400" },
+};
+
+/** The mark for a tile the map above does not name. */
+const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
 
 /**
  * `/login`, the client half — a real sign-in since issue #164.
@@ -39,11 +55,28 @@ import { type FormEvent, useState } from "react";
  * protected page is not reused. The component never reads `window.location` to decide where to go.
  *
  * The words stay in `data/pages/login.ts`: this file owns which id it asks for, never the string.
+ *
+ * Two things here are brand-selected rather than shared (issue #225), and both arrive as
+ * props: `copy` is already resolved by `lib/auth-copy.ts::loginCopyFor`, so `subtitle` and the
+ * `sign-in` card carry the build's brand, and the two tiles under the panel are `copy`'s own
+ * items. The quiz build's tiles are two numbers; the alignment build's are two sentences, and
+ * the slot is the same. The one number this file owns is `platform.activePlayers` (a snapshot
+ * in `data/metrics.ts`, formatted here): it is filled into the fixture's `{count}` placeholder,
+ * so a brand whose tile carries no placeholder renders no count at all.
  */
 export function LoginView({ copy, next }: { copy: PageCopy; next: string }) {
   const router = useRouter();
   const form = sectionOf(copy, "sign-in");
   const stats = sectionOf(copy, "stats");
+
+  /**
+   * The one number this page owns: the demo's active-player count, as `data/metrics.ts`
+   * records it and `content/metrics.ts` formats it. It reaches a tile through the fixture's
+   * `{count}` placeholder — and a brand whose tile carries no placeholder renders none, which
+   * is how the alignment build's two sentences take the slots the quiz build fills with
+   * numbers.
+   */
+  const values = { count: formatCompactCount(metric("platform.activePlayers").value, "upper") };
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -98,18 +131,22 @@ export function LoginView({ copy, next }: { copy: PageCopy; next: string }) {
             <p className="text-xl text-white/90 leading-relaxed">{copy.subtitle}</p>
           </div>
           <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
-              <Trophy className="w-8 h-8 mx-auto mb-2 text-yellow-400" />
-              <div className="text-2xl font-bold">
-                {formatCompactCount(metric("platform.activePlayers").value, "upper")}+
-              </div>
-              <div className="text-sm text-white/80">{itemLabel(stats, "players")}</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
-              <BookOpen className="w-8 h-8 mx-auto mb-2 text-green-400" />
-              <div className="text-2xl font-bold">500+</div>
-              <div className="text-sm text-white/80">{itemLabel(stats, "categories")}</div>
-            </div>
+            {stats.items?.map((stat) => {
+              const mark = STAT_MARKS[stat.id] ?? NEUTRAL_MARK;
+              const Icon = mark.icon;
+              return (
+                <div
+                  key={stat.id}
+                  className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center"
+                >
+                  <Icon className={`w-8 h-8 mx-auto mb-2 ${mark.tone}`} />
+                  {stat.value !== undefined && (
+                    <div className="text-2xl font-bold">{fillLabel(stat.value, values)}</div>
+                  )}
+                  <div className="text-sm text-white/80">{stat.label}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
         {/* Decorative Elements */}

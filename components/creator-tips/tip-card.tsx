@@ -19,7 +19,7 @@ export default function TipCard({ tip, copy }: TipCardProps) {
   return (
     <Link
       href={articlePath(tip)}
-      className="group flex flex-col h-full overflow-hidden rounded-lg border border-gray-200 hover:border-purple-300 dark:border-gray-700 hover:shadow-md transition-all"
+      className="group flex flex-col h-full overflow-hidden rounded-lg border border-gray-200 hover:border-action/40 dark:border-gray-700 hover:shadow-md transition-all"
     >
       <div className="aspect-video relative">
         <Media
@@ -34,7 +34,7 @@ export default function TipCard({ tip, copy }: TipCardProps) {
 
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex items-center mb-3">
-          <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+          <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-action/10 text-action">
             {tipCategoryName(tip.categoryIds[0] ?? "")}
           </span>
           <div className="flex items-center ml-auto text-sm text-gray-500">
@@ -43,7 +43,7 @@ export default function TipCard({ tip, copy }: TipCardProps) {
           </div>
         </div>
 
-        <h3 className="text-lg font-bold mb-2 group-hover:text-purple-700 transition-colors">
+        <h3 className="text-lg font-bold mb-2 group-hover:text-action transition-colors">
           {tip.title}
         </h3>
 
@@ -61,7 +61,7 @@ export default function TipCard({ tip, copy }: TipCardProps) {
           </div>
 
           <button
-            className="ml-auto text-gray-400 hover:text-purple-600 transition-colors"
+            className="ml-auto text-gray-400 hover:text-action transition-colors"
             onClick={(e) => {
               e.preventDefault();
               // Bookmark functionality would go here

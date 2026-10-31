@@ -28,7 +28,7 @@ export function HeroSection({ copy }: { copy: PageCopy }) {
               <Button
                 size="lg"
                 asChild
-                className="bg-white duration-300 text-indigo-600 hover:bg-white/90"
+                className="bg-white duration-300 text-action hover:bg-white/90"
               >
                 <Link href={copy.cta.href}>{copy.cta.label}</Link>
               </Button>
@@ -36,7 +36,7 @@ export function HeroSection({ copy }: { copy: PageCopy }) {
             {copy.secondaryCta && (
               <Button
                 size="lg"
-                className="bg-indigo-600 text-white duration-300 hover:bg-indigo-700"
+                className="bg-action text-action-foreground duration-300 hover:bg-action/90"
                 asChild
               >
                 <Link href={copy.secondaryCta.href}>{copy.secondaryCta.label}</Link>
@@ -45,8 +45,8 @@ export function HeroSection({ copy }: { copy: PageCopy }) {
           </div>
         </div>
       </div>
-      <div className="absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-indigo-400/20 blur-3xl"></div>
-      <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-purple-400/20 blur-3xl"></div>
+      <div className="absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-action/20 blur-3xl"></div>
+      <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-action/20 blur-3xl"></div>
     </section>
   );
 }

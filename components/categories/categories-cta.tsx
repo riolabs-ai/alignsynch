@@ -21,15 +21,15 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
     {
       item: itemOf(copy, "compete"),
       icon: Trophy,
-      ring: "bg-purple-100 dark:bg-purple-900/30",
-      tint: "text-purple-600 dark:text-purple-400",
+      ring: "bg-action/10",
+      tint: "text-action",
       delay: 0.4,
     },
     {
       item: itemOf(copy, "learn"),
       icon: Sparkles,
-      ring: "bg-indigo-100 dark:bg-indigo-900/30",
-      tint: "text-indigo-600 dark:text-indigo-400",
+      ring: "bg-action/10",
+      tint: "text-action",
       delay: 0.5,
     },
     {
@@ -42,11 +42,10 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 relative overflow-hidden">
+    <section className="py-20 bg-muted relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"></div>
-      <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-purple-200/50 dark:bg-purple-900/20 blur-3xl"></div>
-      <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-indigo-200/50 dark:bg-indigo-900/20 blur-3xl"></div>
+      <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-action/10 blur-3xl"></div>
+      <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-action/10 blur-3xl"></div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center mb-12">
@@ -55,9 +54,9 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full shadow-sm border border-purple-100 dark:border-purple-900/50 mb-4"
+            className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full shadow-sm border border-action/20 mb-4"
           >
-            <Sparkles className="h-4 w-4 text-purple-500" />
+            <Sparkles className="h-4 w-4 text-action" />
             <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
               {itemOf(copy, "eyebrow").label}
             </span>
@@ -68,7 +67,7 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             viewport={{ once: true }}
-            className="text-3xl lg:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
+            className="text-3xl lg:text-4xl font-bold mb-4"
           >
             {copy.heading}
           </motion.h2>
@@ -92,7 +91,7 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
           >
             {copy.cta && (
               <Link href={copy.cta.href}>
-                <Button size="lg" variant={"gradient"}>
+                <Button size="lg" variant={"action"}>
                   {copy.cta.label}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -116,7 +115,7 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay }}
               viewport={{ once: true }}
-              className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-purple-100 dark:border-purple-900/50 p-6 text-center hover:shadow-md transition-all hover:-translate-y-1"
+              className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-action/20 p-6 text-center hover:shadow-md transition-all hover:-translate-y-1"
             >
               <div
                 className={`inline-flex items-center justify-center w-14 h-14 rounded-full ${ring} mb-4`}
@@ -138,9 +137,9 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
           viewport={{ once: true }}
           className="mt-16 max-w-3xl mx-auto"
         >
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-purple-100 dark:border-purple-900/50 p-6 flex flex-col sm:flex-row items-center gap-6">
-            <div className="flex-shrink-0 bg-gradient-to-r from-purple-500 to-indigo-500 p-3 rounded-full">
-              <Users className="h-6 w-6 text-white" />
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-action/20 p-6 flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex-shrink-0 bg-action p-3 rounded-full">
+              <Users className="h-6 w-6 text-action-foreground" />
             </div>
             <div className="text-center sm:text-left">
               <p className="text-slate-600 dark:text-slate-400">
@@ -152,7 +151,7 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
             </div>
             <div className="sm:ml-auto">
               <Link href="/register">
-                <Button variant={"gradient"}>{itemOf(copy, "join").label}</Button>
+                <Button variant={"action"}>{itemOf(copy, "join").label}</Button>
               </Link>
             </div>
           </div>
