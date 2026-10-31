@@ -250,9 +250,9 @@ export const newsData: readonly NewsArticle[] = [
     id: "news-quiz-hub-community-spotlight-may",
     kind: "news",
     slug: "quiz-hub-community-spotlight-may",
-    title: "Community Spotlight: Meet the Creator Behind 'History Mysteries'",
+    title: "Community Spotlight: The Creator Behind 'History's Greatest Mysteries'",
     summary:
-      "Learn how history teacher James Wilson built a quiz empire with over 2 million plays and a dedicated following.",
+      "Three published history quizzes carry the HistoryBuff byline. Read together, they show what a catalogue built around one subject looks like.",
     categoryIds: ["news-community", "news-success-stories"],
     tags: [],
     author: {
@@ -266,50 +266,50 @@ export const newsData: readonly NewsArticle[] = [
     body: [
       {
         type: "heading",
-        text: "From Classroom to Quiz Stardom",
+        text: "A Byline You Can Read Off the Record",
         level: 2,
       },
       {
         type: "paragraph",
-        text: `When James Wilson first created a quiz on ancient civilizations for his high school history class, he never imagined it would lead to a side career as one of ${brand.name}'s most successful creators.`,
+        text: "A creator profile usually rests on an interview. This one rests on the library: the byline HistoryBuff sits on three published quizzes here, all of them history, and everything below is read from those three records.",
       },
       {
         type: "paragraph",
-        text: "Three years and over 200 quizzes later, James's 'History Mysteries' series has amassed more than 2 million plays and a dedicated following of history enthusiasts from around the world.",
+        text: "That is a narrower starting point than a conversation, and for a quiz catalogue a more honest one. What a creator decides is visible in the work — how wide the subject is, how hard the items go, how much time a player is given — and none of it needs a quotation to be worth reading.",
       },
       {
         type: "heading",
-        text: "Finding a Niche in Historical Puzzles",
+        text: "Two Ways to Write a History Quiz",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "James's approach combines historical accuracy with engaging storytelling and problem-solving elements. 'I wanted to create quizzes that weren't just about memorizing dates and names,' he explains. 'Each quiz tells a story and invites players to solve a historical mystery or puzzle.'",
+        text: "'History's Greatest Mysteries' takes the narrow route: five questions at hard difficulty, every item built on a case that is still argued over — where the 1947 Roswell incident happened, which of the seven wonders was never conclusively located, what is unusual about the Voynich manuscript, which ship was found empty in 1872, and the year the Romanov dynasty fell. Each one is a fact you either hold or do not.",
       },
       {
         type: "paragraph",
-        text: "This unique format has resonated with players who might not typically be drawn to history content, helping James build an audience beyond traditional history buffs.",
+        text: "'Ancient Civilizations: Egypt, Greece & Rome' goes the other way: the same five questions at medium difficulty, on ground a general reader has met before — the river central to Egyptian civilization, the first Roman emperor, the hill the Parthenon stands on, the script carved into Egyptian monuments, the Greek city-state known for military discipline. Neither record sets a time limit or a per-question timer, which is the right default for a quiz about recall.",
       },
       {
         type: "image",
         image: {
           src: media["placeholder"].src,
-          alt: "Screenshot of a History Mysteries quiz",
+          alt: "Screenshot of a History's Greatest Mysteries quiz",
         },
-        caption: "A sample question from the popular 'Lost Treasures of the Ancient World' quiz",
+        caption: "A sample question from 'History's Greatest Mysteries'",
       },
       {
         type: "heading",
-        text: "Building a Community Around Historical Content",
+        text: "What a Hard Set Asks of Its Author",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "Beyond creating engaging quizzes, James has built a thriving community through his dedicated social media channels and a monthly newsletter where he shares historical facts, behind-the-scenes research, and previews of upcoming quizzes.",
+        text: "The mystery set is the one that shows the work. A fair item has options that all sound possible, and the four in that quiz are things a reader might genuinely believe: four American states for Roswell, four famous ships for 1872, four of the seven wonders for the one that was never found. A decoy nobody would pick makes an item easier than it looks, which is why the hard set is usually the short one in a catalogue.",
       },
       {
         type: "paragraph",
-        text: "'The community aspect has been the most rewarding part,' James says. 'I receive messages from students saying my quizzes helped them develop a love for history, and from older adults who enjoy testing their knowledge and learning new things.'",
+        text: "The survey set asks for the opposite discipline. Its items have to be reachable by someone who has read nothing on the subject and still worth answering for someone who has — the Parthenon's hill and the first Roman emperor are old enough to be common knowledge and specific enough to catch a half-remembered answer.",
       },
       {
         type: "heading",
@@ -318,19 +318,11 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "While James started creating quizzes as a teaching tool, they've now become a significant source of income. Through a combination of premium quizzes, sponsorships from educational companies, and affiliate marketing for history books and courses, he's been able to generate substantial revenue.",
+        text: "What a catalogue earns is not visible from the quizzes themselves — revenue lives in an author's own accounts, not in a record — so this section is guidance rather than a report on anyone's income.",
       },
       {
         type: "paragraph",
-        text: "'Last year, my quiz income actually exceeded my teaching salary,' James reveals. 'It's allowed me to reduce my teaching hours and focus more on creating high-quality educational content.'",
-      },
-      {
-        type: "image",
-        image: {
-          src: media["placeholder"].src,
-          alt: "Growth chart of quiz income",
-        },
-        caption: "James's quiz income has grown steadily over the past three years",
+        text: "Three lines recur in quiz work, and each asks something different of the catalogue. Paid access wants depth: a subscriber renews for the next set, not for the one they have already finished. Sponsorship wants reach and a subject that suits the sponsor, which usually means the broad surveys rather than the specialist ones. Affiliate links want intent — a reader who has just finished a history quiz is a plausible buyer of a history book, and a reader who has just finished a maths quiz is not. The mistake is to build for all three at once on a catalogue that is two records deep.",
       },
       {
         type: "heading",
@@ -339,24 +331,24 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "When asked what advice he would give to new quiz creators, James emphasizes the importance of finding a specific niche and focusing on quality over quantity. 'Create quizzes about topics you're genuinely passionate about, and really invest time in research and question design,' he suggests.",
+        text: "If the records above suggest anything, it is to pick a subject narrow enough that a second and a third quiz are obvious rather than forced. A mystery set and a survey set cover the same category from two angles, which is what lets a reader move from one to the other; a catalogue of one quiz per subject gives nobody a reason to stay.",
       },
       {
         type: "paragraph",
-        text: "He also recommends engaging actively with players through comments and social media. 'The feedback you get from your audience is invaluable for improving your quizzes and building loyalty.'",
+        text: "The other half is item design. Write the options before the answer key, keep every wrong option something a careless reader would defend, and write the explanation with the question rather than after it: the sentence that has to justify an answer is what catches the item that is merely ambiguous.",
       },
       {
         type: "heading",
-        text: "What's Next for History Mysteries",
+        text: "Where a Catalogue Like This Goes Next",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "Looking ahead, James plans to expand his content into new formats, including a podcast that delves deeper into the historical mysteries featured in his quizzes. He's also developing a series of educational resources for teachers who want to use his quizzes in their classrooms.",
+        text: "The obvious next move for the catalogue above is depth rather than breadth: a fourth history quiz under the same byline, on a subject the first three have already taught a reader to want. The less obvious one is to go harder again — the mystery set is what carries the difficulty now, and a catalogue that keeps a hard shelf stocked gives the readers who finish it somewhere to go next.",
       },
       {
         type: "paragraph",
-        text: "'My ultimate goal is to make history accessible and exciting for as many people as possible,' James says. 'Quizzes have proven to be an incredibly effective way to do that, and I'm excited to keep exploring new possibilities.'",
+        text: "That is the whole of the profile, and it is worth being plain about why. A record can tell you what was published and how it was built; it cannot tell you what the person behind the handle thinks about any of it. Where this library carries a quiz, the quiz is the source — and where it does not, the honest thing is to say so rather than invent someone to ask.",
       },
     ],
   },
@@ -473,16 +465,16 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "heading",
-        text: `Implementing Accessibility on ${brand.name}`,
+        text: "Accessibility You Decide While Writing the Quiz",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "Our platform includes several built-in features to help make your quizzes more accessible. These include keyboard navigation support, screen reader compatibility, and customizable text sizing. To access these features, go to the 'Accessibility' tab in your quiz settings.",
+        text: "Most of what makes a quiz accessible is decided while it is being written, not by a switch on the platform. The prompt and every option carry the whole meaning, so the wording and the four choices do more for a reader working slowly than any setting does. The one choice that travels with the quiz is time: a quiz that must be clocked should say so before the player starts, and one that does not need a clock is better without it.",
       },
       {
         type: "paragraph",
-        text: "Remember that creating truly accessible content is an ongoing process of learning and improvement. We're committed to continuing to enhance our accessibility features, and we welcome your feedback on how we can better support inclusive quiz creation.",
+        text: "Remember that creating truly accessible content is an ongoing process of learning and improvement, and that the most useful check is a real reader working through the quiz the way they actually would. We welcome feedback on how these guides can better support inclusive quiz creation.",
       },
     ],
   },
