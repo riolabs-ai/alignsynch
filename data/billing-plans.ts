@@ -11,14 +11,15 @@
  *   `scripts/db-verify.mjs`      V13 proves those rows still equal this file
  *   `lib/billing/entitlements.ts`  plan → what the server allows
  *   `scripts/billing-smoke.mjs`  the keyless demo, which buys a tier through the mock adapter
+ *   `lib/billing/catalogue.ts`   the plan grid's rows: this file's words, `billing_plan`'s prices
  *
- * **`components/pricing/pricing-plans.tsx` still carries its own `PLANS_DATA`** — moving the
- * component onto these rows is card 3 of #289 (the CTA card), and this card does not touch
- * `components/pricing/**`. Until then the two lists cannot diverge silently:
- * `tests/billing-plans.test.ts` parses the component's `PLANS_DATA` and fails when a name,
- * description, price, feature, limitation, CTA or ribbon disagrees with this file. When card 3
- * makes the component read `billing_plan`, that test recognises the switch (the import) and
- * checks the rows instead, so it is never vacuous and never a leftover.
+ * **The plan table renders these rows, and types no price of its own.** Card 3 of #289 moved
+ * `components/pricing/pricing-plans.tsx` off the `PLANS_DATA` copy it used to carry: the page now
+ * reads `billing_plan` (through `lib/billing/catalogue.ts`) for every figure, and this file for
+ * every word. A retired row (`active = false`) or a missing one is a card with no CTA at all,
+ * which is how "a button that cannot work does not render" is enforced by data.
+ * `tests/billing-plans.test.ts` reads the component's source and fails the build if a price
+ * literal reappears under `components/pricing/`, so the two lists cannot diverge again.
  *
  * **Money is integer cents**, the convention the rest of the tree already follows
  * (`QuizStats.rewardCents`, `data/metrics.ts`): `999` is `$9.99`, and no price is a float that
@@ -47,12 +48,14 @@ export type BillingInterval = (typeof BILLING_INTERVALS)[number];
 /**
  * Where a tier's button goes.
  *
- * `/register` is a route. The literal `"support"` is resolved by the surface that renders it to
+ * `/register` is a route, and `checkout` is the plan table's own button: it posts to
+ * `/api/billing/checkout`, which starts a purchase through whichever adapter is configured
+ * (#289 card 3). The literal `"support"` is resolved by the surface that renders it to
  * `mailto:${brand.supportEmail}` — the address is per-brand (`data/brand.ts`), so a mailto
  * written here would pin one brand's address into both builds, and a data module that imported a
  * brand could not also be imported by a seed script.
  */
-export type BillingPlanCtaHref = "/register" | "support";
+export type BillingPlanCtaHref = "/register" | "support" | "checkout";
 
 export interface BillingPlan {
   /** The tier. `billing_plan.id` — one row per (tier, interval). */
@@ -120,7 +123,7 @@ export const billingPlans: readonly BillingPlan[] = [
       "Invite the other party by link",
     ],
     limitations: [],
-    cta: { label: "Talk to us", href: "support" },
+    cta: { label: "Choose Basic", href: "checkout" },
     popular: false,
     checkout: true,
   },
@@ -138,7 +141,7 @@ export const billingPlans: readonly BillingPlan[] = [
       "Invite the other party by link",
     ],
     limitations: [],
-    cta: { label: "Talk to us", href: "support" },
+    cta: { label: "Choose Pro", href: "checkout" },
     popular: true,
     checkout: true,
   },

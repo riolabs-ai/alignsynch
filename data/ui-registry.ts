@@ -364,9 +364,10 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   {
     kind: "route",
     surface: "/pricing",
-    status: "fixture",
+    status: "live",
     templates: ["quizhub"],
-    capability: "Plan comparison, an FAQ and a closing CTA for the subscription tiers.",
+    capability:
+      "Plan comparison read from billing_plan with a checkout per sellable tier, the viewer's own plan marked, an FAQ and a closing CTA.",
   },
   {
     kind: "route",
@@ -708,9 +709,10 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   {
     kind: "domain",
     surface: "components/pricing",
-    status: "fixture",
+    status: "live",
     templates: ["quizhub"],
-    capability: "The plan cards, the FAQ and the closing CTA.",
+    capability:
+      "The plan cards — prices and sellability from billing_plan, a checkout button per sellable tier — the FAQ and the closing CTA.",
   },
   {
     kind: "domain",
