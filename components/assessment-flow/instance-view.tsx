@@ -36,10 +36,11 @@
  *
  * **One stage sentence, and never a bar** (#274). `lib/flow/stage.ts` maps the derived status
  * onto Invited / Connected / Sharing, and the sentence above the bands names the stage and who
- * acts next. There is no stepper, no dots and no percentage, for the reasons
- * `docs/specs/ux-stages.md` records: the transitions are the other party's actions (and one of
- * them is nobody's), an invitation can expire, and "Aligned" is Setting-relative arithmetic on
- * the finished Gap — so it is drawn only by the report's verdict band, never as a step here.
+ * acts next. There is no progress display here at all — no bar, no dots, no percentage — for the
+ * reasons `docs/specs/ux-stages.md` records: the transitions are the other party's actions (and
+ * one of them is nobody's), an invitation can expire, and "Aligned" is Setting-relative
+ * arithmetic on the finished Gap, so it is drawn only by the report's verdict band and never as
+ * a step on this screen.
  *
  * Literal-free: the words are `data/pages/assessment-instance.ts` (E23), except the two mode
  * names, which are the glossary's own vocabulary authored once in `content/assessment.ts`
