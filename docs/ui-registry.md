@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **45** — 31 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **33** — 237 files under `components/`, 232 of them `.tsx`
-- route handlers: **9** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 11 · **fixture** 51 · **db** 9 · **live** 7
-- templates: Both templates 22 · AlignSynch 12 · QuizHub 42 · No template yet 2
+- routes: **47** — 32 static, 15 dynamic, from `app/**/page.tsx`
+- component domains: **33** — 239 files under `components/`, 234 of them `.tsx`
+- route handlers: **11** — `app/**/route.ts`, listed below and not a UI surface
+- status: **mock** 11 · **fixture** 51 · **db** 11 · **live** 7
+- templates: Both templates 22 · AlignSynch 14 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -157,7 +157,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/assessment` — **db**
   - capability: The published assessment templates, each with its create form: pick a template and open a two-party instance from the templates that read from Postgres.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
 
 - `/assessment/[slug]` — **db**
   - capability: One assessment instance from Postgres: both parties' answers per Aspect, the Opinions and Values behind them, and the Gap between the two.
@@ -176,11 +176,23 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
   - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
 
+- `/assessment/templates` — **db**
+  - capability: The template library: the platform's own templates plus the ones this account wrote, with a tab for each, a status filter, a title search, and open/duplicate/archive on every row.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: `record.author_user_id` is the whole rule — `NULL` is a built-in, the author's id is a template a person wrote, and the read returns `author_user_id IS NULL OR author_user_id = $1`, so another account's template is never in the payload. A template written before `0011_console_columns.sql` has no author and therefore reads as built-in; the page says so in its own band rather than leaving it to be discovered. Archiving flips `record.status` to `archived` (author only): the catalogue stops listing it and `createInstanceFromTemplate` refuses it, while every instance already made from it keeps its own copy of the Aspects and still opens. Duplicating copies the record and its items into a new template authored by the caller, whatever state the source is in.
+
+- `/assessment/templates/[templateId]` — **db**
+  - capability: One template, read-only: its Aspects in authored order with their Left and Right Values, how many instances were made from it, who wrote it and whether it is archived. The place the editor will land later.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: The 'open' action. Read-only on purpose — editing is a separate decision, and the spec puts the editor on this same route when it exists. The read applies the same author rule as the library, so another account's template is a 404 here and nothing distinguishes it from an id that does not exist.
+
 - `/assessment/templates/new` — **fixture**
   - capability: Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.
   - components: `components/assessment-flow`
   - reads: an `/api` path — `lib/auth/server.ts`
-  - notes: `fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/route.ts`, which writes the record and item rows through `lib/flow/templates.ts` (no new table, no new column, and no author field, because the content model has none). Signed in only, on both the page and the post. Since #255 this is the app's only writer of a template; the four seeded ones come from `data/assessments.ts`.
+  - notes: `fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/save/route.ts` (moved one segment deeper when `/assessment/templates` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/assessment/templates`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app's only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.
 
 - `/demo` — **mock**
   - capability: The demo PIN gate: one four-digit field and a submit. A correct PIN sets a signed, httpOnly unlock cookie and redirects to `/login`, where the three role buttons appear.
@@ -214,8 +226,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (8): `answer-form.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `template-form.tsx`, `template-list.tsx`
-  - routes (5): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/templates/new`, `/invite/[token]`
+  - files (10): `answer-form.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`
+  - routes (7): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/new`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/marketing` — **fixture**
@@ -477,5 +489,7 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/assessment/instances/[instanceId]/answers` — `app/(mainlayout)/assessment/instances/[instanceId]/answers/route.ts`
 - `/assessment/instances/[instanceId]/invite` — `app/(mainlayout)/assessment/instances/[instanceId]/invite/route.ts`
 - `/assessment/new` — `app/(mainlayout)/assessment/new/route.ts`
-- `/assessment/templates` — `app/(mainlayout)/assessment/templates/route.ts`
+- `/assessment/templates/[templateId]/duplicate` — `app/(mainlayout)/assessment/templates/[templateId]/duplicate/route.ts`
+- `/assessment/templates/[templateId]/status` — `app/(mainlayout)/assessment/templates/[templateId]/status/route.ts`
+- `/assessment/templates/save` — `app/(mainlayout)/assessment/templates/save/route.ts`
 - `/invite/[token]/claim` — `app/(mainlayout)/invite/[token]/claim/route.ts`

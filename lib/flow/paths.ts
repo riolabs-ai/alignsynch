@@ -36,14 +36,43 @@ export const CREATE_INSTANCE_PATH = "/assessment/new";
 export const NEW_TEMPLATE_PATH = "/assessment/templates/new";
 
 /**
+ * `/assessment/templates` — the template library: the built-ins this account can use plus the
+ * templates it wrote (#console 5/5).
+ *
+ * A page now, not a POST endpoint: the route handler that saves a template used to live at this
+ * exact path, and Next refuses a `page.tsx` and a `route.ts` in one segment (they are two
+ * parallel pages for the same URL, and the app loader throws E28). The save moved to
+ * `CREATE_TEMPLATE_PATH` below — one segment deeper, same handler, same redirect — so the
+ * screen the console asked for could exist at the address it asked for.
+ */
+export const TEMPLATE_LIBRARY_PATH = "/assessment/templates";
+
+/** One template, read-only: its Aspects, its instances and whether it is archived. */
+export function templateDetailPath(recordId: string): string {
+  return `${TEMPLATE_LIBRARY_PATH}/${recordId}`;
+}
+
+/** The archive/unarchive endpoint — a POST, so a GET never changes a template's state. */
+export function templateStatusPath(recordId: string): string {
+  return `${templateDetailPath(recordId)}/status`;
+}
+
+/** The duplicate endpoint — a POST, so a GET never writes a copy. */
+export function templateDuplicatePath(recordId: string): string {
+  return `${templateDetailPath(recordId)}/duplicate`;
+}
+
+/**
  * The template-saving endpoint — a POST-only route handler, so it is not a page and the manifest
  * does not list it (the same split as `/assessment/new`).
  *
- * The form posts here and the handler redirects: a save is a POST followed by a GET of either the
- * form (refused, with the reason) or `/assessment` (saved, where the new template is listed). That
- * is what keeps a reload from saving a second copy.
+ * `/assessment/templates/save` and not `/assessment/templates`: that address is the library page
+ * now (`TEMPLATE_LIBRARY_PATH`), and a segment cannot hold both. The form posts here and the
+ * handler redirects: a save is a POST followed by a GET of either the form (refused, with the
+ * reason) or `/assessment` (saved, where the new template is listed). That is what keeps a reload
+ * from saving a second copy.
  */
-export const CREATE_TEMPLATE_PATH = "/assessment/templates";
+export const CREATE_TEMPLATE_PATH = `${TEMPLATE_LIBRARY_PATH}/save`;
 
 export function instancePath(instanceRecordId: string): string {
   return `/assessment/instances/${instanceRecordId}`;

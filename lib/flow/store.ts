@@ -113,6 +113,10 @@ export type FlowErrorCode =
   | "template-not-published"
   | "template-has-no-aspects"
   | "record-is-an-instance"
+  // A template another account wrote (#console 5/5). The catalogue already excludes those rows,
+  // so this is the second half of the same rule for a caller that posts a record id directly:
+  // an authored template belongs to its author, and a signed-out create belongs to nobody.
+  | "template-not-yours"
   // The billing gate's two refusals (#289). They are flow refusals because this store is where an
   // instance comes into being, and the route that calls it already answers `{error, message}` for
   // every `FlowError` — a second error type would be a second branch that could be forgotten.
@@ -283,9 +287,10 @@ export async function createInstanceFromTemplate(
       record_type: string;
       status: string;
       aspects: number;
+      author_user_id: string | null;
       is_instance: boolean;
     }>(
-      `SELECT r.id, r.slug, r.title, r.record_type, r.status,
+      `SELECT r.id, r.slug, r.title, r.record_type, r.status, r.author_user_id,
               (SELECT count(*) FROM item i WHERE i.record_id = r.id)::int AS aspects,
               EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id) AS is_instance
          FROM record r
@@ -305,6 +310,15 @@ export async function createInstanceFromTemplate(
     }
     if (found.record_type !== "assessment") {
       throw new FlowError("unknown-template", `record "${found.id}" is not an assessment`);
+    }
+    // #console 5/5 — an authored template belongs to its author. A built-in has no author and is
+    // everybody's starting point; a template somebody wrote is copyable only by them. Refused
+    // before the status check so a stranger learns nothing about a template they cannot use.
+    if (found.author_user_id !== null && found.author_user_id !== initiatorUserId) {
+      throw new FlowError(
+        "template-not-yours",
+        `template "${found.slug}" was written by another account`,
+      );
     }
     if (found.status !== "published") {
       throw new FlowError(
@@ -1276,8 +1290,20 @@ export interface TemplateSummary {
   readonly aspectCount: number;
 }
 
-/** The published templates a new instance can be copied from, in title order. */
-export async function listPublishedTemplates(): Promise<TemplateSummary[]> {
+/**
+ * The published templates a new instance can be copied from, in title order.
+ *
+ * `viewerUserId` narrows the list to what that account may copy: the platform's templates
+ * (`author_user_id IS NULL`) plus its own. `null` — a signed-out visitor — therefore gets the
+ * built-ins and nothing else, because `author_user_id = NULL` matches no row.
+ *
+ * This is the catalogue's half of the author rule (#console 5/5). Without it a template one
+ * person wrote would be listed, and startable, by every other account — the `/assessment/templates`
+ * screen would filter correctly and the leak would simply be one route over.
+ */
+export async function listPublishedTemplates(
+  viewerUserId: string | null = null,
+): Promise<TemplateSummary[]> {
   const rows = await query<{
     id: string;
     slug: string;
@@ -1290,10 +1316,11 @@ export async function listPublishedTemplates(): Promise<TemplateSummary[]> {
        FROM record r
       WHERE r.record_type = 'assessment'
         AND r.status = 'published'
+        AND (r.author_user_id IS NULL OR r.author_user_id = $1)
         AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)
         AND EXISTS (SELECT 1 FROM item i WHERE i.record_id = r.id)
       ORDER BY r.title`,
-    [],
+    [viewerUserId],
   );
   return rows.map((row) => ({
     id: row.id,

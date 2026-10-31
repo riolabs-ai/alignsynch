@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
   Award,
+  BarChart3,
   BookOpen,
   Compass,
   DollarSign,
@@ -299,7 +300,13 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
  * `tests/nav-brand.test.ts` holds these three hrefs to the ids the rendered page emits, so an
  * anchor cannot drift from its band.
  */
-function AlignSynchMenu({ copy, collapsed, pathname, onNavigate }: NavRenderProps) {
+function AlignSynchMenu({
+  copy,
+  collapsed,
+  pathname,
+  onNavigate,
+  viewer,
+}: NavRenderProps & { viewer: NavViewer }) {
   const nav = sectionOf(copy, "nav-alignsynch");
   return (
     <>
@@ -335,6 +342,28 @@ function AlignSynchMenu({ copy, collapsed, pathname, onNavigate }: NavRenderProp
         collapsed={collapsed}
         onNavigate={onNavigate}
       />
+      {/*
+        The console's Gap Analysis row, behind the `admin-console` capability rather than always
+        drawn (the same rule the quiz rows follow). `/admin/gaps` answers a member with the 404 a
+        URL that never existed returns (`lib/auth/require-role.ts`), so a row every viewer could
+        see would be a row that 404s for most of them — "an entry that is only visually gone is
+        still in the tab order and still announced" (this file's own note on hidden rows).
+
+        `navViewer()` grants no capability today, so this row renders for nobody yet: the
+        role → capability mapping is one function (`lib/nav.ts::navViewer`), and until it reads
+        `user_profile.role` an operator reaches the screen by URL, exactly as #156 recorded for
+        every gated surface. The row exists so the mapping is a capability, not a second menu.
+      */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/gaps"
+          icon={<BarChart3 className="size-5" />}
+          label={itemLabel(nav, "console-gaps")}
+          active={isActive(pathname, "/admin/gaps")}
+          collapsed={collapsed}
+          onNavigate={onNavigate}
+        />
+      )}
     </>
   );
 }
@@ -351,7 +380,7 @@ export function AppNav({
     case "alignsynch":
       return (
         <>
-          <AlignSynchMenu {...render} />
+          <AlignSynchMenu {...render} viewer={viewer} />
           {sees(viewer, "quiz-surfaces") && (
             /**
              * The quiz product, for a viewer who is allowed to see it. It is the *same*

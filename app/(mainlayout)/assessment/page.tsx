@@ -1,5 +1,6 @@
 import { TemplateList } from "@/components/assessment-flow/template-list";
 import { assessmentPageCopy } from "@/data/pages/assessment";
+import { currentUserIfConfigured } from "@/lib/auth/session";
 import { listPublishedTemplates } from "@/lib/flow/store";
 import type { Metadata } from "next";
 
@@ -23,7 +24,12 @@ export default async function AssessmentIndexPage({
 }: {
   searchParams: Promise<{ created?: string | string[] }>;
 }) {
-  const templates = await listPublishedTemplates();
+  // The catalogue is narrowed to what this account may copy: the platform's templates plus its
+  // own (#console 5/5). `currentUserIfConfigured()` and not `currentUser()` because this page has
+  // never required a session — a deployment with no auth configured still renders the built-ins,
+  // and a signed-out visitor gets them too (`author_user_id = NULL` matches nobody's id).
+  const user = await currentUserIfConfigured();
+  const templates = await listPublishedTemplates(user?.userId ?? null);
   const { created } = await searchParams;
   // `?created=` is the id the save redirected with (#255). Resolved against the list just read, so
   // a stale or crafted id draws nothing: the notice never renders a string that is not a template

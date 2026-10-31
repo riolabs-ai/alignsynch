@@ -21,6 +21,7 @@ const STATIC_ROUTES = [
   "/affiliate",
   "/assessment",
   "/assessment/instances",
+  "/assessment/templates",
   "/assessment/templates/new",
   "/battle",
   "/categories",
@@ -54,6 +55,7 @@ const STATIC_ROUTES = [
 const DYNAMIC_ROUTES = [
   "/assessment/[slug]",
   "/assessment/instances/[instanceId]",
+  "/assessment/templates/[templateId]",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/invite/[token]",
