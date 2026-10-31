@@ -29,6 +29,7 @@ import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { listMyInstances, type MyInstance } from "@/lib/db/my-instances";
+import { overviewFilterOf, overviewFiltered } from "@/lib/flow/overview";
 import { MY_INSTANCES_PATH } from "@/lib/flow/paths";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -39,14 +40,30 @@ export const metadata: Metadata = {
   title: "Your assessments",
 };
 
-export default async function MyInstancesPage() {
+/**
+ * `?filter=` — the list one console card links to (Console 2/5).
+ *
+ * The ids are `OVERVIEW_FILTERS` (`lib/flow/overview.ts`), and the predicate that decides them is
+ * the one the Overview counted with, so the figure on the card and the length of this list are two
+ * passes over the same array. An unknown or repeated value resolves to no filter: the unfiltered
+ * list is true about every row it shows, while a filtered list built from a value nobody
+ * recognises would be a page that says it filtered and did not.
+ */
+export default async function MyInstancesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const filter = overviewFilterOf((await searchParams).filter);
+
   const user = await currentUser();
   if (user === null) redirect(loginPathFor(MY_INSTANCES_PATH));
 
   let instances: readonly MyInstance[] = [];
   let unreadable: string | null = null;
   try {
-    instances = await listMyInstances(user.userId);
+    const mine = await listMyInstances(user.userId);
+    instances = filter === null ? mine : overviewFiltered(mine, filter);
   } catch (error) {
     // "The database did not answer" is a state this screen can describe; a schema failure is a
     // code defect and keeps throwing, exactly as the instance screen decides it.
@@ -55,5 +72,12 @@ export default async function MyInstancesPage() {
     unreadable = error.reason;
   }
 
-  return <MyInstances copy={myInstancesPageCopy} instances={instances} unreadable={unreadable} />;
+  return (
+    <MyInstances
+      copy={myInstancesPageCopy}
+      instances={instances}
+      unreadable={unreadable}
+      filter={filter}
+    />
+  );
 }

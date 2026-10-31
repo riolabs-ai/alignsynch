@@ -60,6 +60,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-gaps",
     budget: 0,
   },
+  // Card 3/5 of the console: the operator's relationship registry. Budget 0 from the first
+  // commit, like the flow surfaces — the heading, the nine column labels, the five seat states,
+  // the five stage tabs, the two selects' options, the count sentence and the three
+  // empty/failure states are all `data/pages/admin-instances.ts`, so the next literal written in
+  // the table is a red build.
+  "/admin/instances": {
+    page: "app/(mainlayout)/admin/instances/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-instances",
+    budget: 0,
+  },
   "/battle": {
     page: "app/(mainlayout)/battle/page.tsx",
     dirs: ["components/battle"],
@@ -88,6 +99,20 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/dashboard/user/page.tsx",
     dirs: ["components/identity"],
     fixture: "data/pages/dashboard",
+    budget: 0,
+  },
+  /**
+   * `/dashboard` — the console's Overview (Console 2/5), and the first surface whose four figures
+   * are counts rather than authored metrics. Budget 0 from the first commit: the card labels, the
+   * three one-line explanations, the empty band and the failure panel are all
+   * `data/pages/overview.ts`, so the next sentence written in `components/console/**` is a red
+   * build. `dirs` is only the new domain — `/dashboard/user`'s `components/identity` stays
+   * attributed to that surface, and the two consoles cannot lend each other words.
+   */
+  "/dashboard": {
+    page: "app/(mainlayout)/dashboard/page.tsx",
+    dirs: ["components/console"],
+    fixture: "data/pages/overview",
     budget: 0,
   },
   "/explore": {

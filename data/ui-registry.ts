@@ -137,6 +137,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/instances",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      'Every relationship in the database, for an operator: the template, both seats\' identity state, mode, Setting, the derived stage, when it was created and when anything last happened to it — filterable by stage, mode, Setting and "stalled".',
+    notes:
+      "Admin-only, and the first caller of `requireAdmin()` outside `/demo/admin`: a member gets the 404 a URL that never existed returns, a signed-out visitor is sent to `/login?next=` this path. The blind rule holds for an admin too — the read selects seats, mode, Setting and the stage, never an opinion, a score, a Gap or an answered count, so there is no column and no prop through which an answer could reach the page. Read-and-filter only: no delete, no force-complete. Every filter is client-side over the one read (`lib/db/admin-instances.ts`).",
+  },
+  {
+    kind: "domain",
+    surface: "components/admin",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The operator's registry table: a stage tab row, mode and Setting selects and a stalled toggle over one filterable table of relationships.",
+    notes:
+      "`mock` in this file's vocabulary — it renders the props it is handed. The rows are read by the page (`lib/db/admin-instances.ts`) and passed down, because a client component must not reach `pg`; that boundary is why this domain imports no data module and why the route entry above is the one that claims `db`.",
+  },
+  {
+    kind: "route",
     surface: "/affiliate",
     status: "fixture",
     templates: ["quizhub"],
@@ -281,6 +301,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["quizhub"],
     capability:
       "One quiz a day: today's quiz, your challenge stats, a daily leaderboard, badge progress and your history.",
+  },
+  {
+    kind: "route",
+    surface: "/dashboard",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The signed-in console's Overview: four counts of the viewer's own relationships — awaiting the other party, needing the viewer's answers, complete and unread — plus the templates available, each figure linking to the list it counts.",
+    notes:
+      "Every figure is arithmetic over `listMyInstances(user.userId)` plus the length of the published-template read, and each card links to `/assessment/instances?filter=<id>` (or `/assessment` for the templates) where the same predicate filters the same array (`lib/flow/overview.ts`), so a count cannot disagree with its list. No percentage, no total, and no authored metric: the numbers `data/pages/dashboard.ts` rejected for `/dashboard/user` (#164) have no equivalent here and were not re-created. The blind rule holds by construction — the three relationship counts are the three `MyInstanceState` values, derived from the viewer's own answered count and their own `unlock_seen_at`.",
   },
   {
     kind: "route",
@@ -584,11 +614,11 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     kind: "domain",
     surface: "components/console",
     status: "mock",
-    templates: [],
+    templates: ["alignsynch"],
     capability:
-      "The response-analytics surface: a population's numbers as stat cards, one distribution per measure and a comparison axis, taking the aggregate as a prop so the measure is a plugin rather than a component.",
+      "The console's generic shapes: a stat-card grid of linked figures with the Overview built from it (a header naming the viewer, four counts and the honest empty state for an account with no relationships), and the response-analytics surface — a population's numbers as stat cards, one distribution per measure and a comparison axis, taking the aggregate as a prop so the measure is a plugin rather than a component.",
     notes:
-      "Today's only caller is `/admin/gaps` with AlignSynch's measure (`gapOf` over the eight kinds) — the generic surface is real for both expressions, and the quiz expression of it is the per-question correct rate `components/my-quizzes/quiz-statistics.tsx` mocks. Reads nothing itself: the route reads Postgres and hands the aggregate down, which is why the domain is `mock` and the route above it is `db`.",
+      "Reads nothing itself: counts and aggregates arrive as props from the route that read Postgres, which is why the domain is `mock` and the `/dashboard` and `/admin/gaps` routes above it are `db` (the same split `components/assessment` records). `stat-card-grid.tsx` is the extracted shape of `components/dashboard/dashboard-overview.tsx` with its metrics removed — `value` is a `number` the caller computed — so the next expression can pass its own rows through the grid without inheriting a wallet balance. Its two callers are `/dashboard` (the viewer's own counts, `lib/flow/overview.ts`) and `/admin/gaps` with AlignSynch's measure (`gapOf` over the eight kinds, `lib/admin/gap-aggregates.ts`); the quiz expression of the analytics surface is the per-question correct rate `components/my-quizzes/quiz-statistics.tsx` mocks. `data/pages/overview.ts` holds every word (E23 budget 0).",
   },
   {
     kind: "domain",

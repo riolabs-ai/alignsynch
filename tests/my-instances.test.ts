@@ -24,6 +24,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { matchRoute } from "@/content/route-manifest";
 import { routeManifest } from "@/content/routes";
 import { myInstancesPageCopy } from "@/data/pages/assessment-instances";
+import { OVERVIEW_FILTERS, matchesOverviewFilter, overviewCountsOf } from "@/lib/flow/overview";
 import { MY_INSTANCES_PATH, instancePath } from "@/lib/flow/paths";
 import {
   MY_INSTANCE_STATES,
@@ -89,8 +90,12 @@ const completeUnseenRow: MyInstance = {
   unlock: "unseen",
 };
 
-async function render(): Promise<string> {
-  return renderToStaticMarkup(await MyInstancesPage());
+async function render(filter?: string): Promise<string> {
+  return renderToStaticMarkup(
+    await MyInstancesPage({
+      searchParams: Promise.resolve(filter === undefined ? {} : { filter }),
+    }),
+  );
 }
 
 /** The rendered text: tags dropped, whitespace collapsed. Digits in a class name are not copy. */
@@ -106,6 +111,18 @@ function listSection(html: string): string {
   const match = html.match(/<section data-my-instances="true">[\s\S]*?<\/section>/);
   if (match === null) throw new Error("the list band did not render");
   return match[0];
+}
+
+/**
+ * The list band, or the whole document when a filter kept no rows.
+ *
+ * A filtered list that keeps nothing is drawn as its own band (`data-my-instances-filter-empty`),
+ * so the "how many rows did this render" question has an answer of 0 rather than an exception —
+ * which is the honest reading of the page a zero-card opens.
+ */
+function listSectionOrEmpty(html: string): string {
+  const match = html.match(/<section data-my-instances="true">[\s\S]*?<\/section>/);
+  return match?.[0] ?? html;
 }
 
 /** The one `<li>` in the list band whose state is `state`, as text. */
@@ -246,10 +263,20 @@ describe("the page reads no identity the browser supplied", () => {
   const page = codeOf("app/(mainlayout)/assessment/instances/page.tsx");
   const read = codeOf("lib/db/my-instances.ts");
 
-  it("takes no search param, header or cookie of its own", () => {
-    for (const forbidden of [/searchParams/, /params:/, /\bheaders\(/, /\bcookies\(/]) {
+  it("takes no header or cookie of its own, and no route param but the filter", () => {
+    for (const forbidden of [/params:/, /\bheaders\(/, /\bcookies\(/]) {
       expect(page).not.toMatch(forbidden);
     }
+    // Since Console 2/5 the page reads exactly one query value — `?filter=` — and it can only
+    // narrow the list the session already owns: `overviewFilterOf()` refuses anything that is not
+    // one of the three ids, and `overviewFiltered()` runs over the rows `listMyInstances()` just
+    // returned. No identity, no account id, no widening. Asserted on the identifiers rather than
+    // the words, because the module explains this in prose.
+    expect(page).toMatch(/overviewFilterOf\(\(await searchParams\)\.filter\)/);
+    // …and nothing else is read off the query string at all.
+    expect(page).not.toMatch(/\(await searchParams\)\.(?!filter\b)\w+/);
+    expect(page).not.toMatch(/(searchParams|query)\.(userId|user|account|email|role|id)\b/);
+    expect(page).toMatch(/listMyInstances\(user\.userId\)/);
   });
 
   it("never asks for a role, so an admin is an ordinary account here", () => {
@@ -431,5 +458,70 @@ describe("the unlock marker (#252)", () => {
 
     expect(ids).toEqual([...UNLOCK_MARKS.filter((mark) => mark === "unseen")]);
     expect((states?.items ?? []).map((item) => item.id)).not.toContain("unseen");
+  });
+});
+
+describe("the console's filter (Console 2/5)", () => {
+  const signedIn = {
+    userId: "52dfe892-be03-421b-ac34-1b35d74633dc",
+    email: "initiator@demo.alignsynch.test",
+    name: "Avery",
+  };
+
+  /** One row of each state, so a filter has something to keep and something to drop. */
+  const threeStates: MyInstance[] = [
+    awaitingRow,
+    { ...completeRow, instanceRecordId: "assessment-instance-yours", state: "yours-to-answer" },
+    completeUnseenRow,
+  ];
+
+  it("keeps only the rows `matchesOverviewFilter()` accepts, and says which list it is", async () => {
+    currentUser.mockResolvedValue(signedIn);
+    listMyInstances.mockResolvedValue(threeStates);
+
+    for (const filter of OVERVIEW_FILTERS) {
+      const html = await render(filter);
+      const kept = threeStates.filter((instance) => matchesOverviewFilter(instance, filter));
+      const rendered = (listSectionOrEmpty(html).match(/data-instance="/g) ?? []).length;
+
+      expect(html).toContain(`data-my-instances-filter="${filter}"`);
+      // The number on the Overview card is `overviewCountsOf(...)[filter]`; this is the list
+      // length those same rows produce, from the same predicate.
+      expect(rendered).toBe(kept.length);
+      expect(overviewCountsOf(threeStates)[filter]).toBe(kept.length);
+    }
+  });
+
+  it("offers the way back to every relationship", async () => {
+    currentUser.mockResolvedValue(signedIn);
+    listMyInstances.mockResolvedValue([completeUnseenRow]);
+
+    const html = await render("reports-open");
+    expect(html).toContain(`href="${MY_INSTANCES_PATH}"`);
+    expect(textOf(html)).toContain("Show every relationship");
+  });
+
+  it("draws the filter's own empty sentence, not the new-account band", async () => {
+    currentUser.mockResolvedValue(signedIn);
+    // The reader has relationships; none of them is complete and unread.
+    listMyInstances.mockResolvedValue([awaitingRow]);
+
+    const html = await render("reports-open");
+
+    expect(html).toContain('data-my-instances-filter-empty="reports-open"');
+    expect(textOf(html)).toContain("No relationship is in this list right now");
+    expect(html).not.toContain("data-empty-state");
+  });
+
+  it("ignores a filter value nobody recognises rather than drawing an empty list", async () => {
+    currentUser.mockResolvedValue(signedIn);
+    listMyInstances.mockResolvedValue(threeStates);
+
+    const html = await render("every-relationship");
+
+    expect(html).not.toContain("data-my-instances-filter");
+    expect((listSectionOrEmpty(html).match(/data-instance="/g) ?? []).length).toBe(
+      threeStates.length,
+    );
   });
 });

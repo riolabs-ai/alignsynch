@@ -13,6 +13,16 @@
 export const ASSESSMENTS_PATH = "/assessment";
 
 /**
+ * `/dashboard` — the signed-in console's Overview.
+ *
+ * A top-level path, not a child of `/dashboard/user`: `/dashboard/user` is the **quiz** product's
+ * account home (#164), gated by `requireQuizProduct()`, and a console that sat underneath it would
+ * be unreachable on the alignment build the console exists for. The two are siblings with two
+ * products' words, and only one of them is a 404 on either brand.
+ */
+export const OVERVIEW_PATH = "/dashboard";
+
+/**
  * `/assessment/instances` — the instances **this signed-in account** is a party to (#213).
  *
  * A static path beside the dynamic `/assessment/instances/[instanceId]`, not a child of it: the

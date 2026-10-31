@@ -32,6 +32,7 @@ import Link from "next/link";
 
 import type { PageCopy } from "@/content/pages";
 import type { MyInstance } from "@/lib/db/my-instances";
+import type { OverviewFilter } from "@/lib/flow/overview";
 import { MY_INSTANCES_PATH, instancePath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -43,11 +44,23 @@ export function MyInstances({
   copy,
   instances,
   unreadable,
+  filter = null,
 }: {
   copy: PageCopy;
   instances: readonly MyInstance[];
   /** The database layer's sentence when the read did not answer; `null` when it did. */
   unreadable: string | null;
+  /**
+   * The one list the reader came here for, when they arrived from a console card (Console 2/5).
+   *
+   * `null` is the unfiltered list, which is what this route has always drawn. The page resolves
+   * `?filter=` through `overviewFilterOf()` and passes the rows already filtered by
+   * `matchesOverviewFilter()` — the same predicate the Overview counted with — so the length of
+   * this list and the figure on the card are arithmetic over one array
+   * (`lib/flow/overview.ts`). This component holds no filter of its own: it is handed the rows and
+   * the id, and all it decides is which sentence to draw.
+   */
+  filter?: OverviewFilter | null;
 }) {
   if (unreadable !== null) {
     const failure = sectionOf(copy, "unreadable");
@@ -76,6 +89,7 @@ export function MyInstances({
   const states = sectionOf(copy, "state");
   const marker = sectionOf(copy, "marker");
   const empty = sectionOf(copy, "empty");
+  const filters = sectionOf(copy, "filter");
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10">
@@ -84,21 +98,51 @@ export function MyInstances({
         {copy.subtitle === undefined ? null : <p className={`mt-3 ${MUTED}`}>{copy.subtitle}</p>}
       </header>
 
+      {/* The console's card sends the reader here with one list in mind (Console 2/5). The band
+          names it and offers the way back to every row — without it a filtered list would look
+          like a list that lost somebody's relationships. */}
+      {filter === null ? null : (
+        <p data-my-instances-filter={filter} className={`mb-6 ${MUTED}`}>
+          {itemLabel(filters, "showing")}:{" "}
+          <span className={STRONG}>{itemLabel(filters, filter)}</span>{" "}
+          <Link className="underline" href={MY_INSTANCES_PATH}>
+            {itemLabel(filters, "show-all")}
+          </Link>
+        </p>
+      )}
+
       {instances.length === 0 ? (
-        <section data-empty-state="true" className={CARD}>
-          <h2 className={`text-xl ${STRONG}`}>{empty.heading}</h2>
-          <p className={`mt-2 ${MUTED}`}>{sectionBody(empty)}</p>
-          {empty.cta === undefined ? null : (
-            <p className="mt-4">
-              <Link
-                href={empty.cta.href}
-                className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action/90"
-              >
-                {empty.cta.label}
+        filter === null ? (
+          <section data-empty-state="true" className={CARD}>
+            <h2 className={`text-xl ${STRONG}`}>{empty.heading}</h2>
+            <p className={`mt-2 ${MUTED}`}>{sectionBody(empty)}</p>
+            {empty.cta === undefined ? null : (
+              <p className="mt-4">
+                <Link
+                  href={empty.cta.href}
+                  className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action/90"
+                >
+                  {empty.cta.label}
+                </Link>
+              </p>
+            )}
+          </section>
+        ) : (
+          /**
+           * A filter that keeps no rows is not the same sentence as "you are not in an assessment
+           * yet": this reader has relationships, none of them in this state. Saying so, with the
+           * way back to the whole list, is the difference between a filtered empty list and a page
+           * that looks like it lost somebody's records.
+           */
+          <section data-my-instances-filter-empty={filter} className={CARD}>
+            <p className={MUTED}>{itemLabel(filters, "empty")}</p>
+            <p className="mt-3 text-sm">
+              <Link className="underline" href={MY_INSTANCES_PATH}>
+                {itemLabel(filters, "show-all")}
               </Link>
             </p>
-          )}
-        </section>
+          </section>
+        )
       ) : (
         <section data-my-instances="true">
           <h2 className={`text-xl ${STRONG}`}>{list.heading}</h2>
