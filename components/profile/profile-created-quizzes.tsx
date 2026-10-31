@@ -147,8 +147,8 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6">
-            <div className="mb-2 rounded-full bg-indigo-500 p-3">
-              <Grid className="h-6 w-6 text-neutral-50" />
+            <div className="mb-2 rounded-full bg-action p-3">
+              <Grid className="h-6 w-6 text-action-foreground" />
             </div>
             <div className="text-2xl font-bold">{createdQuizzes.length}</div>
             <p className="text-sm text-muted-foreground">Total Quizzes</p>
@@ -521,29 +521,27 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
                 </div>
 
                 {previewQuiz.isTournament && previewQuiz.tournamentDetails && (
-                  <Card className="border-purple-200 bg-purple-50">
+                  <Card className="border-action/20 bg-action/5">
                     <CardHeader className="pb-2">
-                      <h3 className="text-base font-semibold text-purple-800">
-                        Tournament Details
-                      </h3>
+                      <h3 className="text-base font-semibold text-action">Tournament Details</h3>
                     </CardHeader>
                     <CardContent className="pb-4 pt-0">
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <span className="font-medium text-purple-700">Status:</span>{" "}
-                          <span className="capitalize text-purple-900">
+                          <span className="font-medium text-muted-foreground">Status:</span>{" "}
+                          <span className="capitalize text-foreground">
                             {previewQuiz.tournamentDetails.status}
                           </span>
                         </div>
                         <div>
-                          <span className="font-medium text-purple-700">Participants:</span>{" "}
-                          <span className="text-purple-900">
+                          <span className="font-medium text-muted-foreground">Participants:</span>{" "}
+                          <span className="text-foreground">
                             {previewQuiz.tournamentDetails.participants}
                           </span>
                         </div>
                         <div>
-                          <span className="font-medium text-purple-700">Start Date:</span>{" "}
-                          <span className="text-purple-900">
+                          <span className="font-medium text-muted-foreground">Start Date:</span>{" "}
+                          <span className="text-foreground">
                             {format(
                               new Date(previewQuiz.tournamentDetails.startDate),
                               "MMM d, yyyy",
@@ -551,14 +549,14 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
                           </span>
                         </div>
                         <div>
-                          <span className="font-medium text-purple-700">End Date:</span>{" "}
-                          <span className="text-purple-900">
+                          <span className="font-medium text-muted-foreground">End Date:</span>{" "}
+                          <span className="text-foreground">
                             {format(new Date(previewQuiz.tournamentDetails.endDate), "MMM d, yyyy")}
                           </span>
                         </div>
                         <div className="col-span-2">
-                          <span className="font-medium text-purple-700">Prize:</span>{" "}
-                          <span className="text-purple-900">
+                          <span className="font-medium text-muted-foreground">Prize:</span>{" "}
+                          <span className="text-foreground">
                             {previewQuiz.tournamentDetails.prize}
                           </span>
                         </div>
@@ -574,6 +572,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               Close
             </Button>
             <Button
+              variant="action"
               onClick={() => {
                 setPreviewOpen(false);
                 router.push(`/quiz/${previewQuiz?.id}`);
@@ -620,10 +619,7 @@ function ProfileQuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: Pro
         )}
         {quiz.isTournament && (
           <div className="absolute right-2 top-2">
-            <Badge
-              variant="secondary"
-              className="bg-purple-500/90 text-white hover:bg-purple-500/90"
-            >
+            <Badge variant="action">
               <Trophy className="mr-1 h-3 w-3" /> Tournament
             </Badge>
           </div>
@@ -693,17 +689,17 @@ function ProfileQuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: Pro
         </div>
 
         {quiz.isTournament && quiz.tournamentDetails && (
-          <div className="mt-3 rounded-md bg-purple-50 p-2 text-xs">
-            <div className="font-medium text-purple-800">
+          <div className="mt-3 rounded-md bg-action/5 p-2 text-xs">
+            <div className="font-medium text-action">
               Tournament Status:{" "}
               {quiz.tournamentDetails.status.charAt(0).toUpperCase() +
                 quiz.tournamentDetails.status.slice(1)}
             </div>
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-purple-700">
+              <span className="text-muted-foreground">
                 {quiz.tournamentDetails.participants} participants
               </span>
-              <span className="font-medium text-purple-800">{quiz.tournamentDetails.prize}</span>
+              <span className="font-medium text-action">{quiz.tournamentDetails.prize}</span>
             </div>
           </div>
         )}
@@ -714,7 +710,7 @@ function ProfileQuizCard({ quiz, onEdit, onPreview, onViewStats, onDelete }: Pro
             <Edit className="mr-2 h-3.5 w-3.5" />
             Edit
           </Button>
-          <Button variant="default" size="sm" className="flex-1" onClick={onViewStats}>
+          <Button variant="action" size="sm" className="flex-1" onClick={onViewStats}>
             <BarChart2 className="mr-2 h-3.5 w-3.5" />
             Statistics
           </Button>
@@ -757,10 +753,7 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
           )}
           {quiz.isTournament && (
             <div className="absolute right-2 top-2">
-              <Badge
-                variant="secondary"
-                className="bg-purple-500/90 text-white hover:bg-purple-500/90"
-              >
+              <Badge variant="action">
                 <Trophy className="mr-1 h-3 w-3" /> Tournament
               </Badge>
             </div>
@@ -835,17 +828,17 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
           </div>
 
           {quiz.isTournament && quiz.tournamentDetails && (
-            <div className="mt-3 rounded-md bg-purple-50 p-2 text-xs">
-              <div className="font-medium text-purple-800">
+            <div className="mt-3 rounded-md bg-action/5 p-2 text-xs">
+              <div className="font-medium text-action">
                 Tournament Status:{" "}
                 {quiz.tournamentDetails.status.charAt(0).toUpperCase() +
                   quiz.tournamentDetails.status.slice(1)}
               </div>
               <div className="mt-1 flex items-center justify-between">
-                <span className="text-purple-700">
+                <span className="text-muted-foreground">
                   {quiz.tournamentDetails.participants} participants
                 </span>
-                <span className="font-medium text-purple-800">{quiz.tournamentDetails.prize}</span>
+                <span className="font-medium text-action">{quiz.tournamentDetails.prize}</span>
               </div>
             </div>
           )}
@@ -855,7 +848,7 @@ function QuizListItem({ quiz, onEdit, onPreview, onViewStats, onDelete }: QuizLi
               <Edit className="mr-2 h-3.5 w-3.5" />
               Edit
             </Button>
-            <Button variant="default" size="sm" onClick={onViewStats}>
+            <Button variant="action" size="sm" onClick={onViewStats}>
               <BarChart2 className="mr-2 h-3.5 w-3.5" />
               Statistics
             </Button>

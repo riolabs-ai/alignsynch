@@ -35,14 +35,13 @@ export function AffiliateHero({ copy }: { copy: PageCopy }) {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left column - Text content */}
           <div className="max-w-xl mx-auto lg:mx-0">
-            <div className="inline-flex items-center px-3 py-1 mb-6 text-sm font-medium rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
-              <span className="flex h-2 w-2 rounded-full bg-purple-600 dark:bg-purple-400 mr-2"></span>
+            <div className="inline-flex items-center px-3 py-1 mb-6 text-sm font-medium rounded-full bg-action/10 text-action">
+              <span className="flex h-2 w-2 rounded-full bg-action mr-2"></span>
               {copy.eyebrow}
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-slate-900 dark:text-white">
-              {headingLead}{" "}
-              <span className="text-purple-600 dark:text-purple-400">{headingAccent}</span>
+              {headingLead} <span className="text-action">{headingAccent}</span>
             </h1>
 
             <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
@@ -52,7 +51,7 @@ export function AffiliateHero({ copy }: { copy: PageCopy }) {
             <div className="space-y-4 mb-8">
               {BENEFIT_IDS.map((id, index) => (
                 <div key={index} className="flex items-start">
-                  <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-action mt-0.5 mr-3 flex-shrink-0" />
                   <p className="text-slate-700 dark:text-slate-300">
                     {fillLabel(itemLabel(hero, id), { percent: commissionPct })}
                   </p>
@@ -61,7 +60,7 @@ export function AffiliateHero({ copy }: { copy: PageCopy }) {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <Button variant={"gradient"}>
+              <Button variant="action">
                 {itemLabel(hero, "become-affiliate")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -75,7 +74,7 @@ export function AffiliateHero({ copy }: { copy: PageCopy }) {
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-md">
               <div className="text-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="text-3xl font-bold text-action">
                   {formatMetricValue(maxCommission)}
                 </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">
@@ -83,7 +82,7 @@ export function AffiliateHero({ copy }: { copy: PageCopy }) {
                 </div>
               </div>
               <div className="text-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="text-3xl font-bold text-action">
                   {formatCompactCount(metric("affiliate.affiliates").value)}+
                 </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">
@@ -91,7 +90,7 @@ export function AffiliateHero({ copy }: { copy: PageCopy }) {
                 </div>
               </div>
               <div className="text-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="text-3xl font-bold text-action">
                   {formatCompactCurrency(metric("affiliate.paidOut").value)}+
                 </div>
                 <div className="text-sm text-slate-600 dark:text-slate-400">
@@ -127,7 +126,7 @@ export function AffiliateHero({ copy }: { copy: PageCopy }) {
                 </div>
 
                 <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full mb-1">
-                  <div className="h-2 bg-purple-600 dark:bg-purple-500 rounded-full w-3/4"></div>
+                  <div className="h-2 bg-action rounded-full w-3/4"></div>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {fillLabel(itemLabel(hero, "monthly-goal-progress"), {
@@ -153,10 +152,8 @@ export function AffiliateHero({ copy }: { copy: PageCopy }) {
 
                 <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-3">
-                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium">
-                        2
-                      </span>
+                    <div className="w-8 h-8 rounded-full bg-action/10 flex items-center justify-center mr-3">
+                      <span className="text-action text-sm font-medium">2</span>
                     </div>
                     <span className="text-slate-700 dark:text-slate-300">
                       {itemLabel(hero, "conversions")}

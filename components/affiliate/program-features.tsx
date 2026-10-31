@@ -19,36 +19,36 @@ import {
 const FEATURES = [
   {
     id: "high-commission-rates",
-    icon: <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <DollarSign className="h-5 w-5 text-action" />,
   },
   {
     id: "real-time-analytics",
-    icon: <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <BarChart3 className="h-5 w-5 text-action" />,
   },
   {
     id: "custom-referral-links",
-    icon: <Link className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <Link className="h-5 w-5 text-action" />,
   },
-  { id: "90-day-cookie", icon: <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" /> },
+  { id: "90-day-cookie", icon: <Clock className="h-5 w-5 text-action" /> },
   {
     id: "secure-payments",
-    icon: <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <Shield className="h-5 w-5 text-action" />,
   },
   {
     id: "dedicated-support",
-    icon: <Headphones className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <Headphones className="h-5 w-5 text-action" />,
   },
   {
     id: "performance-bonuses",
-    icon: <Award className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <Award className="h-5 w-5 text-action" />,
   },
   {
     id: "instant-approval",
-    icon: <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <Zap className="h-5 w-5 text-action" />,
   },
   {
     id: "global-program",
-    icon: <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <Globe className="h-5 w-5 text-action" />,
   },
 ] as const;
 
@@ -75,9 +75,7 @@ export function ProgramFeatures({ copy }: { copy: PageCopySection }) {
               <Card className="h-full border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow duration-300">
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                      {feature.icon}
-                    </div>
+                    <div className="p-2 rounded-full bg-action/10">{feature.icon}</div>
                     <CardTitle className="text-lg">{itemLabel(copy, feature.id)}</CardTitle>
                   </div>
                 </CardHeader>
