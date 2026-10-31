@@ -36,6 +36,15 @@ is a function of rows that already exist, and `instanceStatusOf()` in `lib/flow/
 computes it on every read. A column would be a second authored copy of that fact — the same defect
 a stored Gap would be, which is why there is none of those either.
 
+**The invitation's state is derived the same way** (#266). `inviteStateOf()` in
+`lib/flow/invite-state.ts` compares `instance_invite.expires_at` and `claimed_at` with the instant
+the read is made, and answers `unclaimed`, `expired` or `claimed`. There is no cron, no background
+job and no `expired` column: an invitation that ran out is the same two columns read a day later.
+Both seats ask the same function — the Recipient's page maps `unclaimed` to its own word
+`claimable` — so the two screens cannot disagree about whether a link still works. The Initiator's
+panel draws all three, names the deadline (`Nov 6, 2026`), and withholds the URL once the state is
+`expired`, because a link the claim path refuses is not one to offer for copying.
+
 **The copy is `INSERT … SELECT`.** Creating an Instance copies the Template's `item` rows into rows
 owned by the instance record (#145 already made a record own its items). Nothing joins an instance's
 copy back to its Template to render it, so a Template edited afterwards cannot reach an answered
