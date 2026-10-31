@@ -25,14 +25,18 @@
  *     field — and the worked example links to `/assessment/avery-rowan`, the instance
  *     `data/assessments.ts` answers.
  *
- * The two limits are stated because they are true: the fixture set is a demonstration set
- * (there is no database behind it — `AGENTS.md` calls the repo frontend-only), and the Coach
- * the glossary names is modelled nowhere.
+ * The two limits are stated because they are true: the demo dataset is a demonstration set —
+ * stored since #145 in the six content tables `db/migrations/0001_content_model.sql` defines,
+ * read by `/assessment/[slug]` at request time, and reset and reseeded nightly from
+ * `data/bundles/demo-dataset.alignsynch.json` (`.github/workflows/demo-reset.yml`) — and the
+ * Coach the glossary names is modelled nowhere. "Demonstration" is a statement about what the
+ * rows are, never about whether they are stored.
  *
- * What this file deliberately does **not** say: it does not claim an invitation is sent (the
- * app models the two party roles — Initiator and Counterparty — and builds no invite flow), it
- * carries no count, no percentage, no metric, no testimonial and no customer name, and it
- * describes only what the screens in this repo do today.
+ * What this file deliberately does **not** say: it does not describe the invitation the app
+ * sends (the two party roles are Initiator and Counterparty, and the invite flow lives in
+ * `lib/flow/email.ts` and `app/(mainlayout)/invite/[token]`, not on this page), it carries no
+ * count, no percentage, no metric, no testimonial and no customer name, and it describes only
+ * what the screens in this repo do today.
  */
 import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
@@ -142,7 +146,7 @@ export const marketingPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "limit-beta",
           label: "This is a beta",
-          body: "The records behind these screens are a demonstration set, not a database.",
+          body: "The records behind these screens are a demonstration set: real rows in a Postgres database, reset and reseeded every night from a versioned bundle.",
         },
         {
           id: "limit-coach",
