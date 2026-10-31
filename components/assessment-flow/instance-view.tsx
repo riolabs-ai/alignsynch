@@ -27,6 +27,13 @@
  * has to be able to tell a two-score sheet from a four-score one. The mode is a fact about
  * the instance, so it is drawn, not chosen — there is no control here that changes it.
  *
+ * **The invitation panel draws its state, not a flag** (#266). `screen.invite.state` is
+ * `unclaimed`, `expired` or `claimed`, derived at read time from `expires_at` and `claimed_at`
+ * (`lib/flow/invite-state.ts`); each state has its own sentence and its own tone, and the
+ * deadline is filled into the two that are not `claimed`. The link is drawn only for
+ * `unclaimed` — the store withholds it otherwise, so this panel cannot offer a copy control for
+ * a URL the claim path would refuse.
+ *
  * Literal-free: the words are `data/pages/assessment-instance.ts` (E23), except the two mode
  * names, which are the glossary's own vocabulary authored once in `content/assessment.ts`
  * (`MODE_LABELS`) — the same way the report component carries "Aspect" and "Gap".
@@ -35,9 +42,11 @@ import { AssessmentReportView } from "@/components/assessment/assessment-report"
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
 import { InviteLink } from "@/components/assessment-flow/invite-link";
 import { MODE_LABELS } from "@/content/assessment";
+import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { answersPath } from "@/lib/flow/paths";
+import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import type { FlowScreen } from "@/lib/flow/screen";
 
 /** The codes a `?invite=` query may carry. Anything else is ignored, not rendered. */
@@ -64,6 +73,24 @@ export type ProblemCode = (typeof PROBLEM_CODES)[number];
 export function problemCodeOf(value: string | undefined): ProblemCode | undefined {
   return PROBLEM_CODES.find((code) => code === value);
 }
+
+/**
+ * The invitation panel's tone, one per state — the "at a glance" half of #266.
+ *
+ * The sentence already says which state it is; the panel's colour is what a reader catches
+ * before they read it. `unclaimed` is the neutral panel this band has always been, `claimed` is
+ * the emerald the report band uses for a thing that is done, and `expired` is red because it is
+ * news the Initiator has to act on (start again by other means). The three hues are status
+ * colours, which the brand rule deliberately leaves alone; no palette step and no gradient.
+ */
+const INVITE_TONES: Record<InviteDisplayState, string> = {
+  unclaimed:
+    "border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200",
+  expired:
+    "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
+  claimed:
+    "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+};
 
 export function AssessmentInstanceView({
   screen,
@@ -125,12 +152,13 @@ export function AssessmentInstanceView({
         <>
           {screen.invite === null ? null : (
             <section
-              data-invite-state={screen.invite.claimed ? "claimed" : "unclaimed"}
-              className="mb-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+              data-invite-state={screen.invite.state}
+              className={`mb-6 rounded-lg border p-4 text-sm ${INVITE_TONES[screen.invite.state]}`}
             >
               <p className="font-medium">
-                {fillLabel(itemLabel(inviteBand, screen.invite.claimed ? "claimed" : "unclaimed"), {
+                {fillLabel(itemLabel(inviteBand, screen.invite.state), {
                   counterparty: screen.invite.counterpartyName,
+                  date: formatDate(screen.invite.expiresAt),
                 })}
               </p>
 

@@ -60,6 +60,7 @@ import {
 } from "@/lib/db/rows";
 import { invitationLink } from "@/lib/flow/email";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
+import { inviteStateOf } from "@/lib/flow/invite-state";
 import {
   instanceStatusOf,
   parseSubmission,
@@ -797,7 +798,17 @@ export interface InstanceBundle {
   readonly invite: {
     readonly email: string;
     readonly counterpartyName: string;
+    /** `claimed_at IS NOT NULL` — the token was spent. */
     readonly claimed: boolean;
+    /**
+     * `expires_at`, straight off the row (#266).
+     *
+     * Read, not decided against here: this is the bundle, and the state the screens draw is
+     * `inviteStateOf()` over this instant and the clock their own read path carries. Before
+     * #266 the bundle omitted the column, so the Initiator's screen could not know an
+     * invitation had expired and presented a link that no longer worked, forever.
+     */
+    readonly expiresAt: Date;
   } | null;
   readonly answerCounts: Readonly<Record<PartyRole, number>>;
 }
@@ -835,8 +846,9 @@ export async function readInstanceBundle(
     email: string;
     counterparty_name: string;
     claimed_at: Date | null;
+    expires_at: Date;
   }>(
-    `SELECT email, counterparty_name, claimed_at FROM instance_invite WHERE instance_record_id = $1`,
+    `SELECT email, counterparty_name, claimed_at, expires_at FROM instance_invite WHERE instance_record_id = $1`,
     [instanceRecordId],
   );
   const counts = await query<{ role: PartyRole; answered: number }>(
@@ -867,6 +879,7 @@ export async function readInstanceBundle(
             email: invite.email,
             counterpartyName: invite.counterparty_name,
             claimed: invite.claimed_at !== null,
+            expiresAt: invite.expires_at,
           },
     answerCounts: { initiator: answered("initiator"), counterparty: answered("counterparty") },
   };
@@ -1061,6 +1074,13 @@ export async function roleForUser(
  * The opinions are read **after** the status is known, and only for the roles
  * `visibleRoles()` names. That ordering is the blind rule: there is no code path here that
  * loads the other party's scores into memory before deciding whether it may.
+ *
+ * **The invitation's state is derived here, once (#266).** `inviteStateOf()` compares the row's
+ * `expires_at` with `now` and the screen draws the answer as `unclaimed`, `expired` or `claimed`.
+ * Nothing is written: an invitation that ran out is not a row anybody flips, it is the same two
+ * columns read at a later instant. And the link is handed to the screen only while the state is
+ * `unclaimed`, so the Initiator is never shown — or offered a copy control for — a URL the claim
+ * path would refuse.
  */
 export async function readFlowScreen(input: {
   instanceRecordId: string;
@@ -1072,6 +1092,14 @@ export async function readFlowScreen(input: {
    * resolved nothing, so an invited party keeps the identity its link gave it.
    */
   viewerUserId?: string | null;
+  /**
+   * The instant the screen is read (#266), defaulting to the request clock.
+   *
+   * An argument rather than `new Date()` at the comparison so a test can pin `expires_at` in the
+   * past on a fixture row and read the screen the Initiator would have seen — the same shape
+   * `createInstanceFromTemplate` and `claimInvite` already take for the same reason.
+   */
+  now?: Date;
 }): Promise<FlowScreen | undefined> {
   const viewerRole =
     (await roleForToken(input.instanceRecordId, input.token)) ??
@@ -1107,20 +1135,30 @@ export async function readFlowScreen(input: {
     answerCounts: bundle.answerCounts,
   };
 
+  // #266 — the invitation's state, derived once from the row and the instant of this read.
+  const now = input.now ?? new Date();
+  const invite =
+    bundle.invite === null
+      ? null
+      : {
+          email: bundle.invite.email,
+          counterpartyName: bundle.invite.counterpartyName,
+          expiresAt: bundle.invite.expiresAt.toISOString(),
+          state: inviteStateOf(bundle.invite, now),
+        };
+
   return projectScreen({
     rows,
     template,
     viewerRole,
     invite:
-      bundle.invite === null
+      invite === null
         ? null
         : {
-            email: bundle.invite.email,
-            counterpartyName: bundle.invite.counterpartyName,
-            claimed: bundle.invite.claimed,
+            ...invite,
             link:
               status === "awaiting_counterparty" &&
-              !bundle.invite.claimed &&
+              invite.state === "unclaimed" &&
               input.inviteToken !== null &&
               input.inviteToken !== undefined
                 ? invitationLink(input.inviteToken)
@@ -1232,12 +1270,15 @@ export async function previewInvite(
     [hashToken(token)],
   );
   if (row === undefined) return empty;
-  const state: InviteState =
-    row.claimed_at !== null
-      ? "claimed"
-      : row.expires_at.getTime() <= now.getTime()
-        ? "expired"
-        : "claimable";
+  // #266 — the one comparison of `expires_at` with a clock on a read path, shared with the
+  // Initiator's screen so the two seats cannot disagree about whether an invitation is dead.
+  // `claimable` is this page's own word for `unclaimed`; the recipient's four states (and the
+  // sentences `data/pages/invite.ts` gives them) do not move.
+  const derived = inviteStateOf(
+    { claimed: row.claimed_at !== null, expiresAt: row.expires_at },
+    now,
+  );
+  const state: InviteState = derived === "unclaimed" ? "claimable" : derived;
   const viewerRole =
     (await viewerRoleOf(row.instance_record_id, options.viewerTokens ?? [])) ??
     (await roleForUser(row.instance_record_id, options.viewerUserId));
