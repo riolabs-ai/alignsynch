@@ -1,5 +1,6 @@
 "use client";
 import { AppNav, NavRow } from "@/components/layout/nav-menus";
+import { useSidebar } from "@/components/layout/sidebar-context";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
 import type { BrandMark } from "@/lib/brand-mark";
@@ -10,7 +11,6 @@ import { BookOpen, LogOut, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useSidebar } from "./sidebar-context";
 
 /**
  * The sidebar: the brand's mark, the brand's menu, and the sign-out row.

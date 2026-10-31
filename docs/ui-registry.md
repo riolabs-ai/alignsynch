@@ -173,7 +173,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/invite/[token]` — **db**
   - capability: What an invitation says, and the button that claims it — a single-use token spent by a POST once the invited party accepts.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `lib/auth/server.ts`
 
 - `/welcome` — **fixture**
   - capability: The public AlignSynch landing page in its own chrome: what a Gap is, how it works, four opinions and two modes.
