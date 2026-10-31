@@ -24,6 +24,29 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 /** 7 days, from the issue's spec. `instance_invite.expires_at` is written from this. */
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * 24 hours — how long the Initiator waits between re-invites (#275).
+ *
+ * The guard is on the *action*, not on the token: a re-invite mints a fresh token and kills the
+ * old link, so without a cooldown the button is a way to push mail into one person's inbox every
+ * few seconds. A day is the cadence of the product (a relationship check-in, not admin onboarding),
+ * which is why it is not Leantime's 240 s — see `docs/specs/flow-reinvite.md` §3.
+ *
+ * Enforced in `resendRefusal()` (`lib/flow/resend.ts`), inside the transaction that would
+ * otherwise write, so a refusal costs one row read and no write.
+ */
+export const RESEND_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 3 — how many re-invites one invitation may ever see (#275).
+ *
+ * A cooldown alone still allows an unbounded drip (one send a day, forever), so the cap is the
+ * terminal half of the guard: past it the refusal names the honest next step, which is starting a
+ * new instance. Three covers every legitimate story — a typo, a lost email, an expiry, one more
+ * try — and `resent_count` is the only stored fact the cap needs.
+ */
+export const RESEND_LIFETIME_CAP = 3;
+
 /** 32 bytes of entropy, base64url — 43 characters, URL-safe, no padding. */
 export function mintToken(): string {
   return randomBytes(32).toString("base64url");

@@ -8,6 +8,7 @@ import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import type { FlowScreen } from "@/lib/flow/screen";
+import { resendRefusalOf } from "@/lib/flow/resend";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
 import { markUnlockSeen, readFlowScreen } from "@/lib/flow/store";
 import { cookies, headers } from "next/headers";
@@ -109,10 +110,10 @@ export default async function AssessmentInstancePage({
   searchParams,
 }: {
   params: Promise<{ instanceId: string }>;
-  searchParams: Promise<{ problem?: string; invite?: string }>;
+  searchParams: Promise<{ problem?: string; invite?: string; resend?: string }>;
 }) {
   const { instanceId } = await params;
-  const { problem, invite } = await searchParams;
+  const { problem, invite, resend } = await searchParams;
 
   const jar = await cookies();
   const screen = await readFlowScreen({
@@ -136,6 +137,10 @@ export default async function AssessmentInstancePage({
   // (#220): `unset` and `failed` are different facts and get different sentences.
   const inviteNotice = inviteNoticeOf(invite);
   const problemCode = problemCodeOf(problem);
+  // #275 — `?resend=<code>` is the re-invite endpoint's refusal, carried through its 303 exactly
+  // as `?claim=` carries the claim's. A code this build does not know renders nothing: guessing
+  // which refusal it was is worse than saying nothing.
+  const refusedReinvite = resendRefusalOf(resend);
 
   return (
     <AssessmentInstanceView
@@ -143,6 +148,7 @@ export default async function AssessmentInstancePage({
       copy={assessmentInstancePageCopy}
       {...(inviteNotice === undefined ? {} : { inviteNotice })}
       {...(problemCode === undefined ? {} : { problem: problemCode })}
+      {...(refusedReinvite === undefined ? {} : { resendRefusal: refusedReinvite })}
     />
   );
 }
