@@ -80,7 +80,16 @@ const nextConfig = {
    */
   async redirects() {
     return [
-      { source: "/dashboard", destination: "/dashboard/user", permanent: true },
+      /**
+       * `/dashboard` used to be here — `{ source: "/dashboard", destination: "/dashboard/user" }`,
+       * the pre-P1 shell's account path. It is gone because `/dashboard` is now a page
+       * (`app/(mainlayout)/dashboard/page.tsx`, the signed-in console's Overview), and a
+       * `permanent: true` redirect runs **before** the filesystem route: the page was live and
+       * answering 308 to the quiz account home on every brand, i.e. built and unreachable. The
+       * rule the list below states — "these exist only so a stale external link does not land on a
+       * 404" — is exactly why the entry has to go: a redirect may not shadow a page, and
+       * `tests/route-redirects.test.ts` now holds the whole list to it.
+       */
       { source: "/earnings", destination: "/dashboard/user?tab=wallet", permanent: true },
       { source: "/analytics", destination: "/dashboard/user?tab=my-quizzes", permanent: true },
       { source: "/signup", destination: "/register", permanent: true },

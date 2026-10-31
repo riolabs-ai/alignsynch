@@ -36,6 +36,7 @@ import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
+import { overviewPageCopy } from "./overview";
 import { pricingPageCopy } from "./pricing";
 import { profilePageCopy } from "./profile";
 import { registerPageCopy } from "./register";
@@ -59,6 +60,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/creator-tips": creatorTipsPageCopy,
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
   "/daily-challenge": dailyChallengePageCopy,
+  "/dashboard": overviewPageCopy,
   "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,

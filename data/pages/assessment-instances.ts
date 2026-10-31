@@ -68,6 +68,27 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
       cta: { label: "Start an assessment", href: "/assessment" },
     },
     {
+      /**
+       * The three filters the console Overview's cards link with (Console 2/5).
+       *
+       * `?filter=<id>` holds the same three ids a card counts — `awaiting-other`,
+       * `yours-to-answer`, `reports-open` — and `lib/flow/overview.ts` owns the predicate, so this
+       * band only supplies the words. `showing` is the line above the list; `show-all` is the way
+       * back to the unfiltered list; `empty` is what a filter that keeps no rows says, which is a
+       * different sentence from "you are not in an assessment yet" — the reader has relationships,
+       * none of them in this state.
+       */
+      id: "filter",
+      items: [
+        { id: "showing", label: "Showing one list only" },
+        { id: "awaiting-other", label: "Waiting on the other party" },
+        { id: "yours-to-answer", label: "Needs your answers" },
+        { id: "reports-open", label: "Reports open" },
+        { id: "empty", label: "No relationship is in this list right now." },
+        { id: "show-all", label: "Show every relationship" },
+      ],
+    },
+    {
       id: "unreadable",
       heading: "Your assessments could not be read",
       body: "This list is read from the database on every visit, and this visit did not get an answer. Nothing here came from a cache, and no answers were shown, guessed or reused.",

@@ -29,6 +29,7 @@ const STATIC_ROUTES = [
   "/create/generator",
   "/creator-tips",
   "/daily-challenge",
+  "/dashboard",
   "/dashboard/user",
   "/demo",
   "/demo/admin",

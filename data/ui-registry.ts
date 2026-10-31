@@ -254,6 +254,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/dashboard",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The signed-in console's Overview: four counts of the viewer's own relationships — awaiting the other party, needing the viewer's answers, complete and unread — plus the templates available, each figure linking to the list it counts.",
+    notes:
+      "Every figure is arithmetic over `listMyInstances(user.userId)` plus the length of the published-template read, and each card links to `/assessment/instances?filter=<id>` (or `/assessment` for the templates) where the same predicate filters the same array (`lib/flow/overview.ts`), so a count cannot disagree with its list. No percentage, no total, and no authored metric: the numbers `data/pages/dashboard.ts` rejected for `/dashboard/user` (#164) have no equivalent here and were not re-created. The blind rule holds by construction — the three relationship counts are the three `MyInstanceState` values, derived from the viewer's own answered count and their own `unlock_seen_at`.",
+  },
+  {
+    kind: "route",
     surface: "/dashboard/user",
     status: "db",
     templates: ["quizhub", "alignsynch"],
@@ -559,6 +569,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "The chat surfaces: conversation list, thread, composer, message bubble, search and a small dropdown.",
     notes:
       "No template claims messaging yet — the same scope decision as /chat, recorded here so the domain is not orphaned in the catalogue.",
+  },
+  {
+    kind: "domain",
+    surface: "components/console",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The console's two generic shapes: a stat-card grid of linked figures, and the Overview built from it — a header naming the viewer, four counts, and the honest empty state for an account with no relationships yet.",
+    notes:
+      "Reads nothing itself — the counts arrive as props from the route that read Postgres, which is why the domain is `mock` and `/dashboard` above it is `db` (the same split `components/assessment` records). `stat-card-grid.tsx` is the extracted shape of `components/dashboard/dashboard-overview.tsx` with its metrics removed: `value` is a `number` the caller computed, so the next expression can pass its own rows through the grid without inheriting a wallet balance. `data/pages/overview.ts` holds every word (E23 budget 0).",
   },
   {
     kind: "domain",
