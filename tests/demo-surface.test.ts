@@ -16,7 +16,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { DemoEntry } from "@/components/auth/demo-entry";
+import type { BrandId } from "@/data/brand";
 import { loginPageCopy } from "@/data/pages/login";
+import { loginCopyFor } from "@/lib/auth-copy";
 import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
 import { verifyUnlock } from "@/lib/auth/demo-unlock";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -61,14 +63,30 @@ describe("which demo surface /login draws", () => {
 });
 
 describe("the copy a response carries", () => {
+  const DEMO_SECTION_IDS = ["demo-entry", "demo"];
+
+  /** The ids a call ships, for the composed copy the page actually builds. */
   const ids = (surface: Parameters<typeof demoCopyFor>[0]) =>
     (demoCopyFor(surface, loginPageCopy).sections ?? []).map((section) => section.id);
+
+  /**
+   * The ids `/login` ships for one brand — `copy` is what `loginCopyFor` projected (the two the
+   * card asks for), `fixture` is the route fixture the demo's words live in. This is the page's own
+   * call, brand for brand, so the assertions below are about the response and not a simplification.
+   */
+  const idsForBrand = (surface: Parameters<typeof demoCopyFor>[0], brandId: BrandId) =>
+    (demoCopyFor(surface, loginCopyFor(loginPageCopy, brandId), loginPageCopy).sections ?? []).map(
+      (section) => section.id,
+    );
 
   it("ships neither demo section when demo mode is off", () => {
     expect(ids({ kind: "off" })).not.toContain("demo-entry");
     expect(ids({ kind: "off" })).not.toContain("demo");
-    // …and leaves the sign-in card and the stats exactly as they were.
-    expect(ids({ kind: "off" })).toEqual(["sign-in", "stats"]);
+    // …and leaves every other section of the route fixture exactly as it was.
+    const others = (loginPageCopy.sections ?? [])
+      .filter((section) => !DEMO_SECTION_IDS.includes(section.id))
+      .map((section) => section.id);
+    expect(ids({ kind: "off" })).toEqual(others);
   });
 
   it("ships the anchor's copy in `entry` and the role block's in `roles`, never both", () => {
@@ -76,6 +94,24 @@ describe("the copy a response carries", () => {
     expect(ids({ kind: "entry" })).not.toContain("demo");
     expect(ids({ kind: "roles" })).toContain("demo");
     expect(ids({ kind: "roles" })).not.toContain("demo-entry");
+  });
+
+  /**
+   * #225 × #218: `loginCopyFor` rebuilds the section list from the ids a brand owns (`sign-in`,
+   * `stats`), so the demo sections are not in the projected copy at all. If `demoCopyFor` only
+   * filtered what it was handed, every deployment would ship a `/login` that knows the demo exists
+   * and renders nothing — the link on one brand, nothing on the other. So the projection is called
+   * with both brands, and the demo section has to survive it.
+   */
+  it("keeps the demo sections that the brand projection dropped", () => {
+    for (const brandId of ["quizhub", "alignsynch"] as const) {
+      const projected = loginCopyFor(loginPageCopy, brandId);
+      expect((projected.sections ?? []).map((section) => section.id)).not.toContain("demo");
+      expect(idsForBrand({ kind: "entry" }, brandId)).toContain("demo-entry");
+      expect(idsForBrand({ kind: "roles" }, brandId)).toContain("demo");
+      expect(idsForBrand({ kind: "off" }, brandId)).not.toContain("demo");
+      expect(idsForBrand({ kind: "off" }, brandId)).not.toContain("demo-entry");
+    }
   });
 });
 
