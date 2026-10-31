@@ -1,5 +1,20 @@
 # AlignSynch
 
+<p align="center">
+  <img src="docs/assets/hero.svg" alt="AlignSynch — two people answer the same questions; the distance between their answers is the Gap." width="960" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-156898?style=flat&logo=nextdotjs&logoColor=white" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19-156898?style=flat&logo=react&logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8.3-156898?style=flat&logo=typescript&logoColor=white" alt="TypeScript 5.8.3" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4.17-156898?style=flat&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3.4.17" />
+  <img src="https://img.shields.io/badge/shadcn%2Fui-Radix-156898?style=flat" alt="shadcn/ui on Radix" />
+  <img src="https://img.shields.io/badge/Postgres-Neon-156898?style=flat&logo=neon&logoColor=white" alt="Postgres on Neon" />
+  <img src="https://img.shields.io/badge/Auth-Neon_Managed_(Better_Auth)-156898?style=flat" alt="Auth: Neon Managed Auth, hosted Better Auth" />
+  <img src="https://img.shields.io/badge/licence-private-363d49?style=flat" alt="Licence: private" />
+</p>
+
 AlignSynch is a relationship and learning platform: two people answer the same questions about how
 they feel and how they wish it to be, and the distance between the two answers is the Gap.
 
@@ -7,6 +22,11 @@ This repository is the **template** that product is built from, not a single sit
 route table, several templates and several brands, and a build picks the brand. It ships as
 AlignSynch, and **QuizHub is the second shipped brand and template** — the quiz and tournament
 product the platform grew out of, still buildable, still green, not the thing this repository is.
+
+> [!NOTE]
+> **What this is.** One Next.js codebase and one route table that render several brands; it ships as
+> **AlignSynch**, and **QuizHub** is the second shipped brand and template. **Live demo:**
+> <https://alignsynch-amber.vercel.app/> — `main` deploys on every merge.
 
 ## What actually runs
 
@@ -23,6 +43,34 @@ product the platform grew out of, still buildable, still green, not the thing th
 `content/` imports nothing from React or Next. That is what lets the same model be rendered by the
 app, validated by a plain `node` script, and checked against the database with no browser in the
 loop.
+
+## What it looks like
+
+Every image below is this commit running locally — `BRAND=alignsynch`, `DEMO_AUTH=1`, 1440×900 at
+device scale 1, served by `next start` on `http://localhost` (not `127.0.0.1`: that is a different
+origin and the auth server refuses it, see [Environment variables](#environment-variables)). The
+report is the demo dataset's `assessment-instance-avery-rowan`, reached by signing in through
+`/demo` as Avery, so the numbers in it are the ones Postgres returned. Nothing is cropped, upscaled
+or retouched; the PNGs are palette-optimised and nothing else.
+
+### Home
+
+<img src="docs/assets/screens/home.png" alt="The AlignSynch home page at / — the app shell with its assessment navigation, a hero asking 'How do you feel, against how they feel?', and two cards explaining the Feel Gap and the Wish Gap." width="720" />
+
+`/` — the home the AlignSynch brand record composes.
+
+### Welcome
+
+<img src="docs/assets/screens/welcome.png" alt="The AlignSynch public landing page at /welcome — the hero 'Where two people's answers part', and beneath it the Align (business) and Synch (personal) cards." width="720" />
+
+`/welcome` — the standalone marketing route, with no app shell.
+
+### Assessment
+
+<img src="docs/assets/screens/assessment.png" alt="The assessment report at /assessment/instances/assessment-instance-avery-rowan, read from Postgres and signed in as Avery — five Aspects with Avery's and Rowan's answers beside each other and the computed Gap on each; on the first question a Feel Gap of 3 and a Wish Gap of 2." width="720" />
+
+`/assessment/instances/assessment-instance-avery-rowan` — the Avery and Rowan instance, as Avery
+sees it.
 
 ## Two brands from one build
 

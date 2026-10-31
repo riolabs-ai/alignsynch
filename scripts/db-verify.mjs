@@ -22,6 +22,9 @@
  *   V9  the instance's mode matches its opinion rows (#213): `basic` means no Think/Guess
  *       anywhere, `advanced` means the pair on every answered row, and the column is one of
  *       the two modes
+ *   V10 a party's `user_id` is the binding `/assessment/instances` reads (#213 follow-up):
+ *       it names an account that exists, and the two seeded demo parties still carry the
+ *       binding `db:seed` gave them
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -274,6 +277,96 @@ async function main() {
       );
     }
 
+    // V10 — the binding (#213 follow-up). `party.user_id` is the column
+    // `/assessment/instances` filters and `roleForUser()` answers from, and since this card the
+    // flow writes it on the party row it creates when the request carries a session. Two ways
+    // it goes wrong, and each is named:
+    //
+    //   (a) it names an account nobody has. A binding to a deleted or renamed Neon Auth user
+    //       reads as "this person is a party" to every list while the person cannot sign in at
+    //       all, so each binding is checked against the auth table this branch actually has —
+    //       the names are read from the catalogue, not assumed (`db:seed`'s `authTables()`).
+    //   (b) the seeded demo parties lost their seats. `db:seed` is the column's other writer
+    //       (`bindDemoParties`), and a re-seed whose dataset moved, or a reset that unbound
+    //       without re-binding, leaves the demo sign-in landing on "you are not in an
+    //       assessment yet". Skipped — with a line in the summary — when `demo_account` is
+    //       empty, because that is the flag being off, not drift.
+    //
+    // The two members' party map is `DEMO_INSTANCE_ID` + the button's own role name; the admin
+    // answers no instance (`db:seed` gives it `party: null` and `destinationFor()` sends it to
+    // /demo/admin). Kept as two lines here rather than a shared constant the seed does not
+    // import, which would be a third copy of the mapping instead of the only one.
+    const { rows: boundParties } = await client.query(
+      `SELECT instance_record_id, role, user_id FROM party
+        WHERE user_id IS NOT NULL
+        ORDER BY instance_record_id, role`,
+    );
+    if (boundParties.length > 0) {
+      const { rows: authTables } = await client.query(
+        `SELECT table_name FROM information_schema.tables
+          WHERE table_schema = 'neon_auth' AND table_name IN ('user', 'users')
+          ORDER BY table_name`,
+      );
+      const usersTable = authTables[0]?.table_name;
+      let known = null;
+      if (usersTable !== undefined) {
+        const { rows: accounts } = await client.query(
+          `SELECT id::text AS id FROM neon_auth."${usersTable}"`,
+        );
+        known = new Set(accounts.map((row) => row.id));
+      }
+      for (const party of boundParties) {
+        if (known === null) {
+          fail(
+            "V10",
+            `instance "${party.instance_record_id}": the ${party.role} is bound to account "${party.user_id}", but this branch has no neon_auth users table to own it`,
+          );
+        } else if (!known.has(party.user_id)) {
+          fail(
+            "V10",
+            `instance "${party.instance_record_id}": the ${party.role} is bound to account "${party.user_id}", which neon_auth."${usersTable}" does not have`,
+          );
+        }
+      }
+    }
+
+    const { DEMO_ACCOUNT_EMAILS, DEMO_INSTANCE_ID } = await import("@/lib/auth/demo-accounts.ts");
+    const { rows: demoTable } = await client.query(
+      "SELECT to_regclass('public.demo_account') IS NOT NULL AS present",
+    );
+    let seededBindings = 0;
+    let demoSeeded = false;
+    if (demoTable[0]?.present === true) {
+      const { rows: demoAccounts } = await client.query(
+        "SELECT email, user_id FROM demo_account WHERE email = ANY($1::text[])",
+        [Object.values(DEMO_ACCOUNT_EMAILS)],
+      );
+      demoSeeded = demoAccounts.length > 0;
+      const accountOf = new Map(demoAccounts.map((row) => [row.email, row.user_id]));
+      for (const role of ["initiator", "counterparty"]) {
+        const email = DEMO_ACCOUNT_EMAILS[role];
+        const accountId = accountOf.get(email);
+        if (accountId === undefined) continue;
+        const { rows: seat } = await client.query(
+          "SELECT user_id, name FROM party WHERE instance_record_id = $1 AND role = $2",
+          [DEMO_INSTANCE_ID, role],
+        );
+        const bound = seat[0];
+        seededBindings += 1;
+        if (bound === undefined) {
+          fail(
+            "V10",
+            `instance "${DEMO_INSTANCE_ID}": ${email} owns no ${role} party row — the seed's binding has nothing to be on (run \`pnpm db:seed\`)`,
+          );
+        } else if (bound.user_id !== accountId) {
+          fail(
+            "V10",
+            `instance "${DEMO_INSTANCE_ID}": the ${role} ("${bound.name}") is bound to ${bound.user_id === null ? "no account" : `account "${bound.user_id}"`}, not to ${email}'s ("${accountId}") — the seeded binding moved (run \`pnpm db:seed\`)`,
+          );
+        }
+      }
+    }
+
     const { rows: orphanInstances } = await client.query(
       `SELECT ai.record_id FROM assessment_instance ai
          JOIN record r ON r.id = ai.record_id
@@ -293,8 +386,15 @@ async function main() {
       return;
     }
 
+    const bindings =
+      boundParties.length === 0
+        ? "no party is bound to an account yet"
+        : demoSeeded
+          ? `${boundParties.length} party binding(s) resolve to an account, ${seededBindings} seeded binding(s) intact`
+          : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
+
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, ${bindings}, no drift`,
     );
   } finally {
     await client.end();
