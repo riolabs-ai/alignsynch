@@ -30,7 +30,7 @@
  */
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children?: ReactNode }) =>
@@ -66,6 +66,18 @@ import { PLATFORM_VIEWER } from "@/lib/nav";
 
 afterEach(() => {
   vi.unstubAllEnvs();
+});
+
+/**
+ * The quiz template, stated rather than inherited — the same rule `tests/leaderboard-links.test.ts`
+ * carries (#300). Two reasons here: `hiddenNavHrefs()` reads the template, and the header's
+ * notification rows are the *quiz* brand's, so on `BRAND=alignsynch` every row whose link is a quiz
+ * surface is filtered out (correctly — those routes answer 404 there) and the drawer's "keeps the
+ * other rows" assertion would be reading a different screen. The affiliate gate itself is one flag
+ * and is flipped inside each case.
+ */
+beforeEach(() => {
+  vi.stubEnv("BRAND", "quizhub");
 });
 
 /** Every `href` in a rendered tree, in document order. */
