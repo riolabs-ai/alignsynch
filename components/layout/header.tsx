@@ -80,6 +80,7 @@ export function Header({
   viewer,
   account,
   searchIndex,
+  hiddenNav,
 }: {
   copy: PageCopy;
   brandId: BrandId;
@@ -109,6 +110,14 @@ export function Header({
   account: ShellAccount | null;
   /** The brand's own search catalog, built on the server (`data/searchdata.ts`). */
   searchIndex: SearchIndex;
+  /**
+   * The hrefs a feature flag has turned off (issue #175), resolved on the server in
+   * `app/(mainlayout)/layout.tsx` and forwarded by `MainLayout` — `lib/flags.ts` refuses to run
+   * in this client component. The notification rows are the header's one navigation surface: a
+   * row's `link` is a destination like any nav entry, so a row pointing at a gated route is not
+   * drawn (#291 put `/affiliate` on that list). Absent means every gated surface is on.
+   */
+  hiddenNav?: readonly string[];
 }) {
   // The shell's copy, resolved here rather than in each band: `data/pages/shell.ts`
   // owns the words, this file owns which ids it renders. A renamed id is a red build
@@ -137,7 +146,16 @@ export function Header({
    * conversations and badges (issue #156 follow-up).
    */
   const messages = recentMessagesFor(brandId);
-  const notifications = notificationsFor(brandId);
+  /**
+   * The rows whose destination a flag has turned off are dropped here, before the drawer and the
+   * unread badge both read this list (#291 — a "Quiz Reward" row pointed at `/affiliate`, which
+   * answers 404 while `commerce.affiliate` is off). Filtering at the source is what keeps the
+   * badge's count equal to the rows a person can actually open; filtering inside the drawer would
+   * leave a count for a row nobody can see.
+   */
+  const notifications = notificationsFor(brandId).filter(
+    (notification) => !(hiddenNav ?? []).includes(notification.link),
+  );
 
   const pathname = usePathname();
   const router = useRouter();

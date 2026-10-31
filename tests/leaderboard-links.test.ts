@@ -54,9 +54,16 @@ import { profileByHandle } from "@/lib/profile";
  * brand boundary hides twenty more hrefs (the quiz product's) on `BRAND=alignsynch`, and a suite
  * that read the ambient template would be asserting the brand boundary's answer under a name that
  * says "leaderboard" — the row would go red in the leg that is not being tested.
+ *
+ * `commerce.affiliate` is pinned on for the same reason (#291 follow-up): `/affiliate` joined
+ * `navSurfaces` as a second mock gate, so a default build hides two hrefs. Pinning the sibling
+ * surface on keeps every list and every render below about one flag, without weakening the
+ * assertion that the leaderboard's own row is gone. The affiliate half is
+ * `tests/affiliate-links.test.ts`.
  */
 beforeEach(() => {
   vi.stubEnv("BRAND", "quizhub");
+  vi.stubEnv("FLAG_COMMERCE_AFFILIATE", "1");
 });
 
 afterEach(() => {

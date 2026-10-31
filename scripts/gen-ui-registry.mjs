@@ -573,6 +573,9 @@ function renderPage(structure, entries) {
       " under both. A surface no template claims yet has an empty list and sits in _No template" +
       " yet_, which is where a candidate for the next vertical starts its life.",
     "",
+    "How a template picks from this page — the order a new surface is decided in — is" +
+      " [`TEMPLATE-DOCTRINE.md`](TEMPLATE-DOCTRINE.md): one core, many expressions.",
+    "",
     "## Summary",
     "",
     `- routes: **${routeSurfaces.length}** — ${staticRoutes} static, ${routeSurfaces.length - staticRoutes} dynamic, from \`app/**/page.tsx\``,

@@ -267,6 +267,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         active={isActive(pathname, "/affiliate")}
         collapsed={collapsed}
         onNavigate={onNavigate}
+        hidden={hidden?.includes("/affiliate")}
       />
       <NavRow
         href="/pricing"

@@ -184,22 +184,42 @@ describe("the nav and the browser", () => {
     // run (the matrix leg) must assert this row, not the quiz product's.
     vi.stubEnv("BRAND", "quizhub");
     expect(navSurfaces["/leaderboard"]).toBe("community.leaderboard");
-    expect(hiddenNavHrefs()).toEqual(["/leaderboard"]);
+    // Both gated surfaces are off by default, in the order `navSurfaces` declares them.
+    expect(hiddenNavHrefs()).toEqual(["/leaderboard", "/affiliate"]);
 
     vi.stubEnv("FLAG_COMMUNITY_LEADERBOARD", "1");
+    expect(hiddenNavHrefs()).toEqual(["/affiliate"]);
+
+    vi.stubEnv("FLAG_COMMERCE_AFFILIATE", "1");
     expect(hiddenNavHrefs()).toEqual([]);
+  });
+
+  it("names /affiliate, the surface whose route 404s while commerce.affiliate is off (#291)", () => {
+    // The route gates itself, so the shell has to agree: a nav that draws this href is a nav
+    // that hands out a 404 (`tests/affiliate-links.test.ts` proves the four consumers drop it).
+    expect(navSurfaces["/affiliate"]).toBe("commerce.affiliate");
+    expect(hiddenNavHrefs()).toContain("/affiliate");
+
+    vi.stubEnv("FLAG_COMMERCE_AFFILIATE", "1");
+    expect(hiddenNavHrefs()).not.toContain("/affiliate");
   });
 
   /**
    * The brand boundary's nav half (#300). `product.quiz-surfaces` is on for `quizhub` and off for
-   * `alignsynch`, so the same list answers `["/leaderboard"]` on the quiz build — every quiz href
-   * resolves on — and the whole quiz product on the alignment build.
+   * `alignsynch`, so the same list answers the two mock gates on the quiz build (`/leaderboard`
+   * and `/affiliate`, both off everywhere) and the whole quiz product on the alignment build.
    *
    * The count is asserted, not just membership: a route that joins the boundary and not this map
    * is a route a nav, a footer or a content link can still point at and get a 404, which is the
    * failure the card names. It carries both spellings — the static roots a nav draws and the
    * `[param]` patterns a component matches a concrete href against (`profile-activity.tsx` builds
    * `/quiz/<id>` and asks about `/quiz/[id]`).
+   *
+   * `/affiliate` is deliberately **not** in `QUIZ_SURFACES`: its route is brand-gated too (the
+   * page calls `requireQuizProduct()`), but its nav row is owned by the mock gate, because a row
+   * on `product.quiz-surfaces` is advertised on every quiz build while the route answers 404 for
+   * `commerce.affiliate` (#291 follow-up). It is in both lists below either way: off on both
+   * brands, for two different reasons.
    */
   it("carries the quiz product on the alignment build, and only the mock gates on the quiz build", () => {
     const QUIZ_SURFACES = [
@@ -217,7 +237,6 @@ describe("the nav and the browser", () => {
       "/quiz/[id]",
       "/create/editor",
       "/create/generator",
-      "/affiliate",
       "/chat",
       "/dashboard/user",
       "/my-quizzes",
@@ -226,11 +245,13 @@ describe("the nav and the browser", () => {
 
     for (const href of QUIZ_SURFACES) expect(navSurfaces[href]).toBe("product.quiz-surfaces");
 
+    const MOCK_GATES = ["/leaderboard", "/affiliate"];
+
     vi.stubEnv("BRAND", "quizhub");
-    expect(hiddenNavHrefs()).toEqual(["/leaderboard"]);
+    expect(hiddenNavHrefs()).toEqual(MOCK_GATES);
 
     vi.stubEnv("BRAND", "alignsynch");
-    expect([...hiddenNavHrefs()].sort()).toEqual([...QUIZ_SURFACES, "/leaderboard"].sort());
+    expect([...hiddenNavHrefs()].sort()).toEqual([...QUIZ_SURFACES, ...MOCK_GATES].sort());
   });
 
   it("refuses to resolve in a browser — a flag the client decides enforces nothing", () => {

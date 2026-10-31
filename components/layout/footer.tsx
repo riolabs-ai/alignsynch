@@ -324,7 +324,8 @@ function FooterColumnHeading({ children }: { children: React.ReactNode }) {
  * Unchanged in output for `BRAND=quizhub` with every surface on — same rows, same order, same
  * hrefs — and reachable on the alignment brand only for a viewer with the quiz capability.
  *
- * `hiddenNav` drops the Quick Links row whose destination is flagged off (#175 follow-up). The
+ * `hiddenNav` drops the Quick Links rows whose destination is flagged off (#175 follow-up): the
+ * `/leaderboard` row since #175, and the `/affiliate` row since #291 gated that route. The
  * footer is the widest of the four surfaces that used to advertise `/leaderboard` while the flag
  * answered 404: this one mounts on `/`, `/pricing`, `/affiliate`, `/creator-tips`, its detail
  * pages, `/categories` and `/tournaments`. The row is filtered here, not before the call, because
@@ -349,7 +350,9 @@ function QuizHubLinkColumns({
           {!hiddenNav.includes("/leaderboard") && (
             <FooterLinkRow href="/leaderboard" label={itemLabel(links, "leaderboard")} />
           )}
-          <FooterLinkRow href="/affiliate" label={itemLabel(links, "affiliate")} />
+          {!hiddenNav.includes("/affiliate") && (
+            <FooterLinkRow href="/affiliate" label={itemLabel(links, "affiliate")} />
+          )}
           <FooterLinkRow href="/pricing" label={itemLabel(links, "pricing")} />
         </ul>
       </div>

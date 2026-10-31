@@ -253,6 +253,18 @@ process bug.
   no shelf, so a generated one could never run — `data:check` E26 rejects a
   `data/generated/promotions.ts` and `pnpm gen` deletes a leftover.
 
+### The template doctrine — one core, many expressions
+
+This repo is a base core webapp; AlignSynch and QuizHub are two configurations of it and a third is
+coming. A card that adds a screen answers three questions, in order, and names the answers in its
+handoff: **(1)** which existing surface is the template — the file; **(2)** what the variation is — the
+axis that changes: columns, filters, row actions, empty state, detail panel or data source; **(3)** only
+if nothing fits, the generic version of a new surface, named generically and registered with
+`templates: []` so the next expression reuses it. Nothing is deleted for being unused by the current
+brand — it is catalogued in `docs/ui-registry.md` with its `status` and its adoption cost. An AlignSynch
+noun in a component's name is the sign that question 3 was skipped. Full text:
+[`docs/TEMPLATE-DOCTRINE.md`](docs/TEMPLATE-DOCTRINE.md).
+
 ## Pitfalls
 
 - **`/usr/bin/node` is 18.19.1** and shadows newer runtimes, so every Next command dies with

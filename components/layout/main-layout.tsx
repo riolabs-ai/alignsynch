@@ -91,6 +91,7 @@ export function MainLayout({
             viewer={viewer}
             account={account}
             searchIndex={searchIndex}
+            hiddenNav={hiddenNav}
           />
           <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">{children}</main>
         </div>
