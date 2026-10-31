@@ -12,11 +12,11 @@ import { Award, BookOpen, Globe, Users } from "lucide-react";
 const STATS = [
   {
     id: "stat-active-users",
-    icon: <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />,
+    icon: <Users className="h-5 w-5 text-action" />,
   },
   {
     id: "stat-quizzes-taken",
-    icon: <Award className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
+    icon: <Award className="h-5 w-5 text-action" />,
   },
   { id: "stat-countries", icon: <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" /> },
   {
@@ -37,7 +37,7 @@ export function AboutBrand({ copy }: { copy: PageCopySection }) {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">{copy.heading}</h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-purple-600 to-indigo-600 mx-auto mb-6"></div>
+            <div className="w-24 h-1 bg-action mx-auto mb-6"></div>
             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
               {copy.body}
             </p>
@@ -64,8 +64,8 @@ export function AboutBrand({ copy }: { copy: PageCopySection }) {
               />
             </div>
             {/* Decorative elements */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[90%] max-h-[90%] rounded-2xl border border-purple-200 dark:border-purple-900/30 -z-10"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[80%] max-h-[80%] rounded-2xl border border-indigo-200 dark:border-indigo-900/30 -z-20"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[90%] max-h-[90%] rounded-2xl border border-action/20 -z-10"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[80%] max-h-[80%] rounded-2xl border border-action/10 -z-20"></div>
           </motion.div>
 
           {/* Right column - Text content */}

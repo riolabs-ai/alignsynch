@@ -101,7 +101,7 @@ export function MessageModal({ isOpen, onClose, recipient }: MessageModalProps) 
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button onClick={handleSend} disabled={!message.trim() || sending}>
+              <Button variant="action" onClick={handleSend} disabled={!message.trim() || sending}>
                 {sending ? (
                   <>
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />

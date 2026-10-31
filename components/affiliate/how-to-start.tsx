@@ -14,13 +14,13 @@ const STEPS = [
   },
   {
     id: "share-your-link",
-    icon: <Link className="h-6 w-6 text-indigo-500" />,
-    color: "border-l-indigo-500",
+    icon: <Link className="h-6 w-6 text-action" />,
+    color: "border-l-action",
   },
   {
     id: "refer-users",
-    icon: <Users className="h-6 w-6 text-violet-500" />,
-    color: "border-l-violet-500",
+    icon: <Users className="h-6 w-6 text-action" />,
+    color: "border-l-action",
   },
   {
     id: "earn-commission",
@@ -70,7 +70,7 @@ export function HowToStart({ copy }: { copy: PageCopySection }) {
         </div>
 
         <div className="mt-12 text-center">
-          <Button size="lg" className="px-8">
+          <Button size="lg" variant="action" className="px-8">
             {itemLabel(copy, "become-affiliate")}
           </Button>
           <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
