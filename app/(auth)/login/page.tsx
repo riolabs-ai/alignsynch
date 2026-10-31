@@ -2,7 +2,7 @@ import { LoginView } from "@/components/auth/login-view";
 import { loginPageCopy } from "@/data/pages/login";
 import { demoMode } from "@/lib/auth/demo-mode";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
-import { demoSurfaceFor } from "@/lib/auth/demo-surface";
+import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
 import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
 import { safeNextPath } from "@/lib/auth/paths";
 import type { Metadata } from "next";
@@ -41,6 +41,10 @@ export const metadata: Metadata = {
  * parity render) must not need an auth secret to render `/login`, and `demoSurfaceFor()` takes
  * `null` for exactly that case. The actions are passed as props, so this module is the one place
  * the two `"use server"` files are wired to the view.
+ *
+ * The **copy** is trimmed to the state as well (`demoCopyFor`): the view is handed one fixture, and
+ * Next serialises that fixture into the response, so a section left in the prop is text in the HTML
+ * even when nothing draws it. With demo mode off the words are absent from the response entirely.
  */
 export default async function AuthPage({
   searchParams,
@@ -59,5 +63,7 @@ export default async function AuthPage({
         ? { kind: "entry" }
         : { kind: "off" };
 
-  return <LoginView copy={loginPageCopy} next={safeNextPath(target)} demo={demo} />;
+  return (
+    <LoginView copy={demoCopyFor(surface, loginPageCopy)} next={safeNextPath(target)} demo={demo} />
+  );
 }

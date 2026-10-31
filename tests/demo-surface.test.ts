@@ -17,7 +17,7 @@ import { describe, expect, it } from "vitest";
 
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { loginPageCopy } from "@/data/pages/login";
-import { demoSurfaceFor } from "@/lib/auth/demo-surface";
+import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
 import { verifyUnlock } from "@/lib/auth/demo-unlock";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -57,6 +57,25 @@ describe("which demo surface /login draws", () => {
     for (const reason of ["absent", "malformed", "signature", "expired", "no-secret"] as const) {
       expect(demoSurfaceFor(DEMO, { ok: false, reason }).kind).toBe("entry");
     }
+  });
+});
+
+describe("the copy a response carries", () => {
+  const ids = (surface: Parameters<typeof demoCopyFor>[0]) =>
+    (demoCopyFor(surface, loginPageCopy).sections ?? []).map((section) => section.id);
+
+  it("ships neither demo section when demo mode is off", () => {
+    expect(ids({ kind: "off" })).not.toContain("demo-entry");
+    expect(ids({ kind: "off" })).not.toContain("demo");
+    // …and leaves the sign-in card and the stats exactly as they were.
+    expect(ids({ kind: "off" })).toEqual(["sign-in", "stats"]);
+  });
+
+  it("ships the anchor's copy in `entry` and the role block's in `roles`, never both", () => {
+    expect(ids({ kind: "entry" })).toContain("demo-entry");
+    expect(ids({ kind: "entry" })).not.toContain("demo");
+    expect(ids({ kind: "roles" })).toContain("demo");
+    expect(ids({ kind: "roles" })).not.toContain("demo-entry");
   });
 });
 

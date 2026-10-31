@@ -22,6 +22,7 @@
  */
 import type { DemoMode } from "@/lib/auth/demo-mode";
 import type { UnlockVerdict } from "@/lib/auth/demo-unlock";
+import type { PageCopy } from "@/content/pages";
 
 /** The three states, in the order the flow reaches them. */
 export const DEMO_SURFACES = ["off", "entry", "roles"] as const;
@@ -44,4 +45,30 @@ export interface DemoSurfaceDecision {
 export function demoSurfaceFor(mode: DemoMode, unlock: UnlockVerdict | null): DemoSurfaceDecision {
   if (mode.kind !== "demo") return { kind: "off" };
   return unlock?.ok === true ? { kind: "roles" } : { kind: "entry" };
+}
+
+/** The two sections of the `/login` fixture this flow owns. */
+export const DEMO_COPY_SECTIONS = ["demo-entry", "demo"] as const;
+
+/**
+ * The copy a `/login` response may carry: only the demo section its state actually renders.
+ *
+ * The view receives one `PageCopy` object, and Next serialises that object into the response's
+ * flight payload — so a fixture section left in the prop is text in the HTML even when no
+ * component draws it. That is exactly the "not a teaser" rule at the byte level: with demo mode
+ * off, the words "Demo sign-in" and "Demo accounts" are not in the response at all, rather than
+ * being present-but-unrendered. The same rule trims the other direction — the `entry` state ships
+ * the anchor's copy and not the role block's, and `roles` ships the block and not the anchor's.
+ *
+ * The mapping is a pure filter rather than three hand-written fixtures: one fixture stays the
+ * source of the wording (E23), and a section this function drops is a section the state cannot
+ * render. `sign-in` and `stats` are never touched.
+ */
+export function demoCopyFor(surface: DemoSurfaceDecision, copy: PageCopy): PageCopy {
+  const drop =
+    surface.kind === "off"
+      ? new Set<string>(DEMO_COPY_SECTIONS)
+      : new Set<string>([surface.kind === "entry" ? "demo" : "demo-entry"]);
+  const sections = (copy.sections ?? []).filter((section) => !drop.has(section.id));
+  return { ...copy, sections };
 }
