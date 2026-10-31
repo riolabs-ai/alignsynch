@@ -214,6 +214,23 @@ export function isEnabled(name: Name, options: { readonly role?: UserRole | null
  */
 export const navSurfaces: Readonly<Record<string, FlagName>> = {
   "/leaderboard": "community.leaderboard",
+  /**
+   * `/affiliate` is the one quiz href whose nav row the **mock** gate owns (#291 follow-up), not
+   * the brand boundary: `commerce.affiliate` is `default: false` on every template, so the
+   * programme is unadvertised on both builds — which is what the route does too, since
+   * `app/(mainlayout)/affiliate/page.tsx` calls `notFound()` while it is off, and the four
+   * surfaces that still drew a row to it were handing a member a 404.
+   *
+   * The brand half did not go anywhere: that same page calls `requireQuizProduct()` (#300), so an
+   * alignment build answers 404 whether or not the mock flag is on. One href maps to one flag
+   * here, and the flag that turns the *route* off is the one that has to turn the row off — the
+   * alternative (this entry on `product.quiz-surfaces`) is on for every quiz build, which is
+   * exactly the dead link this fixes.
+   *
+   * The fixture, the route and `components/affiliate/**` all stay: the programme is a catalogue
+   * asset, it is only unadvertised.
+   */
+  "/affiliate": "commerce.affiliate",
   "/daily-challenge": "product.quiz-surfaces",
   "/categories": "product.quiz-surfaces",
   "/categories/[slug]": "product.quiz-surfaces",
@@ -228,7 +245,6 @@ export const navSurfaces: Readonly<Record<string, FlagName>> = {
   "/quiz/[id]": "product.quiz-surfaces",
   "/create/editor": "product.quiz-surfaces",
   "/create/generator": "product.quiz-surfaces",
-  "/affiliate": "product.quiz-surfaces",
   "/chat": "product.quiz-surfaces",
   "/dashboard/user": "product.quiz-surfaces",
   "/my-quizzes": "product.quiz-surfaces",
