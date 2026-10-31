@@ -19,6 +19,12 @@
 # CHANGELOG entry, byte for byte (`gh release create --notes-file`). The commits on main are
 # already conventional, so `git log` is the whole generator — no new dependency, no commitlint.
 #
+# A pre-release is cut the same way: `1.1.0-rc1` is a version (semver's `-suffix`), its entry is
+# `## [1.1.0-rc1] - <date>`, and the GitHub Release is created with `--prerelease`. A `+build`
+# suffix is build metadata — allowed, equal in precedence to the release it decorates, and so not
+# marked pre-release. `scripts/release-version.mjs` is the one classifier: validity, ordering and
+# "is this a bump" that the gate, the bump guard and the publish step all share.
+#
 # A pushed tag is never moved. A botched cut is abandoned (delete the tag and the release) and the
 # next attempt is the next version number.
 #
@@ -29,13 +35,13 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 CHANGELOG="CHANGELOG.md"
-SEMVER='^[0-9]+\.[0-9]+\.[0-9]+$'
+VERSION_TOOL="scripts/release-version.mjs"
 CONVENTIONAL='^[a-z]+(\([^)]*\))?!?: '
 
 say() { printf '%s\n' "$*"; }
 step() { printf '\n▶ %s\n' "$*"; }
 die() { printf 'release: %s\n' "$*" >&2; exit 1; }
-usage_die() { printf 'release: %s\n\n' "$*" >&2; sed -n '2,26p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+usage_die() { printf 'release: %s\n\n' "$*" >&2; sed -n '2,31p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2; }
 
 pkg_version() { node -p 'require("./package.json").version'; }
 
@@ -49,14 +55,39 @@ SLUG="$(repo_slug)"
 SLUG_URL=""
 if [ -n "$SLUG" ]; then SLUG_URL="https://github.com/$SLUG"; fi
 
+# --- versions -----------------------------------------------------------------
+# One classifier for the whole script (`scripts/release-version.mjs`), because a version is not
+# three integers: `valid` is "is this a semver at all" (`1.1.0.0`, `1.1` and `v1.1.0` are not),
+# `prerelease` is "does it carry a `-suffix`", and `bump <from> <to>` is semver precedence — so
+# `1.1.0-rc1 -> 1.1.0` is a bump (a release outranks its own pre-release) and `1.1.0 -> 1.1.0-rc1`
+# is not. The same module prints VERSION_TOKEN, the ERE the greps below interpolate, so the parser
+# cannot drift from the validity rule.
+
+version_cli() { node "$ROOT/$VERSION_TOOL" "$@"; }
+is_version() { version_cli valid "$1"; }
+is_prerelease() { version_cli prerelease "$1"; }
+is_bump() { version_cli bump "$1" "$2"; }
+
+VERSION_TOKEN="$(version_cli token)" || die "cannot read the version pattern from $VERSION_TOOL"
+
+# The footer pattern reaches awk through the environment, not `-v`: awk processes escape sequences
+# in `-v` assignments, and gawk (CI's awk) turns `\[` into `[` — which silently turns the pattern
+# into a bracket expression, so the footer would end up inside the entry above it. mawk leaves the
+# backslash alone, which is why this only failed on the runner. `ENVIRON` is not rewritten by either.
+VERSION_LINK_DEF="^\\[$VERSION_TOKEN\\]: "
+export VERSION_LINK_DEF
+
 # --- CHANGELOG parsing ---------------------------------------------------------
-# An entry is `## [<x.y.z>] - <date>` up to the next `## [` heading. The footer that carries
-# the release link is `[1.0.0]: <url>` — deliberately not an `##` heading, so it never looks
-# like the start of an entry.
+# An entry is `## [<version>] - <date>` up to the next `## [` heading, where a version is semver
+# with an optional `-prerelease`/`+build` suffix (`1.1.0-rc1`). The footer that carries the release
+# link is `[1.1.0-rc1]: <url>` — deliberately not an `##` heading, so it never looks like the start
+# of an entry; the parser stops at it by shape as well, so a footer can never end up inside the
+# notes of the entry above it. (The pattern reaches awk through `-v`, which keeps the backslashes
+# mawk and gawk both leave alone for `\[`.)
 
 changelog_versions() {
   [ -f "$CHANGELOG" ] || return 0
-  grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' "$CHANGELOG" | tr -d '#[] ' || true
+  grep -oE "^## \[$VERSION_TOKEN\]" "$CHANGELOG" | tr -d '#[] ' || true
 }
 
 newest_version() {
@@ -68,9 +99,13 @@ newest_version() {
 entry_of() { # <version> -> the entry's lines; the file's link definitions are not the entry
   awk -v want="## [$1] - " '
     index($0, want) == 1 { inside = 1; print; next }
-    inside && (/^## \[/ || /^\[[0-9]+\.[0-9]+\.[0-9]+\]: /) { exit }
+    inside && (/^## \[/ || $0 ~ ENVIRON["VERSION_LINK_DEF"]) { exit }
     inside { print }
   ' "$CHANGELOG"
+}
+
+first_entry_line() { # the line the newest entry starts on, or "" when there is none to insert above
+  grep -nE "^## \[$VERSION_TOKEN\] - " "$CHANGELOG" | head -1 | cut -d: -f1 || true
 }
 
 limits_of() { # <version> -> the Known limits block, body only
@@ -209,7 +244,8 @@ cmd_check() {
   fi
 
   newest="$(newest_version)"
-  [ -n "$newest" ] || die "$CHANGELOG has no '## [x.y.z] - <date>' entry"
+  [ -n "$newest" ] ||
+    die "$CHANGELOG has no '## [x.y.z] - <date>' entry — suffixed where the version is a pre-release"
   pkg="$(pkg_version)"
 
   if [ "$newest" = "$pkg" ]; then
@@ -268,7 +304,8 @@ cmd_check() {
 
 preflight() { # <version> — everything a cut must be true before a single byte is written
   local version="$1"
-  [[ $version =~ $SEMVER ]] || usage_die "'$version' is not a semantic version (x.y.z)"
+  is_version "$version" ||
+    usage_die "'$version' is not a semantic version (x.y.z, optionally -prerelease or +build)"
 
   git rev-parse --git-dir >/dev/null 2>&1 || die "not a git repository"
   [ -z "$(git status --porcelain)" ] ||
@@ -294,18 +331,35 @@ entry_to_file() { # <version> <path> — the entry with its trailing blank lines
 }
 
 tag_and_publish() { # <version> — annotated tag at HEAD, push it, publish the entry verbatim
-  local version="$1" notes ref="v$1"
+  local version="$1" notes ref="v$1" prerelease=false flags=() published tag draft pre url
   notes="$(mktemp "${TMPDIR:-/tmp}/release-notes-$version.XXXXXX")"
   entry_to_file "$version" "$notes"
+
+  # Only a `-suffix` is a pre-release. `+build` is metadata on a final version, and marking that
+  # pre-release would hide the release GitHub calls latest behind a flag semver does not grant it.
+  if is_prerelease "$version"; then
+    prerelease=true
+    flags=(--prerelease)
+  fi
 
   step "tag (annotated, at HEAD $(git rev-parse --short HEAD))"
   git tag -a "$ref" -m "$ref" HEAD
   git push origin "refs/tags/$ref"
 
-  step "release (gh release create $ref --notes-file, the entry byte for byte)"
-  gh release create "$ref" --title "$ref" --notes-file "$notes"
-  gh release view "$ref" --json tagName,isDraft,url -q '"published \(.tagName) draft=\(.isDraft) \(.url)"'
+  step "release (gh release create $ref --notes-file${flags[*]:+ --prerelease}, the entry byte for byte)"
+  gh release create "$ref" --title "$ref" --notes-file "$notes" ${flags[@]+"${flags[@]}"}
+
+  # Read the flag back instead of trusting the create: `gh release create` succeeds whether or not
+  # `--prerelease` took, and a pre-release published as latest is the wrong artefact, not a detail.
+  published="$(gh release view "$ref" --json tagName,isDraft,isPrerelease,url \
+    -q '"\(.tagName)|\(.isDraft)|\(.isPrerelease)|\(.url)"')"
   rm -f "$notes"
+  IFS='|' read -r tag draft pre url <<<"$published"
+  [ "$tag" = "$ref" ] || die "gh release view returned $tag, not $ref"
+  [ "$draft" = "false" ] || die "release $ref is a draft — a release is published, not staged"
+  [ "$pre" = "$prerelease" ] ||
+    die "release $ref published with isPrerelease=$pre, expected $prerelease — delete it and cut again"
+  say "  published $tag draft=$draft prerelease=$pre $url"
 }
 
 cmd_tag_only() { # <version> — the version and entry are already merged on main
@@ -329,11 +383,10 @@ cmd_release() { # <version> <limits-file>
     usage_die "a generated entry needs --limits <file>: the Known limits block ships verbatim in public release notes"
 
   existing="$(pkg_version)"
-  awk -v a="$existing" -v b="$version" 'BEGIN {
-    split(a, x, "."); split(b, y, ".")
-    for (i = 1; i <= 3; i++) if (x[i] + 0 < y[i] + 0) exit 0
-    exit 1
-  }' || die "package.json is at $existing — $version is not a bump"
+  # Semver precedence, not three integers: `1.1.0-rc1 -> 1.1.0` is a bump (a release outranks its
+  # own pre-release) and `1.1.0 -> 1.1.0-rc1` is not, which is the pair the awk this replaced got
+  # exactly backwards.
+  is_bump "$existing" "$version" || die "package.json is at $existing — $version is not a bump"
 
   newest="$(newest_version)"
   if [ -n "$newest" ] && git rev-parse -q --verify "refs/tags/v$newest" >/dev/null 2>&1; then
@@ -346,7 +399,7 @@ cmd_release() { # <version> <limits-file>
 
   # Insert above the newest entry, keep everything below it.
   local first_entry
-  first_entry="$(grep -nE '^## \[[0-9]+\.[0-9]+\.[0-9]+\] - ' "$CHANGELOG" | head -1 | cut -d: -f1 || true)"
+  first_entry="$(first_entry_line)"
   local merged
   merged="$(mktemp "${TMPDIR:-/tmp}/release-changelog.XXXXXX")"
   if [ -n "$first_entry" ]; then
@@ -387,21 +440,36 @@ cmd_release() { # <version> <limits-file>
 
 cmd_dry_run() { # <version> <limits-file>
   local version="$1" limits="$2" from="" newest
-  [[ $version =~ $SEMVER ]] || usage_die "'$version' is not a semantic version (x.y.z)"
+  is_version "$version" ||
+    usage_die "'$version' is not a semantic version (x.y.z, optionally -prerelease or +build)"
 
   newest="$(newest_version)"
   if [ -n "$newest" ] && git rev-parse -q --verify "refs/tags/v$newest" >/dev/null 2>&1; then
     from="refs/tags/v$newest"
   fi
 
+  local first_entry
+  first_entry="$(first_entry_line)"
+
   {
     printf 'release: a dry run — nothing is written\n'
     printf '  would run: bash scripts/verify.sh\n'
-    printf '  would insert this entry in %s, above [%s]\n' "$CHANGELOG" "${newest:-nothing}"
+    if [ -n "$first_entry" ]; then
+      printf '  would insert this entry in %s at line %s, above [%s]\n' \
+        "$CHANGELOG" "$first_entry" "${newest:-nothing}"
+    else
+      printf '  would append this entry to %s\n' "$CHANGELOG"
+    fi
     printf '  would run: git commit -m "chore(release): %s"\n' "$version"
     printf '  would run: git tag -a v%s -m v%s HEAD\n' "$version" "$version"
     printf '  would run: git push origin main && git push origin refs/tags/v%s\n' "$version"
-    printf '  would run: gh release create v%s --notes-file <this entry>\n' "$version"
+    if is_prerelease "$version"; then
+      printf '  would run: gh release create v%s --title v%s --notes-file <this entry> --prerelease\n' \
+        "$version" "$version"
+    else
+      printf '  would run: gh release create v%s --title v%s --notes-file <this entry>\n' \
+        "$version" "$version"
+    fi
     printf '  entry for [%s] follows on stdout\n' "$version"
   } >&2
 
