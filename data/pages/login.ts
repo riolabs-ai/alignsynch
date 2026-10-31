@@ -47,7 +47,7 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
        */
       {
         id: "hero-alignsynch",
-        body: "The same questions for both of you. Where your answers part is the Gap, and the Gap is the conversation worth having.",
+        body: "The same questions for both of you. Where your answers part is the Gap.",
       },
       {
         id: "sign-in",
