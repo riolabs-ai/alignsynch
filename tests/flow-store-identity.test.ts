@@ -66,7 +66,13 @@ const stub = vi.hoisted(() => {
     seats: PartySeat[];
     /** `true` makes the claim's INSERT … ON CONFLICT DO NOTHING report a conflict. */
     seatTaken: boolean;
-  } = { templatePresent: true, invite: undefined, seats: [], seatTaken: false };
+    /**
+     * The billing gate's two reads (#289): how many active instances the account already holds.
+     * `0` is "nothing open", which is what every pre-#289 case in this file is — and the live
+     * subscription read is answered `null` (no row), i.e. the Free plan.
+     */
+    activeInstances: number;
+  } = { templatePresent: true, invite: undefined, seats: [], seatTaken: false, activeInstances: 0 };
 
   /** One SQL statement, whitespace collapsed so a stub case reads as one line. */
   const narrow = (text: string) => text.replace(/\s+/g, " ").trim();
@@ -77,6 +83,7 @@ const stub = vi.hoisted(() => {
     state.invite = undefined;
     state.seats = [];
     state.seatTaken = false;
+    state.activeInstances = 0;
   }
 
   async function query(text: string, values: readonly unknown[] = []) {
@@ -134,13 +141,30 @@ const stub = vi.hoisted(() => {
     throw new Error(`the stub client has no answer for: ${sql.slice(0, 80)}`);
   }
 
-  return { calls, state, reset, query, narrow };
+  /**
+   * The pool-level reads (#289). They arrive through `queryRows`, not through a pooled client,
+   * because `lib/db/billing.ts` reads on the pool — so they get their own stub rather than two
+   * more cases in `query`, which is the transaction's client.
+   */
+  async function rows<T>(text: string, values: readonly unknown[] = []): Promise<T[]> {
+    calls.push({ text, values });
+    const sql = narrow(text);
+    // No subscription row: the account is on the Free plan.
+    if (sql.includes("FROM billing_subscription")) return [] as T[];
+    if (sql.includes("FROM party vp") && sql.includes("JOIN assessment_instance ai")) {
+      return [{ n: state.activeInstances }] as T[];
+    }
+    throw new Error(`the stub has no rows for: ${sql.slice(0, 80)}`);
+  }
+
+  return { calls, state, reset, query, rows, narrow };
 });
 
 vi.mock("@/lib/db/client", () => ({
   getPool: () => ({
     connect: async () => ({ query: stub.query, release: () => undefined }),
   }),
+  queryRows: (text: string, values: readonly unknown[] = []) => stub.rows(text, values),
 }));
 
 /* ------------------------------------------------------------------ *\
