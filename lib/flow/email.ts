@@ -1,14 +1,25 @@
 /**
- * The invitation email — sent when it can be, shown in the app when it cannot (#146).
+ * The invitation email — sent when it can be, shown in the app when it cannot (#146, #220).
  *
  * The flow must not depend on email. `sendInvitation()` therefore has three outcomes, and
- * only one of them is a throw:
+ * never a throw:
  *
- *   sent        Resend accepted the message (2xx)
- *   not sent    no `RESEND_API_KEY`, no `RESEND_FROM`, or Resend answered non-2xx. The
- *               caller shows the link in the UI instead, and the flow carries on.
- *   throw       never on a network or API problem — a mail outage is not a reason to fail
- *               a creation the database already committed.
+ *   sent     the provider accepted the message (2xx)
+ *   unset    no credential is configured on this deployment, so **no send was attempted**.
+ *            The caller says so on screen without naming the variable, and the operator gets
+ *            the variable's name in the server log where it is actionable.
+ *   failed   a send **was** attempted and refused — a non-2xx, or the provider unreachable.
+ *            The caller says only that the invitation could not be sent: the cause is not
+ *            guessed, because a rate limit, an unverified domain and a bad recipient are
+ *            indistinguishable to the reader and only the log line can tell them apart.
+ *
+ * `unset` and `failed` are separate outcomes because they ask for opposite responses: one is
+ * a deployment missing a setting, the other is a request to a working deployment being
+ * refused. Collapsing them (the bug in #220) misdirects whoever debugs it.
+ *
+ * Both non-`sent` paths log exactly one line — the provider's status (`HTTP 429`) or the
+ * transport's error code (`ECONNREFUSED`) — and never the response body, which can echo the
+ * request, never the token, and never the link.
  *
  * No credential is invented here: `RESEND_API_KEY` and `RESEND_FROM` are env, read at call
  * time. `onboarding@resend.dev` is Resend's own documented development sender, so an
@@ -76,17 +87,29 @@ export function invitationMessage(fields: InvitationFields): InvitationMessage {
   };
 }
 
+/** The three things a send can be: accepted, never attempted, or attempted and refused. */
+export type InviteOutcome = "sent" | "unset" | "failed";
+
 export interface SendOutcome {
-  readonly sent: boolean;
-  /** Why it was not sent, for the report line — never rendered as an error to the user. */
-  readonly reason?: string;
+  /** What happened — the creation redirect carries it, and the screen picks the sentence. */
+  readonly outcome: InviteOutcome;
+}
+
+/** The transport's own code (`ECONNREFUSED`, `ENOTFOUND`, …) or the error's name. */
+function errorCodeOf(error: unknown): string {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === "string" && code !== "") return code;
+  }
+  return error instanceof Error ? error.name : "unknown";
 }
 
 /**
- * Send the invitation, or say why it was not sent.
+ * Send the invitation, or say what kind of not-sent this was.
  *
- * A non-2xx is `{ sent: false, reason }` and not a throw: Resend refusing a message is a
- * degraded flow (the link is on screen), not a failed creation.
+ * A non-2xx is `{ outcome: "failed" }` and not a throw: the provider refusing a message is a
+ * degraded flow (the link is on screen), not a failed creation. The one line logged here is
+ * the operator's; nothing returned from this function is ever rendered to a reader.
  */
 export async function sendInvitation(
   message: InvitationMessage,
@@ -94,7 +117,12 @@ export async function sendInvitation(
 ): Promise<SendOutcome> {
   const key = process.env.RESEND_API_KEY?.trim();
   if (key === undefined || key === "") {
-    return { sent: false, reason: "RESEND_API_KEY is not set" };
+    // No send was attempted, so there is nothing to retry and no cause to guess: this is a
+    // deployment with no mailer. The variable's name belongs here, not in the UI (#220).
+    console.warn(
+      "[invite] no mail sender is configured on this deployment — RESEND_API_KEY is not set, so no invitation email was attempted; the link is shown in the app instead",
+    );
+    return { outcome: "unset" };
   }
   const from = process.env.RESEND_FROM?.trim() || DEFAULT_FROM;
 
@@ -111,14 +139,20 @@ export async function sendInvitation(
       }),
     });
   } catch (error) {
-    return {
-      sent: false,
-      reason: `Resend was unreachable: ${error instanceof Error ? error.message : String(error)}`,
-    };
+    // The transport's code only. The message can carry the URL, and the body of a failed
+    // request is the request — neither belongs in the log.
+    console.error(
+      `[invite] the mail provider was unreachable (${errorCodeOf(error)}) — the invitation could not be sent, and the link is shown in the app instead`,
+    );
+    return { outcome: "failed" };
   }
 
   if (!response.ok) {
-    return { sent: false, reason: `Resend answered ${response.status}` };
+    // The status, never the body: Resend's error body echoes the request, recipient included.
+    console.error(
+      `[invite] the mail provider refused the message (HTTP ${response.status}) — the invitation could not be sent, and the link is shown in the app instead`,
+    );
+    return { outcome: "failed" };
   }
-  return { sent: true };
+  return { outcome: "sent" };
 }

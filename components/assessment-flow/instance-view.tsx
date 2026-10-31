@@ -3,8 +3,10 @@
  *
  * Three states, and the third one is the only one that draws a score:
  *
- *   awaiting_counterparty   the Initiator's invite panel (with the link when no email was
- *                          sent), the waiting band, and the Initiatior's own answer sheet
+ *   awaiting_counterparty   the Initiator's invite panel (with the link whenever no email
+ *                          carried it, and one sentence for whether the mailer was absent,
+ *                          refused, or accepted), the waiting band, and the Initiatior's own
+ *                          answer sheet
  *   answering               the same sheet, with the other party's answers absent — not
  *                          hidden, absent (`FlowScreen.report` is `null` and the view model
  *                          has no field to carry them)
@@ -37,6 +39,22 @@ import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { answersPath } from "@/lib/flow/paths";
 import type { FlowScreen } from "@/lib/flow/screen";
 
+/** The codes a `?invite=` query may carry. Anything else is ignored, not rendered. */
+const INVITE_NOTICES = ["sent", "unset", "failed"] as const;
+
+/**
+ * `sent` / `unset` / `failed` — the creation redirect's own fact (#220).
+ *
+ * Three, not two: `unset` is a deployment with no mailer, `failed` a send that was attempted
+ * and refused, and the screen says something different for each. A value this build does not
+ * know renders nothing at all, rather than a guess at which of the two it was.
+ */
+export type InviteNotice = (typeof INVITE_NOTICES)[number];
+
+export function inviteNoticeOf(value: string | undefined): InviteNotice | undefined {
+  return INVITE_NOTICES.find((notice) => notice === value);
+}
+
 /** The codes a `?problem=` query may carry. Anything else is ignored, not rendered. */
 const PROBLEM_CODES = ["frozen", "incomplete", "not-a-party", "no-such-instance"] as const;
 
@@ -55,8 +73,8 @@ export function AssessmentInstanceView({
   screen: FlowScreen;
   copy: PageCopy;
   problem?: ProblemCode;
-  /** `sent` / `unsent` from the creation redirect; absent on a later visit. */
-  inviteNotice?: "sent" | "unsent";
+  /** `sent` / `unset` / `failed` from the creation redirect; absent on a later visit. */
+  inviteNotice?: InviteNotice;
 }) {
   const waiting = sectionOf(copy, "waiting");
   const reportBand = sectionOf(copy, "report");
@@ -115,16 +133,16 @@ export function AssessmentInstanceView({
                 })}
               </p>
 
-              {inviteNotice === "sent" ? (
-                <p className="mt-1">
-                  {fillLabel(itemLabel(inviteBand, "sent"), { email: screen.invite.email })}
+              {inviteNotice === undefined ? null : (
+                <p className="mt-1" data-invite-notice={inviteNotice}>
+                  {inviteNotice === "sent"
+                    ? fillLabel(itemLabel(inviteBand, "sent"), { email: screen.invite.email })
+                    : itemLabel(inviteBand, inviteNotice)}
                 </p>
-              ) : null}
+              )}
 
-              {inviteNotice === "unsent" ? (
-                <p className="mt-1">{itemLabel(inviteBand, "unsent")}</p>
-              ) : null}
-
+              {/* The link is drawn wherever it exists, whatever the email did — a broken
+                  mailer must never make the invitation unshareable (#220). */}
               {screen.invite.link === null ? null : (
                 <p className="mt-2" data-invite-link>
                   <span className="block text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
