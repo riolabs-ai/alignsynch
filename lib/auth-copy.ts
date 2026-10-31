@@ -24,9 +24,10 @@
  *                    card's fourteen field labels, its error states and its buttons are the
  *                    shared section, untouched.
  *   registerCopyFor  `heading`/`subtitle` become the brand's hero, `mobile.body` becomes
- *                    the brand's mobile line. The wizard — its three steps, six interests,
- *                    skill level, date of birth and phone number — is not copy a skin
- *                    picks, and it is returned exactly as the fixture declares it.
+ *                    the brand's mobile line. The form — its two steps (personal details,
+ *                    then the account), its fields and its date of birth and phone number —
+ *                    is not copy a skin picks, and it is returned exactly as the fixture
+ *                    declares it.
  *
  * Every id below is literal at a `sectionOf` call, so a renamed section throws at the
  * fixture read (and `data:check` holds the same ids to `data/pages/budget.ts`) rather than
