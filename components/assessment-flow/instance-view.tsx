@@ -34,6 +34,14 @@
  * `unclaimed` — the store withholds it otherwise, so this panel cannot offer a copy control for
  * a URL the claim path would refuse.
  *
+ * **One stage sentence, and never a bar** (#274). `lib/flow/stage.ts` maps the derived status
+ * onto Invited / Connected / Sharing, and the sentence above the bands names the stage and who
+ * acts next. There is no progress display here at all — no bar, no dots, no percentage — for the
+ * reasons `docs/specs/ux-stages.md` records: the transitions are the other party's actions (and
+ * one of them is nobody's), an invitation can expire, and "Aligned" is Setting-relative
+ * arithmetic on the finished Gap, so it is drawn only by the report's verdict band and never as
+ * a step on this screen.
+ *
  * Literal-free: the words are `data/pages/assessment-instance.ts` (E23), except the two mode
  * names, which are the glossary's own vocabulary authored once in `content/assessment.ts`
  * (`MODE_LABELS`) — the same way the report component carries "Aspect" and "Gap".
@@ -48,6 +56,7 @@ import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { answersPath } from "@/lib/flow/paths";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import type { FlowScreen } from "@/lib/flow/screen";
+import { relationshipStage, stageCopyId } from "@/lib/flow/stage";
 
 /** The codes a `?invite=` query may carry. Anything else is ignored, not rendered. */
 const INVITE_NOTICES = ["sent", "unset", "failed"] as const;
@@ -109,12 +118,28 @@ export function AssessmentInstanceView({
   const inviteBand = sectionOf(copy, "invite");
   const problems = sectionOf(copy, "problems");
   const viewerBand = sectionOf(copy, "viewer");
+  const stageBand = sectionOf(copy, "stage");
   const problemLabel = problem === undefined ? undefined : itemLabel(problems, problem);
   const answered = screen.aspects.some((aspect) => aspect.own !== null);
 
   const names = screen.waiting.map((role) =>
     role === "initiator" ? screen.initiatorName : (screen.counterpartyName ?? ""),
   );
+
+  // #274 — the stage, derived from the same status the bands below are drawn from, and the
+  // sentence that names it. `stageCopyId` picks the expired-invite row from the invitation's
+  // own derived state; `connected-unknown` covers the degenerate copy with no names to list, so
+  // the sentence can never read "Connected —  still to answer."
+  const stage = relationshipStage(screen.status);
+  const stageId =
+    stage === "connected" && names.length === 0
+      ? "connected-unknown"
+      : stageCopyId(stage, screen.invite?.state ?? null);
+  const counterpartyName = screen.invite?.counterpartyName ?? screen.counterpartyName ?? "";
+  const stageSentence = fillLabel(itemLabel(stageBand, stageId), {
+    counterparty: counterpartyName,
+    names: names.join(", "),
+  });
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
@@ -131,6 +156,10 @@ export function AssessmentInstanceView({
         </p>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>
       </header>
+
+      <p data-stage={stage} className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
+        {stageSentence}
+      </p>
 
       <p
         data-answering-as={screen.viewer.role}
