@@ -172,7 +172,7 @@ export function QuizDetails({
             kind={FALLBACK_KIND.quiz}
             seed={quiz.id}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-end p-6">
+          <div className="absolute inset-0 bg-foreground/70 flex flex-col justify-end p-6">
             <div className="flex flex-wrap gap-2 mb-3">
               <Badge variant={getDifficultyVariant(quiz.difficulty)} className="font-medium">
                 {quiz.difficulty.charAt(0).toUpperCase() + quiz.difficulty.slice(1)}

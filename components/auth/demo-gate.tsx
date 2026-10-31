@@ -34,7 +34,7 @@ export function DemoGate({ action }: { action: DemoGateAction }) {
   const [state, formAction, pending] = useActionState(action, INITIAL_DEMO_FORM_STATE);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700">
+    <div className="min-h-screen flex items-center justify-center p-8 bg-action">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center pb-6">
           <div className="mx-auto mb-4 w-12 h-12 bg-amber-500 rounded-lg flex items-center justify-center">
@@ -90,7 +90,7 @@ export function DemoGate({ action }: { action: DemoGateAction }) {
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            <Link href="/login" className="text-indigo-600">
+            <Link href="/login" className="text-action">
               Back to sign in
             </Link>
           </p>

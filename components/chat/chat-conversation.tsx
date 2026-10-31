@@ -164,7 +164,7 @@ export function ChatConversation({
           </DropdownMenu>
         </div>
       </div>
-      <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-muted/30 to-background">
+      <ScrollArea className="flex-1 p-4 bg-muted/20">
         <div className="space-y-6">
           {messageGroups.map((group, index) => (
             <div key={index} className="space-y-4">

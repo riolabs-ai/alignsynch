@@ -31,7 +31,7 @@ interface LeaderboardTableProps {
  */
 const TIER_VARIANTS: Record<PlayerTier, BadgeProps["variant"]> = {
   Diamond: "success",
-  Platinum: "purple",
+  Platinum: "brand",
   Gold: "yellow",
   Silver: "blue",
   Bronze: "outline",

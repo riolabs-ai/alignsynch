@@ -139,7 +139,7 @@ export function LoginView({
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Image */}
-      <div className="hidden lg:flex justify-center lg:w-1/2 bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 relative overflow-hidden">
+      <div className="hidden lg:flex justify-center lg:w-1/2 bg-action relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="mb-8 max-w-md mx-auto">
@@ -177,7 +177,7 @@ export function LoginView({
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 ">
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-8">
-            <div className="lg:hidden mx-auto mb-4 w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <div className="lg:hidden mx-auto mb-4 w-12 h-12 bg-action rounded-lg flex items-center justify-center">
               <BookOpen className="w-6 h-6 text-white" />
             </div>
             <CardTitle className="text-3xl font-bold ">{form.heading}</CardTitle>
@@ -220,7 +220,7 @@ export function LoginView({
                     {itemLabel(form, "remember")}
                   </Label>
                 </div>
-                <Link href="#" className="text-sm text-indigo-600 font-medium">
+                <Link href="#" className="text-sm text-action font-medium">
                   {itemLabel(form, "forgot")}
                 </Link>
               </div>
@@ -243,7 +243,7 @@ export function LoginView({
             </form>
             <div className="text-center text-sm ">
               {itemLabel(form, "signup-prompt")}{" "}
-              <Link href="/register" className="text-indigo-600">
+              <Link href="/register" className="text-action">
                 {itemLabel(form, "signup-action")}
               </Link>
             </div>

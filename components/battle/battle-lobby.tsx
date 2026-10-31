@@ -29,7 +29,7 @@ import { BattleState } from "./battle-page";
 const RULE_ART: Record<string, { Icon: LucideIcon; iconClassName: string }> = {
   "bonus-points": { Icon: Clock, iconClassName: "h-4 w-4 text-blue-500" },
   "no-changing": { Icon: ListChecks, iconClassName: "h-4 w-4 text-green-500" },
-  "streak-xp": { Icon: Trophy, iconClassName: "h-4 w-4 text-purple-500" },
+  "streak-xp": { Icon: Trophy, iconClassName: "h-4 w-4 text-action" },
 };
 
 const DEFAULT_RULE_ART = { Icon: Trophy, iconClassName: "h-4 w-4" };
