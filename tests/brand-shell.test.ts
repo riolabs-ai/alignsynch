@@ -222,11 +222,16 @@ describe("the home title and one FAQ read the same record", () => {
     );
   });
 
-  it("renders the support FAQ as the brand it was given", () => {
-    const alignSynchFaq = render(supportFaqGroups(alignSynch));
+  it("renders the support FAQ as the product it names", () => {
+    // `supportFaqGroups` takes the brand id, not a record: the rows and the name cannot
+    // disagree, so the pair to prove is the two ids' renders, not a record handed in.
+    const alignSynchFaq = render(supportFaqGroups("alignsynch"));
+    const quizHubFaq = render(supportFaqGroups("quizhub"));
     expect(alignSynchFaq).toContain("AlignSynch");
     expect(alignSynchFaq).not.toContain("QuizHub");
     expect(alignSynchFaq).not.toContain(quizHubBrand.supportEmail);
+    expect(quizHubFaq).toContain("QuizHub");
+    expect(quizHubFaq).not.toContain("AlignSynch");
   });
 });
 

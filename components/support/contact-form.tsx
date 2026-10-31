@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { PageCopySection } from "@/content/pages";
+import { supportCategories } from "@/data/support-categories";
 import { itemLabel } from "@/lib/page-copy";
 import type { SupportCategory } from "./support-page";
 
@@ -49,6 +50,8 @@ export function ContactForm({
   supportEmail,
 }: ContactFormProps) {
   const [before, after] = itemLabel(copy, "not-connected").split("{email}");
+  /** The categories this build offers — the same list the rail uses (#313). */
+  const offered: readonly SupportCategory[] = supportCategories;
 
   return (
     <Card className="p-6">
@@ -81,22 +84,18 @@ export function ContactForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">{itemLabel(copy, "category")}</Label>
-            <Select defaultValue={selectedCategory === "all" ? "general" : selectedCategory}>
+            <Select
+              defaultValue={offered.includes(selectedCategory) ? selectedCategory : "general"}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={itemLabel(copy, "category-placeholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="account">{itemLabel(categoryCopy, "account")}</SelectItem>
-                <SelectItem value="billing">{itemLabel(categoryCopy, "billing")}</SelectItem>
-                <SelectItem value="quiz-creation">
-                  {itemLabel(categoryCopy, "quiz-creation")}
-                </SelectItem>
-                <SelectItem value="tournaments">
-                  {itemLabel(categoryCopy, "tournaments")}
-                </SelectItem>
-                <SelectItem value="privacy">{itemLabel(categoryCopy, "privacy")}</SelectItem>
-                <SelectItem value="technical">{itemLabel(categoryCopy, "technical")}</SelectItem>
-                <SelectItem value="general">{itemLabel(categoryCopy, "general")}</SelectItem>
+                {offered.map((id) => (
+                  <SelectItem key={id} value={id}>
+                    {itemLabel(categoryCopy, id)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
