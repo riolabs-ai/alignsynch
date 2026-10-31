@@ -12,7 +12,9 @@
  *
  * This module is the seam issue #165 asked for. Today the store is fixture-backed: it
  * projects the three editorial fixtures (`data/news-data.ts`,
- * `data/creator-tips-data.ts`, `data/knowledge-base-data.ts`) plus their record layer
+ * `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` and the AlignSynch set in
+ * `data/knowledge-base-alignsynch-data.ts`, chosen per build by `data/knowledge-base.ts`)
+ * plus their record layer
  * (`data/article-publication.ts`, which supplies `status`) into records. When #145 lands
  * the tables, the same three functions — `publishedArticles`, `publishedArticle`,
  * `relatedArticles` — read the rows instead, and no component changes.
@@ -43,8 +45,9 @@ import { kbCategories, newsCategories, tipCategories } from "@/content/categorie
 import type { PublishStatus } from "@/content/core";
 import type { Record as ContentRecord } from "@/content/record";
 import { articlePublication } from "@/data/article-publication";
+import { brand, brandIdOf } from "@/data/brand";
 import { tips } from "@/data/creator-tips-data";
-import { articlesData } from "@/data/knowledge-base-data";
+import { kbArticlesByBrand } from "@/data/knowledge-base";
 import { newsData } from "@/data/news-data";
 
 /* ------------------------------------------------------------------ *
@@ -174,10 +177,33 @@ function project(article: AnyArticle): ArticleRecord {
  * Every article record, published or not, in fixture order. `data:check` and the
  * record test read this; a surface reads a query below, so a draft can never leak
  * into a page by importing the list directly.
+ *
+ * The kb half is the **union of both brands' fixtures**, not the active brand's: a record's
+ * status and date are facts about the article (and `statusOf` throws on an id the publication
+ * table does not name), so the store is the whole catalogue and every read below narrows it.
+ * Which brand publishes which set is `data/knowledge-base.ts`'s table — one decision, one place.
  */
-export const articleRecords: readonly ArticleRecord[] = [...newsData, ...tips, ...articlesData].map(
-  project,
+export const articleRecords: readonly ArticleRecord[] = [
+  ...newsData,
+  ...tips,
+  ...kbArticlesByBrand.quizhub,
+  ...kbArticlesByBrand.alignsynch,
+].map(project);
+
+/** The help articles this build publishes, by id — the narrowing every kb read applies (#309). */
+const kbSeenHere: ReadonlySet<string> = new Set(
+  kbArticlesByBrand[brandIdOf(brand)].map((article) => article.id),
 );
+
+/**
+ * Is this record something the build in hand ships? News and tips are the same under both brands;
+ * a help article belongs to exactly one product, and the other product's articles are in the store
+ * (they are real articles with real status rows) but never in a read this build renders.
+ */
+function publishedHere(record: ArticleRecord): boolean {
+  if (record.status !== "published") return false;
+  return record.kind !== "kb" || kbSeenHere.has(record.id);
+}
 
 /* ------------------------------------------------------------------ *
  * Reads — the three functions a surface may call
@@ -213,9 +239,7 @@ export function publishedArticles(kind: "tip"): readonly TipRecord[];
 export function publishedArticles(kind: "kb"): readonly KbRecord[];
 export function publishedArticles(kind: ArticleKind): readonly ArticleRecord[];
 export function publishedArticles(kind: ArticleKind): readonly ArticleRecord[] {
-  return articleRecordsOf(kind)
-    .filter((record) => record.status === "published")
-    .sort(newestFirst);
+  return articleRecordsOf(kind).filter(publishedHere).sort(newestFirst);
 }
 
 /**

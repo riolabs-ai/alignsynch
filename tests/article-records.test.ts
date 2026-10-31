@@ -19,9 +19,12 @@
  */
 import { describe, expect, it } from "vitest";
 
+import type { KbArticle } from "@/content/article";
 import { zRecord } from "@/content/record";
 import { articlePublication } from "@/data/article-publication";
+import { brand, brandIdOf, type BrandId } from "@/data/brand";
 import { tips } from "@/data/creator-tips-data";
+import { kbArticlesByBrand } from "@/data/knowledge-base";
 import { articlesData } from "@/data/knowledge-base-data";
 import { newsData } from "@/data/news-data";
 import {
@@ -46,7 +49,12 @@ const articlesCarryNoItems: ArticlesCarryNoItems = false;
 
 describe("article records", () => {
   it("projects every fixture article to a record that parses as the shared Record", () => {
-    expect(articleRecords).toHaveLength(newsData.length + tips.length + articlesData.length);
+    expect(articleRecords).toHaveLength(
+      newsData.length +
+        tips.length +
+        kbArticlesByBrand.quizhub.length +
+        kbArticlesByBrand.alignsynch.length,
+    );
 
     for (const record of articleRecords) {
       const parsed = zRecord.safeParse({
@@ -201,6 +209,93 @@ describe("reads", () => {
           published.filter((record) => record.categoryIds.includes(row.id)).length,
         );
       }
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 4. The help centre is per product (#309)
+ * ------------------------------------------------------------------ */
+
+/** Every word an article prints, in order — the same text a reader sees on the page. */
+function textOf(article: KbArticle): string {
+  return article.body
+    .flatMap((block) => {
+      if (block.type === "list") return block.items;
+      if (block.type === "image") return [block.caption ?? ""];
+      return [block.text];
+    })
+    .join("\n");
+}
+
+describe("the help centre is per product", () => {
+  it("gives every help article to exactly one brand", () => {
+    const owner = new Map<string, BrandId>();
+    for (const [id, articles] of Object.entries(kbArticlesByBrand) as [
+      BrandId,
+      readonly KbArticle[],
+    ][]) {
+      for (const article of articles) {
+        expect(
+          owner.has(article.id),
+          `${article.id} is in both ${owner.get(article.id)} and ${id}`,
+        ).toBe(false);
+        owner.set(article.id, id);
+      }
+    }
+    for (const record of articleRecordsOf("kb")) {
+      expect(owner.has(record.id), `${record.id} belongs to no brand's fixture`).toBe(true);
+    }
+  });
+
+  it("renders only the active brand's published help articles", () => {
+    const published = new Set(
+      articlePublication.filter((row) => row.status === "published").map((row) => row.id),
+    );
+    const expected = kbArticlesByBrand[brandIdOf(brand)]
+      .map((article) => article.id)
+      .filter((id) => published.has(id))
+      .sort();
+
+    expect(
+      publishedArticles("kb")
+        .map((record) => record.id)
+        .sort(),
+    ).toEqual(expected);
+  });
+
+  it("answers 404 on another product's help article, by slug and by id", () => {
+    const active = brandIdOf(brand);
+    for (const id of Object.keys(kbArticlesByBrand) as BrandId[]) {
+      if (id === active) continue;
+      for (const article of kbArticlesByBrand[id]) {
+        expect(publishedArticle("kb", article.slug), `${article.slug} from ${id}`).toBeUndefined();
+      }
+    }
+  });
+
+  it("keeps QuizHub's quiz articles, titles intact", () => {
+    // The catalogue is an asset: the alignment build filters it, nobody deletes it (#309).
+    const titles = kbArticlesByBrand.quizhub.map((article) => article.title);
+    expect(titles).toContain("Creating Your First Tournament");
+    expect(titles).toContain("Managing Your Subscription");
+    expect(
+      kbArticlesByBrand.quizhub.some((article) => article.id === "kb-reporting-a-problem"),
+    ).toBe(true);
+  });
+
+  it("publishes no AlignSynch article about a product this build does not ship", () => {
+    /** The families #309 is about. Adding one means AlignSynch ships it — a decision, not a copy. */
+    const banned =
+      /\b(?:tournaments?|payouts?|earnings?|premium|subscriptions?|tiers?|native apps?|mobile apps?)\b/i;
+
+    for (const article of kbArticlesByBrand.alignsynch) {
+      const words = `${article.title}\n${article.summary}\n${textOf(article)}`;
+      const hit = words.match(banned);
+      expect(
+        hit?.[0],
+        `${article.id} documents "${hit?.[0]}" for a product that does not have it`,
+      ).toBe(undefined);
     }
   });
 });

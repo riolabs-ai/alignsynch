@@ -59,6 +59,7 @@ import { demoBundleProblems, readStore } from "./bundles";
 import { categories as quizCategoryRows } from "../data/categories";
 import { contacts as modelContacts, conversations as modelConversations } from "../data/chat-data";
 import { categories as tipCategoryTable, tips } from "../data/creator-tips-data";
+import { alignSynchArticlesData } from "../data/knowledge-base-alignsynch-data";
 import { articlesData } from "../data/knowledge-base-data";
 import { categories as newsCategoryTable, newsData } from "../data/news-data";
 import { notifications } from "../data/notifications";
@@ -196,7 +197,10 @@ function validateCollection<T>(
 const quizzes = validateCollection("E0", "quiz", zQuiz, [...quizRecords]);
 const news = validateCollection("E0", "news", zNewsArticle, [...newsData]);
 const tipRecords = validateCollection("E0", "tip", zTip, [...tips]);
-const kbRecords = validateCollection("E0", "kb", zKbArticle, [...articlesData]);
+const kbRecords = validateCollection("E0", "kb", zKbArticle, [
+  ...articlesData,
+  ...alignSynchArticlesData,
+]);
 const contacts = validateCollection("E0", "contact", zContact, [...modelContacts]);
 const conversations = validateCollection("E0", "conversation", zConversation, [
   ...modelConversations,
@@ -332,7 +336,7 @@ function assertUnique<T extends { id: string; slug: string; kind?: string }>(
 const articleCollection = zArticleCollection.safeParse({
   news: newsData,
   tips,
-  kb: articlesData,
+  kb: [...articlesData, ...alignSynchArticlesData],
 });
 if (!articleCollection.success) {
   for (const issue of articleCollection.error.issues)
