@@ -291,9 +291,13 @@ process bug.
 - **A hardcoded `href` or asset path is checked, not trusted.** `data:check` E10 fails on an
   `href` no route in `content/routes.ts` matches and on an asset literal with no file under
   `public/` — that is how `/dashboard`, `/signup` and `/testimonials/jessica.png` 404ed for so
-  long. Legacy paths from the pre-P1 shell now 308 to the real route in `next.config.mjs`; never
-  add a second page to satisfy a link. There is no asset allowlist: E10 fails on any literal with
-  no file under `public/`, so a new missing image is a red build, exactly like a dead link.
+  long. The asset extractor reads **quoted source text, comments included** (unlike the brand-class
+  rule, which parses the AST), so a path spelled in a doc comment that describes an image the tree
+  does not have is an E10 failure at that comment's line — describe the path instead of quoting one
+  that does not exist. Legacy paths from the pre-P1 shell now 308 to the real route in
+  `next.config.mjs`; never add a second page to satisfy a link. There is no asset allowlist: E10
+  fails on any literal with no file under `public/`, so a new missing image is a red build, exactly
+  like a dead link.
 - **A fixture row is imported, never pasted.** `data:check` E21 fails on a module-scope record array
   in `components/search/**` or `components/chat/**` and on any quiz title or chat message body
   written into one of those components (or the header palette) — as a literal, JSX text or a
