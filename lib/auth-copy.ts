@@ -61,6 +61,14 @@ function signInPage(
     sections: [
       { ...sectionOf(copy, "sign-in"), body: parts.prompt },
       { ...parts.stats, id: "stats" },
+      /**
+       * The version badge's words (issue #269). They are not brand-selected — a version is the
+       * same fact on both builds — but this projection *rebuilds* the section list, so a shared
+       * section the view resolves has to be named here or it is dropped and `AppVersion` throws
+       * `PageCopy: no section "version"` at request time. `next build` never renders `/login`,
+       * so this is the line a green build could not tell you about.
+       */
+      sectionOf(copy, "version"),
     ],
   };
 }

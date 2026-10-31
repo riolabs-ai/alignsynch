@@ -83,7 +83,25 @@ describe("the marketing fixture", () => {
 
   it("gives its bands the order the issue gives them", () => {
     const ids = (marketingPageCopy.sections ?? []).map((section) => section.id);
-    expect(ids).toEqual(["domains", "how-it-works", "opinions", "gap", "limits", "cta"]);
+    /**
+     * `version` is not a band of the page: it is the words `/welcome`'s footer prints under the
+     * build's version (issue #269), carried in this fixture because the footer reads this
+     * surface's copy. The six bands the issue names are asserted in order, and that the badge's
+     * section really exists is the next case — filtering it out here must not be a way to drop it.
+     */
+    expect(ids.filter((id) => id !== "version")).toEqual([
+      "domains",
+      "how-it-works",
+      "opinions",
+      "gap",
+      "limits",
+      "cta",
+    ]);
+  });
+
+  it("carries the version badge's three ids, which the footer resolves", () => {
+    const version = (marketingPageCopy.sections ?? []).find((section) => section.id === "version");
+    expect(version?.items?.map((item) => item.id)).toEqual(["label", "compact", "title"]);
   });
 
   it("states the four opinions as two basic and two advanced", () => {

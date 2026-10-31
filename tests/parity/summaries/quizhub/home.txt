@@ -84,7 +84,7 @@ landmarks (6)
   main           1
   navigation     2
 
-links (77 unique, 105 total)
+links (78 unique, 107 total)
   #                                                    8
   /                                                    2
   /affiliate                                           2
@@ -162,10 +162,11 @@ links (77 unique, 105 total)
   /quiz/quiz-world-literature-classics                 1
   /support                                             1
   /tournaments                                         1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 2
 
 counts
-  elements  2586
+  elements  2590
   images    16
   buttons   42
   inputs    3
-  classes   546 (sha e4a4df8f5f84)
+  classes   548 (sha ec5ca3b38d6b)

@@ -1,5 +1,6 @@
 "use client";
 
+import { AppVersion } from "@/components/layout/app-version";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -174,7 +175,7 @@ export function LoginView({
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 ">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-6 p-8 ">
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-8">
             <div className="lg:hidden mx-auto mb-4 w-12 h-12 bg-action rounded-lg flex items-center justify-center">
@@ -254,6 +255,13 @@ export function LoginView({
             {demo.kind === "roles" && <DemoRoles copy={copy} action={demo.action} />}
           </CardContent>
         </Card>
+
+        {/*
+         * The running version, centred directly below the credentials card (issue #269). Below
+         * the card and not inside it: the card is the form, the badge is the build, and a
+         * version is not something you agree to by signing in.
+         */}
+        <AppVersion copy={copy} />
       </div>
     </div>
   );
