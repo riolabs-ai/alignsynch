@@ -138,6 +138,10 @@ const INVITE = {
   counterpartyName: "Rowan",
   expiresAt: "2026-11-06T12:00:00.000Z",
   state: "unclaimed" as const,
+  // #275 — the re-invite's own facts. This fixture is about the stage sentence, so the
+  // invitation has never been re-sent; the panel's budget sentence is `invite-expiry.test.ts`.
+  resentAt: null,
+  resentCount: 0,
   link: "http://localhost:3000/invite/token",
 };
 
