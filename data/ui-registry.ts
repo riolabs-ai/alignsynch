@@ -127,6 +127,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/gaps",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The Gap across a population: the eight kinds the model defines, counted over relationships both parties have finished, read under each relationship's own Setting. Nameless aggregates — no party, no score, no ranking — and a Setting with fewer complete relationships than the floor states that instead of charting.",
+    notes:
+      "The console's one relationship-specific screen and the only caller of `lib/admin/gap-aggregates.ts`. Its generic form is response analytics (stat cards, one distribution per measure, a comparison axis); what varies is the measure (`gapOf` over eight kinds), the population (complete instances) and the comparison (Setting). Admin only: `requireAdmin()` first, so a member gets the 404 `/demo/admin` documents. No migration and no stored aggregate — every number is a function of the `opinion` rows.",
+  },
+  {
+    kind: "route",
     surface: "/affiliate",
     status: "fixture",
     templates: ["quizhub"],
@@ -569,6 +579,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["quizhub"],
     capability:
       "The category grid, the tile generated from a slug, the category detail page and the how-it-works block.",
+  },
+  {
+    kind: "domain",
+    surface: "components/console",
+    status: "mock",
+    templates: [],
+    capability:
+      "The response-analytics surface: a population's numbers as stat cards, one distribution per measure and a comparison axis, taking the aggregate as a prop so the measure is a plugin rather than a component.",
+    notes:
+      "Today's only caller is `/admin/gaps` with AlignSynch's measure (`gapOf` over the eight kinds) — the generic surface is real for both expressions, and the quiz expression of it is the per-question correct rate `components/my-quizzes/quiz-statistics.tsx` mocks. Reads nothing itself: the route reads Postgres and hands the aggregate down, which is why the domain is `mock` and the route above it is `db`.",
   },
   {
     kind: "domain",
