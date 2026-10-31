@@ -59,6 +59,11 @@ export interface OptionRow {
 export interface InstanceRow {
   readonly record_id: string;
   readonly template_record_id: string;
+  /**
+   * `basic` or `advanced`, as text — the schema decides whether it is a mode, so a row that
+   * says `nonsense` fails the parse with the instance named rather than rendering as one.
+   */
+  readonly mode: string;
 }
 
 /** One `party` row. */
@@ -295,6 +300,7 @@ export function assessmentInstanceFromRows(
     {
       ...recordFields(rows.record),
       templateId: rows.instance.template_record_id,
+      mode: rows.instance.mode,
       items,
       parties,
     },

@@ -13,6 +13,7 @@
  * The words come from `data/pages/assessment.ts` (E23); this file holds none.
  */
 import type { PageCopy } from "@/content/pages";
+import { ASSESSMENT_MODES } from "@/content/assessment";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
 import type { TemplateSummary } from "@/lib/flow/store";
@@ -61,6 +62,31 @@ export function TemplateList({
 
               <form action={CREATE_INSTANCE_PATH} method="post" className="mt-4 grid gap-3">
                 <input type="hidden" name="templateRecordId" value={template.id} />
+
+                {/* The mode is chosen **here**, when the instance is created (#213): it belongs
+                    to the play, and the answer sheet never offers a way to change it. Basic is
+                    ticked because it is what the flow asked before modes existed. */}
+                <fieldset className="grid gap-1 text-sm">
+                  <legend className="font-medium text-gray-700 dark:text-gray-200">
+                    {itemLabel(create, "mode-label")}
+                  </legend>
+                  {ASSESSMENT_MODES.map((mode) => (
+                    <label key={mode} className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="mode"
+                        value={mode}
+                        defaultChecked={mode === "basic"}
+                      />
+                      <span>
+                        {itemLabel(create, mode === "basic" ? "mode-basic" : "mode-advanced")}
+                      </span>
+                    </label>
+                  ))}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {itemLabel(create, "mode-help")}
+                  </p>
+                </fieldset>
 
                 <label className="grid gap-1 text-sm" htmlFor={`initiator-name-${template.id}`}>
                   <span className="font-medium text-gray-700 dark:text-gray-200">

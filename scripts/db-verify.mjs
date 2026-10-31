@@ -19,6 +19,9 @@
  *       flow working, not drift
  *   V7  each template and instance parses through `zAssessment` / `zAssessmentInstance`
  *   V8  the flow's bearer credentials are stored as SHA-256 digests, never as tokens (#146)
+ *   V9  the instance's mode matches its opinion rows (#213): `basic` means no Think/Guess
+ *       anywhere, `advanced` means the pair on every answered row, and the column is one of
+ *       the two modes
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -220,6 +223,41 @@ async function main() {
       );
     }
 
+    // V9 — the instance's mode matches its opinion rows (#213). A Basic instance answers
+    // Feel and Wish and nothing else; an Advanced one answers all four on every row. `V6`
+    // already fails a half pair, so `think` alone decides. The model enforces the same rule on
+    // the way out (`zAssessmentInstance`), and this pins it on the live rows: a drift that
+    // slipped past the app is named here, before a report draws it as a Gap.
+    const { rows: instancedModes } = await client.query(
+      `SELECT ai.record_id, r.slug, ai.mode
+         FROM assessment_instance ai
+         JOIN record r ON r.id = ai.record_id
+        ORDER BY r.slug`,
+    );
+    for (const row of instancedModes) {
+      if (row.mode !== "basic" && row.mode !== "advanced") {
+        fail("V9", `instance "${row.slug}" carries mode "${row.mode}" — one of basic, advanced`);
+        continue;
+      }
+      const advanced = row.mode === "advanced";
+      const { rows: offenders } = await client.query(
+        `SELECT role, item_id, (think IS NOT NULL) AS has_think
+           FROM opinion
+          WHERE instance_record_id = $1
+            AND (think IS NOT NULL) <> $2::boolean
+          ORDER BY role, item_id`,
+        [row.record_id, advanced],
+      );
+      for (const opinion of offenders) {
+        fail(
+          "V9",
+          advanced
+            ? `instance "${row.slug}" is Advanced Mode but ${opinion.role} answers Aspect "${opinion.item_id}" without Think/Guess`
+            : `instance "${row.slug}" is Basic Mode but ${opinion.role} answers Aspect "${opinion.item_id}" with Think/Guess`,
+        );
+      }
+    }
+
     // V8 — the flow's own columns (#146). A party's session token and an invitation's token
     // are bearer credentials, so the row may carry a SHA-256 digest and nothing else; a
     // plain-text token here would be readable by anyone with database access.
@@ -256,7 +294,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, no drift`,
     );
   } finally {
     await client.end();

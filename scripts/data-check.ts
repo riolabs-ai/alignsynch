@@ -107,6 +107,7 @@ import {
   modeWiringProblems,
 } from "./mode-invariants";
 import { durationLabels, findMetricLiterals, relativeLabels } from "./metric-refs";
+import { clientGraphFindings, hasClientDirective } from "./client-graph";
 import {
   danglingEntries,
   generatedKeys,
@@ -864,6 +865,65 @@ if (imageSources.length === 0) {
   );
 }
 
+/**
+ * E34 — a `"use client"` module never reaches a server-only module
+ *
+ * (issue #228). `next build` completed on the tree the report describes — `header.tsx`, the
+ * shell's client component, value-imported a helper from `lib/auth/shell-account.ts`, which reads
+ * `lib/db/user-profiles.ts`, which builds the `pg` pool. `pg` has no browser build, so the client
+ * module graph failed to resolve and **every route behind the shell answered 500** at request
+ * time: `/`, `/settings`, `/assessment`, `/assessment/[slug]`. The gate was green the whole way —
+ * `typecheck`, `lint`, `data:check`, `vitest`, `next build` — because nothing in the tree asked
+ * the graph question. (On `main` the header imports the *type* only, which is the shape that must
+ * stay legal; the crossing this rule refuses is the one an unmerged branch carried, and it is one
+ * value import away at all times.)
+ *
+ * A grep for `lib/db` under `components/` would have been wrong in both directions: the fix
+ * keeps `import type { ShellAccount } from "@/lib/auth/shell-account"` (a type is erased before
+ * the bundle, and it is what makes the props safe), and the defect was four hops away behind a
+ * module whose name says nothing about the database. So the rule is the graph: walk every
+ * `"use client"` entry's **runtime** imports, transitively, and fail on the first module the
+ * browser cannot load — `lib/db/**` or a package with no browser build (`pg` above all).
+ *
+ * `scripts/client-graph.ts` owns the extraction (comment stripping, type-only detection, `@/`
+ * and relative resolution) and is pure, so `scripts/__tests__/client-graph.test.ts` drives every
+ * shape — a value import, a type-only one, a mixed clause, a lazy `import()`, a re-export, the
+ * four-hop chain — and its last section asserts the real tree is clean. The census is printed
+ * below on both paths, because "0 crossings" is worth nothing without the entry count it was
+ * measured over.
+ * ------------------------------------------------------------------ */
+
+/**
+ * The roots the graph is built over. `data/` and `content/` hold no `"use client"` module, but
+ * they do hold the fixtures a client component imports, so they must be *resolvable* for the walk
+ * to follow an edge into them and out again (`@/data/notifications` → …).
+ */
+const CLIENT_GRAPH_ROOTS = ["app", "components", "hooks", "lib", "data", "content"];
+
+const clientGraphSources: Record<string, string> = {};
+for (const root of CLIENT_GRAPH_ROOTS) {
+  const dir = join(process.cwd(), root);
+  if (!existsSync(dir)) continue;
+  for (const file of walkSources(root)) clientGraphSources[file.path] = file.source;
+}
+
+const clientEntries = Object.keys(clientGraphSources).filter((path) =>
+  hasClientDirective(clientGraphSources[path] ?? ""),
+);
+
+const clientCrossings = clientGraphFindings({ sources: clientGraphSources });
+
+for (const finding of clientCrossings) {
+  err(finding.rule, finding.message);
+}
+
+if (clientEntries.length === 0) {
+  err(
+    "E34",
+    'the client-graph scan read 0 `"use client"` entries: app/, components/, hooks/ and lib/ were not walked',
+  );
+}
+
 const imageTags = nextImageTags(imageSources);
 const imageMeasured = imageCensus(imageTags);
 
@@ -1573,6 +1633,9 @@ console.log(
 );
 console.log(
   `      ${imageMeasured.tags} next/image tags: ${imageMeasured.dimensioned} width+height, ${imageMeasured.fill} fill, ${imageMeasured.staticImport} static import, ${imageMeasured.fillWithDimension} fill+width/height, ${imageMeasured.missingDimension} with no size source (E29); ${imageMeasured.fill} fill tags, ${imageMeasured.fillWithSizes} of them with sizes`,
+);
+console.log(
+  `      ${clientEntries.length} "use client" entries walked, ${clientCrossings.length} reaching a server-only module (E34)`,
 );
 console.log(
   `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
