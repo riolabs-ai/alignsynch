@@ -51,7 +51,7 @@ export default function TipDetail({ tip, relatedTips, copy, related }: TipDetail
     <div className="container mx-auto">
       <Link
         href="/creator-tips"
-        className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-6"
+        className="inline-flex items-center text-action hover:text-action/80 mb-6"
       >
         <ArrowLeft size={16} className="mr-2" />
         {copy.heading}
@@ -60,7 +60,7 @@ export default function TipDetail({ tip, relatedTips, copy, related }: TipDetail
       <article className="max-w-4xl mx-auto">
         <header className="mb-8">
           <div className="flex items-center mb-4">
-            <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-500 text-white">
+            <span className="px-3 py-1 text-xs font-medium rounded-full bg-action text-action-foreground">
               {tipCategoryName(tip.categoryIds[0] ?? "")}
             </span>
             <div className="flex items-center ml-4 text-sm text-gray-500 dark:text-gray-200">
@@ -101,7 +101,7 @@ export default function TipDetail({ tip, relatedTips, copy, related }: TipDetail
                 size="sm"
                 className={cn(
                   "flex items-center",
-                  isBookmarked && "text-purple-600 border-purple-200 bg-purple-50",
+                  isBookmarked && "text-action border-action/40 bg-action/10",
                 )}
                 onClick={handleBookmark}
               >
@@ -115,10 +115,7 @@ export default function TipDetail({ tip, relatedTips, copy, related }: TipDetail
                 className="flex items-center"
                 onClick={handleLike}
               >
-                <ThumbsUp
-                  size={16}
-                  className={cn("mr-2", hasLiked && "fill-purple-600 text-purple-600")}
-                />
+                <ThumbsUp size={16} className={cn("mr-2", hasLiked && "fill-action text-action")} />
                 {likeCount}
               </Button>
 

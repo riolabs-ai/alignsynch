@@ -18,6 +18,7 @@
  * the right. The unfilled notch stays `bg-gray-200`: it is a neutral ground, not a brand colour.
  */
 import type { OpinionKind } from "@/content/assessment";
+import { MODE_LABELS } from "@/content/assessment";
 import type { AspectReportRow, AssessmentReport, ReportedParty } from "@/lib/assessment-report";
 import { cn } from "@/lib/utils";
 
@@ -145,6 +146,12 @@ export function AssessmentReportView({ report }: { report: AssessmentReport }) {
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{report.title}</h1>
+        <p
+          data-mode={report.mode}
+          className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+        >
+          {MODE_LABELS[report.mode]}
+        </p>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{report.summary}</p>
       </header>
       <div className="space-y-4">

@@ -119,10 +119,11 @@ async function seedInstance(client, instance) {
   await upsertRecord(client, instance);
   await replaceItems(client, instance);
   await client.query(
-    `INSERT INTO assessment_instance (record_id, template_record_id)
-     VALUES ($1, $2)
-     ON CONFLICT (record_id) DO UPDATE SET template_record_id = EXCLUDED.template_record_id`,
-    [instance.id, instance.templateId],
+    `INSERT INTO assessment_instance (record_id, template_record_id, mode)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (record_id) DO UPDATE SET template_record_id = EXCLUDED.template_record_id,
+                                          mode = EXCLUDED.mode`,
+    [instance.id, instance.templateId, instance.mode],
   );
   await client.query("DELETE FROM party WHERE instance_record_id = $1", [instance.id]);
   for (const party of instance.parties) {

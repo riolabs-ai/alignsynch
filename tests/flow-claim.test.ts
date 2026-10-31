@@ -235,6 +235,7 @@ function screen(role: "initiator" | "counterparty"): FlowScreen {
     title: "Relationship Basics",
     summary: "An instance between two people.",
     status: "awaiting_counterparty",
+    mode: "basic",
     viewer: { role, name: role === "initiator" ? "Avery" : "Rowan" },
     aspects: [],
     initiatorName: "Avery",
