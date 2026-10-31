@@ -17,6 +17,16 @@ const badgeVariants = cva(
         purple: "border-transparent bg-purple-500 hover:bg-purple-500/80",
         warning: "border-transparent bg-orange-500 hover:bg-orange-500/80",
         outline: "text-foreground",
+        /**
+         * The brand's interactive colour and the theme's neutral chip (#187 stage 2). A badge
+         * fill used to be a palette step — `default` is `indigo-500`, `purple` is
+         * `purple-500` — so a rank or a quiz badge painted QuizHub's hues on an AlignSynch
+         * page. These two read the tokens `lib/brand-theme.ts` paints, the way `button.tsx`'s
+         * `action` variant does. Additive: no existing variant moved, so every surface that
+         * has not converted yet renders the bytes it rendered before.
+         */
+        action: "border-transparent bg-action text-action-foreground hover:bg-action/90",
+        muted: "border-transparent bg-muted text-foreground hover:bg-muted/80",
       },
     },
     defaultVariants: {

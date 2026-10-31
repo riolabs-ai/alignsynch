@@ -11,8 +11,16 @@ import { QuizPreferences } from "./quiz-preferences";
 import { ConnectedAccounts } from "./connected-accounts";
 import { SubscriptionSettings } from "./subscription-settings";
 import { PageHeader } from "../ui/page-header";
+import type { ShellAccount } from "@/lib/auth/shell-account";
 
-export function AccountSettings() {
+/**
+ * The settings tab shell. `account` is threaded through rather than resolved here for the reason
+ * the identity panels all share (#226): a client component cannot read the session, so the one
+ * identity the panels are allowed to name arrives as a prop from the server that resolved it. It
+ * is required, which is what stops the "Connected Accounts" panel from falling back to a fixture
+ * when a caller forgets — the compiler has no fixture to offer instead.
+ */
+export function AccountSettings({ account }: { account: ShellAccount }) {
   const [activeTab, setActiveTab] = useState("profile");
 
   return (
@@ -60,7 +68,7 @@ export function AccountSettings() {
           </TabsContent>
 
           <TabsContent value="connected">
-            <ConnectedAccounts />
+            <ConnectedAccounts account={account} />
           </TabsContent>
 
           <TabsContent value="subscription">
