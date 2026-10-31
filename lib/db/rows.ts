@@ -33,6 +33,13 @@ export interface RecordRow {
   readonly date: Date | string;
   readonly title: string;
   readonly summary: string;
+  /**
+   * The author, when a person wrote it — `NULL` for the platform's own templates
+   * (`0011_console_columns.sql`). Optional as well as nullable because a row shape is also built
+   * by hand in the tests, and a column added after those rows were written means the same thing
+   * absent as it does `NULL`: nobody.
+   */
+  readonly author_user_id?: string | null;
 }
 
 /** One `item` row: a question, an Aspect. `left_value`/`right_value` exist only on `score`. */
@@ -70,6 +77,12 @@ export interface InstanceRow {
    * what counts as aligned from an unknown lens.
    */
   readonly setting: string;
+  /**
+   * The relationship's own name (`0011_console_columns.sql`); `NULL` is **unnamed**, and the
+   * surface falls back to the template's title via `instanceNameOf()`. Never a generated copy of
+   * that title — a value here is a name a person chose.
+   */
+  readonly name?: string | null;
 }
 
 /** One `party` row. */
@@ -77,6 +90,11 @@ export interface PartyRow {
   readonly instance_record_id: string;
   readonly role: string;
   readonly name: string;
+  /**
+   * When this seat submitted, or `NULL`/absent for "not recorded" — every party written before
+   * `0011_console_columns.sql`, including the seeded ones that did answer.
+   */
+  readonly submitted_at?: Date | string | null;
 }
 
 /** One `opinion` row: a party's scores on one Aspect. */
@@ -145,6 +163,7 @@ function recordFields(row: RecordRow): {
   date: string;
   title: string;
   summary: string;
+  authorUserId?: string;
 } {
   return {
     id: row.id,
@@ -155,6 +174,11 @@ function recordFields(row: RecordRow): {
     date: isoInstantOf(row.date),
     title: row.title,
     summary: row.summary,
+    // `NULL` is "the platform wrote it", and an absent key is the same fact — so it is left out
+    // rather than carried as `undefined`, which keeps a parsed object deep-equal to its fixture.
+    ...(row.author_user_id === null || row.author_user_id === undefined
+      ? {}
+      : { authorUserId: row.author_user_id }),
   };
 }
 
@@ -291,6 +315,11 @@ export function assessmentInstanceFromRows(
     .map((party) => ({
       role: party.role,
       name: party.name,
+      // Absent and `NULL` both mean "not recorded", and both are left out: a seat that answered
+      // before the column existed is not a seat that answered now.
+      ...(party.submitted_at === null || party.submitted_at === undefined
+        ? {}
+        : { submittedAt: isoInstantOf(party.submitted_at) }),
       opinions: orderedItems(rows.items).map((item) => ({
         itemId: item.item_id,
         opinions: opinionsCandidateOf(
@@ -306,6 +335,11 @@ export function assessmentInstanceFromRows(
     {
       ...recordFields(rows.record),
       templateId: rows.instance.template_record_id,
+      // Unnamed is the absence of a name, not a generated one: `instanceNameOf()` falls back to
+      // the template's title at the surface that draws the row.
+      ...(rows.instance.name === null || rows.instance.name === undefined
+        ? {}
+        : { name: rows.instance.name }),
       mode: rows.instance.mode,
       setting: rows.instance.setting,
       items,

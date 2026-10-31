@@ -29,7 +29,7 @@
  * the Coach is not modelled anywhere yet.
  */
 import { z } from "zod";
-import { zId } from "./core";
+import { zId, zIsoDateTime } from "./core";
 import { zItem, zScore, zScoreScale, zTemplateObject, uniqueItemIds, type Gap } from "./record";
 
 /* ------------------------------------------------------------------ *
@@ -235,6 +235,16 @@ export const zParty = z
   .object({
     role: zPartyRole,
     name: z.string().min(1),
+    /**
+     * When this seat submitted its answers — the Initiator's or the Counterparty's own instant,
+     * never the instance's. Absent means "we do not know when", which is every row written before
+     * `db/migrations/0011_console_columns.sql` and every seat that has not answered yet.
+     *
+     * It is **not** the status. Whether a seat has answered is read from its `opinion` rows
+     * (`instanceStatusOf()`); this column adds the one fact those rows cannot carry — *when* — and
+     * a surface that draws it must treat absent as "not recorded", not as "not answered".
+     */
+    submittedAt: zIsoDateTime.optional(),
     /** One entry per Aspect of the instance, in the instance's own order. */
     opinions: z.array(zAspectOpinions).min(1),
   })
@@ -242,11 +252,33 @@ export const zParty = z
 
 export type Party = z.infer<typeof zParty>;
 
+/**
+ * How long a relationship's own name may be. A label a person writes, not a paragraph: the limit
+ * is authored here once and mirrored by the CHECK on `assessment_instance.name`
+ * (`db/migrations/0011_console_columns.sql`), so the database cannot store a name the model would
+ * reject.
+ */
+export const INSTANCE_NAME_MAX = 120;
+
+/** The instance's own name — optional, and NULL in the database means "unnamed" (below). */
+export const zInstanceName = z.string().trim().min(1).max(INSTANCE_NAME_MAX);
+
 export const zAssessmentInstanceObject = zTemplateObject
   .extend({
     type: z.literal("assessment"),
     /** The template this instance is a copy of. Resolved by `data:check` E31. */
     templateId: zId,
+    /**
+     * The relationship's own name, when it has one. Absent means **unnamed**, and every surface
+     * falls back to the template title — two instances of one template were otherwise two
+     * identical rows, because the title a list rendered was always the template's.
+     *
+     * Optional rather than defaulted on purpose: a stored copy of the template title would be a
+     * second authored copy of a fact the template already holds, would stop tracking the title it
+     * copied, and could not be told apart from a name a person chose. `instanceNameOf()` is the
+     * one place the fallback lives.
+     */
+    name: zInstanceName.optional(),
     /** The copy. Equal to the template's Aspects; E31 fails a copy that drifted. */
     items: z.array(zAspect).min(1),
     /**
@@ -335,6 +367,26 @@ export const zAssessmentInstance = zAssessmentInstanceObject
   });
 
 export type AssessmentInstance = z.infer<typeof zAssessmentInstanceObject>;
+
+/**
+ * The name a surface renders for a relationship: its own when it has one, the template's title
+ * when it does not.
+ *
+ * This is the **only** place the fallback lives, so every list that draws a relationship — today
+ * `my-instances.tsx`, tomorrow the console's registry — answers "what is this one called" the same
+ * way, and no view has to remember that `name` is optional. It takes the narrow shape rather than
+ * a whole instance so a row projection can call it without building one.
+ *
+ * The template title is passed in rather than read here: an instance carries the id of the
+ * template it copies (`templateId`) and not the template's words, for the same reason the copy of
+ * the Aspects is not a title — the row that holds the words is the template's.
+ */
+export function instanceNameOf(
+  instance: { readonly name?: string | undefined },
+  templateTitle: string,
+): string {
+  return instance.name ?? templateTitle;
+}
 
 /**
  * The collection rule one instance cannot see (E31 in `data:check`): the template it

@@ -43,6 +43,11 @@
  *       invitation was ever re-sent, and a reissue never predates the invitation it reissues —
  *       the two columns are one fact, and a row where they disagree cannot be measured against
  *       the cooldown or the cap. (Numbered after #289's V13, which landed first.)
+ *   V15 the console's three columns (#289 follow-up, `0011_console_columns.sql`):
+ *       `record.author_user_id`, `assessment_instance.name` and `party.submitted_at` exist, are
+ *       nullable and carry no DEFAULT — each is an absence until somebody writes it — and a seat
+ *       carrying `submitted_at` has answered every Aspect of its instance, because "submitted"
+ *       on a sheet with a blank line is the one state a support read would draw as done.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -130,6 +135,60 @@ async function main() {
       );
     }
     const hasSettingColumn = settingColumn.length > 0;
+
+    // V15 — the console's three columns (#289 follow-up). Checked beside V11/V12 and for the same
+    // reason: the instance read selects `ai.name` and the party read carries `submitted_at`, so a
+    // database migrated before 0011 fails the read instead of this check naming the fix.
+    //
+    // Nullability and the *absence* of a DEFAULT are part of the claim, not decoration: every one
+    // of these three is an absence until a person writes it (no author = the platform's template,
+    // no name = the template's title, no instant = nobody recorded when), so a NOT NULL or a
+    // defaulted column would be a backfilled value a reader could not tell from an authored one.
+    const CONSOLE_COLUMNS = [
+      { table: "record", column: "author_user_id", type: "text" },
+      { table: "assessment_instance", column: "name", type: "text" },
+      { table: "party", column: "submitted_at", type: "timestamp with time zone" },
+    ];
+    const { rows: consoleColumns } = await client.query(
+      `SELECT table_name, column_name, data_type, is_nullable, column_default
+         FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND (table_name, column_name) IN
+              (('record', 'author_user_id'),
+               ('assessment_instance', 'name'),
+               ('party', 'submitted_at'))`,
+    );
+    const consoleColumnOf = new Map(
+      consoleColumns.map((column) => [`${column.table_name}.${column.column_name}`, column]),
+    );
+    let consoleColumnsChecked = 0;
+    /** Parties carrying an instant; counted so the verdict line proves the check looked. */
+    let submittedSeats = 0;
+    for (const expected of CONSOLE_COLUMNS) {
+      const name = `${expected.table}.${expected.column}`;
+      const actual = consoleColumnOf.get(name);
+      if (actual === undefined) {
+        fail(
+          "V15",
+          `public.${name} does not exist — the console cannot read it (run \`pnpm db:migrate\`)`,
+        );
+        continue;
+      }
+      if (actual.is_nullable !== "YES") {
+        fail("V15", `public.${name} is NOT NULL — it is an absence until somebody writes it`);
+      }
+      if (actual.column_default !== null) {
+        fail(
+          "V15",
+          `public.${name} carries DEFAULT ${actual.column_default} — a default is a backfilled value no reader can tell from an authored one`,
+        );
+      }
+      if (actual.data_type !== expected.type) {
+        fail("V15", `public.${name} is ${actual.data_type}, not ${expected.type}`);
+      }
+      consoleColumnsChecked += 1;
+    }
+    const hasSubmittedAt = consoleColumnOf.has("party.submitted_at");
 
     if (missing.length > 0 || !hasSettingColumn) return;
 
@@ -289,6 +348,37 @@ async function main() {
             "V11",
             `instance "${listed.slug}" (${status}): the ${row.role}'s unlock_seen_at is set, but the instance is not complete — the marker would never show`,
           );
+        }
+      }
+
+      // V15 — a seat carrying `p.submitted_at` has answered every Aspect of its instance
+      // (`0011_console_columns.sql`). One-directional on purpose: the seeded parties answered
+      // before the column existed and carry NULL, which is "we do not know when", never "not
+      // answered". The reverse (answered ⇏ submitted) is history, not drift.
+      if (hasSubmittedAt && rows.items.length > 0) {
+        const { rows: submitted } = await client.query(
+          `SELECT p.role, p.submitted_at,
+                  EXISTS (
+                    SELECT 1 FROM item i
+                     WHERE i.record_id = p.instance_record_id
+                       AND NOT EXISTS (
+                         SELECT 1 FROM opinion o
+                          WHERE o.instance_record_id = p.instance_record_id
+                            AND o.role = p.role
+                            AND o.item_id = i.item_id)) AS has_open_lines
+             FROM party p
+            WHERE p.instance_record_id = $1 AND p.submitted_at IS NOT NULL
+            ORDER BY p.role`,
+          [listed.recordId],
+        );
+        for (const row of submitted) {
+          submittedSeats += 1;
+          if (row.has_open_lines) {
+            fail(
+              "V15",
+              `instance "${listed.slug}": the ${row.role} is marked submitted at ${new Date(row.submitted_at).toISOString()} but has not answered every Aspect`,
+            );
+          }
         }
       }
 
@@ -589,7 +679,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

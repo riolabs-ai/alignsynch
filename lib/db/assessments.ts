@@ -42,6 +42,7 @@ const INSTANCE_BY_SLUG_SQL = `
     ai.template_record_id,
     ai.mode,
     ai.alignment_setting,
+    ai.name,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
       '[]'::json
@@ -96,6 +97,8 @@ interface InstanceQueryRow {
   readonly template_record_id: string;
   readonly mode: string;
   readonly alignment_setting: string;
+  /** `NULL` is unnamed (`0011_console_columns.sql`); a surface falls back to the template title. */
+  readonly name: string | null;
   readonly items: readonly ItemRow[];
   readonly options: readonly OptionRow[];
   readonly parties: readonly PartyRow[];
@@ -122,6 +125,7 @@ const SCREEN_BY_SLUG_SQL = `
     ai.template_record_id,
     ai.mode,
     ai.alignment_setting,
+    ai.name,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
       '[]'::json
@@ -187,6 +191,7 @@ export async function readAssessmentInstanceRowsBySlug(
     template_record_id: row.template_record_id,
     mode: row.mode,
     setting: row.alignment_setting,
+    name: row.name,
   };
   return {
     record: row.record,
@@ -261,6 +266,7 @@ export const readAssessmentScreenBySlug = cache(
           template_record_id: row.template_record_id,
           mode: row.mode,
           setting: row.alignment_setting,
+          name: row.name,
         },
         parties: row.parties,
         opinions: row.opinions,

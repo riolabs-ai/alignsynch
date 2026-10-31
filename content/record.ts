@@ -36,6 +36,7 @@
  */
 import { z } from "zod";
 import { zId, zIsoDateTime, zPublishStatus, zSlug } from "./core";
+import { zUserId } from "./identity";
 
 /* ------------------------------------------------------------------ *
  * type — the field that makes one root content type
@@ -158,6 +159,18 @@ export const zRecord = z
     date: zIsoDateTime,
     title: z.string().min(1),
     summary: z.string().min(1),
+    /**
+     * Who authored the record, when a person did — a `user_profile.user_id`, which is why it is
+     * `zUserId` and not `zId`: Neon Auth's identifier, not a kebab id this repo authors. Absent
+     * is "the platform wrote it", which is every seeded template and every record written before
+     * the column existed (`db/migrations/0011_console_columns.sql`).
+     *
+     * That absence is the fact "My Templates" needs and the reason it is an absence rather than a
+     * sentinel account: a member's own records are `authorUserId` equal to their own id, and a
+     * built-in template is nobody's — inventing a system user would make the filter a comparison
+     * against a name that means "not a person", which is the state a boolean would model better.
+     */
+    authorUserId: zUserId.optional(),
   })
   .strict();
 
