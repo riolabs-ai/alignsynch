@@ -54,7 +54,18 @@ const referrals: Referral[] = [
   },
 ];
 
-export function AffiliateDashboard() {
+export function AffiliateDashboard({
+  hiddenNav,
+}: {
+  /**
+   * The hrefs a feature flag has turned off, resolved on the server by
+   * `lib/flags.ts::hiddenNavHrefs()` and passed down — **required, with no default**, the same
+   * shape `Footer` takes (#291). This component is a client one, so it cannot ask the server
+   * itself; a default would let a mount quietly draw the "Learn More About Our Affiliate Program"
+   * CTA to a route that answers 404.
+   */
+  hiddenNav: readonly string[];
+}) {
   // The origin is brand (`brand.referralBase`); `username123` is the demo's handle and
   // stays a literal — this card does not invent a user system to derive it.
   const referralLink = `${brand.referralBase}/ref/username123`;
@@ -259,12 +270,14 @@ export function AffiliateDashboard() {
             </div>
 
             <div className="flex justify-center">
-              <Button variant="outline" asChild>
-                <Link href="/affiliate">
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Learn More About Our Affiliate Program
-                </Link>
-              </Button>
+              {!hiddenNav.includes("/affiliate") && (
+                <Button variant="outline" asChild>
+                  <Link href="/affiliate">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Learn More About Our Affiliate Program
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

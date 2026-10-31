@@ -9,7 +9,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-export function DashboardPage() {
+/**
+ * The prototype dashboard shell. **No route mounts it today**: `/dashboard/user` served this
+ * until #164 replaced it with the session-backed `AccountHome`, and the panes stayed as a
+ * catalogue asset.
+ *
+ * `hiddenNav` is a required prop for the same reason `Footer`'s is: the one link in here that
+ * points at a gated route — the affiliate tab's CTA to `/affiliate`, which answers 404 while
+ * `commerce.affiliate` is off (#291) — must be decided by the shell's list, not by a second check
+ * written in this file. Required, with no default, so a route that mounts this later cannot draw
+ * the CTA without resolving the flags first.
+ */
+export function DashboardPage({ hiddenNav }: { hiddenNav: readonly string[] }) {
   const tab = useSearchParams().get("tab");
   const [activeTab, setActiveTab] = useState(tab || "overview");
 
@@ -39,7 +50,7 @@ export function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="affiliate" className="space-y-6">
-          <AffiliateDashboard />
+          <AffiliateDashboard hiddenNav={hiddenNav} />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
