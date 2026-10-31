@@ -108,7 +108,7 @@ export function pricingFaqCategories(
         {
           question: `How secure is my data on ${brand.name}?`,
           answer:
-            "We take security seriously. All data is encrypted in transit and at rest. We implement industry-standard security practices, regular security audits, and comply with GDPR, CCPA, and other privacy regulations.",
+            "Here is what the app actually does. Traffic between it and its database is encrypted in transit. We never hold your password: sign-in runs through Neon's Managed Auth, which owns the credential, and this app has no password column of its own. Your assessment data lives in Neon's managed Postgres, in us-east-2. The only emails this app sends are two transactional ones — an invitation, and a notice when the other party has answered — and there is no marketing email; it loads no analytics or advertising tracker, so nothing here profiles your visit. We hold no certification and have commissioned no independent audit.",
         },
         {
           question: "Can I delete my account and data?",
