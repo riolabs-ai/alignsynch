@@ -87,6 +87,6 @@ export function routeTitle(path: string): string {
   const last = path.split("/").filter(Boolean).pop() ?? "";
   return last
     .split("-")
-    .map((w) => (w === "ai" ? "AI" : w.charAt(0).toUpperCase() + w.slice(1)))
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 }
