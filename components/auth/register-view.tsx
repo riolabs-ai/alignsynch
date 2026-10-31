@@ -185,7 +185,7 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Image/Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-action relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative mx-auto z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="text-center mb-8">
@@ -201,7 +201,7 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
             {STEPS.map((stepId, index) => (
               <div key={stepId} className="flex items-center">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= index + 1 ? "bg-white text-indigo-600 border-white" : "border-white/50 text-white/70"}`}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= index + 1 ? "bg-white text-action border-white" : "border-white/50 text-white/70"}`}
                 >
                   {index + 1}
                 </div>
@@ -233,7 +233,7 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
         <div className="w-full max-w-lg">
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
-            <div className="mx-auto mb-4 w-16 h-16 bg-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="mx-auto mb-4 w-16 h-16 bg-action rounded-xl flex items-center justify-center">
               <BookOpen className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold  mb-2">{mobile.heading}</h1>
@@ -265,11 +265,11 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
                           <div
                             key={id}
                             onClick={() => handleInterestToggle(id)}
-                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.interests.includes(id) ? "border-indigo-600 bg-indigo-500/20" : "border-gray-200 dark:border-neutral-500 hover:border-gray-300"}`}
+                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.interests.includes(id) ? "border-action bg-action/20" : "border-gray-200 dark:border-neutral-500 hover:border-gray-300"}`}
                           >
                             <div className="flex items-center space-x-3">
                               <Icon
-                                className={`w-5 h-5 ${formData.interests.includes(id) ? "text-indigo-600" : "text-gray-400"}`}
+                                className={`w-5 h-5 ${formData.interests.includes(id) ? "text-action" : "text-gray-400"}`}
                               />
                               <span className="font-medium">{itemLabel(interestsCopy, id)}</span>
                             </div>
@@ -489,11 +489,11 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
                       />
                       <Label htmlFor="terms" className="text-sm ">
                         {itemLabel(account, "agree-prefix")}{" "}
-                        <Link href="#" className="text-indigo-600 hover:underline">
+                        <Link href="#" className="text-action hover:underline">
                           {itemLabel(account, "agree-terms")}
                         </Link>{" "}
                         {itemLabel(account, "agree-and")}{" "}
-                        <Link href="#" className="text-indigo-600 hover:underline">
+                        <Link href="#" className="text-action hover:underline">
                           {itemLabel(account, "agree-privacy")}
                         </Link>{" "}
                         *

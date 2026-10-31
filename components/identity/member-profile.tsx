@@ -39,7 +39,7 @@ export function MemberProfile({
     <div className="container mx-auto max-w-3xl space-y-6 py-6">
       <header className="overflow-hidden rounded-xl shadow-sm">
         <ProfileCover handle={profile.handle} />
-        <div className="flex flex-col gap-4 bg-gradient-to-r from-purple-100 to-blue-100 px-6 pb-6 sm:flex-row sm:items-start dark:from-purple-950/30 dark:to-blue-950/30">
+        <div className="flex flex-col gap-4 bg-action/10 px-6 pb-6 sm:flex-row sm:items-start dark:bg-action/20">
           <GeneratedAvatar
             className="-mt-11 relative z-10 shrink-0 border-4 border-background"
             name={profile.displayName}

@@ -114,7 +114,7 @@ export function FeaturedQuizzes({ copy }: { copy: PageCopySection }) {
                   width={600}
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent flex flex-col justify-end p-4">
+                <div className="absolute inset-0 bg-foreground/60 flex flex-col justify-end p-4">
                   <h3 className="text-white font-semibold line-clamp-1">{quiz.title}</h3>
                   <p className="text-white/80 text-sm">
                     {quiz.categories[0]?.name ?? itemLabel(copy, "empty-category")}

@@ -16,7 +16,7 @@ import Link from "next/link";
 export function TournamentCta({ copy }: { copy: PageCopySection }) {
   return (
     <section className="my-10 xl:my-20">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-action shadow-xl">
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-full h-full">
           <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-white/10 blur-2xl"></div>
@@ -35,7 +35,7 @@ export function TournamentCta({ copy }: { copy: PageCopySection }) {
               <span className="text-yellow-200">{itemLabel(copy, "heading-accent")}</span>
             </h2>
 
-            <p className="text-indigo-100 text-lg max-w-md">{copy.body}</p>
+            <p className="text-action-foreground/80 text-lg max-w-md">{copy.body}</p>
 
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
@@ -44,7 +44,7 @@ export function TournamentCta({ copy }: { copy: PageCopySection }) {
                     <Trophy className="h-4 w-4 text-yellow-200" />
                   </div>
                 </div>
-                <p className="text-indigo-100">{itemLabel(copy, "perk-prizes")}</p>
+                <p className="text-action-foreground/80">{itemLabel(copy, "perk-prizes")}</p>
               </div>
 
               <div className="flex items-start space-x-3">
@@ -53,7 +53,7 @@ export function TournamentCta({ copy }: { copy: PageCopySection }) {
                     <Users className="h-4 w-4 text-yellow-200" />
                   </div>
                 </div>
-                <p className="text-indigo-100">{itemLabel(copy, "perk-community")}</p>
+                <p className="text-action-foreground/80">{itemLabel(copy, "perk-community")}</p>
               </div>
 
               <div className="flex items-start space-x-3">
@@ -62,12 +62,12 @@ export function TournamentCta({ copy }: { copy: PageCopySection }) {
                     <Award className="h-4 w-4 text-yellow-200" />
                   </div>
                 </div>
-                <p className="text-indigo-100">{itemLabel(copy, "perk-badges")}</p>
+                <p className="text-action-foreground/80">{itemLabel(copy, "perk-badges")}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-4 pt-2">
-              <Button asChild size="lg" className="bg-white text-indigo-600 hover:bg-indigo-50">
+              <Button asChild size="lg" className="bg-white text-action hover:bg-action/10">
                 <Link href="/tournaments/register">
                   {itemLabel(copy, "register-now")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -96,7 +96,7 @@ export function TournamentCta({ copy }: { copy: PageCopySection }) {
                 {/* Trophy cup */}
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-24 bg-yellow-300 rounded-t-full">
                   <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-yellow-400 rounded-t-full">
-                    <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-gradient-to-b from-yellow-200 to-yellow-400 rounded-t-full"></div>
+                    <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-yellow-300 rounded-t-full"></div>
                   </div>
                 </div>
 
@@ -119,13 +119,13 @@ export function TournamentCta({ copy }: { copy: PageCopySection }) {
 
               {/* Podium */}
               <div className="relative mx-auto mt-8 flex items-end justify-center space-x-2">
-                <div className="w-16 h-16 bg-indigo-300 rounded-t-md flex items-center justify-center text-indigo-800 font-bold text-lg">
+                <div className="w-16 h-16 bg-action/30 rounded-t-md flex items-center justify-center text-action font-bold text-lg">
                   2
                 </div>
                 <div className="w-16 h-24 bg-yellow-300 rounded-t-md flex items-center justify-center text-yellow-800 font-bold text-lg">
                   1
                 </div>
-                <div className="w-16 h-12 bg-purple-300 rounded-t-md flex items-center justify-center text-purple-800 font-bold text-lg">
+                <div className="w-16 h-12 bg-action/30 rounded-t-md flex items-center justify-center text-action font-bold text-lg">
                   3
                 </div>
               </div>

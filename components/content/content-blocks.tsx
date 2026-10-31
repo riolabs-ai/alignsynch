@@ -47,7 +47,7 @@ const MARKDOWN_COMPONENTS = {
     <p className="text-base mb-4 leading-relaxed" {...props} />
   ),
   a: ({ node, ...props }: { node?: unknown }) => (
-    <a className="text-purple-600 hover:text-purple-700 mb-3 block" {...props} />
+    <a className="text-action hover:text-action/80 mb-3 block" {...props} />
   ),
 };
 

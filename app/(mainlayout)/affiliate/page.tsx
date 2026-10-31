@@ -24,7 +24,7 @@ export const metadata: Metadata = {
  */
 export default function AffiliatePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-900">
+    <div className="min-h-screen bg-background">
       <AffiliateHero copy={affiliatePageCopy} />
       <HowToStart copy={sectionOf(affiliatePageCopy, "how-to-start")} />
       <ProfitCalculator copy={sectionOf(affiliatePageCopy, "profit-calculator")} />

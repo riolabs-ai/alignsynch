@@ -443,7 +443,11 @@ fi
 
 # Biome formats markdown too, so this is the docs lane's real gate as well as
 # the code lane's: a hand-wrapped doc fails `lint` before CI ever sees it.
-run_step "lint (biome check)" pnpm lint || fail
+# The step is `pnpm lint` = `biome check && node scripts/lint-brand-classes.mjs`: the brand rule
+# (#187 stage 4) rides inside the existing lint step, in every lane, so there is no second
+# pipeline and no CI-only check. It prints its own census there — `brand classes: N file(s) …
+# 0 palette steps, 0 gradient utilities` — which is what makes it visible in the gate output.
+run_step "lint (biome check + brand classes)" pnpm lint || fail
 run_step "format:check (biome format)" pnpm format:check || fail
 
 if [ "$LANE" != "docs" ]; then

@@ -53,6 +53,8 @@ export const quizHubBrand: Brand = zBrand.parse({
   description: "Create quizzes, play games, and earn money with our multi-vendor quiz platform",
   domain: "quizhub.com",
   logo: "/placeholder-logo.svg",
+  /** The tab icon (#187 stage 4) — drawn from this record by `scripts/gen-brand-icons.mjs`. */
+  icon: "/brand/quizhub-icon.svg",
   colors: {
     background: "hsl(0 0% 100%)",
     foreground: "hsl(0 0% 3.9%)",

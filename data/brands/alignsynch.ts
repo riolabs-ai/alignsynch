@@ -64,6 +64,8 @@ export const alignSynchBrand: Brand = zBrand.parse({
     "See how you feel against how they feel, and how each of you wishes it to be — the Gap is the conversation worth having.",
   domain: "alignsynch.com",
   logo: "/brand/as2-logo_v2_cl.png",
+  /** The tab icon (#187 stage 4): the brand's blue ground, not the template's indigo one. */
+  icon: "/brand/alignsynch-icon.svg",
   colors: {
     background: "#ffffff",
     foreground: "#363d49",

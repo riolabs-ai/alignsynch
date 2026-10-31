@@ -193,7 +193,7 @@ export function CompletedChallenge({
           </div>
 
           <div className="flex flex-col items-center p-3 bg-muted/30 rounded-lg">
-            <Medal className="h-5 w-5 text-purple-500 mb-1" />
+            <Medal className="h-5 w-5 text-action mb-1" />
             <span className="text-sm text-muted-foreground">{itemLabel(copy, "earned")}</span>
             <span className="text-xl font-bold">
               {fillLabel(itemLabel(copy, "xp"), {
@@ -297,8 +297,8 @@ export function CompletedChallenge({
               </div>
 
               <div className="border rounded-lg p-4 flex items-center space-x-3">
-                <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
-                  <Trophy className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <div className="bg-action/10 dark:bg-action/20 p-2 rounded-full">
+                  <Trophy className="h-5 w-5 text-action" />
                 </div>
                 <div>
                   <h4 className="font-medium">{itemLabel(copy, "top-rank")}</h4>
