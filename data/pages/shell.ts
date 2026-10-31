@@ -408,7 +408,7 @@ export function shellCopy(brand: Brand): PageCopy {
       },
       {
         id: "footer-brand-alignsynch",
-        body: "The same five Aspects, answered by both of you: how it is now, and how you each wish it to be. Where the answers part is the Gap — and the Gap is the conversation worth having.",
+        body: "The same five Aspects, answered by both of you: how it is now, and how you each wish it to be. Where the answers part is the Gap.",
       },
       {
         id: "footer-links",

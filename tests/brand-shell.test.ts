@@ -332,7 +332,7 @@ describe("one build flag, one brand", () => {
       "Create quizzes, play games, and earn money with our multi-vendor quiz platform",
     );
     expect(alignSynchBrand.description).toBe(
-      "See how you feel against how they feel, and how each of you wishes it to be — the Gap is the conversation worth having.",
+      "AlignSynch asks two people the same five questions about their relationship, once for how it is now and once for how each of them wishes it to be, and shows where the answers differ.",
     );
     expect(alignSynchBrand.description).not.toMatch(/\bquiz/i);
   });
