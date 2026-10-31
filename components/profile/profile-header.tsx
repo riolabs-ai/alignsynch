@@ -44,7 +44,14 @@ export function ProfileHeader({
   return (
     <div className="overflow-hidden rounded-xl shadow-sm">
       <ProfileCover handle={person.handle} />
-      <div className="bg-gradient-to-r from-purple-100 to-blue-100 px-6 pb-6 dark:from-purple-950/30 dark:to-blue-950/30">
+      {/*
+        The ground behind the identity row was a two-hue wash — two QuizHub colours under every
+        avatar, on both brands. It is now the brand's own accent fading to nothing, which is the one
+        gradient in this directory that survives: both stops are tokens, so the skin decides. A
+        single-stop tint would have been the other option; the fade is what keeps the cover above it
+        reading as one surface rather than a band with an edge.
+      */}
+      <div className="bg-gradient-to-r from-action/10 to-transparent px-6 pb-6">
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-start">
           <Media
             alt={person.name}
@@ -128,7 +135,7 @@ export function ProfileHeader({
 
           <div className="flex gap-2 self-start sm:self-center">
             <Button
-              variant={isFollowing ? "secondary" : "default"}
+              variant={isFollowing ? "secondary" : "action"}
               size="sm"
               onClick={onFollowToggle}
             >
