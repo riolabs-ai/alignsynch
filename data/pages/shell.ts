@@ -134,6 +134,13 @@ export function shellCopy(brand: Brand): PageCopy {
        *   Templates    the `#templates` band of `/` — the four records' own heading
        *   How it works the `#questions` band of `/` — how the two questions are asked
        *   Support      `/support`        the shell's existing support route, brand-projected
+       *   Overview     `/dashboard`      the signed-in console's front page (console 2/5)
+       *   Your templates `/assessment/templates` — the library: built-ins plus this account's
+       *
+       * The console's two rows are the last, so the menu reads front page → console → operator and
+       * the alignment band above them keeps the order issue #156 shipped. Both are routes this
+       * build serves to every viewer: a signed-out request is answered with the route's own
+       * redirect to `/login?next=…`, never a 404, so a member's row is a row that works.
        *
        * There is no About: no route answers "about this company", and the closest thing
        * (`/welcome`, the marketing page) is a landing page, not an About page. Pointing at
@@ -143,10 +150,11 @@ export function shellCopy(brand: Brand): PageCopy {
        * `quiz-tools` is the heading over the quiz product's own menu, which an elevated viewer
        * gets below the alignment menu (see `lib/nav.ts` for the capability and its stub).
        *
-       * `admin-instances` is the operator's registry (console card 3/5, `/admin/instances`). Its
-       * row is drawn only for a viewer carrying `admin-console`, because a row that leads to a
-       * 404 for a member advertises a surface the member must not learn exists — a 404 is the
-       * whole refusal. A four-row menu for everybody else is the menu this issue shipped.
+       * `console-gaps` and `admin-instances` are the operator's rows (`/admin/gaps` console 4/5,
+       * `/admin/instances` console 3/5). Each is drawn only for a viewer carrying `admin-console`,
+       * because a row that leads to a 404 for a member advertises a surface the member must not
+       * learn exists — a 404 is the whole refusal. A six-row menu for everybody else is the
+       * alignment menu plus the console's own two destinations.
        */
       {
         id: "nav-alignsynch",
@@ -155,6 +163,8 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "templates", label: "Templates" },
           { id: "how-it-works", label: "How it works" },
           { id: "support", label: "Support" },
+          { id: "console-overview", label: "Overview" },
+          { id: "template-library", label: "Your templates" },
           { id: "console-gaps", label: "Gap Analysis" },
           { id: "admin-instances", label: "Relationships" },
           { id: "quiz-tools", label: "Quiz tools" },

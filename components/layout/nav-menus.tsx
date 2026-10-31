@@ -13,7 +13,9 @@ import {
   DollarSign,
   FileQuestion,
   Home,
+  LayoutDashboard,
   LayoutTemplate,
+  Library,
   LifeBuoy,
   Lightbulb,
   Medal,
@@ -292,14 +294,26 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
 }
 
 /**
- * The alignment product's menu — four rows, and every one of them is a destination that
- * exists on this brand today.
+ * The alignment product's menu — the four front-page destinations the brand shipped, then the
+ * console's own two (Overview, Your templates), then the operator's rows when the viewer carries
+ * `admin-console`. Every one of them is a destination that exists on this brand today.
  *
- * The two middle rows are anchors into the front page's own bands (`/#templates`,
- * `/#questions`), which is why `/` gives those bands an `id`: a route that does not exist
- * yet is a later card, and a nav that links to it early is the same 404 this issue removes.
- * `tests/nav-brand.test.ts` holds these three hrefs to the ids the rendered page emits, so an
- * anchor cannot drift from its band.
+ * The two middle rows of the first group are anchors into the front page's own bands
+ * (`/#templates`, `/#questions`), which is why `/` gives those bands an `id`: a route that does
+ * not exist yet is a later card, and a nav that links to it early is the same 404 this issue
+ * removes. `tests/nav-brand.test.ts` holds these three hrefs to the ids the rendered page emits,
+ * so an anchor cannot drift from its band.
+ *
+ * **Why the console's rows are appended and not interleaved.** The order above is the order issue
+ * #156 shipped and the order the front page reads in; the console is a later layer on top of the
+ * same product, so its rows go after them rather than between Home and Support. A reader sees
+ * front page → console → operator, and a diff that adds a row never moves an existing one.
+ *
+ * **Both console rows are ungated, and that is the gate's shape, not an omission.** `/dashboard`
+ * and `/assessment/templates` are `force-dynamic` routes that answer a signed-out request with
+ * `redirect(/login?next=…)` — a redirect is a working destination, unlike `/admin/*`, which
+ * answers a signed-in *member* with a 404 and therefore must not be advertised. So the only
+ * capability this menu consults is the operator's, via `sees(viewer, "admin-console")` below.
  */
 function AlignSynchMenu({
   copy,
@@ -340,6 +354,28 @@ function AlignSynchMenu({
         icon={<LifeBuoy className="size-5" />}
         label={itemLabel(nav, "support")}
         active={isActive(pathname, "/support")}
+        collapsed={collapsed}
+        onNavigate={onNavigate}
+      />
+      {/*
+        The console's own two destinations (console 2/5 and 5/5), appended after the brand's four
+        so no existing row moves. Each is a route this build serves to every viewer — signed out,
+        it redirects to `/login?next=…` with the destination preserved — so both rows are drawn
+        unconditionally, and the capability below stays the operators'.
+      */}
+      <NavRow
+        href="/dashboard"
+        icon={<LayoutDashboard className="size-5" />}
+        label={itemLabel(nav, "console-overview")}
+        active={isActive(pathname, "/dashboard")}
+        collapsed={collapsed}
+        onNavigate={onNavigate}
+      />
+      <NavRow
+        href="/assessment/templates"
+        icon={<Library className="size-5" />}
+        label={itemLabel(nav, "template-library")}
+        active={isActive(pathname, "/assessment/templates")}
         collapsed={collapsed}
         onNavigate={onNavigate}
       />
