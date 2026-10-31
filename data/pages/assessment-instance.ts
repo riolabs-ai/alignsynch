@@ -117,7 +117,20 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
             "Your browser would not copy the link, and it could not be selected for you — select it above and copy it yourself.",
         },
         { id: "claimed", label: "{counterparty} has claimed the invitation" },
-        { id: "unclaimed", label: "{counterparty} has not claimed the invitation yet" },
+        // #266 — three states, and the two that are not `claimed` name the deadline, because
+        // "no invitation has been claimed yet" and "the invitation died last Tuesday" are the
+        // same sentence to a reader who cannot see the clock. `expired` is deliberately not
+        // silent about the consequence: the link is not drawn in that state (`readFlowScreen`
+        // withholds it), so the panel says why there is nothing to send.
+        {
+          id: "unclaimed",
+          label: "{counterparty} has not claimed the invitation yet (it expires {date})",
+        },
+        {
+          id: "expired",
+          label:
+            "This invitation expired on {date}. The link no longer works, so {counterparty} cannot claim it.",
+        },
       ],
     },
     {
