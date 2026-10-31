@@ -58,7 +58,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
 
 - `/register` — **live**
-  - capability: Create a real Neon Managed Auth account, collecting quiz interests and skill level on the way.
+  - capability: Create a real Neon Managed Auth account: personal details, then email, password and the terms agreement.
   - components: `components/auth`, `components/ui`
   - reads: an `/api` path — `lib/auth/client.ts`
 

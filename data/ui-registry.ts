@@ -421,7 +421,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "live",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "Create a real Neon Managed Auth account, collecting quiz interests and skill level on the way.",
+      "Create a real Neon Managed Auth account: personal details, then email, password and the terms agreement.",
   },
   {
     kind: "route",
