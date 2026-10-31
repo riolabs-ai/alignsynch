@@ -157,5 +157,18 @@ export const marketingPageCopy: PageCopy = zPageCopy.parse({
       body: "Avery and Rowan answered Relationship Basics. Both sets of their answers are on one page, with the Gap on every Aspect beside them.",
       cta: { label: "Read the worked example", href: "/assessment/avery-rowan" },
     },
+    /**
+     * The version badge (issue #269) — `/welcome`'s footer prints it under the mailbox. Same
+     * three ids as the shell's and `/login`'s sections, because `AppVersion` is one component;
+     * `{version}` is filled from the build and never typed here.
+     */
+    {
+      id: "version",
+      items: [
+        { id: "label", label: "Version {version}" },
+        { id: "compact", label: "v{version}" },
+        { id: "title", label: "Open the v{version} release notes on GitHub" },
+      ],
+    },
   ],
 });

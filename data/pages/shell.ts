@@ -507,6 +507,30 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "cookies", label: "Cookie Policy" },
         ],
       },
+      /**
+       * The version badge (issue #269) — the words the sidebar and the footer print under the
+       * build's version number.
+       *
+       * One section for both mounts because both read this one instance: a sidebar that said
+       * "Version" and a footer that said "Build" would be two names for one fact. It is not
+       * brand-selected — a version is the same fact on both builds, and the tag it links to is
+       * one tag.
+       *
+       * `{version}` is filled by `AppVersion` from `next.config.mjs`'s `APP_VERSION` (itself
+       * `package.json`'s `version`) and is never typed here: a version spelled in a fixture is
+       * a second source, which is the defect the card forbids. `compact` is the collapsed
+       * rail's short form — 70 px of sidebar cannot hold the long one, and clipping a label is
+       * not a style — and `title` is the accessible name of the link, so a screen reader hears
+       * where it goes as well as which build it is.
+       */
+      {
+        id: "version",
+        items: [
+          { id: "label", label: "Version {version}" },
+          { id: "compact", label: "v{version}" },
+          { id: "title", label: "Open the v{version} release notes on GitHub" },
+        ],
+      },
     ],
   });
 }

@@ -1,5 +1,6 @@
 "use client";
 import { AppNav, NavRow } from "@/components/layout/nav-menus";
+import { AppVersion } from "@/components/layout/app-version";
 import { useSidebar } from "@/components/layout/sidebar-context";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
@@ -144,6 +145,17 @@ export function AppSidebar({
             onNavigate={closeMobile}
           />
         </nav>
+      </div>
+
+      {/*
+       * The version badge — the bottom of the rail (issue #269). Last in the document, so it is
+       * the last stop the keyboard makes inside the sidebar, and below the sign-out row on
+       * purpose: signing out is an action, the version is a fact about the build you signed in
+       * to. The rail collapses to 70 px, which cannot hold the long label, so the collapsed
+       * state asks `AppVersion` for its short form rather than clipping the long one.
+       */}
+      <div className="border-t px-2 py-3 text-center">
+        <AppVersion copy={copy} compact={collapsed} />
       </div>
     </aside>
   );
