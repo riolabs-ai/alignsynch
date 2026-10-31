@@ -50,20 +50,23 @@ function hrefsOf(html: string): string[] {
   return [...html.matchAll(/href="([^"]*)"/g)].map((match) => match[1]);
 }
 
+/** The sidebar's markup for one brand and one viewer. */
+function navHtml(brandId: BrandId, viewer: NavViewer = PLATFORM_VIEWER): string {
+  return renderToStaticMarkup(
+    createElement(AppNav, {
+      brandId,
+      viewer,
+      copy: shellPageCopy,
+      collapsed: false,
+      pathname: "/",
+      onNavigate: () => undefined,
+    }),
+  );
+}
+
 /** The sidebar's rows for one brand and one viewer. */
 function navHrefs(brandId: BrandId, viewer: NavViewer = PLATFORM_VIEWER): string[] {
-  return hrefsOf(
-    renderToStaticMarkup(
-      createElement(AppNav, {
-        brandId,
-        viewer,
-        copy: shellPageCopy,
-        collapsed: false,
-        pathname: "/",
-        onNavigate: () => undefined,
-      }),
-    ),
-  );
+  return hrefsOf(navHtml(brandId, viewer));
 }
 
 /**
@@ -123,7 +126,14 @@ describe("the alignment brand's menu is alignment destinations", () => {
   const hrefs = navHrefs("alignsynch");
 
   it("links only to what exists on this brand today", () => {
-    expect(hrefs).toEqual(["/", "/#templates", "/#questions", "/support"]);
+    expect(hrefs).toEqual([
+      "/",
+      "/#templates",
+      "/#questions",
+      "/support",
+      "/dashboard",
+      "/assessment/templates",
+    ]);
   });
 
   it.each(QUIZ_ONLY)("does not link to %s", (path) => {
@@ -153,8 +163,15 @@ describe("the alignment brand's menu is alignment destinations", () => {
 describe("the quiz product is filtered, not deleted", () => {
   it("gives a viewer with the quiz capability both menus", () => {
     const hrefs = navHrefs("alignsynch", viewerWith("quiz-surfaces"));
-    expect(hrefs.slice(0, 4)).toEqual(["/", "/#templates", "/#questions", "/support"]);
-    expect(hrefs.slice(4)).toEqual(QUIZ_MENU);
+    expect(hrefs.slice(0, 6)).toEqual([
+      "/",
+      "/#templates",
+      "/#questions",
+      "/support",
+      "/dashboard",
+      "/assessment/templates",
+    ]);
+    expect(hrefs.slice(6)).toEqual(QUIZ_MENU);
   });
 
   it.each(QUIZ_ONLY)("restores %s for that viewer", (path) => {
@@ -175,6 +192,49 @@ describe("the quiz product is filtered, not deleted", () => {
     // The heading over the quiz menu is the fixture's word, and its absence is the proof the
     // elevated branch did not render rather than rendered hidden.
     expect(html).not.toContain(itemLabelOf("quiz-tools"));
+  });
+});
+
+describe("the console's own rows are a member's, the operator's rows are not", () => {
+  // `navViewer(null)` and `navViewer("member")` both answer PLATFORM_VIEWER — one line in
+  // `lib/nav.ts` — so this viewer *is* the member's sidebar, and the admin's is the one a role
+  // model hands back. Asserting both sides is what keeps "a member does not see /admin/*" from
+  // passing because the rows were deleted for everybody.
+  const memberHrefs = navHrefs("alignsynch");
+  const adminHrefs = navHrefs("alignsynch", viewerWith("admin-console"));
+
+  it("draws the console's two destinations for a member", () => {
+    expect(memberHrefs).toContain("/dashboard");
+    expect(memberHrefs).toContain("/assessment/templates");
+  });
+
+  it("draws no /admin row for a member, and never merely hides one", () => {
+    expect(memberHrefs.filter((href) => href.startsWith("/admin"))).toEqual([]);
+    const member = navHtml("alignsynch");
+    // The labels too: a row rendered `hidden` would still be in the markup, and the refusal is
+    // that the member does not learn the surface exists — not that it is invisible.
+    expect(member).not.toContain(itemLabelOf("console-gaps"));
+    expect(member).not.toContain(itemLabelOf("admin-instances"));
+  });
+
+  it("draws both operator rows for an admin, appended after the console's", () => {
+    expect(adminHrefs).toEqual([
+      "/",
+      "/#templates",
+      "/#questions",
+      "/support",
+      "/dashboard",
+      "/assessment/templates",
+      "/admin/gaps",
+      "/admin/instances",
+    ]);
+    const admin = navHtml("alignsynch", viewerWith("admin-console"));
+    expect(admin).toContain(itemLabelOf("console-gaps"));
+    expect(admin).toContain(itemLabelOf("admin-instances"));
+  });
+
+  it("keeps the member's sidebar a prefix of the admin's — same rows, same order", () => {
+    expect(adminHrefs.slice(0, memberHrefs.length)).toEqual(memberHrefs);
   });
 });
 
