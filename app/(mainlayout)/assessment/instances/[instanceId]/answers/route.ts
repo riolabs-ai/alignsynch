@@ -4,6 +4,7 @@ import { answersFrom } from "@/lib/flow/answers";
 import { instancePath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { readInstanceMode, submitAnswers } from "@/lib/flow/store";
+import { sendUnlockNotice } from "@/lib/flow/unlock-notice";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -36,6 +37,13 @@ import { NextResponse } from "next/server";
  * wants a Server Component, and a route handler that must return a status is not one). The
  * words are still the fixture's — `problems` in `data/pages/assessment-instance.ts` — plus
  * the store's own reason line, which says which role this session actually answers as.
+ *
+ * **The completing submit emails the other party (#258).** `submitAnswers` answers `complete`
+ * only on the write that filled the last missing answer, so that result is the transition the
+ * notice exists for and the freeze is what keeps it to one. The send happens **after** the
+ * transaction committed and after the refusal branches, so a mail failure can neither unstore an
+ * answer nor change the status code a person sees: the redirect below is the same 303 it always
+ * was, and the screen it lands on is the report, which is the truth either way.
  */
 export async function POST(
   request: Request,
@@ -63,6 +71,27 @@ export async function POST(
   });
 
   if (result.ok) {
+    // #258 — the submit that completes the instance is the one event that emails the other party.
+    // `result.status === "complete"` is that transition and only that transition: the submit
+    // before it reads `answering`, and a submit after it never reaches here (the store refuses it
+    // `frozen`, so the captured email count stays at one). The send is a **single attempt**, and
+    // it cannot turn a stored answer into a failed submit: the rows committed before
+    // `submitAnswers` returned, `sendUnlockNotice` never throws, and this `catch` is the belt for
+    // the one path that could — a read-back that dies after the commit, which still must land the
+    // person on their report rather than an error page.
+    if (result.status === "complete") {
+      await sendUnlockNotice({
+        instanceRecordId: instanceId,
+        submittedBy: result.role,
+      }).catch((error: unknown) => {
+        // Operator line only, and never the message, the link or a token: the screen below is
+        // what the reader sees, and it says the Gap is open because it is.
+        console.error(
+          "[unlock] the notice could not be attempted after a submit completed the instance — the answers are stored and the report is unaffected",
+          error instanceof Error ? error.name : "unknown",
+        );
+      });
+    }
     return NextResponse.redirect(new URL(instancePath(instanceId), request.url), 303);
   }
 

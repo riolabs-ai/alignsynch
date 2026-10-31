@@ -53,6 +53,9 @@ export async function POST(request: Request): Promise<Response> {
       mode: value("mode"),
       // Not `value("userId")`: there is no such field, and the session cannot be posted.
       viewerUserId: viewer?.userId ?? null,
+      // #258 — the address the unlock notice will reach this creator at when the Counterparty
+      // submits last. Also the session's, never the form's: `email` above is the Counterparty's.
+      viewerEmail: viewer?.email ?? null,
     });
   } catch (error) {
     if (error instanceof FlowError) {
