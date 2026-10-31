@@ -100,7 +100,13 @@ const screen = projectScreen({
   rows,
   template,
   viewerRole: "initiator",
-  invite: { email: "rowan@example.com", counterpartyName: "Rowan", claimed: false, link: LINK },
+  invite: {
+    email: "rowan@example.com",
+    counterpartyName: "Rowan",
+    expiresAt: "2026-11-06T12:00:00.000Z",
+    state: "unclaimed" as const,
+    link: LINK,
+  },
 });
 
 const inviteCopy = sectionOf(assessmentInstancePageCopy, "invite");
