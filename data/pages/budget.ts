@@ -244,6 +244,15 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-instance",
     budget: 0,
   },
+  // #255 — the template authoring form. Budget 0 from the first commit, for the reason the
+  // three flow surfaces above are: every word is in `data/pages/assessment-template-new.ts`,
+  // including the six refusals, so the next literal written in the form is a red build.
+  "/assessment/templates/new": {
+    page: "app/(mainlayout)/assessment/templates/new/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-template-new",
+    budget: 0,
+  },
   "/invite/[token]": {
     page: "app/(mainlayout)/invite/[token]/page.tsx",
     dirs: ["components/assessment-flow"],

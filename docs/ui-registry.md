@@ -13,11 +13,11 @@ It has two halves, and each one is owned by a different place:
 
 ## Summary
 
-- routes: **42** — 28 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 230 files under `components/`, 226 of them `.tsx`
-- route handlers: **5** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 10 · **fixture** 50 · **db** 9 · **live** 5
-- templates: Both templates 19 · AlignSynch 11 · QuizHub 42 · No template yet 2
+- routes: **43** — 29 static, 14 dynamic, from `app/**/page.tsx`
+- component domains: **32** — 231 files under `components/`, 227 of them `.tsx`
+- route handlers: **6** — `app/**/route.ts`, listed below and not a UI surface
+- status: **mock** 10 · **fixture** 51 · **db** 9 · **live** 5
+- templates: Both templates 19 · AlignSynch 12 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -158,6 +158,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `lib/auth/server.ts`
   - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404.
 
+- `/assessment/templates/new` — **fixture**
+  - capability: Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.
+  - components: `components/assessment-flow`
+  - reads: an `/api` path — `lib/auth/server.ts`
+  - notes: `fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/route.ts`, which writes the record and item rows through `lib/flow/templates.ts` (no new table, no new column, and no author field, because the content model has none). Signed in only, on both the page and the post. Since #255 this is the app's only writer of a template; the four seeded ones come from `data/assessments.ts`.
+
 - `/demo` — **mock**
   - capability: The demo PIN gate: one four-digit field and a submit. A correct PIN sets a signed, httpOnly unlock cookie and redirects to `/login`, where the three role buttons appear.
   - components: `components/auth`, `components/ui`
@@ -190,8 +196,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (5): `answer-form.tsx`, `instance-view.tsx`, `invite-view.tsx`, `my-instances.tsx`, `template-list.tsx`
-  - routes (4): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/invite/[token]`
+  - files (6): `answer-form.tsx`, `instance-view.tsx`, `invite-view.tsx`, `my-instances.tsx`, `template-form.tsx`, `template-list.tsx`
+  - routes (5): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/templates/new`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/marketing` — **fixture**
@@ -450,4 +456,5 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/api/profile` — `app/api/profile/route.ts`
 - `/assessment/instances/[instanceId]/answers` — `app/(mainlayout)/assessment/instances/[instanceId]/answers/route.ts`
 - `/assessment/new` — `app/(mainlayout)/assessment/new/route.ts`
+- `/assessment/templates` — `app/(mainlayout)/assessment/templates/route.ts`
 - `/invite/[token]/claim` — `app/(mainlayout)/invite/[token]/claim/route.ts`

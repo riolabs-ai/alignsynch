@@ -18,7 +18,19 @@ export const metadata: Metadata = {
   title: "Assessments",
 };
 
-export default async function AssessmentIndexPage() {
+export default async function AssessmentIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ created?: string | string[] }>;
+}) {
   const templates = await listPublishedTemplates();
-  return <TemplateList copy={assessmentPageCopy} templates={templates} />;
+  const { created } = await searchParams;
+  // `?created=` is the id the save redirected with (#255). Resolved against the list just read, so
+  // a stale or crafted id draws nothing: the notice never renders a string that is not a template
+  // this page is already showing.
+  const createdId = typeof created === "string" ? created : undefined;
+  const createdTitle = templates.find((template) => template.id === createdId)?.title ?? null;
+  return (
+    <TemplateList copy={assessmentPageCopy} templates={templates} createdTitle={createdTitle} />
+  );
 }

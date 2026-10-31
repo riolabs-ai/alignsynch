@@ -21,6 +21,12 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
       id: "create",
       heading: "Start an instance",
       body: "You answer first. They see none of it until they have answered too — and you see none of theirs.",
+      cta: {
+        // The authoring form (#255). A `cta` and not a bare href in the view: the path is then
+        // resolved against `content/routes.ts` by E23, so a moved form is a red build and not a 404.
+        label: "Write your own template",
+        href: "/assessment/templates/new",
+      },
       items: [
         { id: "mode-label", label: "Which mode?" },
         { id: "mode-basic", label: "Basic Mode — Feel and Wish" },
@@ -48,6 +54,14 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
       id: "empty",
       heading: "No published template",
       body: "A template has to be published before an instance can be created from it.",
+    },
+    {
+      // The notice a save draws here (#255). `{title}` is the template that was just saved, filled
+      // by `fillLabel()` from the list the page already read — the redirect carries the record's id
+      // and never the words somebody typed.
+      id: "created",
+      heading: "Template saved",
+      body: "“{title}” is published. It is in the list below, and you can start an instance from it now.",
     },
     {
       id: "invitation-email",

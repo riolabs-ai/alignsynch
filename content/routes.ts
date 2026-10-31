@@ -21,6 +21,7 @@ const STATIC_ROUTES = [
   "/affiliate",
   "/assessment",
   "/assessment/instances",
+  "/assessment/templates/new",
   "/battle",
   "/categories",
   "/chat",
