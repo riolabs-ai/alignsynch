@@ -53,6 +53,11 @@ const stub = vi.hoisted(() => {
   const state: {
     /** The template the create copies from; `false` makes it the unknown-template refusal. */
     templatePresent: boolean;
+    /**
+     * `record.author_user_id` of that template (#console 5/5): `null` is a built-in, an id is
+     * the account that wrote it. Mutable so the refusal case can make it somebody else's.
+     */
+    templateAuthorId: string | null;
     /** The invitation the claim locks, or `undefined` for an unknown token. */
     invite:
       | {
@@ -72,7 +77,14 @@ const stub = vi.hoisted(() => {
      * subscription read is answered `null` (no row), i.e. the Free plan.
      */
     activeInstances: number;
-  } = { templatePresent: true, invite: undefined, seats: [], seatTaken: false, activeInstances: 0 };
+  } = {
+    templatePresent: true,
+    templateAuthorId: null,
+    invite: undefined,
+    seats: [],
+    seatTaken: false,
+    activeInstances: 0,
+  };
 
   /** One SQL statement, whitespace collapsed so a stub case reads as one line. */
   const narrow = (text: string) => text.replace(/\s+/g, " ").trim();
@@ -80,6 +92,7 @@ const stub = vi.hoisted(() => {
   function reset(): void {
     calls.length = 0;
     state.templatePresent = true;
+    state.templateAuthorId = null;
     state.invite = undefined;
     state.seats = [];
     state.seatTaken = false;
@@ -102,6 +115,10 @@ const stub = vi.hoisted(() => {
                 title: "Relationship Basics",
                 record_type: "assessment",
                 status: "published",
+                // A built-in: `0011_console_columns.sql` leaves the author NULL, and the
+                // create's author check (#console 5/5) reads NULL as "the platform's, copyable
+                // by anybody". A row fixture without the column would read as somebody else's.
+                author_user_id: state.templateAuthorId,
                 aspects: 3,
                 is_instance: false,
               },
@@ -285,6 +302,38 @@ describe("createInstanceFromTemplate binds the creator", () => {
 
     expect(partyInserts()[0].values[3]).toBeNull();
     for (const call of stub.calls) expect(call.values).not.toContain("posted-by-the-browser");
+  });
+
+  it("refuses a template another account wrote, and writes nothing (#console 5/5)", async () => {
+    stub.state.templateAuthorId = "account-rowan";
+
+    await expect(
+      createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" })),
+    ).rejects.toMatchObject({ code: "template-not-yours" });
+
+    // Refused inside the transaction, before anything was written: no record, no party, no
+    // invitation, and the transaction rolled back rather than committed.
+    expect(callsMatching(/^INSERT INTO/)).toHaveLength(0);
+    const statements = stub.calls.map((call) => stub.narrow(call.text));
+    expect(statements).toContain("ROLLBACK");
+    expect(statements).not.toContain("COMMIT");
+  });
+
+  it("allows the account that wrote the template to copy it", async () => {
+    stub.state.templateAuthorId = "account-avery";
+
+    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+
+    expect(partyInserts()).toHaveLength(1);
+    expect(partyInserts()[0].values[3]).toBe("account-avery");
+  });
+
+  it("refuses a signed-out caller copying an authored template", async () => {
+    stub.state.templateAuthorId = "account-avery";
+
+    await expect(createInstanceFromTemplate(createInput())).rejects.toMatchObject({
+      code: "template-not-yours",
+    });
   });
 });
 
