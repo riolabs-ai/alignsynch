@@ -1,7 +1,7 @@
 route  /
 brand  quizhub
 
-headings (74)
+headings (73)
   h2  "Recent Messages"
   h2  "Notifications"
   h3  "New"
@@ -75,7 +75,6 @@ headings (74)
   h3  "Quick Links"
   h3  "Categories"
   h3  "Contact"
-  h3  "Subscribe to our newsletter"
 
 landmarks (6)
   banner         1
@@ -165,8 +164,8 @@ links (78 unique, 102 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 2
 
 counts
-  elements  2573
+  elements  2550
   images    16
-  buttons   43
-  inputs    3
-  classes   545 (sha fc3a561f76b3)
+  buttons   42
+  inputs    2
+  classes   543 (sha 0e962ccf7bd4)

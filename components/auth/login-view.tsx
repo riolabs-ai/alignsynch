@@ -215,7 +215,7 @@ export function LoginView({
                 />
               </div>
               {/*
-               * No "Forgot password?" link (issue #272). It was an `href="#"`, and nothing in
+               * No "Forgot password?" link (issue #272). Its `href` was a bare hash, and nothing in
                * this app could have been behind it: the Managed Auth client here unwraps
                * `signUp.email`, `signIn.email`, `getSession` and `signOut` only, and no route or
                * form starts a reset. A link that cannot lead anywhere is worse than its absence

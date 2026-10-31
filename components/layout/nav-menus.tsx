@@ -107,7 +107,7 @@ export type NavRowProps = {
  * exactly the markup it had before this module existed.
  *
  * **An action row is a `<button>`, not a link with an empty `href` (issue #272).** The sign-out
- * row was `href="#"`: it rendered, took focus, announced as a link and did nothing, which is
+ * row carried a bare hash: it rendered, took focus, announced as a link and did nothing, which is
  * worse than an absent row because it says the session ended when it did not. `onSelect` is
  * that row; every destination row is still a `Link`, class for class, so the menus this module
  * draws are byte-for-byte what they were.

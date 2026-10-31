@@ -6,7 +6,7 @@ import { brandMark } from "@/lib/brand-mark";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { ArrowRight, BookOpen, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
+import { BookOpen, ExternalLink, Mail } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
@@ -72,12 +72,12 @@ export function Footer({
   hiddenNav: readonly string[];
 }) {
   /**
-   * The footer's brand-selected sections (issue #188, stage S3). The line under the wordmark,
-   * the contact block and the newsletter band are one pair each, and this is the only place
-   * the choice is made — the same shape as `searchSectionFor`, so the header palette and this
-   * footer cannot disagree about which brand they are.
+   * The footer's brand-selected sections (issue #188, stage S3). The line under the wordmark and
+   * the contact block are one pair each, and this is the only place the choice is made — the same
+   * shape as `searchSectionFor`, so the header palette and this footer cannot disagree about which
+   * brand they are. The mailing-list band left this pair with its section (#272).
    */
-  const { brand: brandBlurb, contact, newsletter } = footerCopyFor(copy, brandId);
+  const { brand: brandBlurb, contact } = footerCopyFor(copy, brandId);
   const links = sectionOf(copy, "footer-links");
   const alignLinks = sectionOf(copy, "footer-links-alignsynch");
   const categories = sectionOf(copy, "footer-categories");
@@ -160,7 +160,7 @@ export function Footer({
 
             {/*
              * No social row (issue #272). It drew four icons — Facebook, Twitter, Instagram and
-             * YouTube — and every one was an `href="#"`: a claim of social presence on every page,
+             * YouTube — and every one pointed at a bare `#`: a claim of social presence on every page,
              * reachable by tab and announced as a link, that went nowhere. Nothing in this repo
              * names an account behind any of them, and an icon for an account nobody can reach is
              * fabricated presence rather than an empty state. If those accounts ever exist the row
@@ -180,23 +180,14 @@ export function Footer({
                   {contact.heading}
                   <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-action"></span>
                 </h3>
+                {/*
+                 * One row: the mailbox. The street line and the telephone number that stood
+                 * above it are gone (#272) — an invented address and a number from the block
+                 * reserved for fiction, printed as this company's details on every page of
+                 * both builds. A row comes back when a real value does; a placeholder that
+                 * looks like a fact is the defect, not the empty space.
+                 */}
                 <ul className="space-y-4">
-                  <li className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                      <MapPin className="h-4 w-4 text-action" />
-                    </div>
-                    <span className="text-slate-600 dark:text-slate-400">
-                      {itemLabel(contact, "address")}
-                    </span>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                      <Phone className="h-4 w-4 text-action" />
-                    </div>
-                    <span className="text-slate-600 dark:text-slate-400">
-                      {itemLabel(contact, "phone")}
-                    </span>
-                  </li>
                   <li className="flex items-center space-x-3">
                     <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
                       <Mail className="h-4 w-4 text-action" />
@@ -212,28 +203,13 @@ export function Footer({
           </div>
         </div>
 
-        {/* Newsletter */}
-        <div className="mt-16 p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-xl font-bold mb-2">{newsletter.heading}</h3>
-              <p className="text-slate-600 dark:text-slate-400">{newsletter.body}</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <input
-                  type="email"
-                  placeholder={itemLabel(newsletter, "placeholder")}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-              <Button variant={"action"}>
-                {itemLabel(newsletter, "subscribe")}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
+        {/*
+         * No mailing-list band (#272). It took an email address and offered to deliver news to
+         * it, with a button that had no handler and no sender behind it — this app sends an
+         * invitation and an unlock notice, nothing else. A box that promises a subscription on
+         * every page of both builds is the same defect as a link that goes nowhere; the band
+         * returns when something can keep the promise.
+         */}
 
         {/* Bottom footer */}
         <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">

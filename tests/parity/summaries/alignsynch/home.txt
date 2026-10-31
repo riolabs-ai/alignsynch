@@ -1,7 +1,7 @@
 route  /
 brand  alignsynch
 
-headings (17)
+headings (16)
   h2  "Recent Messages"
   h3  "No messages"
   h2  "Notifications"
@@ -18,7 +18,6 @@ headings (17)
   h3  "Personal"
   h3  "Quick Links"
   h3  "Contact"
-  h3  "Subscribe to our newsletter"
 
 landmarks (6)
   banner         1
@@ -40,8 +39,8 @@ links (10 unique, 20 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 2
 
 counts
-  elements  301
+  elements  278
   images    3
-  buttons   11
-  inputs    2
-  classes   272 (sha 6bcac40a3874)
+  buttons   10
+  inputs    1
+  classes   262 (sha f1623e3680d1)

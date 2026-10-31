@@ -6,10 +6,15 @@
  * this repo names; the login card's promised a password reset this app cannot start; the
  * sidebar's was "Logout", which revoked no session.
  *
- * These cases pin the *markup* that replaced them, which is the half `rg -n 'href="#"' app/
- * components/` cannot see: the footer draws no social row on either brand, and a row that acts
- * is a `<button type="button">` rather than a link with an empty `href`. The other half — that
- * the anchors which remain point at real routes — is `data:check` E10.
+ * The same footer also stated three things that were not true — an invented street address, a
+ * telephone number from the range reserved for fiction, and a subscribe box with no handler and
+ * no sender behind it. They are the same defect in a different element: a page asserting a fact
+ * nobody can check out.
+ *
+ * These cases pin the *markup* that replaced them, which is the half `rg` cannot see: the footer
+ * draws no social row on either brand, prints no fabricated contact row, has no subscribe band,
+ * and a row that acts is a `<button type="button">` rather than a link with an empty `href`. The
+ * other half — that the anchors which remain point at real routes — is `data:check` E10.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -55,6 +60,15 @@ describe("the footer claims no social presence it cannot back", () => {
         .map((match) => match[0].replace(/<[^>]*>/g, "").trim())
         .sort();
       expect(dead).toEqual(["Cookie Policy", "Privacy Policy", "Terms of Service"]);
+    });
+
+    it(`${brandId}: prints no invented street line, telephone number or subscribe box`, () => {
+      const html = footer(brandId);
+      expect(html).not.toMatch(/Alignment Way|Quiz Street|\b555\b/);
+      expect(html).not.toContain("Subscribe");
+      expect(html).not.toMatch(/type="email"/);
+      // The rows that survive the contact block, so this is not a claim about an empty block.
+      expect(html).toContain("Contact Support");
     });
 
     it(`${brandId}: still renders its columns, so the row was the only thing removed`, () => {

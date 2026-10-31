@@ -70,7 +70,7 @@ export function AppSidebar({
   /**
    * Sign out — for real (issue #272).
    *
-   * The row used to be a `href="#"` link: it announced "Logout", took focus, and ended nothing,
+   * The row used to be a link whose `href` was a bare hash: it announced "Logout", took focus, and ended nothing,
    * so the cookie stayed valid and the next request was still signed in. It runs the same step
    * the account page's button runs (`lib/auth/sign-out.ts`) and only navigates once the SDK says
    * the session is gone. A failure is said out loud under the row instead of being swallowed:
