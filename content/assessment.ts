@@ -24,9 +24,9 @@
  * against that other party's prediction. This file stays the shape of the content and the
  * one Gap function it shares with every other record (`gapOf` in `content/record.ts`).
  * The **Setting** (Soft/Full) is modelled below — a per-instance lens over the Gaps, and
- * never a Gap of its own. The four stages the source defines are derived in
- * `content/stages.ts`; stages 4–6 are not defined by that source and are not modelled here,
- * and the Coach is not modelled anywhere yet.
+ * never a Gap of its own. The four **relationship** stages are derived in `content/stages.ts`;
+ * the specification's A–D account states are a different ladder — billing, out of scope — and
+ * the Coach is not modelled anywhere yet.
  */
 import { z } from "zod";
 import { zId } from "./core";
