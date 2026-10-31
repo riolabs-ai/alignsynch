@@ -226,7 +226,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 ### Routes
 
 - `/affiliate` — **fixture**
-  - capability: The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA.
+  - capability: The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA. Not freely available: `commerce.affiliate` ships it off on every template, and the route answers 404 while it is off (#291).
   - components: `components/affiliate`, `components/layout`, `components/media`, `components/ui`
   - reads: 2 record fixtures — `data/flags.ts`, `data/metrics.ts`
 

@@ -131,7 +131,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub"],
     capability:
-      "The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA.",
+      "The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA. Not freely available: `commerce.affiliate` ships it off on every template, and the route answers 404 while it is off (#291).",
   },
   {
     kind: "route",
