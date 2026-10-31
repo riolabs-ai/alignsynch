@@ -18,6 +18,7 @@ import { zRouteManifest, type RouteManifest } from "./route-manifest";
 /** Routes without a dynamic segment. Order is irrelevant; `matchRoute` is exact. */
 const STATIC_ROUTES = [
   "/",
+  "/admin/gaps",
   "/admin/instances",
   "/affiliate",
   "/assessment",

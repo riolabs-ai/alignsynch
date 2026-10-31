@@ -155,6 +155,7 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "templates", label: "Templates" },
           { id: "how-it-works", label: "How it works" },
           { id: "support", label: "Support" },
+          { id: "console-gaps", label: "Gap Analysis" },
           { id: "admin-instances", label: "Relationships" },
           { id: "quiz-tools", label: "Quiz tools" },
         ],

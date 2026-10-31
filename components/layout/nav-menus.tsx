@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
   Award,
+  BarChart3,
   BookOpen,
   Compass,
   DollarSign,
@@ -300,7 +301,13 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
  * `tests/nav-brand.test.ts` holds these three hrefs to the ids the rendered page emits, so an
  * anchor cannot drift from its band.
  */
-function AlignSynchMenu({ copy, collapsed, pathname, onNavigate }: NavRenderProps) {
+function AlignSynchMenu({
+  copy,
+  collapsed,
+  pathname,
+  onNavigate,
+  viewer,
+}: NavRenderProps & { viewer: NavViewer }) {
   const nav = sectionOf(copy, "nav-alignsynch");
   return (
     <>
@@ -336,6 +343,46 @@ function AlignSynchMenu({ copy, collapsed, pathname, onNavigate }: NavRenderProp
         collapsed={collapsed}
         onNavigate={onNavigate}
       />
+      {/*
+        The console's Gap Analysis row, behind the `admin-console` capability rather than always
+        drawn (the same rule the quiz rows follow). `/admin/gaps` answers a member with the 404 a
+        URL that never existed returns (`lib/auth/require-role.ts`), so a row every viewer could
+        see would be a row that 404s for most of them — "an entry that is only visually gone is
+        still in the tab order and still announced" (this file's own note on hidden rows).
+
+        `navViewer()` grants no capability today, so this row renders for nobody yet: the
+        role → capability mapping is one function (`lib/nav.ts::navViewer`), and until it reads
+        `user_profile.role` an operator reaches the screen by URL, exactly as #156 recorded for
+        every gated surface. The row exists so the mapping is a capability, not a second menu.
+      */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/gaps"
+          icon={<BarChart3 className="size-5" />}
+          label={itemLabel(nav, "console-gaps")}
+          active={isActive(pathname, "/admin/gaps")}
+          collapsed={collapsed}
+          onNavigate={onNavigate}
+        />
+      )}
+      {/*
+        The console's Relationships registry (card 3/5, `/admin/instances`), behind the same
+        `admin-console` capability and for the same reason: the route refuses a member with the 404
+        a URL that never existed returns, so a row every viewer could see would be a row that 404s
+        for most of them. `navViewer(role)` in `lib/nav.ts` is what grants the capability — to an
+        `admin` session and to nobody else — and `lib/auth/require-role.ts` re-decides it from the
+        same request on the page itself.
+      */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/instances"
+          icon={<ShieldCheck className="size-5" />}
+          label={itemLabel(nav, "admin-instances")}
+          active={isActive(pathname, "/admin/instances")}
+          collapsed={collapsed}
+          onNavigate={onNavigate}
+        />
+      )}
     </>
   );
 }
@@ -352,24 +399,7 @@ export function AppNav({
     case "alignsynch":
       return (
         <>
-          <AlignSynchMenu {...render} />
-          {sees(viewer, "admin-console") && (
-            /**
-             * The operator's registry (console card 3/5). Drawn only for a viewer whose
-             * `user_profile.role` is `admin` — `navViewer(role)` in `lib/nav.ts` is where that
-             * becomes a capability, and `lib/auth/require-role.ts` is where the page re-decides it
-             * from the same request. A row a member can see but not open would be a link to a 404,
-             * which is the one thing an admin-only surface must not be.
-             */
-            <NavRow
-              href="/admin/instances"
-              icon={<ShieldCheck className="size-5" />}
-              label={itemLabel(sectionOf(render.copy, "nav-alignsynch"), "admin-instances")}
-              active={isActive(render.pathname, "/admin/instances")}
-              collapsed={render.collapsed}
-              onNavigate={render.onNavigate}
-            />
-          )}
+          <AlignSynchMenu {...render} viewer={viewer} />
           {sees(viewer, "quiz-surfaces") && (
             /**
              * The quiz product, for a viewer who is allowed to see it. It is the *same*
