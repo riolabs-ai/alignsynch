@@ -127,6 +127,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/gaps",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The Gap across a population: the eight kinds the model defines, counted over relationships both parties have finished, read under each relationship's own Setting. Nameless aggregates — no party, no score, no ranking — and a Setting with fewer complete relationships than the floor states that instead of charting.",
+    notes:
+      "The console's one relationship-specific screen and the only caller of `lib/admin/gap-aggregates.ts`. Its generic form is response analytics (stat cards, one distribution per measure, a comparison axis); what varies is the measure (`gapOf` over eight kinds), the population (complete instances) and the comparison (Setting). Admin only: `requireAdmin()` first, so a member gets the 404 `/demo/admin` documents. No migration and no stored aggregate — every number is a function of the `opinion` rows.",
+  },
+  {
+    kind: "route",
     surface: "/affiliate",
     status: "fixture",
     templates: ["quizhub"],
@@ -562,6 +572,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "domain",
+    surface: "components/console",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The console's generic shapes: a stat-card grid of linked figures with the Overview built from it (a header naming the viewer, four counts and the honest empty state for an account with no relationships), and the response-analytics surface — a population's numbers as stat cards, one distribution per measure and a comparison axis, taking the aggregate as a prop so the measure is a plugin rather than a component.",
+    notes:
+      "Reads nothing itself: counts and aggregates arrive as props from the route that read Postgres, which is why the domain is `mock` and the `/dashboard` and `/admin/gaps` routes above it are `db` (the same split `components/assessment` records). `stat-card-grid.tsx` is the extracted shape of `components/dashboard/dashboard-overview.tsx` with its metrics removed — `value` is a `number` the caller computed — so the next expression can pass its own rows through the grid without inheriting a wallet balance. Its two callers are `/dashboard` (the viewer's own counts, `lib/flow/overview.ts`) and `/admin/gaps` with AlignSynch's measure (`gapOf` over the eight kinds, `lib/admin/gap-aggregates.ts`); the quiz expression of the analytics surface is the per-question correct rate `components/my-quizzes/quiz-statistics.tsx` mocks. `data/pages/overview.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "domain",
     surface: "components/chat",
     status: "fixture",
     templates: [],
@@ -569,16 +589,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "The chat surfaces: conversation list, thread, composer, message bubble, search and a small dropdown.",
     notes:
       "No template claims messaging yet — the same scope decision as /chat, recorded here so the domain is not orphaned in the catalogue.",
-  },
-  {
-    kind: "domain",
-    surface: "components/console",
-    status: "mock",
-    templates: ["alignsynch"],
-    capability:
-      "The console's two generic shapes: a stat-card grid of linked figures, and the Overview built from it — a header naming the viewer, four counts, and the honest empty state for an account with no relationships yet.",
-    notes:
-      "Reads nothing itself — the counts arrive as props from the route that read Postgres, which is why the domain is `mock` and `/dashboard` above it is `db` (the same split `components/assessment` records). `stat-card-grid.tsx` is the extracted shape of `components/dashboard/dashboard-overview.tsx` with its metrics removed: `value` is a `number` the caller computed, so the next expression can pass its own rows through the grid without inheriting a wallet balance. `data/pages/overview.ts` holds every word (E23 budget 0).",
   },
   {
     kind: "domain",
