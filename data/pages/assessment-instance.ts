@@ -80,6 +80,24 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "failed", label: "The invitation could not be sent. Send this link yourself:" },
         { id: "link-label", label: "Invitation for {counterparty}" },
+        // #257 — the copy control beside that link. Three sentences, because there are three
+        // things that can happen and only one of them is a success: the link is on the
+        // clipboard, the browser refused and the link's text is selected for the reader, or the
+        // browser refused *and* the text could not be selected. The last one claims no
+        // selection, because a message that says "it is selected now" when it is not is worse
+        // than no message — the reader would paste nothing.
+        { id: "copy", label: "Copy link" },
+        { id: "copy-done", label: "Link copied — paste it into a message to {counterparty}." },
+        {
+          id: "copy-manual",
+          label:
+            "Your browser would not let the page copy the link, so it is selected above — press Ctrl+C or ⌘C to copy it.",
+        },
+        {
+          id: "copy-unavailable",
+          label:
+            "Your browser would not copy the link, and it could not be selected for you — select it above and copy it yourself.",
+        },
         { id: "claimed", label: "{counterparty} has claimed the invitation" },
         { id: "unclaimed", label: "{counterparty} has not claimed the invitation yet" },
       ],

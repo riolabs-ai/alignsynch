@@ -33,6 +33,7 @@
  */
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
+import { InviteLink } from "@/components/assessment-flow/invite-link";
 import { MODE_LABELS } from "@/content/assessment";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
@@ -142,7 +143,9 @@ export function AssessmentInstanceView({
               )}
 
               {/* The link is drawn wherever it exists, whatever the email did — a broken
-                  mailer must never make the invitation unshareable (#220). */}
+                  mailer must never make the invitation unshareable (#220). The copy control
+                  beside it is #257: the link stays text a reader can select, and the button
+                  only saves them the mouse work. */}
               {screen.invite.link === null ? null : (
                 <p className="mt-2" data-invite-link>
                   <span className="block text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -150,7 +153,11 @@ export function AssessmentInstanceView({
                       counterparty: screen.invite.counterpartyName,
                     })}
                   </span>
-                  <code className="break-all text-xs text-primary">{screen.invite.link}</code>
+                  <InviteLink
+                    link={screen.invite.link}
+                    copy={inviteBand}
+                    counterpartyName={screen.invite.counterpartyName}
+                  />
                 </p>
               )}
             </section>

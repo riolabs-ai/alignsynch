@@ -14,7 +14,7 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **43** — 29 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 231 files under `components/`, 227 of them `.tsx`
+- component domains: **32** — 232 files under `components/`, 228 of them `.tsx`
 - route handlers: **6** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 10 · **fixture** 51 · **db** 9 · **live** 5
 - templates: Both templates 19 · AlignSynch 12 · QuizHub 42 · No template yet 2
@@ -156,7 +156,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered.
   - components: `components/assessment`, `components/assessment-flow`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `lib/auth/server.ts`
-  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404.
+  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
 
 - `/assessment/templates/new` — **fixture**
   - capability: Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.
@@ -196,7 +196,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (6): `answer-form.tsx`, `instance-view.tsx`, `invite-view.tsx`, `my-instances.tsx`, `template-form.tsx`, `template-list.tsx`
+  - files (7): `answer-form.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `template-form.tsx`, `template-list.tsx`
   - routes (5): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/templates/new`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
