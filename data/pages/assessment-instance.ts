@@ -30,10 +30,21 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "answer",
       heading: "Answer every Aspect",
-      body: "Two scores each, from 1 to 5: how it feels now, and how you wish it to be. Your answers are yours alone until you have both submitted.",
       items: [
+        {
+          id: "body-basic",
+          label:
+            "Two scores each, from 1 to 5: how it feels now, and how you wish it to be. Your answers are yours alone until you have both submitted.",
+        },
+        {
+          id: "body-advanced",
+          label:
+            "Four scores each, from 1 to 5: how it feels now, how you wish it to be, how you think they feel, and how you guess they feel. Your answers are yours alone until you have both submitted.",
+        },
         { id: "feel", label: "Feel" },
         { id: "wish", label: "Wish" },
+        { id: "think", label: "Think" },
+        { id: "guess", label: "Guess" },
         { id: "submit", label: "Submit answers" },
         { id: "resubmit", label: "Update answers" },
       ],
@@ -75,7 +86,8 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         },
         {
           id: "incomplete",
-          label: "Every Aspect needs both scores — how it feels now, and how you wish it to be.",
+          label:
+            "Every Aspect needs a score for every opinion this mode asks — Feel and Wish in Basic Mode, all four in Advanced Mode.",
         },
         { id: "not-a-party", label: "This instance is not yours to answer." },
         { id: "no-such-instance", label: "No instance answers to that link." },
