@@ -11,10 +11,13 @@
  *   * a token is 43 base64url characters, is stored only as a SHA-256 hash, and an invite
  *     expires seven days after it is minted.
  *
- * The email's degraded path is here too: with no `RESEND_API_KEY`, nothing is sent and the
- * caller is told why — which is the branch that makes the in-app link the working flow.
+ * The email's degraded paths are here too, and there are two of them (#220): with no
+ * `RESEND_API_KEY` nothing is sent because no mailer is configured (`unset`), and with a key
+ * present but the provider refusing (429, an unverified domain, an unreachable host) the send
+ * was attempted and failed (`failed`). Both leave the in-app link as the working flow; only
+ * the server log says which one happened, and the reader is never told a variable's name.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   inviteExpiry,
   INVITE_TTL_MS,
@@ -285,6 +288,7 @@ describe("the invitation", () => {
   it("sends nothing and says why when RESEND_API_KEY is absent", async () => {
     const previous = process.env.RESEND_API_KEY;
     delete process.env.RESEND_API_KEY;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       const outcome = await sendInvitation({
         to: "rowan@example.com",
@@ -292,10 +296,107 @@ describe("the invitation", () => {
         text: "text",
         link: "http://localhost:3000/invite/x",
       });
-      expect(outcome.sent).toBe(false);
-      expect(outcome.reason).toContain("RESEND_API_KEY");
+      // `unset` is "no mailer here", not "a mailer refused" (#220): the two get different
+      // sentences on screen and different responses from whoever debugs them.
+      expect(outcome.outcome).toBe("unset");
+      const line = warn.mock.calls.map((call) => call.join(" ")).join("\n");
+      expect(line).toContain("RESEND_API_KEY");
+      // The operator's line, never the reader's: no recipient, no token, no link.
+      expect(line).not.toContain("rowan@example.com");
+      expect(line).not.toContain("/invite/");
     } finally {
+      warn.mockRestore();
       if (previous !== undefined) process.env.RESEND_API_KEY = previous;
+    }
+  });
+
+  it("reports `failed`, not `unset`, when the provider refuses a send with 429", async () => {
+    const previous = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "re_test_key";
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const outcome = await sendInvitation(
+        {
+          to: "rowan@example.com",
+          subject: "subject",
+          text: "text",
+          link: "http://localhost:3000/invite/x",
+        },
+        async () =>
+          new Response(
+            JSON.stringify({ message: "rate limit exceeded", to: "rowan@example.com" }),
+            {
+              status: 429,
+            },
+          ),
+      );
+      expect(outcome.outcome).toBe("failed");
+      // No `unset`: a key was present and a request was made, so telling anybody the key is
+      // missing would send them to look at the one thing that is already right.
+      expect(warn).not.toHaveBeenCalled();
+      const line = error.mock.calls.map((call) => call.join(" ")).join("\n");
+      expect(line).toContain("429");
+      // The status, not the provider's body: it echoes the recipient back.
+      expect(line).not.toContain("rate limit exceeded");
+      expect(line).not.toContain("rowan@example.com");
+      expect(line).not.toContain("/invite/");
+    } finally {
+      error.mockRestore();
+      warn.mockRestore();
+      if (previous === undefined) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = previous;
+    }
+  });
+
+  it("reports `failed` with the transport's code when the provider is unreachable", async () => {
+    const previous = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "re_test_key";
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const refusal = Object.assign(new Error("fetch failed"), { code: "ECONNREFUSED" });
+      const outcome = await sendInvitation(
+        {
+          to: "rowan@example.com",
+          subject: "subject",
+          text: "text",
+          link: "http://localhost:3000/invite/x",
+        },
+        async () => {
+          throw refusal;
+        },
+      );
+      expect(outcome.outcome).toBe("failed");
+      const line = error.mock.calls.map((call) => call.join(" ")).join("\n");
+      expect(line).toContain("ECONNREFUSED");
+      expect(line).not.toContain("api.resend.com");
+    } finally {
+      error.mockRestore();
+      if (previous === undefined) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = previous;
+    }
+  });
+
+  it("reports `sent` when the provider accepts the message", async () => {
+    const previous = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "re_test_key";
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const outcome = await sendInvitation(
+        {
+          to: "rowan@example.com",
+          subject: "subject",
+          text: "text",
+          link: "http://localhost:3000/invite/x",
+        },
+        async () => new Response(JSON.stringify({ id: "email_1" }), { status: 200 }),
+      );
+      expect(outcome.outcome).toBe("sent");
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+      if (previous === undefined) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = previous;
     }
   });
 });

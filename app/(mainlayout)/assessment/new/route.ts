@@ -19,9 +19,12 @@ import {
  * proved by two browser sessions doing exactly what a person does.
  *
  * One transaction does the work — copy the Aspects, the Initiator's party row, the
- * invitation — and only after the commit is the email attempted. A Resend failure is
- * therefore *not* a failed creation: the redirect carries `invite=sent|unsent`, and the
- * instance screen shows the link when nothing was emailed.
+ * invitation — and only after the commit is the email attempted. A mail failure is
+ * therefore *not* a failed creation: the redirect carries `invite=sent|unset|failed`, and the
+ * instance screen shows the link whenever the mail did not carry it (#220). The three values
+ * are the send's own outcome, not a boolean guess: `unset` means no mailer is configured,
+ * `failed` means one was and it refused, and the screen's sentence — and the operator's
+ * response — differ.
  *
  * **The creator's account is read from the session, not from the post** (#213 follow-up). The
  * form carries two names, an address and a mode; it carries no identity, and none is read from
@@ -75,6 +78,10 @@ export async function POST(request: Request): Promise<Response> {
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
 
+  // `sendInvitation` reports three outcomes and never throws. The `.catch` is a belt and not
+  // a path: if this function ever did throw, the creation already committed, so the screen
+  // must still offer the link — which it does whenever `screen.invite.link` exists — and the
+  // notice says only that the send failed, because a thrown error is not a diagnosis.
   const outcome = await sendInvitation(
     invitationMessage({
       to: value("email").trim(),
@@ -83,10 +90,13 @@ export async function POST(request: Request): Promise<Response> {
       templateTitle: created.templateTitle,
       token: created.inviteToken,
     }),
-  ).catch(() => ({ sent: false }));
+  ).catch(() => {
+    console.error("[invite] the send threw, which it must not — the link is shown in the app");
+    return { outcome: "failed" as const };
+  });
 
   const target = new URL(instancePath(created.instanceRecordId), request.url);
-  target.searchParams.set("invite", outcome.sent ? "sent" : "unsent");
+  target.searchParams.set("invite", outcome.outcome);
   // 303: the browser follows with a GET, so a reload of the instance screen cannot create
   // a second instance.
   return NextResponse.redirect(target, 303);

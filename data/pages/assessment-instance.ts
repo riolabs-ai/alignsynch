@@ -68,10 +68,17 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       id: "invite",
       items: [
         { id: "sent", label: "Invitation emailed to {email}" },
+        // Two ways for a send not to happen, and they are not the same sentence (#220). `unset`
+        // is a deployment with no mailer — it may name that fact to an operator, but never the
+        // variable, whose name is in the server log. `failed` is a send that was attempted and
+        // refused: it says only that, because the cause (a rate limit, an unverified domain, a
+        // bad recipient) is not something the reader can see or act on.
         {
-          id: "unsent",
-          label: "No email was sent — RESEND_API_KEY is not set. Send this link yourself:",
+          id: "unset",
+          label:
+            "No email was sent — this deployment has no mail sender configured. Send this link yourself:",
         },
+        { id: "failed", label: "The invitation could not be sent. Send this link yourself:" },
         { id: "link-label", label: "Invitation for {counterparty}" },
         { id: "claimed", label: "{counterparty} has claimed the invitation" },
         { id: "unclaimed", label: "{counterparty} has not claimed the invitation yet" },

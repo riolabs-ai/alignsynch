@@ -192,8 +192,8 @@ async function main() {
   const instancePath = `/assessment/instances/${instanceId}`;
   const inviteNotice = new URL(location, BASE_URL).searchParams.get("invite");
   check(
-    "with no RESEND_API_KEY the redirect says the email was not sent",
-    inviteNotice === "unsent",
+    "with no RESEND_API_KEY the redirect says the emailer was not configured",
+    inviteNotice === "unset",
     `invite=${inviteNotice}`,
   );
   check(
@@ -213,8 +213,8 @@ async function main() {
   );
 
   /* 2. invite ------------------------------------------------------- */
-  // The creation redirect carries `?invite=unsent`; the notice is a fact about that instant,
-  // so the probe reads the screen the redirect pointed at.
+  // The creation redirect carries `?invite=unset` (no key in this run); the notice is a fact
+  // about that instant, so the probe reads the screen the redirect pointed at.
   const initiatorScreen = await initiator.get(`${instancePath}?invite=${inviteNotice}`);
   check(
     "the initiator's screen renders",
@@ -231,6 +231,11 @@ async function main() {
   const link = linkMatch[0];
   const token = link.split("/invite/")[1];
   check("the screen says no email was sent", initiatorScreen.html.includes("No email was sent"));
+  // #220: the reader is told the outcome, never the deployment's configuration.
+  check(
+    "the screen names no environment variable",
+    !initiatorScreen.html.includes("RESEND_API_KEY"),
+  );
   check(
     "the screen shows the answer sheet while the invite is unclaimed",
     initiatorScreen.html.includes(`name="feel:${TIME}"`),

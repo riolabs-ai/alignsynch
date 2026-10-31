@@ -1,4 +1,8 @@
-import { AssessmentInstanceView, problemCodeOf } from "@/components/assessment-flow/instance-view";
+import {
+  AssessmentInstanceView,
+  inviteNoticeOf,
+  problemCodeOf,
+} from "@/components/assessment-flow/instance-view";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
@@ -24,7 +28,7 @@ import type { Metadata } from "next";
  *
  * `force-dynamic`, and no `generateStaticParams`: both would be a database read at build.
  *
- * The invite notice (`?invite=sent|unsent`) is the creation redirect's own fact. It is
+ * The invite notice (`?invite=sent|unset|failed`) is the creation redirect's own fact. It is
  * dropped from the URL by a redirect to the same screen without it, so a reload does not
  * keep claiming an email was sent.
  */
@@ -77,10 +81,12 @@ export default async function AssessmentInstancePage({
   });
   if (screen === undefined) notFound();
 
-  // `?invite=sent|unsent` is the creation redirect's own fact, kept in the address rather
-  // than in a second cookie: it is one visit's sentence, and the panel below renders it
-  // once. Nothing on this screen decides anything from it.
-  const inviteNotice = invite === "sent" || invite === "unsent" ? invite : undefined;
+  // `?invite=sent|unset|failed` is the creation redirect's own fact, kept in the address
+  // rather than in a second cookie: it is one visit's sentence, and the panel below renders
+  // it once. Nothing on this screen decides anything from it — and a value this build does
+  // not know renders nothing, because guessing which kind of not-sent it was is the bug
+  // (#220): `unset` and `failed` are different facts and get different sentences.
+  const inviteNotice = inviteNoticeOf(invite);
   const problemCode = problemCodeOf(problem);
 
   return (
