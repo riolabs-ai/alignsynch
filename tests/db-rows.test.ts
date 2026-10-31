@@ -50,7 +50,11 @@ function instanceRows(instance: AssessmentInstance): AssessmentInstanceRows {
       right_value: item.rightValue,
     })),
     options: [],
-    instance: { record_id: instance.id, template_record_id: instance.templateId },
+    instance: {
+      record_id: instance.id,
+      template_record_id: instance.templateId,
+      mode: instance.mode,
+    },
     parties: instance.parties.map((party) => ({
       instance_record_id: instance.id,
       role: party.role,
@@ -189,6 +193,25 @@ describe("the schema still decides", () => {
     };
 
     expect(() => assessmentTemplateFromRows(wrongType)).toThrow(/type/);
+  });
+
+  /** #213 — the mode is a column, and the parse is what makes a bad value drift. */
+  test("an instance row's mode round-trips through the schema", () => {
+    for (const instance of assessmentInstances) {
+      const rows = instanceRows(instance);
+      expect(assessmentInstanceFromRows(rows).mode).toBe(instance.mode);
+    }
+    // Both values are exercised by the fixture itself: three Basic rows, one Advanced.
+    expect(assessmentInstances.map((instance) => instance.mode)).toContain("advanced");
+    expect(assessmentInstances.map((instance) => instance.mode)).toContain("basic");
+  });
+
+  test("a mode the model does not define is rejected, and the instance is named", () => {
+    const rows = instanceRows(assessmentInstances[0]);
+    const drifted = { ...rows, instance: { ...rows.instance, mode: "nonsense" } };
+
+    expect(() => assessmentInstanceFromRows(drifted)).toThrow(/instance "avery-rowan"/);
+    expect(() => assessmentInstanceFromRows(drifted)).toThrow(/mode/);
   });
 });
 

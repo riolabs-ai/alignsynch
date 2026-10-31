@@ -28,7 +28,7 @@ links (6 unique, 7 total)
   /support                                             1
 
 counts
-  elements  449
+  elements  374
   images    1
   buttons   8
   inputs    1

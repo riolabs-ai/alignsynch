@@ -25,7 +25,7 @@ export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
           <Link
             href={articlePath(tip)}
             key={tip.id}
-            className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 hover:border-purple-300 hover:shadow-md transition-all"
+            className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 hover:border-action/40 hover:shadow-md transition-all"
           >
             <div className="aspect-video relative">
               <Media
@@ -40,7 +40,7 @@ export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
 
             <div className="p-6">
               <div className="flex items-center mb-3">
-                <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-action/10 text-action">
                   {tipCategoryName(tip.categoryIds[0] ?? "")}
                 </span>
                 <div className="flex items-center ml-auto text-sm text-gray-500 dark:text-gray-200">
@@ -49,7 +49,7 @@ export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
                 </div>
               </div>
 
-              <h3 className="text-xl font-bold mb-2 group-hover:text-purple-700 transition-colors">
+              <h3 className="text-xl font-bold mb-2 group-hover:text-action transition-colors">
                 {tip.title}
               </h3>
 
@@ -66,7 +66,7 @@ export default function FeaturedTips({ copy }: { copy: PageCopySection }) {
                   <span className="text-sm font-medium">{tip.author.name}</span>
                 </div>
 
-                <span className="text-purple-600 group-hover:translate-x-1 transition-transform flex items-center">
+                <span className="text-action group-hover:translate-x-1 transition-transform flex items-center">
                   {itemLabel(copy, "read-more")} <ArrowRight size={16} className="ml-1" />
                 </span>
               </div>

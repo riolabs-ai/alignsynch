@@ -9,9 +9,9 @@
  *   Value      two per Aspect — a Left Value (the low/left/min end, notch 1) and a
  *              Right Value (the high/right/max end, notch 5).
  *   Opinion    four per Aspect per party, each a score 1..5: Feel, Wish, Think, Guess.
- *   Mode       two — Basic adds Feel & Wish, Advanced adds Think & Guess. The schema
- *              *allows* four; it does not compute one from another, and it does not
- *              remember which mode an instance was played in.
+ *   Mode       two — Basic asks Feel & Wish, Advanced asks all four. An instance
+ *              **records** its mode (fixed at creation, checked below), so a Basic
+ *              sheet and an Advanced one can never be compared by accident.
  *
  * A template holds Aspects and has no parties. An **instance** is a template copied
  * and given parties — the glossary's Create (Template > Relationship) — so the
@@ -49,6 +49,28 @@ export const BASIC_OPINION_KINDS = ["feel", "wish"] as const;
  * Advanced is not a mode, and the refinement below rejects it.
  */
 export const ADVANCED_OPINION_KINDS = ["think", "guess"] as const;
+
+/**
+ * The two modes an instance is played in. A mode is the **whole** play: Basic asks Feel
+ * and Wish on every Aspect, Advanced asks all four. An instance is one mode, fixed at
+ * creation — half of Advanced is not a mode, and neither is a sheet that switches.
+ */
+export const zAssessmentMode = z.enum(["basic", "advanced"]);
+
+export type AssessmentMode = z.infer<typeof zAssessmentMode>;
+
+export const ASSESSMENT_MODES = zAssessmentMode.options;
+
+/** The opinion kinds a mode asks, in the glossary's order. */
+export function opinionKindsFor(mode: AssessmentMode): readonly OpinionKind[] {
+  return mode === "basic" ? BASIC_OPINION_KINDS : OPINION_KINDS;
+}
+
+/** The glossary's own two words, authored once in the model: "Basic Mode" / "Advanced Mode". */
+export const MODE_LABELS: Record<AssessmentMode, string> = {
+  basic: "Basic Mode",
+  advanced: "Advanced Mode",
+};
 
 /**
  * One party's opinions for one Aspect: two to four, each a score 1..5.
@@ -163,6 +185,12 @@ export const zAssessmentInstanceObject = zTemplateObject
     templateId: zId,
     /** The copy. Equal to the template's Aspects; E31 fails a copy that drifted. */
     items: z.array(zAspect).min(1),
+    /**
+     * Which mode the instance is played in — decided when it is created and never
+     * changed. The refinement below makes `basic ⇔ Think/Guess absent` true by
+     * construction, which is what a report needs before it draws a Gap.
+     */
+    mode: zAssessmentMode,
     /** Two parties: the glossary's Initiator and Counterparty, one each. */
     parties: z.tuple([zParty, zParty]),
   })
@@ -207,6 +235,30 @@ export const zAssessmentInstance = zAssessmentInstanceObject
           });
         }
       }
+    });
+
+    // An instance is ONE mode: Basic means Think and Guess are absent everywhere,
+    // Advanced means they are answered everywhere. `zOpinions` already rejects a
+    // think-without-guess pair, so checking `think` alone decides it. This is the
+    // schema half of "a report never silently compares a Basic answer with an
+    // Advanced one" — the value is a column, and the mixed state is unrepresentable.
+    instance.parties.forEach((party, partyIndex) => {
+      party.opinions.forEach((entry, opinionIndex) => {
+        if (instance.mode === "basic" && entry.opinions.think !== undefined) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["parties", partyIndex, "opinions", opinionIndex, "opinions"],
+            message: `party "${party.name}" answers Aspect "${entry.itemId}" in Advanced (Think/Guess), but this instance is ${MODE_LABELS.basic}`,
+          });
+        }
+        if (instance.mode === "advanced" && entry.opinions.think === undefined) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["parties", partyIndex, "opinions", opinionIndex, "opinions"],
+            message: `party "${party.name}" answers Aspect "${entry.itemId}" with only Feel/Wish, but this instance is ${MODE_LABELS.advanced} — Think and Guess are owed on every Aspect`,
+          });
+        }
+      });
     });
   });
 

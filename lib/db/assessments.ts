@@ -40,6 +40,7 @@ const INSTANCE_BY_SLUG_SQL = `
   SELECT
     ${RECORD_JSON},
     ai.template_record_id,
+    ai.mode,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
       '[]'::json
@@ -92,6 +93,7 @@ const TEMPLATE_BY_ID_SQL = `
 interface InstanceQueryRow {
   readonly record: RecordRow;
   readonly template_record_id: string;
+  readonly mode: string;
   readonly items: readonly ItemRow[];
   readonly options: readonly OptionRow[];
   readonly parties: readonly PartyRow[];
@@ -116,6 +118,7 @@ const SCREEN_BY_SLUG_SQL = `
   SELECT
     ${RECORD_JSON},
     ai.template_record_id,
+    ai.mode,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
       '[]'::json
@@ -179,6 +182,7 @@ export async function readAssessmentInstanceRowsBySlug(
   const instance: InstanceRow = {
     record_id: row.record.id,
     template_record_id: row.template_record_id,
+    mode: row.mode,
   };
   return {
     record: row.record,
@@ -248,7 +252,11 @@ export const readAssessmentScreenBySlug = cache(
         record: row.record,
         items: row.items,
         options: row.options,
-        instance: { record_id: row.record.id, template_record_id: row.template_record_id },
+        instance: {
+          record_id: row.record.id,
+          template_record_id: row.template_record_id,
+          mode: row.mode,
+        },
         parties: row.parties,
         opinions: row.opinions,
       }),
@@ -263,14 +271,15 @@ export const readAssessmentScreenBySlug = cache(
 
 /** Every instance, in slug order — `db:verify` walks this. */
 export async function listAssessmentInstances(): Promise<
-  { slug: string; recordId: string; templateRecordId: string }[]
+  { slug: string; recordId: string; templateRecordId: string; mode: string }[]
 > {
   const rows = await queryRows<{
     slug: string;
     record_id: string;
     template_record_id: string;
+    mode: string;
   }>(
-    `SELECT r.slug, ai.record_id, ai.template_record_id
+    `SELECT r.slug, ai.record_id, ai.template_record_id, ai.mode
        FROM assessment_instance ai
        JOIN record r ON r.id = ai.record_id
       WHERE r.record_type = 'assessment'
@@ -280,6 +289,7 @@ export async function listAssessmentInstances(): Promise<
     slug: row.slug,
     recordId: row.record_id,
     templateRecordId: row.template_record_id,
+    mode: row.mode,
   }));
 }
 

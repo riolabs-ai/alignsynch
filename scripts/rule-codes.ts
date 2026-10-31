@@ -145,6 +145,16 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
+    owner: "the client/server import boundary (scripts/client-graph.ts — issue #228)",
+    // Two files for the same reason the bundle group has two: the code is *minted* where the
+    // rule lives (a finding carries `rule: "E34"`), and `data-check.ts` mints it once more for
+    // the coverage guard — "the walk read 0 client entries" is a failure of the same rule.
+    files: ["client-graph.ts", "data-check.ts"],
+    codes: {
+      E34: 'no `"use client"` module reaches a server-only module (`lib/db/**`, `pg`, a Node builtin) — the browser graph cannot load it and the route 500s at request time',
+    },
+  },
+  {
     owner: "bundle import/export (scripts/bundles.ts, content/bundle.ts — issue #147)",
     // Two files, because the refusal is authored in the model and raised by the CLI: the
     // codes are *minted* where the rule lives (`content/bundle.ts` detects B1–B4/B6) and B5

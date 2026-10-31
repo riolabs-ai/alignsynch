@@ -132,12 +132,16 @@ class Jar {
 const db = new Client({ connectionString: process.env.DATABASE_URL });
 const created = [];
 
-function answers({ feel, wish }, overrides = {}) {
+function answers({ feel, wish, think, guess }, overrides = {}) {
   const fields = {};
   for (const itemId of ASPECT_IDS) {
-    const pair = overrides[itemId] ?? { feel, wish };
+    const pair = overrides[itemId] ?? { feel, wish, think, guess };
     fields[`feel:${itemId}`] = String(pair.feel);
     fields[`wish:${itemId}`] = String(pair.wish);
+    // Advanced kinds only when the caller names them: a Basic sheet must not carry a field
+    // its instance's mode does not ask, or the refusal this card adds would be swallowed.
+    if (pair.think !== undefined) fields[`think:${itemId}`] = String(pair.think);
+    if (pair.guess !== undefined) fields[`guess:${itemId}`] = String(pair.guess);
   }
   return fields;
 }
@@ -168,6 +172,9 @@ async function main() {
     initiatorName: "Avery E2E",
     counterpartyName: "Rowan E2E",
     email: "rowan-e2e@example.com",
+    // The create form's radios (#213). Without one the store refuses: a mode is chosen, never
+    // defaulted, so a post cannot pick a sheet the form did not offer.
+    mode: "basic",
   });
   check(
     "POST /assessment/new answers 303",
@@ -226,6 +233,35 @@ async function main() {
   check(
     "the screen shows the answer sheet while the invite is unclaimed",
     initiatorScreen.html.includes(`name="feel:${TIME}"`),
+  );
+
+  /* 1b. the sheet Basic Mode asks (#213) ----------------------------- */
+  const basicSelects = (initiatorScreen.html.match(/<select /g) ?? []).length;
+  check(
+    "a Basic instance asks two scores on every Aspect, and only two",
+    basicSelects === ASPECT_IDS.length * 2,
+    `${basicSelects} selects for ${ASPECT_IDS.length} Aspects`,
+  );
+  check(
+    "it asks Feel then Wish, and names no Think or Guess field",
+    initiatorScreen.html.includes(`name="feel:${TIME}"`) &&
+      initiatorScreen.html.includes(`name="wish:${TIME}"`) &&
+      !initiatorScreen.html.includes(`name="think:${TIME}"`) &&
+      !initiatorScreen.html.includes(`name="guess:${TIME}"`),
+  );
+  check(
+    "the instance screen names the mode it was played in",
+    initiatorScreen.html.includes('data-mode="basic"') &&
+      initiatorScreen.html.includes("Basic Mode"),
+    'data-mode="basic"',
+  );
+  const basicModeRow = await db.query("SELECT mode FROM assessment_instance WHERE record_id = $1", [
+    instanceId,
+  ]);
+  check(
+    "the row records mode=basic",
+    basicModeRow.rows[0]?.mode === "basic",
+    `mode=${basicModeRow.rows[0]?.mode}`,
   );
 
   const inviteRow = await db.query(
@@ -448,6 +484,34 @@ async function main() {
     `n=${initiatorAfterRefusal.rows[0].n}`,
   );
 
+  /* 3d. a Basic instance refuses an Advanced field (#213) ------------ */
+  // The sheet is the mode's sheet. A Think score posted against a Basic instance is a
+  // refusal, not a field the server quietly drops — the same "silent success" rule the
+  // freeze and the missing-score cases already enforce.
+  const advancedFieldOnBasic = await initiator.post(`${instancePath}/answers`, {
+    ...answers({ feel: 2, wish: 5 }),
+    [`think:${TIME}`]: "4",
+  });
+  check(
+    "a Basic submit carrying a Think score is refused with 409",
+    advancedFieldOnBasic.status === 409,
+    `status ${advancedFieldOnBasic.status}`,
+  );
+  check(
+    "the refusal names the kind and the mode",
+    advancedFieldOnBasic.html.includes("is not an opinion kind this instance"),
+    advancedFieldOnBasic.html.match(/<li>[^<]*<\/li>/)?.[0],
+  );
+  const afterBasicRefusal = await db.query(
+    "SELECT count(*)::int AS n FROM opinion WHERE instance_record_id = $1",
+    [instanceId],
+  );
+  check(
+    "the refused Basic+Think post wrote no opinion row",
+    afterBasicRefusal.rows[0].n === 0,
+    `n=${afterBasicRefusal.rows[0].n}`,
+  );
+
   /* 4. blind: only the Initiator has answered ----------------------- */
   const initiatorSubmit = await initiator.post(
     `${instancePath}/answers`,
@@ -605,6 +669,135 @@ async function main() {
     "no column anywhere is named like a Gap",
     gapColumns.rows[0].n === 0,
     `${gapColumns.rows[0].n}`,
+  );
+
+  /* 10. Advanced Mode: four scores, four Gaps (#213) ------------------ */
+  // The card's second instance. It is created here rather than seeded, so the proof is that
+  // the *flow* can produce an Advanced instance — the gap #213 names was that only the seeded
+  // demo showed all four, and a newly created instance could not.
+  const advInitiator = new Jar("advanced-initiator");
+  const advCounterparty = new Jar("advanced-counterparty");
+  const advCreate = await advInitiator.post("/assessment/new", {
+    templateRecordId: TEMPLATE_ID,
+    initiatorName: "Noor E2E",
+    counterpartyName: "Iris E2E",
+    email: "iris-e2e@example.com",
+    mode: "advanced",
+  });
+  check(
+    "an Advanced instance is created with 303",
+    advCreate.status === 303,
+    `status ${advCreate.status}`,
+  );
+  const advMatch = (advCreate.location ?? "").match(/\/assessment\/instances\/([0-9a-f-]{36})/);
+  if (advMatch === null) throw new Error("no instance id in the advanced redirect");
+  const advInstanceId = advMatch[1];
+  created.push(advInstanceId);
+  const advPath = `/assessment/instances/${advInstanceId}`;
+
+  const advScreen = await advInitiator.get(advPath);
+  check(
+    "the Advanced instance screen renders",
+    advScreen.status === 200,
+    `status ${advScreen.status}`,
+  );
+  const advSelects = (advScreen.html.match(/<select /g) ?? []).length;
+  check(
+    "an Advanced instance asks four scores on every Aspect, and only four",
+    advSelects === ASPECT_IDS.length * 4,
+    `${advSelects} selects for ${ASPECT_IDS.length} Aspects`,
+  );
+  const advFieldOrder = [...advScreen.html.matchAll(new RegExp(`name="(\\w+):${TIME}"`, "g"))].map(
+    (match) => match[1],
+  );
+  check(
+    "the four are asked in the glossary's order",
+    advFieldOrder.join(",") === "feel,wish,think,guess",
+    advFieldOrder.join(","),
+  );
+  check(
+    "the screen names Advanced Mode",
+    advScreen.html.includes('data-mode="advanced"') && advScreen.html.includes("Advanced Mode"),
+    'data-mode="advanced"',
+  );
+  const advModeRow = await db.query("SELECT mode FROM assessment_instance WHERE record_id = $1", [
+    advInstanceId,
+  ]);
+  check(
+    "the row records mode=advanced",
+    advModeRow.rows[0]?.mode === "advanced",
+    `mode=${advModeRow.rows[0]?.mode}`,
+  );
+
+  const advLink = advScreen.html.match(/https?:\/\/[^\s"<>]+\/invite\/[A-Za-z0-9_-]{43}/)?.[0];
+  check("the Advanced screen shows its invitation link", advLink !== undefined, advLink);
+  if (advLink === undefined) throw new Error("no invitation link on the advanced screen");
+  const advToken = advLink.split("/invite/")[1];
+  const advInvitePage = await advCounterparty.get(`/invite/${advToken}`);
+  check(
+    "the Advanced invitation page renders for the Counterparty",
+    advInvitePage.status === 200,
+    `status ${advInvitePage.status}`,
+  );
+  const advClaim = await advCounterparty.post(`/invite/${advToken}/claim`, {
+    confirm: "Iris E2E",
+  });
+  check(
+    "claiming the Advanced invitation answers 303",
+    advClaim.status === 303,
+    `status ${advClaim.status}`,
+  );
+
+  const shortSheet = await advInitiator.post(`${advPath}/answers`, answers({ feel: 2, wish: 5 }));
+  check(
+    "an Advanced submit that skips Think and Guess is refused with 409",
+    shortSheet.status === 409,
+    `status ${shortSheet.status}`,
+  );
+  check(
+    "the refusal says the pair comes together",
+    shortSheet.html.includes("Think and Guess come together"),
+    "the pair rule",
+  );
+
+  const advInitiatorSubmit = await advInitiator.post(
+    `${advPath}/answers`,
+    answers({ feel: 2, wish: 5, think: 4, guess: 1 }),
+  );
+  check(
+    "the Advanced Initiator submits four scores",
+    advInitiatorSubmit.status === 303,
+    `status ${advInitiatorSubmit.status}`,
+  );
+  const advCounterpartySubmit = await advCounterparty.post(
+    `${advPath}/answers`,
+    answers({ feel: 5, wish: 3, think: 3, guess: 4 }),
+  );
+  check(
+    "the Advanced Counterparty submits four scores",
+    advCounterpartySubmit.status === 303,
+    `status ${advCounterpartySubmit.status}`,
+  );
+
+  const advReport = await advInitiator.get(advPath);
+  const advRow = advReport.html.match(new RegExp(`<section[^>]*data-aspect="${TIME}"[^>]*>`))?.[0];
+  check(
+    "the Advanced report draws a Gap for every opinion kind",
+    advRow?.includes('data-feel-gap="3"') === true &&
+      advRow.includes('data-wish-gap="2"') &&
+      advRow.includes('data-think-gap="1"') &&
+      advRow.includes('data-guess-gap="3"'),
+    advRow?.slice(0, 220) ?? "no row",
+  );
+  const advGapAttributes = (advReport.html.match(/data-(feel|wish|think|guess)-gap=/g) ?? [])
+    .length;
+  check(
+    "every Aspect carries four Gaps (5 × 4)",
+    advGapAttributes === ASPECT_IDS.length * 4,
+    `${advGapAttributes} gap attributes`,
+  );
+  note(
+    `rendered: data-aspect="${TIME}" data-feel-gap="3" data-wish-gap="2" data-think-gap="1" data-guess-gap="3"`,
   );
 }
 

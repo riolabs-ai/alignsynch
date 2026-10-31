@@ -9,7 +9,7 @@
  *   assessment-personal-parent-child    Relationship Type: Personal — Parent / Child
  *   assessment-blank-template           Relationship Type: blank — the user names it (draft)
  *
- *   assessment-instance-avery-rowan     the feature example: Basic Mode, Think & Guess on two
+ *   assessment-instance-avery-rowan     the feature example: Basic Mode on every Aspect
  *   assessment-instance-ruth-sam        two parties who agree on every Aspect — every Gap is 0
  *   assessment-instance-marco-priya     two parties who disagree on all five — Gaps 1 to 4
  *   assessment-instance-noor-iris       Advanced Mode on every Aspect — Think & Guess on all five
@@ -247,9 +247,11 @@ export const assessments: readonly Assessment[] = [
 /**
  * The templates above, copied and given two parties.
  *
- * Feel and Wish are answered on all five Aspects (Basic Mode) in every instance but the
- * Advanced one, which adds Think and Guess on all five — Advanced Mode adds the pair,
- * and nothing in the model derives one opinion from another.
+ * Every instance names its **mode** — `basic` asks Feel and Wish on all five Aspects,
+ * `advanced` asks all four — and the model enforces it (`zAssessmentInstance` rejects a
+ * Basic instance carrying Think/Guess and an Advanced one missing it). `noor-iris` is the
+ * Advanced demonstration; the other three are Basic, which is what a newly created instance
+ * is too. Nothing in the model derives one opinion from another.
  */
 export const assessmentInstances: readonly AssessmentInstance[] = [
   {
@@ -259,6 +261,7 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
     status: "published",
     date: "2026-10-28T18:30:00.000Z",
     templateId: "assessment-relationship-basics",
+    mode: "basic",
     title: "Relationship Basics",
     summary: "Relationship Basics, answered by Avery and Rowan.",
     items: [
@@ -304,10 +307,10 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
         name: "Avery",
         opinions: [
           /** Feel 2 against Rowan's Feel 5: a Gap of 3 on the very first Aspect. */
-          { itemId: "aspect-time-together", opinions: { feel: 2, wish: 5, think: 3, guess: 4 } },
+          { itemId: "aspect-time-together", opinions: { feel: 2, wish: 5 } },
           { itemId: "aspect-housework", opinions: { feel: 3, wish: 4 } },
           { itemId: "aspect-money", opinions: { feel: 4, wish: 4 } },
-          { itemId: "aspect-conflict", opinions: { feel: 3, wish: 5, think: 4, guess: 4 } },
+          { itemId: "aspect-conflict", opinions: { feel: 3, wish: 5 } },
           { itemId: "aspect-affection", opinions: { feel: 4, wish: 4 } },
         ],
       },
@@ -315,10 +318,10 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
         role: "counterparty",
         name: "Rowan",
         opinions: [
-          { itemId: "aspect-time-together", opinions: { feel: 5, wish: 3, think: 4, guess: 3 } },
+          { itemId: "aspect-time-together", opinions: { feel: 5, wish: 3 } },
           { itemId: "aspect-housework", opinions: { feel: 2, wish: 3 } },
           { itemId: "aspect-money", opinions: { feel: 4, wish: 4 } },
-          { itemId: "aspect-conflict", opinions: { feel: 2, wish: 3, think: 3, guess: 3 } },
+          { itemId: "aspect-conflict", opinions: { feel: 2, wish: 3 } },
           { itemId: "aspect-affection", opinions: { feel: 3, wish: 4 } },
         ],
       },
@@ -335,6 +338,7 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
     status: "published",
     date: "2026-10-28T19:00:00.000Z",
     templateId: "assessment-personal-parent-child",
+    mode: "basic",
     title: "Parent & Child",
     summary:
       "Parent & Child, answered by Ruth (Parent) and Sam (Child) — they agree on all five Aspects, so every Gap is 0.",
@@ -416,6 +420,7 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
     status: "published",
     date: "2026-10-29T08:30:00.000Z",
     templateId: "assessment-business-staff-manager",
+    mode: "basic",
     title: "Staff & Manager",
     summary:
       "Staff & Manager, answered by Marco (Staff) and Priya (Manager) — they disagree on all five Aspects, with Gaps from 1 to 4.",
@@ -515,6 +520,7 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
     title: "Parent & Child",
     summary:
       "Parent & Child, answered by Noor (Parent) and Iris (Child) in Advanced Mode — Feel, Wish, Think and Guess on all five Aspects.",
+    mode: "advanced",
     items: [
       {
         id: "aspect-check-ins",

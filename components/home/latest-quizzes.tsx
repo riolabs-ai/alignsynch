@@ -30,7 +30,7 @@ export function LatestQuizzes({ copy }: { copy: PageCopySection }) {
   };
 
   return (
-    <section className="space-y-6 bg-indigo-50 py-10 px-4 xl:px-8 dark:bg-slate-900">
+    <section className="space-y-6 bg-muted py-10 px-4 xl:px-8 dark:bg-slate-900">
       <h2 className="text-2xl font-bold tracking-tight">{copy.heading}</h2>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4">
@@ -50,7 +50,7 @@ export function LatestQuizzes({ copy }: { copy: PageCopySection }) {
                 seed={quiz.id}
                 width={600}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent flex items-end p-4">
                 <div className="w-full">
                   <div className="flex justify-between items-center mb-2">
                     <Badge
@@ -70,7 +70,7 @@ export function LatestQuizzes({ copy }: { copy: PageCopySection }) {
                 {quiz.categories[0]?.name ?? itemLabel(copy, "empty-category")}
               </Badge>
 
-              <Button size="sm" asChild>
+              <Button size="sm" variant="action" asChild>
                 <Link href={quiz.href}>{itemLabel(copy, "play-now")}</Link>
               </Button>
             </CardContent>

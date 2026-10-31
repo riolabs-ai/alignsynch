@@ -53,13 +53,13 @@ export function FeaturedQuizzes({ copy }: { copy: PageCopySection }) {
       case "hot":
         return "destructive";
       case "editors":
-        return "purple";
+        return "action";
       case "trending":
         return "blue";
       case "topRated":
         return "yellow";
       default:
-        return "default";
+        return "muted";
     }
   };
 
@@ -114,7 +114,7 @@ export function FeaturedQuizzes({ copy }: { copy: PageCopySection }) {
                   width={600}
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent flex flex-col justify-end p-4">
                   <h3 className="text-white font-semibold line-clamp-1">{quiz.title}</h3>
                   <p className="text-white/80 text-sm">
                     {quiz.categories[0]?.name ?? itemLabel(copy, "empty-category")}
@@ -224,7 +224,7 @@ export function FeaturedQuizzes({ copy }: { copy: PageCopySection }) {
               </CardContent>
 
               <CardFooter className="p-4 pt-0">
-                <Button className="w-full" asChild>
+                <Button variant="action" className="w-full" asChild>
                   <Link href={quiz.href}>{itemLabel(copy, "play-now")}</Link>
                 </Button>
               </CardFooter>

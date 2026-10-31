@@ -14,11 +14,18 @@
  *
  * The rows are built from the real template fixture, not invented: the Aspect ids, prompts
  * and Values are `data/assessments.ts`'s, which is what the screen would draw.
+ *
+ * An Advanced instance (#213) is projected the same way: the view model carries `mode`, the
+ * viewer's `own` holds four scores instead of two, and the counterparty's Think/Guess are
+ * just as absent before `complete` as their Feel/Wish — there is still no field that could
+ * carry them.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
+import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { PartyRole } from "@/content/assessment";
 import type { Assessment } from "@/content/assessment";
@@ -70,7 +77,30 @@ function opinionsFor(
   });
 }
 
-function rowsWith(opinions: OpinionRow[], answered: Record<PartyRole, number>): FlowInstanceRows {
+/** The same, with all four opinions answered — an Advanced sheet (#213). */
+function advancedOpinionsFor(
+  role: PartyRole,
+  overrides: Record<string, { feel: number; wish: number; think: number; guess: number }> = {},
+): OpinionRow[] {
+  return template.items.map((item) => {
+    const override = overrides[item.id];
+    return {
+      instance_record_id: INSTANCE_ID,
+      role,
+      item_id: item.id,
+      feel: override?.feel ?? 3,
+      wish: override?.wish ?? 3,
+      think: override?.think ?? 3,
+      guess: override?.guess ?? 3,
+    };
+  });
+}
+
+function rowsWith(
+  opinions: OpinionRow[],
+  answered: Record<PartyRole, number>,
+  mode = "basic",
+): FlowInstanceRows {
   return {
     record: {
       id: INSTANCE_ID,
@@ -83,7 +113,7 @@ function rowsWith(opinions: OpinionRow[], answered: Record<PartyRole, number>): 
     },
     items,
     options: [],
-    instance: { record_id: INSTANCE_ID, template_record_id: template?.id ?? "" },
+    instance: { record_id: INSTANCE_ID, template_record_id: template?.id ?? "", mode },
     parties,
     opinions,
     answerCounts: answered,
@@ -184,5 +214,99 @@ describe("the report, once both have submitted", () => {
       invite,
     });
     expect(counterpartyView.report?.rows.find((row) => row.itemId === TIME)?.gaps.feel).toBe(3);
+  });
+});
+
+/**
+ * #213 — the sheet asks what the mode defines, and an Advanced sheet is just as blind.
+ *
+ * The rendered counts are the acceptance's numbers, moved to the cheapest place they can be
+ * read: five Aspects × 2 kinds = ten selects in Basic, × 4 = twenty in Advanced, in the
+ * glossary's order. The live version of the same claim is `scripts/flow-e2e.mjs`, which
+ * counts them off a production build against real rows.
+ */
+describe("an Advanced instance", () => {
+  const bothAdvanced = [
+    ...advancedOpinionsFor("initiator", {
+      [TIME]: { feel: 2, wish: 5, think: 4, guess: 1 },
+    }),
+    ...advancedOpinionsFor("counterparty", {
+      [TIME]: { feel: 5, wish: 3, think: 3, guess: 4 },
+    }),
+  ];
+
+  const render = (screen: ReturnType<typeof projectScreen>) =>
+    renderToStaticMarkup(
+      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+    );
+
+  it("asks four scores per Aspect, in the glossary's order, and names Advanced Mode", () => {
+    const screen = projectScreen({
+      rows: rowsWith(bothAdvanced, { initiator: 0, counterparty: 0 }, "advanced"),
+      template,
+      viewerRole: "initiator",
+      invite,
+    });
+
+    expect(screen.mode).toBe("advanced");
+    const html = render(screen);
+    expect((html.match(/<select /g) ?? []).length).toBe(items.length * 4);
+    expect(
+      [...html.matchAll(/name="(\w+):aspect-time-together"/g)].map((match) => match[1]),
+    ).toEqual(["feel", "wish", "think", "guess"]);
+    expect(html).toContain('data-mode="advanced"');
+    expect(html).toContain("Advanced Mode");
+  });
+
+  it("asks two scores per Aspect in Basic Mode, and nothing else", () => {
+    const screen = projectScreen({
+      rows: rowsWith([], { initiator: 0, counterparty: 0 }),
+      template,
+      viewerRole: "initiator",
+      invite,
+    });
+
+    expect(screen.mode).toBe("basic");
+    const html = render(screen);
+    expect((html.match(/<select /g) ?? []).length).toBe(items.length * 2);
+    expect(
+      [...html.matchAll(/name="(\w+):aspect-time-together"/g)].map((match) => match[1]),
+    ).toEqual(["feel", "wish"]);
+    expect(html).toContain('data-mode="basic"');
+    expect(html).not.toContain("Advanced Mode");
+  });
+
+  it("keeps the counterparty's Think and Guess out of the view model before complete", () => {
+    const screen = projectScreen({
+      rows: rowsWith(
+        [
+          ...advancedOpinionsFor("initiator", {
+            [TIME]: { feel: 2, wish: 5, think: 4, guess: 1 },
+          }),
+          ...advancedOpinionsFor("counterparty", {
+            [TIME]: { feel: 5, wish: 3, think: 4, guess: 2 },
+          }),
+        ],
+        { initiator: items.length, counterparty: 0 },
+        "advanced",
+      ),
+      template,
+      viewerRole: "initiator",
+      invite,
+    });
+
+    expect(screen.status).toBe("answering");
+    expect(screen.report).toBeNull();
+    // The viewer's own four scores are there; the other party's 4/2 are nowhere.
+    expect(screen.aspects.find((aspect) => aspect.itemId === TIME)?.own).toEqual({
+      feel: 2,
+      wish: 5,
+      think: 4,
+      guess: 1,
+    });
+    const serialized = JSON.stringify(screen);
+    expect(serialized).not.toContain('"guess":2');
+    // The only party in the projection is the viewer; nobody else's role is carried.
+    expect(serialized).not.toContain('"role":"counterparty"');
   });
 });

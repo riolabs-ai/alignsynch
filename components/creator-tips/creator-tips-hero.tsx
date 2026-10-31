@@ -23,7 +23,7 @@ export default function CreatorTipsHero({
   };
 
   return (
-    <div className="relative bg-gradient-to-r from-purple-700 to-indigo-700 rounded-2xl p-8 mb-12 overflow-hidden">
+    <div className="relative bg-action rounded-2xl p-8 mb-12 overflow-hidden">
       <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
 
       <div className="relative max-w-3xl mx-auto text-center">
@@ -35,7 +35,7 @@ export default function CreatorTipsHero({
           <input
             type="text"
             placeholder={itemLabel(copy, "search-placeholder")}
-            className="w-full dark:bg-slate-900 px-4 py-3 rounded-full pl-12 pr-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full dark:bg-slate-900 px-4 py-3 rounded-full pl-12 pr-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-action"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />

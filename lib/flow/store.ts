@@ -27,7 +27,8 @@
  * No `gap` is written anywhere: the report is `gapOf()` over two opinion rows, computed by
  * `lib/assessment-report.ts` on every render.
  */
-import type { Assessment, PartyRole } from "@/content/assessment";
+import type { Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
+import { zAssessmentMode } from "@/content/assessment";
 import { getPool } from "@/lib/db/client";
 import {
   assessmentTemplateFromRows,
@@ -83,6 +84,17 @@ export interface CreateInstanceInput {
   readonly initiatorName: string;
   readonly counterpartyName: string;
   readonly email: string;
+  /**
+   * Which mode the instance is played in — `basic` (Feel + Wish) or `advanced` (all four).
+   *
+   * Typed `string` because it arrives as form text and the **store** is the boundary that
+   * decides: `zAssessmentMode.safeParse` refuses anything else before the transaction opens,
+   * so a post that omits it is a refusal, not a silent Basic. The mode is fixed at creation
+   * and no code path moves it afterwards (`submitAnswers` reads it from the locked row),
+   * because switching it would put one party's Basic answers and the other's Advanced ones
+   * on one report.
+   */
+  readonly mode: string;
   /** A clock, injectable so a test can pin `expires_at`. */
   readonly now?: Date;
 }
@@ -126,6 +138,10 @@ export async function createInstanceFromTemplate(
   const email = required(input.email, "their email");
   if (!emailLooksDeliverable(email)) {
     throw new FlowError("invalid-input", "their email is not an address");
+  }
+  const mode = zAssessmentMode.safeParse(input.mode);
+  if (!mode.success) {
+    throw new FlowError("invalid-input", "mode must be basic or advanced");
   }
 
   const now = input.now ?? new Date();
@@ -213,8 +229,8 @@ export async function createInstanceFromTemplate(
     );
 
     await client.query(
-      "INSERT INTO assessment_instance (record_id, template_record_id) VALUES ($1, $2)",
-      [instanceRecordId, found.id],
+      "INSERT INTO assessment_instance (record_id, template_record_id, mode) VALUES ($1, $2, $3)",
+      [instanceRecordId, found.id, mode.data],
     );
 
     await client.query(
@@ -451,14 +467,18 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
-    const locked = await client.query<{ record_id: string }>(
-      "SELECT record_id FROM assessment_instance WHERE record_id = $1 FOR UPDATE",
+    const locked = await client.query<{ record_id: string; mode: string }>(
+      "SELECT record_id, mode FROM assessment_instance WHERE record_id = $1 FOR UPDATE",
       [input.instanceRecordId],
     );
     if (locked.rows[0] === undefined) {
       await client.query("ROLLBACK");
       return { ok: false, code: "no-such-instance", reason: "no instance has that id" };
     }
+    // The mode the sheet is judged against is the row's, read under the lock that already
+    // protects the freeze — never a field of the form. `zAssessmentMode` cannot reject a
+    // value the column's CHECK allows, so a failure here is drift on a hand-edited row.
+    const mode = zAssessmentMode.parse(locked.rows[0].mode);
 
     const role =
       input.token === undefined
@@ -505,6 +525,7 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
     const submission = parseSubmission(
       aspects.rows.map((row) => row.item_id),
       input.answers,
+      mode,
     );
     if (!submission.ok) {
       await client.query("ROLLBACK");
@@ -524,9 +545,17 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
     ]);
     for (const answer of submission.answers) {
       await client.query(
-        `INSERT INTO opinion (instance_record_id, role, item_id, feel, wish)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [input.instanceRecordId, role, answer.itemId, answer.opinions.feel, answer.opinions.wish],
+        `INSERT INTO opinion (instance_record_id, role, item_id, feel, wish, think, guess)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          input.instanceRecordId,
+          role,
+          answer.itemId,
+          answer.opinions.feel,
+          answer.opinions.wish,
+          answer.opinions.think ?? null,
+          answer.opinions.guess ?? null,
+        ],
       );
     }
 
@@ -618,8 +647,16 @@ export interface InstanceBundle {
 export async function readInstanceBundle(
   instanceRecordId: string,
 ): Promise<InstanceBundle | undefined> {
-  const [instance] = await query(
+  const [instance] = await query<{
+    record: RecordRow;
+    template_record_id: string;
+    mode: string;
+    items: ItemRow[];
+    options: OptionRow[];
+  }>(
     `SELECT to_jsonb(r) AS record,
+            ai.template_record_id,
+            ai.mode,
             COALESCE((SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id), '[]'::json) AS items,
             COALESCE((SELECT json_agg(to_jsonb(o) ORDER BY o.position) FROM response_option o WHERE o.record_id = r.id), '[]'::json) AS options
        FROM record r
@@ -650,19 +687,15 @@ export async function readInstanceBundle(
   );
 
   const answered = (role: PartyRole) => counts.find((row) => row.role === role)?.answered ?? 0;
-  const row = instance as unknown as {
-    record: RecordRow;
-    items: ItemRow[];
-    options: OptionRow[];
-  };
 
   return {
-    record: row.record,
-    items: row.items,
-    options: row.options,
+    record: instance.record,
+    items: instance.items,
+    options: instance.options,
     instance: {
       record_id: instanceRecordId,
-      template_record_id: await templateIdOf(instanceRecordId),
+      template_record_id: instance.template_record_id,
+      mode: instance.mode,
     },
     parties,
     invite:
@@ -677,12 +710,24 @@ export async function readInstanceBundle(
   };
 }
 
-async function templateIdOf(instanceRecordId: string): Promise<string> {
-  const [row] = await query<{ template_record_id: string }>(
-    "SELECT template_record_id FROM assessment_instance WHERE record_id = $1",
+/**
+ * The mode one instance is played in, or `undefined` when there is no such instance.
+ *
+ * The answers route asks this **before** parsing a post, because the form's field names
+ * have to be read against the kinds the instance's mode asks (`answersFrom()`), and the
+ * refusal for an unknown instance is the store's own `no-such-instance`, not the parser's.
+ * Reading it outside the submit's lock cannot race: the column is written once, at creation,
+ * and no code path updates it — the submit re-reads it `FOR UPDATE` and that value decides.
+ */
+export async function readInstanceMode(
+  instanceRecordId: string,
+): Promise<AssessmentMode | undefined> {
+  const [row] = await query<{ mode: string }>(
+    "SELECT mode FROM assessment_instance WHERE record_id = $1",
     [instanceRecordId],
   );
-  return row?.template_record_id ?? "";
+  if (row === undefined) return undefined;
+  return zAssessmentMode.parse(row.mode);
 }
 
 /** A template's rows, parsed through `zAssessment` — the words a report draws above the rows. */
