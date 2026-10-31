@@ -85,7 +85,7 @@ const INDEXABLE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
   { path: "/creator-tips", title: "Quiz Creator Tips" },
   { path: "/quiz-discussions", title: "Quiz Discussions" },
   { path: "/create/editor", title: "Create Quiz" },
-  { path: "/create/generator", title: "AI Quiz Generator" },
+  { path: "/create/generator", title: "Quiz Generator" },
   { path: "/affiliate", title: "Affiliate Page" },
   { path: "/pricing", title: "Pricing Plan" },
   { path: "/support", title: "Support" },

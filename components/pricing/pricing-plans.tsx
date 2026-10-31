@@ -81,12 +81,7 @@ const PLANS_DATA: readonly Plan[] = [
       "Community support",
       "Ad-supported experience",
     ],
-    limitations: [
-      "Limited quiz templates",
-      "No AI quiz generation",
-      "No custom branding",
-      "Basic reporting only",
-    ],
+    limitations: ["Limited quiz templates", "No custom branding", "Basic reporting only"],
     cta: "Get Started",
     popular: false,
   },
@@ -100,7 +95,6 @@ const PLANS_DATA: readonly Plan[] = [
     features: [
       "Create up to 50 quizzes",
       "Ad-free experience",
-      "10 AI-generated quizzes/month",
       "Basic quiz customization",
       "Email support",
       "Download results as CSV",
@@ -120,7 +114,6 @@ const PLANS_DATA: readonly Plan[] = [
     features: [
       "Unlimited quiz creation",
       "Advanced quiz customization",
-      "50 AI-generated quizzes/month",
       "Custom branding",
       "Priority support",
       "Advanced analytics",
@@ -141,7 +134,6 @@ const PLANS_DATA: readonly Plan[] = [
     },
     features: [
       "Everything in Pro",
-      "Unlimited AI quiz generation",
       "Dedicated account manager",
       "Custom integrations",
       "SSO authentication",
