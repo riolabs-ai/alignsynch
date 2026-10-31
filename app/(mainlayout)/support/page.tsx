@@ -17,6 +17,7 @@ export default function Support() {
       faqs={sectionOf(supportPageCopy, "faqs")}
       contact={sectionOf(supportPageCopy, "contact")}
       knowledgeBase={sectionOf(supportPageCopy, "knowledge-base")}
+      supportEmail={brand.supportEmail}
     />
   );
 }

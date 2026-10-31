@@ -768,13 +768,13 @@ export const newsData: readonly NewsArticle[] = [
     slug: "ai-powered-quiz-creation-tools",
     title: "How AI is Revolutionizing Quiz Creation: New Tools and Techniques",
     summary:
-      "Explore the latest AI-powered features that are making it easier than ever to create engaging, personalized quizzes.",
-    categoryIds: ["news-platform-updates", "news-industry-news"],
+      "A survey of the AI capabilities now available to quiz creators — question generation, adaptive difficulty, personalization — and how to use them well.",
+    categoryIds: ["news-industry-news"],
     tags: [],
     author: {
       name: "Ryan Zhang",
-      role: "AI Product Specialist",
-      bio: `Ryan specializes in AI applications for content creation and helps develop ${brand.name}'s AI-powered features.`,
+      role: "Technology Writer",
+      bio: "Ryan writes about AI tooling for content creation and how creators are putting it to work.",
     },
     publishedAt: "2025-04-08T03:00:00.000Z",
     readMinutes: 7,
@@ -838,7 +838,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Creator spotlight: Education platform EduQuiz has seen a 40% improvement in student test scores after implementing AI-personalized quiz paths that adapt to each student's strengths and weaknesses.",
+        text: "In education, the same principle is being applied to practice sets: instead of every student working through an identical sequence, the next question is chosen from what their previous answers show.",
       },
       {
         type: "image",
@@ -903,11 +903,11 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: `${brand.name} now offers a suite of AI tools integrated directly into our platform. Premium and Business subscribers can access these features from the 'AI Assistant' tab in the quiz creation interface.`,
+        text: "If you want to use these capabilities, they are available today across a growing field of third-party tools and authoring platforms. Judge them against the work you actually do: question drafting, media generation, and adaptive difficulty are usually sold as separate capabilities, and a vendor's demo is not the same as your own topic.",
       },
       {
         type: "paragraph",
-        text: "We've designed these tools to be intuitive and accessible even for creators with no technical background in AI. Start with the 'AI Question Generator' to create a basic question set, then explore more advanced features like personalization and dynamic difficulty as you become comfortable with the technology.",
+        text: "A sensible way in: start with question generation on a small set of your own quizzes, review every item for accuracy and bias, and only then take on personalization and dynamic difficulty. That keeps the review burden proportionate while you learn what the tools are genuinely good at.",
       },
     ],
   },
