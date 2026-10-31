@@ -39,29 +39,8 @@ export function KnowledgeBase({ selectedCategory, copy, categoryCopy }: Knowledg
       article.summary.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // Get the category name for display
-  const getCategoryName = () => {
-    switch (selectedCategory) {
-      case "all":
-        return itemLabel(categoryCopy, "all");
-      case "account":
-        return itemLabel(categoryCopy, "account");
-      case "billing":
-        return itemLabel(categoryCopy, "billing");
-      case "quiz-creation":
-        return itemLabel(categoryCopy, "quiz-creation");
-      case "tournaments":
-        return itemLabel(categoryCopy, "tournaments");
-      case "privacy":
-        return itemLabel(categoryCopy, "privacy");
-      case "technical":
-        return itemLabel(categoryCopy, "technical");
-      case "general":
-        return itemLabel(categoryCopy, "general");
-      default:
-        return itemLabel(categoryCopy, "all");
-    }
-  };
+  // The heading is the selected category's name from the fixture, or "All Categories".
+  const getCategoryName = () => itemLabel(categoryCopy, selectedCategory);
 
   return (
     <Card className="p-4 xl:p-6">

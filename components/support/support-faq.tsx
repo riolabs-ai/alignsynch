@@ -11,6 +11,11 @@ import { Input } from "@/components/ui/input";
 import type { Brand } from "@/content/brand";
 import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
+import {
+  isSupportFaqCategory,
+  supportCategories,
+  type SupportFaqCategory,
+} from "@/data/support-categories";
 import { itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
 import { useState } from "react";
@@ -24,40 +29,6 @@ interface SupportFAQProps {
 
 /** One FAQ row: the question and the answer the accordion shows under it. */
 export type SupportFaqQuestion = { question: string; answer: string };
-
-/**
- * The categories that have answers (#288).
- *
- * This list is the whole taxonomy the support page offers, and `support-categories.tsx`
- * builds the rail from it, so a category cannot be selectable and empty: adding a key here
- * without rows, or a row under a key that is not here, is the bug this constant prevents.
- *
- * Two members of `KB_CATEGORY_SLUGS` are absent — the two this issue removed answers for —
- * and that union in `content/article.ts` stays as it is, because the knowledge-base fixture
- * carries one article per category and those files are not this surface's. What was removed
- * is the claim, not the slug: those rows priced a subscription, a payout path and a prize
- * for a business this app has no provider, table or route for. A support FAQ whose job is
- * to deny features is worse than a shorter one.
- *
- * The rows that remain each name something in this tree: `app/(mainlayout)/settings`,
- * `app/(mainlayout)/profile/[username]`, `content/record.ts`'s two scales, the create
- * editor, and `brand.supportEmail`. Nothing here answers with a date, a vendor the code
- * does not integrate with, a support-hours figure, or a promise.
- */
-export const SUPPORT_FAQ_CATEGORIES = [
-  "account",
-  "quiz-creation",
-  "privacy",
-  "technical",
-  "general",
-] as const;
-
-export type SupportFaqCategory = (typeof SUPPORT_FAQ_CATEGORIES)[number];
-
-/** Is this the union's filter sentinel, or a category this file actually answers? */
-export function isSupportFaqCategory(category: SupportCategory): category is SupportFaqCategory {
-  return (SUPPORT_FAQ_CATEGORIES as readonly SupportCategory[]).includes(category);
-}
 
 /**
  * The support FAQ rows, as a function of the brand.
@@ -148,7 +119,7 @@ export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQP
     : "all";
 
   const faqs =
-    category === "all" ? SUPPORT_FAQ_CATEGORIES.flatMap((id) => allFaqs[id]) : allFaqs[category];
+    category === "all" ? supportCategories.flatMap((id) => allFaqs[id]) : allFaqs[category];
 
   // Filter FAQs based on search query
   const filteredFaqs = faqs.filter(
