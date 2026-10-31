@@ -133,6 +133,8 @@ const invite = {
   counterpartyName: "Rowan",
   expiresAt: "2026-11-06T12:00:00.000Z",
   state: "claimed" as const,
+  resentAt: null,
+  resentCount: 0,
   link: null,
 };
 
@@ -345,6 +347,8 @@ describe("the invite notice", () => {
     counterpartyName: "Rowan",
     expiresAt: "2026-11-06T12:00:00.000Z",
     state: "unclaimed" as const,
+    resentAt: null,
+    resentCount: 0,
     link,
   };
 

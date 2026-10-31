@@ -14,8 +14,8 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **43** — 29 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 234 files under `components/`, 229 of them `.tsx`
-- route handlers: **6** — `app/**/route.ts`, listed below and not a UI surface
+- component domains: **32** — 235 files under `components/`, 230 of them `.tsx`
+- route handlers: **7** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 10 · **fixture** 51 · **db** 9 · **live** 5
 - templates: Both templates 19 · AlignSynch 12 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -196,7 +196,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (7): `answer-form.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `template-form.tsx`, `template-list.tsx`
+  - files (8): `answer-form.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `template-form.tsx`, `template-list.tsx`
   - routes (5): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/templates/new`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
@@ -455,6 +455,7 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/api/auth/[...path]` — `app/api/auth/[...path]/route.ts`
 - `/api/profile` — `app/api/profile/route.ts`
 - `/assessment/instances/[instanceId]/answers` — `app/(mainlayout)/assessment/instances/[instanceId]/answers/route.ts`
+- `/assessment/instances/[instanceId]/invite` — `app/(mainlayout)/assessment/instances/[instanceId]/invite/route.ts`
 - `/assessment/new` — `app/(mainlayout)/assessment/new/route.ts`
 - `/assessment/templates` — `app/(mainlayout)/assessment/templates/route.ts`
 - `/invite/[token]/claim` — `app/(mainlayout)/invite/[token]/claim/route.ts`

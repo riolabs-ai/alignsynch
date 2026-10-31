@@ -78,6 +78,19 @@ export interface FlowInvite {
    * beside `expiresAt` and not instead of it, because the sentence names the date.
    */
   readonly state: InviteDisplayState;
+  /**
+   * `resent_at` as an ISO instant, or `null` when the live token is the original (#275).
+   *
+   * Carried for the panel's "sent N times" sentence and for anything that later wants to draw the
+   * cooldown's remaining time. Nothing on this screen decides a refusal from it: the cooldown is
+   * enforced inside the store's transaction, where the write would happen.
+   */
+  readonly resentAt: string | null;
+  /**
+   * How many lifetime re-invites this invitation has seen (`resent_count`), drawn against
+   * `RESEND_LIFETIME_CAP` so the cap is a visible budget rather than a surprise refusal.
+   */
+  readonly resentCount: number;
   /** The link, once: while the invite is unclaimed, live and the caller holds the raw token. */
   readonly link: string | null;
 }
