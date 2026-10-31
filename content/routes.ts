@@ -20,6 +20,7 @@ const STATIC_ROUTES = [
   "/",
   "/affiliate",
   "/assessment",
+  "/assessment/instances",
   "/battle",
   "/categories",
   "/chat",

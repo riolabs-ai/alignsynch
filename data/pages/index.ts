@@ -17,6 +17,7 @@ import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
 import { assessmentInstancePageCopy } from "./assessment-instance";
+import { myInstancesPageCopy } from "./assessment-instances";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
@@ -47,6 +48,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
+  "/assessment/instances": myInstancesPageCopy,
   "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
