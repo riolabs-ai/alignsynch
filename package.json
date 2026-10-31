@@ -1,5 +1,5 @@
 {
-  "name": "quizhub",
+  "name": "alignsynch",
   "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@12.16.1",
@@ -7,12 +7,12 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build",
+    "dev": "turbo run web:dev",
+    "build": "turbo run web:build",
     "start": "next start",
-    "typecheck": "next typegen && tsc --noEmit",
-    "data:check": "tsc -p tsconfig.datacheck.json && node --test .datacheck/scripts/__tests__/*.test.js && node .datacheck/scripts/data-check.js && node scripts/sample-brand-colors.mjs --check && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs --check",
-    "test": "vitest run",
+    "typecheck": "turbo run web:typecheck",
+    "data:check": "turbo run web:data:check",
+    "test": "turbo run web:test",
     "parity": "node scripts/parity.mjs",
     "parity:update": "node scripts/parity.mjs --update",
     "bundles": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/bundles.js",
@@ -30,10 +30,17 @@
     "demo:reset": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/demo-reset.mjs",
     "flow:e2e": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flow-e2e.mjs",
     "objstore:smoke": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/objstore-smoke.mjs",
-    "lint": "biome check && node scripts/lint-brand-classes.mjs",
-    "lint:fix": "biome check --write && node scripts/lint-brand-classes.mjs",
+    "lint": "turbo run web:lint",
+    "lint:fix": "turbo run web:lint:fix",
     "format": "biome format --write .",
-    "format:check": "biome format ."
+    "format:check": "biome format .",
+    "web:build": "next build",
+    "web:typecheck": "next typegen && tsc --noEmit",
+    "web:data:check": "tsc -p tsconfig.datacheck.json && node --test .datacheck/scripts/__tests__/*.test.js && node .datacheck/scripts/data-check.js && node scripts/sample-brand-colors.mjs --check && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs --check",
+    "web:test": "vitest run",
+    "web:lint": "biome check && node scripts/lint-brand-classes.mjs",
+    "web:lint:fix": "biome check --write && node scripts/lint-brand-classes.mjs",
+    "web:dev": "next dev --turbo"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.3.1",
@@ -105,6 +112,7 @@
     "jsdom": "^30.1.3",
     "postcss": "^8",
     "tailwindcss": "3.4.17",
+    "turbo": "2.11.10",
     "typescript": "^5",
     "vitest": "^5.0.5"
   }
