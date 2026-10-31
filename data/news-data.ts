@@ -548,7 +548,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Team registration requires at least one premium member, and teams can represent schools, companies, friend groups, or online communities.",
+        text: "Teams can represent schools, companies, friend groups, or online communities.",
       },
       {
         type: "heading",
@@ -582,7 +582,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: `To register, simply log in to your ${brand.name} account and visit the 'Championships' tab in the main menu. Basic participation is free, with optional premium features available for subscribers.`,
+        text: `To register, sign in to your ${brand.name} account, or create one, and open the Tournaments page.`,
       },
       {
         type: "heading",
@@ -640,7 +640,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "In this article, we'll explore the most effective monetization strategies for 2025, with real examples from successful creators on our platform.",
+        text: "In this article, we'll walk through the strategies that tend to hold up in 2025, in the order most creators take them on, and what each one asks of you before it pays.",
       },
       {
         type: "heading",
@@ -653,7 +653,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Creator spotlight: Education specialist Maria Gonzalez generates over $8,000 monthly through her 'Advanced Test Prep' subscription, which offers premium practice quizzes for standardized tests with detailed explanations and personalized progress tracking.",
+        text: "The pattern that makes this model work is unglamorous: one narrow niche, a steady publishing rhythm, and an archive deep enough that a subscriber never runs out. Test prep is the classic case — a subscription is only worth renewing if each week brings new practice sets with explanations and some record of what the reader has already covered.",
       },
       {
         type: "image",
@@ -687,7 +687,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Creator spotlight: Career coach Thomas Wright uses his 'Career Satisfaction Assessment' quiz to identify potential clients for his coaching programs, generating 70% of his new business through this channel.",
+        text: "The model reads best as a funnel with one job: the quiz result names a problem the reader recognizes, and the next step is a conversation. Measure how many people reach that step, not how many finish the quiz — a short completed quiz that books a call beats a long one that books none.",
       },
       {
         type: "image",
@@ -721,7 +721,7 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Creator spotlight: Former teacher Jonathan Lee now earns six figures annually creating custom assessment quizzes for educational technology companies and school districts.",
+        text: "This is the slowest of the six strategies to start and the most durable once it does: a business client buys on a statement of work, renews annually, and rarely shops on price the way a consumer subscriber does. The work is closer to instructional design than to quiz publishing, and the sales cycle is measured in months rather than days.",
       },
       {
         type: "image",
