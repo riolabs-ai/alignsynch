@@ -120,7 +120,7 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "An invitation is claimable for seven days from the instant it is created. At the end of that window the claim page says the invitation has expired, and the link cannot be revived: the expiry is a column written when the invitation was created, not a flag that can be reset afterwards. Ask the person who created the instance to start a new one with you.",
+        text: "An invitation is claimable for seven days from the instant it is created. At the end of that window the claim page says the invitation has expired, and the link cannot be revived: the expiry is a column written when the invitation was issued, and nothing un-expires it. What the initiator can do is send a new one — see below.",
       },
       {
         type: "heading",
@@ -147,6 +147,19 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
       {
         type: "note",
         text: "A claim that is refused does not use the link up. The page says why — somebody else holds the seat, the browser already answers as one of the two parties, or the confirmation was not sent — and the invitation stays claimable until it expires or is taken.",
+      },
+      {
+        type: "heading",
+        text: "Sending a new invitation",
+        level: 2,
+      },
+      {
+        type: "paragraph",
+        text: 'The initiator can send a new invitation while the seat is still unclaimed, whether or not the first link has expired. It is a re-invite of the same invitation, not a new instance: the old token is replaced, so there is only ever one live link, and the previous one stops naming an invitation at all — it answers "No such invitation", which is a different sentence from "expired". A mistyped address can be corrected on the same form.',
+      },
+      {
+        type: "paragraph",
+        text: "Two limits: at most one re-invitation every 24 hours, and at most three over the life of the invitation. The screen shows the count before you send; a send inside the 24-hour window is refused and the refusal names the wait. Once the other person has claimed the seat, or you have both answered everything, a re-invite is refused too — a finished relationship needs a new instance, not a new token.",
       },
     ],
   },
