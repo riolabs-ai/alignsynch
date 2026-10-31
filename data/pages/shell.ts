@@ -107,6 +107,14 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "pricing", label: "Pricing Plan" },
           { id: "support", label: "Support" },
           { id: "logout", label: "Logout" },
+          /**
+           * The sign-out row's two other states (issue #272). The row is a control now, not a
+           * `href="#"` link, so it needs the words a control needs: the moment between the click
+           * and the session ending, and the failure that has to be said out loud rather than
+           * swallowed. Both live here because the row's label lives here.
+           */
+          { id: "logout-pending", label: "Signing out…" },
+          { id: "logout-error", label: "Couldn't sign out. Try again." },
         ],
       },
       /**

@@ -4,6 +4,7 @@ import { AppVersion } from "@/components/layout/app-version";
 import { useSidebar } from "@/components/layout/sidebar-context";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
+import { endSession } from "@/lib/auth/sign-out";
 import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -11,7 +12,8 @@ import { cn } from "@/lib/utils";
 import { BookOpen, LogOut, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 /**
  * The sidebar: the brand's mark, the brand's menu, and the sign-out row.
@@ -50,6 +52,43 @@ export function AppSidebar({
   const pathname = usePathname();
 
   const { collapsed, mobileOpen, closeMobile } = useSidebar();
+
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutFailed, setSignOutFailed] = useState(false);
+
+  /**
+   * The rail's sign-out row, and the words it can carry.
+   *
+   * Each id is a literal at its own `itemLabel` call so E23 can see it — a ternary over an id is
+   * an id the gate cannot read, and a renamed one would then only fail at the fixture read.
+   */
+  const logoutLabel = itemLabel(nav, "logout");
+  const logoutPendingLabel = itemLabel(nav, "logout-pending");
+  const logoutErrorLabel = itemLabel(nav, "logout-error");
+
+  /**
+   * Sign out — for real (issue #272).
+   *
+   * The row used to be a `href="#"` link: it announced "Logout", took focus, and ended nothing,
+   * so the cookie stayed valid and the next request was still signed in. It runs the same step
+   * the account page's button runs (`lib/auth/sign-out.ts`) and only navigates once the SDK says
+   * the session is gone. A failure is said out loud under the row instead of being swallowed:
+   * a rail that ignored the click would look like it had signed the person out.
+   */
+  const signOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutFailed(false);
+    if (!(await endSession())) {
+      setSigningOut(false);
+      setSignOutFailed(true);
+      return;
+    }
+    closeMobile();
+    router.replace("/login");
+    router.refresh();
+  };
 
   /**
    * Closed is the CSS default below `xl` — off-canvas *and* `invisible` — so nothing
@@ -137,14 +176,17 @@ export function AppSidebar({
       <div className="border-t py-4">
         <nav className="grid gap-1 px-2">
           <NavRow
-            href="#"
             icon={<LogOut className="size-5" />}
-            label={itemLabel(nav, "logout")}
+            label={signingOut ? logoutPendingLabel : logoutLabel}
             active={false}
             collapsed={collapsed}
             onNavigate={closeMobile}
+            onSelect={signOut}
           />
         </nav>
+        {signOutFailed && !collapsed && (
+          <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>
+        )}
       </div>
 
       {/*
