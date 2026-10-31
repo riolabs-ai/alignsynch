@@ -72,7 +72,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/support` — **fixture**
   - capability: The help centre: FAQ, help categories and a contact form.
   - components: `components/support`, `components/ui`
-  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
+  - reads: 7 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+4 more)
 
 - `/support/articles/[slug]` — **fixture**
   - capability: One help article from the knowledge base, with related articles and a 'was this helpful?' prompt.

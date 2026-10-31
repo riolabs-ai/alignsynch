@@ -7,7 +7,7 @@ import { itemLabel } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
 import { FileQuestion, HelpCircle, Lock, Settings, Users } from "lucide-react";
 import type { ReactNode } from "react";
-import { SUPPORT_FAQ_CATEGORIES, type SupportFaqCategory } from "./support-faq";
+import { supportCategories, type SupportFaqCategory } from "@/data/support-categories";
 import type { SupportCategory } from "./support-page";
 
 interface SupportCategoriesProps {
@@ -29,17 +29,16 @@ const ICONS: Record<SupportFaqCategory, ReactNode> = {
 };
 
 /**
- * The rail's order: the filter sentinel first, then every category the FAQ answers.
+ * The rail's order: the filter sentinel first, then every category this build offers.
  *
- * It is **derived** from `SUPPORT_FAQ_CATEGORIES` (#288), not written a second time, so a
- * category cannot appear in the rail with no row behind it — selecting one used to be an
- * empty panel. The two categories whose answers this issue removed left the rail with them;
- * `content/article.ts` keeps their slugs because the knowledge-base fixture carries one
- * article in each, and those articles stay reachable under All Categories.
+ * It is **derived** from `data/support-categories.ts` (#288, #313), not written a second time, so
+ * a category cannot appear in the rail with no row behind it — selecting one used to be an empty
+ * panel. The list is the build's, so the alignment product does not offer "Quiz Creation" for a
+ * product with no quizzes; `content/article.ts` keeps that slug for QuizHub's articles.
  */
 const CATEGORIES: { id: SupportCategory; icon: ReactNode }[] = [
   { id: "all", icon: <HelpCircle className="h-4 w-4" /> },
-  ...SUPPORT_FAQ_CATEGORIES.map((id) => ({ id, icon: ICONS[id] })),
+  ...supportCategories.map((id) => ({ id, icon: ICONS[id] })),
 ];
 
 export function SupportCategories({
