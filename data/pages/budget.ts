@@ -232,6 +232,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment",
     budget: 0,
   },
+  "/assessment/instances": {
+    page: "app/(mainlayout)/assessment/instances/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-instances",
+    budget: 0,
+  },
   "/assessment/instances/[instanceId]": {
     page: "app/(mainlayout)/assessment/instances/[instanceId]/page.tsx",
     dirs: ["components/assessment-flow"],

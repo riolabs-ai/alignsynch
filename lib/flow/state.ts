@@ -173,3 +173,59 @@ export function waitingOn(progress: InstanceProgress, hasInitiator: boolean): Pa
   if (!progress.hasCounterparty || owed.counterparty > 0) waiting.push("counterparty");
   return waiting;
 }
+
+/* ------------------------------------------------------------------ *\
+ * One row of "my instances" (#213)
+ * ------------------------------------------------------------------ */
+
+/**
+ * What one row of the list may say — three values, and the third one is the only one that
+ * mentions anything the viewer has not seen themselves.
+ *
+ *   yours-to-answer   the viewer still owes an Aspect. Their own sheet, their own arithmetic.
+ *   awaiting-other    the viewer has answered everything and the instance is not complete, so
+ *                     the other party has not. The row says *awaiting* and nothing else.
+ *   complete          both answered every Aspect: the Gap is open to both of them.
+ *
+ * **The blind rule holds in the list too.** `awaiting-other` is derived from a count the viewer
+ * cannot see the substance of, and it is deliberately the *whole* sentence: no score, no
+ * "3 of 5 answered", no partial Gap. There is no fourth state for "the other party has answered
+ * but you have not", because that is `yours-to-answer` — a row may tell the reader what they owe
+ * and never how far along somebody else is.
+ *
+ * The values are the copy item ids (`data/pages/assessment-instances.ts`), kebab-case like every
+ * other id in the content model, so the view joins on them with `itemLabel(state, state)` the way
+ * the instance screen joins a `?problem=` code.
+ *
+ * Pure, like the rest of this module: both counts come from rows the caller already read, and
+ * `instanceStatusOf` is reused so the list and the screen can never disagree about `complete`.
+ */
+export const MY_INSTANCE_STATES = ["yours-to-answer", "awaiting-other", "complete"] as const;
+
+export type MyInstanceState = (typeof MY_INSTANCE_STATES)[number];
+
+/** The counts one row contributes, plus which side of it the viewer is. */
+export interface MyInstanceProgress extends InstanceProgress {
+  readonly viewerRole: PartyRole;
+}
+
+/** The viewer's own answered count. Never the other party's — see the comment above. */
+export function viewerAnsweredCount(progress: MyInstanceProgress): number {
+  return progress.viewerRole === "initiator"
+    ? progress.initiatorAnswered
+    : progress.counterpartyAnswered;
+}
+
+/**
+ * The row's state.
+ *
+ * A copy with no Aspects is never `complete` (`instanceStatusOf`), and it is not
+ * `yours_to_answer` either — there is nothing to answer, so the honest row is `awaiting_other`
+ * rather than an invitation to fill in a form that does not exist.
+ */
+export function myInstanceStateOf(progress: MyInstanceProgress): MyInstanceState {
+  if (instanceStatusOf(progress) === "complete") return "complete";
+  const answered = viewerAnsweredCount(progress);
+  if (progress.aspectCount > 0 && answered < progress.aspectCount) return "yours-to-answer";
+  return "awaiting-other";
+}

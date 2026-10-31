@@ -13,11 +13,11 @@ It has two halves, and each one is owned by a different place:
 
 ## Summary
 
-- routes: **41** — 27 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 227 files under `components/`, 223 of them `.tsx`
+- routes: **42** — 28 static, 14 dynamic, from `app/**/page.tsx`
+- component domains: **32** — 228 files under `components/`, 224 of them `.tsx`
 - route handlers: **5** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 9 · **fixture** 50 · **db** 9 · **live** 5
-- templates: Both templates 19 · AlignSynch 10 · QuizHub 42 · No template yet 2
+- status: **mock** 9 · **fixture** 50 · **db** 10 · **live** 5
+- templates: Both templates 19 · AlignSynch 11 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -145,6 +145,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/assessment`
   - reads: Postgres — `lib/db/assessments.ts`, `lib/db/client.ts`, `lib/db/rows.ts`
 
+- `/assessment/instances` — **db**
+  - capability: Every instance the signed-in account is a party to, with both parties and where each one stands: yours to answer, awaiting the other party, or complete with the Gap open.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/my-instances.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: Filtered by party.user_id against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. A row says only where the instance stands: the blind rule holds in the list too, and nothing here draws a score, a count or a Gap.
+
 - `/assessment/instances/[instanceId]` — **db**
   - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered.
   - components: `components/assessment`, `components/assessment-flow`
@@ -183,8 +189,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (4): `answer-form.tsx`, `instance-view.tsx`, `invite-view.tsx`, `template-list.tsx`
-  - routes (3): `/assessment`, `/assessment/instances/[instanceId]`, `/invite/[token]`
+  - files (5): `answer-form.tsx`, `instance-view.tsx`, `invite-view.tsx`, `my-instances.tsx`, `template-list.tsx`
+  - routes (4): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/marketing` — **fixture**

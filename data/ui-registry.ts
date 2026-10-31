@@ -151,6 +151,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/assessment/instances",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Every instance the signed-in account is a party to, with both parties and where each one stands: yours to answer, awaiting the other party, or complete with the Gap open.",
+    notes:
+      "Filtered by party.user_id against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. A row says only where the instance stands: the blind rule holds in the list too, and nothing here draws a score, a count or a Gap.",
+  },
+  {
+    kind: "route",
     surface: "/assessment/instances/[instanceId]",
     status: "db",
     templates: ["alignsynch"],
