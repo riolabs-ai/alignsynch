@@ -1,17 +1,18 @@
 /**
  * The four derived stages (issue #261) — the vocabulary, the four states, and the Setting.
  *
- * The card's claim is not "there is a stage function". It is that the glossary defines
- * **four** stages — 1 Invited, 2 Connected, 3 Sharing, 7 Aligned — and that the count it also
- * claims ("6", Example List "(1-6)") is contradicted by its own rows. So the cases below pin,
- * in order:
+ * The card's claim is not "there is a stage function". It is that the relationship ladder is
+ * **four** stages — 1 Invited, 2 Connected, 3 Sharing, 4 Aligned — and that the other numbers
+ * in the source material belong to a different ladder: the specification's **A–D "stage of
+ * User"** (Play, Registered, Parties Locked, Subscribed), which is billing and out of scope
+ * (`docs/SPEC-DRIFT.md` §4.2, §4.3). So the cases below pin, in order:
  *
- *   1. the vocabulary — four stages, the numbers 1, 2, 3 and 7, and **no** stage numbered 4,
- *      5 or 6, because the document defines none;
+ *   1. the vocabulary — four stages numbered 1–4 contiguously, and no fifth relationship
+ *      stage invented to fill a gap that turned out to be a different product;
  *   2. the four states, each driven from a real fixture: `avery-rowan` with its invite still
- *      unclaimed (invited), `marco-priya` with Marco 5/5 and Priya 3/5 (connected), the same
- *      `marco-priya` complete under Soft — Gaps 1..4 (sharing), and `ruth-sam` complete under
- *      Soft — every Gap 0 or 1 (aligned);
+ *      unclaimed (invited), `marco-priya` with both seats and a sheet short of complete
+ *      (connected), the same `marco-priya` complete under Soft — Gaps 1..4 (sharing), and
+ *      `ruth-sam` complete under Soft — every Gap 0 or 1 (aligned);
  *   3. the Setting is read, not assumed: one Gap of exactly 1 is Aligned under Soft and
  *      Sharing under Full, and `ruth-sam`'s six Gaps of 1 are likewise;
  *   4. the leak bound — before both parties have submitted a stage is `invited` or
@@ -71,24 +72,29 @@ describe("the vocabulary", () => {
     assert.deepEqual([...RELATIONSHIP_STAGES], ["invited", "connected", "sharing", "aligned"]);
   });
 
-  it("keeps the source's numbers, including Aligned at 7", () => {
-    assert.deepEqual({ ...STAGE_NUMBERS }, { invited: 1, connected: 2, sharing: 3, aligned: 7 });
+  it("numbers the relationship ladder 1–4, the specification's range", () => {
+    assert.deepEqual({ ...STAGE_NUMBERS }, { invited: 1, connected: 2, sharing: 3, aligned: 4 });
     assert.deepEqual(
       RELATIONSHIP_STAGES.map((stage) => STAGE_NUMBERS[stage]),
-      [1, 2, 3, 7],
+      [1, 2, 3, 4],
     );
   });
 
-  it("has no stage 4, 5 or 6 — the source defines none, and none is invented here", () => {
+  it("has no fifth relationship stage — A–D are the specification's billing ladder, not stages here", () => {
+    // Contiguous 1–4: nothing skipped, nothing appended. The A–D rows the specification draws
+    // beside this ladder are "stage of User" (Play, Registered, Parties Locked, Subscribed) —
+    // billing and account states, out of scope (`docs/SPEC-DRIFT.md` §4.2, §4.3) — so they are
+    // not stage names here and no fifth relationship stage is invented to hold their place.
     const numbers: number[] = RELATIONSHIP_STAGES.map((stage) => STAGE_NUMBERS[stage]);
-    for (const missing of [4, 5, 6]) {
+    assert.deepEqual(numbers, [1, 2, 3, 4]);
+    assert.equal(new Set(numbers).size, numbers.length);
+    for (const billing of ["a", "b", "c", "d"]) {
       assert.equal(
-        numbers.includes(missing),
+        (RELATIONSHIP_STAGES as readonly string[]).includes(billing),
         false,
-        `stage ${missing} is not defined in the glossary and must not appear in the vocabulary`,
+        `"${billing}" is a stage of the User in the specification, never a relationship stage`,
       );
     }
-    assert.equal(numbers.length, 4);
   });
 
   it("gives each stage the glossary's own name and definition, once", () => {
@@ -174,7 +180,7 @@ describe("the four states, from real fixtures", () => {
       aspects,
     });
     assert.equal(stage, "aligned");
-    assert.equal(STAGE_NUMBERS[stage], 7);
+    assert.equal(STAGE_NUMBERS[stage], 4);
   });
 });
 

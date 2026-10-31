@@ -128,7 +128,13 @@ function rowsWith(
   };
 }
 
-const invite = { email: "rowan@example.com", counterpartyName: "Rowan", claimed: true, link: null };
+const invite = {
+  email: "rowan@example.com",
+  counterpartyName: "Rowan",
+  expiresAt: "2026-11-06T12:00:00.000Z",
+  state: "claimed" as const,
+  link: null,
+};
 
 describe("the blind state", () => {
   const initiatorAnswers = opinionsFor("initiator", {
@@ -169,7 +175,7 @@ describe("the blind state", () => {
       wish: 5,
     });
     expect(screen.waiting).toEqual(["counterparty"]);
-    expect(screen.invite?.claimed).toBe(true);
+    expect(screen.invite?.state).toBe("claimed");
   });
 });
 
@@ -334,7 +340,13 @@ describe("an Advanced instance", () => {
 describe("the invite notice", () => {
   const TOKEN = "t".repeat(43);
   const link = `http://localhost:3000/invite/${TOKEN}`;
-  const unclaimed = { email: "rowan@example.com", counterpartyName: "Rowan", claimed: false, link };
+  const unclaimed = {
+    email: "rowan@example.com",
+    counterpartyName: "Rowan",
+    expiresAt: "2026-11-06T12:00:00.000Z",
+    state: "unclaimed" as const,
+    link,
+  };
 
   const render = (inviteNotice: InviteNotice | undefined): string => {
     const screen = projectScreen({

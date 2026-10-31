@@ -29,6 +29,13 @@ export type PricingFaqCategory = {
  * second brand cannot render, so every row below reads `brand.name` (and the contact
  * line reads `brand.supportEmail`) and the projection is what `tests/brand-shell.test.ts`
  * renders with a different record.
+ *
+ * The list is pruned to the questions this app can answer today (#286). A row whose
+ * honest answer is "there is no such feature" is a row that sells something the build
+ * does not contain, so the seven that had no code behind them were removed rather than
+ * reworded into a denial. Nothing was widened to fill the space: the generator row names
+ * the template library it actually reads, and the deletion row names the mailbox because
+ * the settings button it would otherwise point at does nothing.
  */
 export function pricingFaqCategories(
   brand: Pick<Brand, "name" | "supportEmail">,
@@ -49,32 +56,7 @@ export function pricingFaqCategories(
         {
           question: `Can I try ${brand.name} before purchasing?`,
           answer:
-            "Yes! We offer a free plan with limited features that you can use indefinitely. Additionally, our paid plans come with a 14-day free trial, no credit card required, so you can explore all features before making a decision.",
-        },
-      ],
-    },
-    {
-      name: "Billing",
-      questions: [
-        {
-          question: "How does billing work?",
-          answer:
-            "We offer both monthly and annual billing cycles. You'll be charged at the beginning of each billing period. Annual plans offer a 20% discount compared to monthly billing.",
-        },
-        {
-          question: "Can I change my plan later?",
-          answer:
-            "You can upgrade, downgrade, or cancel your plan at any time. Upgrades take effect immediately, while downgrades or cancellations take effect at the end of your current billing cycle.",
-        },
-        {
-          question: "What payment methods do you accept?",
-          answer:
-            "We accept all major credit cards (Visa, Mastercard, American Express, Discover), PayPal, and in some regions, we support bank transfers for annual enterprise plans.",
-        },
-        {
-          question: "Do you offer refunds?",
-          answer:
-            "We offer a 30-day money-back guarantee for all new subscriptions. If you're not satisfied with our service, contact our support team within 30 days of your initial purchase for a full refund.",
+            "Nothing is charged while you are trying it: there is no paid subscription to manage yet, so there is no checkout, no billing cycle, and no card on file. You can use the app and see what it does first.",
         },
       ],
     },
@@ -83,22 +65,12 @@ export function pricingFaqCategories(
       questions: [
         {
           question: "What types of quizzes can I create?",
-          answer: `${brand.name} supports multiple quiz formats including multiple choice, true/false, fill-in-the-blank, matching, ranking, and open-ended questions. You can also add images, videos, and audio to your quizzes.`,
+          answer: `${brand.name} builds a quiz from multiple-choice questions: each question offers a list of named answers, at least two, and one of them is marked correct. Its second template, the assessment, asks each item on a fixed five-point band, 1 to 5, and names the value at each end of that band. Those two response scales — a list of options and the 1-to-5 band — are the whole question model, and a question is its prompt plus its scale.`,
         },
         {
-          question: "How does the AI quiz generation work?",
+          question: "How does quiz generation work?",
           answer:
-            "Our AI quiz generation feature uses advanced natural language processing to create high-quality quiz questions based on topics you provide. Simply enter a subject, select the difficulty level and number of questions, and our AI will generate a complete quiz for you to review and customize.",
-        },
-        {
-          question: "Can I brand my quizzes with my logo and colors?",
-          answer:
-            "Yes, custom branding is available on our Pro and Enterprise plans. You can add your logo, customize colors, fonts, and even use your own domain for a seamless branded experience.",
-        },
-        {
-          question: "What analytics and reporting features are available?",
-          answer:
-            "Depending on your plan, you can access various analytics including completion rates, average scores, question-level performance, time spent, and user progress over time. Enterprise plans offer custom reporting capabilities.",
+            "It assembles a draft from the built-in template library and retitles it with your topic. No language model is involved: it does not read the topic for meaning and does not write new questions, it selects existing templates and puts your topic in their titles, so the draft is a starting point to edit.",
         },
       ],
     },
@@ -108,17 +80,11 @@ export function pricingFaqCategories(
         {
           question: `How secure is my data on ${brand.name}?`,
           answer:
-            "We take security seriously. All data is encrypted in transit and at rest. We implement industry-standard security practices, regular security audits, and comply with GDPR, CCPA, and other privacy regulations.",
+            "Here is what the app actually does. Traffic between it and its database is encrypted in transit. We never hold your password: sign-in runs through Neon's Managed Auth, which owns the credential, and this app has no password column of its own. Your assessment data lives in Neon's managed Postgres, in us-east-2. The only emails this app sends are two transactional ones — an invitation, and a notice when the other party has answered — and there is no marketing email; it loads no analytics or advertising tracker, so nothing here profiles your visit. We hold no certification and have commissioned no independent audit.",
         },
         {
           question: "Can I delete my account and data?",
-          answer:
-            "Yes, you can delete your account and associated data at any time from your account settings. We also offer data export options if you'd like to backup your information before deletion.",
-        },
-        {
-          question: "Do you offer Single Sign-On (SSO)?",
-          answer:
-            "Yes, SSO integration is available on our Enterprise plan. We support SAML, OAuth, and can integrate with popular identity providers like Okta, Auth0, Google Workspace, and Microsoft Azure AD.",
+          answer: `Not from inside the app yet: the settings screen draws the delete control, but the action is not wired up, and there is no self-serve way to remove an account. Ask at ${brand.supportEmail} and the account and its data are removed by hand.`,
         },
       ],
     },

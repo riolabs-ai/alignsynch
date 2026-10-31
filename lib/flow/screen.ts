@@ -25,6 +25,7 @@ import type { Score } from "@/content/record";
 import { SCORE_MAX, SCORE_MIN } from "@/content/record";
 import type { AssessmentReport } from "@/lib/assessment-report";
 import { assessmentReport } from "@/lib/assessment-report";
+import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import {
   assessmentInstanceFromRows,
   orderedItems,
@@ -60,8 +61,24 @@ export interface FlowAspect {
 export interface FlowInvite {
   readonly email: string;
   readonly counterpartyName: string;
-  readonly claimed: boolean;
-  /** The link, once: while the invite is unclaimed and the caller holds the raw token. */
+  /**
+   * **When** the invitation stops accepting a claim — the row's `expires_at`, as an ISO instant.
+   *
+   * A string rather than a `Date` because this is a view model: the screen formats it with the
+   * repo's UTC formatter (`formatDate`) and never re-derives a date from it, so the value that
+   * crosses into the markup is the one Postgres handed back (#266).
+   */
+  readonly expiresAt: string;
+  /**
+   * **Which** of the three states the invitation is in, derived at read time by
+   * `inviteStateOf()` — `unclaimed`, `expired` or `claimed` (#266).
+   *
+   * Not a column and not a boolean: the Initiator's screen has to tell "not claimed yet" from
+   * "expired" from "claimed", and a `claimed` flag could only ever answer the third. It lives
+   * beside `expiresAt` and not instead of it, because the sentence names the date.
+   */
+  readonly state: InviteDisplayState;
+  /** The link, once: while the invite is unclaimed, live and the caller holds the raw token. */
   readonly link: string | null;
 }
 
