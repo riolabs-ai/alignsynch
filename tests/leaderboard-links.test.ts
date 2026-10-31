@@ -238,8 +238,9 @@ describe("every footer mount passes the list down", () => {
   it("finds the mounts it is meant to check (positive control)", () => {
     const mounts = Object.values(tree).flatMap(footerTagsIn);
 
-    // Eight today: `/` twice, four routes, and the two client shells that forward the prop.
-    expect(mounts).toHaveLength(8);
+    // Ten today: `/` twice, four routes, the two client shells that forward the prop, and the
+    // two legal pages (#270), which mount the same footer so the legal row is on both.
+    expect(mounts).toHaveLength(10);
   });
 
   it("leaves no `<Footer>` mount on the tree without hiddenNav", () => {

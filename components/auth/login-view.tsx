@@ -88,6 +88,8 @@ export function LoginView({
   const router = useRouter();
   const form = sectionOf(copy, "sign-in");
   const stats = sectionOf(copy, "stats");
+  /** The legal row under the card (issue #270); the two ids are the fixture's. */
+  const legal = sectionOf(copy, "legal");
 
   /**
    * The one number this page owns: the demo's active-player count, as `data/metrics.ts`
@@ -265,6 +267,22 @@ export function LoginView({
          * version is not something you agree to by signing in.
          */}
         <AppVersion copy={copy} />
+
+        {/*
+         * The legal row (issue #270): the two documents a person can read before they agree to
+         * anything. Below the badge and outside the card, because these are documents about the
+         * product, not fields of the form — and they are the same two destinations the footer
+         * carries, so a reader who lands here first is not the only one without them.
+         */}
+        <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+          <Link href="/terms" className="hover:text-action hover:underline">
+            {itemLabel(legal, "terms")}
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link href="/privacy" className="hover:text-action hover:underline">
+            {itemLabel(legal, "privacy")}
+          </Link>
+        </div>
       </div>
     </div>
   );
