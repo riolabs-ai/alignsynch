@@ -26,11 +26,11 @@
  * Five sentences were removed from this fixture by #309 rather than rewritten, because each
  * described a product nobody ships: an account tier with a monthly tournament quota, a
  * subscription-status row on a settings page that has no such control, two tags naming a paid
- * feature on a product with no tiers, a section of troubleshooting steps for a native app that does
- * not exist, and an email-plus-three-social-providers sign-up for a form that takes an email and a
- * password. A note about a paid tier outliving a cancellation went with them. The quiz articles
- * are otherwise untouched: on QuizHub these document the mocked surfaces the catalogue is meant to
- * keep, and the honest thing to do with them is leave them where they belong.
+ * feature on a product with no tiers, a section of troubleshooting steps for an application this
+ * repo does not build, and an email-plus-three-social-providers sign-up for a form that takes an
+ * email and a password. A note about a paid tier outliving a cancellation went with them. The quiz
+ * articles are otherwise untouched: on QuizHub these document the mocked surfaces the catalogue is
+ * meant to keep, and the honest thing to do with them is leave them where they belong.
  */
 import type { KbArticle } from "../content/article";
 import { brand } from "./brand";
