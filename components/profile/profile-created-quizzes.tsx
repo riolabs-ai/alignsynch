@@ -572,6 +572,7 @@ export function ProfileCreatedQuizzes({ user }: ProfileCreatedQuizzesProps) {
               Close
             </Button>
             <Button
+              variant="action"
               onClick={() => {
                 setPreviewOpen(false);
                 router.push(`/quiz/${previewQuiz?.id}`);
