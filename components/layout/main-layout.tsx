@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/layout/header";
 import { AppSidebar } from "@/components/layout/sidebar";
+import { useSidebar } from "@/components/layout/sidebar-context";
 import type { SearchIndex } from "@/content/search";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
@@ -10,7 +11,6 @@ import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import type React from "react";
-import { useSidebar } from "./sidebar-context";
 
 /**
  * The shell. `copy` is `data/pages/shell.ts`, parsed by `app/(mainlayout)/layout.tsx` and

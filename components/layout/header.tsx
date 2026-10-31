@@ -1,5 +1,6 @@
 "use client";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
+import { useSidebar } from "@/components/layout/sidebar-context";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -46,7 +47,6 @@ import React, { useEffect, useState } from "react";
 import ChatDrawer from "../header/ChatDrawer";
 import NotificationDrawer from "../header/NotificationDrawer";
 import { Badge } from "../ui/badge";
-import { useSidebar } from "./sidebar-context";
 
 /**
  * The account slot when nobody is signed in (issue #212).
