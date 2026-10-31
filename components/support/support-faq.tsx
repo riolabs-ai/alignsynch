@@ -26,6 +26,40 @@ interface SupportFAQProps {
 export type SupportFaqQuestion = { question: string; answer: string };
 
 /**
+ * The categories that have answers (#288).
+ *
+ * This list is the whole taxonomy the support page offers, and `support-categories.tsx`
+ * builds the rail from it, so a category cannot be selectable and empty: adding a key here
+ * without rows, or a row under a key that is not here, is the bug this constant prevents.
+ *
+ * Two members of `KB_CATEGORY_SLUGS` are absent — the two this issue removed answers for —
+ * and that union in `content/article.ts` stays as it is, because the knowledge-base fixture
+ * carries one article per category and those files are not this surface's. What was removed
+ * is the claim, not the slug: those rows priced a subscription, a payout path and a prize
+ * for a business this app has no provider, table or route for. A support FAQ whose job is
+ * to deny features is worse than a shorter one.
+ *
+ * The rows that remain each name something in this tree: `app/(mainlayout)/settings`,
+ * `app/(mainlayout)/profile/[username]`, `content/record.ts`'s two scales, the create
+ * editor, and `brand.supportEmail`. Nothing here answers with a date, a vendor the code
+ * does not integrate with, a support-hours figure, or a promise.
+ */
+export const SUPPORT_FAQ_CATEGORIES = [
+  "account",
+  "quiz-creation",
+  "privacy",
+  "technical",
+  "general",
+] as const;
+
+export type SupportFaqCategory = (typeof SUPPORT_FAQ_CATEGORIES)[number];
+
+/** Is this the union's filter sentinel, or a category this file actually answers? */
+export function isSupportFaqCategory(category: SupportCategory): category is SupportFaqCategory {
+  return (SUPPORT_FAQ_CATEGORIES as readonly SupportCategory[]).includes(category);
+}
+
+/**
  * The support FAQ rows, as a function of the brand.
  *
  * The rows are record-shaped blocks with no schema in P2, so they stay in this feature
@@ -36,191 +70,63 @@ export type SupportFaqQuestion = { question: string; answer: string };
  */
 export function supportFaqGroups(
   brand: Pick<Brand, "name" | "supportEmail">,
-): Record<Exclude<SupportCategory, "all">, SupportFaqQuestion[]> {
+): Record<SupportFaqCategory, SupportFaqQuestion[]> {
   return {
     account: [
       {
-        question: "How do I change my username?",
+        question: "How do I edit my profile?",
         answer:
-          "To change your username, go to Account Settings > Profile. Click on the edit button next to your username and enter a new one. Note that usernames must be unique and can only be changed once every 30 days.",
+          "Open Account Settings (/settings) and change your display name, handle, bio or country, then save. The first save creates your profile; after that the same form updates it.",
       },
       {
-        question: "How do I reset my password?",
+        question: "Can I change my username?",
         answer:
-          "To reset your password, click on the 'Forgot Password' link on the login page. Enter the email associated with your account, and we'll send you a password reset link. Follow the instructions in the email to create a new password.",
+          "Your username is the handle in Account Settings, and it is also your profile address. Change it whenever you need to; the one rule is that a handle belongs to one person, so a name somebody else already holds will not save.",
       },
       {
-        question: "Can I link my social media accounts?",
+        question: "Who can see my profile?",
         answer:
-          "Yes, you can link your social media accounts for easier login. Go to Account Settings > Connected Accounts and click on the social media platforms you want to connect. This also allows you to share your quiz achievements directly to those platforms.",
-      },
-      {
-        question: "How do I delete my account?",
-        answer:
-          "To delete your account, go to Account Settings > Privacy, and scroll to the bottom where you'll find the 'Delete Account' option. Please note that account deletion is permanent and will remove all your data, including created quizzes and earnings history.",
-      },
-      {
-        question: "How do I change my email address?",
-        answer:
-          "To change your email address, go to Account Settings > Profile. Click on the edit button next to your email address and enter a new one. You'll receive a verification email at the new address. Your email change will be complete once you verify the new address.",
-      },
-    ],
-    billing: [
-      {
-        question: "What payment methods are accepted?",
-        answer:
-          "We accept credit/debit cards (Visa, Mastercard, American Express), PayPal, Apple Pay, Google Pay, and various regional payment methods depending on your location. All payments are processed securely through our payment partners.",
-      },
-      {
-        question: "How do I update my payment information?",
-        answer:
-          "To update your payment information, go to Account Settings > Billing. Click on 'Payment Methods' and select 'Add New Method' or 'Edit' next to an existing method. Follow the prompts to update your information securely.",
-      },
-      {
-        question: "When will I receive my earnings?",
-        answer:
-          "Earnings are calculated daily and updated in your dashboard. You can withdraw your earnings once they reach the minimum threshold ($25). Withdrawals are processed within 3-5 business days, depending on your payment method and location.",
-      },
-      {
-        question: "How do I cancel my subscription?",
-        answer:
-          "To cancel your subscription, go to Account Settings > Billing > Subscriptions. Click on 'Cancel Subscription' and follow the prompts. Your subscription will remain active until the end of the current billing period, after which it will not renew.",
-      },
-      {
-        question: "Is there a refund policy?",
-        answer:
-          "Yes, we offer refunds within 14 days of purchase for subscription plans if you haven't used premium features. For tournament entry fees, refunds are available up to 24 hours before the tournament starts. Please contact support for specific refund requests.",
+          "Anyone who opens your profile address. That page shows your display name, handle, bio and country, and nothing else about your account. Only you can change it, from Account Settings.",
       },
     ],
     "quiz-creation": [
       {
-        question: "How do I create a quiz?",
+        question: "How do I write a quiz?",
         answer:
-          "To create a quiz, click on 'Create' in the sidebar and choose either 'Editor' for manual creation or 'Generator' for AI-assisted creation. In the Editor, you can add questions, multiple-choice answers, and media. The Generator will help you create questions based on your topic and preferences.",
+          "The editor is at /create/editor. It takes a title, a summary, your questions, and settings for the time limit, passing score, visibility and retakes. Your work stays in the browser while you edit it — saving and publishing confirm on screen but do not write a record.",
       },
       {
-        question: "What types of questions can I include?",
+        question: "What kinds of questions can a quiz have?",
         answer:
-          "You can create multiple-choice questions (single or multiple correct answers), true/false questions, fill-in-the-blank, matching, and short answer questions. Each question can include text, images, or embedded videos to make your quiz more engaging.",
-      },
-      {
-        question: "How many questions can I add to a quiz?",
-        answer:
-          "Free accounts can create quizzes with up to 10 questions. Premium accounts can create quizzes with up to 100 questions. For educational institutions, we offer custom limits based on your needs.",
-      },
-      {
-        question: "Can I add images or videos to my questions?",
-        answer:
-          "Yes, you can add images, GIFs, and videos to both questions and answer options. Click the media icon in the question editor to upload or embed media. Supported formats include JPG, PNG, GIF for images and YouTube, Vimeo links for videos.",
-      },
-      {
-        question: "How do I set time limits for questions?",
-        answer:
-          "In the quiz editor, you can set time limits for individual questions or for the entire quiz. Click on the timer icon next to each question to set a specific time limit, or use the quiz settings to apply a uniform time limit to all questions.",
-      },
-    ],
-    tournaments: [
-      {
-        question: "How do I create a tournament?",
-        answer:
-          "To create a tournament, go to the Tournaments section and click 'Create Tournament'. Fill in the details including name, description, start/end dates, entry requirements, and prizes. You can make it public or invite-only, and set up rounds and scoring rules.",
-      },
-      {
-        question: "How do I join a tournament?",
-        answer:
-          "Browse available tournaments in the Tournaments section. Click on a tournament to view details, then click 'Join Tournament'. Some tournaments may have entry requirements (skill level, entry fee) that you'll need to meet before joining.",
-      },
-      {
-        question: "How is tournament scoring calculated?",
-        answer:
-          "Tournament scoring depends on the format chosen by the organizer. Common formats include points per correct answer, time-based scoring (faster answers get more points), or elimination rounds. The specific scoring rules are always displayed on the tournament details page.",
-      },
-      {
-        question: "Can I create a private tournament for friends?",
-        answer:
-          "Yes, when creating a tournament, select 'Invite Only' in the privacy settings. You'll receive a unique code that you can share with friends. Only people with this code will be able to join your tournament.",
-      },
-      {
-        question: "How are tournament prizes distributed?",
-        answer:
-          "Prize distribution depends on the tournament. Cash prizes are credited to winners' accounts within 48 hours of tournament completion. Virtual prizes (badges, points) are awarded immediately. For physical prizes, winners will be contacted to provide shipping information.",
+          "Every question is a prompt plus one of two response scales: a set of named options, where one option is the answer, or a five-point 1–5 band. A question with options can also carry an explanation, which a player sees with the answer.",
       },
     ],
     privacy: [
       {
-        question: "How is my personal information used?",
+        question: "What does the app store about me?",
         answer:
-          "We collect only necessary information to provide our services. Your personal data is used for account management, service improvement, and personalized experiences. We never sell your data to third parties. For complete details, please review our Privacy Policy.",
-      },
-      {
-        question: "Can I make my profile private?",
-        answer:
-          "Yes, go to Account Settings > Privacy and toggle 'Private Profile'. When enabled, only your username will be visible to others. Your quiz history, achievements, and other profile details will be hidden from public view.",
-      },
-      {
-        question: "How do I control who sees my created quizzes?",
-        answer:
-          "When creating or editing a quiz, you can set its visibility to 'Public' (visible to everyone), 'Unlisted' (accessible only via direct link), or 'Private' (visible only to you). You can change this setting at any time from the quiz management page.",
-      },
-      {
-        question: "Are my quiz results shared with others?",
-        answer:
-          "By default, your quiz results are visible on leaderboards. To change this, go to Account Settings > Privacy and toggle 'Hide My Results'. This will prevent your name from appearing on public leaderboards while still allowing you to see your own performance.",
-      },
-      {
-        question: "How can I manage cookies and tracking?",
-        answer:
-          "We use cookies for essential functions, analytics, and personalization. You can manage cookie preferences in the footer of our website by clicking 'Cookie Settings'. You can choose to accept all cookies or only essential ones required for the site to function.",
+          "Two things. Your sign-in — email and password — belongs to the managed auth service the app signs in through, and the app never reads or stores your password. Your profile — display name, handle, bio and country — is a row in the app's own database, written when you save Account Settings.",
       },
     ],
     technical: [
       {
-        question: "The quiz editor isn't loading properly. What should I do?",
-        answer:
-          "First, try refreshing the page. If that doesn't work, clear your browser cache and cookies. Make sure you're using a supported browser (Chrome, Firefox, Safari, Edge - latest versions). If problems persist, try using a different browser or device.",
-      },
-      {
-        question: "Why can't I upload images to my quiz?",
-        answer:
-          "Check that your image meets our requirements: max 5MB size, JPG/PNG/GIF format. If the image meets these requirements but still won't upload, try compressing it further or using a different image. Also ensure you have a stable internet connection.",
-      },
-      {
-        question: "The quiz timer isn't working correctly. How can I fix it?",
-        answer:
-          "Timer issues are often related to browser performance. Close unnecessary tabs and applications, refresh the page, or try a different browser. If you're on mobile, ensure your device isn't in battery saving mode, which can affect timers.",
-      },
-      {
-        question: "Why am I experiencing lag during quizzes?",
-        answer:
-          "Lag can be caused by slow internet connection, browser issues, or device performance. Try connecting to a stronger WiFi signal, closing other applications and tabs, or switching to a device with better performance. For mobile users, the app version may provide better performance than the browser version.",
-      },
-      {
-        question: "How do I report a bug?",
-        answer:
-          "To report a bug, go to the Support page and select 'Contact Us'. Choose 'Report a Bug' from the dropdown menu and provide as much detail as possible, including what you were doing when the bug occurred, your device, browser, and screenshots if possible. Our team will investigate and respond as soon as possible.",
+        question: "A page looks out of date, or a button does nothing. What should I try?",
+        answer: `Reload the page. If it still looks wrong, clear this site's data, sign in again and retry the action. If it keeps happening, email ${brand.supportEmail} with the page you were on and what you saw.`,
       },
     ],
     general: [
       {
         question: `What is ${brand.name}?`,
-        answer: `${brand.name} is an interactive platform where users can create, share, and take quizzes on various topics. It combines educational content with gamification elements, allowing creators to earn from their quizzes while players can win prizes and climb leaderboards.`,
+        answer: `${brand.name} is a web app for taking quizzes and drafting your own: browse the catalogue at /explore, play a quiz, and open /create/editor to write one.`,
       },
       {
         question: "How do I get started?",
         answer:
-          "Sign up for a free account, then explore the platform by taking some featured quizzes. When you're ready to create your own, click 'Create' in the sidebar and follow the guided process. Check out the 'Creator Tips' section for advice on making engaging quizzes.",
+          "Create an account at /register, then open /explore and play one. When you want to write your own, /create/editor opens the editor, and /creator-tips collects what makes a question work.",
       },
       {
-        question: `Is ${brand.name} available on mobile devices?`,
-        answer: `Yes, ${brand.name} is fully responsive and works on all mobile browsers. We also offer dedicated apps for iOS and Android with additional features like offline quiz taking and push notifications for tournament reminders.`,
-      },
-      {
-        question: `Can I use ${brand.name} for educational purposes?`,
-        answer: `Many educators use ${brand.name} to create engaging learning materials. We offer special educational accounts with features like student progress tracking, classroom management, and the ability to align quizzes with curriculum standards.`,
-      },
-      {
-        question: "How do I contact customer support?",
-        answer: `You can contact our support team through the 'Contact Us' tab on this page, by emailing ${brand.supportEmail}, or by using the chat button in the bottom right corner of any page. Our support team is available 24/7 to assist with any questions or issues.`,
+        question: "How do I contact support?",
+        answer: `Email ${brand.supportEmail}. Include the page you were on and what you expected to happen, and for a bug, what happened instead.`,
       },
     ],
   };
@@ -232,19 +138,17 @@ export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQP
   /** The rows, with the product name and the support address read from the record. */
   const allFaqs = supportFaqGroups(brand);
 
-  // Combine all FAQs for the "all" category
-  const allCategoryFaqs = [
-    ...allFaqs.account,
-    ...allFaqs.billing,
-    ...allFaqs["quiz-creation"],
-    ...allFaqs.tournaments,
-    ...allFaqs.privacy,
-    ...allFaqs.technical,
-    ...allFaqs.general,
-  ];
+  /**
+   * A category the rail does not offer has no rows, and an empty panel is the bug #288
+   * removed the empty categories to avoid: anything that is not one of these falls back to
+   * the whole list rather than to "No FAQs found".
+   */
+  const category: SupportFaqCategory | "all" = isSupportFaqCategory(selectedCategory)
+    ? selectedCategory
+    : "all";
 
-  // Get the appropriate FAQs based on the selected category
-  const faqs = selectedCategory === "all" ? allCategoryFaqs : allFaqs[selectedCategory] || [];
+  const faqs =
+    category === "all" ? SUPPORT_FAQ_CATEGORIES.flatMap((id) => allFaqs[id]) : allFaqs[category];
 
   // Filter FAQs based on search query
   const filteredFaqs = faqs.filter(
@@ -253,35 +157,11 @@ export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQP
       faq.answer.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // Get the category name for display
-  const getCategoryName = () => {
-    switch (selectedCategory) {
-      case "all":
-        return itemLabel(categoryCopy, "all");
-      case "account":
-        return itemLabel(categoryCopy, "account");
-      case "billing":
-        return itemLabel(categoryCopy, "billing");
-      case "quiz-creation":
-        return itemLabel(categoryCopy, "quiz-creation");
-      case "tournaments":
-        return itemLabel(categoryCopy, "tournaments");
-      case "privacy":
-        return itemLabel(categoryCopy, "privacy");
-      case "technical":
-        return itemLabel(categoryCopy, "technical");
-      case "general":
-        return itemLabel(categoryCopy, "general");
-      default:
-        return itemLabel(categoryCopy, "all");
-    }
-  };
-
   return (
     <Card className="p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <h2 className="text-2xl font-bold">
-          {getCategoryName()} {copy.heading}
+          {itemLabel(categoryCopy, category)} {copy.heading}
         </h2>
         <div className="relative w-full md:w-64 mt-4 md:mt-0">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -296,8 +176,8 @@ export function SupportFAQ({ selectedCategory, copy, categoryCopy }: SupportFAQP
 
       {filteredFaqs.length > 0 ? (
         <Accordion type="single" collapsible className="w-full">
-          {filteredFaqs.map((faq, index) => (
-            <AccordionItem key={index} value={`item-${index}`}>
+          {filteredFaqs.map((faq) => (
+            <AccordionItem key={faq.question} value={faq.question}>
               <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
               <AccordionContent>{faq.answer}</AccordionContent>
             </AccordionItem>
