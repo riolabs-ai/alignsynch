@@ -14,9 +14,9 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **42** — 28 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 228 files under `components/`, 224 of them `.tsx`
+- component domains: **32** — 230 files under `components/`, 226 of them `.tsx`
 - route handlers: **5** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 9 · **fixture** 50 · **db** 10 · **live** 5
+- status: **mock** 10 · **fixture** 50 · **db** 9 · **live** 5
 - templates: Both templates 19 · AlignSynch 11 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
@@ -45,7 +45,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/login` — **live**
   - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials and network states.
   - components: `components/auth`, `components/ui`
-  - reads: an `/api` path — `lib/auth/client.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/client.ts`, `lib/auth/server.ts`
 
 - `/profile/[username]` — **db**
   - capability: A public profile read from Postgres: header, stats, achievements, followers, quiz history and created quizzes.
@@ -80,9 +80,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - routes: every route — imported by `app/layout.tsx`, no page imports it directly
 
 - `components/auth` — **live**
-  - capability: The sign-in and sign-up forms, including pending, invalid-credentials and network states.
-  - files (3): `demo-panel.tsx`, `login-view.tsx`, `register-view.tsx`
+  - capability: The sign-in and sign-up forms, including pending, invalid-credentials and network states, plus the two demo surfaces `/login` draws only in demo mode: the anchor to the PIN gate and, under a valid unlock cookie, the three role buttons.
+  - files (5): `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `login-view.tsx`, `register-view.tsx`
   - routes (3): `/demo`, `/login`, `/register`
+  - notes: The demo surfaces are decided on the server (`lib/auth/demo-surface.ts`) and render nothing outside demo mode; the PIN gate itself is `/demo` (`components/auth/demo-gate.tsx`), not this route.
 
 - `components/content` — **mock**
   - capability: The block renderer every article record is drawn through: paragraphs, headings, lists, images and quotes.
@@ -157,14 +158,14 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `lib/auth/server.ts`
   - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404.
 
-- `/demo` — **db**
-  - capability: A PIN-gated demo panel: three buttons sign a browser in as the seeded Initiator, Counterparty or Admin through a server action, with no password ever sent to the browser.
+- `/demo` — **mock**
+  - capability: The demo PIN gate: one four-digit field and a submit. A correct PIN sets a signed, httpOnly unlock cookie and redirects to `/login`, where the three role buttons appear.
   - components: `components/auth`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/server.ts`
-  - notes: Exists only under DEMO_AUTH=1, and refused when VERCEL_ENV=production unless DEMO_ALLOW_PRODUCTION=1 is also set; outside demo mode the route answers the same 404 a URL that never existed does.
+  - reads: 3 fixture modules of page copy and assets only
+  - notes: Exists only under DEMO_AUTH=1, and refused when VERCEL_ENV=production unless DEMO_ALLOW_PRODUCTION=1 is also set; outside demo mode the route answers the same 404 a URL that never existed does. `mock` rather than `db` since #218: the gate reads no Postgres — it compares the PIN and signs a cookie, and the credential read moved to the role action behind `/login`.
 
 - `/demo/admin` — **db**
-  - capability: The admin-only check behind the demo panel's third button: it prints the session it read from Postgres, and a member account asking for it gets a 404 rather than a 403.
+  - capability: The admin-only check behind the demo's Admin role button (drawn on `/login` under a valid unlock): it prints the session it read from Postgres, and a member account asking for it gets a 404 rather than a 403.
   - components: `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
   - notes: The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route.

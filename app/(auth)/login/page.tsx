@@ -1,9 +1,14 @@
 import { LoginView } from "@/components/auth/login-view";
 import { brand, brandIdOf } from "@/data/brand";
 import { loginPageCopy } from "@/data/pages/login";
+import { demoMode } from "@/lib/auth/demo-mode";
+import type { DemoViewProps } from "@/lib/auth/demo-form";
+import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
+import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
 import { loginCopyFor } from "@/lib/auth-copy";
 import { safeNextPath } from "@/lib/auth/paths";
 import type { Metadata } from "next";
+import { signInAsDemoRole } from "./demo-actions";
 
 export const metadata: Metadata = {
   title: "Log In",
@@ -22,11 +27,30 @@ export const metadata: Metadata = {
  * client only ever receives something it is allowed to navigate to. Reading `searchParams` makes
  * this route request-time — correct for a form that must never be cached with somebody's `next=`.
  *
- * The brand is resolved here too (issue #225): `loginCopyFor` picks which of the fixture's hero
- * sentences and stat tiles this build renders, so the view keeps asking for the same two ids
- * (`sign-in`, `stats`) and never sees a brand. The choice lives in `lib/auth-copy.ts` because
- * both auth routes need it; the shape is the one `/` already uses — one route, one component,
- * the composition chosen on the server.
+ * **The demo block is a server decision too** (#218), and the same three states `/demo` already
+ * understands (`lib/auth/demo-surface.ts`):
+ *
+ *   off     demo mode is not on → neither the link nor the buttons. Not a disabled control and
+ *           not a hint: `/login` renders exactly what it rendered before #218.
+ *   entry   demo mode is on, this request has no valid unlock → an anchor to `/demo` and no
+ *           buttons. The gate is the one door, so the link goes there and the role buttons do
+ *           not exist yet.
+ *   roles   the unlock cookie verifies → the three role buttons, each a server action that
+ *           re-verifies the same cookie, and no link back to the gate (the buttons already switch
+ *           accounts; asking for the PIN again would repeat the first step for nothing).
+ *
+ * The cookie is only read when demo mode is on: a tree with no `DEMO_*` env (the gate, CI, the
+ * parity render) must not need an auth secret to render `/login`, and `demoSurfaceFor()` takes
+ * `null` for exactly that case. The actions are passed as props, so this module is the one place
+ * the two `"use server"` files are wired to the view.
+ *
+ * The **copy** is assembled here from two server decisions and handed down as one prop. The brand
+ * is resolved here (issue #225): `loginCopyFor` picks which of the fixture's hero sentences and
+ * stat tiles this build renders, so the view keeps asking for the same two ids (`sign-in`,
+ * `stats`) and never sees a brand; the choice lives in `lib/auth-copy.ts` because both auth routes
+ * need it. The demo state then adds its own section (`demoCopyFor`): the view is handed one
+ * `PageCopy` and Next serialises it into the response, so a section left in the prop is text in
+ * the HTML even when nothing draws it — with demo mode off those words are absent entirely.
  */
 export default async function AuthPage({
   searchParams,
@@ -36,7 +60,20 @@ export default async function AuthPage({
   const { next } = await searchParams;
   const target = Array.isArray(next) ? next[0] : next;
 
+  const mode = demoMode();
+  const surface = demoSurfaceFor(mode, mode.kind === "demo" ? await readDemoUnlock() : null);
+  const demo: DemoViewProps =
+    surface.kind === "roles"
+      ? { kind: "roles", action: signInAsDemoRole }
+      : surface.kind === "entry"
+        ? { kind: "entry" }
+        : { kind: "off" };
+
   return (
-    <LoginView copy={loginCopyFor(loginPageCopy, brandIdOf(brand))} next={safeNextPath(target)} />
+    <LoginView
+      copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandIdOf(brand)), loginPageCopy)}
+      next={safeNextPath(target)}
+      demo={demo}
+    />
   );
 }
