@@ -14,19 +14,29 @@
  */
 import type { PageCopy } from "@/content/pages";
 import { ASSESSMENT_MODES } from "@/content/assessment";
-import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
 import type { TemplateSummary } from "@/lib/flow/store";
 
 export function TemplateList({
   copy,
   templates,
+  createdTitle = null,
 }: {
   copy: PageCopy;
   templates: readonly TemplateSummary[];
+  /**
+   * The title of the template a save just created, or `null` on a plain visit (#255).
+   *
+   * A title and not an id: the page resolved `?created=` against the list it already read, so a
+   * query parameter that names nothing draws no notice — and the words somebody typed travel no
+   * further than the record that holds them.
+   */
+  createdTitle?: string | null;
 }) {
   const create = sectionOf(copy, "create");
   const list = sectionOf(copy, "templates");
+  const created = sectionOf(copy, "created");
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10">
@@ -37,9 +47,28 @@ export function TemplateList({
         )}
       </header>
 
+      {createdTitle === null ? null : (
+        <div
+          data-template-created="true"
+          role="status"
+          className="mb-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          <p className="font-semibold">{created.heading}</p>
+          <p className="mt-1">{fillLabel(sectionBody(created), { title: createdTitle })}</p>
+        </div>
+      )}
+
       <p className="mb-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
         {sectionBody(create)}
       </p>
+
+      {create.cta === undefined ? null : (
+        <p className="mb-6 text-sm">
+          <a className="font-medium text-action underline" href={create.cta.href}>
+            {create.cta.label}
+          </a>
+        </p>
+      )}
 
       <section className="space-y-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{list.heading}</h2>

@@ -24,6 +24,27 @@ export const MY_INSTANCES_PATH = "/assessment/instances";
 /** The create endpoint — a POST-only route handler. */
 export const CREATE_INSTANCE_PATH = "/assessment/new";
 
+/**
+ * `/assessment/templates/new` — the form that authors a template (#255).
+ *
+ * Registered in `content/routes.ts` (E7 checks it in both directions) because it is a page. It is
+ * a child of `/assessment` rather than a sibling (`/assessment/new` is already taken by the
+ * instance-creating POST), and it is not `/assessment/templates/[slug]/edit`: a template is never
+ * edited once saved — instances copy their Aspects at creation, so a mutable source would rewrite
+ * the questions under answers somebody already gave.
+ */
+export const NEW_TEMPLATE_PATH = "/assessment/templates/new";
+
+/**
+ * The template-saving endpoint — a POST-only route handler, so it is not a page and the manifest
+ * does not list it (the same split as `/assessment/new`).
+ *
+ * The form posts here and the handler redirects: a save is a POST followed by a GET of either the
+ * form (refused, with the reason) or `/assessment` (saved, where the new template is listed). That
+ * is what keeps a reload from saving a second copy.
+ */
+export const CREATE_TEMPLATE_PATH = "/assessment/templates";
+
 export function instancePath(instanceRecordId: string): string {
   return `/assessment/instances/${instanceRecordId}`;
 }
