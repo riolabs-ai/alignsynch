@@ -18,6 +18,9 @@ yarn-error.log*
 
 # env files
 .env*
+# …except the template: names and comments, no values, and it must be committed so a new
+# variable is documented by the change that adds it.
+!.env.example
 
 # vercel
 .vercel

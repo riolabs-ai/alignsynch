@@ -4,6 +4,7 @@ import { selectQuestionAccuracy, selectQuizResults } from "@/content/quiz-result
 import { analyticsFor } from "@/data/quiz-analytics";
 import { quizResults } from "@/data/quiz-results";
 import { quizById } from "@/data/quizzes";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -27,6 +28,9 @@ export async function generateMetadata({
 }
 
 export default async function QuizDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  // Quiz-only (#300), ahead of the id: an author's detail page for a quiz the alignment build
+  // does not have.
+  requireQuizProduct();
   const { id } = await params;
   const record = quizById(id);
   if (record === undefined) notFound();

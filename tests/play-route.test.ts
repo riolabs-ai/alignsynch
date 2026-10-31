@@ -18,7 +18,7 @@
  * Next actually throws (`NEXT_HTTP_ERROR_FALLBACK;404`) rather than a stand-in.
  */
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import QuizPlayPage from "@/app/(mainlayout)/quiz/[id]/play/page";
 import { quizById } from "@/data/quizzes";
 
@@ -43,6 +43,21 @@ async function renderRoute(id: string): Promise<string> {
   const element = await QuizPlayPage({ params: Promise.resolve({ id }) });
   return renderToStaticMarkup(element);
 }
+
+/**
+ * The template is stated, not inherited (#300). These cases are about the route's *wiring* — which
+ * record it plays for a given id — and that wiring only exists on a build that ships the quiz
+ * product. Read ambiently, `BRAND=alignsynch` (the matrix leg) would run every case against a route
+ * that has already answered 404, so the suite would go red for a reason its own name does not
+ * claim. The boundary has its own case below, and its own file (`tests/brand-boundary.test.ts`).
+ */
+beforeEach(() => {
+  vi.stubEnv("BRAND", "quizhub");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("/quiz/[id]/play", () => {
   it("plays the quiz the URL names", async () => {
@@ -81,6 +96,18 @@ describe("/quiz/[id]/play", () => {
     expect(empty?.questions).toHaveLength(0);
 
     await expect(renderRoute("quiz-math-puzzles-and-problems")).rejects.toMatchObject({
+      digest: NOT_FOUND_DIGEST,
+    });
+  });
+
+  it("is not-found on a build that does not ship the quiz product, even for a playable id", async () => {
+    // The brand boundary (#300), asserted through the route rather than through the helper: a page
+    // that forgot `requireQuizProduct()` would play the quiz for the alignment brand, and this is
+    // the case that notices. It is last because it is the only one that closes the gate.
+    vi.stubEnv("BRAND", "alignsynch");
+    expect(quizById("quiz-world-geography-challenge")?.questions.length).toBeGreaterThan(0);
+
+    await expect(renderRoute("quiz-world-geography-challenge")).rejects.toMatchObject({
       digest: NOT_FOUND_DIGEST,
     });
   });
