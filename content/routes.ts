@@ -19,6 +19,7 @@ import { zRouteManifest, type RouteManifest } from "./route-manifest";
 const STATIC_ROUTES = [
   "/",
   "/admin/gaps",
+  "/admin/instances",
   "/affiliate",
   "/assessment",
   "/assessment/instances",

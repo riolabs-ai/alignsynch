@@ -19,6 +19,7 @@ import {
   Medal,
   Newspaper,
   PackagePlus,
+  ShieldCheck,
   Sparkles,
   Swords,
   Trophy,
@@ -360,6 +361,24 @@ function AlignSynchMenu({
           icon={<BarChart3 className="size-5" />}
           label={itemLabel(nav, "console-gaps")}
           active={isActive(pathname, "/admin/gaps")}
+          collapsed={collapsed}
+          onNavigate={onNavigate}
+        />
+      )}
+      {/*
+        The console's Relationships registry (card 3/5, `/admin/instances`), behind the same
+        `admin-console` capability and for the same reason: the route refuses a member with the 404
+        a URL that never existed returns, so a row every viewer could see would be a row that 404s
+        for most of them. `navViewer(role)` in `lib/nav.ts` is what grants the capability — to an
+        `admin` session and to nobody else — and `lib/auth/require-role.ts` re-decides it from the
+        same request on the page itself.
+      */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/instances"
+          icon={<ShieldCheck className="size-5" />}
+          label={itemLabel(nav, "admin-instances")}
+          active={isActive(pathname, "/admin/instances")}
           collapsed={collapsed}
           onNavigate={onNavigate}
         />

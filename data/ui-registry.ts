@@ -137,6 +137,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/instances",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      'Every relationship in the database, for an operator: the template, both seats\' identity state, mode, Setting, the derived stage, when it was created and when anything last happened to it — filterable by stage, mode, Setting and "stalled".',
+    notes:
+      "Admin-only, and the first caller of `requireAdmin()` outside `/demo/admin`: a member gets the 404 a URL that never existed returns, a signed-out visitor is sent to `/login?next=` this path. The blind rule holds for an admin too — the read selects seats, mode, Setting and the stage, never an opinion, a score, a Gap or an answered count, so there is no column and no prop through which an answer could reach the page. Read-and-filter only: no delete, no force-complete. Every filter is client-side over the one read (`lib/db/admin-instances.ts`).",
+  },
+  {
+    kind: "domain",
+    surface: "components/admin",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The operator's registry table: a stage tab row, mode and Setting selects and a stalled toggle over one filterable table of relationships.",
+    notes:
+      "`mock` in this file's vocabulary — it renders the props it is handed. The rows are read by the page (`lib/db/admin-instances.ts`) and passed down, because a client component must not reach `pg`; that boundary is why this domain imports no data module and why the route entry above is the one that claims `db`.",
+  },
+  {
+    kind: "route",
     surface: "/affiliate",
     status: "fixture",
     templates: ["quizhub"],

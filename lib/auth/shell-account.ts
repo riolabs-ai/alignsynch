@@ -46,7 +46,7 @@
  * missing configuration to anyone who asks for a protected page.
  */
 import { currentUser, type SessionUser } from "@/lib/auth/session";
-import type { UserProfile } from "@/content/identity";
+import { DEFAULT_USER_ROLE, type UserProfile, type UserRole } from "@/content/identity";
 import { readUserProfileByUserId } from "@/lib/db/user-profiles";
 import { cookies } from "next/headers";
 import { authConfigured } from "@/lib/auth/config";
@@ -112,6 +112,41 @@ async function profileOf(userId: string): Promise<UserProfile | null> {
 }
 
 /**
+ * The chrome's two server-resolved facts, from **one** session read and **one** profile read.
+ *
+ * The header needs the account; the sidebar needs the role (to decide which destinations a viewer
+ * carries, `lib/nav.ts`). Both are functions of the same two reads, so asking twice would be a
+ * second auth-server round trip and a second `user_profile` query on every page behind the shell.
+ * This is the one function that pays for them, and `shellAccount()` below is the header's half of
+ * it — unchanged for the callers that only ever wanted a name.
+ *
+ * `role` follows `lib/auth/require-role.ts`'s rule for a missing row or an unreadable one:
+ * `DEFAULT_USER_ROLE` (`member`). That is the **closed** direction — a failed profile read can only
+ * under-grant, never hand somebody the console — and it matches what `roleOfUser()` answers for the
+ * same person, so the menu and the page's gate cannot disagree about who is an admin.
+ */
+export interface ShellSession {
+  readonly account: ShellAccount | null;
+  readonly role: UserRole | null;
+}
+
+/** The signed-in person and the role this request resolves to, or `null`s when nobody is. */
+export async function shellSession(): Promise<ShellSession> {
+  if (!authConfigured()) return { account: null, role: null };
+
+  await cookies();
+
+  const user = await currentUser();
+  if (user === null) return { account: null, role: null };
+
+  const profile = await profileOf(user.userId);
+  return {
+    account: shellAccountOf(user, profile),
+    role: profile?.role ?? DEFAULT_USER_ROLE,
+  };
+}
+
+/**
  * The signed-in person for this request, or `null` when nobody is.
  *
  * Request-time by construction: with auth configured this reads the cookie store (which is what
@@ -119,12 +154,5 @@ async function profileOf(userId: string): Promise<UserProfile | null> {
  * signed-in admin cannot share one cached shell.
  */
 export async function shellAccount(): Promise<ShellAccount | null> {
-  if (!authConfigured()) return null;
-
-  await cookies();
-
-  const user = await currentUser();
-  if (user === null) return null;
-
-  return shellAccountOf(user, await profileOf(user.userId));
+  return (await shellSession()).account;
 }
