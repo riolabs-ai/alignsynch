@@ -82,7 +82,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
   };
 
   return (
-    <section className="py-10 xl:py-16  bg-indigo-50 dark:bg-slate-900">
+    <section className="py-10 xl:py-16  bg-muted dark:bg-slate-900">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-4">
@@ -97,7 +97,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
             <div className="col-span-5 flex items-center justify-center">
               <div className="relative">
                 <div className="absolute -top-6 -left-6">
-                  <Quote className="h-12 w-12 text-indigo-200 dark:text-indigo-800 rotate-180" />
+                  <Quote className="h-12 w-12 text-action/20 rotate-180" />
                 </div>
                 <Media
                   alt={testimonials[activeIndex].name}
@@ -107,7 +107,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                   seed={testimonials[activeIndex].name}
                   width={256}
                 />
-                <Badge className="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5">
+                <Badge className="absolute bottom-4 right-4 bg-action hover:bg-action/90 text-action-foreground px-3 py-1.5">
                   {testimonials[activeIndex].role}
                 </Badge>
               </div>
@@ -129,7 +129,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
 
               <div className="flex gap-6 flex-wrap">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  <p className="text-2xl font-bold text-action">
                     {testimonials[activeIndex].stats.earnings}
                   </p>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -137,7 +137,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  <p className="text-2xl font-bold text-action">
                     {testimonials[activeIndex].stats.quizzes}
                   </p>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -145,7 +145,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  <p className="text-2xl font-bold text-action">
                     {testimonials[activeIndex].stats.followers}
                   </p>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -158,7 +158,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
 
           {/* Mobile view - card based */}
           <div className="md:hidden">
-            <Card className="border-2 border-indigo-100 dark:border-indigo-900/30 overflow-hidden">
+            <Card className="border-2 border-action/20 overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex justify-center mb-6">
                   <Media
@@ -188,7 +188,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
 
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-md">
-                    <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                    <p className="text-lg font-bold text-action">
                       {testimonials[activeIndex].stats.earnings}
                     </p>
                     <p className="text-xs text-slate-600 dark:text-slate-400">
@@ -196,7 +196,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                     </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-md">
-                    <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                    <p className="text-lg font-bold text-action">
                       {testimonials[activeIndex].stats.quizzes}
                     </p>
                     <p className="text-xs text-slate-600 dark:text-slate-400">
@@ -204,7 +204,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                     </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-md">
-                    <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                    <p className="text-lg font-bold text-action">
                       {testimonials[activeIndex].stats.followers}
                     </p>
                     <p className="text-xs text-slate-600 dark:text-slate-400">
@@ -222,7 +222,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
               <button
                 key={index}
                 onClick={() => setActiveIndex(index)}
-                className={`h-2.5 w-2.5 rounded-full transition-colors ${index === activeIndex ? "bg-indigo-600 dark:bg-indigo-400" : "bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600"}`}
+                className={`h-2.5 w-2.5 rounded-full transition-colors ${index === activeIndex ? "bg-action" : "bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600"}`}
                 aria-label={`View testimonial ${index + 1}`}
               />
             ))}

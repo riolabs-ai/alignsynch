@@ -21,7 +21,16 @@ export const notifications: readonly Notification[] = [
     iconKey: "trophy",
     createdAt: "2026-10-29T09:50:00.000Z", // was "10m ago"
     read: false,
-    link: "/profile/alexjohnson",
+    /*
+      The one notification about the reader rather than about somebody else (#226). Its link used
+      to be a demo player's profile, so "Achievement Unlocked!" opened a stranger's page on every
+      quiz-brand screen. A fixture cannot know the signed-in person's handle — that is a session
+      fact — so the row points at the account home that needs no handle at all rather than at a
+      person the fixture made up. Deriving `link` from the session would be a notification-system
+      change (`notificationsFor` would have to take an identity); this row does not need one to be
+      right about who it is about.
+    */
+    link: "/dashboard/user",
   },
   {
     id: "notif-2",
