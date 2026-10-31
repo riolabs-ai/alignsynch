@@ -179,6 +179,10 @@ describe("the record", () => {
 
 describe("the nav and the browser", () => {
   it("hides the gated href when its flag is off, and shows it when on", () => {
+    // The template is stated, not ambient: this case is about `community.leaderboard`, and the
+    // brand boundary (#300) hides twenty more hrefs on the alignment build. A `BRAND=alignsynch`
+    // run (the matrix leg) must assert this row, not the quiz product's.
+    vi.stubEnv("BRAND", "quizhub");
     expect(navSurfaces["/leaderboard"]).toBe("community.leaderboard");
     expect(hiddenNavHrefs()).toEqual(["/leaderboard"]);
 
