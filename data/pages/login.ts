@@ -9,6 +9,9 @@
  * it. The trailing space after `signup-prompt` is the view's (`{" "}`), not this
  * fixture's: a label with an invisible trailing space is a fixture nobody can review.
  *
+ * `demo-entry` and `demo` are the two demo surfaces this route may draw (#218), and they are
+ * mutually exclusive (see their sections below).
+ *
  * ## Two brands, one card (issue #225)
  *
  * The card is shared — its field labels, its error states and its two buttons are the
@@ -81,6 +84,35 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
       {
         id: "sign-in-alignsynch",
         body: "Sign in to see your assessments.",
+      },
+      /**
+       * The demo surfaces this route may draw (#218), and they are mutually exclusive: the page
+       * renders `demo-entry` only when demo mode is on and this request has no valid unlock, and
+       * `demo` only when one verifies, so the same reader never sees both. What `/demo` itself
+       * renders is **not** here: that gate is a development surface with no fixture (it writes
+       * its few words itself).
+       *
+       *   demo-entry   `link` is the anchor's text — its whole accessible name, which is why the
+       *                note is a separate item and not inside the anchor
+       *   demo         `heading`/`body` are the card above the buttons, and each `*-note` is the
+       *                line under one button's label
+       */
+      {
+        id: "demo-entry",
+        items: [
+          { id: "link", label: "Demo sign-in" },
+          { id: "note", label: "Needs the demo PIN. Four digits." },
+        ],
+      },
+      {
+        id: "demo",
+        heading: "Demo accounts",
+        body: "Demo mode — not a real login. Pick one and the server signs in with credentials the browser never receives.",
+        items: [
+          { id: "initiator-note", label: "Avery — the party who asked" },
+          { id: "counterparty-note", label: "Rowan — the party who answers" },
+          { id: "admin-note", label: "The administrator, with no party to answer as" },
+        ],
       },
       {
         id: "stats",

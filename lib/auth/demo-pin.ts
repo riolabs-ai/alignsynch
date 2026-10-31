@@ -3,12 +3,14 @@
  *
  * Two properties, both measured rather than asserted:
  *
- * **One comparison, constant time.** `pinMatches()` hashes both sides with SHA-256 and compares
- * the digests with `timingSafeEqual`. Digesting first is what makes the comparison
- * length-independent: `timingSafeEqual` throws on unequal buffer lengths, so comparing the raw
- * strings would answer "wrong length" faster than "wrong value" — a timing oracle that leaks
- * the PIN's length. Two 32-byte digests are always comparable, and the time taken depends on
- * neither the PIN nor how much of it was guessed.
+ * **One comparison, constant time.** `pinMatches()` is the demo's only PIN comparison, and it
+ * delegates to `constantTimeEqual()` (`lib/auth/constant-time.ts`): both sides are hashed with
+ * SHA-256 and the digests compared with `timingSafeEqual`. Digesting first is what makes the
+ * comparison length-independent: `timingSafeEqual` throws on unequal buffer lengths, so comparing
+ * the raw strings would answer "wrong length" faster than "wrong value" — a timing oracle that
+ * leaks the PIN's length. Two 32-byte digests are always comparable, and the time taken depends on
+ * neither the PIN nor how much of it was guessed. The unlock cookie's signature check (#218) uses
+ * the same function, so there is one constant-time compare in the tree rather than two.
  *
  * **One sentence per cause, and one shared.** `PIN_REJECTION` is what a wrong PIN gets, and it is
  * also what a button value that is not one of the three gets — the same sentence for both, so a
@@ -24,7 +26,7 @@
  * per-process limit (a restarted server forgets) is a slower demo, not a weaker login — the
  * PIN is still the gate.
  */
-import { createHash, timingSafeEqual } from "node:crypto";
+import { constantTimeEqual } from "@/lib/auth/constant-time";
 
 /** The sentence a wrong PIN and an unknown button value both answer. */
 export const PIN_REJECTION = "That PIN is not correct.";
@@ -39,9 +41,7 @@ export const RATE_LIMITED = "Too many attempts. Wait a minute and try again.";
  * whatever the PIN is. `expected` comes from the environment and is never logged by this module.
  */
 export function pinMatches(given: string, expected: string): boolean {
-  const left = createHash("sha256").update(given, "utf8").digest();
-  const right = createHash("sha256").update(expected, "utf8").digest();
-  return timingSafeEqual(left, right);
+  return constantTimeEqual(given, expected);
 }
 
 /* ------------------------------------------------------------------ *\
