@@ -50,6 +50,16 @@ last 24 h, every one of them a production deployment and not one a preview, said
 working — and nothing in the repository said how, so no review could see it and a project transfer
 would have lost it silently.
 
+**Measured on 2026-10-31: creation, not just the build, is currently disabled upstream.** A branch
+was pushed twice — `probe/preview-suppression`, once with no marker and once with `[preview]` in the
+message — and **neither produced a deployment record at all**: `vercel ls` showed 15 records, every
+one `target=production`, on refs `main` or none. So the project's Git settings suppress a preview
+before a deployment exists, and this `ignoreCommand` never gets the chance to answer. That is why the
+rule here is the **policy of record** rather than the working switch: it is the reviewable statement
+of what may build, it costs nothing, and it becomes the effective gate the moment preview creation is
+allowed again or the project is transferred. Turning previews on takes both switches, and they have
+to agree — allow creation at the project level, then opt in per commit with `[preview]`.
+
 ## 2. Is production serving what merged?
 
 ```bash
