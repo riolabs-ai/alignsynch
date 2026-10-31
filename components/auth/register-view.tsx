@@ -489,11 +489,11 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
                       />
                       <Label htmlFor="terms" className="text-sm ">
                         {itemLabel(account, "agree-prefix")}{" "}
-                        <Link href="#" className="text-action hover:underline">
+                        <Link href="/terms" className="text-action hover:underline">
                           {itemLabel(account, "agree-terms")}
                         </Link>{" "}
                         {itemLabel(account, "agree-and")}{" "}
-                        <Link href="#" className="text-action hover:underline">
+                        <Link href="/privacy" className="text-action hover:underline">
                           {itemLabel(account, "agree-privacy")}
                         </Link>{" "}
                         *

@@ -39,11 +39,13 @@ const STATIC_ROUTES = [
   "/my-quizzes",
   "/news",
   "/pricing",
+  "/privacy",
   "/quiz-discussions",
   "/register",
   "/search",
   "/settings",
   "/support",
+  "/terms",
   "/tournaments",
   "/welcome",
 ] as const;

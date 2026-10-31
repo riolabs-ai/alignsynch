@@ -84,8 +84,8 @@ landmarks (6)
   main           1
   navigation     2
 
-links (78 unique, 107 total)
-  #                                                    8
+links (80 unique, 107 total)
+  #                                                    6
   /                                                    2
   /affiliate                                           2
   /battle                                              2
@@ -125,6 +125,7 @@ links (78 unique, 107 total)
   /explore                                             2
   /news                                                1
   /pricing                                             2
+  /privacy                                             1
   /profile/alexjohnson                                 2
   /profile/davidwilson                                 2
   /profile/emilydavis                                  2
@@ -161,6 +162,7 @@ links (78 unique, 107 total)
   /quiz/quiz-world-history-through-time                1
   /quiz/quiz-world-literature-classics                 1
   /support                                             1
+  /terms                                               1
   /tournaments                                         1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 2
 

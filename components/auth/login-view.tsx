@@ -88,6 +88,8 @@ export function LoginView({
   const router = useRouter();
   const form = sectionOf(copy, "sign-in");
   const stats = sectionOf(copy, "stats");
+  /** The legal row under the card (issue #270); the two ids are the fixture's. */
+  const legal = sectionOf(copy, "legal");
 
   /**
    * The one number this page owns: the demo's active-player count, as `data/metrics.ts`
@@ -221,9 +223,15 @@ export function LoginView({
                     {itemLabel(form, "remember")}
                   </Label>
                 </div>
-                <Link href="#" className="text-sm text-action font-medium">
-                  {itemLabel(form, "forgot")}
-                </Link>
+                {/*
+                 * The "Forgot password?" anchor used to stand here with `href="#"` (issue #270).
+                 * There is no password-reset flow in this build — no route, no action, no
+                 * `resetPassword` call — so the anchor promised a screen that does not exist and
+                 * went nowhere when clicked. It is removed rather than repointed: `/privacy` is
+                 * not where a forgotten password is reset, and inventing a destination would be
+                 * the same defect with a different URL. The affordance comes back the day the
+                 * flow ships.
+                 */}
               </div>
 
               {fieldProblem && (
@@ -262,6 +270,22 @@ export function LoginView({
          * version is not something you agree to by signing in.
          */}
         <AppVersion copy={copy} />
+
+        {/*
+         * The legal row (issue #270): the two routes a person signing in can read before they
+         * agree to anything. Below the badge and outside the card, because these are documents
+         * about the product, not fields of the form — and they are the same two destinations the
+         * footer carries, so a reader who lands here first is not the only one without them.
+         */}
+        <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+          <Link href="/terms" className="hover:text-action hover:underline">
+            {itemLabel(legal, "terms")}
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link href="/privacy" className="hover:text-action hover:underline">
+            {itemLabel(legal, "privacy")}
+          </Link>
+        </div>
       </div>
     </div>
   );

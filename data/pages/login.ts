@@ -59,7 +59,11 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "password", label: "Password" },
           { id: "password-placeholder", label: "Enter your password" },
           { id: "remember", label: "Remember me" },
-          { id: "forgot", label: "Forgot password?" },
+          /**
+           * `forgot` was removed with the dead anchor it labelled (issue #270): this build has no
+           * password-reset flow, so "Forgot password?" pointed at `#`. The label comes back with
+           * the route, not before it.
+           */
           { id: "submit", label: "Sign In" },
           { id: "pending", label: "Signing in…" },
           { id: "error-invalid-credentials", label: "Invalid email or password" },
@@ -152,6 +156,22 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "label", label: "Version {version}" },
           { id: "compact", label: "v{version}" },
           { id: "title", label: "Open the v{version} release notes on GitHub" },
+        ],
+      },
+      /**
+       * The legal row under the card (issue #270): the two routes that now exist, so the `/login`
+       * surface carries the same links the footer does. The labels are the fixture's and the
+       * destinations are the view's — `components/auth/login-view.tsx` reads `terms` and `privacy`
+       * by id, so a rename here is a red build (E23) instead of a blank link.
+       *
+       * The two words are the document titles, not a promise about the reader's input: clicking
+       * them leaves the form, which is why they sit below the card and not inside it.
+       */
+      {
+        id: "legal",
+        items: [
+          { id: "terms", label: "Terms of Service" },
+          { id: "privacy", label: "Privacy Policy" },
         ],
       },
     ],

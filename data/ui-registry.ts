@@ -370,6 +370,14 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/privacy",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The draft privacy policy: what the build actually collects, why, where it lives and what the reader can ask for, behind a draft notice that cannot be dismissed.",
+  },
+  {
+    kind: "route",
     surface: "/profile/[username]",
     status: "db",
     templates: ["quizhub", "alignsynch"],
@@ -444,6 +452,14 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["quizhub", "alignsynch"],
     capability:
       "One help article from the knowledge base, with related articles and a 'was this helpful?' prompt.",
+  },
+  {
+    kind: "route",
+    surface: "/terms",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The draft terms of service: the rules for using the product, its liability and dispute clauses, and a draft notice that cannot be dismissed.",
   },
   {
     kind: "route",
@@ -618,6 +634,24 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["quizhub", "alignsynch"],
     capability:
       "The account surfaces: the signed-in home, the member profile, the settings form that POSTs /api/profile, sign-out and the demo-account notice.",
+  },
+  {
+    kind: "domain",
+    surface: "components/legal",
+    /**
+     * `mock` is the generator's own vocabulary for "renders props, reaches no data module", and
+     * that is literally this domain: `legal-page.tsx` takes one `PageCopy` prop and imports only
+     * the `PageCopy` type and the fixture readers. The words are `data/pages/legal` — a committed
+     * fixture — but the *page* imports it and passes it down, so the domain's own closure reaches
+     * nothing under `data/`, which is what the rule measures. Calling it `fixture` here would be
+     * the prose the gate refuses.
+     */
+    status: "mock",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.",
+    notes:
+      "The copy arrives as a prop from `data/pages/legal` (the two route entries claim it), so this domain reads no data module of its own.",
   },
   {
     kind: "domain",
