@@ -41,7 +41,7 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 | `pnpm db:seed`                   | exit 0, ~1 s         | mirrors `data/assessments.ts` into the six tables, idempotent, prints counts; removes the temp e2e auth user first     |
 | `pnpm db:verify`                 | exit 0, ~1 s         | the DB port of E31 (drift) plus the party rules, read through `lib/db/**`; exit 1 with a named failure per violation   |
 | `pnpm objstore:smoke`            | exit 0, <1 s         | put → get → bytes compared → deleted; reads `NEON_OBJSTORE_*` (falls back to the `AWS_*` names `neon env pull` writes) |
-| `pnpm lint`                      | exit 0, ~0.8 s       | `biome check`; **0 errors**, 195 warnings, 34 infos                                                                    |
+| `pnpm lint`                      | exit 0, ~1.6–2.6 s   | `biome check` then `node scripts/lint-brand-classes.mjs`; **0 errors**, 203 warnings, 34 infos                         |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 442 files; CI gate                                                                                     |
 | `pnpm build`                     | exit 0, ~50–76 s     | `next build`; `/assessment/[slug]` is request-time since #145 (no `generateStaticParams`, no build-time DB read)       |
 | `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                                          |
@@ -67,7 +67,7 @@ bash scripts/verify.sh       # THE gate. ~45 s locally, green = shippable
 It runs, in order, and stops at the first failure (printing the failing step and its exit
 code): `deps (pnpm install --frozen-lockfile)` → `glossary` (`pnpm glossary:check`) →
 `release:check` (`bash scripts/release.sh --check`) → `typecheck` (`next typegen && tsc --noEmit`) →
-`lint` (`biome check`) → `format:check`
+`lint` (`biome check` + the brand rule, see below) → `format:check`
 (`biome format`) → `data:check` → `test` → `parity` → `build` (`next build`). `data:check`,
 `test` and `parity` run only when `package.json` defines that script; otherwise they are
 skipped with a visible `○ … skipped` line, so the same script is correct on `main` (no
@@ -231,6 +231,15 @@ process bug.
   silent extra.
 - Lint rules that still have violations on `main` are pinned to `warn` in `biome.jsonc`; flip each
   one to `error` as its violations are fixed instead of adding suppressions.
+- **A brand colour is a token, never a palette step.** `pnpm lint` runs
+  `scripts/lint-brand-classes.mjs` after biome and fails on `indigo-*`, `purple-*`, `violet-*` or
+  `bg-gradient-to-*` anywhere under `components/` and `app/` (#187 stage 4). There is no allowlist
+  and no suppression: the palette has exactly one home, `data/brand.ts`, painted through
+  `bg-action` / `text-action` / `border-action` by `lib/brand-theme.ts`. If a role has no token,
+  add one to the record — do not exempt the line, and do not compose a gradient in a component
+  (gradients belong to the token layer, `app/globals.css`). Status hues (`blue`, `amber`, `green`,
+  `red`, `slate`) are deliberately outside the rule: "warning" and "trending" mean the same thing
+  under both brands.
 - `pnpm gen` emits **quizzes only** into `data/generated/`, and `pnpm gen --count 20 --seed 42 &&
   pnpm data:check` is a green gate. Promotions are curated (`data/promotions.ts`), never generated:
   a campaign names a slot that `data/quiz-catalogue.ts` renders (E17), and a generated quiz is in

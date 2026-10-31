@@ -86,13 +86,13 @@ export function FeaturedQuizzesPage({ now, copy }: { now: string; copy: PageCopy
       case "hot":
         return "destructive";
       case "editors":
-        return "purple";
+        return "brand";
       case "trending":
         return "blue";
       case "topRated":
         return "yellow";
       case "popular":
-        return "purple";
+        return "brand";
       case "new":
         return "blue";
       default:
@@ -196,7 +196,7 @@ export function FeaturedQuizzesPage({ now, copy }: { now: string; copy: PageCopy
                   width={600}
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
+                <div className="absolute inset-0 bg-foreground/60 flex flex-col justify-end p-4">
                   <h3 className="text-white font-semibold line-clamp-2">{quiz.title}</h3>
                   <div className="flex items-center justify-between mt-2">
                     <p className="text-white/80 text-sm">

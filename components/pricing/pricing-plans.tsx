@@ -205,9 +205,9 @@ LimitationsList.displayName = "LimitationsList";
 // Memoized pricing card component
 const PricingCard = memo<PricingCardProps>(({ plan, billingCycle, copy }) => {
   const cardContent: CardContentData = useMemo(() => {
-    const cardClassName: string = `relative flex flex-col border-2 ${plan.popular ? "border-purple-400 dark:border-purple-500 shadow-lg" : "border-slate-200 dark:border-slate-800"}`;
+    const cardClassName: string = `relative flex flex-col border-2 ${plan.popular ? "border-action dark:border-action shadow-lg" : "border-slate-200 dark:border-slate-800"}`;
 
-    const buttonClassName: string = `w-full ${plan.popular ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0" : ""}`;
+    const buttonClassName: string = `w-full ${plan.popular ? "bg-action hover:bg-action/90 text-white border-0" : ""}`;
 
     const priceDisplay: string =
       billingCycle === "monthly"
@@ -225,7 +225,7 @@ const PricingCard = memo<PricingCardProps>(({ plan, billingCycle, copy }) => {
     <Card key={plan.name} className={cardContent.cardClassName}>
       {plan.popular && (
         <div className="absolute -top-4 left-0 right-0 flex justify-center">
-          <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 px-3 py-1 text-white border-0">
+          <Badge className="bg-action hover:bg-action/90 px-3 py-1 text-white border-0">
             {itemLabel(copy, "most-popular")}
           </Badge>
         </div>
@@ -341,7 +341,7 @@ export function PricingPlans({ copy }: { copy: PageCopySection }): JSX.Element {
             </TooltipProvider>
             <span className="text-sm">
               {itemLabel(copy, "custom-plan")}{" "}
-              <Link href="#" className="text-purple-600 hover:text-purple-700 font-medium">
+              <Link href="#" className="text-action hover:text-action/80 font-medium">
                 {itemLabel(copy, "custom-plan-link")}
               </Link>
             </span>

@@ -28,8 +28,8 @@ const BADGE_ART: Record<
   },
   perfect: {
     Icon: Star,
-    wrapClassName: "p-1 bg-purple-100 dark:bg-purple-900 rounded-full mb-1",
-    iconClassName: "h-3 w-3 text-purple-600 dark:text-purple-400",
+    wrapClassName: "p-1 bg-action/10 dark:bg-action/20 rounded-full mb-1",
+    iconClassName: "h-3 w-3 text-action",
   },
   "top-3": {
     Icon: Trophy,
@@ -132,7 +132,7 @@ export function DailyRewards({ copy }: { copy: PageCopySection }) {
 
           <div className="space-y-2">
             <h3 className="text-sm font-medium flex items-center">
-              <Trophy className="h-4 w-4 mr-2 text-purple-500" />
+              <Trophy className="h-4 w-4 mr-2 text-action" />
               {itemLabel(copy, "badges")}
             </h3>
 

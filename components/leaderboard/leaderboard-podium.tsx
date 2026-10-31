@@ -68,9 +68,7 @@ export function LeaderboardPodium({ entries }: LeaderboardPodiumProps) {
                   {player.level}
                 </div>
               </div>
-              <div
-                className={`mt-3 w-full ${podiumHeights[i]} rounded-t-lg bg-gradient-to-t from-muted/80 to-muted/20`}
-              />
+              <div className={`mt-3 w-full ${podiumHeights[i]} rounded-t-lg bg-muted/60`} />
             </div>
           );
         })}

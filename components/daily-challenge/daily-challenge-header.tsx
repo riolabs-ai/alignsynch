@@ -55,10 +55,10 @@ export function DailyChallengeHeader({ copy }: { copy: PageCopy }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
+        <Card className="bg-action/5 dark:bg-action/10 border-action/30">
           <CardContent className="p-4 xl:pt-4 flex items-center space-x-4">
-            <div className="p-2 bg-purple-100 dark:bg-purple-800 rounded-full">
-              <Clock className="h-5 w-5 text-purple-600 dark:text-purple-300" />
+            <div className="p-2 bg-action/10 dark:bg-action/20 rounded-full">
+              <Clock className="h-5 w-5 text-action" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
@@ -72,7 +72,7 @@ export function DailyChallengeHeader({ copy }: { copy: PageCopy }) {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
           <CardContent className="p-4 xl:pt-4 flex items-center space-x-4">
             <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-full">
               <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-300" />
@@ -86,7 +86,7 @@ export function DailyChallengeHeader({ copy }: { copy: PageCopy }) {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
+        <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
           <CardContent className="p-4 xl:pt-4 flex items-center space-x-4">
             <div className="p-2 bg-amber-100 dark:bg-amber-800 rounded-full">
               <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-300" />
@@ -104,7 +104,7 @@ export function DailyChallengeHeader({ copy }: { copy: PageCopy }) {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
+        <Card className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800">
           <CardContent className="p-4 xl:pt-4 flex items-center space-x-4">
             <div className="p-2 bg-red-100 dark:bg-red-800 rounded-full">
               <Flame className="h-5 w-5 text-red-600 dark:text-red-300" />

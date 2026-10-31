@@ -318,8 +318,8 @@ export function SearchResults({
                       <Link key={page.id} href={page.path} className="block">
                         <Card className="h-full hover:shadow-md transition-shadow">
                           <CardContent className="p-6">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-purple-100 mb-3">
-                              <FileText className="h-5 w-5 text-purple-600" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-action/10 mb-3">
+                              <FileText className="h-5 w-5 text-action" />
                             </div>
                             <h3 className="text-lg font-semibold mb-1">{page.title}</h3>
                             <p className="font-mono text-sm text-muted-foreground">{page.path}</p>
@@ -469,8 +469,8 @@ export function SearchResults({
                       <Link key={page.id} href={page.path} className="block">
                         <Card className="h-full hover:shadow-md transition-shadow">
                           <CardContent className="p-6">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-purple-100 mb-4">
-                              <FileText className="h-6 w-6 text-purple-600" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-action/10 mb-4">
+                              <FileText className="h-6 w-6 text-action" />
                             </div>
                             <h3 className="text-xl font-semibold mb-2">{page.title}</h3>
                             <p className="font-mono text-muted-foreground">{page.path}</p>

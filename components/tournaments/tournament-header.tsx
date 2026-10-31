@@ -33,7 +33,7 @@ export function TournamentHeader({ tournament, copy }: TournamentHeaderProps) {
 
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-indigo-900/90 z-10 rounded-lg" />
+      <div className="absolute inset-0 bg-action/85 z-10 rounded-lg" />
       <Image
         src={media["abstract-geometric-shapes"].src}
         alt={tournament.title}
@@ -84,7 +84,7 @@ export function TournamentHeader({ tournament, copy }: TournamentHeaderProps) {
 
             {tournament.status === "registration" && (
               <div className="flex gap-4">
-                <Button className="bg-white text-purple-900 hover:bg-gray-100">
+                <Button className="bg-white text-action hover:bg-gray-100">
                   {pageItemOf(copy, "register").label}
                 </Button>
                 <Button variant="outline" className="border-white/30 hover:bg-white/10">

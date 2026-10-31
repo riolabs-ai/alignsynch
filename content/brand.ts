@@ -147,6 +147,22 @@ export const zBrand = z
     description: z.string().min(1),
     domain: zBrandDomain,
     logo: zBrandLogoPath,
+    /**
+     * The tab icon — `public/brand/<id>-icon.svg` (#187 stage 4), a `public/`-rooted path for
+     * the same reason `logo` is (D-P2-1: a fixture holds the `src` the registry already
+     * carries, and E19 holds that string to a registry entry).
+     *
+     * Before this field, `app/favicon.ico` was one static file, so the browser tab, a bookmark
+     * and the history list all showed QuizHub's mark on the AlignSynch build. An icon is the
+     * one surface a reader sees before any word of the page, which makes it brand data rather
+     * than a build artefact: `app/layout.tsx` passes this path to `metadata.icons`, and no
+     * component names one.
+     *
+     * The file is drawn from the record by `scripts/gen-brand-icons.mjs` — the ground is
+     * `colors.action` and the mark is `colors.actionForeground` on the brand's initial — so the
+     * hex is not authored twice, and `pnpm data:check` re-draws it with `--check`.
+     */
+    icon: zBrandLogoPath,
     colors: zBrandColors,
     supportEmail: z.string().email(),
     affiliateEmail: z.string().email(),

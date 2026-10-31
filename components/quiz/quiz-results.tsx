@@ -130,7 +130,7 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
   return (
     <div className="max-w-2xl mx-auto">
       <Card className="mb-8 overflow-hidden border-2 shadow-lg">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 text-center">
+        <div className="bg-action text-white p-6 text-center">
           <h2 className="text-3xl font-bold mb-2">Quiz Completed!</h2>
           <p className="opacity-90">{getPerformanceMessage(score)}</p>
         </div>
@@ -290,7 +290,7 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-yellow-50 to-amber-50"
+                className="flex items-center gap-3 p-4 border rounded-md bg-amber-50"
               >
                 <div className="bg-yellow-500/20 p-2 rounded-full">
                   <Trophy className="h-5 w-5 text-yellow-600" />
@@ -309,7 +309,7 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-blue-50 to-cyan-50"
+                className="flex items-center gap-3 p-4 border rounded-md bg-blue-50"
               >
                 <div className="bg-blue-500/20 p-2 rounded-full">
                   <Clock className="h-5 w-5 text-blue-600" />
@@ -328,7 +328,7 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-green-50 to-emerald-50"
+                className="flex items-center gap-3 p-4 border rounded-md bg-green-50"
               >
                 <div className="bg-green-100 p-2 rounded-full">
                   <CheckCircle className="h-5 w-5 text-green-600" />
@@ -346,10 +346,10 @@ export function QuizResults({ results, quiz, onRestart, onReview, onExit }: Quiz
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="flex items-center gap-3 p-4 border rounded-md bg-gradient-to-r from-purple-50 to-violet-50"
+              className="flex items-center gap-3 p-4 border rounded-md bg-action/5"
             >
-              <div className="bg-purple-100 p-2 rounded-full">
-                <Award className="h-5 w-5 text-purple-600" />
+              <div className="bg-action/10 p-2 rounded-full">
+                <Award className="h-5 w-5 text-action" />
               </div>
               <div>
                 <div className="font-medium">Quiz Completed</div>
