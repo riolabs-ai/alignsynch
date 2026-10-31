@@ -7,6 +7,9 @@ The script is the procedure; this page is why.
 
 The live prototype is <https://alignsynch-amber.vercel.app/>. The script does not deploy and does not
 wait for a deploy: Vercel deploys `main`, and a tag is not a deploy trigger for this repository.
+Whether that deploy actually landed is a separate, out-of-band question — which pushes are allowed
+to build and how to prove the site is serving the merged commit are in
+[`DEPLOYING.md`](DEPLOYING.md).
 
 ## Prerequisites
 
