@@ -48,6 +48,10 @@ import { currentQuiz } from "../../data/currentQuiz";
 
 const assessment = assessments[0] as Assessment;
 const instance = assessmentInstances[0] as AssessmentInstance;
+/** The Advanced fixture (#213): the only seeded instance that answers all four kinds. */
+const advancedInstance = assessmentInstances.find(
+  (entry) => entry.slug === "noor-iris",
+) as AssessmentInstance;
 
 /** The party's opinions on one Aspect. */
 const opinionsOn = (party: Party, itemId: string) => {
@@ -203,22 +207,29 @@ describe("an item carries a scale, and a response is a value on it", () => {
  * ================================================================== */
 
 describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", () => {
-  it("answers every Aspect of the instance, two to four opinions each", () => {
+  it("answers every Aspect of both modes' instances, two or four opinions each", () => {
     assert.equal(zAssessmentInstance.safeParse(instance).success, true);
     assert.equal(instance.parties.length, 2);
 
-    const counts = instance.parties.flatMap((party) =>
-      party.opinions.map((row) => opinionKindsOf(row.opinions).length),
-    );
-    assert.ok(counts.length > 0);
+    const counts = (candidate: AssessmentInstance) =>
+      candidate.parties.flatMap((party) =>
+        party.opinions.map((row) => opinionKindsOf(row.opinions).length),
+      );
+
+    // Both modes are exercised by the fixtures, in separate instances: a mode is the whole
+    // play (#213), so no single instance mixes a two-score Aspect with a four-score one.
+    assert.equal(instance.mode, "basic");
     assert.equal(
-      counts.every((count) => count >= BASIC_OPINION_KINDS.length && count <= OPINION_KINDS.length),
+      counts(instance).every((count) => count === BASIC_OPINION_KINDS.length),
       true,
-      `every party answers 2..4 opinions per Aspect (got ${counts.join(", ")})`,
+      `a Basic instance answers exactly 2 opinions per Aspect (got ${counts(instance).join(", ")})`,
     );
-    // Both modes are exercised: the fixture is not all-Basic or all-Advanced.
-    assert.equal(counts.includes(BASIC_OPINION_KINDS.length), true);
-    assert.equal(counts.includes(OPINION_KINDS.length), true);
+    assert.equal(advancedInstance.mode, "advanced");
+    assert.equal(
+      counts(advancedInstance).every((count) => count === OPINION_KINDS.length),
+      true,
+      `an Advanced instance answers all 4 (got ${counts(advancedInstance).join(", ")})`,
+    );
   });
 
   it("names the Basic opinions in the glossary's order", () => {
@@ -229,7 +240,7 @@ describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", (
   });
 
   it("adds Think and Guess as a pair, never one alone", () => {
-    const advanced = opinionsOn(instance.parties[0] as Party, "aspect-time-together");
+    const advanced = opinionsOn(advancedInstance.parties[0] as Party, "aspect-check-ins");
     assert.deepEqual(opinionKindsOf(advanced), [...BASIC_OPINION_KINDS, ...ADVANCED_OPINION_KINDS]);
 
     assert.equal(zOpinions.safeParse({ feel: 3, wish: 4, think: 2 }).success, false);
@@ -245,6 +256,51 @@ describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", (
       zOpinions.safeParse({ feel: 3, wish: 4, think: 2, guess: 5, doubt: 1 }).success,
       false,
     );
+  });
+
+  /**
+   * #213 — the mixed state is unrepresentable. The schema has always allowed four opinions
+   * per Aspect; what it now refuses is an instance whose **mode** and opinion rows disagree.
+   * Both cases spread the real fixtures and change one thing about them.
+   */
+  it("rejects a Basic instance carrying Advanced opinions", () => {
+    const mixed: AssessmentInstance = {
+      ...instance,
+      parties: instance.parties.map((party) => ({
+        ...party,
+        opinions: party.opinions.map((row, index) =>
+          index === 0 ? { ...row, opinions: { ...row.opinions, think: 3, guess: 4 } } : row,
+        ),
+      })) as AssessmentInstance["parties"],
+    };
+
+    const parsed = zAssessmentInstance.safeParse(mixed);
+    assert.equal(parsed.success, false);
+    if (parsed.success) return;
+    const message = parsed.error.issues.map((issue) => issue.message).join(" ");
+    assert.match(message, /Basic Mode/);
+    assert.match(message, /aspect-time-together/);
+  });
+
+  it("rejects an Advanced instance answered with Basic sheets", () => {
+    const short: AssessmentInstance = {
+      ...advancedInstance,
+      parties: advancedInstance.parties.map((party) => ({
+        ...party,
+        opinions: party.opinions.map((row, index) =>
+          index === 0
+            ? { ...row, opinions: { feel: row.opinions.feel, wish: row.opinions.wish } }
+            : row,
+        ),
+      })) as AssessmentInstance["parties"],
+    };
+
+    const parsed = zAssessmentInstance.safeParse(short);
+    assert.equal(parsed.success, false);
+    if (parsed.success) return;
+    const message = parsed.error.issues.map((issue) => issue.message).join(" ");
+    assert.match(message, /Advanced Mode/);
+    assert.match(message, /Think and Guess are owed on every Aspect/);
   });
 
   it("rejects a score outside 1..5", () => {

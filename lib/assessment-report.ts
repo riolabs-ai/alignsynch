@@ -19,6 +19,7 @@
 import type {
   Assessment,
   AssessmentInstance,
+  AssessmentMode,
   AspectOpinions,
   OpinionKind,
   Opinions,
@@ -44,8 +45,9 @@ export interface ReportedParty {
 
 /**
  * The Gaps of one Aspect. `feel` and `wish` are always there, because Basic Mode is the
- * floor; `think` and `guess` exist only when **both** parties answered them, since a
- * difference needs two Opinions and Advanced Mode is optional per Aspect.
+ * floor; `think` and `guess` exist only when **both** parties answered them — an Advanced
+ * instance answers all four on every Aspect and a Basic one answers neither, so the pair is
+ * present or absent for the whole instance rather than per row.
  */
 export interface ReportedGaps {
   readonly feel: Gap;
@@ -77,6 +79,13 @@ export interface AssessmentReport {
   readonly slug: string;
   readonly title: string;
   readonly summary: string;
+  /**
+   * The mode the instance was played in. Copied from `instance.mode`, so a report **knows**
+   * which sheet it is drawing and can say so — the next card's eight gap kinds read this
+   * before drawing any cross-party comparison, and a Basic report has no Think/Guess rows
+   * to draw because the schema never let them exist.
+   */
+  readonly mode: AssessmentMode;
   readonly rows: readonly AspectReportRow[];
 }
 
@@ -165,6 +174,7 @@ export function assessmentReport(
     slug: instance.slug,
     title: template.title,
     summary: template.summary,
+    mode: instance.mode,
     rows,
   };
 }

@@ -32,6 +32,7 @@ import {
   type InstanceProgress,
 } from "@/lib/flow/state";
 import { answersFrom } from "@/lib/flow/answers";
+import { BASIC_OPINION_KINDS, opinionKindsFor } from "@/content/assessment";
 import { invitationMessage, invitationLink, sendInvitation } from "@/lib/flow/email";
 
 const aspects = ["aspect-time-together", "aspect-money"];
@@ -115,6 +116,7 @@ describe("a submission is the whole sheet, validated by the model's own schema",
         ["aspect-time-together", { feel: "2", wish: "5" }],
         ["aspect-money", { feel: "4", wish: "4" }],
       ]),
+      "basic",
     );
     expect(parsed.ok).toBe(true);
     if (parsed.ok) {
@@ -124,7 +126,11 @@ describe("a submission is the whole sheet, validated by the model's own schema",
   });
 
   it("refuses a sheet that skips an Aspect, naming it", () => {
-    const parsed = parseSubmission(aspects, new Map([["aspect-money", { feel: "4", wish: "4" }]]));
+    const parsed = parseSubmission(
+      aspects,
+      new Map([["aspect-money", { feel: "4", wish: "4" }]]),
+      "basic",
+    );
     expect(parsed.ok).toBe(false);
     if (!parsed.ok) expect(parsed.problems.join(" ")).toContain("aspect-time-together");
   });
@@ -136,6 +142,7 @@ describe("a submission is the whole sheet, validated by the model's own schema",
         ["aspect-time-together", { feel: "7", wish: "3" }],
         ["aspect-money", { feel: "4", wish: "4" }],
       ]),
+      "basic",
     );
     expect(outOfRange.ok).toBe(false);
 
@@ -145,21 +152,91 @@ describe("a submission is the whole sheet, validated by the model's own schema",
         ["aspect-time-together", { feel: "", wish: "3" }],
         ["aspect-money", { feel: "4", wish: "4" }],
       ]),
+      "basic",
     );
     expect(empty.ok).toBe(false);
   });
 });
 
-describe("a form post is read as feel/wish per Aspect", () => {
-  it("keys answers by Aspect and refuses an Advanced kind", () => {
+/**
+ * #213 — the mode decides the sheet, and the mode is an argument.
+ *
+ * `parseSubmission` takes the mode `submitAnswers` read from the locked instance row, so a
+ * post cannot choose which sheet it is judged against. Basic refuses a Think/Guess value
+ * instead of dropping it; Advanced refuses a sheet that skips the pair.
+ */
+describe("the sheet a mode asks", () => {
+  const fourScores = new Map([
+    ["aspect-time-together", { feel: "2", wish: "5", think: "4", guess: "1" }],
+    ["aspect-money", { feel: "4", wish: "4", think: "3", guess: "3" }],
+  ]);
+
+  it("parses four scores per Aspect in Advanced, in the glossary's order", () => {
+    const parsed = parseSubmission(aspects, fourScores, "advanced");
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.answers[0]?.opinions).toEqual({ feel: 2, wish: 5, think: 4, guess: 1 });
+      expect(Object.keys(parsed.answers[0]?.opinions ?? {})).toEqual([
+        "feel",
+        "wish",
+        "think",
+        "guess",
+      ]);
+    }
+  });
+
+  it("refuses an Advanced sheet that skips the pair, naming the rule", () => {
+    const parsed = parseSubmission(
+      aspects,
+      new Map([
+        ["aspect-time-together", { feel: "2", wish: "5" }],
+        ["aspect-money", { feel: "4", wish: "4", think: "3", guess: "3" }],
+      ]),
+      "advanced",
+    );
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) {
+      expect(parsed.problems.join(" ")).toContain("Think and Guess come together");
+      expect(parsed.problems.join(" ")).toContain("aspect-time-together");
+    }
+  });
+
+  it("refuses Think and Guess in a Basic submit, naming the kind", () => {
+    const parsed = parseSubmission(aspects, fourScores, "basic");
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) {
+      expect(parsed.problems.join(" ")).toContain('"think" is not a Basic Mode opinion kind');
+    }
+  });
+});
+
+describe("a form post is read against the kinds the instance's mode asks", () => {
+  it("keys answers by Aspect and refuses an Advanced kind in Basic Mode", () => {
     const form = new FormData();
     form.set("feel:aspect-money", "4");
     form.set("wish:aspect-money", "2");
     form.set("think:aspect-money", "1");
 
-    const parsed = answersFrom(form);
+    const parsed = answersFrom(form, BASIC_OPINION_KINDS);
     expect(parsed.answers.get("aspect-money")).toEqual({ feel: "4", wish: "2" });
     expect(parsed.problems.join(" ")).toContain("think");
+  });
+
+  it("reads all four kinds when the mode is Advanced", () => {
+    const form = new FormData();
+    form.set("feel:aspect-money", "4");
+    form.set("wish:aspect-money", "2");
+    form.set("think:aspect-money", "1");
+    form.set("guess:aspect-money", "5");
+
+    const parsed = answersFrom(form, opinionKindsFor("advanced"));
+    expect(parsed.problems).toEqual([]);
+    expect(parsed.answers.get("aspect-money")).toEqual({
+      feel: "4",
+      wish: "2",
+      think: "1",
+      guess: "5",
+    });
   });
 });
 

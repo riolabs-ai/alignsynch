@@ -337,6 +337,7 @@
           }
         ],
         "templateId": "assessment-relationship-basics",
+        "mode": "basic",
         "parties": [
           {
             "role": "initiator",
@@ -346,9 +347,7 @@
                 "itemId": "aspect-time-together",
                 "opinions": {
                   "feel": 2,
-                  "wish": 5,
-                  "think": 3,
-                  "guess": 4
+                  "wish": 5
                 }
               },
               {
@@ -369,9 +368,7 @@
                 "itemId": "aspect-conflict",
                 "opinions": {
                   "feel": 3,
-                  "wish": 5,
-                  "think": 4,
-                  "guess": 4
+                  "wish": 5
                 }
               },
               {
@@ -391,9 +388,7 @@
                 "itemId": "aspect-time-together",
                 "opinions": {
                   "feel": 5,
-                  "wish": 3,
-                  "think": 4,
-                  "guess": 3
+                  "wish": 3
                 }
               },
               {
@@ -414,9 +409,7 @@
                 "itemId": "aspect-conflict",
                 "opinions": {
                   "feel": 2,
-                  "wish": 3,
-                  "think": 3,
-                  "guess": 3
+                  "wish": 3
                 }
               },
               {
@@ -496,6 +489,7 @@
           }
         ],
         "templateId": "assessment-personal-parent-child",
+        "mode": "basic",
         "parties": [
           {
             "role": "initiator",
@@ -647,6 +641,7 @@
           }
         ],
         "templateId": "assessment-business-staff-manager",
+        "mode": "basic",
         "parties": [
           {
             "role": "initiator",
@@ -798,6 +793,7 @@
           }
         ],
         "templateId": "assessment-personal-parent-child",
+        "mode": "advanced",
         "parties": [
           {
             "role": "initiator",

@@ -17,7 +17,7 @@
 /news/[slug] | alignsynch | edac0f1593e718f82cf913c2e3999a2e23a6c4323ed447ed9fa6cded0d0aebb9
 /quiz/[id] | quizhub | eea7564337ae7e87b7908df0e934a0096cc8e6163c8f228e478ca7b1ba305541
 /quiz/[id] | alignsynch | 1d160d7c8479a3a04a5478368a51129be20438312c9a77c6875196e3916bd572
-/assessment/avery-rowan | quizhub | a5ac7052d6385999f54bed3b8228ead26d3524f8f65dfd20a3fb82d77157d5b0
-/assessment/avery-rowan | alignsynch | a580f113914120ecbfee6a15dd0b7e2ae90af4b1cddba69d36748bae05d13153
+/assessment/avery-rowan | quizhub | 8974c02fe216364f765a8e5b90ead8b94feb49df70178e20ba3dd45239af435c
+/assessment/avery-rowan | alignsynch | d6177871a1808cc3a9c1dc26d8de850b4e07d3256cb956b215a6b035fab3e2ae
 /profile/[username] | quizhub | 753a8279a0ed0d04ac873f10c80a8d202621ad5e9a80138606e920469d58d8e1
 /profile/[username] | alignsynch | f1623a8dd4644bab265fad46f59cd22cdb6a56e0fffac7839cd0142f3cd2882a
