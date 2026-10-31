@@ -21,7 +21,7 @@ links (5 unique, 9 total)
   /assessment/avery-rowan                              3
   /assessment/marco-priya                              2
   /assessment/ruth-sam                                 2
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.1.0-rc1 1
   mailto:alignsynch@riolabs.ai                         1
 
 counts

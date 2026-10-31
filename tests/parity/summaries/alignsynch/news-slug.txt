@@ -42,7 +42,7 @@ links (11 unique, 12 total)
   /news/quiz-monetization-strategies-2025              1
   /settings                                            1
   /support                                             1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.1.0-rc1 1
 
 counts
   elements  359
