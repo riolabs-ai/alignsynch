@@ -15,7 +15,7 @@ It has two halves, and each one is owned by a different place:
 
 - routes: **45** — 31 static, 14 dynamic, from `app/**/page.tsx`
 - component domains: **33** — 235 files under `components/`, 230 of them `.tsx`
-- route handlers: **6** — `app/**/route.ts`, listed below and not a UI surface
+- route handlers: **7** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 11 · **fixture** 53 · **db** 9 · **live** 5
 - templates: Both templates 22 · AlignSynch 12 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -469,6 +469,7 @@ Catalogued, claimed by no template yet.
 HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they carry no template affinity and no status of their own. The surfaces they serve are catalogued above.
 
 - `/api/auth/[...path]` — `app/api/auth/[...path]/route.ts`
+- `/api/billing/webhook` — `app/api/billing/webhook/route.ts`
 - `/api/profile` — `app/api/profile/route.ts`
 - `/assessment/instances/[instanceId]/answers` — `app/(mainlayout)/assessment/instances/[instanceId]/answers/route.ts`
 - `/assessment/new` — `app/(mainlayout)/assessment/new/route.ts`

@@ -6,12 +6,17 @@
  * route, a page, the smoke script — imports **this** module and never an adapter, so swapping
  * adapters is an environment change: no component, no import, no rebuild.
  *
- * **This build carries one adapter.** `mock` is constructed here; any other name is refused with
- * a sentence that names what is missing, never silently served by the mock. That is deliberate
- * twice over: a demo configured for a hosted provider must fail loudly rather than hand a person
- * a fake subscription, and card 2 of #289 adds the second adapter by editing this one switch —
- * `lib/billing/port.ts`, `lib/billing/types.ts`, `lib/billing/entitlements.ts` and
- * `db/migrations/0009_billing.sql` already carry the provider's name and need no change.
+ * **This build carries two adapters.** `mock` and `stripe` are both in
+ * `CARRIED_BILLING_PROVIDERS`, and the switch below constructs exactly the one `BILLING_PROVIDER`
+ * names; any other name is refused with a sentence that lists what the build does carry, never
+ * silently served by the mock. That is deliberate twice over: a demo configured for a hosted
+ * provider must fail loudly rather than hand a person a fake subscription, and a name this build
+ * has not built is an operator's typo, not a fallback.
+ *
+ * **The hosted adapter is imported only on the branch that selects it.** With `BILLING_PROVIDER`
+ * unset — the default — `lib/billing/adapters/stripe.ts` is never resolved, so a keyless demo, the
+ * tests and `bash scripts/verify.sh` do not load a module that wants credentials. Its constructor
+ * is what refuses a missing key, and it runs only when someone asked for that adapter.
  *
  * The adapter is imported **lazily**, so a route that never bills does not load `pg` work it does
  * not need and a keyless build stays honest.
@@ -34,8 +39,8 @@ import {
   type WebhookRequest,
 } from "./types";
 
-/** The adapters this build actually constructs. `mock` and nothing else, until card 2 lands. */
-export const CARRIED_BILLING_PROVIDERS: readonly BillingProvider[] = [DEFAULT_BILLING_PROVIDER];
+/** The adapters this build actually constructs. A name outside this list is refused, not mocked. */
+export const CARRIED_BILLING_PROVIDERS: readonly BillingProvider[] = ["mock", "stripe"];
 
 /**
  * The adapter name, from the environment. `mock` unless someone asked for another name.
@@ -74,11 +79,18 @@ let cached: { readonly provider: BillingProvider; readonly port: BillingPort } |
  * Construction may throw `BillingRefusal("not-configured")` — at call time, never at import time,
  * so a keyless build stays green and the error names the variable the operator has to change.
  */
-export async function billing(env: NodeJS.ProcessEnv = process.env): Promise<BillingPort> {
+export async function billing(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): Promise<BillingPort> {
   const provider = billingProvider(env);
   if (cached?.provider === provider) return cached.port;
 
-  const port: BillingPort = new (await import("./adapters/mock")).MockBillingAdapter();
+  // One `await import()` per carried adapter, each inside the branch that selects it: the module
+  // that is not selected is never resolved, which is what keeps the keyless demo keyless.
+  const port: BillingPort =
+    provider === "stripe"
+      ? new (await import("./adapters/stripe")).StripeBillingAdapter({ env })
+      : new (await import("./adapters/mock")).MockBillingAdapter();
   cached = { provider, port };
   return port;
 }
