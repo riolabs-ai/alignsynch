@@ -25,7 +25,7 @@ import { useEffect, useState } from "react";
 
 /**
  * The search page renders `buildSearchIndex()` output — `data/searchdata.ts` derives it from
- * the quiz collection, the category table, the user collection and the route manifest. This
+ * the record collection, the category table, the user collection and the route manifest. This
  * component holds no catalog of its own: `data:check` E21 fails the build if a search result
  * or a chat message list is written into a component again (this file used to carry 8 quizzes,
  * 6 categories, 4 creators and 4 pages, none of which existed in any collection).

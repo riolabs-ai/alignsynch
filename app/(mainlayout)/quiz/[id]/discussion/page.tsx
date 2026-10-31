@@ -9,10 +9,10 @@ import { use } from "react";
 import type { QuizCommentThread } from "@/content/quiz-result";
 
 /**
- * `/quiz/[id]/discussion` — the result review for one quiz.
+ * `/quiz/[id]/discussion` — the result review for one record.
  *
  * The segment is `[id]`, so the param is `id`. It used to be destructured as
- * `slug`, which is `undefined` for this route: the page never had the quiz the
+ * `slug`, which is `undefined` for this route: the page never had the record the
  * route named and rendered its mock regardless. The threads are built per question
  * here so the client component gets plain data.
  */
@@ -22,25 +22,25 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const quiz = quizById(id);
-  return { title: quiz === undefined ? "Quiz Discussion" : `${quiz.title} — Discussion` };
+  const record = quizById(id);
+  return { title: record === undefined ? "Quiz Discussion" : `${record.title} — Discussion` };
 }
 
 export default function QuizDiscussionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const quiz = quizById(id);
-  if (quiz === undefined) notFound();
+  const record = quizById(id);
+  if (record === undefined) notFound();
 
-  const result = selectViewerResult(quizResults, quiz.id);
+  const result = selectViewerResult(quizResults, record.id);
   const threads: Record<string, QuizCommentThread[]> = {};
-  for (const question of quiz.questions) {
+  for (const question of record.questions) {
     threads[question.id] = selectCommentThreads(quizComments, {
-      quizId: quiz.id,
+      quizId: record.id,
       questionId: question.id,
     });
   }
 
   return (
-    <QuizDiscussion quiz={quiz} {...(result !== undefined ? { result } : {})} threads={threads} />
+    <QuizDiscussion quiz={record} {...(result !== undefined ? { result } : {})} threads={threads} />
   );
 }
