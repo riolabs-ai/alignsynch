@@ -192,11 +192,13 @@ describe("the port stays provider-free", () => {
     expect(port).not.toMatch(/@\/lib\/db\//);
   });
 
-  it("the offline adapter is the only one this build constructs", () => {
+  it("constructs only the adapter the environment names, never both", () => {
     const index = file("lib/billing/index.ts");
     expect(index).toContain('import("./adapters/mock")');
-    // Any other adapter name must be refused by the switch, not imported.
-    expect(index).not.toMatch(/import\(\s*["']\.\/adapters\/(?!mock)/);
+    expect(index).toContain('import("./adapters/stripe")');
+    // Both are dynamic imports inside the branch that selects them: a static import would load
+    // the hosted adapter (and its credentials) in every keyless demo.
+    expect(index).not.toMatch(/from\s+["']\.\/adapters\//);
     expect(DEFAULT_BILLING_PROVIDER).toBe("mock");
     expect(BILLING_PROVIDERS).toContain("mock");
   });
