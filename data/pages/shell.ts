@@ -142,6 +142,11 @@ export function shellCopy(brand: Brand): PageCopy {
        *
        * `quiz-tools` is the heading over the quiz product's own menu, which an elevated viewer
        * gets below the alignment menu (see `lib/nav.ts` for the capability and its stub).
+       *
+       * `admin-instances` is the operator's registry (console card 3/5, `/admin/instances`). Its
+       * row is drawn only for a viewer carrying `admin-console`, because a row that leads to a
+       * 404 for a member advertises a surface the member must not learn exists — a 404 is the
+       * whole refusal. A four-row menu for everybody else is the menu this issue shipped.
        */
       {
         id: "nav-alignsynch",
@@ -150,6 +155,7 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "templates", label: "Templates" },
           { id: "how-it-works", label: "How it works" },
           { id: "support", label: "Support" },
+          { id: "admin-instances", label: "Relationships" },
           { id: "quiz-tools", label: "Quiz tools" },
         ],
       },

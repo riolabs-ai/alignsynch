@@ -54,6 +54,16 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/home",
     budget: 0,
   },
+  // Card 3/5 of the console: the first admin surface. Budget 0 from the first commit, like the
+  // flow surfaces — the heading, the nine column labels, the five seat states, the five stage
+  // tabs, the two selects' options, the count sentence and the three empty/failure states are all
+  // `data/pages/admin-instances.ts`, so the next literal written in the table is a red build.
+  "/admin/instances": {
+    page: "app/(mainlayout)/admin/instances/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-instances",
+    budget: 0,
+  },
   "/battle": {
     page: "app/(mainlayout)/battle/page.tsx",
     dirs: ["components/battle"],

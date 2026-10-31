@@ -18,6 +18,7 @@ import {
   Medal,
   Newspaper,
   PackagePlus,
+  ShieldCheck,
   Sparkles,
   Swords,
   Trophy,
@@ -352,6 +353,23 @@ export function AppNav({
       return (
         <>
           <AlignSynchMenu {...render} />
+          {sees(viewer, "admin-console") && (
+            /**
+             * The operator's registry (console card 3/5). Drawn only for a viewer whose
+             * `user_profile.role` is `admin` — `navViewer(role)` in `lib/nav.ts` is where that
+             * becomes a capability, and `lib/auth/require-role.ts` is where the page re-decides it
+             * from the same request. A row a member can see but not open would be a link to a 404,
+             * which is the one thing an admin-only surface must not be.
+             */
+            <NavRow
+              href="/admin/instances"
+              icon={<ShieldCheck className="size-5" />}
+              label={itemLabel(sectionOf(render.copy, "nav-alignsynch"), "admin-instances")}
+              active={isActive(render.pathname, "/admin/instances")}
+              collapsed={render.collapsed}
+              onNavigate={render.onNavigate}
+            />
+          )}
           {sees(viewer, "quiz-surfaces") && (
             /**
              * The quiz product, for a viewer who is allowed to see it. It is the *same*

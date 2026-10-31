@@ -14,6 +14,7 @@
  * never the component itself.
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
+import { adminInstancesPageCopy } from "./admin-instances";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
 import { assessmentInstancePageCopy } from "./assessment-instance";
@@ -48,6 +49,7 @@ import { tournamentsPageCopy } from "./tournaments";
 
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
+  "/admin/instances": adminInstancesPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   "/assessment/instances": myInstancesPageCopy,
