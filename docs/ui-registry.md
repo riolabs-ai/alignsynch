@@ -11,6 +11,8 @@ It has two halves, and each one is owned by a different place:
 
 **`templates` is a scope decision, not a render fact.** Both brands render this one route table — `data/brand.ts` swaps a record, not a page — so a surface is listed here under a template when that template's product story needs it: a quiz-specific implementation is QuizHub's, the alignment product's is AlignSynch's, and a surface both need unchanged is under both. A surface no template claims yet has an empty list and sits in _No template yet_, which is where a candidate for the next vertical starts its life.
 
+How a template picks from this page — the order a new surface is decided in — is [`TEMPLATE-DOCTRINE.md`](TEMPLATE-DOCTRINE.md): one core, many expressions.
+
 ## Summary
 
 - routes: **45** — 31 static, 14 dynamic, from `app/**/page.tsx`
