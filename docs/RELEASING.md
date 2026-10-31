@@ -48,6 +48,37 @@ writing anything.
 `--dry-run <version>` prints every command it would run (on stderr) and the entry it would write (on
 stdout, so it can be redirected), and writes nothing.
 
+## Pre-releases
+
+A release candidate is a version with a semver `-suffix` — `1.1.0-rc1`, `1.1.0-beta.2` — and it is
+cut by the same two paths above. The procedure does not change; three things about the artefacts do:
+
+- the heading is `## [1.1.0-rc1] - <date>`, and `--check` reads it as the newest entry, so a tree
+  carrying a candidate still passes the gate (`release:check` is a step of that gate, in every lane);
+- the GitHub Release is created with `--prerelease`, and the script reads `isPrerelease` back and
+  fails the cut when the flag did not take. A candidate published as "latest" is the wrong
+  artefact, not a cosmetic detail;
+- the candidate's entry stays in `CHANGELOG.md` when the final release lands: `1.1.0` is cut _above_
+  it, like any other version.
+
+The order is semver precedence, not three integers — `scripts/release-version.mjs` is the one
+classifier the gate, the bump guard and the publish step share. `1.0.0 → 1.1.0-rc1` is a bump and
+`1.1.0-rc1 → 1.1.0` is a bump (a release outranks its own candidate), while `1.1.0 → 1.1.0-rc1`,
+`1.1.0-rc1 → 1.1.0-rc1` and `1.0.0 → 0.9.9` are not. A `+build` suffix (`1.1.0+build.5`) is build
+metadata: a final release of equal precedence to `1.1.0`, so it is not marked pre-release.
+
+```bash
+bash scripts/release.sh --dry-run 1.1.0-rc1 --limits limits.md  # the entry, with --prerelease in the command block
+# ... put the entry in CHANGELOG.md, set package.json to 1.1.0-rc1, merge the PR ...
+bash scripts/release.sh --tag-only 1.1.0-rc1                    # tag the merge commit, publish, then read the flag back
+gh release view v1.1.0-rc1 --json tagName,isPrerelease          # prerelease: true
+```
+
+**A pre-release is abandoned, never moved** — exactly like any other tag (see _Failure path_). A
+candidate cut from the wrong commit, or with notes that are no longer true, is deleted, and the next
+attempt is `1.1.0-rc2`; the final release is still `1.1.0`, and it is the only number anyone is
+expected to have pinned.
+
 ## The entry comes from the commits
 
 `git log <previous tag>..HEAD` is the whole generator — no commitlint, no semantic-release, no new
@@ -60,9 +91,10 @@ dependency. Every commit lands in exactly one section, so no merged PR can be dr
 - `chore(release): <version>` → omitted: it is the act of recording the entry, not a change in it
 
 The trailing `(#NNN)` every squash-merged commit carries becomes a link to that pull request. The
-version heading is `## [x.y.z] - <date>`; the release link is a plain footer definition
-(`[x.y.z]: <url>`), deliberately not a heading. The entry parser stops at both, so the footer is
-never part of an entry — and therefore never part of the release notes, which are the entry.
+version heading is `## [x.y.z] - <date>` — `## [1.1.0-rc1] - <date>` for a candidate; the release
+link is a plain footer definition (`[x.y.z]: <url>`), deliberately not a heading. The entry parser
+stops at both, so the footer is never part of an entry — and therefore never part of the release
+notes, which are the entry.
 
 ## Known limits are mandatory
 
@@ -106,6 +138,7 @@ It fails when:
 **A pushed tag is never moved.** If a cut is wrong — the wrong commit, a typo in the notes, a limit
 that is no longer true — report it, delete the tag and the Release, and cut the **next** version
 (`v1.0.1`). Re-tagging the same version silently rewrites what someone may already have pinned.
+A pre-release is no exception: `v1.1.0-rc1` is not re-pointed at a repaired commit, `v1.1.0-rc2` is.
 `--tag-only` refuses an existing tag by design; do not work around it with `git tag -f`.
 
 A release is done when all four artefacts agree:
