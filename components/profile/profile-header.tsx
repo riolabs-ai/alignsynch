@@ -45,7 +45,7 @@ export function ProfileHeader({
     <div className="overflow-hidden rounded-xl shadow-sm">
       <ProfileCover handle={person.handle} />
       {/*
-        The ground behind the identity row was a purple-to-blue wash — two QuizHub hues under every
+        The ground behind the identity row was a two-hue wash — two QuizHub colours under every
         avatar, on both brands. It is now the brand's own accent fading to nothing, which is the one
         gradient in this directory that survives: both stops are tokens, so the skin decides. A
         single-stop tint would have been the other option; the fade is what keeps the cover above it
