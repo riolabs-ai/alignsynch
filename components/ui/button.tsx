@@ -3,20 +3,33 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
+/**
+ * The brand's interactive fill (#187): a solid `action` ground with `action-foreground` on
+ * top. It is one value under two names on purpose.
+ *
+ *   `default`  is the name every shadcn call site already passes (implicitly, or as
+ *              `variant="default"`), and it used to be a palette step — the indigo 500 the
+ *              template's buttons painted on every page of both builds. It now paints the
+ *              same token as `action`, which is what "the palette has one home" means.
+ *   `action`   is the explicit name a page uses when it means *the brand's call to action*
+ *              rather than *the default button*; stages 2 and 3 of issue #187 moved the home,
+ *              affiliate and profile surfaces onto it.
+ *
+ * A third variant, `gradient` (a purple→indigo 600 ramp with a matching hover ramp), drew
+ * nothing: no file in `app/`, `components/` or `tests/` passes it. It was deleted with the
+ * palette rather than re-pointed, because a gradient outside the token layer is the drift
+ * `pnpm lint` now rejects (`scripts/lint-brand-classes.mjs`) — keeping a named utility that
+ * only exists to paint one would leave the rule with a hole it cannot see.
+ */
+const actionFill = "bg-action text-action-foreground hover:bg-action/90";
+
 const buttonVariants = cva(
   "inline-flex items-center duration-300 justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-indigo-500 text-white hover:bg-indigo-600",
-        /**
-         * The brand's own interactive colour (#187), for a call to action on a page whose
-         * chrome has already moved to tokens. `default` and `gradient` above and below still
-         * carry palette steps: they are drawn across the home, affiliate and profile surfaces
-         * (stages 2 and 3 of issue #187), and re-pointing them here would repaint every one of
-         * those pages in the same commit — a colour change this card cannot verify.
-         */
-        action: "bg-action text-action-foreground hover:bg-action/90",
+        default: actionFill,
+        action: actionFill,
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
           "border border-input text-primary bg-background hover:bg-accent hover:text-accent-foreground",
@@ -24,8 +37,6 @@ const buttonVariants = cva(
         success: "bg-green-400 text-gray-800 hover:bg-green-400/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        gradient:
-          " bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0",
       },
       size: {
         default: "h-10 px-4 py-2",

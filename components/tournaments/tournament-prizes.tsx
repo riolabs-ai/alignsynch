@@ -33,7 +33,7 @@ export function TournamentPrizes({ tournament, copy }: TournamentPrizesProps) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:order-2">
-              <div className="bg-gradient-to-b from-amber-100 to-amber-300 rounded-lg p-6 text-center shadow-lg border border-amber-200 transform transition-all duration-200 ">
+              <div className="bg-amber-200 rounded-lg p-6 text-center shadow-lg border border-amber-200 transform transition-all duration-200 ">
                 <div className="mx-auto w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mb-4">
                   <Trophy className="h-8 w-8 text-white" />
                 </div>
@@ -53,7 +53,7 @@ export function TournamentPrizes({ tournament, copy }: TournamentPrizesProps) {
             </div>
 
             <div className="md:order-1">
-              <div className="bg-gradient-to-b from-gray-100 to-gray-300 rounded-lg p-6 text-center shadow-md border border-gray-200 transform transition-all duration-200  hover:shadow-lg">
+              <div className="bg-gray-200 rounded-lg p-6 text-center shadow-md border border-gray-200 transform transition-all duration-200  hover:shadow-lg">
                 <div className="mx-auto w-14 h-14 bg-gray-500 rounded-full flex items-center justify-center mb-4">
                   <Medal className="h-7 w-7 text-white" />
                 </div>
@@ -73,7 +73,7 @@ export function TournamentPrizes({ tournament, copy }: TournamentPrizesProps) {
             </div>
 
             <div className="md:order-3">
-              <div className="bg-gradient-to-b from-amber-50 to-amber-200 rounded-lg p-6 text-center shadow-md border border-amber-100 transform transition-all duration-200  hover:shadow-lg">
+              <div className="bg-amber-100 rounded-lg p-6 text-center shadow-md border border-amber-100 transform transition-all duration-200  hover:shadow-lg">
                 <div className="mx-auto w-14 h-14 bg-amber-700 rounded-full flex items-center justify-center mb-4">
                   <Award className="h-7 w-7 text-white" />
                 </div>
@@ -94,10 +94,10 @@ export function TournamentPrizes({ tournament, copy }: TournamentPrizesProps) {
           </div>
 
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="border-l-4 border-l-purple-400 hover:shadow-md transition-shadow">
+            <Card className="border-l-4 border-l-action hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-purple-500" />
+                  <Gift className="h-4 w-4 text-action" />
                   {itemLabel(copy, "runner-up")}
                 </CardTitle>
               </CardHeader>
@@ -175,9 +175,9 @@ export function TournamentPrizes({ tournament, copy }: TournamentPrizesProps) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 rounded-md bg-purple-50 dark:bg-purple-950">
-                    <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                      <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  <div className="flex items-center gap-3 p-3 rounded-md bg-action/5 dark:bg-action/10">
+                    <div className="h-8 w-8 rounded-full bg-action/10 dark:bg-action/20 flex items-center justify-center">
+                      <Target className="h-4 w-4 text-action" />
                     </div>
                     <div>
                       <div className="font-medium">{itemLabel(copy, "consistency")}</div>
@@ -192,7 +192,7 @@ export function TournamentPrizes({ tournament, copy }: TournamentPrizesProps) {
           </div>
 
           <div className="mt-8">
-            <Card className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900">
+            <Card className="bg-amber-50 dark:bg-amber-950">
               <CardContent className="pt-6">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4">

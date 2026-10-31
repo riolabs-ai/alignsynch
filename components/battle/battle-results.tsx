@@ -227,7 +227,7 @@ export function BattleResults({ copy, battleState, onRematch, onReturnHome }: Ba
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-purple-500" />
+                    <Award className="h-5 w-5 text-action" />
                     <span>{itemLabel(copy, "final-rank")}</span>
                   </div>
                   <span className="font-bold">#{currentPlayerRank}</span>
@@ -269,9 +269,9 @@ export function BattleResults({ copy, battleState, onRematch, onReturnHome }: Ba
                 </div>
               )}
 
-              <div className="flex items-center justify-between p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-action/10 border border-action/20">
                 <div className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-purple-500" />
+                  <Award className="h-5 w-5 text-action" />
                   <span>{itemLabel(copy, "battle-coins")}</span>
                 </div>
                 <span className="font-bold">+{Math.floor((currentPlayer?.score || 0) / 20)}</span>

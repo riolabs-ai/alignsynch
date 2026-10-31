@@ -2,10 +2,17 @@
  * The assessment report, drawn — the read-only half of `/assessment/[slug]`.
  *
  * Every number on this screen is an expression over the view model
- * (`lib/assessment-report.ts`): the scores are the fixture's, and the Gaps are `gapOf()`
- * over the pair beside them. Nothing here is typed in, nothing here can be edited, and
- * there is no state to submit — the component is a server component with no `"use client"`,
- * because a screen that only reads has no handlers to run.
+ * (`lib/assessment-report.ts`): the scores are the fixture's, and the eight Gaps are
+ * `content/gaps.ts`'s pairs, one `gapOf()` each. Nothing here is typed in, nothing here
+ * can be edited, and there is no state to submit — the component is a server component
+ * with no `"use client"`, because a screen that only reads has no handlers to run.
+ *
+ * **One line per Gap, not one line per Opinion.** The glossary's Gaps are pairs, and a
+ * pair is not always "the same answer from both parties": an Initiator Think Gap is
+ * Noor's *thought* about Iris against Iris's *actual* Feel. So a line names the two
+ * Opinions it subtracts (who, which kind, which score) and prints the Gap those two make,
+ * which is why the old party-column table is gone — a score's column said who gave it but
+ * not what it was compared with.
  *
  * It takes the projection rather than the records so the render is testable in a node
  * environment: `tests/assessment-report.test.ts` renders this with `renderToStaticMarkup`
@@ -19,11 +26,18 @@
  */
 import type { OpinionKind } from "@/content/assessment";
 import { MODE_LABELS } from "@/content/assessment";
+import type { GapSource, GapSourceSide } from "@/content/gaps";
+import { GAP_KIND_LABELS, GAP_KIND_SOURCES, GAP_KINDS } from "@/content/gaps";
 import type { AspectReportRow, AssessmentReport, ReportedParty } from "@/lib/assessment-report";
 import { cn } from "@/lib/utils";
 
-/** The opinion kinds in the glossary's order: Basic's pair, then Advanced's. */
-const OPINION_KINDS: readonly OpinionKind[] = ["feel", "wish", "think", "guess"];
+/** The four opinion kinds as a reader sees them: "Noor Think", never "Noor think". */
+const OPINION_LABELS: Record<OpinionKind, string> = {
+  feel: "Feel",
+  wish: "Wish",
+  think: "Think",
+  guess: "Guess",
+};
 
 /**
  * One Opinion as a position on the 1..5 band: a notch per score, the answered one filled.
@@ -51,7 +65,7 @@ function Notches({
   return (
     <span
       role="img"
-      aria-label={`${party} ${kind}: ${value}`}
+      aria-label={`${party} ${OPINION_LABELS[kind]}: ${value}`}
       className="inline-flex items-center gap-1.5"
     >
       <span aria-hidden className="inline-flex items-center gap-1.5">
@@ -70,23 +84,59 @@ function Notches({
   );
 }
 
-/** One opinion kind for one Aspect: both parties' positions, and the Gap between them. */
-function OpinionLine({ row, kind }: { row: AspectReportRow; kind: OpinionKind }) {
-  const left = row.left.opinions[kind];
-  const right = row.right.opinions[kind];
-  const gap = row.gaps[kind];
+/** One side of a Gap: the party, the opinion kind they gave, and the score they gave. */
+interface GapSideView {
+  readonly name: string;
+  readonly opinion: OpinionKind;
+  readonly value: number | undefined;
+}
 
-  // Only the kinds both parties answered are drawn: Think and Guess are Advanced Mode,
-  // answered per Aspect, and a row with one side blank is a Gap with nothing to measure.
-  if (left === undefined || right === undefined || gap === undefined) return null;
+/** Who gave which Opinion on this Aspect, resolved from the row the Gap belongs to. */
+function sideOf(row: AspectReportRow, side: GapSourceSide): GapSideView {
+  const party: ReportedParty = row.left.role === side.party ? row.left : row.right;
+  return { name: party.name, opinion: side.opinion, value: party.opinions[side.opinion] };
+}
+
+/** One party's score, named: "Noor Think" and the notch band with the number filled in. */
+function SideScore({ side, min, max }: { side: GapSideView; min: number; max: number }) {
+  if (side.value === undefined) return null;
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="text-sm text-gray-600 dark:text-gray-300">
+        <span className="font-medium text-gray-700 dark:text-gray-300">{side.name}</span>{" "}
+        <span>{OPINION_LABELS[side.opinion]}</span>
+      </span>
+      <Notches min={min} max={max} value={side.value} party={side.name} kind={side.opinion} />
+    </span>
+  );
+}
+
+/**
+ * One Gap of one Aspect: its glossary name, the two Opinions it subtracts, and the number.
+ *
+ * A kind is drawn only when it has a number. The four Basic kinds always do (Feel and Wish
+ * are required on both sides); the four prediction kinds do only on an Advanced instance,
+ * where both parties answered Think and Guess. Basic never renders a Think or Guess Gap,
+ * because the schema never let it store the score one would need.
+ */
+function GapLine({ row, source }: { row: AspectReportRow; source: GapSource }) {
+  const gap = row.gaps[source.kind];
+  const left = sideOf(row, source.left);
+  const right = sideOf(row, source.right);
+  if (gap === undefined || left.value === undefined || right.value === undefined) return null;
 
   return (
-    <div className="grid grid-cols-[5rem_1fr_1fr_3.5rem] items-center gap-3 py-1.5">
-      <span className="text-sm font-medium capitalize text-gray-700 dark:text-gray-300">
-        {kind}
+    <div className="grid grid-cols-[12rem_1fr_3.5rem] items-center gap-3 py-1.5">
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        {GAP_KIND_LABELS[source.kind]}
       </span>
-      <Notches min={row.min} max={row.max} value={left} party={row.left.name} kind={kind} />
-      <Notches min={row.min} max={row.max} value={right} party={row.right.name} kind={kind} />
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <SideScore side={left} min={row.min} max={row.max} />
+        <span aria-hidden className="text-xs text-gray-400 dark:text-gray-500">
+          vs
+        </span>
+        <SideScore side={right} min={row.min} max={row.max} />
+      </span>
       <span className="text-right text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100">
         {gap === 0 ? "In synch" : gap}
       </span>
@@ -94,37 +144,44 @@ function OpinionLine({ row, kind }: { row: AspectReportRow; kind: OpinionKind })
   );
 }
 
-/** The column names for one Aspect's answers: who answered, and what the last column is. */
-function RowHeading({ left, right }: { left: ReportedParty; right: ReportedParty }) {
+/** The column names for one Aspect's Gaps: the kind, the pair it subtracts, the value. */
+function GapHeading() {
   return (
-    <div className="grid grid-cols-[5rem_1fr_1fr_3.5rem] items-center gap-3 border-b border-gray-200 pb-1 dark:border-gray-700">
+    <div className="grid grid-cols-[12rem_1fr_3.5rem] items-center gap-3 border-b border-gray-200 pb-1 dark:border-gray-700">
       <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        Aspect
+        Gap
       </span>
       <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        {left.name}
-      </span>
-      <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        {right.name}
+        The two Opinions it compares
       </span>
       <span className="text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        Gap
+        Value
       </span>
     </div>
   );
 }
 
-/** One Aspect: what is asked, the two Values that name the band's ends, and the answers. */
+/**
+ * One Aspect: what is asked, the two Values that name the band's ends, and one line per Gap
+ * kind it has — four on a Basic instance, eight on an Advanced one.
+ */
 function AspectRow({ row }: { row: AspectReportRow }) {
+  // `data-<kind>-gap`, one attribute per Gap this Aspect actually has, in glossary order:
+  // the render test reads the numbers off the row instead of parsing a sentence. A kind
+  // with no pair is absent, so a Basic row carries four of these and never a prediction
+  // one; the attribute is always the kind's own name, so no name can mean "two people's
+  // Think scores differ" — the quantity the glossary does not define.
+  const gapAttributes: Record<string, string> = Object.fromEntries(
+    GAP_KINDS.flatMap((kind) => {
+      const gap = row.gaps[kind];
+      return gap === undefined ? [] : [[`data-${kind}-gap`, String(gap)]];
+    }),
+  );
+
   return (
     <section
-      // Read back by the render test: the Gap of this Aspect is on the row, not in a
-      // sentence a regex has to guess at.
       data-aspect={row.itemId}
-      data-feel-gap={row.gaps.feel}
-      data-wish-gap={row.gaps.wish}
-      {...(row.gaps.think === undefined ? {} : { "data-think-gap": row.gaps.think })}
-      {...(row.gaps.guess === undefined ? {} : { "data-guess-gap": row.gaps.guess })}
+      {...gapAttributes}
       className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
     >
       <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{row.prompt}</h2>
@@ -133,9 +190,9 @@ function AspectRow({ row }: { row: AspectReportRow }) {
         <span className="mx-2 text-gray-400 dark:text-gray-500">—</span>
         <span>{row.rightValue}</span>
       </p>
-      <RowHeading left={row.left} right={row.right} />
-      {OPINION_KINDS.map((kind) => (
-        <OpinionLine key={kind} row={row} kind={kind} />
+      <GapHeading />
+      {GAP_KIND_SOURCES.map((source) => (
+        <GapLine key={source.kind} row={row} source={source} />
       ))}
     </section>
   );

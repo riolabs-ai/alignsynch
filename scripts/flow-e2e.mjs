@@ -20,7 +20,8 @@
  *                  Initiator has answered
  *   5. submit      the Counterparty answers differently on one Aspect
  *   6. gap         both parties now see `data-feel-gap="3"` where Feel 2 meets Feel 5, and
- *                  "In synch" where they agree
+ *                  "In synch" where they agree; an Advanced instance draws all eight kinds,
+ *                  the four prediction ones against the other party's actual (#219)
  *   7. freeze      a post-completion submit is a 409, and the stored rows are unchanged
  *   8. copy        editing the Template's prompt afterwards does not change the instance
  *   9. hashes      the invitation row stores the SHA-256 of the token, never the token
@@ -782,22 +783,28 @@ async function main() {
   const advReport = await advInitiator.get(advPath);
   const advRow = advReport.html.match(new RegExp(`<section[^>]*data-aspect="${TIME}"[^>]*>`))?.[0];
   check(
-    "the Advanced report draws a Gap for every opinion kind",
+    "the Advanced report draws all eight Gap kinds (#219)",
     advRow?.includes('data-feel-gap="3"') === true &&
       advRow.includes('data-wish-gap="2"') &&
-      advRow.includes('data-think-gap="1"') &&
-      advRow.includes('data-guess-gap="3"'),
-    advRow?.slice(0, 220) ?? "no row",
+      advRow.includes('data-initiator-gap="3"') &&
+      advRow.includes('data-counterparty-gap="2"') &&
+      // A prediction against the other party's actual: Initiator Think 4 vs Counterparty
+      // Feel 5 → 1; Initiator Guess 1 vs Counterparty Wish 3 → 2; Counterparty Think 3 vs
+      // Initiator Feel 2 → 1; Counterparty Guess 4 vs Initiator Wish 5 → 1.
+      advRow.includes('data-initiator-think-gap="1"') &&
+      advRow.includes('data-initiator-guess-gap="2"') &&
+      advRow.includes('data-counterparty-think-gap="1"') &&
+      advRow.includes('data-counterparty-guess-gap="1"'),
+    advRow?.slice(0, 260) ?? "no row",
   );
-  const advGapAttributes = (advReport.html.match(/data-(feel|wish|think|guess)-gap=/g) ?? [])
-    .length;
+  const advGapAttributes = (advReport.html.match(/data-[a-z]+(?:-[a-z]+)*-gap=/g) ?? []).length;
   check(
-    "every Aspect carries four Gaps (5 × 4)",
-    advGapAttributes === ASPECT_IDS.length * 4,
+    "every Aspect carries eight Gaps (5 × 8)",
+    advGapAttributes === ASPECT_IDS.length * 8,
     `${advGapAttributes} gap attributes`,
   );
   note(
-    `rendered: data-aspect="${TIME}" data-feel-gap="3" data-wish-gap="2" data-think-gap="1" data-guess-gap="3"`,
+    `rendered: data-aspect="${TIME}" feel 3 · wish 2 · initiator 3 · counterparty 2 · I-think 1 · I-guess 2 · C-think 1 · C-guess 1`,
   );
 }
 

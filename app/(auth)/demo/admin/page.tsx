@@ -41,7 +41,7 @@ export default async function DemoAdminPage() {
   const { user, role } = await requireAdmin({ next: "/demo/admin" });
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-slate-800 via-slate-900 to-black">
+    <div className="min-h-screen flex items-center justify-center p-8 bg-foreground">
       <Card className="w-full max-w-lg shadow-xl border-0">
         <CardHeader className="pb-4">
           <CardTitle className="text-2xl font-bold">Admin-only surface</CardTitle>

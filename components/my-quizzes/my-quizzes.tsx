@@ -248,7 +248,7 @@ export function MyQuizzes() {
                       seed={quiz.id}
                       width={600}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                    <div className="absolute inset-0 bg-foreground/50 flex items-end p-4">
                       <div className="w-full">
                         <div className="flex justify-between items-center mb-2">
                           <Badge

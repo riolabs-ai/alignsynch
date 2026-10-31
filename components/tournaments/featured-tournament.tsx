@@ -19,7 +19,7 @@ export function FeaturedTournament({ copy }: { copy: PageCopySection }) {
   return (
     <Card className="overflow-hidden border-0 shadow-lg">
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-indigo-900/90 z-10" />
+        <div className="absolute inset-0 bg-action/85 z-10" />
         <Image
           src={media["abstract-geometric-shapes"].src} // Using existing abstract image for featured tournament
           alt="Featured Tournament"
@@ -63,7 +63,7 @@ export function FeaturedTournament({ copy }: { copy: PageCopySection }) {
 
               <Button
                 onClick={() => router.push("/tournaments/global-championship")}
-                className="bg-white text-purple-900 hover:bg-gray-100"
+                className="bg-white text-action hover:bg-gray-100"
               >
                 {itemLabel(copy, "join")} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

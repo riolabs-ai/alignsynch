@@ -116,6 +116,12 @@ A cold clone (fresh `git clone`, no `node_modules`, no Next cache) runs the same
 in **43 s** — the install is 0.7 s off the shared pnpm store, so "works on my machine" is not
 carrying the result.
 
+The `lint` row above is the biome-only step. Since #187 stage 4 the step is
+`pnpm lint` = `biome check && node scripts/lint-brand-classes.mjs`, which bans the
+indigo/purple/violet palette steps and `bg-gradient-*` utilities under `components/` and `app/`
+(no allowlist; `scripts/brand-classes.mjs` is the rule, `--self-test` runs in every invocation)
+and measured **1.6–2.6 s** for the pair across three `lane=code` gate runs on 2026-10-30.
+
 CI, same tree: the first post-change run is **1 m 0 s** end to end, of which the script itself
 is **43.6 s** (`data:check` and `test` skipped there too). The extra ~17 s is runner setup; the
 pre-change p50 was 55 s, so the gate bought the parity preflight and the two skip-aware steps

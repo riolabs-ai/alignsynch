@@ -33,6 +33,24 @@ export const metadata: Metadata = {
     template: `%s · ${brand.name}`,
   },
   description: brand.description,
+  /**
+   * The tab icon, read from the record (#187 stage 4).
+   *
+   * `app/favicon.ico` used to be the whole answer, and it is one static file: the browser tab,
+   * a bookmark and the history entry showed the template's mark on an AlignSynch build. The
+   * path is `brand.icon` — recorded in `data/brand.ts`, registered in `data/media.ts`, drawn
+   * from the record's own colours by `scripts/gen-brand-icons.mjs` — because the icon is the
+   * first thing a reader sees and therefore brand data, not a build artefact. The static
+   * `favicon.ico` was deleted with this card so exactly one icon is declared, on purpose: two
+   * `<link rel="icon">` tags would leave the choice of which brand a reader sees to the
+   * browser's tie-break rules.
+   *
+   * `type` is stated because Next only infers it for its own generated icons; an SVG needs it
+   * for a reader (and a few crawlers) to accept the file.
+   */
+  icons: {
+    icon: [{ url: brand.icon, type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({

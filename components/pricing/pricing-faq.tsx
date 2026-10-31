@@ -200,7 +200,7 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
                 {itemLabel(copy, "no-results-hint")}{" "}
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="text-purple-600 hover:text-purple-700"
+                  className="text-action hover:text-action/80"
                 >
                   {itemLabel(copy, "clear-search")}
                 </button>
@@ -214,7 +214,7 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
             {itemLabel(copy, "contact-prompt")}{" "}
             <a
               href={`mailto:${brand.supportEmail}`}
-              className="text-purple-600 hover:text-purple-700 font-medium"
+              className="text-action hover:text-action/80 font-medium"
             >
               {itemLabel(copy, "contact-email")}
             </a>

@@ -73,7 +73,7 @@ export function AccountHome({
               {handle === undefined ? (
                 <Badge variant="outline">{itemLabel(identity, "no-handle")}</Badge>
               ) : (
-                <Link href={`/profile/${handle}`} className="text-sm text-indigo-600">
+                <Link href={`/profile/${handle}`} className="text-sm text-action">
                   {itemLabel(identity, "handle-prefix")}
                   {handle}
                 </Link>

@@ -86,6 +86,8 @@ const alignSynch: Brand = zBrand.parse({
   description: alignSynchBrand.description,
   domain: "alignsynch.com",
   logo: alignSynchBrand.logo,
+  // The tab icon is brand data like the logo (#187 stage 4): read from the record, not restated.
+  icon: alignSynchBrand.icon,
   colors: alignSynchBrand.colors,
   supportEmail: "alignsynch@riolabs.ai",
   affiliateEmail: "alignsynch@riolabs.ai",
