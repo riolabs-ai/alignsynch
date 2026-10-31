@@ -16,6 +16,13 @@
  * The FAQ questions and answers are not here: they are an inline record array in
  * `support-faq.tsx` with no schema in P2 (`content/article.ts` has no `Faq`), so only the
  * band's chrome — its heading, the search placeholder, the empty state — is copy.
+ *
+ * The `contact` band has no success state and no attachment copy (#290): the form is not
+ * connected to a mailbox, so the only claim it may make is `not-connected`, whose `{email}`
+ * placeholder the view fills from `brand.supportEmail`. The old success heading, its
+ * response-time sentence, the made-up reference number and the file-type / upload rows all
+ * described a queue and a validation that do not exist, and were deleted rather than left
+ * unrendered.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
@@ -60,12 +67,10 @@ export const supportPageCopy: PageCopy = zPageCopy.parse({
       id: "contact",
       heading: "Contact Support",
       items: [
-        { id: "success-heading", label: "Message Sent!" },
         {
-          id: "success-body",
-          label: "Thank you for contacting us. We'll get back to you as soon as possible.",
+          id: "not-connected",
+          label: "This form isn't connected yet — email {email} instead.",
         },
-        { id: "reference-number", label: "Your reference number: #" },
         { id: "name", label: "Name" },
         { id: "name-placeholder", label: "Your name" },
         { id: "email", label: "Email" },
@@ -76,14 +81,6 @@ export const supportPageCopy: PageCopy = zPageCopy.parse({
         { id: "category-placeholder", label: "Select a category" },
         { id: "message", label: "Message" },
         { id: "message-placeholder", label: "Please describe your issue in detail" },
-        { id: "attachment", label: "Attachment (optional)" },
-        { id: "upload-file", label: "Upload File" },
-        { id: "change-file", label: "Change File" },
-        {
-          id: "accepted-types",
-          label: "Accepted file types: Images, PDF, DOC, DOCX, TXT (Max 5MB)",
-        },
-        { id: "sending", label: "Sending..." },
         { id: "submit", label: "Submit Request" },
       ],
     },
