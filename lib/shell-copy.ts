@@ -37,38 +37,40 @@ export function searchSectionFor(copy: PageCopy, brandId: BrandId): PageCopySect
 }
 
 /**
- * The footer's three brand-owned sections (issue #188, stage S3).
+ * The footer's two brand-owned sections (issue #188, stage S3; trimmed by #272).
  *
- * The footer is chrome on every page, and three of its sentences are product vocabulary:
- * the line under the wordmark, the street line in the contact block, and the newsletter
- * pitch. Until this existed they were one string each in the shared fixture, so
- * `BRAND=alignsynch` printed "quizzes", "quiz creators", "quiz tips" and "123 Quiz Street"
- * in the footer of every page it served — copy no route budget could see and no link could
- * reach.
+ * The footer is chrome on every page, and two of its sentences are product vocabulary: the line
+ * under the wordmark and the contact block. Until this existed they were one string each in the
+ * shared fixture, so `BRAND=alignsynch` printed "quizzes", "quiz creators" and a street line
+ * about a quiz template in the footer of every page it served — copy no route budget could see
+ * and no link could reach.
  *
- * One call, three sections, one exhaustive switch: the ids are literal at the `sectionOf`
- * call so E23 can see them, and a brand added to `data/brand.ts` without its three
- * sections fails `tsc` on the `never` below rather than falling back to the quiz words.
- * The *heading*, the field placeholder and the button are the same section pairs' shared
- * halves — `footerContactFor`-style duplication would make the next brand a second copy of
- * "Contact" — so callers read those ids out of the returned section, not out of a literal.
+ * There used to be a third, the newsletter band. It is gone (#272): the field took an address
+ * and the button had no handler, and this app sends no marketing mail, so there was nothing for a
+ * brand to word — the band and both of its fixture sections were removed together. Two sections
+ * is the whole of `footerCopyFor` today, and a third band would be a third case here.
+ *
+ * One call, two sections, one exhaustive switch: the ids are literal at the `sectionOf` call so
+ * E23 can see them, and a brand added to `data/brand.ts` without its two sections fails `tsc` on
+ * the `never` below rather than falling back to the quiz words. The *heading*, the button and the
+ * mailbox are the section pairs' shared halves — `footerContactFor`-style duplication would make
+ * the next brand a second copy of "Contact" — so callers read those ids out of the returned
+ * section, not out of a literal.
  */
 export function footerCopyFor(
   copy: PageCopy,
   brandId: BrandId,
-): { brand: PageCopySection; contact: PageCopySection; newsletter: PageCopySection } {
+): { brand: PageCopySection; contact: PageCopySection } {
   switch (brandId) {
     case "quizhub":
       return {
         brand: sectionOf(copy, "footer-brand"),
         contact: sectionOf(copy, "footer-contact"),
-        newsletter: sectionOf(copy, "footer-newsletter"),
       };
     case "alignsynch":
       return {
         brand: sectionOf(copy, "footer-brand-alignsynch"),
         contact: sectionOf(copy, "footer-contact-alignsynch"),
-        newsletter: sectionOf(copy, "footer-newsletter-alignsynch"),
       };
     default: {
       // A brand added to `data/brand.ts` without footer words lands here and fails `tsc`.
