@@ -10,6 +10,7 @@ import { ArrowRight, BookOpen, ExternalLink, Mail, MapPin, Phone } from "lucide-
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
+import { AppVersion } from "@/components/layout/app-version";
 
 /**
  * The footer — the one shell band the pages render themselves, so it takes the whole
@@ -317,6 +318,16 @@ export function Footer({
               </Link>
             </div>
           </div>
+        </div>
+
+        {/*
+         * The version badge — the very bottom of the footer (issue #269), below the copyright
+         * and the legal row, centred so it reads as the document's signature rather than as a
+         * fourth legal link. `AppVersion` owns the URL, the version and the words; this file
+         * only decides where it stands.
+         */}
+        <div className="mt-6 flex justify-center">
+          <AppVersion copy={copy} />
         </div>
       </div>
     </footer>

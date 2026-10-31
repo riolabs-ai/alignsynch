@@ -1,3 +1,27 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/**
+ * The running version, read from `package.json` — the one source (issue #269).
+ *
+ * Read here and in no other build-time place: the badge
+ * (`components/layout/app-version.tsx`) prints whatever this file inlines, so a version bump is
+ * one line in `package.json` and nothing else. `scripts/parity.mjs` imports *this* config rather
+ * than parsing `package.json` again, so the parity render and the built page cannot disagree.
+ *
+ * It goes in `env` for the same reason `BRAND` does: Next inlines `env` into the browser bundle,
+ * so a client component (the sidebar, the sign-in card) can print the version without a prop
+ * threaded through every mount. Only public values belong here — `package.json`'s version is
+ * public, `DATABASE_URL` and friends are not and must never move into this block.
+ *
+ * The path is resolved from this file, not `process.cwd()`: `next build` may run from a parent
+ * directory in a monorepo, and a relative read would then throw at the wrong time.
+ */
+const { version: APP_VERSION } = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "package.json"), "utf8"),
+);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /**
@@ -16,6 +40,8 @@ const nextConfig = {
    */
   env: {
     BRAND: process.env.BRAND || "quizhub",
+    /** `package.json`'s `version`, read at the top of this file — see `AppVersion` (#269). */
+    APP_VERSION,
   },
   // typescript: {
   //   ignoreBuildErrors: true,

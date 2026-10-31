@@ -27,7 +27,7 @@ landmarks (6)
   main           1
   navigation     2
 
-links (9 unique, 23 total)
+links (10 unique, 25 total)
   #                                                    8
   /                                                    2
   /#questions                                          2
@@ -37,10 +37,11 @@ links (9 unique, 23 total)
   /assessment/ruth-sam                                 2
   /settings                                            1
   /support                                             2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 2
 
 counts
-  elements  314
+  elements  318
   images    3
   buttons   10
   inputs    2
-  classes   277 (sha 0f9b93524717)
+  classes   279 (sha 702ae219a191)

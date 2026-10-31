@@ -14,7 +14,7 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **43** — 29 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 232 files under `components/`, 228 of them `.tsx`
+- component domains: **32** — 233 files under `components/`, 229 of them `.tsx`
 - route handlers: **6** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 10 · **fixture** 51 · **db** 9 · **live** 5
 - templates: Both templates 19 · AlignSynch 12 · QuizHub 42 · No template yet 2
@@ -44,7 +44,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/login` — **live**
   - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials and network states.
-  - components: `components/auth`, `components/ui`
+  - components: `components/auth`, `components/layout`, `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/client.ts`, `lib/auth/server.ts`
 
 - `/profile/[username]` — **db**
@@ -103,8 +103,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/layout` — **fixture**
   - capability: The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.
-  - files (6): `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
-  - routes (7): `/`, `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/pricing`, `/tournaments` — and every other route through `app/layout.tsx`
+  - files (7): `app-version.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
+  - routes (8): `/`, `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/pricing`, `/tournaments` — and every other route through `app/layout.tsx`
 
 - `components/media` — **mock**
   - capability: The one media resolver: a file, a remote URL or a generated default drawn from a seed, in that order, with a fallback on error and no image file behind the last tier.
