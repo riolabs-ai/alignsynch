@@ -167,7 +167,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered.",
     notes:
-      "The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404.",
+      "The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).",
   },
   {
     kind: "route",
