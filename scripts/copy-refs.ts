@@ -182,6 +182,12 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * `autoComplete` joins them for the same reason (issue #164): `"email"` / `"current-password"`
  * are W3C enumerated tokens a password manager reads, exactly like `type="password"` — not copy.
  * Counting them also made every login form's budget wrong by the two hints it must carry.
+ *
+ * `scope` and `stackId` are the two the console's response-analytics table added: a table header's
+ * `scope="row"` / `scope="col"` is a token the screen reader reads the *structure* by, and a
+ * recharts `stackId` names a stack (`dataKey`'s sibling). Both are markup by the same test as
+ * `role` and `dataKey` — a reader never sees either word — so counting them would force a table
+ * into a copy fixture to spell `row`.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
   "accept",
@@ -209,8 +215,10 @@ const TECHNICAL_ATTRIBUTES = new Set([
   "preserveAspectRatio",
   "rel",
   "role",
+  "scope",
   "size",
   "src",
+  "stackId",
   "stopColor",
   "stroke",
   "strokeLinecap",

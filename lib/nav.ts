@@ -39,7 +39,7 @@
 import type { BrandId } from "@/data/brand";
 
 /** One destination family a viewer may or may not be shown. */
-export const NAV_CAPABILITIES = ["quiz-surfaces"] as const;
+export const NAV_CAPABILITIES = ["quiz-surfaces", "admin-console"] as const;
 
 export type NavCapability = (typeof NAV_CAPABILITIES)[number];
 
