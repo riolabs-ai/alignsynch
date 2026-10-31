@@ -45,7 +45,9 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 
 import { freezeClock, normalize, renderRoute } from "./harness";
 import { parityRoutes, type ParityRoute } from "./routes";
+import { quizOnlyRoutes } from "./boundary";
 import { absentRender, summarize } from "./summary";
+import { QUIZ_PRODUCT_FLAG, quizProductShipped } from "@/lib/brand-boundary";
 import { isEnabled } from "@/lib/flags";
 
 /**
@@ -214,6 +216,42 @@ async function rendersNotFound(route: ParityRoute): Promise<boolean> {
   }
 }
 
+/**
+ * Anything the boundary assertion can render: a page, its concrete params and the pattern it is
+ * printed under. Both `ParityRoute` and `QuizOnlyRoute` satisfy it, so one helper serves the
+ * snapshot loop and the boundary loop.
+ */
+type GateTarget = {
+  readonly page: import("./routes").ParityPage;
+  readonly params: Record<string, string>;
+  readonly route: string;
+};
+
+/**
+ * What a gated route answers on this brand, for the boundary assertion (#300).
+ *
+ * Three outcomes, and the difference between the last two is the whole test:
+ *
+ *   `"404"`       the page threw Next's not-found — the surface is closed on this brand.
+ *   `"render"`    the page produced a tree — the surface is open. (Whether the HTML is *right* is
+ *                 the snapshot's question, for the routes it covers, and `next build`'s for the
+ *                 rest; this assertion is about the boundary, not the page.)
+ *   `"error: …"`  the page threw something else. Reported rather than swallowed, because "it did
+ *                 not answer 404" and "it rendered" are not the same claim and a test that
+ *                 conflates them would pass over a broken page.
+ */
+async function answerOf(target: GateTarget): Promise<string> {
+  try {
+    await renderRoute(target.page, target.params, target.route);
+    return "render";
+  } catch (error) {
+    const digest = (error as { digest?: unknown }).digest;
+    if (typeof digest === "string" && digest.startsWith("NEXT_HTTP_ERROR_FALLBACK;404"))
+      return "404";
+    return `error: ${error instanceof Error ? error.message : String(error)}`;
+  }
+}
+
 type Artifact = { document: string; summary: string; extension: string };
 
 /**
@@ -254,6 +292,16 @@ describe("brand parity", () => {
 
       let artifact: Artifact;
 
+      /**
+       * Is this route on the brand boundary (#300)? `/quiz/[id]` is: it is one of the seven
+       * snapshot routes **and** quiz-only, so on a build that does not ship the quiz product its
+       * committed artifact is the declared 404 rather than a render. The check is the flag's own
+       * answer, not the brand's name, so `FLAG_PRODUCT_QUIZ_SURFACES=1` on the alignment build
+       * falls through to the render branch exactly as the route itself would.
+       */
+      const onQuizBoundary = quizOnlyRoutes.some((entry) => entry.route === route.route);
+      const closedByBrand = onQuizBoundary && !quizProductShipped();
+
       if (route.disabledByFlag !== undefined) {
         // A surface that is off (#175). The two halves of the claim are asserted separately:
         // the flag resolver says off, and the page really throws `notFound()` — a page that
@@ -273,6 +321,19 @@ describe("brand parity", () => {
         ).toBe(true);
 
         const absent = absentRender(route.route, brand, flag);
+        artifact = { ...absent, extension: "txt" };
+      } else if (closedByBrand) {
+        // The brand boundary (#300). One claim, and it is the one that can fail: the surface
+        // exists and this brand does not ship it, so the page must answer not-found. A page that
+        // renders here is a page that forgot `requireQuizProduct()`.
+        expect(
+          await rendersNotFound(route),
+          `${brand} ${route.route} is a quiz-only route and this build does not ship the quiz ` +
+            "product, but the route rendered — the page does not call `requireQuizProduct()` " +
+            "(lib/brand-boundary.ts) before it reads",
+        ).toBe(true);
+
+        const absent = absentRender(route.route, brand, QUIZ_PRODUCT_FLAG, "brand");
         artifact = { ...absent, extension: "txt" };
       } else {
         const html = await renderRoute(route.page, route.params, route.route);
@@ -341,6 +402,79 @@ describe("brand parity", () => {
       ).toBe(committedSummary);
     });
   }
+
+  /**
+   * The brand boundary (#300) — what the harness never asked, and the reason fifty-two statements
+   * about quizzes were served under the AlignSynch name.
+   *
+   * The seven routes above are a *snapshot*: they pin what a page renders. This block is a
+   * *status*: for every route the quiz product owns, does this brand serve it at all. The two
+   * questions are complementary — a hash cannot answer the second one, because both brands used
+   * to render the same page.
+   *
+   * The list lives in `boundary.ts` and is the same list the card's route decision names, so a
+   * route joining the product joins one file. `/quiz/[id]` is in both: this block asks whether the
+   * route is open, the snapshot loop above pins what it renders when it is (and pins its declared
+   * 404 on the brand that does not ship it).
+   */
+  describe("quiz product boundary", () => {
+    /**
+     * The list's premise, stated once: if the brand this process resolved disagrees with what the
+     * gate says, every assertion below is either vacuous or wrong on one of the two runs.
+     */
+    it(`the quiz product is ${brand === "quizhub" ? "shipped" : "not shipped"} by this brand`, () => {
+      expect(quizProductShipped()).toBe(brand === "quizhub");
+    });
+
+    for (const route of quizOnlyRoutes) {
+      it(`${route.route} — ${brand}`, async () => {
+        freezeClock();
+        const answer = await answerOf(route);
+
+        if (brand === "quizhub") {
+          /**
+           * The quiz brand ships the product, so the route must be **open**. `"render"` rather
+           * than "not a 404": a page that threw for some other reason has not shown that it
+           * serves the surface, and that distinction is the difference between this test and a
+           * test that passes over a broken page.
+           *
+           * The one exception is documented rather than forgiven: `/dashboard/user` resolves a
+           * session, and this process has no auth environment — the shell's own layout renders
+           * signed-out here for the same reason (`harness.ts`). Its gate is still asserted on the
+           * alignment brand, and its 200 is on the `curl` table the PR carries.
+           */
+          if (route.route === "/dashboard/user") {
+            expect(
+              answer,
+              `${brand} ${route.route}: this brand ships the quiz product, so the route must not ` +
+                `answer 404 — got ${answer}.`,
+            ).not.toBe("404");
+            return;
+          }
+
+          expect(
+            answer,
+            `${brand} ${route.route}: this brand ships the quiz product, so the route must be ` +
+              `open — got ${answer}. A 404 here means the page's gate closed on the brand that ` +
+              "sells the surface (data/flags.ts's `templates`, or the helper's flag name).",
+          ).toBe("render");
+        } else {
+          /**
+           * The alignment brand does not ship it, so every one of these must answer Next's
+           * not-found — the same 404 an unknown URL gets, not a 403 and not an empty shell. This
+           * is the assertion the card's deliberate un-gate breaks: remove `requireQuizProduct()`
+           * from any page below and exactly that line goes red.
+           */
+          expect(
+            answer,
+            `${brand} ${route.route}: this brand does not ship the quiz product, so the route ` +
+              `must answer 404 via ${QUIZ_PRODUCT_FLAG} — got ${answer}. The page's first ` +
+              "statement is missing `requireQuizProduct()` (lib/brand-boundary.ts).",
+          ).toBe("404");
+        }
+      });
+    }
+  });
 
   /**
    * The fragment `scripts/parity.mjs` merges into `manifest.txt` after both brands have run: one

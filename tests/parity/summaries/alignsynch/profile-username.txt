@@ -18,17 +18,16 @@ landmarks (5)
   main           1
   navigation     2
 
-links (7 unique, 8 total)
+links (6 unique, 7 total)
   /                                                    2
   /#questions                                          1
   /#templates                                          1
-  /quiz/q123                                           1
   /settings                                            1
   /support                                             1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 1
 
 counts
-  elements  354
+  elements  352
   images    1
   buttons   17
   inputs    1

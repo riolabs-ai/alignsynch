@@ -35,7 +35,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/` — **fixture**
   - capability: The front page: QuizHub leads with category, latest and featured shelves, top players and live winners; AlignSynch leads with the two questions each party answers and the four assessment templates.
   - components: `components/categories`, `components/home`, `components/layout`, `components/media`, `components/ui`
-  - reads: 16 record fixtures — `data/assessments.ts`, `data/authored-quizzes.ts`, `data/browse-quizzes.ts` (+13 more)
+  - reads: 15 record fixtures — `data/assessments.ts`, `data/authored-quizzes.ts`, `data/browse-quizzes.ts` (+12 more)
 
 - `/dashboard/user` — **db**
   - capability: The signed-in person's account home: their saved profile, wallet, recent activity and their quizzes, read from Postgres.
@@ -167,7 +167,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/demo` — **mock**
   - capability: The demo PIN gate: one four-digit field and a submit. A correct PIN sets a signed, httpOnly unlock cookie and redirects to `/login`, where the three role buttons appear.
   - components: `components/auth`, `components/ui`
-  - reads: 3 fixture modules of page copy and assets only
+  - reads: 3 fixture modules of page copy, assets or decisions — no records
   - notes: Exists only under DEMO_AUTH=1, and refused when VERCEL_ENV=production unless DEMO_ALLOW_PRODUCTION=1 is also set; outside demo mode the route answers the same 404 a URL that never existed does. `mock` rather than `db` since #218: the gate reads no Postgres — it compares the PIN and signs a cookie, and the credential read moved to the role action behind `/login`.
 
 - `/demo/admin` — **db**
@@ -184,7 +184,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/welcome` — **fixture**
   - capability: The public AlignSynch landing page in its own chrome: what a Gap is, how it works, four opinions and two modes.
   - components: `components/marketing`
-  - reads: 3 fixture modules of page copy and assets only
+  - reads: 3 fixture modules of page copy, assets or decisions — no records
 
 ### Component domains
 
@@ -212,7 +212,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/affiliate` — **fixture**
   - capability: The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA.
   - components: `components/affiliate`, `components/layout`, `components/media`, `components/ui`
-  - reads: 2 record fixtures — `data/flags.ts`, `data/metrics.ts`
+  - reads: 1 record fixture — `data/metrics.ts`
 
 - `/battle` — **fixture**
   - capability: A head-to-head quiz battle: choose a mode, join a lobby, play the same question set live and land on a results screen.
@@ -222,7 +222,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/categories` — **fixture**
   - capability: Every quiz category as a tile generated from its slug, with a how-it-works block and a closing CTA.
   - components: `components/categories`, `components/layout`, `components/media`, `components/ui`
-  - reads: 10 record fixtures — `data/authored-quizzes.ts`, `data/browse-quizzes.ts`, `data/categories.ts` (+7 more)
+  - reads: 9 record fixtures — `data/authored-quizzes.ts`, `data/browse-quizzes.ts`, `data/categories.ts` (+6 more)
 
 - `/categories/[slug]` — **fixture**
   - capability: One category's quizzes, under the tile generated for that category.
@@ -232,7 +232,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/create/editor` — **mock**
   - capability: Hand-write a quiz in an editor: questions, answer options, media slots and a live draft pane.
   - components: `components/create`, `components/ui`
-  - reads: literals only
+  - reads: 1 fixture module of page copy, assets or decisions — no records
   - notes: The editor state is literals inside components/create — nothing is saved anywhere.
 
 - `/create/generator` — **fixture**
@@ -243,12 +243,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/creator-tips` — **fixture**
   - capability: Editorial tips for quiz creators, browsable by category with featured and latest grids.
   - components: `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: 5 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/flags.ts` (+2 more)
+  - reads: 4 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` (+1 more)
 
 - `/creator-tips/[slug]` — **fixture**
   - capability: One creator-tip article, with its related tips.
   - components: `components/content`, `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: 5 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/flags.ts` (+2 more)
+  - reads: 4 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` (+1 more)
 
 - `/daily-challenge` — **fixture**
   - capability: One quiz a day: today's quiz, your challenge stats, a daily leaderboard, badge progress and your history.
@@ -284,7 +284,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/my-quizzes/[id]/statistics` — **mock**
   - capability: Per-quiz statistics: completion, question-level correct rates, time spent and a leaderboard of players.
   - components: `components/media`, `components/my-quizzes`, `components/ui`
-  - reads: 1 fixture module of page copy and assets only
+  - reads: 2 fixture modules of page copy, assets or decisions — no records
   - notes: The numbers are literals inside components/my-quizzes/quiz-statistics.tsx, headed 'Mock data for the quiz' — no fixture backs them, and this entry records the mock rather than fixing it.
 
 - `/news` — **fixture**
@@ -300,7 +300,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/pricing` — **fixture**
   - capability: Plan comparison, an FAQ and a closing CTA for the subscription tiers.
   - components: `components/layout`, `components/pricing`, `components/ui`
-  - reads: 2 record fixtures — `data/flags.ts`, `data/metrics.ts`
+  - reads: 1 record fixture — `data/metrics.ts`
 
 - `/quiz-discussions` — **fixture**
   - capability: Every discussion thread across quizzes, with each quiz's comment count and result beside it.
@@ -330,7 +330,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/tournaments` — **fixture**
   - capability: Quiz tournaments: the featured championship, the full list, categories, how it works and a CTA.
   - components: `components/layout`, `components/media`, `components/tournaments`, `components/ui`
-  - reads: 2 record fixtures — `data/flags.ts`, `data/metrics.ts`
+  - reads: 1 record fixture — `data/metrics.ts`
 
 - `/tournaments/[id]` — **fixture**
   - capability: One tournament: overview, key dates, stats, categories, rules, prizes and its leaderboard.

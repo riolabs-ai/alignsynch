@@ -10,6 +10,7 @@ import { WhyPartner } from "@/components/affiliate/why-partner";
 import { Footer } from "@/components/layout/footer";
 import { affiliatePageCopy } from "@/data/pages/affiliate";
 import { shellPageCopy } from "@/data/pages/shell";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
@@ -21,8 +22,13 @@ export const metadata: Metadata = {
 /**
  * The affiliate programme. Each band's words come from `data/pages/affiliate.ts`,
  * resolved here and passed down — no affiliate component holds its own copy (E23).
+ *
+ * Quiz-only (#300): this is the **quiz creator** affiliate programme, so the alignment build
+ * answers 404 before a single band is mounted. (The issue's trap is about `/pricing`, which stays
+ * — a price is a page any product has. An affiliate programme for quiz authors is not.)
  */
 export default function AffiliatePage() {
+  requireQuizProduct();
   return (
     <div className="min-h-screen bg-background">
       <AffiliateHero copy={affiliatePageCopy} />

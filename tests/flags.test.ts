@@ -6,9 +6,10 @@
  *   1. **the precedence** — `FLAG_<NAME>` beats the per-template value beats `default`. The
  *      order is the whole feature: an operator who sets `FLAG_X=0` has to be able to take a
  *      surface down on a template that ships it on, or the lever is advisory.
- *   2. **the shape** — every declared flag is a boolean `default`, and every one of the eight is
+ *   2. **the shape** — every declared flag is a boolean `default`, and every one of the nine is
  *      `false`. "A mock on by default is how a mock reaches a client", so a `true` added to
- *      `data/flags.ts` has to fail a test, not just a review.
+ *      `data/flags.ts` has to fail a test, not just a review. (`product.quiz-surfaces` is on for
+ *      one template through `templates`, never through `default` — #300.)
  *   3. **the server-only rule** — the resolver refuses to run in a browser. A flag the client
  *      decides cannot 404 a route or stop a query, which is the entire point of the mechanism.
  *
@@ -88,6 +89,9 @@ describe("the environment value", () => {
     expect(envNameFor("community.leaderboard")).toBe("FLAG_COMMUNITY_LEADERBOARD");
     expect(envNameFor("commerce.pricing")).toBe("FLAG_COMMERCE_PRICING");
     expect(envNameFor("create.editor")).toBe("FLAG_CREATE_EDITOR");
+    // A hyphen is a legal flag spelling and an illegal `export` (#300): the derived name replaces
+    // it, so `FLAG_PRODUCT_QUIZ_SURFACES=1` is a variable an operator can actually set.
+    expect(envNameFor("product.quiz-surfaces")).toBe("FLAG_PRODUCT_QUIZ_SURFACES");
   });
 
   it("is read through isEnabled, not only through the pure resolver", () => {
@@ -123,7 +127,7 @@ describe("the environment value", () => {
 });
 
 describe("the record", () => {
-  it("declares the eight surfaces the issue names, and nothing else", () => {
+  it("declares the eight deferred surfaces and the brand boundary, and nothing else", () => {
     expect(Object.keys(flags).sort()).toEqual([
       "commerce.affiliate",
       "commerce.pricing",
@@ -133,6 +137,7 @@ describe("the record", () => {
       "community.tournaments",
       "create.editor",
       "create.generator",
+      "product.quiz-surfaces",
     ]);
   });
 
@@ -179,6 +184,49 @@ describe("the nav and the browser", () => {
 
     vi.stubEnv("FLAG_COMMUNITY_LEADERBOARD", "1");
     expect(hiddenNavHrefs()).toEqual([]);
+  });
+
+  /**
+   * The brand boundary's nav half (#300). `product.quiz-surfaces` is on for `quizhub` and off for
+   * `alignsynch`, so the same list answers `["/leaderboard"]` on the quiz build — every quiz href
+   * resolves on — and the whole quiz product on the alignment build.
+   *
+   * The count is asserted, not just membership: a route that joins the boundary and not this map
+   * is a route a nav, a footer or a content link can still point at and get a 404, which is the
+   * failure the card names. It carries both spellings — the static roots a nav draws and the
+   * `[param]` patterns a component matches a concrete href against (`profile-activity.tsx` builds
+   * `/quiz/<id>` and asks about `/quiz/[id]`).
+   */
+  it("carries the quiz product on the alignment build, and only the mock gates on the quiz build", () => {
+    const QUIZ_SURFACES = [
+      "/daily-challenge",
+      "/categories",
+      "/categories/[slug]",
+      "/battle",
+      "/explore",
+      "/explore/featured",
+      "/tournaments",
+      "/tournaments/[id]",
+      "/creator-tips",
+      "/creator-tips/[slug]",
+      "/quiz-discussions",
+      "/quiz/[id]",
+      "/create/editor",
+      "/create/generator",
+      "/affiliate",
+      "/chat",
+      "/dashboard/user",
+      "/my-quizzes",
+      "/my-quizzes/[id]",
+    ];
+
+    for (const href of QUIZ_SURFACES) expect(navSurfaces[href]).toBe("product.quiz-surfaces");
+
+    vi.stubEnv("BRAND", "quizhub");
+    expect(hiddenNavHrefs()).toEqual(["/leaderboard"]);
+
+    vi.stubEnv("BRAND", "alignsynch");
+    expect([...hiddenNavHrefs()].sort()).toEqual([...QUIZ_SURFACES, "/leaderboard"].sort());
   });
 
   it("refuses to resolve in a browser — a flag the client decides enforces nothing", () => {

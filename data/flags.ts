@@ -11,7 +11,9 @@
  *
  *   1. `FLAG_<NAME>` in the environment — `1` on, `0` off — wins over everything. This is the
  *      request-time lever: `community.leaderboard` is `FLAG_COMMUNITY_LEADERBOARD`. A dotted
- *      name becomes a legal env name by upper-casing it and writing `_` for `.`.
+ *      name becomes a legal env name by upper-casing it and writing `_` for `.` — and for `-` too,
+ *      because a shell cannot export a hyphenated variable (`product.quiz-surfaces` is
+ *      `FLAG_PRODUCT_QUIZ_SURFACES`, #300).
  *   2. `templates` — an explicit per-template **on**. If the build's template is in the list
  *      the flag is on, whatever `default` says. `BRAND` already selects a whole skin at build
  *      time; this field is the narrower case where one template ships a surface before another.
@@ -46,9 +48,11 @@
  * group, the payment-gated pair and the two save-path surfaces, declared so that hiding one is
  * an env change rather than a find-and-replace.
  *
- * `templates` is empty on all eight today: each surface has the same status on both templates,
- * so an override would be a claim nobody made. The field is schema, not decoration — the
- * resolver reads it and `tests/flags.test.ts` proves it beats `default` and loses to the env.
+ * `templates` is empty on the eight deferred surfaces: each has the same status on both templates,
+ * so an override would be a claim nobody made. The field is schema, not decoration — the resolver
+ * reads it and `tests/flags.test.ts` proves it beats `default` and loses to the env. It has
+ * exactly one real user, `product.quiz-surfaces` (#300): the quiz product's surfaces ship on
+ * `quizhub` and not on `alignsynch`, which is a per-template *on* and nothing else.
  *
  * `adminBypass` is set on **one** flag, `community.leaderboard`, and it does not weaken the rule
  * above: the surface still ships off for every visitor, and an admin reaching it is a review
@@ -103,6 +107,7 @@ export const zFlags = z
     "commerce.affiliate": zFlagDefinition,
     "create.editor": zFlagDefinition,
     "create.generator": zFlagDefinition,
+    "product.quiz-surfaces": zFlagDefinition,
   })
   .strict();
 
@@ -143,6 +148,24 @@ export const flags: Flags = zFlags.parse({
   "create.generator": {
     default: false,
     note: "Mocked generation: the generator seeds from `data/mock-quizzes.ts` and saves to a toast. Off for the same reason as the editor.",
+  },
+  /**
+   * The brand boundary (#300), and the one flag whose subject is a *product* rather than a mock.
+   *
+   * `templates: ["quizhub"]` is the whole mechanism: the quiz product's surfaces exist on the quiz
+   * template and do not exist on the alignment one, so the same resolver `/leaderboard` reads
+   * answers `true` for one build and `false` for the other, with no second `BRAND === …` check
+   * anywhere. `default: false` keeps the rule above intact for anything that is not `quizhub`.
+   *
+   * Its hrefs are in `navSurfaces` (`lib/flags.ts`) and its routes call
+   * `lib/brand-boundary.ts::requireQuizProduct()`, which is the one gate those twenty-two pages
+   * share. `FLAG_PRODUCT_QUIZ_SURFACES=1` on an alignment build turns the whole product back on,
+   * which is the review path: the surfaces are gated, not deleted.
+   */
+  "product.quiz-surfaces": {
+    default: false,
+    templates: ["quizhub"],
+    note: "Shipped by the quiz template only: twenty-two routes (the quiz catalogue, a quiz and its two views, the authoring pair, an author's own quizzes, tournaments, battle, the daily challenge, creator tips, discussions, chat and the quiz dashboard) answer 404 on the alignment build (#300). Gated, never removed.",
   },
 });
 
