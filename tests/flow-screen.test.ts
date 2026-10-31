@@ -213,11 +213,13 @@ describe("the report, once both have submitted", () => {
     );
   });
 
-  it("renders an agreed Aspect as In synch", () => {
+  it("renders an agreed Aspect as In Synch", () => {
     const row = screen.report?.rows.find((entry) => entry.itemId === MONEY);
     expect(row?.gaps).toMatchObject({ feel: 0, wish: 0 });
     expect(markup).toContain('data-aspect="aspect-money" data-feel-gap="0" data-wish-gap="0"');
-    expect(markup).toContain("In synch");
+    // Capitalised as the source prints it (#274, SPEC-DRIFT quick win #4), and printed beside
+    // the 0 rather than instead of it: the number is the fact, the word is the glossary's.
+    expect(markup).toContain("In Synch");
   });
 
   it("draws the Gap for the Counterparty too — the unlock is symmetric", () => {

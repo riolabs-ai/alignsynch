@@ -112,6 +112,60 @@ export const GAP_KIND_LABELS: Record<GapKind, string> = {
 };
 
 /* ------------------------------------------------------------------ *
+ * The groups — the spec's three headings, and which kinds sit under each
+ * ------------------------------------------------------------------ */
+
+/**
+ * One of the glossary's gap **groups**: a heading the spec already prints, and the kinds
+ * that belong under it. A group is never a ninth kind — it is the same eight, named once
+ * so a report can group them without inventing "Basic / Prediction" in a component.
+ */
+export interface GapGroup {
+  /** Stable handle for the report's `data-gap-group` and the render test. */
+  readonly id: string;
+  /** The spec's own heading, verbatim (p.65: "Feelings and Wishes Differ", …). */
+  readonly heading: string;
+  /** The kinds under it, in `GAP_KINDS` order. */
+  readonly kinds: readonly GapKind[];
+}
+
+/**
+ * The three groups, in the spec's order — the document groups its eight rows under exactly
+ * these headings, so the build adopts them instead of inventing vocabulary (`ux-report.md`,
+ * SPEC-DRIFT §6 quick win "name the gap groups").
+ *
+ *   Feelings and Wishes Differ    the two cross-party comparisons (Basic)
+ *   Desires To Change             each party's own Feel against their own Wish (Basic)
+ *   Prediction Gaps and Analysis  the four prediction-against-actual kinds (Advanced only)
+ *
+ * The third group holds only kinds an Advanced instance has, so on a Basic instance it is
+ * **absent**, not empty: `groupsIn()` drops a group with no present kind, which is the same
+ * rule `gapKindsOf` applies to a kind. Rendering an empty "Prediction" table would be the
+ * `abs(score, nothing)` defect one level up — a heading about a question nobody asked.
+ *
+ * The partition is asserted in `scripts/__tests__/gaps.test.ts`: every kind appears in
+ * exactly one group, and the groups cover `GAP_KINDS` with nothing left over. That is what
+ * keeps a ninth kind from shipping without the report deciding where it belongs.
+ */
+export const GAP_GROUPS: readonly GapGroup[] = [
+  {
+    id: "feelings-and-wishes",
+    heading: "Feelings and Wishes Differ",
+    kinds: ["feel", "wish"],
+  },
+  {
+    id: "desires-to-change",
+    heading: "Desires To Change",
+    kinds: ["initiator", "counterparty"],
+  },
+  {
+    id: "prediction-gaps",
+    heading: "Prediction Gaps and Analysis",
+    kinds: ["initiator-think", "initiator-guess", "counterparty-think", "counterparty-guess"],
+  },
+];
+
+/* ------------------------------------------------------------------ *
  * The pairs — one table, so the arithmetic and the screen cannot disagree
  * ------------------------------------------------------------------ */
 
@@ -213,6 +267,19 @@ export function gapKindsOf(initiator: Opinions, counterparty: Opinions): GapKind
 /** The kinds one Aspect actually has, in glossary order — four, or eight in Advanced Mode. */
 export function gapKindsIn(gaps: GapKinds): GapKind[] {
   return GAP_KINDS.filter((kind) => gaps[kind] !== undefined);
+}
+
+/**
+ * The groups one Aspect actually has a row for — two on a Basic instance, three on an
+ * Advanced one.
+ *
+ * A group is present when **at least one** of its kinds is: the Prediction group is
+ * absent on a Basic instance because no prediction was ever asked, and drawing its heading
+ * over an empty table would announce four Gaps that do not exist. The filtering lives here
+ * beside `gapKindsIn` so the report's loop cannot render a group the numbers do not have.
+ */
+export function groupsIn(gaps: GapKinds): GapGroup[] {
+  return GAP_GROUPS.filter((group) => group.kinds.some((kind) => gaps[kind] !== undefined));
 }
 
 /* ------------------------------------------------------------------ *

@@ -1,17 +1,28 @@
 route  /assessment/avery-rowan
 brand  alignsynch
 
-headings (10)
+headings (21)
   h2  "Recent Messages"
   h3  "No messages"
   h2  "Notifications"
   h3  "No notifications"
   h1  "Relationship Basics"
+  h2  "Where you stand"
   h2  "How much time do you spend together in a normal week?"
+  h3  "Feelings and Wishes Differ"
+  h3  "Desires To Change"
   h2  "How is the work of the household divided?"
+  h3  "Feelings and Wishes Differ"
+  h3  "Desires To Change"
   h2  "How are money and the decisions about it handled?"
+  h3  "Feelings and Wishes Differ"
+  h3  "Desires To Change"
   h2  "When there is a disagreement, how is it raised?"
+  h3  "Feelings and Wishes Differ"
+  h3  "Desires To Change"
   h2  "How often do you show affection?"
+  h3  "Feelings and Wishes Differ"
+  h3  "Desires To Change"
 
 landmarks (6)
   banner         2
@@ -29,8 +40,8 @@ links (7 unique, 8 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 1
 
 counts
-  elements  761
+  elements  992
   images    1
   buttons   8
   inputs    1
-  classes   197 (sha 554c6b23bb44)
+  classes   222 (sha 210866111c55)
