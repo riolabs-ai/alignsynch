@@ -142,7 +142,7 @@ export const newsData: readonly NewsArticle[] = [
     slug: "new-quiz-analytics-features",
     title: "Introducing Advanced Quiz Analytics: Gain Deeper Insights Into Player Behavior",
     summary:
-      "Our new analytics dashboard provides comprehensive data on quiz performance, player demographics, and engagement patterns.",
+      "What a quiz's own analytics show — completion rate, average score, time per question, revenue and a per-question correct rate — and how to read each number.",
     categoryIds: ["news-platform-updates", "news-tutorials"],
     tags: [],
     author: {
@@ -160,32 +160,33 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "We're excited to announce the launch of our Advanced Quiz Analytics suite, designed to give creators unprecedented visibility into how players interact with their quizzes.",
+        text: "Analytics are per quiz, not a separate dashboard you log in to. Every quiz in My Quizzes has its own page, and that page carries a performance overview: completion rate, average score, average time per question and total revenue.",
       },
       {
         type: "paragraph",
-        text: "Whether you're creating quizzes for education, marketing, or entertainment, these new tools will help you optimize your content and better understand your audience.",
+        text: "Those numbers answer different questions, and knowing which one to reach for is most of the work. The rest of this article takes them in turn.",
       },
       {
         type: "heading",
-        text: "Key Features of the New Analytics Dashboard",
+        text: "What the Quiz Page Shows You",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "Our redesigned analytics dashboard puts the most important metrics front and center, with intuitive visualizations that make it easy to spot trends and opportunities for improvement.",
+        text: "Completion rate is the share of started plays that finished. Average score is the mean result across the plays that were recorded. Average time per question is the pacing figure, and total revenue is what the quiz has earned so far.",
       },
       {
         type: "paragraph",
-        text: "The new dashboard includes detailed question-level analytics, player demographic data, completion rates, time spent analysis, and social sharing metrics—all accessible from a single, user-friendly interface.",
+        text: "A figure with no data behind it shows as a dash, never as a zero. A quiz nobody has finished yet has no completion rate, and that is a different thing from a completion rate of zero.",
       },
       {
         type: "image",
         image: {
           src: media["placeholder"].src,
-          alt: "New analytics dashboard interface",
+          alt: "Quiz performance overview",
         },
-        caption: "The redesigned analytics dashboard provides comprehensive insights at a glance",
+        caption:
+          "A quiz's performance overview: completion rate, average score, time per question and revenue",
       },
       {
         type: "heading",
@@ -194,58 +195,54 @@ export const newsData: readonly NewsArticle[] = [
       },
       {
         type: "paragraph",
-        text: "One of the most powerful features of our new analytics suite is the ability to analyze performance at the individual question level. You can now see which questions cause players to drop off, which ones take the longest to answer, and which have the highest and lowest correct response rates.",
+        text: "Each question on that page carries the share of players who answered it correctly, computed from the results recorded for that quiz. That one line is usually more actionable than the average score above it, because it points at an item rather than at the quiz as a whole.",
       },
       {
         type: "paragraph",
-        text: "This granular data allows you to identify and fix problematic questions, adjust difficulty levels, and create more balanced quizzes that keep players engaged from start to finish.",
+        text: "Read the list as a ranking rather than a grade. A question far below its neighbours is usually one of three things: ambiguous wording, a distractor that reads as correct, or a fact your audience simply does not know. Only the first two are yours to fix.",
       },
       {
         type: "heading",
-        text: "Audience Demographics and Segmentation",
+        text: "Completion Rate and Average Score",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "Understanding who is taking your quizzes is crucial for creating targeted content that resonates with your audience. Our new demographics section provides insights into your players' age ranges, geographic locations, devices used, and more.",
-      },
-      {
-        type: "paragraph",
-        text: "You can also create custom segments to compare performance across different audience groups, helping you tailor your quizzes to specific target demographics.",
+        text: "The two headline numbers move for different reasons, so they are worth reading together. A high completion rate with a low average score describes a quiz that is easy to finish and hard to finish well; the reverse describes one that players abandon partway through.",
       },
       {
         type: "image",
         image: {
           src: media["placeholder"].src,
-          alt: "Audience demographics visualization",
+          alt: "Completion and score comparison",
         },
-        caption: "Detailed audience demographics help you understand who's taking your quizzes",
+        caption: "Completion rate and average score answer different questions",
       },
       {
         type: "heading",
-        text: "Engagement Over Time",
+        text: "Where the Numbers Come From",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "Track how engagement with your quizzes changes over time with our new temporal analysis tools. Identify peak usage times, measure the impact of promotional efforts, and understand seasonal trends that affect quiz participation.",
+        text: "Everything on the page is recorded per quiz. Nothing is a portfolio average, and a new quiz starts with no history at all, so the overview fills in as results arrive rather than at the moment the quiz is published.",
       },
       {
         type: "paragraph",
-        text: "These insights can help you optimize when you publish new quizzes and when to promote existing content for maximum reach and engagement.",
+        text: "That has a practical consequence: analytics improve with use. A quiz with a handful of recorded results shows you a shape worth acting on; a quiz with none shows you dashes, and no amount of reading will change that.",
       },
       {
         type: "heading",
-        text: "Getting Started With Advanced Analytics",
+        text: "Reading Your First Quiz",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "The new analytics features are available now to all Premium and Business plan subscribers. To access them, simply log in to your dashboard and click on the 'Analytics' tab in the left navigation menu.",
+        text: "Open My Quizzes, pick a quiz, and the overview is on its page. Start with completion rate, then work through the question-level correct rates to see which items are pulling the average down.",
       },
       {
         type: "paragraph",
-        text: "We've also created a comprehensive guide to help you make the most of these new tools, which you can find in our Help Center. As always, our support team is available to answer any questions you may have about these exciting new features.",
+        text: "One number on the page is computed rather than recorded: the per-question accuracy comes from the answer sheets players submitted, not from the overview above it. When the two disagree, the sheets are the more specific evidence, because they point at answers rather than at totals.",
       },
     ],
   },
