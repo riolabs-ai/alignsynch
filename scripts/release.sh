@@ -70,6 +70,13 @@ is_bump() { version_cli bump "$1" "$2"; }
 
 VERSION_TOKEN="$(version_cli token)" || die "cannot read the version pattern from $VERSION_TOOL"
 
+# The footer pattern reaches awk through the environment, not `-v`: awk processes escape sequences
+# in `-v` assignments, and gawk (CI's awk) turns `\[` into `[` — which silently turns the pattern
+# into a bracket expression, so the footer would end up inside the entry above it. mawk leaves the
+# backslash alone, which is why this only failed on the runner. `ENVIRON` is not rewritten by either.
+VERSION_LINK_DEF="^\\[$VERSION_TOKEN\\]: "
+export VERSION_LINK_DEF
+
 # --- CHANGELOG parsing ---------------------------------------------------------
 # An entry is `## [<version>] - <date>` up to the next `## [` heading, where a version is semver
 # with an optional `-prerelease`/`+build` suffix (`1.1.0-rc1`). The footer that carries the release
@@ -90,9 +97,9 @@ newest_version() {
 }
 
 entry_of() { # <version> -> the entry's lines; the file's link definitions are not the entry
-  awk -v want="## [$1] - " -v stop="^\\[$VERSION_TOKEN\\]: " '
+  awk -v want="## [$1] - " '
     index($0, want) == 1 { inside = 1; print; next }
-    inside && (/^## \[/ || $0 ~ stop) { exit }
+    inside && (/^## \[/ || $0 ~ ENVIRON["VERSION_LINK_DEF"]) { exit }
     inside { print }
   ' "$CHANGELOG"
 }
