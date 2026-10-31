@@ -25,7 +25,13 @@ import { matchRoute } from "@/content/route-manifest";
 import { routeManifest } from "@/content/routes";
 import { myInstancesPageCopy } from "@/data/pages/assessment-instances";
 import { MY_INSTANCES_PATH, instancePath } from "@/lib/flow/paths";
-import { MY_INSTANCE_STATES, myInstanceStateOf, type MyInstanceProgress } from "@/lib/flow/state";
+import {
+  MY_INSTANCE_STATES,
+  UNLOCK_MARKS,
+  myInstanceStateOf,
+  unlockMarkOf,
+  type MyInstanceProgress,
+} from "@/lib/flow/state";
 import type { MyInstance } from "@/lib/db/my-instances";
 
 const { redirect, currentUser, listMyInstances } = vi.hoisted(() => ({
@@ -59,6 +65,7 @@ const completeRow: MyInstance = {
   viewerName: "Avery",
   otherName: "Rowan",
   state: "complete",
+  unlock: "seen",
 };
 
 /** The viewer has answered every Aspect, the instance is not complete, so the other has not. */
@@ -70,6 +77,16 @@ const awaitingRow: MyInstance = {
   viewerName: "Marco",
   otherName: "Priya",
   state: "awaiting-other",
+  unlock: "seen",
+};
+
+/**
+ * Complete, and this party has not opened it since (#252) — the row the card exists for: the
+ * Counterparty submitted while the Initiator was away.
+ */
+const completeUnseenRow: MyInstance = {
+  ...completeRow,
+  unlock: "unseen",
 };
 
 async function render(): Promise<string> {
@@ -301,5 +318,118 @@ describe("a row's state is derived, never stored", () => {
     const states = myInstancesPageCopy.sections?.find((section) => section.id === "state");
     const ids = (states?.items ?? []).map((item) => item.id);
     expect([...MY_INSTANCE_STATES].sort()).toEqual([...ids].sort());
+  });
+});
+
+describe("the unlock marker (#252)", () => {
+  it("is unseen only for a complete row this party has not opened since", () => {
+    const opened = new Date("2026-10-30T18:00:00.000Z");
+    expect(unlockMarkOf("complete", null)).toBe("unseen");
+    expect(unlockMarkOf("complete", opened)).toBe("seen");
+    // Every other state is "nothing to announce", whatever the column says: a mark can only
+    // ever be drawn on a row that already says `complete`.
+    expect(unlockMarkOf("awaiting-other", null)).toBe("seen");
+    expect(unlockMarkOf("yours-to-answer", null)).toBe("seen");
+  });
+
+  it("draws the fixture's one line on a complete row nobody has opened, and quotes it", async () => {
+    currentUser.mockResolvedValue({
+      userId: "52dfe892-be03-421b-ac34-1b35d74633dc",
+      email: "initiator@demo.alignsynch.test",
+      name: "Avery",
+    });
+    listMyInstances.mockResolvedValue([completeUnseenRow]);
+
+    const html = await render();
+    const row = rowText(html, "complete");
+
+    expect(html).toContain('data-instance-marker="unseen"');
+    expect(row).toContain("Complete since you last looked — open it to read the Gap");
+    // The marker adds no number, no score and no Gap value to the row.
+    expect(row).not.toMatch(/\d/);
+  });
+
+  it("is absent on a complete row that party has already opened, which still says complete", async () => {
+    currentUser.mockResolvedValue({
+      userId: "52dfe892-be03-421b-ac34-1b35d74633dc",
+      email: "initiator@demo.alignsynch.test",
+      name: "Avery",
+    });
+    listMyInstances.mockResolvedValue([completeRow]);
+
+    const html = await render();
+    const row = rowText(html, "complete");
+
+    expect(row).toContain("You have both answered");
+    expect(html).not.toContain("data-instance-marker");
+    expect(html).not.toContain("Complete since you last looked");
+    expect(listSection(html)).toContain('data-instance-unlock="seen"');
+  });
+
+  it("is drawn on the row, never as a toast, a modal or a count in the header", async () => {
+    currentUser.mockResolvedValue({
+      userId: "52dfe892-be03-421b-ac34-1b35d74633dc",
+      email: "initiator@demo.alignsynch.test",
+      name: "Avery",
+    });
+    listMyInstances.mockResolvedValue([completeUnseenRow]);
+
+    const html = await render();
+    const marker = html.match(/<p data-instance-marker="unseen"[\s\S]*?<\/p>/)?.[0] ?? "";
+
+    // It is a row-level `<p>`; the page's heading area carries no marker and no digit.
+    expect(marker).not.toBe("");
+    expect(marker).toContain("Complete since you last looked");
+    expect(html).not.toContain('role="dialog"');
+    expect(html).not.toContain('role="alert"');
+  });
+
+  it("keeps the two parties' rows independent — one instance, two different marks", async () => {
+    const initiatorRow: MyInstance = {
+      ...completeUnseenRow,
+      viewerRole: "initiator",
+      viewerName: "Avery",
+      otherName: "Rowan",
+    };
+    const counterpartyRow: MyInstance = {
+      ...completeRow,
+      instanceRecordId: "assessment-instance-avery-rowan",
+      viewerRole: "counterparty",
+      viewerName: "Rowan",
+      otherName: "Avery",
+    };
+
+    // The read is per account: this render is the Initiator's list and the next is the
+    // Counterparty's, from the same instance and the same two opinions.
+    currentUser.mockResolvedValue({
+      userId: "52dfe892-be03-421b-ac34-1b35d74633dc",
+      email: "initiator@demo.alignsynch.test",
+      name: "Avery",
+    });
+    listMyInstances.mockResolvedValue([initiatorRow]);
+    const initiatorHtml = await render();
+
+    currentUser.mockResolvedValue({
+      userId: "9c3f1a02-77c1-4f6e-9a8b-2f4b1c7d5e10",
+      email: "counterparty@demo.alignsynch.test",
+      name: "Rowan",
+    });
+    listMyInstances.mockResolvedValue([counterpartyRow]);
+    const counterpartyHtml = await render();
+
+    expect(initiatorHtml).toContain('data-instance-marker="unseen"');
+    expect(initiatorHtml).toContain("Complete since you last looked");
+    expect(counterpartyHtml).not.toContain("data-instance-marker");
+    expect(counterpartyHtml).not.toContain("Complete since you last looked");
+    expect(counterpartyHtml).toContain("You have both answered");
+  });
+
+  it("has its own copy band, so no marker string is a state sentence", () => {
+    const marker = myInstancesPageCopy.sections?.find((section) => section.id === "marker");
+    const states = myInstancesPageCopy.sections?.find((section) => section.id === "state");
+    const ids = (marker?.items ?? []).map((item) => item.id);
+
+    expect(ids).toEqual([...UNLOCK_MARKS.filter((mark) => mark === "unseen")]);
+    expect((states?.items ?? []).map((item) => item.id)).not.toContain("unseen");
   });
 });

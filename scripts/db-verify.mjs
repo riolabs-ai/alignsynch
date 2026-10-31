@@ -25,6 +25,9 @@
  *   V10 a party's `user_id` is the binding `/assessment/instances` reads (#213 follow-up):
  *       it names an account that exists, and the two seeded demo parties still carry the
  *       binding `db:seed` gave them
+ *   V11 the unlock mark (#252) exists, and a `party.unlock_seen_at` is set only on an instance
+ *       that is already `complete` — a mark written too early would silently swallow the event
+ *       the marker exists to announce
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -80,6 +83,22 @@ async function main() {
         `public.${column.table_name}.${column.column_name} names a Gap — it is gapOf(), never a column`,
       );
     }
+
+    // V11 — the column the unlock marker writes (#252). Checked before the per-instance loop
+    // because a database migrated before #252 has no place to put the mark, and the list would
+    // then read a missing column on every request instead of this check naming the fix.
+    const { rows: unlockColumn } = await client.query(
+      `SELECT 1 AS present FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'party'
+          AND column_name = 'unlock_seen_at'`,
+    );
+    if (unlockColumn.length === 0) {
+      fail(
+        "V11",
+        "public.party.unlock_seen_at does not exist — the unlock marker cannot be written (run `pnpm db:migrate`)",
+      );
+    }
+    const hasUnlockColumn = unlockColumn.length > 0;
 
     if (missing.length > 0) return;
 
@@ -182,6 +201,25 @@ async function main() {
         initiatorAnswered: answeredBy("initiator"),
         counterpartyAnswered: answeredBy("counterparty"),
       });
+
+      // V11 — the mark (#252). `party.unlock_seen_at` is written when a party opens a COMPLETE
+      // instance, so a value on an unfinished one was written too early: the row would read
+      // "already seen" the moment it became complete, and the unlocking event would pass in
+      // silence. `complete` is terminal, so there is no legitimate version of this.
+      if (hasUnlockColumn && status !== "complete") {
+        const { rows: premature } = await client.query(
+          `SELECT role FROM party
+            WHERE instance_record_id = $1 AND unlock_seen_at IS NOT NULL
+            ORDER BY role`,
+          [listed.recordId],
+        );
+        for (const row of premature) {
+          fail(
+            "V11",
+            `instance "${listed.slug}" (${status}): the ${row.role}'s unlock_seen_at is set, but the instance is not complete — the marker would never show`,
+          );
+        }
+      }
 
       // A fixture instance is answered in full by construction, and a **complete** flow
       // instance has to be; an unfinished one is the flow working, not drift.
@@ -379,6 +417,10 @@ async function main() {
       );
     }
 
+    const { rows: unlockMarks } = hasUnlockColumn
+      ? await client.query("SELECT count(*)::int AS n FROM party WHERE unlock_seen_at IS NOT NULL")
+      : [{ n: 0 }];
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -394,7 +436,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, ${bindings}, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, no drift`,
     );
   } finally {
     await client.end();

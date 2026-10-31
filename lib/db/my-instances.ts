@@ -15,7 +15,9 @@
  * **The blind rule holds in the list.** The counts are read because the status is a function of
  * them (`instanceStatusOf`), and `myInstanceStateOf` turns them into one of three sentences. No
  * score, no per-Aspect answer and no Gap is selected here at all: a row cannot leak what this
- * statement never asks Postgres for.
+ * statement never asks Postgres for. The one column #252 adds is `vp.unlock_seen_at` — the
+ * **viewer's own** mark, read from the viewer's party row, never the other party's — and it only
+ * decides whether the marker is drawn on a row that is already `complete`.
  *
  * **A row is only listed when it can be opened.** The template join keeps the definition
  * `TEMPLATE_BY_ID_SQL` uses — a template is a record with no `assessment_instance` row — so an
@@ -35,13 +37,20 @@
  */
 import type { PartyRole } from "@/content/assessment";
 import { queryRows } from "@/lib/db/client";
-import { myInstanceStateOf, type MyInstanceState } from "@/lib/flow/state";
+import {
+  myInstanceStateOf,
+  unlockMarkOf,
+  type MyInstanceState,
+  type UnlockMark,
+} from "@/lib/flow/state";
 
 /**
  * One row, as the list renders it.
  *
  * `state` is already the sentence's code — the derivation lives in `lib/flow/state.ts` so the
- * view cannot invent a fourth state and the pure suite can drive all three.
+ * view cannot invent a fourth state and the pure suite can drive all three. `unlock` is the same
+ * rule for the marker (#252): it is derived from `state` plus the viewer's own `unlock_seen_at`,
+ * so the view never compares a timestamp and the two parties' rows differ by their own column.
  */
 export interface MyInstance {
   readonly instanceRecordId: string;
@@ -53,6 +62,11 @@ export interface MyInstance {
   /** The other party, from their party row or the invitation they have yet to claim. */
   readonly otherName: string | null;
   readonly state: MyInstanceState;
+  /**
+   * `unseen` when the instance is complete and this party has not opened it since — the marker
+   * the row draws. Read from **this party's** column only, never the other party's.
+   */
+  readonly unlock: UnlockMark;
 }
 
 interface MyInstanceRow {
@@ -66,6 +80,7 @@ interface MyInstanceRow {
   readonly viewer_answered: number;
   readonly other_answered: number;
   readonly has_counterparty: boolean;
+  readonly viewer_unlock_seen_at: Date | null;
 }
 
 /**
@@ -89,7 +104,8 @@ const MY_INSTANCES_SQL = `
     (SELECT count(*) FROM opinion o
       WHERE o.instance_record_id = r.id AND o.role <> vp.role)::int AS other_answered,
     EXISTS (SELECT 1 FROM party cp
-             WHERE cp.instance_record_id = r.id AND cp.role = 'counterparty') AS has_counterparty
+             WHERE cp.instance_record_id = r.id AND cp.role = 'counterparty') AS has_counterparty,
+    vp.unlock_seen_at                       AS viewer_unlock_seen_at
   FROM party vp
   JOIN record r             ON r.id = vp.instance_record_id AND r.record_type = 'assessment'
   JOIN assessment_instance ai ON ai.record_id = r.id
@@ -129,6 +145,16 @@ export async function listMyInstances(userId: string): Promise<MyInstance[]> {
         ? { initiator: row.viewer_answered, counterparty: row.other_answered }
         : { initiator: row.other_answered, counterparty: row.viewer_answered };
 
+    // One derivation, then the mark on top of it: `unlockMarkOf()` is handed the state it just
+    // decided, so a row can never say "complete" and show a marker for something else.
+    const state = myInstanceStateOf({
+      aspectCount: row.aspect_count,
+      hasCounterparty: row.has_counterparty,
+      initiatorAnswered: answeredBy.initiator,
+      counterpartyAnswered: answeredBy.counterparty,
+      viewerRole,
+    });
+
     return {
       instanceRecordId: row.instance_record_id,
       slug: row.slug,
@@ -136,13 +162,8 @@ export async function listMyInstances(userId: string): Promise<MyInstance[]> {
       viewerRole,
       viewerName: row.viewer_name,
       otherName: row.other_name,
-      state: myInstanceStateOf({
-        aspectCount: row.aspect_count,
-        hasCounterparty: row.has_counterparty,
-        initiatorAnswered: answeredBy.initiator,
-        counterpartyAnswered: answeredBy.counterparty,
-        viewerRole,
-      }),
+      state,
+      unlock: unlockMarkOf(state, row.viewer_unlock_seen_at),
     };
   });
 }

@@ -2,9 +2,11 @@ import { AssessmentInstanceView, problemCodeOf } from "@/components/assessment-f
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
+import { DatabaseUnavailableError } from "@/lib/db/client";
+import type { FlowScreen } from "@/lib/flow/screen";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
-import { readFlowScreen } from "@/lib/flow/store";
-import { cookies } from "next/headers";
+import { markUnlockSeen, readFlowScreen } from "@/lib/flow/store";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -24,6 +26,12 @@ import type { Metadata } from "next";
  *
  * `force-dynamic`, and no `generateStaticParams`: both would be a database read at build.
  *
+ * **Opening this screen is the event that clears the unlock marker** (#252). The list says
+ * "complete since you last looked"; this page writes `party.unlock_seen_at` for the party the
+ * request resolved as, once and only once the instance is complete — see `recordUnlockSeen()`
+ * above for the three rules that keep the write from firing on a prefetch, on an unfinished
+ * instance, or on a connection that has already dropped.
+ *
  * The invite notice (`?invite=sent|unsent`) is the creation redirect's own fact. It is
  * dropped from the URL by a redirect to the same screen without it, so a reload does not
  * keep claiming an email was sent.
@@ -41,6 +49,40 @@ async function viewerUserId(): Promise<string | null> {
   if (!authConfigured()) return null;
   const user = await currentUser();
   return user?.userId ?? null;
+}
+
+/**
+ * The unlock mark (#252): opening a complete instance is what clears it, for the party reading.
+ *
+ * Three rules, and each one is a way this could go wrong:
+ *
+ * - **Only a complete instance.** Before that there is no unlock to have seen, and
+ *   `markUnlockSeen` would be recording a visit as if it were an event. `screen.status` is the
+ *   same derivation the report below is drawn from, so the marker cannot be cleared by a screen
+ *   that had nothing to show.
+ * - **Only a request that is a person opening the screen.** `next/link` prefetches a route the
+ *   reader may navigate to, and Next marks those requests with `Next-Router-Prefetch: 1`; counting
+ *   one as a visit would delete the marker before the sentence it announces is ever read, which is
+ *   the whole defect this card fixes arriving from the other side. A prefetch renders no marker to
+ *   clear, so it writes nothing and the real visit still does.
+ * - **A mark that cannot be written is not a failed screen.** The report above it was read
+ *   successfully; if the connection drops between the read and this UPDATE, the honest answer is
+ *   still the report, with a stale marker next visit. `DatabaseUnavailableError` is logged and
+ *   swallowed for that reason, exactly as the list answers a dead database with a panel — while
+ *   any other failure keeps throwing, because a schema that cannot take the column is a defect the
+ *   gate is supposed to catch.
+ */
+async function recordUnlockSeen(screen: FlowScreen): Promise<void> {
+  if (screen.status !== "complete") return;
+  const prefetch = (await headers()).get("next-router-prefetch");
+  if (prefetch === "1") return;
+
+  try {
+    await markUnlockSeen({ instanceRecordId: screen.instanceRecordId, role: screen.viewer.role });
+  } catch (error) {
+    if (!(error instanceof DatabaseUnavailableError)) throw error;
+    console.error("instance screen: the unlock mark could not be written", error);
+  }
 }
 
 export async function generateMetadata({
@@ -76,6 +118,12 @@ export default async function AssessmentInstancePage({
     viewerUserId: await viewerUserId(),
   });
   if (screen === undefined) notFound();
+
+  // #252 — this visit is the event that clears "complete since you last looked" on
+  // `/assessment/instances`, for **this** party only: `screen.viewer.role` is the seat the read
+  // resolved from Postgres, and `markUnlockSeen` writes that row and no other. It runs after the
+  // read, so the sentence drawn above and the mark cleared here come from one status.
+  await recordUnlockSeen(screen);
 
   // `?invite=sent|unsent` is the creation redirect's own fact, kept in the address rather
   // than in a second cookie: it is one visit's sentence, and the panel below renders it
