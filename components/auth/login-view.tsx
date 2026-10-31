@@ -216,22 +216,19 @@ export function LoginView({
                   className="h-12 border-gray-300 "
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember" />
-                  <Label htmlFor="remember" className="text-sm ">
-                    {itemLabel(form, "remember")}
-                  </Label>
-                </div>
-                {/*
-                 * The "Forgot password?" anchor used to stand here with `href="#"` (issue #270).
-                 * There is no password-reset flow in this build — no route, no action, no
-                 * `resetPassword` call — so the anchor promised a screen that does not exist and
-                 * went nowhere when clicked. It is removed rather than repointed: `/privacy` is
-                 * not where a forgotten password is reset, and inventing a destination would be
-                 * the same defect with a different URL. The affordance comes back the day the
-                 * flow ships.
-                 */}
+              {/*
+               * No "Forgot password?" link (issue #272). Its `href` was a bare hash, and nothing in
+               * this app could have been behind it: the Managed Auth client here unwraps
+               * `signUp.email`, `signIn.email`, `getSession` and `signOut` only, and no route or
+               * form starts a reset. A link that cannot lead anywhere is worse than its absence
+               * — this one also promised an account feature the product does not have. It comes
+               * back when the reset flow does, pointed at the reset route.
+               */}
+              <div className="flex items-center space-x-2">
+                <Checkbox id="remember" />
+                <Label htmlFor="remember" className="text-sm ">
+                  {itemLabel(form, "remember")}
+                </Label>
               </div>
 
               {fieldProblem && (
@@ -272,10 +269,10 @@ export function LoginView({
         <AppVersion copy={copy} />
 
         {/*
-         * The legal row (issue #270): the two routes a person signing in can read before they
-         * agree to anything. Below the badge and outside the card, because these are documents
-         * about the product, not fields of the form — and they are the same two destinations the
-         * footer carries, so a reader who lands here first is not the only one without them.
+         * The legal row (issue #270): the two documents a person can read before they agree to
+         * anything. Below the badge and outside the card, because these are documents about the
+         * product, not fields of the form — and they are the same two destinations the footer
+         * carries, so a reader who lands here first is not the only one without them.
          */}
         <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
           <Link href="/terms" className="hover:text-action hover:underline">

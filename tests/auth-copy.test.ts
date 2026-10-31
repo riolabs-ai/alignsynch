@@ -157,10 +157,6 @@ describe("the alignment build speaks its own product", () => {
     // The view asks for `sign-in` and `stats` on both brands; the projection is what makes
     // that one component, so the ids are the contract rather than an implementation detail.
     const copy = loginCopyFor(loginCopy(alignSynch), "alignsynch");
-    // Fourteen, not fifteen: issue #270 removed the `forgot` label together with the `href="#"`
-    // anchor it labelled — this build has no password-reset flow, so the anchor promised a screen
-    // that does not exist. The number is a pin: adding a field to the card is a deliberate edit
-    // here as well as in the fixture.
     expect(sectionOf(copy, "sign-in").items).toHaveLength(14);
     expect(sectionOf(copy, "stats").items).toHaveLength(2);
   });

@@ -187,9 +187,17 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
 
   it("replaces them on the alignment brand", () => {
     const hrefs = footerHrefs("alignsynch");
-    // The column, then the legal row (#270): Terms and Privacy point at the routes now that
-    // they exist, and the Cookie Policy row is unchanged (there is no `/cookies` route).
-    expect(hrefs).toEqual(["/#templates", "/#questions", "/support", "/privacy", "/terms"]);
+    // The column, then the legal row (#270): Terms and Privacy point at the routes now that they
+    // exist, and the Cookie Policy row points at `/privacy` too — §9 of that page is the cookie
+    // policy, and a third `/cookies` route is a route nobody asked for (issue #270, refinement 2).
+    expect(hrefs).toEqual([
+      "/#templates",
+      "/#questions",
+      "/support",
+      "/privacy",
+      "/terms",
+      "/privacy",
+    ]);
   });
 
   it("restores them for a viewer with the quiz capability", () => {
