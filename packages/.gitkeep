@@ -1,0 +1,4 @@
+# packages/* — the shared workspace packages (steps 2-5 of #148: schema, ui, template-quiz,
+# template-assessment). The directory exists from step 1 so that `pnpm-workspace.yaml` and
+# `turbo.json` describe a real layout rather than a glob that matches nothing. It holds no
+# package yet: nothing has moved.

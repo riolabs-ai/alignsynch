@@ -1,0 +1,3 @@
+# apps/* — the application workspace packages (step 6 of #148: the Next app moves to apps/web).
+# The directory exists from step 1 so that `pnpm-workspace.yaml` and `turbo.json` describe a real
+# layout rather than a glob that matches nothing. It holds no package yet: nothing has moved.

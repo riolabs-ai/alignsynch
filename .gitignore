@@ -7,6 +7,9 @@
 /.next/
 /out/
 
+# turborepo task cache (turbo.json); local only, never committed
+/.turbo/
+
 # production
 /build
 
