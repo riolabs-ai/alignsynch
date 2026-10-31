@@ -12,6 +12,15 @@
  */
 export const ASSESSMENTS_PATH = "/assessment";
 
+/**
+ * `/assessment/instances` — the instances **this signed-in account** is a party to (#213).
+ *
+ * A static path beside the dynamic `/assessment/instances/[instanceId]`, not a child of it: the
+ * list is its own surface, and a browser that types it gets the list rather than a 404 for an
+ * instance id nobody holds.
+ */
+export const MY_INSTANCES_PATH = "/assessment/instances";
+
 /** The create endpoint — a POST-only route handler. */
 export const CREATE_INSTANCE_PATH = "/assessment/new";
 
