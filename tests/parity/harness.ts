@@ -3,10 +3,11 @@
  *
  * ## What "render" means here, and what it does not
  *
- * The page module and the `(mainlayout)` layout are the real ones — the same default exports
- * the router resolves — rendered with React's own server renderer (`renderToPipeableStream`
- * rather than `renderToStaticMarkup`, because three of the seven pages unwrap `params` with
- * `use()`, which only a real render can do). What is *not* real, and why:
+ * The page module and the route group's layout are the real ones — the same default exports
+ * the router resolves (since #317 there are two groups: the product shell and the marketing
+ * chrome, and the route names which one it lives in) — rendered with React's own server renderer
+ * (`renderToPipeableStream` rather than `renderToStaticMarkup`, because three of the seven pages
+ * unwrap `params` with `use()`, which only a real render can do). What is *not* real, and why:
  *
  *   * **`next/image` → a plain `<img>`.** Next's `<Image>` needs the Next runtime to compute its
  *     srcset, and it throws for a missing `width` (`AGENTS.md` lists that as a build-invisible
@@ -44,6 +45,7 @@ import React from "react";
 import { DEMO_NOW_ISO } from "@/content/core";
 import { brand } from "@/data/brand";
 import { brandThemeVars } from "@/lib/brand-theme";
+import type { RouteLayout } from "./routes";
 
 /** The pathname `usePathname()` answers: set per route, so the shell's active item is in the snapshot. */
 export const navigation = { pathname: "/" };
@@ -121,7 +123,11 @@ async function renderToHtml(element: React.ReactElement): Promise<string> {
 }
 
 /**
- * One route, both layers: the page inside the real `(mainlayout)` shell.
+ * One route, both layers: the page inside the real layout its group mounts.
+ *
+ * `(mainlayout)` is the product shell; `(marketing)` is the public header and footer (#317). The
+ * caller names the group because the page module cannot: a file's path is not visible to it, and
+ * the harness must mount what the router mounts or it hashes a page nobody receives.
  *
  * The brand's theme vars ride on the wrapper so a palette edit is visible in the snapshot even
  * though the root layout cannot be rendered here (see the header).
@@ -130,9 +136,13 @@ export async function renderRoute(
   page: (props: { params: Promise<Record<string, string>> }) => unknown | Promise<unknown>,
   params: Record<string, string>,
   pathname: string,
+  layout: RouteLayout = "mainlayout",
 ): Promise<string> {
   const { SidebarProvider } = await import("@/components/layout/sidebar-context");
-  const Layout = (await import("@/app/(mainlayout)/layout")).default;
+  const Layout =
+    layout === "marketing"
+      ? (await import("@/app/(marketing)/layout")).default
+      : (await import("@/app/(mainlayout)/layout")).default;
 
   navigation.pathname = pathname;
 

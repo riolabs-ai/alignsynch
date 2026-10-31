@@ -208,7 +208,7 @@ const computed: { route: string; brand: string; sha: string }[] = [];
  */
 async function rendersNotFound(route: ParityRoute): Promise<boolean> {
   try {
-    await renderRoute(route.page, route.params, route.route);
+    await renderRoute(route.page, route.params, route.route, route.layout);
     return false;
   } catch (error) {
     const digest = (error as { digest?: unknown }).digest;
@@ -225,6 +225,12 @@ type GateTarget = {
   readonly page: import("./routes").ParityPage;
   readonly params: Record<string, string>;
   readonly route: string;
+  /**
+   * The group the page lives in, when the target is a snapshot route. The boundary list is
+   * `(mainlayout)` throughout — every one of those routes is a product surface — so an absent
+   * value means the shell, which is also `renderRoute`'s default.
+   */
+  readonly layout?: import("./routes").RouteLayout;
 };
 
 /**
@@ -242,7 +248,7 @@ type GateTarget = {
  */
 async function answerOf(target: GateTarget): Promise<string> {
   try {
-    await renderRoute(target.page, target.params, target.route);
+    await renderRoute(target.page, target.params, target.route, target.layout);
     return "render";
   } catch (error) {
     const digest = (error as { digest?: unknown }).digest;
@@ -280,7 +286,12 @@ describe("brand parity", () => {
 
     freezeClock();
     const html = normalize(
-      await renderRoute(parityRoutes[0].page, parityRoutes[0].params, parityRoutes[0].route),
+      await renderRoute(
+        parityRoutes[0].page,
+        parityRoutes[0].params,
+        parityRoutes[0].route,
+        parityRoutes[0].layout,
+      ),
     );
     expect(html).toContain(NAMES[brand].own);
     expect(html).not.toContain(NAMES[brand].other);
@@ -336,7 +347,7 @@ describe("brand parity", () => {
         const absent = absentRender(route.route, brand, QUIZ_PRODUCT_FLAG, "brand");
         artifact = { ...absent, extension: "txt" };
       } else {
-        const html = await renderRoute(route.page, route.params, route.route);
+        const html = await renderRoute(route.page, route.params, route.route, route.layout);
         expect(html).toContain(NAMES[brand].own);
         expect(html).not.toContain(NAMES[brand].other);
 
@@ -344,7 +355,9 @@ describe("brand parity", () => {
         // a flaky comparison, and the failure would be blamed on the next honest commit instead of
         // on the clock: `/quiz/[id]` is the route that reads it, which is `freezeClock()`'s job.
         const document = normalize(html);
-        expect(normalize(await renderRoute(route.page, route.params, route.route))).toBe(document);
+        expect(
+          normalize(await renderRoute(route.page, route.params, route.route, route.layout)),
+        ).toBe(document);
 
         artifact = {
           document,

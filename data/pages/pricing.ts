@@ -2,7 +2,7 @@
  * `/pricing` — the pricing route's copy (WU-9).
  *
  * The pricing page is three bands: the plan grid (`PricingPlans`), the FAQ
- * (`PricingFaq`) and the closing banner (`PricingCta`). `app/(mainlayout)/pricing/page.tsx`
+ * (`PricingFaq`) and the closing banner (`PricingCta`). `app/(marketing)/pricing/page.tsx`
  * resolves one section per band and passes it down, so the words below are the
  * only ones the three components render.
  *

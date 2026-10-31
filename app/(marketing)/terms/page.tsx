@@ -1,8 +1,5 @@
-import { Footer } from "@/components/layout/footer";
 import { LegalPage } from "@/components/legal/legal-page";
 import { legalPages } from "@/data/pages/legal";
-import { shellPageCopy } from "@/data/pages/shell";
-import { hiddenNavHrefs } from "@/lib/flags";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -17,14 +14,15 @@ export const metadata: Metadata = {
  * server module on purpose: the fixture is parsed at import, the view holds no state, and the
  * draft banner must render first and cannot be dismissed.
  *
- * The footer is mounted here as it is on the marketing pages, so the legal row that links this
- * page also links the other one from it.
+ * It is a public surface (#317). The module lives in `app/(marketing)/`, so the surface is
+ * whichever chrome that group mounts: a marketing header and footer, never the product shell's
+ * sidebar, palette or drawers. The shell's footer used to be mounted here and is not any more —
+ * one page, one footer, and the footer a public page gets is the group's.
  */
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-background">
       <LegalPage copy={legalPages.terms} />
-      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
     </div>
   );
 }

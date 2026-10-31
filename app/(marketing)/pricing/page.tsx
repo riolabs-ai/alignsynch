@@ -1,14 +1,11 @@
-import { Footer } from "@/components/layout/footer";
 import { PricingCta } from "@/components/pricing/pricing-cta";
 import { PricingFaq } from "@/components/pricing/pricing-faq";
 import { PricingPlans } from "@/components/pricing/pricing-plans";
 import type { BillingPlanId } from "@/data/billing-plans";
 import { pricingPageCopy } from "@/data/pages/pricing";
-import { shellPageCopy } from "@/data/pages/shell";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { billingTestMode, entitlementForAccount } from "@/lib/billing";
 import { pricingPlans, readPricingPlanRows } from "@/lib/billing/catalogue";
-import { hiddenNavHrefs } from "@/lib/flags";
 import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
 
@@ -50,6 +47,11 @@ async function entitledPlanIdForViewer(): Promise<BillingPlanId | null> {
  * `billing_plan`, its words from `data/billing-plans.ts`, and the account's own tier from the
  * entitlement — never from a query string, which is what makes a refresh after a checkout show
  * the plan that was actually bought (#289, card 3 of 3).
+ *
+ * It is a public surface (#317), and the module lives in `app/(marketing)/` so the surface is the
+ * marketing chrome — header, footer, and none of the product shell's sidebar, palette or drawers.
+ * Request-time and public are not in tension: the plan rows and the viewer's tier are read per
+ * request, and neither is a reason to mount the app around a page a signed-out visitor reads.
  */
 export default async function PricingPage() {
   const [planRows, entitledPlanId] = await Promise.all([
@@ -71,7 +73,6 @@ export default async function PricingPage() {
       />
       <PricingFaq copy={sectionOf(pricingPageCopy, "faq")} />
       <PricingCta copy={sectionOf(pricingPageCopy, "cta")} />
-      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
     </div>
   );
 }

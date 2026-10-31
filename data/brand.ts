@@ -117,7 +117,7 @@ export const brand: Brand = resolveBrand(process.env.BRAND);
  * key). Identity is the join: the two records are distinct objects, so `brands[key] === record`
  * is true for exactly one key.
  *
- * This is what keeps a brand's *name* out of a `.tsx`: `app/(mainlayout)/page.tsx` switches over
+ * This is what keeps a brand's *name* out of a `.tsx`: `app/(marketing)/page.tsx` switches over
  * `BrandId` — `"quizhub"`, `"alignsynch"` — and never compares `brand.name` to `"AlignSynch"`,
  * so renaming a product is a fixture edit and a new brand is a compile error until its front
  * page is chosen deliberately.

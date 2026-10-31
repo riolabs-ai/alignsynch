@@ -6,13 +6,13 @@ import type { Metadata } from "next";
 /**
  * `/welcome` — the public landing page (issue #159).
  *
- * **Why `/welcome` and not `/`.** The card asked for one page to serve `/` and for the choice to
- * be stated. `app/(mainlayout)/page.tsx` keeps it: `/` is the product home for both brands (an
- * eleven-band quiz storefront under `BRAND=quizhub`, the alignment page under `BRAND=alignsynch`),
- * and moving it would change a `(mainlayout)` product route — which this card forbids — plus the
- * home target issue #156's navigation is spec'd against. Next cannot mount two pages at one path,
- * so the landing page takes an explicit path inside its own group instead of displacing the
- * product home. Exactly one page serves `/`, and it is `app/(mainlayout)/page.tsx`.
+ * **Why an explicit path, and why it is still one after #317.** When #159 landed, `/` was a
+ * `(mainlayout)` product route and that card forbade moving it, so the landing page took its own
+ * path inside this group. #317 moved the public surfaces — including `/` — into `(marketing)`, so
+ * the two are siblings now: `/` is the front door composed from the brand record, and `/welcome` is
+ * the landing page. The path stays because it is a URL that already exists in the route manifest
+ * and in `data/pages/index.ts`; a route the product no longer needs is retired on purpose, not as
+ * a side effect of another card.
  *
  * The title is `absolute`: the root layout's `%s · <brand>` template would print the product name
  * twice, because the marketing title already names it. Both halves come from the brand record and

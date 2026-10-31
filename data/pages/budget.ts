@@ -49,7 +49,7 @@ import { zPageCopyBudget, type PageCopyBudget } from "../../content/pages";
 
 export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   "/": {
-    page: "app/(mainlayout)/page.tsx",
+    page: "app/(marketing)/page.tsx",
     dirs: ["components/home", "components/categories"],
     fixture: "data/pages/home",
     budget: 0,
@@ -115,7 +115,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   "/pricing": {
-    page: "app/(mainlayout)/pricing/page.tsx",
+    page: "app/(marketing)/pricing/page.tsx",
     dirs: ["components/pricing"],
     fixture: "data/pages/pricing",
     budget: 0,
@@ -150,13 +150,13 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   "/support": {
-    page: "app/(mainlayout)/support/page.tsx",
+    page: "app/(marketing)/support/page.tsx",
     dirs: ["components/support"],
     fixture: "data/pages/support",
     budget: 0,
   },
   "/support/articles/[slug]": {
-    page: "app/(mainlayout)/support/articles/[slug]/page.tsx",
+    page: "app/(marketing)/support/articles/[slug]/page.tsx",
     dirs: ["components/support"],
     fixture: "data/pages/support-article",
     budget: 0,
@@ -181,13 +181,13 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
    * `BRAND=alignsynch` validate different words against the same budget.
    */
   "/privacy": {
-    page: "app/(mainlayout)/privacy/page.tsx",
+    page: "app/(marketing)/privacy/page.tsx",
     dirs: ["components/legal"],
     fixture: "data/pages/legal",
     budget: 0,
   },
   "/terms": {
-    page: "app/(mainlayout)/terms/page.tsx",
+    page: "app/(marketing)/terms/page.tsx",
     dirs: ["components/legal"],
     fixture: "data/pages/legal",
     budget: 0,

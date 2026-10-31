@@ -87,7 +87,7 @@ export function Footer({
    * The link columns are the brand's (issue #156). A footer is part of navigation: before
    * this, the AlignSynch front page ended on a Quick Links column whose third row was
    * `/leaderboard`, and a Categories column of quiz subjects. The switch is the same shape
-   * `app/(mainlayout)/page.tsx` uses for its front page, so a third brand cannot inherit the
+   * `app/(marketing)/page.tsx` uses for its front page, so a third brand cannot inherit the
    * quiz columns by accident — it fails to compile until its own are chosen.
    *
    * `viewer` is the capability stub from `lib/nav.ts`: the quiz columns come back for a

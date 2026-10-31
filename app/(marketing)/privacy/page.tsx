@@ -1,8 +1,5 @@
-import { Footer } from "@/components/layout/footer";
 import { LegalPage } from "@/components/legal/legal-page";
 import { legalPages } from "@/data/pages/legal";
-import { shellPageCopy } from "@/data/pages/shell";
-import { hiddenNavHrefs } from "@/lib/flags";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -16,12 +13,15 @@ export const metadata: Metadata = {
  * (`data/pages/legal.ts`) so a sentence cannot be corrected on one page and left on the other.
  * There is deliberately no separate `/cookies` route — §9 of this page is the cookie policy, and
  * the issue's refinement says a third page would be a route nobody asked for.
+ *
+ * It is a public surface (#317): the module lives in `app/(marketing)/`, so it inherits that
+ * group's header and footer and never the product shell — no `<aside>`, no app navigation. The
+ * shell's footer is gone from this page for the same reason: the group's footer is the chrome.
  */
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-background">
       <LegalPage copy={legalPages.privacy} />
-      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
     </div>
   );
 }

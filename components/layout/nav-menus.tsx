@@ -34,7 +34,7 @@ import type React from "react";
  * every route of every brand, so the AlignSynch demo's first click was `/leaderboard` — a
  * quiz feature, from a page about alignment. The fix is not a second sidebar: the two menus
  * are two compositions of the same `NavRow`, chosen by a `switch` over the brand literal the
- * way `app/(mainlayout)/page.tsx` chooses its front page, and the quiz menu is one component
+ * way `app/(marketing)/page.tsx` chooses its front page, and the quiz menu is one component
  * that a viewer either gets or does not (`lib/nav.ts`).
  *
  * Three rules this file keeps:
