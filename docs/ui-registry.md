@@ -14,7 +14,7 @@ It has two halves, and each one is owned by a different place:
 ## Summary
 
 - routes: **43** — 29 static, 14 dynamic, from `app/**/page.tsx`
-- component domains: **32** — 233 files under `components/`, 229 of them `.tsx`
+- component domains: **32** — 234 files under `components/`, 229 of them `.tsx`
 - route handlers: **6** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 10 · **fixture** 51 · **db** 9 · **live** 5
 - templates: Both templates 19 · AlignSynch 12 · QuizHub 42 · No template yet 2
@@ -40,7 +40,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/dashboard/user` — **db**
   - capability: The signed-in person's account home: their saved profile, wallet, recent activity and their quizzes, read from Postgres.
   - components: `components/identity`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/login` — **live**
   - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials and network states.
@@ -60,7 +60,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/settings` — **live**
   - capability: The parts of your account you can change — display name, handle, bio and the country pair — saved through the guarded POST /api/profile.
   - components: `components/identity`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/support` — **fixture**
   - capability: The help centre: FAQ, help categories and a contact form.
@@ -356,7 +356,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/create` — **fixture**
   - capability: The quiz editor, the generator form and the draft shape they share.
-  - files (3): `quiz-draft.ts`, `quiz-editor.tsx`, `quiz-generator.tsx`
+  - files (4): `quiz-draft.ts`, `quiz-editor.tsx`, `quiz-generator-templates.ts`, `quiz-generator.tsx`
   - routes (2): `/create/editor`, `/create/generator`
 
 - `components/creator-tips` — **fixture**

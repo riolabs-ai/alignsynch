@@ -155,24 +155,27 @@ describe("the /search tab strip lists the groups the index can fill", () => {
   });
 });
 
-describe("the footer's three brand-owned bands", () => {
+describe("the footer's brand-owned bands", () => {
   /**
-   * The failure this pins (issue #188, stage S3): the footer is chrome on every page, and three
-   * of its sentences are product vocabulary — the blurb under the wordmark, the street line, the
-   * newsletter pitch. They were shared strings, so `BRAND=alignsynch` printed "quizzes", "quiz
-   * creators", "quiz tips" and "123 Quiz Street" in the footer of every page it served.
+   * The failure this pins (issue #188, stage S3): the footer is chrome on every page, and two of
+   * its sentences are product vocabulary — the blurb under the wordmark and the contact block.
+   * They were shared strings, so `BRAND=alignsynch` printed "quizzes", "quiz creators" and a quiz
+   * template's street line in the footer of every page it served.
    *
    * `footerCopyFor` is the join E23 cannot make: it resolves the section id from a variable, so
-   * the gate sees the six literals at the `sectionOf` calls but cannot see *which brand* gets
-   * which. A mapped id that went missing, or a section that carried the wrong brand's words,
-   * would be a runtime throw or a shipped defect. These are those failures, at test time.
+   * the gate sees the literals at the `sectionOf` calls but cannot see *which brand* gets which.
+   * A mapped id that went missing, or a section that carried the wrong brand's words, would be a
+   * runtime throw or a shipped defect. These are those failures, at test time.
+   *
+   * The third band that used to sit here — the subscribe box — is gone (#272), with its two
+   * sections: no handler, no sender, and no marketing mail in the app to send.
    */
   const footer = (brandId: "quizhub" | "alignsynch") => footerCopyFor(shellPageCopy, brandId);
 
-  it("resolves all three bands for both brands and hands back the section, not a copy", () => {
+  it("resolves both bands for both brands and hands back the section, not a copy", () => {
     for (const brandId of ["quizhub", "alignsynch"] as const) {
       const bands = footer(brandId);
-      for (const band of [bands.brand, bands.contact, bands.newsletter]) {
+      for (const band of [bands.brand, bands.contact]) {
         expect(band.id.length).toBeGreaterThan(0);
       }
       expect(bands.brand.id).toBe(
@@ -181,19 +184,20 @@ describe("the footer's three brand-owned bands", () => {
     }
   });
 
-  it("declares the same item ids on both brands' contact and newsletter bands", () => {
+  it("declares the same item ids on both brands' contact bands", () => {
     // The footer resolves one set of ids whichever section the brand chose, exactly as the two
     // `search` sections do — so a variant that renamed an id is a throw, not a blank row.
     const ids = (band: { items?: { id: string }[] }) => (band.items ?? []).map((item) => item.id);
     expect(ids(footer("alignsynch").contact)).toEqual(ids(footer("quizhub").contact));
-    expect(ids(footer("alignsynch").newsletter)).toEqual(ids(footer("quizhub").newsletter));
+    // The mailbox and the button are the rows a contact block can honestly print (#272): the
+    // street line and the telephone number were invented, so both brands lost them together.
+    expect(ids(footer("quizhub").contact)).toEqual(["email", "cta"]);
   });
 
   it("keeps the quiz build on the words it shipped, typo corrected", () => {
     const words = footer("quizhub");
     expect(sectionBody(words.brand)).toContain("quiz creators");
-    expect(itemLabel(words.contact, "address")).toContain("Quiz Street");
-    expect(sectionBody(words.newsletter)).toContain("quiz tips");
+    expect(itemLabel(words.contact, "cta")).toBe("Contact Support");
     // #188 fixed the spelling on both brands; it is the one string that moved on this build.
     const account = sectionOf(shellPageCopy, "account");
     expect(itemLabel(account, "quizzes")).toBe("My Quizzes");
@@ -204,7 +208,6 @@ describe("the footer's three brand-owned bands", () => {
     const words = footer("alignsynch");
     const text = [
       sectionBody(words.brand),
-      sectionBody(words.newsletter),
       // The mailbox is the record's, not the fixture's: `quizhub@riolabs.ai` contains the word
       // and is asserted as an address in its own case below. Matching it here would make the
       // test a statement about the ambient record rather than about the alignment copy.
@@ -212,7 +215,6 @@ describe("the footer's three brand-owned bands", () => {
         .filter((item) => item.id !== "email")
         .map((item) => item.label),
       words.contact.heading ?? "",
-      words.newsletter.heading ?? "",
     ].join("\n");
     expect(text).not.toMatch(/quiz/i);
     expect(text.length).toBeGreaterThan(0);

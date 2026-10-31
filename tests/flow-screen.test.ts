@@ -266,10 +266,12 @@ describe("an Advanced instance", () => {
 
     expect(screen.mode).toBe("advanced");
     const html = render(screen);
-    expect((html.match(/<select /g) ?? []).length).toBe(items.length * 4);
-    expect(
-      [...html.matchAll(/name="(\w+):aspect-time-together"/g)].map((match) => match[1]),
-    ).toEqual(["feel", "wish", "think", "guess"]);
+    // Five segments per score (#273): four kinds x every Aspect, five radios in each band.
+    expect((html.match(/type="radio"/g) ?? []).length).toBe(items.length * 4 * 5);
+    const groups = [...html.matchAll(/name="(\w+):aspect-time-together"/g)].map(
+      (match) => match[1],
+    );
+    expect([...new Set(groups)]).toEqual(["feel", "wish", "think", "guess"]);
     expect(html).toContain('data-mode="advanced"');
     expect(html).toContain("Advanced Mode");
   });
@@ -284,10 +286,11 @@ describe("an Advanced instance", () => {
 
     expect(screen.mode).toBe("basic");
     const html = render(screen);
-    expect((html.match(/<select /g) ?? []).length).toBe(items.length * 2);
-    expect(
-      [...html.matchAll(/name="(\w+):aspect-time-together"/g)].map((match) => match[1]),
-    ).toEqual(["feel", "wish"]);
+    expect((html.match(/type="radio"/g) ?? []).length).toBe(items.length * 2 * 5);
+    const groups = [...html.matchAll(/name="(\w+):aspect-time-together"/g)].map(
+      (match) => match[1],
+    );
+    expect([...new Set(groups)]).toEqual(["feel", "wish"]);
     expect(html).toContain('data-mode="basic"');
     expect(html).not.toContain("Advanced Mode");
   });

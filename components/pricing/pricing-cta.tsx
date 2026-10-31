@@ -1,10 +1,19 @@
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight, Check } from "lucide-react";
+import Link from "next/link";
 
-/** The closing banner's perk bullets — ids only; the words live in `data/pages/pricing.ts`. */
-const PERKS = ["perk-no-card", "perk-trial", "perk-cancel", "perk-support"] as const;
+/**
+ * The closing banner's perk bullets — ids only; the words live in `data/pages/pricing.ts`.
+ *
+ * Two bullets, and both are true today: the free plan works, and the paid plans open when
+ * billing lands (#289). The four this replaced each described a money path the build does
+ * not have — a card that is never charged, a trial that cannot start, a cancellation
+ * nobody can make, and a support tier that does not exist. A trial a visitor cannot start
+ * is the one claim on this page that would cost someone an evening.
+ */
+const PERKS = ["perk-free", "perk-billing"] as const;
 
 export function PricingCta({ copy }: { copy: PageCopySection }) {
   return (
@@ -26,12 +35,25 @@ export function PricingCta({ copy }: { copy: PageCopySection }) {
               </ul>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-white text-action hover:bg-action/10 border-0">
+                <Link
+                  href="/register"
+                  className={buttonVariants({
+                    size: "lg",
+                    className: "bg-white text-action hover:bg-action/10 border-0",
+                  })}
+                >
                   {itemLabel(copy, "get-started")}
-                </Button>
-                <Button size="lg" variant="outline" className="border-white  hover:bg-white/10">
+                </Link>
+                <Link
+                  href="/demo"
+                  className={buttonVariants({
+                    size: "lg",
+                    variant: "outline",
+                    className: "border-white hover:bg-white/10",
+                  })}
+                >
                   {itemLabel(copy, "view-demo")} <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                </Link>
               </div>
             </div>
 

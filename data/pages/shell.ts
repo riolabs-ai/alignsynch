@@ -43,27 +43,29 @@
  * a second source of truth for it. The header's account block no longer prints an address at all
  * (#212) — it prints the signed-in person's own, which is session data and not this fixture's.
  *
- * THE FOOTER'S THREE SENTENCES ARE THE BRAND'S VOCABULARY, NOT THE TEMPLATE'S (issue
- * #188, stage S3). `Brand` carries a name, an address and a domain; it does not carry a
- * *product category*, and on `BRAND=alignsynch` this file printed "quizzes", "quiz
- * creators", "quiz tips" and "123 Quiz Street" in the chrome of every page — the words
- * a reskin cannot reach because they are fixtures, not routes. The blurb, the contact
- * address and the newsletter line are therefore one *section pair* each, with the same
- * ids on both sides, exactly like `nav`/`nav-alignsynch`:
+ * THE FOOTER'S BRAND SENTENCES ARE THE BRAND'S VOCABULARY, NOT THE TEMPLATE'S (issue
+ * #188, stage S3). `Brand` carries a name, a mailbox and a domain; it does not carry a
+ * *product category*, and on `BRAND=alignsynch` this file printed "quizzes" and "quiz
+ * creators" in the chrome of every page — the words a reskin cannot reach because they are
+ * fixtures, not routes. The blurb and the contact block are therefore one *section pair*
+ * each, with the same ids on both sides, exactly like `nav`/`nav-alignsynch`:
  *
  *   footer-brand              / footer-brand-alignsynch             the sentence under the wordmark
- *   footer-contact            / footer-contact-alignsynch          street, phone, mailbox, CTA
- *   footer-newsletter         / footer-newsletter-alignsynch       heading, body, field, button
+ *   footer-contact            / footer-contact-alignsynch          mailbox, CTA
  *
  * `footerCopyFor` in `lib/shell-copy.ts` is the switch, and it is exhaustive over
- * `BrandId`, so a third brand fails `tsc` until its three sections exist. The alignment
- * sections are written out rather than derived from the quiz ones: a paragraph, a street
- * address and a newsletter pitch are copy an editor writes, and a placeholder swapped
- * into the quiz sentence (`"…and alignment tips"`) would be the same string with a
- * different noun, which is what a re-skin must stop being.
+ * `BrandId`, so a third brand fails `tsc` until its two sections exist. The alignment
+ * sections are written out rather than derived from the quiz ones: a paragraph and the words
+ * beside a mailbox are copy an editor writes, and a placeholder swapped into the quiz
+ * sentence ("…and alignment tips") would be the same string with a different noun, which is
+ * what a re-skin must stop being.
+ *
+ * Two of the rows those sections once carried are gone (#272), and the third section with
+ * them: the street line and the telephone number were invented, and the mailing-list band had
+ * no sender behind it. What is left is what a reader can check out.
  *
  * What stays shared is everything the two products genuinely share — the column
- * headings, the field placeholder, the button, "Contact", the legal line, the drawer
+ * headings, "Contact", the support button, the legal line, the drawer
  * empty states. Those are shell furniture, not product vocabulary, and duplicating them
  * would make the next brand a six-section copy of a five-word heading.
  */
@@ -102,11 +104,19 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "creator-tips", label: "Quiz Creator Tips" },
           { id: "quiz-discussions", label: "Quiz Discussions" },
           { id: "create-editor", label: "Create Quiz" },
-          { id: "create-generator", label: "Ai Quiz Generator" },
+          { id: "create-generator", label: "Quiz Generator" },
           { id: "affiliate", label: "Affiliate Page" },
           { id: "pricing", label: "Pricing Plan" },
           { id: "support", label: "Support" },
           { id: "logout", label: "Logout" },
+          /**
+           * The sign-out row's two other states (issue #272). The row is a control now, not a
+           * `href="#"` link, so it needs the words a control needs: the moment between the click
+           * and the session ending, and the failure that has to be said out loud rather than
+           * swallowed. Both live here because the row's label lives here.
+           */
+          { id: "logout-pending", label: "Signing out…" },
+          { id: "logout-error", label: "Couldn't sign out. Try again." },
         ],
       },
       /**
@@ -445,59 +455,45 @@ export function shellCopy(brand: Brand): PageCopy {
       {
         id: "footer-contact",
         heading: "Contact",
+        /**
+         * Two rows, not four (issue #272). The block used to print a street line and a telephone
+         * number. Neither is a fact about this company: the street was invented, and the number
+         * came from the range reserved for fiction, so it cannot reach anyone. A mailbox someone
+         * can write to and a button that opens the support surface are the two rows that
+         * survive; a real address or number comes back only from the brand record, when someone
+         * supplies one.
+         */
         items: [
-          { id: "address", label: "123 Quiz Street, Knowledge City, QZ 12345" },
-          { id: "phone", label: "+1 (555) 123-4567" },
           { id: "email", label: brand.supportEmail },
           { id: "cta", label: "Contact Support" },
         ],
       },
       /**
-       * The alignment brand's contact block — the same four ids, because the footer resolves
-       * one set of ids whichever section the brand picked.
+       * The alignment brand's contact block — the same ids, because the footer resolves one set
+       * of ids whichever section the brand picked.
        *
-       * Only the street line differs: a quiz template's demo address is not a fact about this
-       * product, and `123 Quiz Street` was the fourth quiz string on every AlignSynch page.
-       * The phone is the demo's own 555 number (no product in it) and the mailbox is the
-       * record's, read twice on purpose — the two brands route to different inboxes and the
-       * address is a field, not a literal. The postal line is authored demo copy like the one
-       * above it; a real address is the brand's to supply, and nothing derives it.
+       * It differs in nothing but the words the brands do not share; the two fabricated rows
+       * (street line, 555 number) are gone from both sections because the ids have to match and
+       * neither value is a fact about either product. The mailbox is the record's, read twice on
+       * purpose: the two brands route to different inboxes and the address is a field, not a
+       * literal.
        */
       {
         id: "footer-contact-alignsynch",
         heading: "Contact",
         items: [
-          { id: "address", label: "123 Alignment Way, Insight City, AL 12345" },
-          { id: "phone", label: "+1 (555) 123-4567" },
           { id: "email", label: brand.supportEmail },
           { id: "cta", label: "Contact Support" },
         ],
       },
-      {
-        id: "footer-newsletter",
-        heading: "Subscribe to our newsletter",
-        body: "Get the latest news, updates and quiz tips delivered directly to your inbox.",
-        items: [
-          { id: "placeholder", label: "Enter your email" },
-          { id: "subscribe", label: "Subscribe" },
-        ],
-      },
       /**
-       * The alignment brand's newsletter band — the heading, the field and the button are the
-       * shell's (a subscribed reader is the same reader), the promise is the brand's.
-       *
-       * "quiz tips" was the third string this card moved: an alignment visitor was being
-       * offered tips about a product their build does not ship.
+       * No mailing-list band (issue #272). The footer carried a box that took an address and a
+       * button that did nothing with it: no handler, and no marketing mail exists in this app
+       * (an invitation and an unlock notice are the only messages it sends). A box that promises
+       * a subscription on every page of both builds is a claim about a feature nobody can reach,
+       * so the band, its two sections and the projection that chose between them are gone. It
+       * comes back with the sender behind it.
        */
-      {
-        id: "footer-newsletter-alignsynch",
-        heading: "Subscribe to our newsletter",
-        body: "Get the latest news, updates and notes on the Gap delivered directly to your inbox.",
-        items: [
-          { id: "placeholder", label: "Enter your email" },
-          { id: "subscribe", label: "Subscribe" },
-        ],
-      },
       {
         id: "footer-legal",
         items: [
