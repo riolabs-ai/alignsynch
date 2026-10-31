@@ -15,10 +15,10 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const quiz = quizById(id);
-  return quiz === undefined
+  const record = quizById(id);
+  return record === undefined
     ? { title: "Quiz Details" }
-    : { title: quiz.title, description: quiz.summary };
+    : { title: record.title, description: record.summary };
 }
 
 /**
@@ -26,8 +26,8 @@ export async function generateMetadata({
  *
  * The page used to render a template literal (`reward: "$5.00"`) and nothing from the
  * model, so the detail page could disagree with every card on the site. It now
- * projects the record through `quizDetailModel()` — the quiz-scoped campaign (A3)
- * plus the quiz's own activity (`selectQuizLeaderboard` / `selectQuizReviews` over
+ * projects the record through `quizDetailModel()` — the record-scoped campaign (A3)
+ * plus the record's own activity (`selectQuizLeaderboard` / `selectQuizReviews` over
  * `data/quiz-results.ts` and `data/quiz-reviews.ts`) — **at one instant**, and hands
  * the result to the client component. `now` travels as an ISO string because the
  * countdown is formatted against it: a client component that reads its own clock
@@ -35,7 +35,7 @@ export async function generateMetadata({
  * mismatch class in AGENTS.md).
  *
  * The leaderboard and the reviews are selected here, on the server, and only for
- * this quiz: the component receives the rows the page prints, not the two
+ * this record: the component receives the rows the page prints, not the two
  * collections, so a fixture edit changes the page without touching a `.tsx`.
  *
  * An id that is not a record (`/quiz/1`, the template's) still renders the template
@@ -45,8 +45,8 @@ export async function generateMetadata({
 export default function QuizPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const now = new Date();
-  const quiz = quizById(id);
+  const record = quizById(id);
   const detail: QuizDetailModel | undefined =
-    quiz === undefined ? undefined : quizDetailModel(quiz, now);
+    record === undefined ? undefined : quizDetailModel(record, now);
   return <QuizDetails id={id} detail={detail} />;
 }
