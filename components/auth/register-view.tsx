@@ -17,58 +17,30 @@ import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  Brain,
-  Eye,
-  EyeOff,
-  Gamepad2,
-  Globe,
-  Link,
-  Loader2,
-  Trophy,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Eye, EyeOff, Loader2, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 
-/**
- * The onboarding interests, in render order. The ids are the form values and the icons;
- * `data/pages/register.ts` owns the words. These six are the form's own buckets, not the
- * 25-subject `quizCategories` taxonomy — rendering the taxonomy here would be a different
- * product decision, not a copy fix.
- */
-const INTERESTS: ReadonlyArray<{ id: string; icon: LucideIcon }> = [
-  { id: "general", icon: Brain },
-  { id: "science", icon: BookOpen },
-  { id: "history", icon: Globe },
-  { id: "sports", icon: Trophy },
-  { id: "gaming", icon: Gamepad2 },
-  { id: "social", icon: Users },
-];
-
 /** The step ids, in order. The rail, the header counter and the lookups all read this. */
-const STEPS = ["step-1", "step-2", "step-3"] as const;
+const STEPS = ["step-1", "step-2"] as const;
 
 /**
  * `/register`, the client half. The words come from `data/pages/register.ts`, parsed by
  * `app/(auth)/register/page.tsx` and passed in, because this component is a client
  * boundary and the fixture carries zod.
+ *
+ * Two steps since #291: personal details, then the account. The flow used to open on a
+ * quiz-interests and quiz-skill step that both brands rendered and nothing read; it is
+ * gone, so the component carries no interest state, no skill state and no newsletter
+ * opt-in next to a newsletter that does not exist.
  */
 export function RegisterView({ copy }: { copy: PageCopy }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    // Step 1: Quiz Interests
-    interests: [] as string[],
-    skillLevel: "",
-    preferredTopics: [] as string[],
-
-    // Step 2: Personal Details
+    // Step 1: Personal Details
     firstName: "",
     lastName: "",
     email: "",
@@ -76,30 +48,18 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
     dateOfBirth: "",
     country: "",
 
-    // Step 3: Account Setup
+    // Step 2: Account Setup
     password: "",
     confirmPassword: "",
-    newsletter: false,
     terms: false,
   });
 
   const mobile = sectionOf(copy, "mobile");
   const stepsCopy = sectionOf(copy, "steps");
   const progressCopy = sectionOf(copy, "progress");
-  const interestsCopy = sectionOf(copy, "interests");
-  const skillCopy = sectionOf(copy, "skill");
   const details = sectionOf(copy, "details");
   const account = sectionOf(copy, "account");
   const navigation = sectionOf(copy, "navigation");
-
-  const handleInterestToggle = (interest: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }));
-  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -112,10 +72,8 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.interests.length > 0 && formData.skillLevel;
-      case 2:
         return formData.firstName && formData.lastName && formData.email && formData.phone;
-      case 3:
+      case 2:
         return (
           formData.password &&
           formData.confirmPassword &&
@@ -130,13 +88,14 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
   const router = useRouter();
 
   /**
-   * The sign-up itself (issue #164). Until this card the last step's button did nothing at all.
+   * The sign-up itself (issue #164). Until that card the last step's button did nothing at all.
    *
    * `name` is the auth user's display name — `zUserProfile.displayName` starts from it on
-   * `/settings`, so a person who never saves a profile still has a name on their page. The
-   * onboarding interests and phone number are not part of the auth user or the profile schema,
-   * so they are not sent anywhere: a form field that silently goes nowhere is worse than one the
-   * product does not ask for yet.
+   * `/settings`, so a person who never saves a profile still has a name on their page. The phone
+   * number and date of birth are not part of the auth user or the profile schema, so they are not
+   * sent anywhere: a form field that silently goes nowhere is worse than one the product does not
+   * ask for yet. (The quiz-interests and skill-level fields had the same problem and were removed
+   * outright in #291 rather than being left in the form.)
    */
   const status = sectionOf(copy, "status");
   const [pending, setPending] = useState(false);
@@ -252,59 +211,8 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
               <CardDescription>{itemValue(stepsCopy, STEPS[currentStep - 1])}</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Step 1: Quiz Interests */}
+              {/* Step 1: Personal Details */}
               {currentStep === 1 && (
-                <div className="space-y-6">
-                  <div>
-                    <Label className="text-base font-semibold mb-4 block">
-                      {interestsCopy.heading}
-                    </Label>
-                    <div className="grid grid-cols-1 gap-3">
-                      {INTERESTS.map(({ id, icon: Icon }) => {
-                        return (
-                          <div
-                            key={id}
-                            onClick={() => handleInterestToggle(id)}
-                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.interests.includes(id) ? "border-action bg-action/20" : "border-gray-200 dark:border-neutral-500 hover:border-gray-300"}`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <Icon
-                                className={`w-5 h-5 ${formData.interests.includes(id) ? "text-action" : "text-gray-400"}`}
-                              />
-                              <span className="font-medium">{itemLabel(interestsCopy, id)}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="skillLevel" className="text-base font-semibold">
-                      {skillCopy.heading}
-                    </Label>
-                    <Select
-                      value={formData.skillLevel}
-                      onValueChange={(value) => handleInputChange("skillLevel", value)}
-                    >
-                      <SelectTrigger className="mt-2 h-12">
-                        <SelectValue placeholder={itemLabel(skillCopy, "placeholder")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">{itemLabel(skillCopy, "beginner")}</SelectItem>
-                        <SelectItem value="intermediate">
-                          {itemLabel(skillCopy, "intermediate")}
-                        </SelectItem>
-                        <SelectItem value="advanced">{itemLabel(skillCopy, "advanced")}</SelectItem>
-                        <SelectItem value="expert">{itemLabel(skillCopy, "expert")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Personal Details */}
-              {currentStep === 2 && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -402,8 +310,8 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
                 </div>
               )}
 
-              {/* Step 3: Account Setup */}
-              {currentStep === 3 && (
+              {/* Step 2: Account Setup */}
+              {currentStep === 2 && (
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="password" className="text-sm font-medium ">
@@ -468,19 +376,6 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
                   <div className="space-y-3 pt-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="newsletter"
-                        checked={formData.newsletter}
-                        onCheckedChange={(checked) =>
-                          handleInputChange("newsletter", checked as boolean)
-                        }
-                      />
-                      <Label htmlFor="newsletter" className="text-sm ">
-                        {itemLabel(account, "newsletter")}
-                      </Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
                         id="terms"
                         checked={formData.terms}
                         onCheckedChange={(checked) =>
@@ -527,7 +422,7 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
                   </span>
                 </Button>
 
-                {currentStep < 3 ? (
+                {currentStep < STEPS.length ? (
                   <Button onClick={nextStep} disabled={!canProceed()}>
                     <span>{itemLabel(navigation, "next")}</span>
                     <ArrowRight className="w-4 h-4" />
