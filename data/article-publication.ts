@@ -56,4 +56,10 @@ export const articlePublication: readonly ArticlePublication[] = [
   { id: "kb-troubleshooting-quiz-issues", status: "published" },
   { id: "kb-community-guidelines", status: "published" },
   { id: "kb-reporting-a-problem", status: "draft" },
+
+  // support, AlignSynch's three (#309) — published, and selected by
+  // `data/knowledge-base.ts` on `BRAND=alignsynch` instead of the quiz catalogue
+  { id: "kb-account-and-sign-in", status: "published" },
+  { id: "kb-invitations-and-expiry", status: "published" },
+  { id: "kb-how-the-gap-is-computed", status: "published" },
 ];
