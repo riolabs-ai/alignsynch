@@ -2,7 +2,14 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,65 +20,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { mockQuizzes } from "@/data/mock-quizzes";
+import { DIFFICULTIES } from "@/content/core";
 import type { Quiz } from "@/content/quiz";
-import { Sparkles } from "lucide-react";
+import { mockQuizzes } from "@/data/mock-quizzes";
+import { Layers } from "lucide-react";
 import { useState } from "react";
 import { QuizEditor } from "./quiz-editor";
+import { DRAFT_COUNTS, composeDraft } from "./quiz-generator-templates";
 
-// Mock quiz data array with 20 quizzes
-
+/**
+ * The generator: it composes a draft out of the built-in template library (`data/mock-quizzes`)
+ * and retitles each row with the topic typed here. There is no model, no prompt and no network
+ * call behind this form — `composeDraft` is the whole rule, and
+ * `tests/quiz-generator-templates.test.ts` pins it (#287).
+ *
+ * The difficulty and the count are read by that rule. Until #287 both were collected and thrown
+ * away, and every run returned five rows whatever the controls said.
+ */
 export function QuizGenerator() {
   const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("medium");
-  const [questionCount, setQuestionCount] = useState("5");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isGenerated, setIsGenerated] = useState(false);
-  const [generatedQuizzes, setGeneratedQuizzes] = useState<Quiz[]>([]);
+  const [difficulty, setDifficulty] = useState<string>("medium");
+  const [draftCount, setDraftCount] = useState<string>("5");
+  const [drafts, setDrafts] = useState<Quiz[]>([]);
+  const [available, setAvailable] = useState(0);
+  const [isBuilt, setIsBuilt] = useState(false);
 
-  const handleGenerate = () => {
-    if (!topic) return;
-
-    setIsGenerating(true);
-
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Select 5 random quizzes from the mockQuizzes array
-      const shuffled = [...mockQuizzes].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 5);
-
-      // Update the topic of the selected quizzes based on user input
-      const customizedQuizzes = selected.map((quiz, index) => ({
-        ...quiz,
-        id: `quiz-generated-${index + 1}`,
-        slug: `generated-${index + 1}`,
-        title: `${topic} - ${quiz.title}`,
-        tags: [...quiz.tags, topic.toLowerCase()],
-        // The generated quiz is a draft of the chosen topic, so it keeps the
-        // template's own settings; only the timer is reset.
-        settings: { ...quiz.settings, timeLimitSeconds: 0 },
-      }));
-
-      setGeneratedQuizzes(customizedQuizzes);
-      setIsGenerating(false);
-      setIsGenerated(true);
-    }, 2000);
+  const build = () => {
+    const result = composeDraft(mockQuizzes, {
+      topic,
+      difficulty,
+      count: Number(draftCount),
+    });
+    setDrafts(result.quizzes);
+    setAvailable(result.available);
+    setIsBuilt(true);
   };
+
+  const requested = Number(draftCount);
 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="generator" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="generator">AI Generator</TabsTrigger>
-          <TabsTrigger value="editor" disabled={!isGenerated}>
-            Edit Generated Quiz
+          <TabsTrigger value="generator">Generator</TabsTrigger>
+          <TabsTrigger value="editor" disabled={!isBuilt}>
+            Edit Draft
           </TabsTrigger>
         </TabsList>
         <TabsContent value="generator" className="space-y-6 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>AI Quiz Generator</CardTitle>
+              <CardTitle>Quiz Generator</CardTitle>
+              <CardDescription>
+                Builds a draft from the built-in template library and retitles it with your topic.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -92,65 +94,60 @@ export function QuizGenerator() {
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="easy">Easy</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="hard">Hard</SelectItem>
+                      {DIFFICULTIES.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {level.charAt(0).toUpperCase() + level.slice(1)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="question-count">Number of Questions</Label>
-                  <Select value={questionCount} onValueChange={setQuestionCount}>
-                    <SelectTrigger id="question-count">
+                  <Label htmlFor="draft-count">Number of Drafts</Label>
+                  <Select value={draftCount} onValueChange={setDraftCount}>
+                    <SelectTrigger id="draft-count">
                       <SelectValue placeholder="Select count" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="5">5 Questions</SelectItem>
-                      <SelectItem value="10">10 Questions</SelectItem>
-                      <SelectItem value="15">15 Questions</SelectItem>
-                      <SelectItem value="20">20 Questions</SelectItem>
+                      {DRAFT_COUNTS.map((count) => (
+                        <SelectItem key={count} value={String(count)}>
+                          {count} drafts
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="additional-info">Additional Information (Optional)</Label>
-                <Textarea
-                  id="additional-info"
-                  placeholder="Any specific requirements or focus areas for the quiz"
-                />
-              </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleGenerate} disabled={!topic || isGenerating} className="w-full">
-                {isGenerating ? (
-                  <>Generating Quiz...</>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" /> Generate Quiz
-                  </>
-                )}
+              <Button onClick={build} disabled={!topic.trim()} className="w-full">
+                <Layers className="mr-2 h-4 w-4" />
+                Build Draft
               </Button>
             </CardFooter>
           </Card>
 
-          {isGenerated && (
+          {isBuilt && (
             <div className="rounded-lg border bg-muted/50 p-4">
-              <h3 className="mb-2 text-lg font-medium">Quiz Generated Successfully!</h3>
+              <h3 className="mb-2 text-lg font-medium">Draft built</h3>
               <p className="text-muted-foreground">
-                Your quiz on "{topic}" has been generated with {questionCount} {difficulty}{" "}
-                difficulty questions.
+                {drafts.length} {drafts.length === 1 ? "quiz" : "quizzes"} from the {difficulty}{" "}
+                templates in the library, each retitled with "{topic}".
               </p>
+              {drafts.length < requested && (
+                <p className="mt-2 text-muted-foreground">
+                  The library holds {available} templates at {difficulty} difficulty, so it builds
+                  that many and stops.
+                </p>
+              )}
               <p className="mt-2 text-muted-foreground">
-                Click the "Edit Generated Quiz" tab above to review and customize your quiz before
-                publishing.
+                Open the "Edit Draft" tab above to change the questions before publishing.
               </p>
               <div className="mt-4 space-y-2">
-                <h4 className="font-medium">Generated Quizzes:</h4>
+                <h4 className="font-medium">Drafted Quizzes:</h4>
                 <div className="grid gap-2">
-                  {generatedQuizzes.map((quiz) => (
+                  {drafts.map((quiz) => (
                     <div key={quiz.id} className="rounded border p-3">
                       <div className="flex items-center justify-between">
                         <h5 className="font-medium">{quiz.title}</h5>
@@ -173,7 +170,7 @@ export function QuizGenerator() {
         </TabsContent>
 
         <TabsContent value="editor">
-          {isGenerated && <QuizEditor initialQuizzes={generatedQuizzes} />}
+          {isBuilt && <QuizEditor initialQuizzes={drafts} />}
         </TabsContent>
       </Tabs>
     </div>
