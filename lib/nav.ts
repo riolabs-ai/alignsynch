@@ -17,26 +17,27 @@
  * (`components/layout/nav-menus.tsx`), never a second nav tree: the quiz menu is a single
  * component that a viewer either gets or does not.
  *
- * **Which filter is stubbed, and where it gets wired.** There is no role model yet.
- * `SessionUser` (`lib/auth/session.ts`) carries `userId`, `email` and `name` and says so in
- * its own comment — "no token, no session id, no roles". So `navViewer()` below returns
- * `PLATFORM_VIEWER` for every request, and no capability is ever granted: the quiz menu is
- * unreachable in the shell on the alignment brand until roles exist. That is the honest
- * state, not a half-feature dressed up as finished — an admin today reaches every surface by
- * URL, which is what the destination table in the PR measures.
+ * **Which filter was stubbed, and where it got wired.** `SessionUser` (`lib/auth/session.ts`) still
+ * carries only `userId`, `email` and `name` — "no token, no session id, no roles" — so the role is
+ * not on the session: it is read from `user_profile.role` for this request by
+ * `app/(mainlayout)/layout.tsx`, the server component that already resolves the account for the
+ * header, and handed to `navViewer(role)` below. The console's operator rows are the first
+ * capability that comes from it (`admin-console`); a member, a signed-out visitor and a deployment
+ * with no session all get the empty set this function returned for every request before the
+ * console existed, which is why the alignment menu and the whole quiz build render what they
+ * always did.
  *
- * The wiring point is this function and only this function. When a role lands (a `role`
- * column on `user_profile`, read through `lib/auth/session.ts`), `navViewer` takes the
- * `SessionUser | null` the shell already resolves server-side and returns the capabilities
- * that role carries. The caller is `app/(mainlayout)/layout.tsx`, a server component — a
- * client component cannot call `currentUser()`, and putting a role on the client would be
- * trusting the browser. That layout already passes the brand id and the mark down to the
- * sidebar; a capability set is one more prop on the same path.
+ * The wiring point is this function and only this function, and the role crosses the
+ * server/client boundary exactly once: `app/(mainlayout)/layout.tsx` reads it server-side (a client
+ * component cannot call `currentUser()`, and putting a role on the client would be trusting the
+ * browser) and passes the **capability set**, never the role, down to the sidebar.
  *
- * Nothing here imports React, Next or zod: it is a pure predicate, so a node test can prove
- * both viewers without a browser (see `tests/nav-brand.test.ts`).
+ * Nothing here imports React, Next or zod at runtime: it is a pure predicate, so a node test can
+ * prove both viewers without a browser (see `tests/nav-brand.test.ts`). The `UserRole` import is
+ * type-only and erased at build time.
  */
 import type { BrandId } from "@/data/brand";
+import type { UserRole } from "@/content/identity";
 
 /** One destination family a viewer may or may not be shown. */
 export const NAV_CAPABILITIES = ["quiz-surfaces", "admin-console"] as const;
@@ -80,14 +81,24 @@ export function viewerWith(...capabilities: NavCapability[]): NavViewer {
 export const ALIGNMENT_ROUTES: readonly string[] = ["/", "/settings", "/support"];
 
 /**
- * The viewer the shell renders for — **stubbed until roles exist** (see the module comment).
+ * The viewer the shell renders for, from the role the **server** resolved for this request.
  *
- * Every request is the platform viewer, because the most a session knows today is an id, an
- * email and a name. Role → capabilities is mapped here and nowhere else; no component asks
- * what a viewer's role is, only which capabilities it carries, so the swap is one function.
+ * `admin` carries `admin-console`: the operator's destinations (`/admin/instances` today, and the
+ * gap analysis beside it) are rows a member must not see, because a row that leads to a 404 is a
+ * row that advertises a surface. Everybody else — a member, a signed-out visitor, a deployment
+ * with no session — carries the empty set, exactly as this function answered before the console
+ * existed.
+ *
+ * The role is an argument rather than a session read for the reason this module has always given:
+ * a capability set is a pure value a node test can render either way, and the request's own
+ * session is read in `app/(mainlayout)/layout.tsx` (a server component) through
+ * `lib/auth/shell-account.ts::shellSession()`, which is the one place the session and the profile
+ * row are resolved for the chrome. `quiz-surfaces` is still granted to nobody: the branding work
+ * (#156) will decide whether an admin gets the quiz menu, and this function is where that
+ * decision lands when it is made.
  */
-export function navViewer(): NavViewer {
-  return PLATFORM_VIEWER;
+export function navViewer(role: UserRole | null = null): NavViewer {
+  return role === "admin" ? viewerWith("admin-console") : PLATFORM_VIEWER;
 }
 
 /**
