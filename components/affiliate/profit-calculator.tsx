@@ -113,7 +113,7 @@ export function ProfitCalculator({ copy }: { copy: PageCopySection }): JSX.Eleme
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <label className="font-medium flex items-center gap-2">
-                  <Users className="h-4 w-4 text-purple-500" />
+                  <Users className="h-4 w-4 text-action" />
                   {itemLabel(copy, "monthly-referrals")}
                 </label>
                 <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">
@@ -136,7 +136,7 @@ export function ProfitCalculator({ copy }: { copy: PageCopySection }): JSX.Eleme
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <label className="font-medium flex items-center gap-2">
-                  <Users className="h-4 w-4 text-indigo-500" />
+                  <Users className="h-4 w-4 text-action" />
                   {itemLabel(copy, "conversion-rate")}
                 </label>
                 <span className="text-sm font-semibold bg-white dark:bg-slate-700 px-2 py-1 rounded-md shadow-sm">
@@ -188,12 +188,12 @@ export function ProfitCalculator({ copy }: { copy: PageCopySection }): JSX.Eleme
             viewport={{ once: true }}
           >
             <Card className="overflow-hidden border-0 shadow-xl bg-white dark:bg-slate-900">
-              <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+              <CardHeader className="bg-action text-action-foreground">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl">{itemLabel(copy, "earnings-potential")}</CardTitle>
                   <Calculator className="h-5 w-5 opacity-75" />
                 </div>
-                <CardDescription className="text-purple-100">
+                <CardDescription className="text-action-foreground/80">
                   {fillLabel(itemLabel(copy, "commission-note"), {
                     percent: formatPercentValue(commissionPct),
                   })}
@@ -221,29 +221,35 @@ export function ProfitCalculator({ copy }: { copy: PageCopySection }): JSX.Eleme
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg border border-purple-100 dark:border-purple-800/30">
+                    {/*
+                      Two earnings panels that used to be told apart by hue — purple for the month,
+                      indigo for the year. A brand owns one accent (#187 stage 3), so they now share
+                      the action tint and the labels carry the distinction. The alternative was to
+                      hand the year a second colour the brand record does not have.
+                    */}
+                    <div className="bg-action/5 p-6 rounded-lg border border-action/20">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="p-2 bg-purple-100 dark:bg-purple-800/30 rounded-full">
-                            <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          <div className="p-2 bg-action/10 rounded-full">
+                            <Calendar className="h-5 w-5 text-action" />
                           </div>
                           <span className="font-medium">{itemLabel(copy, "monthly-earnings")}</span>
                         </div>
-                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        <div className="text-2xl font-bold text-action">
                           ${state.monthlyEarnings.toFixed(2)}
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
+                    <div className="bg-action/5 p-6 rounded-lg border border-action/20">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="p-2 bg-indigo-100 dark:bg-indigo-800/30 rounded-full">
-                            <Calendar className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                          <div className="p-2 bg-action/10 rounded-full">
+                            <Calendar className="h-5 w-5 text-action" />
                           </div>
                           <span className="font-medium">{itemLabel(copy, "yearly-earnings")}</span>
                         </div>
-                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                        <div className="text-2xl font-bold text-action">
                           ${state.yearlyEarnings.toFixed(2)}
                         </div>
                       </div>
