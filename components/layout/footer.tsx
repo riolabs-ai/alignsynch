@@ -219,21 +219,21 @@ export function Footer({
             </p>
             <div className="flex flex-wrap justify-center gap-6 mt-4 md:mt-0">
               <Link
-                href="#"
+                href="/privacy"
                 className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
               >
                 <span>{itemLabel(legal, "privacy")}</span>
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
-                href="#"
+                href="/terms"
                 className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
               >
                 <span>{itemLabel(legal, "terms")}</span>
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
-                href="#"
+                href="/privacy"
                 className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
               >
                 <span>{itemLabel(legal, "cookies")}</span>

@@ -153,6 +153,19 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "title", label: "Open the v{version} release notes on GitHub" },
         ],
       },
+      /**
+       * The legal row under the card (issue #270): the two routes that now exist, so `/login`
+       * carries the same links the footer does, before a person agrees to anything. The labels
+       * are the fixture's and the destinations are the view's — `components/auth/login-view.tsx`
+       * reads `terms` and `privacy` by id, so a rename here is a red build (E23).
+       */
+      {
+        id: "legal",
+        items: [
+          { id: "terms", label: "Terms of Service" },
+          { id: "privacy", label: "Privacy Policy" },
+        ],
+      },
     ],
   });
 }
