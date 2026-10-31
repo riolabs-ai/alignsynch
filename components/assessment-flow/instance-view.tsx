@@ -20,10 +20,18 @@
  * session that finds itself answering as somebody else has no way to notice otherwise, and
  * that silence is what made a link click able to corrupt a whole instance's Gap.
  *
- * Literal-free: the words are `data/pages/assessment-instance.ts` (E23).
+ * **Which mode this is, is on the screen too** (#213): a badge under the title names the mode
+ * the instance was played in (`data-mode` for a test), because a reader looking at a report
+ * has to be able to tell a two-score sheet from a four-score one. The mode is a fact about
+ * the instance, so it is drawn, not chosen — there is no control here that changes it.
+ *
+ * Literal-free: the words are `data/pages/assessment-instance.ts` (E23), except the two mode
+ * names, which are the glossary's own vocabulary authored once in `content/assessment.ts`
+ * (`MODE_LABELS`) — the same way the report component carries "Aspect" and "Gap".
  */
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
+import { MODE_LABELS } from "@/content/assessment";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { answersPath } from "@/lib/flow/paths";
@@ -69,6 +77,12 @@ export function AssessmentInstanceView({
           {copy.heading}
         </p>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{screen.title}</h1>
+        <p
+          data-mode={screen.mode}
+          className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+        >
+          {MODE_LABELS[screen.mode]}
+        </p>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>
       </header>
 
@@ -140,6 +154,7 @@ export function AssessmentInstanceView({
             aspects={screen.aspects}
             action={answersPath(screen.instanceRecordId)}
             hasAnswers={answered}
+            mode={screen.mode}
           />
         </>
       ) : (

@@ -50,7 +50,7 @@ export function ResourcesAndReferral({
     {
       id: 1,
       title: "How to create high-converting quizzes",
-      icon: <TrendingUp className="h-5 w-5 text-purple-500" />,
+      icon: <TrendingUp className="h-5 w-5 text-action" />,
       description: "Learn the psychology behind quizzes that engage users and drive conversions.",
     },
     {
@@ -77,7 +77,7 @@ export function ResourcesAndReferral({
     {
       id: 5,
       title: "Optimizing quiz length for maximum engagement",
-      icon: <Clock className="h-5 w-5 text-indigo-500" />,
+      icon: <Clock className="h-5 w-5 text-action" />,
       description:
         "Find the sweet spot for quiz length to keep players engaged without dropping off.",
     },
@@ -178,7 +178,7 @@ export function ResourcesAndReferral({
                     {creatorTips.map((tip) => (
                       <SwiperSlide className="max-w-[270px]">
                         <div key={tip.id} className="min-w-[270px] max-w-[270px] snap-start ">
-                          <Card className="h-full border border-slate-200 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800/50 transition-colors">
+                          <Card className="h-full border border-slate-200 dark:border-slate-800 hover:border-action/40 transition-colors">
                             <CardContent className="p-5 xl:pt-5">
                               <div className="flex flex-col h-full">
                                 <div className="mb-3 p-2 rounded-full bg-slate-100 dark:bg-slate-800 w-fit">
@@ -192,7 +192,7 @@ export function ResourcesAndReferral({
                                 </p>
                                 <Button
                                   variant="ghost"
-                                  className="justify-start p-0 h-auto text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-transparent"
+                                  className="justify-start p-0 h-auto text-action hover:text-action/80 hover:bg-transparent"
                                 >
                                   {itemLabel(tipsCopy, "read-more")}
                                   <ArrowRight className="ml-1 h-4 w-4" />

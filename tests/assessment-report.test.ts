@@ -40,6 +40,7 @@ import AssessmentPage, {
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { gapOf, type Gap } from "@/content/record";
+import { MODE_LABELS } from "@/content/assessment";
 import { assessmentInstances, assessments } from "@/data/assessments";
 import { assessmentReport, instanceBySlug } from "@/lib/assessment-report";
 
@@ -97,13 +98,53 @@ describe("the report's Gaps", () => {
     expect(gaps.every((gap) => gap >= 0 && gap <= 4)).toBe(true);
   });
 
-  it("gives Think and Guess a Gap only where both parties answered them", () => {
-    const advanced = report.rows.filter((row) => row.gaps.think !== undefined);
-    expect(advanced.map((row) => row.itemId)).toEqual(["aspect-time-together", "aspect-conflict"]);
+  it("carries the mode it was played in, and a Basic report has no Think or Guess Gap", () => {
+    expect(report.mode).toBe("basic");
     for (const row of report.rows) {
-      expect(row.gaps.guess === undefined).toBe(row.gaps.think === undefined);
+      expect(row.gaps.think).toBeUndefined();
+      expect(row.gaps.guess).toBeUndefined();
+      expect(row.left.opinions.think).toBeUndefined();
+      expect(row.right.opinions.think).toBeUndefined();
     }
-    expect(report.rows.filter((row) => row.gaps.guess !== undefined)).toHaveLength(advanced.length);
+  });
+
+  /**
+   * The Advanced fixture, through the same projection: every Aspect carries four opinions
+   * per party and therefore four Gaps. These are the numbers the card quotes.
+   */
+  it("gives an Advanced instance four Gaps on every Aspect", () => {
+    const advancedInstance = instanceBySlug("noor-iris", assessmentInstances);
+    const advancedTemplate =
+      advancedInstance === undefined
+        ? undefined
+        : assessments.find((entry) => entry.id === advancedInstance.templateId);
+    expect(advancedInstance).toBeDefined();
+    expect(advancedTemplate).toBeDefined();
+    if (advancedInstance === undefined || advancedTemplate === undefined) return;
+
+    const advancedReport = assessmentReport(advancedInstance, advancedTemplate);
+    expect(advancedReport.mode).toBe("advanced");
+    expect(advancedReport.rows).toHaveLength(5);
+    for (const row of advancedReport.rows) {
+      expect(row.gaps.think, row.itemId).toBeDefined();
+      expect(row.gaps.guess, row.itemId).toBeDefined();
+      expect(row.gaps.think).toBe(
+        gapOf(row.left.opinions.think ?? 0, row.right.opinions.think ?? 0),
+      );
+      expect(row.gaps.guess).toBe(
+        gapOf(row.left.opinions.guess ?? 0, row.right.opinions.guess ?? 0),
+      );
+    }
+
+    const first = advancedReport.rows.find((row) => row.itemId === "aspect-check-ins");
+    expect(first?.left.opinions).toEqual({ feel: 3, wish: 5, think: 4, guess: 2 });
+    expect(first?.right.opinions).toEqual({ feel: 4, wish: 3, think: 3, guess: 4 });
+    expect({
+      feel: first?.gaps.feel,
+      wish: first?.gaps.wish,
+      think: first?.gaps.think,
+      guess: first?.gaps.guess,
+    }).toEqual({ feel: 1, wish: 2, think: 1, guess: 2 });
   });
 });
 
@@ -123,23 +164,51 @@ describe("the rendered screen", () => {
     expect(row?.[0]).toContain('data-wish-gap="2"');
   });
 
-  it("draws Think and Guess only on the Aspects that carry them", () => {
+  it("draws no Think or Guess line on a Basic instance, and names its mode", () => {
     const rowOf = (aspect: string) =>
       markup.match(
         new RegExp(`<section[^>]*data-aspect="${aspect}"[^>]*>[\\s\\S]*?</section>`),
       )?.[0] ?? "";
 
-    const advanced = rowOf("aspect-time-together");
-    expect(advanced).toContain(">think<");
-    expect(advanced).toContain(">guess<");
-    expect(advanced).toContain('data-think-gap="1"');
-
-    const basicOnly = rowOf("aspect-housework");
+    const basicOnly = rowOf("aspect-time-together");
     expect(basicOnly).toContain(">feel<");
     expect(basicOnly).toContain(">wish<");
     expect(basicOnly).not.toContain(">think<");
     expect(basicOnly).not.toContain(">guess<");
     expect(basicOnly).not.toContain("data-think-gap");
+    expect(basicOnly).not.toContain("data-guess-gap");
+
+    expect(markup).toContain('data-mode="basic"');
+    expect(markup).toContain(MODE_LABELS.basic);
+    expect(markup).not.toContain(MODE_LABELS.advanced);
+  });
+
+  it("draws all four lines and names Advanced Mode on the Advanced fixture", () => {
+    const advancedInstance = instanceBySlug("noor-iris", assessmentInstances);
+    const advancedTemplate =
+      advancedInstance === undefined
+        ? undefined
+        : assessments.find((entry) => entry.id === advancedInstance.templateId);
+    if (advancedInstance === undefined || advancedTemplate === undefined) {
+      throw new Error("the Noor/Iris fixture and its template are the subject here");
+    }
+
+    const advancedMarkup = renderToStaticMarkup(
+      createElement(AssessmentReportView, {
+        report: assessmentReport(advancedInstance, advancedTemplate),
+      }),
+    );
+
+    expect(advancedMarkup).toContain('data-mode="advanced"');
+    expect(advancedMarkup).toContain(MODE_LABELS.advanced);
+    expect((advancedMarkup.match(/data-think-gap=/g) ?? []).length).toBe(5);
+    expect((advancedMarkup.match(/data-guess-gap=/g) ?? []).length).toBe(5);
+    expect(advancedMarkup).toContain(">think<");
+    expect(advancedMarkup).toContain(">guess<");
+    // aspect-check-ins: gapOf(4, 3) === 1 (Think), gapOf(2, 4) === 2 (Guess).
+    const row = advancedMarkup.match(/<section[^>]*data-aspect="aspect-check-ins"[^>]*>/);
+    expect(row?.[0]).toContain('data-think-gap="1"');
+    expect(row?.[0]).toContain('data-guess-gap="2"');
   });
 
   /**

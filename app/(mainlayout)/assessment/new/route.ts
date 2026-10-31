@@ -33,6 +33,10 @@ export async function POST(request: Request): Promise<Response> {
       initiatorName: value("initiatorName"),
       counterpartyName: value("counterpartyName"),
       email: value("email"),
+      // The create form's radios (#213). A post without one is refused by the store —
+      // "mode must be basic or advanced" — rather than defaulted to Basic, so a crafted
+      // POST cannot choose a mode the form never offered.
+      mode: value("mode"),
     });
   } catch (error) {
     if (error instanceof FlowError) {

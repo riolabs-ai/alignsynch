@@ -191,6 +191,12 @@ process bug.
   arrays and fixture text pasted into a component. It binds `components/search/**`,
   `components/chat/**` and the header palette; copies still sitting in the other feature
   directories are counted on the summary line every run instead of being allowed silently.
+  E34 is the third, and the only one that reads the **import graph**: `scripts/client-graph.ts`
+  walks every `"use client"` module's runtime imports and fails when one reaches `lib/db/**`, `pg`
+  or a Node builtin — the bundle has no browser build for those, so the route 500s at request time
+  while `next build` stays green. `import type` is erased and stays legal; a value import from the
+  same module is not. The census (`N "use client" entries walked, 0 reaching a server-only module`)
+  prints every run.
 - `content/bundle.ts` + `scripts/bundles.ts` — the bundle (#147): a template or a demo dataset as
   one versioned JSON document, and the CLI that exports and imports it. The canonical demo
   bundle is committed at `data/bundles/demo-dataset.alignsynch.json`; an import writes the tenant
@@ -239,6 +245,14 @@ process bug.
 - **`next/image` needs an intrinsic size.** Without `width`/`height` or `fill`, dev renders a 500:
   `Image with src "/category/animal.webp" is missing required "width" property.` `next build`
   still passes, so CI cannot see it. Use `fill` inside a `position: relative` parent.
+- **A client component may not value-import server code, and the build will not tell you.** A
+  `"use client"` module that imports a _value_ from a module which reaches `lib/db/**` or `pg`
+  compiles — `typecheck`, `lint`, `data:check`, `vitest` and `next build` all stay green — and then
+  every route behind the shell answers **500** at request time, because the browser graph has no
+  `pg` build (#228). `import type` is erased and is the correct way to pass props across the
+  boundary. `data:check` **E34** now walks the graph and fails on the crossing; if you see it,
+  resolve the value on the server and pass it down, or move the pure derivation into a module that
+  imports no `lib/db/**` — never "fix" it by adding `"use client"` to the database module.
 - **Never read a clock in a render path.** A label from `new Date()` or `toLocale*` is rendered
   once by the server and re-rendered at hydration; the two disagree and every page logs React
   `#418` (hydration mismatch). `content/core.ts` owns the fixture clock (`DEMO_NOW_ISO`) and every
