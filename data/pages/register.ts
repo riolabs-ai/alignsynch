@@ -25,14 +25,13 @@
  *
  * ## Two steps, not three (issue #291)
  *
- * The flow used to open on a first step — "Quiz Interests" over six topic buckets, plus
- * "What's your quiz skill level?" — that both brands rendered. `register-view.tsx` kept
- * those values in local state and sends only the name, email and password to Neon Auth,
- * so the step asked every visitor for work nothing reads, and on the alignment build it
- * asked about a product they had not come to use. The step is removed, and with it the
- * "Subscribe to our newsletter for quiz updates and tips" line, for a newsletter that has
- * never existed. What is left is the form the app actually submits: personal details,
- * then the account.
+ * The flow used to open on a first step — six quiz-topic buckets to tick, plus a select for
+ * self-rated quiz ability — that both brands rendered. `register-view.tsx` kept those values
+ * in local state and sends only the name, email and password to Neon Auth, so the step asked
+ * every visitor for work nothing reads, and on the alignment build it asked about a product
+ * they had not come to use. The step is removed, and with it the newsletter opt-in line, for
+ * a newsletter that has never existed. What is left is the form the app actually submits:
+ * personal details, then the account.
  *
  * The phone number and date of birth in `details` are still collected and still unread.
  * That is a separate defect (the form's own validation, not the quiz vocabulary this card
