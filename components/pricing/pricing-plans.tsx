@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PageCopySection } from "@/content/pages";
 import { formatPercentValue } from "@/content/metrics";
+import { brand } from "@/data/brand";
 import { metric } from "@/data/metrics";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Check, HelpCircle } from "lucide-react";
@@ -29,13 +30,19 @@ interface PlanPrice {
   yearly: number;
 }
 
+interface PlanCta {
+  label: string;
+  /** A route or a `mailto:` — every plan CTA has a destination, because a dead button is a bug. */
+  href: string;
+}
+
 interface Plan {
   name: string;
   description: string;
   price: PlanPrice;
   features: string[];
   limitations: string[];
-  cta: string;
+  cta: PlanCta;
   popular: boolean;
 }
 
@@ -65,86 +72,97 @@ interface LabelClasses {
   yearly: string;
 }
 
-// Memoized plans data - doesn't change between renders
+/**
+ * The four plans, as the page states them.
+ *
+ * What a row may say is decided by what the tree does, not by what a pricing table
+ * usually promises (Jaden, 2026-10-31). Every row below is either verifiable today —
+ * an instance's mode is fixed at creation (`content/assessment.ts`), the report prints
+ * one line per Gap (`components/assessment/assessment-report.tsx`), a party comes back
+ * to their assessments at `/assessment/instances`, and the other party is invited by
+ * link (`/invite/[token]`) — or it is one of the two facts #289's gate will enforce
+ * (paid = unlimited active assessments + Advanced Mode), which is what the `price-note`
+ * under the toggle declares the page to be describing.
+ *
+ * Removed, and why: quiz-creation caps and AI quotas (nothing enforces a limit, and the
+ * generator draws from `data/mock-quizzes`); ad-supported / ad-free (no ad code);
+ * basic/advanced analytics (a fixture); support tiers (one mailbox, `brand.supportEmail`);
+ * custom branding and quiz customization (the build-time brand, not a per-user setting);
+ * team collaboration and seats (no organisation model); API access and embeds (neither
+ * exists); SSO and "advanced security" (auth is Neon's managed Better Auth); CSV export
+ * and integrations (no export path); and the Enterprise list — SLA, account manager,
+ * custom reporting, custom integrations, onboarding — which are not offerings.
+ *
+ * Basic and Pro carry the same rows. #289 gates paid plans as "unlimited active
+ * assessments + Advanced Mode" and nothing else in the tree separates the two, so the
+ * tier and its price stay (D1) and the rows do not invent a difference to justify one.
+ */
+const SUPPORT_MAILTO = `mailto:${brand.supportEmail}`;
+
 const PLANS_DATA: readonly Plan[] = [
   {
     name: "Free",
-    description: "Perfect for beginners and casual quiz takers",
+    description: "For trying the assessment format",
     price: {
       monthly: 0,
       yearly: 0,
     },
     features: [
-      "Create up to 5 quizzes",
-      "Take unlimited quizzes",
-      "Basic analytics",
-      "Community support",
-      "Ad-supported experience",
+      "Basic Mode: Feel and Wish on every Aspect",
+      "The report, one line per Gap",
+      "Your assessments in one list",
+      "Invite the other party by link",
     ],
-    limitations: ["Limited quiz templates", "No custom branding", "Basic reporting only"],
-    cta: "Get Started",
+    limitations: ["One active assessment at a time", "Advanced Mode needs a paid plan"],
+    cta: { label: "Start free", href: "/register" },
     popular: false,
   },
   {
     name: "Basic",
-    description: "Great for educators and content creators",
+    description: "For a two-party practice",
     price: {
       monthly: 9.99,
       yearly: 7.99,
     },
     features: [
-      "Create up to 50 quizzes",
-      "Ad-free experience",
-      "Basic quiz customization",
-      "Email support",
-      "Download results as CSV",
-      "Basic integrations",
+      "Unlimited active assessments",
+      "Basic Mode and Advanced Mode",
+      "The report, one line per Gap",
+      "Your assessments in one list",
+      "Invite the other party by link",
     ],
     limitations: [],
-    cta: "Start Free Trial",
+    cta: { label: "Talk to us", href: SUPPORT_MAILTO },
     popular: false,
   },
   {
     name: "Pro",
-    description: "For professionals and growing businesses",
+    description: "For a busier two-party practice",
     price: {
       monthly: 19.99,
       yearly: 16.99,
     },
     features: [
-      "Unlimited quiz creation",
-      "Advanced quiz customization",
-      "Custom branding",
-      "Priority support",
-      "Advanced analytics",
-      "Team collaboration (up to 5)",
-      "API access",
-      "Embed quizzes anywhere",
+      "Unlimited active assessments",
+      "Basic Mode and Advanced Mode",
+      "The report, one line per Gap",
+      "Your assessments in one list",
+      "Invite the other party by link",
     ],
     limitations: [],
-    cta: "Start Free Trial",
+    cta: { label: "Talk to us", href: SUPPORT_MAILTO },
     popular: true,
   },
   {
     name: "Enterprise",
-    description: "Custom solutions for large organizations",
+    description: "For organisations that want to agree terms first",
     price: {
       monthly: 49.99,
       yearly: 39.99,
     },
-    features: [
-      "Everything in Pro",
-      "Dedicated account manager",
-      "Custom integrations",
-      "SSO authentication",
-      "Advanced security features",
-      "Unlimited team members",
-      "Custom reporting",
-      "SLA guarantees",
-      "Onboarding & training",
-    ],
-    limitations: [],
-    cta: "Contact Sales",
+    features: ["Everything in Pro", "Volume, procurement and terms, agreed by email"],
+    limitations: ["SSO, team management, custom reporting and integrations are not built"],
+    cta: { label: "Contact us", href: SUPPORT_MAILTO },
     popular: false,
   },
 ] as const;
@@ -247,10 +265,11 @@ const PricingCard = memo<PricingCardProps>(({ plan, billingCycle, copy }) => {
       </CardContent>
       <CardFooter>
         <Button
+          asChild
           className={cardContent.buttonClassName}
           variant={plan.popular ? "default" : "outline"}
         >
-          {plan.cta}
+          <Link href={plan.cta.href}>{plan.cta.label}</Link>
         </Button>
       </CardFooter>
     </Card>
@@ -315,6 +334,10 @@ export function PricingPlans({ copy }: { copy: PageCopySection }): JSX.Element {
               </Badge>
             </div>
           </div>
+
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+            {itemLabel(copy, "price-note")}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">{pricingCards}</div>
@@ -333,7 +356,7 @@ export function PricingPlans({ copy }: { copy: PageCopySection }): JSX.Element {
             </TooltipProvider>
             <span className="text-sm">
               {itemLabel(copy, "custom-plan")}{" "}
-              <Link href="#" className="text-action hover:text-action/80 font-medium">
+              <Link href={SUPPORT_MAILTO} className="text-action hover:text-action/80 font-medium">
                 {itemLabel(copy, "custom-plan-link")}
               </Link>
             </span>

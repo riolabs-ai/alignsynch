@@ -13,6 +13,13 @@
  *    typed here as well would be a second source of truth for a metric.
  *  - `no-results` carries `{query}`; the view fills it from the live search box.
  *
+ * `price-note` is the line that makes a published price honest before billing
+ * exists. Jaden ruled on 2026-10-31 that the four tiers and every price stay
+ * (they become `billing_plan` rows in #289), so the page cannot stop showing a
+ * number — it has to say what the number is: the intended rate, with no way to
+ * buy it today. The plan rows' CTAs point at `/register` and at the support
+ * mailbox for the same reason; there is no checkout to point them at yet.
+ *
  * `heading` is the route's page heading and the plan band renders it as its `h1`:
  * on this route the first band *is* the hero, so the page line and the section
  * heading spell the same words — the band reads its own section, the top-level
@@ -36,8 +43,13 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "monthly", label: "Monthly" },
         { id: "yearly", label: "Yearly" },
-        { id: "save-badge", label: "Save {percent}" },
-        { id: "most-popular", label: "Most Popular" },
+        { id: "save-badge", label: "Save up to {percent}" },
+        {
+          id: "price-note",
+          label:
+            "These are the intended prices and plan contents — billing is not open yet, so nothing on this page can be purchased today.",
+        },
+        { id: "most-popular", label: "Recommended" },
         { id: "whats-included", label: "WHAT'S INCLUDED:" },
         { id: "limitations", label: "LIMITATIONS:" },
         { id: "price-per-month", label: "mo" },
@@ -67,12 +79,10 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "cta",
       heading: "Ready to create amazing quizzes?",
-      body: "Join thousands of educators, content creators, and businesses who are engaging their audience with interactive quizzes.",
+      body: "The free plan works today. The paid plans open when billing lands, and the prices above are what they will cost.",
       items: [
-        { id: "perk-no-card", label: "No credit card required to start" },
-        { id: "perk-trial", label: "14-day free trial on all paid plans" },
-        { id: "perk-cancel", label: "Cancel anytime, no questions asked" },
-        { id: "perk-support", label: "Dedicated support to help you succeed" },
+        { id: "perk-free", label: "Free plan, usable today" },
+        { id: "perk-billing", label: "Paid plans open when billing lands" },
         { id: "get-started", label: "Get Started Free" },
         { id: "view-demo", label: "View Demo" },
       ],
