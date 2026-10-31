@@ -50,7 +50,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/privacy` — **fixture**
   - capability: The draft privacy policy: what the build actually collects, why, where it lives and what the reader can ask for, behind a draft notice that cannot be dismissed.
   - components: `components/layout`, `components/legal`, `components/ui`
-  - reads: 1 record fixture — `data/flags.ts`
+  - reads: 6 fixture modules of page copy, assets or decisions — no records
 
 - `/profile/[username]` — **db**
   - capability: A public profile read from Postgres: header, stats, achievements, followers, quiz history and created quizzes.
@@ -80,7 +80,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/terms` — **fixture**
   - capability: The draft terms of service: the rules for using the product, its liability and dispute clauses, and a draft notice that cannot be dismissed.
   - components: `components/layout`, `components/legal`, `components/ui`
-  - reads: 1 record fixture — `data/flags.ts`
+  - reads: 6 fixture modules of page copy, assets or decisions — no records
 
 ### Component domains
 
