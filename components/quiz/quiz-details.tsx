@@ -413,7 +413,7 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
                     seed={String(quiz.id)}
                     width={600}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                  <div className="absolute inset-0 bg-foreground/50 flex items-end p-3">
                     <div>
                       <Badge variant={getDifficultyVariant(quiz.difficulty)} className="mb-1">
                         {quiz.difficulty}
@@ -452,11 +452,11 @@ export function QuizDetails({ id, detail }: { id: string; detail?: QuizDetailMod
             kind={FALLBACK_KIND.quiz}
             seed={view.title}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4 md:p-6">
+          <div className="absolute inset-0 bg-foreground/70 flex flex-col justify-end p-4 md:p-6">
             <div className="flex flex-wrap gap-2 mb-3">
               <Badge variant={getDifficultyVariant(view.difficulty)}>{view.difficulty}</Badge>
               {view.featured && (
-                <Badge variant="secondary" className="bg-purple-500/80 text-white border-0">
+                <Badge variant="secondary" className="bg-action/80 text-white border-0">
                   Featured
                 </Badge>
               )}

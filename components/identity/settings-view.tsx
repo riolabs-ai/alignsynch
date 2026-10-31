@@ -231,7 +231,7 @@ export function SettingsView({ copy, email, signedInName, profile }: SettingsVie
               {publicHref !== undefined && (
                 <Link
                   href={publicHref}
-                  className="inline-flex items-center gap-1 text-sm text-indigo-600"
+                  className="inline-flex items-center gap-1 text-sm text-action"
                 >
                   {itemLabel(links, "public-profile")}
                   <ExternalLink className="h-3 w-3" />

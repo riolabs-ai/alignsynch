@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  */
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-900">
+    <div className="min-h-screen bg-background">
       <PricingPlans copy={sectionOf(pricingPageCopy, "plans")} />
       <PricingFaq copy={sectionOf(pricingPageCopy, "faq")} />
       <PricingCta copy={sectionOf(pricingPageCopy, "cta")} />

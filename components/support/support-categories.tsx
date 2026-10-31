@@ -44,7 +44,7 @@ export function SupportCategories({
               variant={selectedCategory === category.id ? "default" : "ghost"}
               className={cn(
                 "w-full justify-start",
-                selectedCategory === category.id ? "bg-indigo-500 text-white" : "",
+                selectedCategory === category.id ? "bg-action text-white" : "",
               )}
               onClick={() => setSelectedCategory(category.id as SupportCategory)}
             >

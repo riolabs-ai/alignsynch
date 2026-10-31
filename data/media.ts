@@ -51,11 +51,25 @@ export const media = {
     height: 574,
     kind: "illustration",
   },
+  "brand.alignsynch-icon": {
+    src: "/brand/alignsynch-icon.svg",
+    alt: "Alignsynch Icon",
+    width: 32,
+    height: 32,
+    kind: "illustration",
+  },
   "brand.as2-logo_v2_cl": {
     src: "/brand/as2-logo_v2_cl.png",
     alt: "As2 Logo V2 Cl",
     width: 818,
     height: 127,
+    kind: "illustration",
+  },
+  "brand.quizhub-icon": {
+    src: "/brand/quizhub-icon.svg",
+    alt: "Quizhub Icon",
+    width: 32,
+    height: 32,
     kind: "illustration",
   },
   "browse-category": {

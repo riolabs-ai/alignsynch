@@ -168,4 +168,4 @@ counts
   images    16
   buttons   42
   inputs    3
-  classes   552 (sha cee722dae6c3)
+  classes   546 (sha e4a4df8f5f84)

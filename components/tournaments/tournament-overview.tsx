@@ -76,7 +76,7 @@ export function TournamentOverview({ tournament, copy }: TournamentOverviewProps
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-purple-500 mt-0.5" />
+                <Calendar className="h-5 w-5 text-action mt-0.5" />
                 <div>
                   <h4 className="font-medium">{itemLabel(keyDates, "registration-period")}</h4>
                   <p className="text-sm text-muted-foreground">

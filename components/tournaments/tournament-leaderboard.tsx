@@ -321,7 +321,7 @@ export function TournamentLeaderboard({ tournament, copy }: TournamentLeaderboar
                 <div>
                   <div className="font-medium">
                     {itemLabel(copy, "your-rank")}{" "}
-                    <span className="text-purple-600 font-bold">#42</span>
+                    <span className="text-action font-bold">#42</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {fillLabel(itemLabel(copy, "percentile"), {

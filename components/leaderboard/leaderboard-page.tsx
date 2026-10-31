@@ -131,7 +131,7 @@ export function LeaderboardPage({ boards }: { boards: LeaderboardBoards }) {
 
       {/* Enhanced Global Leaderboard Section */}
       <Card className="overflow-hidden border-0 shadow-lg">
-        <div className="bg-gradient-to-r from-purple-600 to-blue-500 p-6 text-white">
+        <div className="bg-action p-6 text-white">
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <div>
               <h2 className="text-2xl font-bold tracking-tight">Global Leaderboard</h2>

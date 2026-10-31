@@ -51,7 +51,7 @@ export function ProfileHeader({
         single-stop tint would have been the other option; the fade is what keeps the cover above it
         reading as one surface rather than a band with an edge.
       */}
-      <div className="bg-gradient-to-r from-action/10 to-transparent px-6 pb-6">
+      <div className="bg-action/5 px-6 pb-6">
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-start">
           <Media
             alt={person.name}

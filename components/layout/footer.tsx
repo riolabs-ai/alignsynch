@@ -114,7 +114,7 @@ export function Footer({
   const mark = brandMark(brand.logo);
 
   return (
-    <footer className="relative overflow-hidden bg-gradient-to-b from-background to-muted pt-16 pb-8 sm:px-4 xl:px-8">
+    <footer className="relative overflow-hidden bg-muted pt-16 pb-8 sm:px-4 xl:px-8">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-1 bg-action"></div>
       <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-muted blur-3xl opacity-70"></div>

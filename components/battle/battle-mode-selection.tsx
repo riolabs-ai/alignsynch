@@ -141,8 +141,8 @@ export function BattleModeSelection({ copy, onModeSelect }: BattleModeSelectionP
         <BulletCard
           copy={sectionOf(copy, "ranking-card")}
           Icon={ListChecks}
-          iconClassName="h-5 w-5 text-purple-500"
-          bulletClassName="h-2 w-2 rounded-full bg-purple-500"
+          iconClassName="h-5 w-5 text-action"
+          bulletClassName="h-2 w-2 rounded-full bg-action"
         />
       </div>
     </div>
