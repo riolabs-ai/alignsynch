@@ -164,7 +164,7 @@ export function CategoryDetailPage({ categoryName, copy }: CategoryDetailPagePro
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white bg-indigo-500">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-action-foreground bg-action">
                 <Target />
               </div>
               <h1 className="text-3xl font-bold"> {copy.heading}</h1>
@@ -172,7 +172,7 @@ export function CategoryDetailPage({ categoryName, copy }: CategoryDetailPagePro
             <p className="text-muted-foreground mt-2 max-w-2xl">{copy.subtitle}</p>
           </div>
 
-          <Button asChild>
+          <Button variant="action" asChild>
             <Link href="/create/editor">{pageItemOf(copy, "create-quiz").label}</Link>
           </Button>
         </div>
@@ -254,7 +254,7 @@ export function CategoryDetailPage({ categoryName, copy }: CategoryDetailPagePro
                   seed={quiz.id}
                   width={1000}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent flex items-end p-4">
                   <div className="w-full">
                     <div className="flex justify-between items-center mb-2">
                       <Badge
@@ -359,7 +359,7 @@ export function CategoryDetailPage({ categoryName, copy }: CategoryDetailPagePro
               </CardContent>
 
               <CardFooter className="px-4 pb-4 pt-0">
-                <Button className="w-full" asChild>
+                <Button variant="action" className="w-full" asChild>
                   <Link href={`${quiz.href}/play`}>{pageItemOf(copy, "play-now").label}</Link>
                 </Button>
               </CardFooter>

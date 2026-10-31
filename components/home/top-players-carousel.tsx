@@ -25,11 +25,11 @@ const TOP_PLAYERS = leaderboardEntries("global", 8);
 
 /** Rank title -> badge variant. `rankTitleOf` owns the threshold; this owns the colour. */
 const RANK_TITLE_VARIANTS: Record<RankTitle, BadgeProps["variant"]> = {
-  Grandmaster: "purple",
+  Grandmaster: "action",
   Master: "blue",
   Expert: "yellow",
   Pro: "success",
-  Elite: "default",
+  Elite: "muted",
   Advanced: "outline",
 };
 
@@ -38,7 +38,7 @@ const orDash = (value: string | undefined) => value ?? "—";
 
 export function TopPlayersCarousel({ copy }: { copy: PageCopySection }) {
   return (
-    <section className="space-y-4 px-4 xl:px-8 bg-indigo-50 dark:bg-slate-900 py-10">
+    <section className="space-y-4 px-4 xl:px-8 bg-muted dark:bg-slate-900 py-10">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Award className="h-6 w-6 text-primary" />

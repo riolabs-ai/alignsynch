@@ -58,7 +58,7 @@ export function NewsletterSection({ copy }: { copy: PageCopySection }) {
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-indigo-900/90 backdrop-blur-sm"></div>
+        <div className="absolute inset-0 bg-foreground/90 backdrop-blur-sm"></div>
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
@@ -115,12 +115,12 @@ export function NewsletterSection({ copy }: { copy: PageCopySection }) {
                   </div>
                   <Button
                     type="submit"
-                    className="h-14 px-8 bg-white text-indigo-900 hover:bg-white/90 transition-all duration-200 font-medium text-base"
+                    className="h-14 px-8 bg-white text-action hover:bg-white/90 transition-all duration-200 font-medium text-base"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 border-2 border-indigo-900 border-t-transparent rounded-full animate-spin"></span>
+                        <span className="h-4 w-4 border-2 border-action border-t-transparent rounded-full animate-spin"></span>
                         {itemLabel(copy, "subscribing")}
                       </span>
                     ) : (
@@ -167,8 +167,8 @@ export function NewsletterSection({ copy }: { copy: PageCopySection }) {
       </div>
 
       {/* Decorative elements */}
-      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
-      <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl"></div>
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-action/20 rounded-full blur-3xl"></div>
+      <div className="absolute -top-10 -right-10 w-40 h-40 bg-action/20 rounded-full blur-3xl"></div>
     </section>
   );
 }

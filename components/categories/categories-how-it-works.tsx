@@ -20,22 +20,19 @@ export function CategoriesHowItWorks({ copy }: { copy: PageCopySection }) {
   const steps = [
     {
       item: itemOf(copy, "browse"),
-      icon: <Search className="h-6 w-6 text-white" />,
-      color: "from-purple-500 to-purple-600",
+      icon: <Search className="h-6 w-6 text-action-foreground" />,
       delay: 0.3,
       img: browse,
     },
     {
       item: itemOf(copy, "take"),
-      icon: <BookOpen className="h-6 w-6 text-white" />,
-      color: "from-indigo-500 to-indigo-600",
+      icon: <BookOpen className="h-6 w-6 text-action-foreground" />,
       delay: 0.5,
       img: takequiz,
     },
     {
       item: itemOf(copy, "earn"),
-      icon: <Award className="h-6 w-6 text-white" />,
-      color: "from-blue-500 to-blue-600",
+      icon: <Award className="h-6 w-6 text-action-foreground" />,
       delay: 0.7,
       img: earnReward,
     },
@@ -102,9 +99,7 @@ export function CategoriesHowItWorks({ copy }: { copy: PageCopySection }) {
                     width={300}
                   />
                   <div className="absolute top-4 left-4">
-                    <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r ${step.color} shadow-lg`}
-                    >
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-action shadow-lg">
                       {step.icon}
                     </div>
                   </div>
