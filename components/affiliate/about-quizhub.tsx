@@ -1,6 +1,6 @@
 "use client";
 import { Media } from "@/components/media/media";
-import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
+import { FALLBACK_KIND } from "@/lib/media-entry";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
