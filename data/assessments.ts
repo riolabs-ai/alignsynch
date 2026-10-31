@@ -252,6 +252,13 @@ export const assessments: readonly Assessment[] = [
  * Basic instance carrying Think/Guess and an Advanced one missing it). `noor-iris` is the
  * Advanced demonstration; the other three are Basic, which is what a newly created instance
  * is too. Nothing in the model derives one opinion from another.
+ *
+ * Every instance also names its **Setting** — the lens `content/gaps.ts` reads to decide
+ * whether the Gaps are small enough to call the parties aligned. Authored here rather than
+ * left to the column's default, so no seeded row's setting is hidden by it: `avery-rowan`,
+ * `ruth-sam` and `marco-priya` are Soft ("Small Gap (1) OK" — a Gap of 1 is tolerated), and
+ * `noor-iris` is Full ("No Gap OK" — only In Synch passes). The setting changes no Gap
+ * number; it only decides which of them are tolerated.
  */
 export const assessmentInstances: readonly AssessmentInstance[] = [
   {
@@ -262,6 +269,7 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
     date: "2026-10-28T18:30:00.000Z",
     templateId: "assessment-relationship-basics",
     mode: "basic",
+    setting: "soft",
     title: "Relationship Basics",
     summary: "Relationship Basics, answered by Avery and Rowan.",
     items: [
@@ -339,6 +347,7 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
     date: "2026-10-28T19:00:00.000Z",
     templateId: "assessment-personal-parent-child",
     mode: "basic",
+    setting: "soft",
     title: "Parent & Child",
     summary:
       "Parent & Child, answered by Ruth (Parent) and Sam (Child) — they agree on all five Aspects, so every Gap is 0.",
@@ -421,6 +430,7 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
     date: "2026-10-29T08:30:00.000Z",
     templateId: "assessment-business-staff-manager",
     mode: "basic",
+    setting: "soft",
     title: "Staff & Manager",
     summary:
       "Staff & Manager, answered by Marco (Staff) and Priya (Manager) — they disagree on all five Aspects, with Gaps from 1 to 4.",
@@ -521,6 +531,7 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
     summary:
       "Parent & Child, answered by Noor (Parent) and Iris (Child) in Advanced Mode — Feel, Wish, Think and Guess on all five Aspects.",
     mode: "advanced",
+    setting: "full",
     items: [
       {
         id: "aspect-check-ins",

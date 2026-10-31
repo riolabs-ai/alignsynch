@@ -41,6 +41,7 @@ const INSTANCE_BY_SLUG_SQL = `
     ${RECORD_JSON},
     ai.template_record_id,
     ai.mode,
+    ai.alignment_setting,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
       '[]'::json
@@ -94,6 +95,7 @@ interface InstanceQueryRow {
   readonly record: RecordRow;
   readonly template_record_id: string;
   readonly mode: string;
+  readonly alignment_setting: string;
   readonly items: readonly ItemRow[];
   readonly options: readonly OptionRow[];
   readonly parties: readonly PartyRow[];
@@ -119,6 +121,7 @@ const SCREEN_BY_SLUG_SQL = `
     ${RECORD_JSON},
     ai.template_record_id,
     ai.mode,
+    ai.alignment_setting,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
       '[]'::json
@@ -183,6 +186,7 @@ export async function readAssessmentInstanceRowsBySlug(
     record_id: row.record.id,
     template_record_id: row.template_record_id,
     mode: row.mode,
+    setting: row.alignment_setting,
   };
   return {
     record: row.record,
@@ -256,6 +260,7 @@ export const readAssessmentScreenBySlug = cache(
           record_id: row.record.id,
           template_record_id: row.template_record_id,
           mode: row.mode,
+          setting: row.alignment_setting,
         },
         parties: row.parties,
         opinions: row.opinions,

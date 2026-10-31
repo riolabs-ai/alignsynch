@@ -64,6 +64,12 @@ export interface InstanceRow {
    * says `nonsense` fails the parse with the instance named rather than rendering as one.
    */
   readonly mode: string;
+  /**
+   * `soft` or `full`, as text — the same rule the mode follows: the schema decides whether it
+   * is a setting (#259), and a row that says `nonsense` fails the parse instead of deciding
+   * what counts as aligned from an unknown lens.
+   */
+  readonly setting: string;
 }
 
 /** One `party` row. */
@@ -301,6 +307,7 @@ export function assessmentInstanceFromRows(
       ...recordFields(rows.record),
       templateId: rows.instance.template_record_id,
       mode: rows.instance.mode,
+      setting: rows.instance.setting,
       items,
       parties,
     },

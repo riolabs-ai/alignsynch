@@ -47,7 +47,7 @@
  * `lib/assessment-report.ts` on every render.
  */
 import type { Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
-import { zAssessmentMode } from "@/content/assessment";
+import { DEFAULT_ALIGNMENT_SETTING, zAssessmentMode } from "@/content/assessment";
 import { getPool } from "@/lib/db/client";
 import {
   assessmentTemplateFromRows,
@@ -315,8 +315,9 @@ export async function createInstanceFromTemplate(
     );
 
     await client.query(
-      "INSERT INTO assessment_instance (record_id, template_record_id, mode) VALUES ($1, $2, $3)",
-      [instanceRecordId, found.id, mode.data],
+      `INSERT INTO assessment_instance (record_id, template_record_id, mode, alignment_setting)
+       VALUES ($1, $2, $3, $4)`,
+      [instanceRecordId, found.id, mode.data, DEFAULT_ALIGNMENT_SETTING],
     );
 
     // The Initiator's seat. `user_id` is the session's account when there is one, and NULL when
@@ -809,12 +810,14 @@ export async function readInstanceBundle(
     record: RecordRow;
     template_record_id: string;
     mode: string;
+    alignment_setting: string;
     items: ItemRow[];
     options: OptionRow[];
   }>(
     `SELECT to_jsonb(r) AS record,
             ai.template_record_id,
             ai.mode,
+            ai.alignment_setting,
             COALESCE((SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id), '[]'::json) AS items,
             COALESCE((SELECT json_agg(to_jsonb(o) ORDER BY o.position) FROM response_option o WHERE o.record_id = r.id), '[]'::json) AS options
        FROM record r
@@ -854,6 +857,7 @@ export async function readInstanceBundle(
       record_id: instanceRecordId,
       template_record_id: instance.template_record_id,
       mode: instance.mode,
+      setting: instance.alignment_setting,
     },
     parties,
     invite:

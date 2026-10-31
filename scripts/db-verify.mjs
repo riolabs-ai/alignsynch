@@ -28,6 +28,11 @@
  *   V11 the unlock mark (#252) exists, and a `party.unlock_seen_at` is set only on an instance
  *       that is already `complete` — a mark written too early would silently swallow the event
  *       the marker exists to announce
+ *   V12 the Setting (#259): `assessment_instance.alignment_setting` exists, every row carries
+ *       one of the two values, and each seeded instance carries the setting its fixture
+ *       authors — one line per seeded instance, so which they are never has to be guessed
+ *       from a DEFAULT. It is a lens over the Gaps and not a Gap, so this check adds no
+ *       `%gap%` name (V2 keeps that rule) and no stored verdict.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -100,10 +105,48 @@ async function main() {
     }
     const hasUnlockColumn = unlockColumn.length > 0;
 
-    if (missing.length > 0) return;
+    // V12 — the Setting's column (#259). Checked beside V11 and for the same reason: the read
+    // path selects `ai.alignment_setting`, so on a database migrated before 0008 every instance
+    // read would fail with a missing column instead of this check naming the fix.
+    const { rows: settingColumn } = await client.query(
+      `SELECT 1 AS present FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'assessment_instance'
+          AND column_name = 'alignment_setting'`,
+    );
+    if (settingColumn.length === 0) {
+      fail(
+        "V12",
+        "public.assessment_instance.alignment_setting does not exist — the Setting cannot be read (run `pnpm db:migrate`)",
+      );
+    }
+    const hasSettingColumn = settingColumn.length > 0;
+
+    if (missing.length > 0 || !hasSettingColumn) return;
 
     const instances = await listAssessmentInstances();
     let templatesChecked = 0;
+
+    // V12 — the Setting's vocabulary and the fixture parity (#259). The fixture map is
+    // `data/assessments.ts` itself, not a list copied into this script: a setting written by
+    // `db:seed` and a setting authored in the fixture are the same value or they are drift.
+    const { assessmentInstances: authoredInstances } = await import("@/data/assessments.ts");
+    const authoredSettingOf = new Map(
+      authoredInstances.map((instance) => [instance.id, instance.setting]),
+    );
+    const { rows: badSettings } = await client.query(
+      `SELECT r.slug, ai.alignment_setting
+         FROM assessment_instance ai
+         JOIN record r ON r.id = ai.record_id
+        WHERE ai.alignment_setting NOT IN ('soft', 'full')
+        ORDER BY r.slug`,
+    );
+    for (const row of badSettings) {
+      fail(
+        "V12",
+        `instance "${row.slug}" carries Setting "${row.alignment_setting}" — one of soft, full`,
+      );
+    }
+    const settingsChecked = [];
 
     for (const listed of instances) {
       const rows = await readAssessmentInstanceRowsBySlug(listed.slug);
@@ -219,6 +262,20 @@ async function main() {
             `instance "${listed.slug}" (${status}): the ${row.role}'s unlock_seen_at is set, but the instance is not complete — the marker would never show`,
           );
         }
+      }
+
+      // V12 — a seeded row still says what its fixture authors (#259). The DEFAULT on the
+      // column makes a migrated database *look* right; only comparing against
+      // `data/assessments.ts` proves which setting a seeded instance actually plays under.
+      const authored = authoredSettingOf.get(listed.recordId);
+      if (authored !== undefined) {
+        if (rows.instance.setting !== authored) {
+          fail(
+            "V12",
+            `instance "${listed.slug}" carries Setting "${rows.instance.setting}", but data/assessments.ts authors "${authored}" (run \`pnpm db:seed\`)`,
+          );
+        }
+        settingsChecked.push({ slug: listed.slug, setting: rows.instance.setting });
       }
 
       // A fixture instance is answered in full by construction, and a **complete** flow
@@ -436,8 +493,18 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, no drift`,
     );
+
+    // One line per seeded instance, in slug order: which Setting it plays under, and what that
+    // word means in the glossary's own sentence. A bare `soft` in a column is an enum member;
+    // "Soft — Small Gap (1) OK" is the fact a reader can act on (#259).
+    const { SETTING_LABELS, SETTING_DEFINITIONS } = await import("@/content/assessment.ts");
+    for (const checked of settingsChecked) {
+      console.log(
+        `  setting  ${checked.slug.padEnd(12)} ${SETTING_LABELS[checked.setting]} — ${SETTING_DEFINITIONS[checked.setting]}`,
+      );
+    }
   } finally {
     await client.end();
   }
