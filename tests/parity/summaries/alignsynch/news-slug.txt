@@ -31,7 +31,7 @@ landmarks (5)
   main           1
   navigation     2
 
-links (9 unique, 10 total)
+links (10 unique, 11 total)
   #                                                    1
   /                                                    2
   /#questions                                          1
@@ -41,10 +41,11 @@ links (9 unique, 10 total)
   /news/quiz-monetization-strategies-2025              1
   /settings                                            1
   /support                                             1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 1
 
 counts
-  elements  341
+  elements  343
   images    3
   buttons   25
   inputs    3
-  classes   223 (sha ad86ab8d0c9b)
+  classes   228 (sha 973f94844178)

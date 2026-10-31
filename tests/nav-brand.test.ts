@@ -73,13 +73,18 @@ function navHrefs(brandId: BrandId, viewer: NavViewer = PLATFORM_VIEWER): string
  * follow-up): `Footer`'s prop is required precisely so no mount can forget it, and this file is
  * about the *brand* rule, so it renders a build with every gated surface on. The flag half of the
  * same columns is `tests/leaderboard-links.test.ts`.
+ *
+ * The footer's *navigation* destinations are what this reads — site-relative only. The footer also
+ * carries the version badge (issue #269), whose href is the GitHub release tag: a fact about the
+ * build, not a column of the footer, so the brand rule ignores the outbound link. `#` placeholders
+ * were already excluded for the same reason.
  */
 function footerHrefs(brandId: BrandId, viewer: NavViewer = PLATFORM_VIEWER): string[] {
   return hrefsOf(
     renderToStaticMarkup(
       createElement(Footer, { copy: shellPageCopy, viewer, brandId, hiddenNav: [] }),
     ),
-  ).filter((href) => href !== "#");
+  ).filter((href) => href.startsWith("/"));
 }
 
 /** The quiz menu exactly as the sidebar rendered it before #156, in order. */

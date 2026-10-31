@@ -36,6 +36,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import nextConfig from "../next.config.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const VITEST = join(ROOT, "node_modules", "vitest", "vitest.mjs");
@@ -125,6 +126,14 @@ for (const brand of BRANDS) {
       // Setting both from one variable is what makes "this run is the brand it claims" true.
       BRAND: brand,
       PARITY_BRAND: brand,
+      /**
+       * `APP_VERSION` is the third build constant, and it is taken from **`next.config.mjs`'s own
+       * `env` block** rather than parsed out of `package.json` here (issue #269). One derivation,
+       * two callers: if the badge's version ever moved, the parity hash would move with it in the
+       * same commit instead of hashing a `v` with nothing after it, and a manifest that pinned
+       * the empty badge would be a green gate over a page that prints nothing.
+       */
+      APP_VERSION: nextConfig.env.APP_VERSION,
       PARITY_UPDATE: UPDATE ? "1" : "",
       PARITY_ARTIFACT_DIR: ARTIFACTS,
       // `TZ` and the locale are both pinned because both reach the render. `content/core.ts`

@@ -140,6 +140,20 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "gap", label: "The distance between them", value: "The Gap" },
         ],
       },
+      /**
+       * The version badge (issue #269) — the line under the credentials card. The same three
+       * ids as the shell's section (`data/pages/shell.ts`), because `AppVersion` is one
+       * component resolving one set of ids; the words are per surface because a fixture owns
+       * its own copy, and `{version}` is filled from the build, never typed.
+       */
+      {
+        id: "version",
+        items: [
+          { id: "label", label: "Version {version}" },
+          { id: "compact", label: "v{version}" },
+          { id: "title", label: "Open the v{version} release notes on GitHub" },
+        ],
+      },
     ],
   });
 }

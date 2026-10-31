@@ -19,7 +19,7 @@ landmarks (6)
   main           1
   navigation     2
 
-links (17 unique, 18 total)
+links (18 unique, 19 total)
   #                                                    1
   /                                                    2
   /affiliate                                           1
@@ -37,10 +37,11 @@ links (17 unique, 18 total)
   /quiz-discussions                                    1
   /support                                             1
   /tournaments                                         1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 1
 
 counts
-  elements  958
+  elements  960
   images    0
   buttons   9
   inputs    1
-  classes   233 (sha 4f492597fa2e)
+  classes   240 (sha f811ef2ac93d)

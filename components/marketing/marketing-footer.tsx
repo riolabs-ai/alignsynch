@@ -1,3 +1,4 @@
+import { AppVersion } from "@/components/layout/app-version";
 import type { Brand } from "@/content/brand";
 import type { PageCopy } from "@/content/pages";
 import { pageItemOf } from "@/lib/page-copy";
@@ -27,6 +28,15 @@ export function MarketingFooter({ brand, copy }: { brand: Brand; copy: PageCopy 
         >
           {contact.label}
         </a>
+        {/*
+         * The version badge, at the very bottom of this footer (issue #269). This is the second
+         * footer in the tree — `components/layout/footer.tsx` is the shell's — and `/welcome` is
+         * the one page that renders this one, so the badge is mounted here as well. One
+         * component, the surface's own fixture for the words.
+         */}
+        <div className="mt-4 border-t border-slate-200 pt-4">
+          <AppVersion copy={copy} />
+        </div>
       </div>
     </footer>
   );

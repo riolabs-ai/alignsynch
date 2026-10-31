@@ -73,6 +73,18 @@ that a screen reads a fixture. An empty block is how a prototype ships as if it 
 Write what is true **on the commit being tagged**, and check it there before writing it. A limit that
 was accurate a week ago is still a false claim in a public document.
 
+## The version badge points at the tag
+
+Every build prints its own version — on `/login`, in the footer, at the foot of the sidebar —
+and that badge links to `releases/tag/v<version>`, the exact tag, deliberately not
+`/releases/latest`. The number is `package.json`'s `version`, read once by `next.config.mjs` and
+inlined into the bundle; nothing else in the tree spells a version.
+
+**The version badge links to the tag — tag before you deploy, or the badge leads to a 404.** That
+is the coupling, not a bug in the badge: a badge that always resolves but never names the deployed
+build identifies nothing. `scripts/release.sh` creates the tag and the Release in that order, and
+`--tag-only` is what a prepared bump uses, so the ordinary path already satisfies it.
+
 ## The gate runs the check
 
 `scripts/verify.sh` runs `release:check` in **every lane**, next to the glossary step, for the same
