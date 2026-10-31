@@ -61,7 +61,26 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "remember", label: "Remember me" },
           { id: "submit", label: "Sign In" },
           { id: "pending", label: "Signing in…" },
-          { id: "error-invalid-credentials", label: "Invalid email or password" },
+          /**
+           * The rejected-password sentence, and it names the other way in (issue #281).
+           *
+           * A person who created their account with Google has no password. Better Auth
+           * 1.7.6 cannot tell that apart from a wrong one: `signInEmail` looks up the
+           * credential account and answers `INVALID_EMAIL_OR_PASSWORD` (401) when the user
+           * is missing, when there is **no credential account at all** (the Google case),
+           * when the row has no password, and when the password does not verify — the same
+           * code, deliberately, so the endpoint is not an account-existence oracle
+           * (`better-auth`'s sign-in route — `api/routes/sign-in.mjs` in the package — where the
+           * four `throw APIError.from` branches after `findUserByEmail` all name it). So this
+           * surface cannot branch on "Google
+           * account" versus "wrong password" without inventing a signal: the sentence says
+           * both things instead of guessing one.
+           */
+          {
+            id: "error-invalid-credentials",
+            label:
+              "Invalid email or password. If you signed up with Google, use Continue with Google instead.",
+          },
           { id: "error-network", label: "Couldn't reach the server. Check your connection." },
           {
             id: "error-origin",
@@ -72,6 +91,25 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "error-required", label: "Enter your email and password." },
           { id: "signup-prompt", label: "Don't have an account?" },
           { id: "signup-action", label: "Sign up here" },
+        ],
+      },
+      /**
+       * The Google button beside the card (issue #281).
+       *
+       * One button, no provider picker: the form is the other option, and a chooser between
+       * two options is a step whose only job is to be dismissed. `divider` is the word
+       * between them — in the fixture like every other string on this surface, because
+       * `/login`'s copy budget is 0 (`data/pages/budget.ts`) and the view may not type one.
+       *
+       * `label` is the button's whole accessible name, which is why the mark beside it is
+       * decorative and carries no text of its own.
+       */
+      {
+        id: "google",
+        items: [
+          { id: "label", label: "Continue with Google" },
+          { id: "pending", label: "Opening Google…" },
+          { id: "divider", label: "or" },
         ],
       },
       /**

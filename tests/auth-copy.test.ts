@@ -169,6 +169,42 @@ describe("the alignment build speaks its own product", () => {
   });
 });
 
+describe("the Google button's copy (issue #281)", () => {
+  /**
+   * The section has to survive `loginCopyFor`, which *rebuilds* the section list: a section it
+   * does not name is dropped, and `LoginView` then throws `PageCopy: no section "google"` at
+   * request time while `next build` stays green (it never renders `/login`). Same trap #269 and
+   * #270 each hit once, and this file already pins it for `legal`.
+   */
+  it("survives the /login projection on both brands", () => {
+    const quizGoogle = sectionOf(loginCopyFor(loginCopy(quizHub), "quizhub"), "google");
+    const alignGoogle = sectionOf(loginCopyFor(loginCopy(alignSynch), "alignsynch"), "google");
+
+    // The button is the card's, not a skin's: one shared pair of strings, like the form.
+    expect(quizGoogle).toEqual(alignGoogle);
+    expect(itemLabel(alignGoogle, "label")).toBe("Continue with Google");
+    expect(itemLabel(alignGoogle, "divider")).toBe("or");
+    expect(itemLabel(alignGoogle, "pending").length).toBeGreaterThan(0);
+  });
+
+  /**
+   * The password form's rejection sentence names the Google path. Better Auth answers
+   * `INVALID_EMAIL_OR_PASSWORD` for an account that has no credential row exactly as it does
+   * for a wrong password — there is no code to branch on — so "Invalid email or password"
+   * alone would send a Google-only account looking for a reset flow this product does not
+   * have. The sentence claims both, and this pins the half that names the real cause.
+   */
+  it("names the other way in when a password sign-in is rejected", () => {
+    for (const [id, record] of [
+      ["quizhub", quizHub],
+      ["alignsynch", alignSynch],
+    ] as const) {
+      const card = sectionOf(loginCopyFor(loginCopy(record), id), "sign-in");
+      expect(itemLabel(card, "error-invalid-credentials")).toContain("Continue with Google");
+    }
+  });
+});
+
 describe("the card and the wizard are shared, not skinned", () => {
   it("renders the sign-in card's fields and errors identically on both brands", () => {
     const card = (id: "quizhub" | "alignsynch", record: Brand) =>

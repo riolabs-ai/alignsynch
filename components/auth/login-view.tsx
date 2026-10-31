@@ -75,6 +75,16 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
  * the slot is the same. The one number this file owns is `platform.activePlayers` (a snapshot
  * in `data/metrics.ts`, formatted here): it is filled into the fixture's `{count}` placeholder,
  * so a brand whose tile carries no placeholder renders no count at all.
+ *
+ * **The Google button (issue #281)** sits above the form, because it is the shorter path and
+ * the form is the fallback — one button, no provider picker. It is drawn by this component for
+ * both brands from the fixture's `google` section (the surface's copy budget is 0, so not one
+ * word of it is typed here). Where it must **not** be drawn is inside the desktop shell
+ * (#280): Google refuses its OAuth flow in an embedded webview (`403 disallowed_useragent`),
+ * so a button there is a guaranteed dead end. That card has not landed, and there is no shell
+ * in this tree to detect, so the guard is *pending* rather than guessed — when #280 lands it
+ * belongs here as one boolean prop resolved on the server, the way `demo` already arrives,
+ * never a `navigator.userAgent` check in a client component.
  */
 export function LoginView({
   copy,
@@ -90,6 +100,8 @@ export function LoginView({
   const stats = sectionOf(copy, "stats");
   /** The legal row under the card (issue #270); the two ids are the fixture's. */
   const legal = sectionOf(copy, "legal");
+  /** The Google button's three strings (issue #281). */
+  const google = sectionOf(copy, "google");
 
   /**
    * The one number this page owns: the demo's active-player count, as `data/metrics.ts`
@@ -103,6 +115,7 @@ export function LoginView({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
+  const [googlePending, setGooglePending] = useState(false);
   const [failure, setFailure] = useState<AuthFailure | null>(null);
   const [fieldProblem, setFieldProblem] = useState(false);
 
@@ -137,6 +150,43 @@ export function LoginView({
 
     router.push(next);
     router.refresh();
+  };
+
+  /**
+   * Start the Google flow (issue #281).
+   *
+   * `signIn.social` asks the proxy for the provider's authorize URL and the SDK then sends the
+   * browser to Google; the password form above is untouched by it. `callbackURL` is where Neon
+   * Auth returns the person *after* the flow — this origin plus the `?next=` path the server
+   * already validated (`lib/auth/paths.ts`) — and it is **not** the provider's authorized
+   * redirect URI, which is `{NEON_AUTH_BASE_URL}/callback/google` in the console. Confusing the
+   * two is the `redirect_uri_mismatch` this card documents once on purpose.
+   *
+   * A failure here reaches the same `failure` state the form uses, so the person reads the
+   * fixture's sentence for the cause it actually was — `origin` when the address is not on the
+   * branch's trusted-domain list (which fails *after* Google consent, and used to look like a
+   * code bug), `network` when the request never left. There is no success branch: the SDK has
+   * already navigated away by then, and clearing `pending` would only flash an idle button
+   * during the redirect.
+   */
+  const startGoogle = async () => {
+    setFieldProblem(false);
+    setFailure(null);
+    setGooglePending(true);
+
+    try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: `${window.location.origin}${next}`,
+      });
+      if (result?.error) {
+        setFailure(authFailureOf(result.error));
+        setGooglePending(false);
+      }
+    } catch (error) {
+      setFailure(authFailureOf(error));
+      setGooglePending(false);
+    }
   };
 
   return (
@@ -187,6 +237,35 @@ export function LoginView({
             <CardDescription>{form.body}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/*
+             * The Google button (issue #281), above the form because it is the shorter path:
+             * one button, no provider picker. `type="button"` — a `<button>` outside the form
+             * still defaults to submit in older user agents, and a stray submit would run the
+             * password handler over two empty fields.
+             */}
+            <div className="space-y-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12"
+                onClick={startGoogle}
+                disabled={googlePending || pending}
+              >
+                {googlePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {googlePending ? itemLabel(google, "pending") : itemLabel(google, "label")}
+              </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                  <span className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    {itemLabel(google, "divider")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={submit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium ">
