@@ -451,14 +451,12 @@ describe("the blind rule survives the new read", () => {
     expect(serialized).not.toContain('"role":"counterparty"');
     expect(serialized).not.toContain("data-feel-gap");
 
-    // And nothing reached the markup: every select still shows "no answer chosen", and there is
-    // no Gap band and no "In synch" — the two ways a score of theirs could reach the reader.
+    // And nothing reached the markup: every segment still shows "no answer chosen" (the band
+    // is drawn, nothing is checked), and there is no Gap band and no "In synch" — the two ways
+    // a score of theirs could reach the reader.
     const markup = render(screen);
-    const preselected = [...markup.matchAll(/<option value="([^"]*)" selected=""/g)].map(
-      (match) => match[1],
-    );
-    expect(preselected).toHaveLength(screen.aspects.length * 2);
-    expect(preselected.every((value) => value === "")).toBe(true);
+    expect((markup.match(/type="radio"/g) ?? []).length).toBe(screen.aspects.length * 2 * 5);
+    expect(markup.match(/ checked=""/g) ?? []).toHaveLength(0);
     expect(markup).not.toContain("data-feel-gap");
     expect(markup).not.toContain("In synch");
   });

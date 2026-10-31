@@ -214,16 +214,19 @@ export function LoginView({
                   className="h-12 border-gray-300 "
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember" />
-                  <Label htmlFor="remember" className="text-sm ">
-                    {itemLabel(form, "remember")}
-                  </Label>
-                </div>
-                <Link href="#" className="text-sm text-action font-medium">
-                  {itemLabel(form, "forgot")}
-                </Link>
+              {/*
+               * No "Forgot password?" link (issue #272). Its `href` was a bare hash, and nothing in
+               * this app could have been behind it: the Managed Auth client here unwraps
+               * `signUp.email`, `signIn.email`, `getSession` and `signOut` only, and no route or
+               * form starts a reset. A link that cannot lead anywhere is worse than its absence
+               * — this one also promised an account feature the product does not have. It comes
+               * back when the reset flow does, pointed at the reset route.
+               */}
+              <div className="flex items-center space-x-2">
+                <Checkbox id="remember" />
+                <Label htmlFor="remember" className="text-sm ">
+                  {itemLabel(form, "remember")}
+                </Label>
               </div>
 
               {fieldProblem && (

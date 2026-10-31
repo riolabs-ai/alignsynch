@@ -32,11 +32,13 @@ import type {
 import {
   ADVANCED_GAP_KINDS,
   BASIC_GAP_KINDS,
+  GAP_GROUPS,
   GAP_KINDS,
   GAP_KIND_LABELS,
   GAP_KIND_SOURCES,
   gapKindsIn,
   gapKindsOf,
+  groupsIn,
   type GapKind,
   type GapSource,
 } from "../../content/gaps";
@@ -393,6 +395,67 @@ describe("the fixtures", () => {
     for (const item of avery.items) {
       const gaps = gapsFor(avery, item.id);
       for (const kind of ADVANCED_GAP_KINDS) assert.equal(gaps[kind], undefined);
+    }
+  });
+});
+
+/**
+ * The three groups (#274) — the specification's headings, and the partition that keeps them
+ * honest.
+ *
+ * `GAP_GROUPS` is what the report draws its three tables from, so the properties that matter
+ * are structural rather than editorial: the headings are the document's own words in the
+ * document's order, every kind sits under **exactly one** heading, and the groups cover the
+ * eight with nothing invented and nothing dropped. A ninth kind added to the glossary would
+ * fail the second case instead of shipping without a home; a kind quietly listed under two
+ * headings would print the same number twice under two different names.
+ *
+ * `groupsIn()` is the same rule one level up from `gapKindsIn()`: a group exists when it has a
+ * present kind, which is why a Basic instance draws two tables and never an empty third.
+ */
+describe("the groups", () => {
+  it("is the specification's three headings, in its order", () => {
+    assert.deepEqual(
+      GAP_GROUPS.map((group) => group.heading),
+      ["Feelings and Wishes Differ", "Desires To Change", "Prediction Gaps and Analysis"],
+    );
+  });
+
+  it("puts every kind under exactly one heading, and covers all eight", () => {
+    const placed = GAP_GROUPS.flatMap((group) => group.kinds);
+    assert.equal(placed.length, GAP_KINDS.length);
+    assert.deepEqual([...placed].sort(), [...GAP_KINDS].sort());
+    for (const kind of GAP_KINDS) {
+      const homes = GAP_GROUPS.filter((group) => group.kinds.includes(kind));
+      assert.equal(homes.length, 1, `kind "${kind}" sits under ${homes.length} headings`);
+    }
+  });
+
+  it("keeps the four Basic kinds in two groups and the four predictions in the third", () => {
+    assert.deepEqual(GAP_GROUPS[0].kinds, ["feel", "wish"]);
+    assert.deepEqual(GAP_GROUPS[1].kinds, ["initiator", "counterparty"]);
+    assert.deepEqual(GAP_GROUPS[2].kinds, [...ADVANCED_GAP_KINDS]);
+    // The Basic floor is exactly the first two groups, read as data rather than restated.
+    assert.deepEqual(
+      GAP_GROUPS.slice(0, 2).flatMap((group) => group.kinds),
+      [...BASIC_GAP_KINDS],
+    );
+  });
+
+  it("drops a group with no present kind, so Basic never draws a Prediction table", () => {
+    const avery = instanceNamed("avery-rowan");
+    const noor = instanceNamed("noor-iris");
+    for (const item of avery.items) {
+      assert.deepEqual(
+        groupsIn(gapsFor(avery, item.id)).map((group) => group.id),
+        ["feelings-and-wishes", "desires-to-change"],
+      );
+    }
+    for (const item of noor.items) {
+      assert.deepEqual(
+        groupsIn(gapsFor(noor, item.id)).map((group) => group.id),
+        GAP_GROUPS.map((group) => group.id),
+      );
     }
   });
 });
