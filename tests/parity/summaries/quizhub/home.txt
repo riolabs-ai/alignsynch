@@ -136,7 +136,7 @@ links (64 unique, 74 total)
   /quiz/quiz-world-geography-challenge-capitals-landmarks 1
   /quiz/quiz-world-history-through-time                1
   /quiz/quiz-world-literature-classics                 1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.1.0-rc1 1
   mailto:quizhub@riolabs.ai                            1
 
 counts

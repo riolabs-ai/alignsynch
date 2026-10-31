@@ -48,7 +48,11 @@ export const profilePageCopy: PageCopy = zPageCopy.parse({
       body: "This profile is sample data from the app's fixtures — not a real member, with no account behind it and nothing to sign in to.",
       items: [
         { id: "demo-badge", label: "Demo account" },
-        { id: "demo-note", label: "Sample data, kept so the leaderboard has people in it." },
+        {
+          id: "demo-note",
+          label:
+            "Sample data: the account exists so the pages that list people have someone to list.",
+        },
       ],
     },
     {
