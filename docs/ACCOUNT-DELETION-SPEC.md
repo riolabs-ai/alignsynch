@@ -146,8 +146,8 @@ delete later" state. A soft-delete window (say 30 days) is a **policy** fact —
 privacy text must say — not an implementation detail, so it is out of scope for this card and, if
 the product ever wants one, it must be decided first and stated in the policy text.
 
-What the policy text must say under this spec (the interim copy on the settings card, §7, says the
-same thing in one line):
+What the policy text must say under this spec (the interim copy on the settings card —
+`components/settings/security-settings.tsx`, "Delete Account" — says the same thing in one line):
 
 > When you delete your account, your profile, your invitations and the details that identify you in
 > any shared assessment are removed immediately and permanently. Assessments you participated in
