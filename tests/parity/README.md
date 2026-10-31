@@ -1,11 +1,14 @@
 # Brand parity — a hash manifest and a summary, not 1.4 MB of HTML
 
 Both brands render seven routes. Each render is reduced to a SHA-256 and to a structural summary,
-and those two small files are what is committed (#171).
+and those two small files are what is committed (#171). A second assertion, over a longer list,
+covers the boundary between the two products: the routes the quiz product owns answer 200 on
+QuizHub and 404 on AlignSynch (#300).
 
 ```
 tests/parity/
-  routes.ts              the seven routes, and the fixture id each dynamic one is rendered with
+  routes.ts              the seven snapshot routes, and the fixture id each dynamic one is rendered with
+  boundary.ts            the twenty-two quiz-only routes — the status list, not a snapshot
   harness.ts             the render (page inside the real shell), the clock freeze, the normalisation
   summary.ts             the structural summary: headings, landmarks, link targets, counts
   parity.check.ts        one process per brand; compares, or rewrites in update mode
@@ -71,6 +74,42 @@ summary into a rendered page: a reviewer gets that decision instead of a surface
 from the list. Only a route that _names_ its flag may 404 — any other not-found (a fixture that
 stopped resolving) still fails the run, which is the guard that keeps a broken page from being
 pinned as "absent".
+
+## The brand boundary — a second assertion, over a longer list (#300)
+
+The seven routes above ask _what does this page render_. They never asked _does this brand serve
+this page at all_, and that gap is how fifty-two statements about quizzes were served under the
+AlignSynch name: every quiz surface answered 200 on a build that does not sell quizzes.
+
+`boundary.ts` is the list — twenty-two routes the quiz product owns (the catalogue, a quiz and its
+two views, the authoring pair, an author's own quizzes, tournaments, battle, the daily challenge,
+creator tips, discussions, chat and the quiz dashboard). `parity.check.ts` walks it per brand and
+asserts a **status**, not a hash:
+
+| brand      | this build ships the quiz product | every route on the list           |
+| ---------- | --------------------------------- | --------------------------------- |
+| quizhub    | yes                               | renders (not a 404)               |
+| alignsynch | no                                | `404` via `product.quiz-surfaces` |
+
+Two outcomes, and the difference between them is the test: `"render"` is a page that produced a
+tree, `"error: …"` is a page that threw something else. A route that threw for its own reasons has
+not shown that it serves the surface, so the quiz-brand leg requires `"render"` and fails on
+anything else. The one documented exception is `/dashboard/user`, which resolves a session this
+process does not have — its gate is still asserted on the alignment brand and its 200 is on the
+`curl` table the PR carries.
+
+`/leaderboard` is **not** on the list even though it is a quiz surface: it answers 404 on both
+brands because its own flag is off, so it cannot express the boundary. It keeps `disabledByFlag`,
+which is the honest statement of what closes it.
+
+`/quiz/[id]` is on both lists. On the quiz brand it is hashed like any page; on the alignment brand
+its committed artifact is the declared 404 — the summary line reads `product.quiz-surfaces is off
+on the alignsynch build`, which is a different sentence from the flag case on purpose, because the
+two 404s are different facts.
+
+Nothing about this widens the hash set: the manifest is still the fourteen `route | brand` lines of
+the seven snapshot routes, and the boundary is a status assertion over its own list. The one line
+that moves when the boundary is introduced is `/quiz/[id] | alignsynch`.
 
 ## Why a hash and a summary, and not HTML
 

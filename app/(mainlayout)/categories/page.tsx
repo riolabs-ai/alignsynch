@@ -1,6 +1,7 @@
 import { CategoriesPage } from "@/components/categories/categories-page";
 import { categoriesPageCopy } from "@/data/pages/categories";
 import { shellPageCopy } from "@/data/pages/shell";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import { hiddenNavHrefs } from "@/lib/flags";
 
 export const metadata = {
@@ -9,6 +10,9 @@ export const metadata = {
 };
 
 export default function CategoriesRoute() {
+  // The brand boundary (#300) comes before the copy: on the alignment build this route is
+  // a 404, so the quiz subjects are never projected and the footer is never asked for.
+  requireQuizProduct();
   // Three props: the page's own bands (WU-8), the shell the footer renders (WU-7), and the gated
   // hrefs the footer must not draw (#175 follow-up). The last one is resolved here because the
   // page and the footer are both client modules and `lib/flags.ts` throws in a browser.
