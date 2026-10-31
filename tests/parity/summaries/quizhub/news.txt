@@ -27,8 +27,7 @@ landmarks (6)
   main           1
   navigation     3
 
-links (27 unique, 43 total)
-  #                                                    1
+links (26 unique, 42 total)
   /                                                    2
   /affiliate                                           1
   /battle                                              1
@@ -59,6 +58,6 @@ links (27 unique, 43 total)
 counts
   elements  744
   images    0
-  buttons   18
+  buttons   19
   inputs    2
   classes   258 (sha f0d8655ee918)

@@ -21,7 +21,7 @@
  *
  *   loginCopyFor     `subtitle` becomes the brand's hero sentence, `sign-in.body` becomes
  *                    the brand's card line, and the `stats` band is the brand's own. The
- *                    card's fifteen field labels, its error states and its buttons are the
+ *                    card's fourteen field labels, its error states and its buttons are the
  *                    shared section, untouched.
  *   registerCopyFor  `heading`/`subtitle` become the brand's hero, `mobile.body` becomes
  *                    the brand's mobile line. The wizard — its three steps, six interests,

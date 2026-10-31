@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth/client";
+import { endSession } from "@/lib/auth/sign-out";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -40,8 +40,7 @@ export function SignOutButton({
   const signOut = async () => {
     setPending(true);
     setFailed(false);
-    const { error } = await authClient.signOut();
-    if (error) {
+    if (!(await endSession())) {
       setPending(false);
       setFailed(true);
       return;
