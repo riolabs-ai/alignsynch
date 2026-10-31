@@ -1,14 +1,32 @@
 "use client";
 
+/**
+ * The "Connected Accounts" panel — and the person it names (#226).
+ *
+ * Every "Connected as …" line here used to name a fixture: a demo player's handle, the matching
+ * social alias, the demo mailbox and the demo person's name. The panel is not mounted by any route
+ * today (the live `/settings` surface is `components/identity/settings-view.tsx`, and these panels
+ * are the ones that card left unimported), but a panel that hard-codes a person is a panel that
+ * ships a stranger the moment it is mounted — which is exactly how the header and this file kept
+ * pointing at the same fixture player after the avatar was fixed.
+ *
+ * So the identity is a **required prop**, not a default: there is no state in which this component
+ * can name somebody who is not the session, because the only person it can name is the one it is
+ * handed. `ShellAccount` is plain data resolved on the server by `lib/auth/shell-account.ts`; the
+ * fields each row shows are the ones that provider would already know about this person (the
+ * mailbox for Google, the display name for Facebook, the handle for the two that are identified by
+ * one), so no row invents a second identity to keep in sync.
+ */
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { brand } from "@/data/brand";
+import type { ShellAccount } from "@/lib/auth/shell-account";
 import { Facebook, Github, Loader2, Twitter } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function ConnectedAccounts() {
+export function ConnectedAccounts({ account }: { account: ShellAccount }) {
   const [isLoading, setIsLoading] = useState(false);
   const [connectedAccounts, setConnectedAccounts] = useState({
     google: true,
@@ -84,7 +102,7 @@ export function ConnectedAccounts() {
               <div>
                 <p className="font-medium">Google</p>
                 <p className="text-sm text-muted-foreground">
-                  {connectedAccounts.google ? "Connected as alex@example.com" : "Not connected"}
+                  {connectedAccounts.google ? `Connected as ${account.email}` : "Not connected"}
                 </p>
               </div>
             </div>
@@ -121,7 +139,7 @@ export function ConnectedAccounts() {
               <div>
                 <p className="font-medium">Facebook</p>
                 <p className="text-sm text-muted-foreground">
-                  {connectedAccounts.facebook ? "Connected as Alex Johnson" : "Not connected"}
+                  {connectedAccounts.facebook ? `Connected as ${account.name}` : "Not connected"}
                 </p>
               </div>
             </div>
@@ -158,7 +176,7 @@ export function ConnectedAccounts() {
               <div>
                 <p className="font-medium">Twitter</p>
                 <p className="text-sm text-muted-foreground">
-                  {connectedAccounts.twitter ? "Connected as @quizmaster" : "Not connected"}
+                  {connectedAccounts.twitter ? `Connected as @${account.handle}` : "Not connected"}
                 </p>
               </div>
             </div>
@@ -195,7 +213,7 @@ export function ConnectedAccounts() {
               <div>
                 <p className="font-medium">GitHub</p>
                 <p className="text-sm text-muted-foreground">
-                  {connectedAccounts.github ? "Connected as alexjohnson" : "Not connected"}
+                  {connectedAccounts.github ? `Connected as ${account.handle}` : "Not connected"}
                 </p>
               </div>
             </div>

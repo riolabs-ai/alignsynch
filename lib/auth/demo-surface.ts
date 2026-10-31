@@ -51,24 +51,38 @@ export function demoSurfaceFor(mode: DemoMode, unlock: UnlockVerdict | null): De
 export const DEMO_COPY_SECTIONS = ["demo-entry", "demo"] as const;
 
 /**
- * The copy a `/login` response may carry: only the demo section its state actually renders.
+ * The copy a `/login` response may carry: the brand-projected card plus only the demo section
+ * its state actually renders.
  *
- * The view receives one `PageCopy` object, and Next serialises that object into the response's
- * flight payload — so a fixture section left in the prop is text in the HTML even when no
- * component draws it. That is exactly the "not a teaser" rule at the byte level: with demo mode
- * off, the words "Demo sign-in" and "Demo accounts" are not in the response at all, rather than
- * being present-but-unrendered. The same rule trims the other direction — the `entry` state ships
- * the anchor's copy and not the role block's, and `roles` ships the block and not the anchor's.
+ * Two facts shape this function. The view receives one `PageCopy` object and Next serialises that
+ * object into the response's flight payload, so a fixture section left in the prop is **text in
+ * the HTML** even when no component draws it — "not a teaser" is a byte-level rule, not a
+ * rendering one. And `lib/auth-copy.ts::loginCopyFor` (#225) rebuilds the section list from the
+ * ids a brand owns (`sign-in`, `stats`), so the demo sections are no longer in the projected copy
+ * at all: they have to be lifted from the fixture and appended here.
  *
- * The mapping is a pure filter rather than three hand-written fixtures: one fixture stays the
- * source of the wording (E23), and a section this function drops is a section the state cannot
- * render. `sign-in` and `stats` are never touched.
+ * Hence two sources. `copy` is what the brand projection returned (the two ids the card asks
+ * for); `fixture` is the parsed route fixture, where the demo wording lives. The demo sections
+ * come from `fixture`, everything else from `copy`, and then the state's own sections are
+ * dropped: `off` ships neither, `entry` ships `demo-entry` only, `roles` ships `demo` only.
+ *
+ * A filter rather than three hand-written fixtures: one fixture stays the source of the wording
+ * (E23), and a section this function drops is a section the state cannot render.
  */
-export function demoCopyFor(surface: DemoSurfaceDecision, copy: PageCopy): PageCopy {
+export function demoCopyFor(
+  surface: DemoSurfaceDecision,
+  copy: PageCopy,
+  fixture: PageCopy = copy,
+): PageCopy {
+  const isDemo = (id: string): boolean =>
+    (DEMO_COPY_SECTIONS as readonly string[]).includes(id);
   const drop =
     surface.kind === "off"
       ? new Set<string>(DEMO_COPY_SECTIONS)
       : new Set<string>([surface.kind === "entry" ? "demo" : "demo-entry"]);
-  const sections = (copy.sections ?? []).filter((section) => !drop.has(section.id));
+  const sections = [
+    ...(copy.sections ?? []).filter((section) => !isDemo(section.id)),
+    ...(fixture.sections ?? []).filter((section) => isDemo(section.id)),
+  ].filter((section) => !drop.has(section.id));
   return { ...copy, sections };
 }

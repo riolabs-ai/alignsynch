@@ -1,9 +1,11 @@
 import { LoginView } from "@/components/auth/login-view";
+import { brand, brandIdOf } from "@/data/brand";
 import { loginPageCopy } from "@/data/pages/login";
 import { demoMode } from "@/lib/auth/demo-mode";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
 import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
+import { loginCopyFor } from "@/lib/auth-copy";
 import { safeNextPath } from "@/lib/auth/paths";
 import type { Metadata } from "next";
 import { signInAsDemoRole } from "./demo-actions";
@@ -42,9 +44,13 @@ export const metadata: Metadata = {
  * `null` for exactly that case. The actions are passed as props, so this module is the one place
  * the two `"use server"` files are wired to the view.
  *
- * The **copy** is trimmed to the state as well (`demoCopyFor`): the view is handed one fixture, and
- * Next serialises that fixture into the response, so a section left in the prop is text in the HTML
- * even when nothing draws it. With demo mode off the words are absent from the response entirely.
+ * The **copy** is assembled here from two server decisions and handed down as one prop. The brand
+ * is resolved here (issue #225): `loginCopyFor` picks which of the fixture's hero sentences and
+ * stat tiles this build renders, so the view keeps asking for the same two ids (`sign-in`,
+ * `stats`) and never sees a brand; the choice lives in `lib/auth-copy.ts` because both auth routes
+ * need it. The demo state then adds its own section (`demoCopyFor`): the view is handed one
+ * `PageCopy` and Next serialises it into the response, so a section left in the prop is text in
+ * the HTML even when nothing draws it — with demo mode off those words are absent entirely.
  */
 export default async function AuthPage({
   searchParams,
@@ -64,6 +70,10 @@ export default async function AuthPage({
         : { kind: "off" };
 
   return (
-    <LoginView copy={demoCopyFor(surface, loginPageCopy)} next={safeNextPath(target)} demo={demo} />
+    <LoginView
+      copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandIdOf(brand)), loginPageCopy)}
+      next={safeNextPath(target)}
+      demo={demo}
+    />
   );
 }
