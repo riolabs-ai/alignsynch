@@ -60,7 +60,9 @@ into the other.
   one place the pair is compared.
 - `Gap` — a difference of Opinion. **A function, never a field**: `gapOf(left, right)` is
   `|left − right|`, 0 (In Synch) to 4. No record carries a gap, so no copy can drift from the scores
-  it was computed from. The eight gap _types_ the glossary names are not modelled here.
+  it was computed from. The eight gap _types_ the glossary names are `content/gaps.ts`: eight pairs,
+  one `gapOf` call each — including the four prediction kinds, which compare a party's Think/Guess
+  with the **other** party's Feel/Wish.
 - `Assessment` (`content/assessment.ts`) — `Template` + `Aspect` items + `zOpinions`. An `Aspect` is an
   `Item` with a fixed 1..5 scale and the two named ends `leftValue` (notch 1) / `rightValue` (notch 5).
   A party answers two to four opinions per Aspect: `feel` + `wish` required (Basic), `think` + `guess`
