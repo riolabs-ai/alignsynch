@@ -345,12 +345,32 @@ export function browserUnsafe(module: string): string | null {
  * author actually wrote, in the order the compiler walked it. An unresolvable specifier is not a
  * finding: it is either a bare package (judged by name above) or a file this map does not hold
  * (JSON, CSS, a generated fixture), and neither is this rule's business.
+ *
+ * The adjacencies are built **once** for the whole map. Parsing every entry's reachable sources
+ * again for each entry was 724 ms p50 on this tree (measured, 8-core box under fleet load) — close
+ * enough to the one-second budget that two more client components would have spent it. The parse
+ * does not depend on which entry is asking, so it happens once and the walk is graph traversal
+ * only: 265 ms p50 for the same tree (n=5: 184–342 ms), and it runs once per `data:check`.
  */
 export function clientGraphFindings(input: ClientGraphSources): ClientBoundaryFinding[] {
   const sources = input.sources;
   const paths = Object.keys(sources);
   const known = new Set(paths);
   const findings: ClientBoundaryFinding[] = [];
+
+  /** `path` → the runtime edges out of it, with the specifier resolved as far as the map allows. */
+  const edges = new Map<string, { specifier: string; resolved: string | null }[]>();
+  for (const path of paths) {
+    const list: { specifier: string; resolved: string | null }[] = [];
+    for (const edge of moduleImports(sources[path] ?? "")) {
+      if (!edge.runtime) continue;
+      list.push({
+        specifier: edge.specifier,
+        resolved: resolveSpecifier(edge.specifier, path, known),
+      });
+    }
+    edges.set(path, list);
+  }
 
   const entries = paths.filter((path) => hasClientDirective(sources[path] ?? "")).sort();
 
@@ -362,11 +382,8 @@ export function clientGraphFindings(input: ClientGraphSources): ClientBoundaryFi
 
     while (queue.length > 0) {
       const current = queue.shift() as string;
-      for (const edge of moduleImports(sources[current] ?? "")) {
-        if (!edge.runtime) continue;
-
-        const resolved = resolveSpecifier(edge.specifier, current, known);
-        const target = resolved ?? edge.specifier;
+      for (const edge of edges.get(current) ?? []) {
+        const target = edge.resolved ?? edge.specifier;
         const unsafe = browserUnsafe(target);
         if (unsafe !== null) {
           if (reported.has(target)) continue;
@@ -385,10 +402,10 @@ export function clientGraphFindings(input: ClientGraphSources): ClientBoundaryFi
           continue;
         }
 
-        if (resolved === null || seen.has(resolved)) continue;
-        seen.add(resolved);
-        parent.set(resolved, current);
-        queue.push(resolved);
+        if (edge.resolved === null || seen.has(edge.resolved)) continue;
+        seen.add(edge.resolved);
+        parent.set(edge.resolved, current);
+        queue.push(edge.resolved);
       }
     }
   }

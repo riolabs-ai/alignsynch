@@ -336,6 +336,37 @@ describe("clientGraphFindings — the shape #228 shipped", () => {
     };
     assert.deepEqual(clientGraphFindings({ sources: serverOnly }), []);
   });
+
+  it("leaves a server component and a route handler free to import the database", () => {
+    // The rule is about the **browser** graph. `app/**/layout.tsx` and `app/api/**/route.ts` are
+    // server code: reading `lib/db/**` there is what the layer is for, and a rule that flagged it
+    // would be a rule about the wrong question. Only a `"use client"` entry is walked.
+    const sources = {
+      "app/(mainlayout)/layout.tsx": [
+        'import { shellAccount } from "@/lib/auth/shell-account";',
+        'import { MainLayout } from "@/components/layout/main-layout";',
+        "export default async function Layout() {",
+        "  const account = await shellAccount();",
+        "  return null;",
+        "}",
+      ].join("\n"),
+      "app/api/assessments/route.ts": [
+        'import { query } from "@/lib/db/client";',
+        "export async function GET() {",
+        '  return query("select 1");',
+        "}",
+      ].join("\n"),
+      "components/layout/main-layout.tsx":
+        '"use client";\nexport function MainLayout() { return null; }',
+      "lib/auth/shell-account.ts": [
+        'import { readUserProfileByUserId } from "@/lib/db/user-profiles";',
+        "export async function shellAccount() { return readUserProfileByUserId('u'); }",
+      ].join("\n"),
+      "lib/db/user-profiles.ts": 'import { query } from "./client";',
+      "lib/db/client.ts": 'import { Pool } from "pg";',
+    };
+    assert.deepEqual(clientGraphFindings({ sources }), []);
+  });
 });
 
 describe("clientGraphFindings — the rest of the shapes", () => {
