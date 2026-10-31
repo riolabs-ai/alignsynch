@@ -61,7 +61,7 @@ export const alignSynchBrand: Brand = zBrand.parse({
   name: "AlignSynch",
   legalName: "AlignSynch",
   description:
-    "See how you feel against how they feel, and how each of you wishes it to be — the Gap is the conversation worth having.",
+    "AlignSynch asks two people the same five questions about their relationship, once for how it is now and once for how each of them wishes it to be, and shows where the answers differ.",
   domain: "alignsynch.com",
   logo: "/brand/as2-logo_v2_cl.png",
   colors: {
