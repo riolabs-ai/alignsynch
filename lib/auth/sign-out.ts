@@ -19,6 +19,19 @@ import { authClient } from "./client";
  * error and the caller must say so rather than pretend the person is signed out.
  */
 export async function endSession(): Promise<boolean> {
-  const { error } = await authClient.signOut();
-  return !error;
+  /**
+   * A rejected `signOut` is a failed sign-out, not an exception the caller forgot to catch.
+   *
+   * `authClient.signOut()` rejects rather than answering `{ error }` when the request itself
+   * fails — the gate and CI build with no `NEON_AUTH_BASE_URL`, where `/api/auth/sign-out`
+   * answers 500, so the SDK's promise rejects. Without this `try` the caller's `await` throws,
+   * its pending state never clears and the control sits on "Signing out…" forever: a button
+   * that looks like it is still working, which is the same lie as the link that did nothing.
+   */
+  try {
+    const { error } = await authClient.signOut();
+    return !error;
+  } catch {
+    return false;
+  }
 }
