@@ -402,8 +402,10 @@ describe("the rendered screen", () => {
     expect(row).toContain(
       '<span class="font-medium text-gray-700 dark:text-gray-300">Iris</span> <span>Feel</span>',
     );
-    // And an agreed Gap prints the glossary's word rather than a 0.
-    expect(row).toContain("In synch");
+    // And an agreed Gap prints the glossary's word beside the number. Capitalised the way the
+    // source prints it (SPEC-DRIFT quick win #4, #274) — the row is "0 In Synch", never a 0
+    // with no word, because a bar of length 0 and a bar that failed are not the same screen.
+    expect(row).toContain("In Synch");
   });
 
   /**
@@ -426,7 +428,10 @@ describe("the rendered screen", () => {
       // is the escaped string on the wire; compare against the same escaping.
       expect(html).toContain(escapeHtml(own.title));
       for (const party of entry.parties) expect(html).toContain(escapeHtml(party.name));
-      expect((html.match(/<section /g) ?? []).length).toBe(entry.items.length);
+      // One `data-aspect` row per Aspect. Counted on the attribute and not on `<section `
+      // since #274: the verdict band above the cards is a `<section>` too, and a count of the
+      // tag would have had to grow by one to keep saying "every Aspect is drawn".
+      expect((html.match(/data-aspect="/g) ?? []).length).toBe(entry.items.length);
       // Every instance draws four kinds per Aspect, or eight when it is Advanced.
       const perAspect = entry.mode === "advanced" ? GAP_KINDS.length : BASIC_GAP_KINDS.length;
       expect(gapAttributes(html), `${entry.slug} (${entry.mode})`).toHaveLength(
@@ -500,10 +505,10 @@ describe("when the database does not answer (#204)", () => {
     // The panel names the slug it could not read and prints the database layer's sentence.
     expect(html).toContain('data-assessment-unreadable="avery-rowan"');
     expect(html).toContain(reason);
-    // No assessment is drawn from a failed read: not a row, and not the "In synch" a Gap of 0
+    // No assessment is drawn from a failed read: not a row, and not the "In Synch" a Gap of 0
     // prints, which is what an empty report would have said about two people's answers.
     expect(html).not.toContain("data-aspect=");
-    expect(html).not.toContain("In synch");
+    expect(html).not.toContain("In Synch");
     // And no spinner: the page is not still coming.
     expect(html).not.toContain("animate-spin");
   });

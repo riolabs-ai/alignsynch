@@ -135,7 +135,7 @@ export const flags: Flags = zFlags.parse({
   },
   "commerce.pricing": {
     default: false,
-    note: "Fixture-backed plans with no checkout: wait on payments. Off, because a price a client can read is an offer.",
+    note: "Fixture-backed plans with no checkout. Off because buying is not possible, NOT because the page should hide: Jaden ruled on 2026-10-31 that the four tiers and every price stay (they become `billing_plan` rows in #289), and until then the page's `price-note` says the rates are intended and nothing can be purchased. /pricing is deliberately public — it is not in `lib/flags.ts` `navSurfaces`, the route never calls `notFound()`, and the nav links it unconditionally.",
   },
   "commerce.affiliate": {
     default: false,

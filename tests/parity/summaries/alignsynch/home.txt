@@ -26,16 +26,17 @@ landmarks (6)
   main           1
   navigation     2
 
-links (10 unique, 20 total)
-  #                                                    3
+links (11 unique, 20 total)
   /                                                    2
   /#questions                                          2
   /#templates                                          2
   /assessment/avery-rowan                              2
   /assessment/marco-priya                              2
   /assessment/ruth-sam                                 2
+  /privacy                                             2
   /settings                                            1
   /support                                             2
+  /terms                                               1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0 2
 
 counts

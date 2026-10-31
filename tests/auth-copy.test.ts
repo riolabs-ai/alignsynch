@@ -12,7 +12,7 @@
  *   1. the quiz build's copy is the copy that shipped (the deploy-safety half);
  *   2. the alignment build's *page* carries no quiz vocabulary, no product name from the other
  *      brand and no count — its two tiles are sentences, not a smaller number;
- *   3. the parts that belong to the *card*, not the skin (the fifteen field labels, the error
+ *   3. the parts that belong to the *card*, not the skin (the fourteen field labels, the error
  *      states, the wizard's three steps and its fields) are byte-identical on both brands, so
  *      "this demo is AlignSynch now" moved the words it was supposed to move and nothing else;
  *   4. the wizard is untouched in particular: it is a follow-up card's decision, not this one's,

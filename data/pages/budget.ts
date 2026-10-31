@@ -173,6 +173,25 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/creator-tips-detail",
     budget: 0,
   },
+  /**
+   * The two legal pages (issue #270). One component directory serves both routes, because they
+   * are one document in two shapes: the draft banner, the heading, the section stack and the
+   * paragraph/list vocabulary are shared, and only the fixture differs. `fixture` is the module
+   * the page imports, which is also where the brand record is read — so `BRAND=quizhub` and
+   * `BRAND=alignsynch` validate different words against the same budget.
+   */
+  "/privacy": {
+    page: "app/(mainlayout)/privacy/page.tsx",
+    dirs: ["components/legal"],
+    fixture: "data/pages/legal",
+    budget: 0,
+  },
+  "/terms": {
+    page: "app/(mainlayout)/terms/page.tsx",
+    dirs: ["components/legal"],
+    fixture: "data/pages/legal",
+    budget: 0,
+  },
   shell: {
     page: "app/(mainlayout)/layout.tsx",
     mounts: ["components/layout/footer.tsx"],
