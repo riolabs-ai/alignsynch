@@ -19,6 +19,7 @@
  * and `components/assessment/assessment-report.tsx` is the only thing that draws it.
  */
 import type {
+  AlignmentSetting,
   Assessment,
   AssessmentInstance,
   AssessmentMode,
@@ -27,8 +28,15 @@ import type {
   Party,
   PartyRole,
 } from "@/content/assessment";
-import { gapKindsOf, type GapKinds } from "@/content/gaps";
-import type { Score } from "@/content/record";
+import {
+  gapKindsIn,
+  gapKindsOf,
+  instanceAlignment,
+  type AlignmentVerdict,
+  type GapKind,
+  type GapKinds,
+} from "@/content/gaps";
+import type { Gap, Score } from "@/content/record";
 
 /** One party's answers on one Aspect, narrowed to the four opinion kinds. */
 export interface ReportedOpinions {
@@ -70,6 +78,22 @@ export interface AspectReportRow {
   readonly gaps: ReportedGaps;
 }
 
+/**
+ * The widest Gap the Setting does not tolerate, named by the Aspect it sits on — what the
+ * verdict band's second sentence needs ("the widest is a Gap of 4 on …").
+ *
+ * Ties are broken by the glossary order (`GAP_KINDS`), then by the instance's own Aspect
+ * order, so the same frozen numbers always name the same Gap: the report is read by two
+ * people from two devices, and a "widest" that moved between reads would be a different
+ * sentence about the same data.
+ */
+export interface WidestGap {
+  readonly itemId: string;
+  readonly prompt: string;
+  readonly kind: GapKind;
+  readonly gap: Gap;
+}
+
 /** The instance, ready to draw: the template's words, the parties' names, one row per Aspect. */
 export interface AssessmentReport {
   readonly slug: string;
@@ -82,6 +106,24 @@ export interface AssessmentReport {
    * to draw because the schema never let them exist.
    */
   readonly mode: AssessmentMode;
+  /**
+   * The Setting the instance is read under, and the widest Gap it tolerates.
+   *
+   * `settingLimit` is carried rather than re-imported by the view, because
+   * `content/gaps.ts::gapMeetsSetting` is the one comparison in the codebase that reads the
+   * threshold: a bar with its tolerance tick drawn from a second copy of the table could
+   * disagree with the verdict about the same numbers.
+   */
+  readonly setting: AlignmentSetting;
+  readonly settingLimit: Gap;
+  /**
+   * The verdict — `instanceAlignment()` over exactly the Gaps above, so the band and the
+   * rows cannot say different things. Derived on every projection, never stored and never
+   * an argument: "aligned" is arithmetic over the finished Gap, not a state a caller sets.
+   */
+  readonly verdict: AlignmentVerdict;
+  /** The widest unmet Gap, or `null` when every Gap meets the Setting. */
+  readonly widest: WidestGap | null;
   readonly rows: readonly AspectReportRow[];
 }
 
@@ -156,11 +198,38 @@ export function assessmentReport(
     };
   });
 
+  // The verdict is the same `instanceAlignment()` the schematic in `content/gaps.ts`
+  // defines — read over the rows just built, with the instance's own Setting. Nothing is
+  // passed in: an "aligned" flag from a caller would be a second authored copy of a
+  // subtraction, and the one thing this report may never do is disagree with its own numbers.
+  const verdict = instanceAlignment(
+    rows.map((row) => ({ itemId: row.itemId, gaps: row.gaps })),
+    instance.setting,
+  );
+
+  // The widest unmet Gap, in the rows' own order (Aspect, then glossary order) so a tie
+  // always resolves the same way — see `WidestGap`.
+  const unmet = new Set(verdict.unmet.map((entry) => `${entry.itemId}:${entry.kind}`));
+  let widest: WidestGap | null = null;
+  for (const row of rows) {
+    for (const kind of gapKindsIn(row.gaps)) {
+      const gap = row.gaps[kind];
+      if (gap === undefined || !unmet.has(`${row.itemId}:${kind}`)) continue;
+      if (widest === null || gap > widest.gap) {
+        widest = { itemId: row.itemId, prompt: row.prompt, kind, gap };
+      }
+    }
+  }
+
   return {
     slug: instance.slug,
     title: template.title,
     summary: template.summary,
     mode: instance.mode,
+    setting: instance.setting,
+    settingLimit: verdict.limit,
+    verdict,
+    widest,
     rows,
   };
 }
