@@ -131,7 +131,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub"],
     capability:
-      "The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA.",
+      "The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA. Not freely available: `commerce.affiliate` ships it off on every template, and the route answers 404 while it is off (#291).",
   },
   {
     kind: "route",
@@ -421,7 +421,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "live",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "Create a real Neon Managed Auth account, collecting quiz interests and skill level on the way.",
+      "Create a real Neon Managed Auth account: personal details, then email, password and the terms agreement.",
   },
   {
     kind: "route",

@@ -58,6 +58,14 @@ export type QuizOnlyRoute = {
   page: ParityPage;
   /** The concrete URL this route is exercised with; empty for a static route. */
   params: Record<string, string>;
+  /**
+   * Flags **another card** uses to close this surface on the same page (#291 landed
+   * `commerce.affiliate` on `/affiliate`, which 404s on both brands while the payout path is
+   * missing). The boundary block sets these to `1` for the duration of its case, so the answer it
+   * measures is the *brand* gate's — otherwise the route would be closed by the mock flag on both
+   * brands and the assertion would pass without ever exercising `requireQuizProduct()`.
+   */
+  openFlags?: readonly string[];
 };
 
 /**
@@ -122,7 +130,14 @@ export const quizOnlyRoutes: readonly QuizOnlyRoute[] = [
     page: MyQuizStatisticsPage as unknown as ParityPage,
     params: { id: QUIZ_ID },
   },
-  { route: "/affiliate", page: AffiliatePage as unknown as ParityPage, params: {} },
+  {
+    // `commerce.affiliate` (#291) closes this page on both brands until the payout path exists, so
+    // the boundary case opens it: what is measured is the brand gate underneath.
+    route: "/affiliate",
+    page: AffiliatePage as unknown as ParityPage,
+    params: {},
+    openFlags: ["commerce.affiliate"],
+  },
   { route: "/chat", page: ChatPage as unknown as ParityPage, params: {} },
   { route: "/dashboard/user", page: DashboardPage as unknown as ParityPage, params: {} },
 ] as const;

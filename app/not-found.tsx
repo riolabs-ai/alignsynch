@@ -91,7 +91,7 @@ export default function NotFound() {
                 {itemLabel(message, "line-2")}
               </p>
 
-              {/* Fun Quiz Fact */}
+              {/* About the error (#291: the false CERN trivia lived here) */}
               <div className="bg-white/10 rounded-lg p-4 mb-6 border border-white/20">
                 <div className="flex items-center justify-center mb-2">
                   <Trophy className="w-5 h-5 text-yellow-400 mr-2" />

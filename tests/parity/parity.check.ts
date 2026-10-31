@@ -429,7 +429,18 @@ describe("brand parity", () => {
     for (const route of quizOnlyRoutes) {
       it(`${route.route} — ${brand}`, async () => {
         freezeClock();
+        /**
+         * Flags other cards use to close this same surface (#291's `commerce.affiliate` on
+         * `/affiliate`) are opened for the duration of the case, so the answer measured is the
+         * brand gate's rather than a mock flag's. Without this, a route that two flags close would
+         * assert "404 on alignsynch" for the wrong reason and "render on quizhub" would fail.
+         */
+        for (const flag of route.openFlags ?? []) {
+          vi.stubEnv(`FLAG_${flag.replace(/[.-]/g, "_").toUpperCase()}`, "1");
+        }
+
         const answer = await answerOf(route);
+        vi.unstubAllEnvs();
 
         if (brand === "quizhub") {
           /**
