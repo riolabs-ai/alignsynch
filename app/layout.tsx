@@ -28,11 +28,50 @@ const inter = Inter({ subsets: ["latin"] });
  *    "| QuizMaker" would print the brand twice and disagree with this one.
  */
 export const metadata: Metadata = {
+  /**
+   * The origin a relative metadata URL is resolved against — the half that makes `og:image`
+   * absolute. A crawler handed a path with no origin has nothing to resolve it against and
+   * drops the preview, which is why this is not left to the crawler's default.
+   *
+   * Composed from `brand.domain` — the bare host `content/brand.ts` requires — and not from
+   * `referralBase`, which carries the scheme too but is the referral link's origin, a role that
+   * may point somewhere else the day a brand splits its demo from its marketing site. This is
+   * the one place in the tree that composes a URL out of `domain`, which is the use the field's
+   * own comment names.
+   */
+  metadataBase: new URL(`https://${brand.domain}`),
   title: {
     default: brand.name,
     template: `%s · ${brand.name}`,
   },
   description: brand.description,
+  /**
+   * The share preview's fixed half: what product this is, and what kind of page it is.
+   *
+   * `title` and `description` are deliberately **absent**. Next fills `og:title`,
+   * `og:description`, `twitter:title` and `twitter:description` from the route's own resolved
+   * `<title>` and description when `openGraph` leaves them out (`resolve-metadata.js`'s
+   * `inheritFromMetadata`), so `/news/<slug>` previews as the article and `/` previews as the
+   * brand — for every route, without a per-page `openGraph` block. Stating `title: brand.name`
+   * here would pin all 34 routes' previews to the product name, which is *less* than a crawler
+   * gets from `<title>` today.
+   *
+   * The image is not named here either: `app/opengraph-image.tsx` is the file convention, and
+   * Next injects `og:image` (and, from it, `twitter:image`) into every route from that one file.
+   * An `images` array would be a second list of the same fact.
+   */
+  openGraph: {
+    type: "website",
+    siteName: brand.name,
+  },
+  /**
+   * A wide card, because the image is 1200x630. `circle` would crop it to a thumbnail; the
+   * `card` is stated rather than inferred so turning the image off cannot silently change the
+   * shape of a preview.
+   */
+  twitter: {
+    card: "summary_large_image",
+  },
   /**
    * The tab icon, read from the record (#187 stage 4).
    *
