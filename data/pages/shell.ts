@@ -102,7 +102,7 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "creator-tips", label: "Quiz Creator Tips" },
           { id: "quiz-discussions", label: "Quiz Discussions" },
           { id: "create-editor", label: "Create Quiz" },
-          { id: "create-generator", label: "Ai Quiz Generator" },
+          { id: "create-generator", label: "Quiz Generator" },
           { id: "affiliate", label: "Affiliate Page" },
           { id: "pricing", label: "Pricing Plan" },
           { id: "support", label: "Support" },
