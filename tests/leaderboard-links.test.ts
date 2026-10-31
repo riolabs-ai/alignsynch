@@ -249,9 +249,13 @@ describe("every footer mount passes the list down", () => {
   it("finds the mounts it is meant to check (positive control)", () => {
     const mounts = Object.values(tree).flatMap(footerTagsIn);
 
-    // Ten today: `/` twice, four routes, the two client shells that forward the prop, and the
-    // two legal pages (#270), which mount the same footer so the legal row is on both.
-    expect(mounts).toHaveLength(10);
+    // Five today: the three product routes that still render the shell footer themselves, and the
+    // two client shells that forward the prop. The other five the count used to hold left in #317:
+    // `/` twice (one mount per brand composition), `/pricing`, `/terms` and `/privacy` are public
+    // pages now and live in `app/(marketing)/`, where the group's own footer is the chrome — a
+    // public page that mounted this one would carry two footers, and the shell footer's nav is
+    // exactly what the boundary removes.
+    expect(mounts).toHaveLength(5);
   });
 
   it("leaves no `<Footer>` mount on the tree without hiddenNav", () => {

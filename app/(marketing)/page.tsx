@@ -10,7 +10,6 @@ import { PlayerTestimonials } from "@/components/home/player-testimonials";
 import { QuizzesByDifficulty } from "@/components/home/quizzes-by-difficulty";
 import { ResourcesAndReferral } from "@/components/home/resources-and-referral";
 import { TopPlayersCarousel } from "@/components/home/top-players-carousel";
-import { Footer } from "@/components/layout/footer";
 import type { Brand } from "@/content/brand";
 import { assessmentInstances, assessments } from "@/data/assessments";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
@@ -20,7 +19,6 @@ import {
   alignSynchHomeCopy,
   alignSynchHomeTitle,
 } from "@/data/pages/home-alignsynch";
-import { shellPageCopy } from "@/data/pages/shell";
 import { alignmentHome } from "@/lib/alignment-home";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { sectionOf, withoutHiddenCta } from "@/lib/page-copy";
@@ -89,7 +87,6 @@ function QuizHubHome({ hiddenNav }: { hiddenNav: readonly string[] }) {
         tips={sectionOf(homePageCopy, "creator-tips")}
       />
       <NewsletterSection copy={sectionOf(homePageCopy, "newsletter")} />
-      <Footer copy={shellPageCopy} hiddenNav={hiddenNav} />
     </div>
   );
 }
@@ -102,7 +99,7 @@ function QuizHubHome({ hiddenNav }: { hiddenNav: readonly string[] }) {
  * template, relationship or family is named here — which is why the page cannot claim a fifth
  * template or a response the fixtures do not hold.
  */
-function AlignSynchHome({ hiddenNav }: { hiddenNav: readonly string[] }) {
+function AlignSynchHome() {
   return (
     <div className="space-y-4 xl:space-y-8 pb-8">
       <AlignmentHomeView
@@ -114,7 +111,6 @@ function AlignSynchHome({ hiddenNav }: { hiddenNav: readonly string[] }) {
           ALIGN_SYNCH_FEATURED_SLUG,
         )}
       />
-      <Footer copy={shellPageCopy} hiddenNav={hiddenNav} />
     </div>
   );
 }
@@ -122,15 +118,30 @@ function AlignSynchHome({ hiddenNav }: { hiddenNav: readonly string[] }) {
 /**
  * The home route — and the one place `BRAND` changes the product *surface*, not only the paint.
  *
+ * **`/` is a marketing page, for everyone (#317, option (a)).** This module lives in
+ * `app/(marketing)/`, so it inherits that group's header and footer and never the product shell:
+ * no `<aside>`, no search palette, no drawers, no account menu. The group is the mechanism — there
+ * is no `if (signedIn)` here — which is what keeps the shell's client components out of the front
+ * door's bundle.
+ *
+ * Option (a) was chosen over (b), and the reason is that a signed-in person does not need a second
+ * `/`: their home is `/dashboard/user`, which is where the sign-in flow already lands them
+ * (`lib/auth/paths.ts`'s `AFTER_SIGN_IN`, which `register-view.tsx` pushes explicitly).
+ * Splitting `/` by session would have made the front door request-time to answer a chrome
+ * question that the group already answers.
+ *
+ * The shell's footer is no longer mounted by the page: the group's footer is the chrome now, and
+ * two footers on one page was the old arrangement's accident, not a design.
+ *
  * A `switch` over the brand id rather than a lookup or a boolean, for the reason `resolveBrand`
  * gives: `BrandId` is a closed union and both branches return, so a brand added without a front
  * page is a compile error instead of a template inherited by accident, and neither composition
  * can be edited into the other by a skin.
  *
  * `hiddenNav` is resolved here, on the server, once per request (#175 follow-up): `hiddenNavHrefs()`
- * returns the hrefs whose surface is gated off, and each branch hands the same list to the two
- * places the front page advertises one — the `top-players` CTA and the footer. Neither client
- * component can ask the flag itself.
+ * returns the hrefs whose surface is gated off, and the quiz branch hands the list to the one place
+ * its front page advertises one — the `top-players` CTA. Neither client component can ask the flag
+ * itself.
  */
 export default function Home() {
   const hiddenNav = hiddenNavHrefs();
@@ -138,6 +149,6 @@ export default function Home() {
     case "quizhub":
       return <QuizHubHome hiddenNav={hiddenNav} />;
     case "alignsynch":
-      return <AlignSynchHome hiddenNav={hiddenNav} />;
+      return <AlignSynchHome />;
   }
 }

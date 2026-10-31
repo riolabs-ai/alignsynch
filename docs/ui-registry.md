@@ -34,7 +34,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/` — **fixture**
   - capability: The front page: QuizHub leads with category, latest and featured shelves, top players and live winners; AlignSynch leads with the two questions each party answers and the four assessment templates.
-  - components: `components/categories`, `components/home`, `components/layout`, `components/media`, `components/ui`
+  - components: `components/categories`, `components/home`, `components/media`, `components/ui`
   - reads: 15 record fixtures — `data/assessments.ts`, `data/authored-quizzes.ts`, `data/browse-quizzes.ts` (+12 more)
 
 - `/dashboard/user` — **db**
@@ -49,8 +49,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/privacy` — **fixture**
   - capability: The draft privacy policy: what the build actually collects, why, where it lives and what the reader can ask for, behind a draft notice that cannot be dismissed.
-  - components: `components/layout`, `components/legal`, `components/ui`
-  - reads: 6 fixture modules of page copy, assets or decisions — no records
+  - components: `components/legal`
+  - reads: 3 fixture modules of page copy, assets or decisions — no records
 
 - `/profile/[username]` — **db**
   - capability: A public profile read from Postgres: header, stats, achievements, followers, quiz history and created quizzes.
@@ -79,8 +79,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/terms` — **fixture**
   - capability: The draft terms of service: the rules for using the product, its liability and dispute clauses, and a draft notice that cannot be dismissed.
-  - components: `components/layout`, `components/legal`, `components/ui`
-  - reads: 6 fixture modules of page copy, assets or decisions — no records
+  - components: `components/legal`
+  - reads: 3 fixture modules of page copy, assets or decisions — no records
 
 ### Component domains
 
@@ -114,7 +114,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/layout` — **fixture**
   - capability: The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.
   - files (7): `app-version.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
-  - routes (10): `/`, `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/pricing`, `/privacy`, `/terms`, `/tournaments` — and every other route through `app/layout.tsx`
+  - routes (6): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/tournaments` — and every other route through `app/layout.tsx`
 
 - `components/legal` — **mock**
   - capability: The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.
@@ -145,7 +145,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (38): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/privacy`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/terms`, `/tournaments`, `/tournaments/[id]` — and every other route through `app/layout.tsx`
+  - routes (36): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch
@@ -315,7 +315,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/pricing` — **live**
   - capability: Plan comparison read from billing_plan with a checkout per sellable tier, the viewer's own plan marked, an FAQ and a closing CTA.
-  - components: `components/layout`, `components/pricing`, `components/ui`
+  - components: `components/pricing`, `components/ui`
   - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `components/pricing/plan-checkout-button.tsx`, `components/pricing/pricing-plans.tsx`, `data/billing-plans.ts`, `lib/auth/server.ts`
 
 - `/quiz-discussions` — **fixture**

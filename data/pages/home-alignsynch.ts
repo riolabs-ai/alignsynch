@@ -3,7 +3,7 @@
  *
  * `data/pages/home.ts` is the QuizHub front page: categories, tournaments, leaderboards,
  * "Earn Rewards". This module is the other composition of the same route, and which one
- * renders is a build flag (`BRAND`), not a second page — `app/(mainlayout)/page.tsx` switches
+ * renders is a build flag (`BRAND`), not a second page — `app/(marketing)/page.tsx` switches
  * on the brand the way `resolveBrand` does, so neither product inherits the other's front
  * page by accident.
  *

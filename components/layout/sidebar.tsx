@@ -100,7 +100,7 @@ export function AppSidebar({
     <aside
       id="app-sidebar"
       className={cn(
-        "max-xl:fixed max-xl:top-0 max-xl:left-0 max-xl:h-full xl:sticky top-0 flex h-screen flex-col border-r bg-background transition-all duration-300",
+        "fixed top-0 left-0 h-screen flex flex-col border-r bg-background transition-all duration-300",
         collapsed ? "w-[250px] xl:w-[70px]" : "w-[250px]",
         mobileOpen
           ? "max-xl:visible max-xl:translate-x-0 max-xl:shadow-2xl"

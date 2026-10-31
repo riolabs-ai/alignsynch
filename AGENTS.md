@@ -207,9 +207,13 @@ process bug.
   are `B1`–`B6`, and `data:check` E32 keeps the committed bundle equal to the fixtures. Read
   `docs/BUNDLES.md` before changing either.
 - `app/(mainlayout)/**` — every product page behind the header/sidebar shell; `app/(auth)/**` —
-  login/register, no shell. Dynamic segments: `quiz/[id]/{play,discussion}`,
+  login/register, no shell; `app/(marketing)/**` — the public surfaces (`/`, `/welcome`,
+  `/pricing`, `/support`, `/terms`, `/privacy`), behind a marketing header and footer and **never**
+  the shell. The group is the boundary (#317): a page is either in `(mainlayout)` and gets the app,
+  or in `(marketing)` and gets a wordmark — there is no session check that swaps the chrome, and
+  the sidebar is `position: fixed` on the app side. Dynamic segments: `quiz/[id]/{play,discussion}`,
   `my-quizzes/[id]/{statistics}`, `categories/[slug]`, `news/[slug]`, `creator-tips/[slug]`,
-  `profile/[username]`, `support/articles/[id]`, `tournaments/[id]`.
+  `profile/[username]`, `support/articles/[slug]`, `tournaments/[id]`.
 - `components/<feature>/` — one directory per feature; `components/ui/` is shadcn primitives.
 - `docs/p1-migration/{MIGRATION.md,ledger.json}` — what the P1 model changed, field by field.
 - Generated, not part of the build: `.next/`, `.datacheck/`, `node_modules/`, `.migration/`.

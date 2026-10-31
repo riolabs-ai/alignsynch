@@ -3,7 +3,7 @@
  *
  * Every visible string the page's own components render lives here (WU-6, issue
  * #53): the hero, the nine band headings, the CTA labels, the tab labels, the
- * inline card microcopy and the empty states. `app/(mainlayout)/page.tsx` parses
+ * inline card microcopy and the empty states. `app/(marketing)/page.tsx` parses
  * this module at import and passes one section down per component, so editing a
  * line here changes `/` with no `.tsx` edit — that is P2's exit proof.
  *
@@ -31,7 +31,7 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 /**
  * The `/` document title — `"<brand> — Play, Share, Earn"`.
  *
- * `app/(mainlayout)/page.tsx` exports it as `metadata.title.absolute`, because this page
+ * `app/(marketing)/page.tsx` exports it as `metadata.title.absolute`, because this page
  * names the product itself: the root layout's `%s · <brand>` template would otherwise
  * print the name twice (`"<brand> — Play, Share, Earn · <brand>"`).
  *

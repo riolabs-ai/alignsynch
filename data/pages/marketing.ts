@@ -176,3 +176,44 @@ export const marketingPageCopy: PageCopy = zPageCopy.parse({
     },
   ],
 });
+
+/**
+ * The `(marketing)` chrome for the **template** brand — QuizHub's header action, footer line and
+ * version labels, and nothing else.
+ *
+ * **Why the group has two copies (#317).** The chrome now wraps `/`, and `pnpm parity` hashes `/`
+ * for both brands under one rule: a route's render carries its own brand's name and not the
+ * other's. `marketingPageCopy` above is the alignment product's pitch — its subtitle and its
+ * footer line name the product and state what that product is — so a quiz build mounting it on
+ * the front door would print the other brand's name and describe a product it does not ship. The
+ * gate refuses that, correctly. Two fixtures and a `switch` over `brandIdOf(brand)` is the
+ * arrangement this tree already uses for the front page itself (`data/pages/home.ts` and
+ * `home-alignsynch.ts`), and it is copy data, not a session check: nothing here reads the
+ * request.
+ *
+ * Only the fields the chrome reads are written, and each is the brand record's own claim —
+ * "create quizzes, play games" is `quizHubBrand.description`, and the action points at the quiz
+ * catalogue. What this is *not* is a QuizHub landing page: `/welcome` still renders the alignment
+ * landing for both brands (a pre-existing gap, and inventing six bands of quiz marketing is a
+ * product decision this card does not own). The chrome is brand-correct because the chrome is
+ * what `/` now inherits.
+ */
+export const quizHubMarketingCopy: PageCopy = zPageCopy.parse({
+  heading: "Play, share, earn",
+  cta: { label: "Explore quizzes", href: "/explore" },
+  items: [
+    { id: "footer-note", label: "QuizHub is a quiz platform — create a quiz, play one, share it." },
+    { id: "footer-contact", label: "Email us" },
+  ],
+  sections: [
+    /** The same three ids `AppVersion` reads on every surface that mounts it (issue #269). */
+    {
+      id: "version",
+      items: [
+        { id: "label", label: "Version {version}" },
+        { id: "compact", label: "v{version}" },
+        { id: "title", label: "Open the v{version} release notes on GitHub" },
+      ],
+    },
+  ],
+});

@@ -78,7 +78,12 @@ export function MainLayout({
           />
         </div>
         <div
-          className={cn(collapsed ? "xl:w-[calc(100%-70px)]" : "xl:w-[calc(100%-250px)]", "w-full")}
+          className={cn(
+            collapsed
+              ? "xl:w-[calc(100%-70px)] xl:ml-[70px]"
+              : "xl:w-[calc(100%-250px)] xl:ml-[250px]",
+            "w-full",
+          )}
         >
           <Header
             copy={copy}

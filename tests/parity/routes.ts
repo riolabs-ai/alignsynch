@@ -18,7 +18,7 @@ import AssessmentPage from "@/app/(mainlayout)/assessment/[slug]/page";
 import LeaderboardPage from "@/app/(mainlayout)/leaderboard/page";
 import NewsArticlePage from "@/app/(mainlayout)/news/[slug]/page";
 import NewsPage from "@/app/(mainlayout)/news/page";
-import HomePage from "@/app/(mainlayout)/page";
+import HomePage from "@/app/(marketing)/page";
 import ProfilePage from "@/app/(mainlayout)/profile/[username]/page";
 import QuizPage from "@/app/(mainlayout)/quiz/[id]/page";
 import type { FlagName } from "@/data/flags";
@@ -32,6 +32,17 @@ export type ParityPage = (props: {
   params: Promise<Record<string, string>>;
 }) => unknown | Promise<unknown>;
 
+/**
+ * The chrome a route is mounted inside — the route group its page module lives in.
+ *
+ * Parity renders the page **inside the layout the router would pick**, and since #317 there are
+ * two: `(mainlayout)` is the product shell (sidebar, header, drawers) and `(marketing)` is the
+ * public header and footer. A route's group is what decides which one a reader gets, so the
+ * snapshot has to mount the same one or it hashes a page nobody sees — the `/` home page moved to
+ * `(marketing)` and would otherwise be pinned with a sidebar the real route does not render.
+ */
+export type RouteLayout = "mainlayout" | "marketing";
+
 export type ParityRoute = {
   /** The route pattern, as the spec names it. Printed in the failure and the update log. */
   route: string;
@@ -41,6 +52,11 @@ export type ParityRoute = {
   page: ParityPage;
   /** The dynamic segments this concrete URL fills; empty for a static route. */
   params: Record<string, string>;
+  /**
+   * The group the page module lives in. Absent means `(mainlayout)`, which is where every route in
+   * this list lived before #317 and where five of the seven still are.
+   */
+  layout?: RouteLayout;
   /**
    * The feature flag that keeps this surface **off**, so the page answers 404 by design (#175).
    *
@@ -75,6 +91,12 @@ export const parityRoutes: readonly ParityRoute[] = [
     slug: "home",
     page: HomePage as unknown as ParityPage,
     params: {},
+    /**
+     * The front door is a public surface since #317: `app/(marketing)/page.tsx` renders inside the
+     * marketing header and footer, with no sidebar. Mounting it in the shell here would pin a page
+     * the router never serves.
+     */
+    layout: "marketing",
   },
   {
     route: "/leaderboard",

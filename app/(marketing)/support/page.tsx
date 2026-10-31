@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   description: `Get help and support for your ${brand.name} account`,
 };
 
+/**
+ * `/support` and its article pages are public surfaces (#317): they live in `app/(marketing)/`,
+ * so the help centre a signed-out visitor reaches carries the marketing chrome and not the
+ * product shell. `/pricing`, `/terms`, `/privacy` and `/` moved with them; `app/(auth)/` keeps its
+ * own chrome, and every route behind the app keeps the shell.
+ */
 export default function Support() {
   return (
     <SupportPage

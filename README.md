@@ -273,7 +273,7 @@ QuizHub, and 2 by neither yet.
    `brands` table in `data/brand.ts`. Its `logo` is a path that must already be registered in
    `data/media.ts` — the registry is a bijection with `public/`, and `pnpm data:check` fails when it
    is not.
-2. **Pick the front page.** `app/(mainlayout)/page.tsx` switches over `BrandId`, so a new brand is a
+2. **Pick the front page.** `app/(marketing)/page.tsx` switches over `BrandId`, so a new brand is a
    compile error until its home composition is chosen deliberately: one copy module under
    `data/pages/` and one `case` arm. That is the only application code an adoption touches, and it is
    a compile error rather than a runtime surprise on purpose.
