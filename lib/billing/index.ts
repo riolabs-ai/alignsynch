@@ -71,6 +71,28 @@ export function billingProvider(
   return raw as BillingProvider;
 }
 
+/**
+ * Is this deployment selling through the hosted adapter **in test mode**?
+ *
+ * The release candidate runs `BILLING_PROVIDER=stripe` on Preview and Production with `sk_test_…`
+ * keys, so a completed checkout creates a test-mode subscription and no money moves. The pricing
+ * page has to say so on the one line a stranger reads — that is the surface card 3 of #289 owns —
+ * and this is the server's answer rather than the component's guess.
+ *
+ * `stripe` is the only hosted adapter this build carries and it refuses any key that is not a
+ * test key (see `adapters/stripe.ts`), so selecting it *is* test mode. A name this build refuses
+ * (`not-configured`) answers `false`: there is nothing to warn about on a tree that cannot bill.
+ */
+export function billingTestMode(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  try {
+    return billingProvider(env) === "stripe";
+  } catch {
+    return false;
+  }
+}
+
 let cached: { readonly provider: BillingProvider; readonly port: BillingPort } | undefined;
 
 /**
