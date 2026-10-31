@@ -132,18 +132,24 @@ product. They are a different product from "one codebase, several brands, one te
 2. **The initiator is never told an invitation expired.** `lib/flow/store.ts` selects
    `email, counterparty_name, claimed_at` and omits `expires_at`, so a dead link looks live forever.
    The recipient already gets a correct message; the initiator does not.
-3. **Template titles use `&` where the spec uses a slash flanked by spaces**
-   (`data/assessments.ts`).
-4. **"In synch" is lower-cased** in the report; the spec treats In Synch as a named state.
-5. **Name the gap groups** (Basic / Prediction / Doubt) wherever the report groups them — the spec's
+3. **"In synch" is lower-cased** in the report; the spec treats In Synch as a named state.
+4. **Name the gap groups** (Basic / Prediction / Doubt) wherever the report groups them — the spec's
    own headings use those names.
-6. **The spec marks `Status` obsolete** as a user-facing word for the derived mini-stage.
+
+### Rejected on review
+
+- **Template titles keep `&`.** The spec's `/` is list punctuation — a page listing templates as
+  "Parent / Child, Staff / Manager" — not a title format, and "Parent & Child" reads better than
+  "Parent / Child". Likewise the `Status` item is withdrawn: no such user-facing string exists in
+  the tree.
 
 ## 7. Moderate — one issue each, discuss before building
 
 - Relationship Maintenance fields (relationship name, type, realm, descriptor).
 - Registration identity: username at sign-up, and what the 30-day policy means without billing.
-- A stage bar, once §4.3 is answered.
+- Stages: no stepper — `docs/specs/ux-stages.md` recommends one derived status sentence naming the
+  current stage and who acts next, with Aligned shown as the report's verdict rather than a fourth
+  step.
 - Re-invite and void for expired invitations.
 - The ~10 spec email types with no equivalent (only invitation and unlock exist).
 - Written analysis / generated-report emails — the spec defers detail to v3-00-0, and the flag
@@ -151,8 +157,9 @@ product. They are a different product from "one codebase, several brands, one te
 - The marketing surface reads narrower than the spec's ten benefits.
 - Template catalogue: four seeded against a spec listing over a dozen, grouped Business / Personal /
   Custom, with a built-in versus My Templates split.
-- Opinion sliders: the build uses a `<select>`; the spec shows continuous sliders. Accessibility and
-  keyboard behaviour are why this is not a quick win.
+- Answer input: specified in `docs/specs/ux-input.md`, which recommends a segmented radio group (a
+  five-segment control with radio semantics) over the spec's slider, with the accessibility and
+  survey-method evidence for rejecting it.
 
 ## 8. Big — settle before any queue
 
@@ -169,3 +176,6 @@ build is better than the spec, it says that too.
 
 Mockups from the specification are in `docs/reference/mockups/`, indexed by `docs/REFERENCE-MOCKUPS.md`.
 They are inspiration, not requirements.
+
+The research behind the recommendations above lives in `docs/specs/`, one file per question, indexed
+by `docs/specs/README.md`.
