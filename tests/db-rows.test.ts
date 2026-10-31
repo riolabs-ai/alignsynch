@@ -26,7 +26,12 @@ import {
   type AssessmentTemplateRows,
 } from "@/lib/db/rows";
 import { assessmentInstances, assessments } from "@/data/assessments";
-import type { Assessment, AssessmentInstance } from "@/content/assessment";
+import {
+  INSTANCE_NAME_MAX,
+  instanceNameOf,
+  type Assessment,
+  type AssessmentInstance,
+} from "@/content/assessment";
 
 /** The rows the seed writes for an instance, written the way `db-seed.mjs` writes them. */
 function instanceRows(instance: AssessmentInstance): AssessmentInstanceRows {
@@ -213,6 +218,115 @@ describe("the schema still decides", () => {
 
     expect(() => assessmentInstanceFromRows(drifted)).toThrow(/instance "avery-rowan"/);
     expect(() => assessmentInstanceFromRows(drifted)).toThrow(/mode/);
+  });
+});
+
+/**
+ * The three columns of `0011_console_columns.sql` (#289 follow-up), at the read boundary.
+ *
+ * The claim under test is the one the migration makes: every one of them is an **absence** on a
+ * row that predates it, and the absence is what a surface falls back from — no generated author,
+ * no copied title, no invented instant. Each case therefore parses rows that carry the column as
+ * `NULL` and asserts the parsed object has no key at all, which is what `safeParse` would have
+ * stripped had the schema not known the field.
+ */
+describe("the console's three columns (#289 follow-up)", () => {
+  test("an existing instance parses with `name` NULL, and the fallback is the template title", () => {
+    // Every fixture instance predates the column, so every one of them is unnamed.
+    for (const instance of assessmentInstances) {
+      const template = assessments.find((candidate) => candidate.id === instance.templateId);
+      expect(template).toBeDefined();
+
+      const rows = instanceRows(instance);
+      expect(rows.instance.name).toBeUndefined();
+
+      const parsed = assessmentInstanceFromRows(rows);
+      expect("name" in parsed).toBe(false);
+      expect(instanceNameOf(parsed, template!.title)).toBe(template!.title);
+      // An explicit `NULL` is the same fact as an absent column, and reads the same way.
+      expect(
+        instanceNameOf(
+          assessmentInstanceFromRows({ ...rows, instance: { ...rows.instance, name: null } }),
+          template!.title,
+        ),
+      ).toBe(template!.title);
+    }
+
+    // The fallback reads the *argument*, not the copy's own title: a caller that resolves a
+    // different title gets that one back, which is what makes "the template's title" a fact about
+    // the template rather than a coincidence of the copy.
+    const instance = assessmentInstances[0];
+    expect(
+      instanceNameOf(assessmentInstanceFromRows(instanceRows(instance)), "Parent & Child (2026)"),
+    ).toBe("Parent & Child (2026)");
+  });
+
+  test("a named instance round-trips its own name, and the fallback does not override it", () => {
+    const instance = assessmentInstances[0];
+    const rows = instanceRows(instance);
+    const named = { ...rows, instance: { ...rows.instance, name: "Avery & Rowan, October" } };
+    const parsed = assessmentInstanceFromRows(named);
+
+    expect(parsed.name).toBe("Avery & Rowan, October");
+    expect(instanceNameOf(parsed, "Parent & Child")).toBe("Avery & Rowan, October");
+  });
+
+  test("a blank or over-long name is rejected, and the instance is named", () => {
+    const rows = instanceRows(assessmentInstances[0]);
+    const blank = { ...rows, instance: { ...rows.instance, name: "   " } };
+    const overLong = {
+      ...rows,
+      instance: { ...rows.instance, name: "n".repeat(INSTANCE_NAME_MAX + 1) },
+    };
+
+    // `NULL` is unnamed; a padded string is a band nobody chose, and the model refuses it.
+    expect(() => assessmentInstanceFromRows(blank)).toThrow(/instance "avery-rowan"/);
+    expect(() => assessmentInstanceFromRows(overLong)).toThrow(/name/);
+  });
+
+  test("a record with no author reads as the platform's, and an authored one keeps its id", () => {
+    const template = assessments[0];
+    const rows = templateRows(template);
+
+    const anonymous = assessmentTemplateFromRows(rows);
+    expect("authorUserId" in anonymous).toBe(false);
+    expect(
+      "authorUserId" in
+        assessmentTemplateFromRows({ ...rows, record: { ...rows.record, author_user_id: null } }),
+    ).toBe(false);
+
+    const authored = assessmentTemplateFromRows({
+      ...rows,
+      record: { ...rows.record, author_user_id: "auth-user-8f21" },
+    });
+    expect(authored.authorUserId).toBe("auth-user-8f21");
+    // The instance's own record row carries it too: an instance is a record, and the author of
+    // the copy is the person who created it.
+    const instance = assessmentInstances[0];
+    const instanceWithAuthor = {
+      ...instanceRows(instance),
+      record: { ...instanceRows(instance).record, author_user_id: "auth-user-8f21" },
+    };
+    expect(assessmentInstanceFromRows(instanceWithAuthor).authorUserId).toBe("auth-user-8f21");
+  });
+
+  test("a party's submitted_at is the model's instant, and NULL is 'not recorded'", () => {
+    const instance = assessmentInstances[0];
+    const rows = instanceRows(instance);
+    // The parties arrive as `to_jsonb(p)` from the query, so the column is a string there.
+    const submitted = {
+      ...rows,
+      parties: replacing(rows.parties, 0, { submitted_at: "2026-10-24T09:00:00+00:00" }),
+    };
+    const parsed = assessmentInstanceFromRows(submitted);
+
+    expect(parsed.parties[0]).toMatchObject({
+      role: instance.parties[0].role,
+      submittedAt: "2026-10-24T09:00:00.000Z",
+    });
+    // The other seat was never given an instant, and "no instant" is not "no answer".
+    expect("submittedAt" in parsed.parties[1]).toBe(false);
+    expect(parsed.parties[1].opinions.length).toBe(instance.parties[1].opinions.length);
   });
 });
 
