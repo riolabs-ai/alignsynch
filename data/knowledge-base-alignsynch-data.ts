@@ -52,7 +52,7 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "To sign out, open the account menu in the header and choose Sign out. That ends the browser session; the answers you already submitted stay with the instance, because they were saved when you submitted them.",
+        text: "To sign out, use the Sign out row at the foot of the sidebar, or the same button on Account Settings. Both run one step, which revokes the session with the auth service and returns you to the signed-out page only once that succeeds; if it fails, the control says so rather than leaving you half signed in. The answers you already submitted stay with the instance, because they were saved when you submitted them.",
       },
       {
         type: "heading",
