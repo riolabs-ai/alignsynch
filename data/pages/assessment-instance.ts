@@ -14,6 +14,13 @@
  * header region on every visit. The bug it closes was a session being moved into the other
  * party's column with nothing on screen saying so, so this is a standing sentence and not a
  * one-time notice — it is drawn in all three states, before the report and while answering.
+ *
+ * `unlock-email` is the one message this screen's flow *sends* (#258) — the notice the other
+ * party gets when a submit makes the instance `complete`. The words live here, beside the report
+ * they announce, and not in `lib/flow/`; the sender fills `{other}`, `{recipient}`,
+ * `{template}` and `{link}` through `fillLabel()`. It deliberately has no score, no Gap value
+ * and no token-shaped placeholder to fill: the blind rule does not stop at the browser, so the
+ * email names the instance and links to it, and the numbers stay behind the party cookie.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
@@ -63,6 +70,17 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       id: "report",
       heading: "You have both answered",
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
+    },
+    {
+      id: "unlock-email",
+      items: [
+        { id: "subject", label: "{other} has answered {template}" },
+        {
+          id: "body",
+          label:
+            "Hi {recipient},\n\n{other} has answered their side of {template}, and so have you. Every Aspect now has both answers, so the Gap is open to you both.\n\nOpen the instance: {link}\n\nThe answers are frozen now — neither of you can change one. Open it to read the Gap.",
+        },
+      ],
     },
     {
       id: "invite",

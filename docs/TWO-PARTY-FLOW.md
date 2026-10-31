@@ -26,7 +26,9 @@ be consumed by the first mail client to preview the link.
 
 - `party.access_token_hash` — who is asking, as a SHA-256 digest. The token itself is never stored.
 - `instance_invite` — the invitation: email, the Counterparty's name, `token_hash`, `expires_at`
-  (seven days), `claimed_at` (set by the one claim that consumed it).
+  (seven days), `claimed_at` (set by the one claim that consumed it), and — since #258 —
+  `initiator_email`, the address the unlock notice reaches the other party at
+  (`0008_initiator_email.sql`; NULL for a create nobody was signed in for).
 - the two indexes that make both lookups a key read.
 
 **No `status` column.** The instance's status (`awaiting_counterparty` / `answering` / `complete`)
@@ -80,6 +82,33 @@ transport's error code (`ECONNREFUSED`), never the response body (it can echo th
 never the token and never the link. The instance screen prints the invitation link in all three
 outcomes — email is attempted after the transaction commits, so a mailer that breaks is a
 degraded path, never a failed creation and never an unshareable invitation.
+
+### The unlock notice (#258)
+
+The second message goes the other way. When a submit makes an instance `complete`, the party who
+did **not** just submit is emailed once: `lib/flow/unlock-notice.ts` composes it, the answers route
+sends it after `submitAnswers` has committed, and `sendMail()` in `lib/flow/email.ts` is the same
+transport the invitation uses — one provider, one set of outcomes, no new dependency.
+
+- **Once, on the transition only.** `submitAnswers` returns `status: "complete"` on the write that
+  filled the last missing answer; the submit before it says `answering` and the submit after it is
+  refused `frozen` by the row lock. There is no `notified_at` column and no queue, because the
+  freeze already makes "complete" a one-shot event.
+- **What it carries.** The instance's title, the two party names, and a link to
+  `/assessment/instances/<id>`. No answer, no score, no Gap value and no token: buying a mailbox is
+  not the same as being a party, so the blind rule travels with the message.
+- **Who holds the addresses.** `instance_invite.email` is the Counterparty's (typed into the create
+  form); `instance_invite.initiator_email` is the creator's, taken from their session at creation
+  (`db/migrations/0008_initiator_email.sql`) and NULL when they created it signed out. A seat with
+  no address gets no message and one operator line — the in-app marker from #252 is the delivery.
+- **A mail failure never fails a submit.** The record has already committed; `sendMail()` never
+  throws, the route wraps the attempt in a `catch` that logs only the error's name, and the person
+  lands on the same 303 and the same report either way. With no `RESEND_API_KEY` the notice reports
+  `unset` and nothing is sent, exactly as the invitation does.
+
+`RESEND_ENDPOINT` is the one knob that exists for the proof rather than for production: it lets
+the flow be driven against a local capture server, so the message above can be shown without
+claiming a send that never happened. Nothing sets it on a real deployment.
 
 ## The proof
 

@@ -13,6 +13,11 @@
  * which is the only fact the list's "complete since you last looked" marker needs and the one
  * thing no opinion row carries. It is a single-row UPDATE, not an operation on the flow.
  *
+ * …plus one read for the notice (#258): `readUnlockFacts` returns the two seats' names and
+ * addresses and the instance's title, and reads **no** `opinion` row — the send path is subject to
+ * the blind rule too, so there is nothing in its result that a score or a Gap value could be drawn
+ * from.
+ *
  * **The copy is `INSERT … SELECT`.** An instance's Aspects are its own `item` rows,
  * copied out of the template's at creation time (#145 made that the shape: a record owns
  * its items). Nothing joins the instance's copy back to the template to render it, so a
@@ -123,6 +128,20 @@ export interface CreateInstanceInput {
    * creating the instance; their binding is the claim's to write.
    */
   readonly viewerUserId?: string | null;
+  /**
+   * The signed-in creator's address, when the request has one (#258).
+   *
+   * Read from the session by the route (`currentUser()?.email`), never from the form — the create
+   * form's one address field is the Counterparty's, and it is `email` above. It is written on the
+   * invitation row as `initiator_email`, because that is the only moment the app holds it: the
+   * address lives in Neon Auth (`0003_user_profile.sql`) and nothing here keeps a second copy.
+   *
+   * It is what lets the unlock notice reach the Initiator when the **Counterparty** submits the
+   * last answer. A signed-out create has none, stores NULL, and its notice simply cannot be
+   * addressed — the in-app marker (#252) is the delivery, exactly as an invitation with no mailer
+   * is a link on screen.
+   */
+  readonly viewerEmail?: string | null;
   /** A clock, injectable so a test can pin `expires_at`. */
   readonly now?: Date;
 }
@@ -169,6 +188,22 @@ function normalizedUserId(value: string | null | undefined): string | null {
 }
 
 /**
+ * The Initiator's address as the invitation row stores it, or `null` (#258).
+ *
+ * A session address is not a form field and is not refused: a create must not fail because the
+ * auth provider holds something the SQL CHECK calls malformed. So an absent, blank or
+ * undeliverable value becomes NULL — "we do not have an address for this seat" — and the
+ * consequence is the same one a signed-out create has: no unlock notice can be addressed, and
+ * the in-app marker is the delivery.
+ */
+function normalizedInitiatorEmail(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const text = value.trim();
+  if (text === "" || !emailLooksDeliverable(text) || text.length > 254) return null;
+  return text;
+}
+
+/**
  * Create an instance from a published template, in one transaction.
  *
  * The template must be a **published assessment record with no instance row**. A draft
@@ -191,6 +226,11 @@ export async function createInstanceFromTemplate(
 
   const now = input.now ?? new Date();
   const initiatorUserId = normalizedUserId(input.viewerUserId);
+  // #258 — the address the unlock notice will reach the Initiator at, or NULL when nobody signed
+  // in to create this instance. Written on the invitation row, in the same transaction that
+  // writes the Initiator's seat, for the same reason `user_id` is: an instance must not exist
+  // with "somebody was here" on one row and no record of it on another.
+  const initiatorEmail = normalizedInitiatorEmail(input.viewerEmail);
   const initiatorToken = mintToken();
   const inviteToken = mintToken();
   const instanceRecordId = cryptoRandomId();
@@ -294,8 +334,8 @@ export async function createInstanceFromTemplate(
 
     await client.query(
       `INSERT INTO instance_invite
-         (instance_record_id, email, counterparty_name, token_hash, created_at, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+         (instance_record_id, email, counterparty_name, token_hash, created_at, expires_at, initiator_email)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         instanceRecordId,
         email,
@@ -303,6 +343,9 @@ export async function createInstanceFromTemplate(
         hashToken(inviteToken),
         now.toISOString(),
         inviteExpiry(now).toISOString(),
+        // #258 — the two addresses one instance needs, one per seat: the Counterparty's is the
+        // form's `email`, the Initiator's rode in from the session.
+        initiatorEmail,
       ],
     );
 
@@ -508,7 +551,19 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
  * ------------------------------------------------------------------ */
 
 export type SubmitResult =
-  | { readonly ok: true; readonly status: InstanceStatus }
+  | {
+      readonly ok: true;
+      readonly status: InstanceStatus;
+      /**
+       * The seat this submit was written under, resolved from the cookie's token hash (#258).
+       *
+       * It is returned rather than re-read because the caller needs it for exactly one thing:
+       * on the submit that completes the instance, the **other** party is the one to tell. The
+       * role is already the store's answer here (a request cannot name it), so handing it back
+       * keeps the notice from asking a second question whose answer could differ.
+       */
+      readonly role: PartyRole;
+    }
   | {
       readonly ok: false;
       readonly code: SubmissionRejection;
@@ -641,7 +696,7 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
 
     const after = await progressOfClient(client, input.instanceRecordId, aspects.rows.length);
     await client.query("COMMIT");
-    return { ok: true, status: instanceStatusOf(after) };
+    return { ok: true, status: instanceStatusOf(after), role };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
@@ -815,6 +870,76 @@ export async function readInstanceBundle(
           },
     answerCounts: { initiator: answered("initiator"), counterparty: answered("counterparty") },
   };
+}
+
+/**
+ * One seat, as the unlock notice addresses it (#258).
+ *
+ * `email` is `null` for a seat the app holds no address for: the Initiator on an instance created
+ * signed out, or either party on an instance that predates `0008_initiator_email.sql`. That is a
+ * fact about the row, and the notice's job is to answer it honestly — not to guess an address
+ * from a name, and not to fall back to the other party's, which would mail the wrong person.
+ */
+export interface UnlockSeat {
+  readonly role: PartyRole;
+  readonly name: string;
+  readonly email: string | null;
+}
+
+/** Both seats of one instance, plus its title — everything an unlock notice is written from. */
+export interface UnlockFacts {
+  readonly instanceRecordId: string;
+  readonly title: string;
+  readonly initiator: UnlockSeat;
+  readonly counterparty: UnlockSeat;
+}
+
+/**
+ * The two addresses and two names of one instance (#258), or `undefined` when it is not one.
+ *
+ * **One query, no opinions.** This reads the `record` title, the two `party` names and the
+ * invitation row's two addresses — and nothing from `opinion`. That is the blind rule again, on
+ * the send path: the notice is composed from who answered and what the instance is called, and
+ * there is no row in this result that could put a score or a Gap value into an email even if a
+ * later edit wanted to.
+ *
+ * Called only after a submit has committed `complete`, which is why both seats must exist for a
+ * result to come back at all: a missing `party` row here would mean the status the caller just
+ * read is not the status of these rows, and returning `undefined` leaves the notice unsent rather
+ * than sending one to a seat the instance does not have.
+ */
+export async function readUnlockFacts(instanceRecordId: string): Promise<UnlockFacts | undefined> {
+  const rows = await query<{
+    title: string;
+    role: PartyRole;
+    name: string;
+    counterparty_email: string | null;
+    initiator_email: string | null;
+  }>(
+    `SELECT r.title, p.role, p.name,
+            iv.email AS counterparty_email, iv.initiator_email
+       FROM record r
+       JOIN assessment_instance ai ON ai.record_id = r.id
+       JOIN party p ON p.instance_record_id = r.id
+       LEFT JOIN instance_invite iv ON iv.instance_record_id = r.id
+      WHERE r.id = $1`,
+    [instanceRecordId],
+  );
+  const title = rows[0]?.title;
+  const seatOf = (role: PartyRole): UnlockSeat | undefined => {
+    const row = rows.find((candidate) => candidate.role === role);
+    if (row === undefined) return undefined;
+    return {
+      role,
+      name: row.name,
+      email: role === "counterparty" ? row.counterparty_email : row.initiator_email,
+    };
+  };
+  const initiator = seatOf("initiator");
+  const counterparty = seatOf("counterparty");
+  if (title === undefined || initiator === undefined || counterparty === undefined)
+    return undefined;
+  return { instanceRecordId, title, initiator, counterparty };
 }
 
 /**
