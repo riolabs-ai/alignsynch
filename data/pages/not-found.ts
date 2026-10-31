@@ -9,6 +9,22 @@
  * The page's randomised background glyphs are a client component of their own
  * (`components/not-found/floating-glyphs.tsx`): the 404 module stays a server module so
  * it can parse this fixture without putting zod in the browser bundle.
+ *
+ * ## The fact band (issue #291)
+ *
+ * The band used to read "The HTTP 404 error was named after room 404 at CERN, where the
+ * original web servers were located!" — a widely repeated story that CERN and the W3C
+ * both contradict. It sat on every 404 of both brands, so every dead link in the demo
+ * told the same falsehood.
+ *
+ * It is replaced by a statement about the code itself, checked against the specification
+ * rather than remembered: RFC 9110 §15.5.5 (HTTP Semantics, June 2022) says "The 404 (Not
+ * Found) status code indicates that the origin server did not find a current
+ * representation for the target resource or is not willing to disclose that one exists"
+ * (https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.5). The body below is a
+ * paraphrase of that sentence and claims nothing beyond it — no origin story, no trivia,
+ * nothing a reader would have to take on trust. The heading is no longer "Fun Quiz Fact"
+ * for the same reason: the product's name is not what makes an HTTP status true.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
@@ -24,8 +40,8 @@ export const notFoundPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "fact",
-      heading: "Fun Quiz Fact",
-      body: "The HTTP 404 error was named after room 404 at CERN, where the original web servers were located!",
+      heading: "About this error",
+      body: "404 is the status code the HTTP specification calls Not Found: the server answered, and it found no current representation at the address you asked for.",
     },
     {
       id: "actions",
