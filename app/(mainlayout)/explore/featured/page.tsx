@@ -1,5 +1,6 @@
 import { FeaturedQuizzesPage } from "@/components/explore/featured-quizzes-page";
 import { exploreFeaturedPageCopy } from "@/data/pages/explore-featured";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import type { Metadata } from "next";
 
 /** The route's title is its own heading (`data/pages/explore-featured.ts`). */
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default function FeaturedPage() {
+  // Quiz-only (#300), gated before the clock is read: the alignment build answers 404 and
+  // never projects a campaign it does not sell.
+  requireQuizProduct();
   // One instant for the whole page: server render and hydration project the same
   // campaigns at the same clock (see `FeaturedQuizzesPage`'s `now`).
   return <FeaturedQuizzesPage now={new Date().toISOString()} copy={exploreFeaturedPageCopy} />;

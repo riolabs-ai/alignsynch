@@ -108,7 +108,10 @@ QuizHub identical is `pnpm parity`: seven routes rendered under both brands, has
 `tests/parity/summaries/`. Full HTML is never committed — a mismatch writes the render to
 `tests/parity/artifacts/` and CI uploads it. A hash is rewritten with
 `pnpm parity:update --reason "…"` and the PR says which routes moved and why; never widen the
-harness to make one match ([`tests/parity/README.md`](tests/parity/README.md)).
+harness to make one match ([`tests/parity/README.md`](tests/parity/README.md)). Parity also asserts
+the **brand boundary** (#300): the twenty-two routes the quiz product owns
+(`tests/parity/boundary.ts`) render on `quizhub` and answer `404` on `alignsynch`, where they are
+gated by `product.quiz-surfaces` (`lib/brand-boundary.ts::requireQuizProduct()`).
 
 Runtime parity is enforced by the script, not by convention: it refuses to run when the
 shell's Node major disagrees with `.nvmrc` (`24`) or when `pnpm` is not `12.x`.

@@ -30,9 +30,9 @@
  *   db       a module under `lib/db/` — Postgres, through `pg`
  *   api      a string literal under `/api/`, or an import of `app/api/` — a real HTTP write path
  *   data     a module under `data/` at all
- *   records  a module under `data/` excluding page copy, the brand record and the media registry:
- *            those are words and assets, not records, and a surface that reads only them renders
- *            a stand-in
+ *   records  a module under `data/` excluding page copy, the brand record, the media registry and
+ *            the flag store: those are words, assets and decisions, not records, and a surface
+ *            that reads only them renders a stand-in
  *   literal  none of the above
  *
  * and then refuses four claims that cannot be true: `db` without a `lib/db` module, `live`
@@ -84,8 +84,16 @@ const SOURCE_FILE = /\.(?:tsx?|mts)$/;
 const RESOLVE_EXT = [".tsx", ".ts", "/index.tsx", "/index.ts"];
 const SKIP_DTS = /\.d\.ts$/;
 
-/** Fixtures that are words or assets rather than records — see the header, `records`. */
-const NOT_RECORDS = /^data\/(?:pages\/|brand\.ts$|brands\/|media\.ts$)/;
+/**
+ * Fixtures that are words, assets or **decisions** rather than records — see the header, `records`.
+ *
+ * `flags.ts` joined this list in #300 for the same reason `brand.ts` is on it: a surface that asks
+ * `product.quiz-surfaces` learns one boolean — whether this build ships it — and renders no record
+ * from that answer. Without the exclusion, adding the brand boundary to a page that is honestly a
+ * mock (`/create/editor`, `/my-quizzes/[id]/statistics`) flips the wiring check's `records` verdict
+ * and demands the page claim to be `fixture`, which would be a false statement about its content.
+ */
+const NOT_RECORDS = /^data\/(?:pages\/|brand\.ts$|brands\/|media\.ts$|flags\.ts$)/;
 
 /** `undocumented` is a value in `data/ui-registry.ts`; the page must not spell it differently. */
 const UI_UNDOCUMENTED = "undocumented";
@@ -477,7 +485,12 @@ function renderRoute(surface, entry) {
       const rest = records.length > named.length ? ` (+${records.length - named.length} more)` : "";
       reads.push(`${plural(records.length, "record fixture")} — ${codeList(named)}${rest}`);
     } else if (data.length > 0) {
-      reads.push(`${plural(data.length, "fixture module")} of page copy and assets only`);
+      // "and assets only" was the whole sentence before #300; the flag store is a third kind of
+      // non-record module (a decision), so the words name all three rather than calling a boolean
+      // a picture.
+      reads.push(
+        `${plural(data.length, "fixture module")} of page copy, assets or decisions — no records`,
+      );
     } else reads.push("literals only");
   }
   out.push(`  - reads: ${reads.join(" · ")}`);

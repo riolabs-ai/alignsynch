@@ -1,5 +1,6 @@
 import { ExploreQuizzesPage } from "@/components/explore/explore-quizzes-page";
 import { explorePageCopy } from "@/data/pages/explore";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import type { Metadata } from "next";
 
 /** The route's title is its own heading (`data/pages/explore.ts`). */
@@ -25,6 +26,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default function ExplorePage() {
+  // Quiz-only (#300): the catalogue is the quiz product's front door.
+  requireQuizProduct();
   // One instant for the whole page: server render and hydration project the same
   // campaigns at the same clock (see `ExploreQuizzesPage`'s `now`).
   return <ExploreQuizzesPage now={new Date().toISOString()} copy={explorePageCopy} />;

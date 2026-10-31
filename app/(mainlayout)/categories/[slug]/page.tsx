@@ -1,6 +1,7 @@
 import { categoriesData } from "@/components/categories/categories-data";
 import { CategoryDetailPage } from "@/components/categories/category-detail-page";
 import { categoryDetailPageCopy } from "@/data/pages/category-detail";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { use } from "react";
@@ -39,6 +40,8 @@ export async function generateMetadata({
  * `app/not-found.tsx` renders, so the status, the title and the body agree.
  */
 export default function CategoryRoute({ params }: { params: Promise<{ slug: string }> }) {
+  // Quiz-only (#300), ahead of the slug: on the alignment build no slug is a quiz subject.
+  requireQuizProduct();
   const { slug } = use(params);
   const category = categoriesData.find((cat) => cat.slug === slug);
 

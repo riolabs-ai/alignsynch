@@ -1,5 +1,6 @@
 import { BattlePage } from "@/components/battle/battle-page";
 import { battlePageCopy } from "@/data/pages/battle";
+import { requireQuizProduct } from "@/lib/brand-boundary";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -14,5 +15,6 @@ export const metadata: Metadata = {
  * modes to the option lists their selects render).
  */
 export default function Battle() {
+  requireQuizProduct();
   return <BattlePage copy={battlePageCopy} />;
 }

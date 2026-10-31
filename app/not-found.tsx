@@ -44,6 +44,12 @@ export const metadata: Metadata = {
  * keeps exactly the rows the fixture declares and loses the one that cannot resolve. Note that
  * Next prerenders this body at build time (`/_not-found`), so — exactly like the sidebar — the
  * flag is a **build-time** value on this surface: a flip needs a rebuild to be visible here.
+ *
+ * **`/explore` and `/categories` are gated the same way as `/leaderboard` (#300).** They are quiz
+ * product surfaces now, so on the alignment build they answer 404 and this page — which is what a
+ * visitor reaches *by* following a dead link — must not hand them two more. Every row reads the
+ * same `hiddenNav` list, which is why a surface joining the boundary needs no edit here beyond the
+ * href it names; a row whose destination is gated simply is not drawn.
  */
 export default function NotFound() {
   const message = sectionOf(notFoundPageCopy, "message");
@@ -112,20 +118,24 @@ export default function NotFound() {
           <div className="text-center">
             <p className="text-gray-300 mb-4">{itemLabel(actions, "prompt")}</p>
             <div className="flex justify-center space-x-4 text-sm">
-              <Link
-                href="/explore"
-                className="text-background/80 hover:text-background transition-colors flex items-center"
-              >
-                <Search className="w-4 h-4 mr-1" />
-                {itemLabel(actions, "browse")}
-              </Link>
-              <Link
-                href="/categories"
-                className="text-blue-400 hover:text-blue-300 transition-colors flex items-center"
-              >
-                <Brain className="w-4 h-4 mr-1" />
-                {itemLabel(actions, "categories")}
-              </Link>
+              {!hiddenNav.includes("/explore") && (
+                <Link
+                  href="/explore"
+                  className="text-background/80 hover:text-background transition-colors flex items-center"
+                >
+                  <Search className="w-4 h-4 mr-1" />
+                  {itemLabel(actions, "browse")}
+                </Link>
+              )}
+              {!hiddenNav.includes("/categories") && (
+                <Link
+                  href="/categories"
+                  className="text-blue-400 hover:text-blue-300 transition-colors flex items-center"
+                >
+                  <Brain className="w-4 h-4 mr-1" />
+                  {itemLabel(actions, "categories")}
+                </Link>
+              )}
               {!hiddenNav.includes("/leaderboard") && (
                 <Link
                   href="/leaderboard"
