@@ -21,6 +21,7 @@
  * name a brand-new account starts with). Nothing else from the auth user is copied into a page,
  * because nothing else is ours.
  */
+import { authConfigured } from "@/lib/auth/config";
 import { neonAuth } from "@/lib/auth/server";
 
 /** The session as the app uses it. No token, no session id, no roles. */
@@ -57,4 +58,25 @@ export async function currentUser(): Promise<SessionUser | null> {
     console.error("auth: getSession failed — treating the request as signed out", error);
     return null;
   }
+}
+
+/**
+ * The session, when this deployment could have one at all — `null` when it could not (#184's
+ * rule, applied to a write that only *records* who was there).
+ *
+ * `currentUser()` deliberately throws on a missing `NEON_AUTH_*`, because a page behind an auth
+ * wall that treats a configuration mistake as "signed out" sends everyone to `/login` forever.
+ * The flow's two writes are the other case: creating and claiming an assessment work with no
+ * account at all (#146 shipped them that way), and binding an account is an addition to that,
+ * not a gate on it. So a tree with no auth env keeps working — `party.user_id` stays NULL,
+ * exactly as a signed-out request's does — instead of turning `POST /assessment/new` into a 500
+ * because a secret is missing.
+ *
+ * This is the same shape as `currentRole()` in `lib/auth/require-role.ts`: ask
+ * `authConfigured()` first, then read the session, and let an outage with auth configured keep
+ * answering the way `currentUser()` documents.
+ */
+export async function currentUserIfConfigured(): Promise<SessionUser | null> {
+  if (!authConfigured()) return null;
+  return currentUser();
 }
