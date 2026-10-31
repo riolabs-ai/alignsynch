@@ -7,17 +7,17 @@
 # half of the same render; the full HTML is only ever written to tests/parity/artifacts/.
 #
 # route | brand | sha256
-/ | quizhub | bc802563548bd4615dde5d079feef8089206d2374e22dd18073fcffa82bed269
+/ | quizhub | 060541db49d2bbc50c5e03d45b99c17bacd9a92859168971647a12047b3355be
 / | alignsynch | 08fb5bb9c3a107943f2334366dd4f626a8b12e3edbc99de4f53f3940109adc80
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
-/news | quizhub | c3252562621a3f16115f3cce644eab78de6f5605eef047a40854ac8c5bd5e366
+/news | quizhub | ca68297b531d15f1319fa78d2c0be30f5d6815ee3d9c25e2e43fdea8955da2b9
 /news | alignsynch | dc2c28744c24901e4a56f24550348bc113a9ccb6d11a318e4ef0634803368cde
-/news/[slug] | quizhub | 1f18a9b6a20257cf6b329855fd9e6cda5fe6a599a431490295fa5ed793e02d71
+/news/[slug] | quizhub | 4be8e213ae8ec9612b4fbdc0cd4c451a834dcc848592e11fb5357a7547de05c3
 /news/[slug] | alignsynch | fa6946c8d1e8b3ae602d1f3e747baed6642a357bd2dc3f3f9764a31d162a91f5
-/quiz/[id] | quizhub | f56029fd020b890efcb5318ee7ef18c63cb69cc7c0e300210e02ead2d6903153
+/quiz/[id] | quizhub | 18aa1c4ef66a11e633b446953c2bd12624c4e35ca8f1a7c714b922d6a3dff986
 /quiz/[id] | alignsynch | 7bc3f0d2eeb41957664ccc6d1d7489f301c63c63732f41842d50ee2658be8d78
-/assessment/avery-rowan | quizhub | 00fb2272009be9a9420ee3cbf0936362068b414c4125df0138e016cf719a9990
+/assessment/avery-rowan | quizhub | 6ad82ea037c5e71d723586880b13181b3eed2469acdf3f677e17a623969f1489
 /assessment/avery-rowan | alignsynch | c6325e00cc995796af8d53dd4cf4425d029a2c64509a8722e3d8f84db924a794
-/profile/[username] | quizhub | ce128adf02100e74b114ad67e35fcc14389a41f63840d1aa9bf203dd60edbd3e
+/profile/[username] | quizhub | 07503f989c64d49f66b70b396889b5a2c1a2e29f12c3e4e88c54cb35f4120ee4
 /profile/[username] | alignsynch | 7f3228f2794ef6c359512f410dedb654b2813193915fbc44e92637208e770a13
