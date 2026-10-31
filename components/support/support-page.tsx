@@ -26,9 +26,18 @@ interface SupportPageProps {
   faqs: PageCopySection;
   contact: PageCopySection;
   knowledgeBase: PageCopySection;
+  /** The address the contact form sends a reader to, from the brand record, never a literal. */
+  supportEmail: string;
 }
 
-export function SupportPage({ hero, categories, faqs, contact, knowledgeBase }: SupportPageProps) {
+export function SupportPage({
+  hero,
+  categories,
+  faqs,
+  contact,
+  knowledgeBase,
+  supportEmail,
+}: SupportPageProps) {
   const [activeTab, setActiveTab] = useState<"faq" | "contact" | "knowledge">("faq");
   const [selectedCategory, setSelectedCategory] = useState<SupportCategory>("all");
 
@@ -54,6 +63,7 @@ export function SupportPage({ hero, categories, faqs, contact, knowledgeBase }: 
               selectedCategory={selectedCategory}
               copy={contact}
               categoryCopy={categories}
+              supportEmail={supportEmail}
             />
           )}
           {activeTab === "knowledge" && (
