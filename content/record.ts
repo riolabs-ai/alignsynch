@@ -289,9 +289,9 @@ export type Gap = 0 | 1 | 2 | 3 | 4;
  * and there is no rule that could catch it, because two authored values cannot be
  * compared by a schema. `gapOf(2, 5) === 3`; `gapOf(4, 4) === 0` is In Synch.
  *
- * The eight gap *types* the glossary names (Feel Gap, Wish Gap, Initiator Gap, …) are
- * not this function's business: each of them is one call over one pair of opinions,
- * and none of them is implemented here.
+ * The eight gap *types* the glossary names (Feel Gap, Wish Gap, Initiator Gap, …) are not
+ * this function's business: each of them is one call over one pair of opinions.
+ * `content/gaps.ts` is where those eight pairs are named and computed.
  */
 export function gapOf(left: Score, right: Score): Gap {
   const gap = Math.abs(left - right);

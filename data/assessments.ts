@@ -564,45 +564,55 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
         name: "Noor",
         opinions: [
           /**
-           * Iris answers Feel 4, Wish 3, Think 3, Guess 4 below:
-           * gapOf(3, 4) === 1 (Feel), gapOf(5, 3) === 2 (Wish),
-           * gapOf(4, 3) === 1 (Think), gapOf(2, 4) === 2 (Guess).
+           * Iris answers Feel 4, Wish 3, Think 3, Guess 4 below. The eight gaps (#219):
+           * Feel 1, Wish 2, Initiator 2, Counterparty 1, and the predictions measured
+           * against the actual — Initiator Think gapOf(4, 4) === 0,
+           * Initiator Guess gapOf(2, 3) === 1, Counterparty Think gapOf(3, 3) === 0,
+           * Counterparty Guess gapOf(4, 5) === 1.
            */
           {
             itemId: "aspect-check-ins",
             opinions: { feel: 3, wish: 5, think: 4, guess: 2 },
           },
           /**
-           * Iris answers Feel 5, Wish 2, Think 4, Guess 3 below:
-           * gapOf(2, 5) === 3 (Feel), gapOf(4, 2) === 2 (Wish),
-           * gapOf(3, 4) === 1 (Think), gapOf(1, 3) === 2 (Guess).
+           * Iris answers Feel 5, Wish 2, Think 4, Guess 3 below. The eight gaps (#219):
+           * Feel 3, Wish 2, Initiator 2, Counterparty 3, and the predictions measured
+           * against the actual — Initiator Think gapOf(3, 5) === 2,
+           * Initiator Guess gapOf(1, 2) === 1, Counterparty Think gapOf(4, 2) === 2,
+           * Counterparty Guess gapOf(3, 4) === 1.
            */
           {
             itemId: "aspect-house-rules",
             opinions: { feel: 2, wish: 4, think: 3, guess: 1 },
           },
           /**
-           * Iris answers Feel 4, Wish 3, Think 5, Guess 2 below:
-           * gapOf(5, 4) === 1 (Feel), gapOf(5, 3) === 2 (Wish),
-           * gapOf(4, 5) === 1 (Think), gapOf(5, 2) === 3 (Guess).
+           * Iris answers Feel 4, Wish 3, Think 5, Guess 2 below. The eight gaps (#219):
+           * Feel 1, Wish 2, Initiator 0, Counterparty 1, and the predictions measured
+           * against the actual — Initiator Think gapOf(4, 4) === 0,
+           * Initiator Guess gapOf(5, 3) === 2, Counterparty Think gapOf(5, 5) === 0,
+           * Counterparty Guess gapOf(2, 5) === 3.
            */
           {
             itemId: "aspect-trust",
             opinions: { feel: 5, wish: 5, think: 4, guess: 5 },
           },
           /**
-           * Iris answers Feel 3, Wish 1, Think 4, Guess 1 below:
-           * gapOf(1, 3) === 2 (Feel), gapOf(4, 1) === 3 (Wish),
-           * gapOf(2, 4) === 2 (Think), gapOf(3, 1) === 2 (Guess).
+           * Iris answers Feel 3, Wish 1, Think 4, Guess 1 below. The eight gaps (#219):
+           * Feel 2, Wish 3, Initiator 3, Counterparty 2, and the predictions measured
+           * against the actual — Initiator Think gapOf(2, 3) === 1,
+           * Initiator Guess gapOf(3, 1) === 2, Counterparty Think gapOf(4, 1) === 3,
+           * Counterparty Guess gapOf(1, 4) === 3.
            */
           {
             itemId: "aspect-one-to-one",
             opinions: { feel: 1, wish: 4, think: 2, guess: 3 },
           },
           /**
-           * Iris answers Feel 4, Wish 5, Think 3, Guess 5 below:
-           * gapOf(3, 4) === 1 (Feel), gapOf(2, 5) === 3 (Wish),
-           * gapOf(2, 3) === 1 (Think), gapOf(4, 5) === 1 (Guess).
+           * Iris answers Feel 4, Wish 5, Think 3, Guess 5 below. The eight gaps (#219):
+           * Feel 1, Wish 3, Initiator 1, Counterparty 1, and the predictions measured
+           * against the actual — Initiator Think gapOf(2, 4) === 2,
+           * Initiator Guess gapOf(4, 5) === 1, Counterparty Think gapOf(3, 3) === 0,
+           * Counterparty Guess gapOf(5, 2) === 3.
            */
           {
             itemId: "aspect-privacy",

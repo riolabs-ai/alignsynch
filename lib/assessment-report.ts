@@ -1,11 +1,13 @@
 /**
  * The assessment report — the one projection `/assessment/[slug]` renders.
  *
- * The screen is a read of two records and one function:
+ * The screen is a read of two records and two functions:
  *
  *   the instance  holds the copy of the Aspects and both parties' Opinions;
  *   the template  holds the title and summary the reader sees above them;
- *   `gapOf()`     is the only Gap there is (`content/record.ts`).
+ *   `gapOf()`     is the one subtraction (`content/record.ts`);
+ *   `gapKindsOf()` is which two Opinions each of the eight glossary Gaps subtracts
+ *                 (`content/gaps.ts`) — this module does not re-derive a pair inline.
  *
  * There is no `gap` field to read, and this module does not add one: every number in a
  * row is computed here from the pair of Opinions beside it, so a rendered Gap cannot
@@ -21,12 +23,12 @@ import type {
   AssessmentInstance,
   AssessmentMode,
   AspectOpinions,
-  OpinionKind,
   Opinions,
   Party,
   PartyRole,
 } from "@/content/assessment";
-import { gapOf, type Gap, type Score } from "@/content/record";
+import { gapKindsOf, type GapKinds } from "@/content/gaps";
+import type { Score } from "@/content/record";
 
 /** One party's answers on one Aspect, narrowed to the four opinion kinds. */
 export interface ReportedOpinions {
@@ -44,17 +46,11 @@ export interface ReportedParty {
 }
 
 /**
- * The Gaps of one Aspect. `feel` and `wish` are always there, because Basic Mode is the
- * floor; `think` and `guess` exist only when **both** parties answered them — an Advanced
- * instance answers all four on every Aspect and a Basic one answers neither, so the pair is
- * present or absent for the whole instance rather than per row.
+ * The Gaps of one Aspect, keyed by kind: `content/gaps.ts` computes all eight, so the
+ * four Basic kinds are always numbers and the four prediction kinds are there exactly
+ * when the instance was played in Advanced Mode.
  */
-export interface ReportedGaps {
-  readonly feel: Gap;
-  readonly wish: Gap;
-  readonly think?: Gap;
-  readonly guess?: Gap;
-}
+export type ReportedGaps = GapKinds;
 
 /** One Aspect, as a row: what is asked, the two ends of the scale, both parties, the Gaps. */
 export interface AspectReportRow {
@@ -118,25 +114,15 @@ function reportedOpinions(opinions: Opinions): ReportedOpinions {
 }
 
 /**
- * The Gaps between two parties' answers.
+ * The Gaps between two parties' answers, all eight kinds of them.
  *
- * `gapOf()` is called once per opinion kind, on the pair it belongs to — the eight named
- * Gaps of the glossary are eight calls over eight pairs, not eight functions. A kind only
- * one party answered has no pair, so it has no Gap: abs(score, nothing) is not a number.
+ * `content/gaps.ts` owns the arithmetic and the pairs: eight calls of `gapOf()`, one per
+ * glossary kind, and a kind one party never answered is absent because
+ * `abs(score, nothing)` is not a number. Nothing here re-derives a pair inline — the
+ * view model would otherwise be a second, silently different definition of a Gap.
  */
 export function gapsBetween(left: ReportedOpinions, right: ReportedOpinions): ReportedGaps {
-  const gapFor = (kind: OpinionKind): Gap | undefined => {
-    const [a, b] = [left[kind], right[kind]];
-    return a === undefined || b === undefined ? undefined : gapOf(a, b);
-  };
-  const think = gapFor("think");
-  const guess = gapFor("guess");
-  return {
-    feel: gapOf(left.feel, right.feel),
-    wish: gapOf(left.wish, right.wish),
-    ...(think === undefined ? {} : { think }),
-    ...(guess === undefined ? {} : { guess }),
-  };
+  return gapKindsOf(left, right);
 }
 
 /**

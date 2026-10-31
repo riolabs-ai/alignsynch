@@ -39,8 +39,8 @@ links (17 unique, 18 total)
   /tournaments                                         1
 
 counts
-  elements  573
+  elements  958
   images    0
   buttons   9
   inputs    1
-  classes   231 (sha ff8ca848c5eb)
+  classes   233 (sha 4f492597fa2e)
