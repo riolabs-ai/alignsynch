@@ -1,0 +1,34 @@
+-- 0007_party_unlock_seen.sql — a party's own "I have read the unlock" mark (#252).
+--
+-- When the Counterparty submits the last answer the instance becomes `complete`, and until this
+-- file the Initiator was told nothing: the row they last looked at said "waiting", and the next
+-- look said "complete" only if they happened to look. The unlocking event — the moment the
+-- product delivers its value — was discoverable only by re-reading a list. One nullable column
+-- is enough to make that event visible on the row, and this file adds exactly that one.
+--
+--   party.unlock_seen_at   WHEN this party last opened a COMPLETE instance. NULL = never looked.
+--
+-- **Per party, not per instance.** Two people share an instance and either of them may have read
+-- the Gap while the other has not, so the mark belongs on the seat — beside `user_id` and
+-- `access_token_hash`, the columns that already say who a party is.
+--
+-- **NULL is the honest value for every existing row, so there is no backfill.** A seeded or
+-- pre-#252 party has no record of ever opening anything, and "never looked" is exactly what that
+-- absence means. The consequence is deliberate and small: an instance that was already complete
+-- when this column appeared shows its marker once, and clears itself the first time its party
+-- opens it.
+--
+-- **No `status` column, no `gap` column, no completeness column.** `complete` stays derived from
+-- the opinion rows (`instanceStatusOf()`, `lib/flow/state.ts`), exactly as `0002_two_party_flow.sql`
+-- records. This column is not a summary of the instance — it records one thing no opinion row
+-- carries, which is that a person looked.
+--
+-- **Why NULL/non-NULL is the whole fact, and not a timestamp comparison.** `complete` is terminal:
+-- `submitAnswers` freezes the rows the moment both parties have answered (`maySubmit`), so an
+-- instance can never go back to `answering` and there is nothing for a "became complete at"
+-- instant to be compared against. Storing one would be a second authored copy of a derived fact,
+-- which is the defect this schema has refused three times (`0002` on status, `0002` on the Gap,
+-- `0006` on the mode).
+--
+-- Idempotent on purpose, like 0001–0006.
+ALTER TABLE party ADD COLUMN IF NOT EXISTS unlock_seen_at TIMESTAMPTZ NULL;

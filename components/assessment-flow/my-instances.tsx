@@ -12,6 +12,13 @@
  * click away and is the only surface that draws any of those, and only once both parties have
  * submitted.
  *
+ * **The marker (#252) is a second derived value, not a second sentence about the answers.**
+ * `MyInstance.unlock` is `unseen` only when the row is already `complete` and this party has not
+ * opened it since; the component draws the fixture's one line for it and nothing else. It is
+ * rendered on the row rather than in the header, as a toast or as a badge count, because the
+ * event belongs to one instance and to one person — the other party's row is unaffected (their
+ * own `unlock_seen_at` decides it), and this file never sees a timestamp.
+ *
  * **Which party is "you" is the session's, not the row's.** Both parties read the same two
  * names; the badge on one of them comes from `viewerRole`, which the read resolved from
  * `party.user_id`. The list is per-account, so the same instance renders as two different rows to
@@ -67,6 +74,7 @@ export function MyInstances({
   const list = sectionOf(copy, "list");
   const row = sectionOf(copy, "row");
   const states = sectionOf(copy, "state");
+  const marker = sectionOf(copy, "marker");
   const empty = sectionOf(copy, "empty");
 
   return (
@@ -111,6 +119,7 @@ export function MyInstances({
                   key={instance.instanceRecordId}
                   data-instance={instance.instanceRecordId}
                   data-instance-state={instance.state}
+                  data-instance-unlock={instance.unlock}
                   className={CARD}
                 >
                   <h3 className={`text-base ${STRONG}`}>{instance.templateTitle}</h3>
@@ -143,6 +152,19 @@ export function MyInstances({
                   <p className={`mt-3 ${MUTED}`}>
                     {fillLabel(itemLabel(states, instance.state), { name: other })}
                   </p>
+
+                  {/* The marker (#252): a quiet line on the row, never a toast, a modal or a
+                      count in the header. It says the instance moved while this reader was
+                      away — the one fact the state sentence above cannot carry, because it is
+                      true of the same `complete` row either way. */}
+                  {instance.unlock === "unseen" ? (
+                    <p
+                      data-instance-marker="unseen"
+                      className="mt-2 rounded border border-action/40 bg-action/5 px-2 py-1 text-sm font-medium text-action"
+                    >
+                      {itemLabel(marker, "unseen")}
+                    </p>
+                  ) : null}
 
                   <p className="mt-2 text-sm">
                     <Link className="underline" href={instancePath(instance.instanceRecordId)}>

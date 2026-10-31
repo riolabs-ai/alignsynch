@@ -7,6 +7,12 @@
  * and no Gap. The sentence stops there on purpose: the blind rule holds in the list, so a row is
  * not allowed to tell a reader how far along somebody else is, only that they are not done.
  *
+ * `marker` is the second sentence a row may carry (#252), and it only ever appears on a row that
+ * already says `complete`: it names the *event* — the other person answered, and this reader has
+ * not opened it since — without adding a number, a rating or a Gap value, and without telling the
+ * reader anything they would not have seen by opening the row. `unseen` is the only item because
+ * "already seen" is an absence, not a sentence.
+ *
  * `row` carries the four strings a row composes (`initiator`, `counterparty`, `you`, and `open`),
  * and `unnamed-party` is the fallback for the one case Postgres can leave NULL: an instance whose
  * Counterparty row does not exist yet *and* whose invitation is gone. It should not happen;
@@ -46,6 +52,14 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
         { id: "awaiting-other", label: "Waiting for {name} to answer." },
         { id: "complete", label: "You have both answered — the Gap is open" },
       ],
+    },
+    {
+      // #252. Drawn only on a row that is already `complete` and whose party has not opened it
+      // since: the row says *where the instance stands* (band `state`) and this says *that it
+      // moved while you were away*. No count, no score, no Gap value — opening the row is still
+      // the only way to read one.
+      id: "marker",
+      items: [{ id: "unseen", label: "Complete since you last looked — open it to read the Gap" }],
     },
     {
       id: "empty",

@@ -9,6 +9,10 @@
  *   submitAnswers                write one party's whole sheet, or refuse
  *   readFlowScreen               rows + viewer → the view model the screen draws
  *
+ * …plus one mark (#252): `markUnlockSeen` records that one party has opened a complete instance,
+ * which is the only fact the list's "complete since you last looked" marker needs and the one
+ * thing no opinion row carries. It is a single-row UPDATE, not an operation on the flow.
+ *
  * **The copy is `INSERT … SELECT`.** An instance's Aspects are its own `item` rows,
  * copied out of the template's at creation time (#145 made that the shape: a record owns
  * its items). Nothing joins the instance's copy back to the template to render it, so a
@@ -994,6 +998,42 @@ export async function readFlowScreen(input: {
                 : null,
           },
   });
+}
+
+/**
+ * Record that one party has opened a **complete** instance (#252).
+ *
+ * The marker on `/assessment/instances` says "complete since you last looked", and this is the
+ * write that makes "last looked" mean something: the instance screen calls it on render once
+ * both parties have answered, scoped to the party the request resolved as — so one person
+ * reading the Gap clears their own row and leaves the other person's alone. That is the whole
+ * per-party rule: the UPDATE names `(instance_record_id, role)`, and `role` came from Postgres by
+ * way of `readFlowScreen`, never from the request.
+ *
+ * `unlock_seen_at IS NULL` in the predicate makes a re-open a no-op write rather than a second
+ * update: the first look is the event, and `complete` is terminal (`maySubmit()`), so there is
+ * nothing a later timestamp could say that the first one does not. `true` means this call was the
+ * one that cleared the mark; `false` is an instance already seen (or a role that is not a party
+ * to it, which cannot be reached through the screen).
+ *
+ * **Not gated here on completeness.** The rule lives in `instanceStatusOf()`, and the instance
+ * screen already holds the projected status it just drew — asking again in SQL would be a second
+ * copy of that rule in a different language. `db:verify` V11 is what catches a mark written on an
+ * instance that is not complete.
+ */
+export async function markUnlockSeen(input: {
+  readonly instanceRecordId: string;
+  readonly role: PartyRole;
+  /** A clock, injectable so a test can pin the value; the screen passes none. */
+  readonly now?: Date;
+}): Promise<boolean> {
+  const now = input.now ?? new Date();
+  const result = await getPool().query(
+    `UPDATE party SET unlock_seen_at = $3
+      WHERE instance_record_id = $1 AND role = $2 AND unlock_seen_at IS NULL`,
+    [input.instanceRecordId, input.role, now.toISOString()],
+  );
+  return (result.rowCount ?? 0) > 0;
 }
 
 export type InviteState = "claimable" | "claimed" | "expired" | "unknown";

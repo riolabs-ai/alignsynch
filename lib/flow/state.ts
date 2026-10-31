@@ -263,3 +263,38 @@ export function myInstanceStateOf(progress: MyInstanceProgress): MyInstanceState
   if (progress.aspectCount > 0 && answered < progress.aspectCount) return "yours-to-answer";
   return "awaiting-other";
 }
+
+/* ------------------------------------------------------------------ *\
+ * The unlock mark (#252)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Whether a row's `complete` is news to the viewer.
+ *
+ *   unseen   the instance is complete and this party has not opened it since — the marker
+ *   seen     everything else, including every row that is not complete
+ *
+ * The two values are the decision, so the view cannot invent a third and the pure suite can
+ * drive both without a database.
+ *
+ * **Why a NULL timestamp is the whole fact.** `complete` is terminal — `maySubmit()` freezes the
+ * answers the moment both parties have answered — so there is no "complete, but from before"
+ * case for a timestamp comparison to distinguish. `party.unlock_seen_at` is therefore a mark,
+ * not a clock: `NULL` is "this party has never opened a complete instance", and the moment they
+ * do, the page writes one and the marker is gone for them (`markUnlockSeen()` in
+ * `lib/flow/store.ts` writes it, and only for the party who opened it).
+ *
+ * **The blind rule is untouched.** The mark is arithmetic over a count and a column: it says
+ * *that* the instance is complete, which the row already said, and nothing about what is in it —
+ * no score, no count, no Gap value. `unseen` is only ever derivable from `complete`, so a row
+ * cannot use it to tell a reader that somebody else is partway through.
+ *
+ * Pure, like the rest of this module: the caller passes the timestamp it read from the party row.
+ */
+export const UNLOCK_MARKS = ["unseen", "seen"] as const;
+
+export type UnlockMark = (typeof UNLOCK_MARKS)[number];
+
+export function unlockMarkOf(state: MyInstanceState, unlockSeenAt: Date | null): UnlockMark {
+  return state === "complete" && unlockSeenAt === null ? "unseen" : "seen";
+}
