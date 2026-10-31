@@ -201,13 +201,33 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/assessment/templates",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The template library: the platform's own templates plus the ones this account wrote, with a tab for each, a status filter, a title search, and open/duplicate/archive on every row.",
+    notes:
+      "`record.author_user_id` is the whole rule — `NULL` is a built-in, the author's id is a template a person wrote, and the read returns `author_user_id IS NULL OR author_user_id = $1`, so another account's template is never in the payload. A template written before `0011_console_columns.sql` has no author and therefore reads as built-in; the page says so in its own band rather than leaving it to be discovered. Archiving flips `record.status` to `archived` (author only): the catalogue stops listing it and `createInstanceFromTemplate` refuses it, while every instance already made from it keeps its own copy of the Aspects and still opens. Duplicating copies the record and its items into a new template authored by the caller, whatever state the source is in.",
+  },
+  {
+    kind: "route",
+    surface: "/assessment/templates/[templateId]",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "One template, read-only: its Aspects in authored order with their Left and Right Values, how many instances were made from it, who wrote it and whether it is archived. The place the editor will land later.",
+    notes:
+      "The 'open' action. Read-only on purpose — editing is a separate decision, and the spec puts the editor on this same route when it exists. The read applies the same author rule as the library, so another account's template is a 404 here and nothing distinguishes it from an id that does not exist.",
+  },
+  {
+    kind: "route",
     surface: "/assessment/templates/new",
     status: "fixture",
     templates: ["alignsynch"],
     capability:
       "Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.",
     notes:
-      "`fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/route.ts`, which writes the record and item rows through `lib/flow/templates.ts` (no new table, no new column, and no author field, because the content model has none). Signed in only, on both the page and the post. Since #255 this is the app's only writer of a template; the four seeded ones come from `data/assessments.ts`.",
+      '`fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/save/route.ts` (moved one segment deeper when `/assessment/templates` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/assessment/templates`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app\'s only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.',
   },
   {
     kind: "route",

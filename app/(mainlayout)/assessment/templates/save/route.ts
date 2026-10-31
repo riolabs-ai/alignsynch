@@ -6,7 +6,14 @@ import { readTemplateDraft, type AspectRowInput } from "@/lib/flow/template-draf
 import { createAssessmentTemplate } from "@/lib/flow/templates";
 
 /**
- * `POST /assessment/templates` — save an authored template, then redirect (#255).
+ * `POST /assessment/templates/save` — save an authored template, then redirect (#255).
+ *
+ * **The path moved one segment deeper when `/assessment/templates` became the library page**
+ * (#console 5/5). Next refuses a `page.tsx` and a `route.ts` in one segment — the app loader
+ * treats them as two parallel pages for the same URL (E28) — so the screen the console asked for
+ * could not share its address with the save handler. The handler is unchanged apart from writing
+ * the author: one segment, same redirects, so the form is still a plain HTML POST a `curl` can
+ * make.
  *
  * A route handler and not a server action, for the reason `/assessment/new` gives: the flow has to
  * be drivable with a plain HTML form (no client bundle, and `curl` can post it), and the acceptance
@@ -15,8 +22,8 @@ import { createAssessmentTemplate } from "@/lib/flow/templates";
  * **Signed in is a gate, not a hint.** `currentUser()` resolves the account from the request's own
  * cookies before any field is read; with no session the answer is the gated pages' own — a redirect
  * to `/login` carrying this path, so the round trip returns to the form. Nothing posted by the
- * browser can assert an identity, and the store writes no identity: the model has no author field
- * to write one into.
+ * browser can assert an identity: the author written on the row is the session's id and there is
+ * no form field that reaches it.
  *
  * **A refusal is a redirect, not a JSON body.** The form is HTML, so a person who typed five
  * Aspects and left a Value blank gets the form back with the fixture's sentence above it, rather
@@ -67,7 +74,7 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.redirect(target, 303);
   }
 
-  const created = await createAssessmentTemplate(result.draft);
+  const created = await createAssessmentTemplate(result.draft, { authorUserId: user.userId });
   const done = new URL(ASSESSMENTS_PATH, request.url);
   done.searchParams.set("created", created.id);
   return NextResponse.redirect(done, 303);
