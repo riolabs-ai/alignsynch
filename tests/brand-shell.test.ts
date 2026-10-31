@@ -10,17 +10,18 @@
  * So the two claims are pairs, in this file:
  *
  *   1. the AlignSynch render says AlignSynch and does not say QuizHub;
- *   2. outside the footer's three brand-owned sections, it is the QuizHub render with the
+ *   2. outside the footer's brand-owned sections, it is the QuizHub render with the
  *      name and the address swapped — byte for byte — which is the stronger half: it proves
  *      the projection reads `brand.name` in exactly the places it prints the product name and
  *      nowhere else, so a reskin cannot drag copy with it.
  *
- * Claim 2 used to cover the whole projection, including the footer's blurb, street line and
- * newsletter pitch. Those three are the brand's vocabulary now (#188, stage S3): the quiz
- * build's footer advertised "quizzes", "quiz creators", "quiz tips" and "123 Quiz Street" on
- * every page of the alignment build, because a sentence about the product is not a string the
- * name substitution can reach. They are excluded from claim 2 and pinned separately below —
- * the quiz side byte for byte, the alignment side against the quiz vocabulary.
+ * Claim 2 used to cover the whole projection, including the footer's blurb and the contact
+ * block. Those are the brand's vocabulary now (#188, stage S3): the quiz build's footer
+ * advertised "quizzes" and "quiz creators" on every page of the alignment build, because a
+ * sentence about the product is not a string the name substitution can reach. They are excluded
+ * from claim 2 and pinned separately below — the quiz side byte for byte, the alignment side
+ * against the quiz vocabulary. The street line and the newsletter band those cases used to pin
+ * are gone (#272): neither was a fact a brand could own.
  *
  * "Renders" here means the projection's own text: a `PageCopy` is words with no markup,
  * the components that draw it get it as a prop, and a node environment has no DOM. Every
@@ -110,15 +111,14 @@ const alignSynchRender = render(shellCopy(alignSynch));
  * The footer sections whose words are the brand's product vocabulary rather than a name or an
  * address (#188). They are the only part of the projection where the two brands' renders are
  * allowed to differ by more than the name and the mailbox — so they are the only part claim 2
- * below excludes, and each one is pinned explicitly in its own case.
+ * below excludes, and each one is pinned explicitly in its own case. The newsletter pair left
+ * this set with its section (#272).
  */
 const BRAND_OWNED_FOOTER_SECTIONS = new Set([
   "footer-brand",
   "footer-brand-alignsynch",
   "footer-contact",
   "footer-contact-alignsynch",
-  "footer-newsletter",
-  "footer-newsletter-alignsynch",
 ]);
 
 /** A projection's text with the brand-owned footer sections removed. */
@@ -163,10 +163,7 @@ describe("shell projection — the product name comes from the brand", () => {
     expect(sectionBody(footer.brand)).toBe(
       "Create engaging quizzes, challenge others, and earn rewards for your knowledge. Join our community of quiz creators and players today.",
     );
-    expect(itemLabel(footer.contact, "address")).toBe("123 Quiz Street, Knowledge City, QZ 12345");
-    expect(sectionBody(footer.newsletter)).toBe(
-      "Get the latest news, updates and quiz tips delivered directly to your inbox.",
-    );
+    expect(itemLabel(footer.contact, "cta")).toBe("Contact Support");
   });
 
   it("gives the alignment build footer words with no quiz vocabulary in them", () => {
@@ -174,16 +171,13 @@ describe("shell projection — the product name comes from the brand", () => {
     const words = render(footer);
     expect(words.length).toBeGreaterThan(0);
     expect(words).not.toMatch(/\bquiz/i);
-    // The three strings #188 was filed on, named so a regression says which one came back.
+    // The strings #188 was filed on, named so a regression says which one came back.
     expect(words).not.toContain("quiz creators");
     expect(words).not.toContain("quiz tips");
     expect(words).not.toContain("Quiz Street");
     // Same ids, different words: the footer resolves one set of ids per brand.
-    for (const id of ["address", "phone", "email", "cta"]) {
+    for (const id of ["email", "cta"]) {
       expect(itemLabel(footer.contact, id).length).toBeGreaterThan(0);
-    }
-    for (const id of ["placeholder", "subscribe"]) {
-      expect(itemLabel(footer.newsletter, id).length).toBeGreaterThan(0);
     }
   });
 
