@@ -17,10 +17,13 @@
  * and given parties — the glossary's Create (Template > Relationship) — so the
  * opinions live on the instance, next to the copy of the Aspects they answer.
  *
- * The eight gap *types* (Feel Gap, Wish Gap, Initiator Gap, Counterparty Gap, and the
- * two Advanced ones), the Soft/Full setting, the six stages and the Coach are not
- * modelled here: this file is the shape of the content and the one Gap function it
- * shares with every other record (`gapOf` in `content/record.ts`).
+ * The eight gap *types* — Feel, Wish, Initiator and Counterparty (Basic), plus Initiator
+ * Think, Initiator Guess, Counterparty Think and Counterparty Guess (Advanced) — are
+ * modelled in `content/gaps.ts`, one `gapOf` call per pair; the four prediction kinds
+ * compare a party's Think or Guess against the **other** party's Feel or Wish, never
+ * against that other party's prediction. This file stays the shape of the content and the
+ * one Gap function it shares with every other record (`gapOf` in `content/record.ts`).
+ * The Soft/Full setting, the six stages and the Coach are not modelled anywhere yet.
  */
 import { z } from "zod";
 import { zId } from "./core";

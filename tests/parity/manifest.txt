@@ -8,7 +8,7 @@
 #
 # route | brand | sha256
 / | quizhub | d4c082796229fd1c29682d468a3bd7d5d92ce91175abaf58404324f19ef45903
-/ | alignsynch | b04bd340ba5e83f40e336af451aea8ebb215c56c3a7b7cf2911a90143d6524a2
+/ | alignsynch | fe9f4aa6e817adcded0e0f922e0555667964f6a0a0062a111ae77fe580ce92da
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
 /news | quizhub | ada27e5f891f009ff8eab0cb28e27f46560e0a3d9f33df690f404962935be622
@@ -17,7 +17,7 @@
 /news/[slug] | alignsynch | e7618d7a09176f50a2aa1ff6fa0d07cb541977b3b812ef16fd8f62135784a72c
 /quiz/[id] | quizhub | dcf14aadfa02de9a4be43947cf836ab3f71cc270d1ba0cbc47f458fe23da7466
 /quiz/[id] | alignsynch | e966d1e47236d4076aae2e06c79595172b1142cb4d03201606c6651bbfce14e3
-/assessment/avery-rowan | quizhub | 8974c02fe216364f765a8e5b90ead8b94feb49df70178e20ba3dd45239af435c
-/assessment/avery-rowan | alignsynch | d6177871a1808cc3a9c1dc26d8de850b4e07d3256cb956b215a6b035fab3e2ae
+/assessment/avery-rowan | quizhub | 367b25a7642cb3f5537225dca5cd1275067e859672e159e3de2ab19f57b051b2
+/assessment/avery-rowan | alignsynch | 93e2fc56cd2bd37a00a8a518909e9b9fc881fcfd0d99724103654390dc6da885
 /profile/[username] | quizhub | 8c74c72e0b403ace71898fdba619088573a464aa8d646679a6734022c15fbb19
 /profile/[username] | alignsynch | 326081b51afd321233677518e1f5725477afe609203685483c1b43e1c3319be3
