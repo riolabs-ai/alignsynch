@@ -84,7 +84,12 @@ const rows: FlowInstanceRows = {
   },
   items,
   options: [],
-  instance: { record_id: INSTANCE_ID, template_record_id: template.id, mode: "basic" },
+  instance: {
+    record_id: INSTANCE_ID,
+    template_record_id: template.id,
+    mode: "basic",
+    setting: "soft",
+  },
   parties,
   opinions: [],
   answerCounts: { initiator: 0, counterparty: 0 },

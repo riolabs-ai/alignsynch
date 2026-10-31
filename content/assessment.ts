@@ -23,11 +23,12 @@
  * compare a party's Think or Guess against the **other** party's Feel or Wish, never
  * against that other party's prediction. This file stays the shape of the content and the
  * one Gap function it shares with every other record (`gapOf` in `content/record.ts`).
- * The Soft/Full setting, the six stages and the Coach are not modelled anywhere yet.
+ * The **Setting** (Soft/Full) is modelled below — a per-instance lens over the Gaps, and
+ * never a Gap of its own. The six stages and the Coach are not modelled anywhere yet.
  */
 import { z } from "zod";
 import { zId } from "./core";
-import { zItem, zScore, zScoreScale, zTemplateObject, uniqueItemIds } from "./record";
+import { zItem, zScore, zScoreScale, zTemplateObject, uniqueItemIds, type Gap } from "./record";
 
 /* ------------------------------------------------------------------ *
  * Opinion — how a party answers one Aspect
@@ -74,6 +75,64 @@ export const MODE_LABELS: Record<AssessmentMode, string> = {
   basic: "Basic Mode",
   advanced: "Advanced Mode",
 };
+
+/* ------------------------------------------------------------------ *
+ * Setting — how closely the parties want to Align
+ * ------------------------------------------------------------------ */
+
+/**
+ * The **Setting**, in the glossary's own words (v2-01-01h, the Setting rows):
+ *
+ *   Setting   Qty 2 — "How closely you want to Align." Example List: "Small Gap (1) is
+ *             OK, or not." The detail row: "Box in Relationship Maintenance that changes
+ *             the requirement to be In Synch." Values: Soft or Full.
+ *   Soft      "Small Gap (1) OK – a satisfactory Setting."
+ *             (i.e. satisfactory, casual, lenient, acceptable, & generous)
+ *   Full      "No Gap OK – an exceptional Setting."
+ *             (i.e. exceptional, stellar, true, & complete)
+ *
+ * A setting is a **lens over the Gaps, never a Gap**: it decides what counts as aligned,
+ * changes no number, and is not one of the eight gap kinds. The comparison that reads it
+ * lives in `content/gaps.ts` (`gapMeetsSetting`, `instanceAlignment`), so the verdict is
+ * derived from the opinion rows on every read and never stored — no `aligned` column,
+ * exactly as there is no `gap` column.
+ */
+export const zAlignmentSetting = z.enum(["soft", "full"]);
+
+export type AlignmentSetting = z.infer<typeof zAlignmentSetting>;
+
+export const ALIGNMENT_SETTINGS = zAlignmentSetting.options;
+
+/** The glossary's own two words, authored once: "Soft" / "Full". */
+export const SETTING_LABELS: Record<AlignmentSetting, string> = {
+  soft: "Soft",
+  full: "Full",
+};
+
+/** Each setting's one-line glossary definition — the words a reader is owed beside the word. */
+export const SETTING_DEFINITIONS: Record<AlignmentSetting, string> = {
+  soft: "Small Gap (1) OK – a satisfactory Setting.",
+  full: "No Gap OK – an exceptional Setting.",
+};
+
+/**
+ * The widest Gap each setting tolerates: Soft is the glossary's "Small Gap (1) OK" — a Gap
+ * of 1, the yellow Small Gap, while 2..4 are the Big Gaps; Full is "No Gap OK", so only In
+ * Synch (0) passes. Thresholds, never columns: a stored tolerance could drift from the
+ * arithmetic, a constant cannot.
+ */
+export const SETTING_GAP_LIMITS: Record<AlignmentSetting, Gap> = {
+  soft: 1,
+  full: 0,
+};
+
+/**
+ * The setting a row that predates the column is read under. The glossary names no default;
+ * Soft is the least-strict reading, and the only one that cannot retroactively mark a
+ * relationship unmet that its parties never agreed to play by Full. Every fixture authors
+ * its setting explicitly rather than leaning on this, and so does migration 0008.
+ */
+export const DEFAULT_ALIGNMENT_SETTING: AlignmentSetting = "soft";
 
 /**
  * One party's opinions for one Aspect: two to four, each a score 1..5.
@@ -194,6 +253,14 @@ export const zAssessmentInstanceObject = zTemplateObject
      * construction, which is what a report needs before it draws a Gap.
      */
     mode: zAssessmentMode,
+    /**
+     * The Setting this instance is aligned under — a lens over the Gaps, not a Gap and not
+     * a stored verdict. Soft tolerates a Small Gap (1) and Full tolerates none
+     * (`content/gaps.ts::gapMeetsSetting`). Required rather than optional, exactly as `mode`
+     * is: every instance *is* played under one setting, and "Soft ⇔ the author forgot" is the
+     * silent comparison a default would hide.
+     */
+    setting: zAlignmentSetting,
     /** Two parties: the glossary's Initiator and Counterparty, one each. */
     parties: z.tuple([zParty, zParty]),
   })
