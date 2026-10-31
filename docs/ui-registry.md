@@ -70,12 +70,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/support` — **fixture**
   - capability: The help centre: FAQ, help categories and a contact form.
   - components: `components/support`, `components/ui`
-  - reads: 4 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` (+1 more)
+  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
 
 - `/support/articles/[slug]` — **fixture**
   - capability: One help article from the knowledge base, with related articles and a 'was this helpful?' prompt.
   - components: `components/content`, `components/support`, `components/ui`
-  - reads: 4 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` (+1 more)
+  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
 
 - `/terms` — **fixture**
   - capability: The draft terms of service: the rules for using the product, its liability and dispute clauses, and a draft notice that cannot be dismissed.
@@ -259,12 +259,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/creator-tips` — **fixture**
   - capability: Editorial tips for quiz creators, browsable by category with featured and latest grids.
   - components: `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: 5 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/flags.ts` (+2 more)
+  - reads: 7 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/flags.ts` (+4 more)
 
 - `/creator-tips/[slug]` — **fixture**
   - capability: One creator-tip article, with its related tips.
   - components: `components/content`, `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: 5 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/flags.ts` (+2 more)
+  - reads: 7 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/flags.ts` (+4 more)
 
 - `/daily-challenge` — **fixture**
   - capability: One quiz a day: today's quiz, your challenge stats, a daily leaderboard, badge progress and your history.
@@ -306,12 +306,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/news` — **fixture**
   - capability: Product news and updates, featured first, as article records.
   - components: `components/media`, `components/news`, `components/ui`
-  - reads: 4 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` (+1 more)
+  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
 
 - `/news/[slug]` — **fixture**
   - capability: One news article with share, its comment thread, the author and related articles.
   - components: `components/content`, `components/media`, `components/news`, `components/ui`
-  - reads: 5 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-data.ts` (+2 more)
+  - reads: 7 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+4 more)
 
 - `/pricing` — **fixture**
   - capability: Plan comparison, an FAQ and a closing CTA for the subscription tiers.

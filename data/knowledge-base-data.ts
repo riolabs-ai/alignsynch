@@ -15,6 +15,22 @@
  *               `data/article-publication.ts` is `draft`. It renders nowhere: it is the
  *               fixture that proves the published-only rule on every gate run instead of
  *               leaving it a sentence in a pull request.
+ *
+ * This is **QuizHub's** catalogue (issue #309). It is the quiz product's documentation and QuizHub
+ * still renders it; the AlignSynch build publishes the three articles in
+ * `data/knowledge-base-alignsynch-data.ts` instead, chosen by `data/knowledge-base.ts`. The set a
+ * build reads is the only thing that differs — the articles stay in the tree because a catalogue
+ * is an asset, and because deleting them would delete QuizHub's help centre to fix a page another
+ * product renders.
+ *
+ * Five sentences were removed from this fixture by #309 rather than rewritten, because each
+ * described a product nobody ships: an account tier with a monthly tournament quota, a
+ * subscription-status row on a settings page that has no such control, two tags naming a paid
+ * feature on a product with no tiers, a section of troubleshooting steps for a native app that does
+ * not exist, and an email-plus-three-social-providers sign-up for a form that takes an email and a
+ * password. A note about a paid tier outliving a cancellation went with them. The quiz articles
+ * are otherwise untouched: on QuizHub these document the mocked surfaces the catalogue is meant to
+ * keep, and the honest thing to do with them is leave them where they belong.
  */
 import type { KbArticle } from "../content/article";
 import { brand } from "./brand";
@@ -51,7 +67,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: `To get started with ${brand.name}, you'll need to create an account. Visit our homepage and click on the 'Sign Up' button in the top right corner. You can register using your email address, or sign up with your Google, Facebook, or Apple account for a quicker process.`,
+        text: `To get started with ${brand.name}, you'll need to create an account. Visit our homepage and click on the 'Sign Up' button in the top right corner. Registration takes an email address and a password.`,
       },
       {
         type: "list",
@@ -204,7 +220,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Stay informed about activity relevant to you by configuring your notification settings. You can receive notifications via email, push notifications (if you've installed our mobile app), or within the platform.",
+        text: "Stay informed about activity relevant to you by configuring your notification settings. Notifications reach you by email or inside the platform.",
       },
       {
         type: "list",
@@ -375,10 +391,6 @@ export const articlesData: readonly KbArticle[] = [
           "You'll receive an email confirmation of your cancellation",
         ],
         ordered: false,
-      },
-      {
-        type: "note",
-        text: "After cancellation, your premium features will remain active until the end of your current billing period. Your account will then revert to the free tier.",
       },
       {
         type: "heading",
@@ -669,10 +681,6 @@ export const articlesData: readonly KbArticle[] = [
         ordered: false,
       },
       {
-        type: "note",
-        text: "Premium accounts can create unlimited tournaments, while free accounts are limited to one active tournament per month.",
-      },
-      {
         type: "heading",
         text: "Configuring Tournament Settings",
         level: 2,
@@ -708,7 +716,7 @@ export const articlesData: readonly KbArticle[] = [
         items: [
           "Create new quizzes specifically for the tournament",
           "Select from your existing quizzes",
-          `Import quizzes from the ${brand.name} library (premium feature)`,
+          `Import quizzes from the ${brand.name} library`,
           "Invite other creators to contribute quizzes (collaboration feature)",
           "Start a quiz from a draft the generator built out of a template",
         ],
@@ -778,7 +786,6 @@ export const articlesData: readonly KbArticle[] = [
           "Use the built-in invitation system to invite specific users",
           "Share on social media directly from the platform",
           "Embed tournament announcements on your website",
-          "Create a custom landing page (premium feature)",
           "Schedule announcement posts leading up to the event",
           "Partner with other quiz creators for cross-promotion",
         ],
@@ -1094,26 +1101,6 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "heading",
-        text: "Mobile App Issues",
-        level: 2,
-      },
-      {
-        type: "paragraph",
-        text: "If you're using our mobile app and experiencing problems:",
-      },
-      {
-        type: "list",
-        items: [
-          "App crashes: Update to the latest version or reinstall the app",
-          "Sync issues: Ensure you're logged into the same account and have a stable internet connection",
-          "Notification problems: Check your device notification settings and the app's notification settings",
-          "Storage warnings: Clear the app cache or free up device storage",
-          "Display issues: Try adjusting your device's display settings or font size",
-        ],
-        ordered: false,
-      },
-      {
-        type: "heading",
         text: "Account and Access Problems",
         level: 2,
       },
@@ -1124,7 +1111,6 @@ export const articlesData: readonly KbArticle[] = [
       {
         type: "list",
         items: [
-          "Premium feature access: Verify your subscription status in Account Settings",
           "Quiz access denied: Check if the quiz requires a password or is restricted to certain users",
           "Tournament entry issues: Ensure you meet all eligibility requirements and registered before the deadline",
           "Missing quizzes: Check different tabs (Draft, Published, Archived) in your My Quizzes section",
