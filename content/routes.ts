@@ -62,6 +62,7 @@ const STATIC_ROUTES = [
   "/v1/initiator/templates/new",
   "/v1/pricing",
   "/v1/privacy",
+  "/v1/review",
   "/v1/service",
   "/v1/support",
   "/v1/templates",

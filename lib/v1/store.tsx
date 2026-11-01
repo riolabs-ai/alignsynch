@@ -47,6 +47,7 @@ import {
   type V1SessionRecord,
   type V1Ticket,
 } from "@/data/v1/fixtures";
+import type { ReviewStatus } from "@/lib/v1/review";
 import { unlockedAtOf } from "@/lib/v1/derive";
 import {
   createContext,
@@ -67,6 +68,15 @@ const FLOW_STORAGE_KEY = "alignsynch.v1.relationships.v1";
 
 /** The persona's own key — `v1_persona` in localStorage and mirrored to a cookie of that name. */
 const PERSONA_KEY = "v1_persona";
+
+/** The key the review checklist persists under. */
+const REVIEW_STORAGE_KEY = "alignsynch.v1.review.v1";
+
+/** One row's mutable state: its approval status and the reviewer's note. */
+export interface ReviewEntry {
+  readonly status: ReviewStatus;
+  readonly note: string;
+}
 
 /* ------------------------------------------------------------------ *
  * Small helpers
@@ -141,6 +151,34 @@ function loadFlow(): {
   }
 }
 
+/** The persisted review checklist, or an empty record when nothing has been decided yet. */
+function loadReviews(): Readonly<Record<string, ReviewEntry>> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(REVIEW_STORAGE_KEY);
+    if (raw === null) return {};
+    const parsed = JSON.parse(raw) as Record<string, ReviewEntry>;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
+    const next: Record<string, ReviewEntry> = {};
+    for (const [route, entry] of Object.entries(parsed)) {
+      if (
+        entry !== null &&
+        typeof entry === "object" &&
+        (entry.status === "unreviewed" ||
+          entry.status === "changes requested" ||
+          entry.status === "approved") &&
+        typeof entry.note === "string"
+      ) {
+        next[route] = { status: entry.status, note: entry.note };
+      }
+    }
+    return next;
+  } catch (error) {
+    console.warn("v1 store: could not read persisted reviews, re-seeding", error);
+    return {};
+  }
+}
+
 function parsePersona(raw: string | null | undefined): Persona | null {
   if (raw === null || raw === undefined) return null;
   const result = zPersona.safeParse(raw);
@@ -201,6 +239,8 @@ export interface V1Store {
   readonly addCoachComment: (relationshipId: string, body: string) => void;
   readonly toggleShareWithCoach: (relationshipId: string) => void;
   readonly resolveTicket: (ticketId: string) => void;
+  readonly reviews: Readonly<Record<string, ReviewEntry>>;
+  readonly setReview: (route: string, patch: Partial<ReviewEntry>) => void;
   readonly resetStore: () => void;
 }
 
@@ -211,6 +251,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
   const [relationships, setRelationships] = useState<readonly V1Relationship[]>(seedRelationships);
   const [accounts, setAccounts] = useState<readonly V1Account[]>(seedAccounts);
   const [tickets, setTickets] = useState<readonly V1Ticket[]>(seedTickets);
+  const [reviews, setReviews] = useState<Readonly<Record<string, ReviewEntry>>>({});
   const [persona, setPersonaState] = useState<Persona>("visitor");
   const [hydrated, setHydrated] = useState(false);
   const hydratedRef = useRef(false);
@@ -225,6 +266,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     setRelationships(flow.relationships);
     setAccounts(flow.accounts);
     setTickets(flow.tickets);
+    setReviews(loadReviews());
     setPersonaState(nextPersona);
     setHydrated(true);
   }, []);
@@ -249,6 +291,15 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       console.warn("v1 store: could not persist flow (private mode?)", error);
     }
   }, [relationships, accounts, tickets, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      window.localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(reviews));
+    } catch (error) {
+      console.warn("v1 store: could not persist reviews (private mode?)", error);
+    }
+  }, [reviews, hydrated]);
 
   const saveTemplate = useCallback((template: Assessment) => {
     setTemplates((previous) => {
@@ -518,11 +569,25 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const setReview = useCallback((route: string, patch: Partial<ReviewEntry>) => {
+    setReviews((previous) => {
+      const current: ReviewEntry = previous[route] ?? { status: "unreviewed", note: "" };
+      return {
+        ...previous,
+        [route]: {
+          status: patch.status ?? current.status,
+          note: patch.note ?? current.note,
+        },
+      };
+    });
+  }, []);
+
   const resetStore = useCallback(() => {
     try {
       window.localStorage.removeItem(STORAGE_KEY);
       window.localStorage.removeItem(FLOW_STORAGE_KEY);
       window.localStorage.removeItem(PERSONA_KEY);
+      window.localStorage.removeItem(REVIEW_STORAGE_KEY);
     } catch (error) {
       console.warn("v1 store: could not clear the store (private mode?)", error);
     }
@@ -530,6 +595,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     setRelationships(seedRelationships);
     setAccounts(seedAccounts);
     setTickets(seedTickets);
+    setReviews({});
     setPersonaState("visitor");
     setHydrated(true);
   }, []);
@@ -558,6 +624,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,
+      reviews,
+      setReview,
       resetStore,
     }),
     [
@@ -583,6 +651,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,
+      reviews,
+      setReview,
       resetStore,
     ],
   );

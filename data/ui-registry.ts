@@ -632,6 +632,14 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/v1/review",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The prototype's own review checklist — every /v1 screen with an approval state (unreviewed, changes requested, approved) and a note, persisted in the store so a review survives a reload.",
+  },
+  {
+    kind: "route",
     surface: "/v1/relationships/[id]",
     status: "prototype",
     templates: ["alignsynch"],
