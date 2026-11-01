@@ -430,9 +430,36 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
 
               <div className="space-y-2">
                 <Label>Mode</Label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
+                    <input
+                      type="radio"
+                      name="template-mode"
+                      value="advanced"
+                      defaultChecked
+                      className="h-4 w-4 shrink-0"
+                    />
+                    <span className="text-sm font-medium text-foreground">Advanced</span>
+                    <span className="text-xs text-muted-foreground">
+                      Feel · Wish · Think · Guess
+                    </span>
+                  </label>
+                  <label className="flex cursor-not-allowed items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 opacity-70">
+                    <input
+                      type="radio"
+                      name="template-mode"
+                      value="basic"
+                      disabled
+                      className="h-4 w-4 shrink-0"
+                    />
+                    <span className="text-sm font-medium text-foreground">Basic</span>
+                    <span className="text-xs text-muted-foreground">
+                      Basic is a subset of Advanced. Not in this prototype.
+                    </span>
+                  </label>
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  Basic Mode asks Feel &amp; Wish; Advanced Mode adds Think &amp; Guess. Mode is
-                  chosen when a relationship is created, never stored on a template.
+                  Mode is chosen when a relationship is created, never stored on a template.
                 </p>
               </div>
 

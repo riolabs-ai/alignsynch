@@ -2,6 +2,7 @@
 import { STAGE_LABELS, type RelationshipStage } from "@/content/stages";
 import type { Gap } from "@/content/record";
 import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -113,5 +114,63 @@ export function StatTile({ label, value }: { label: string; value: string }) {
       <div className="text-2xl font-semibold text-foreground">{value}</div>
       <div className="mt-0.5 text-xs text-muted-foreground">{label}</div>
     </div>
+  );
+}
+
+/**
+ * The back affordance every detail view carries — the shell header's own pattern (a ghost link
+ * with an arrow), at a 44px touch target so it stays tappable at 390px. Text and icon, never one
+ * without the other; a detail view without it is a dead end on a phone.
+ */
+export function BackLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex h-11 items-center gap-2 rounded-md px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+      {label}
+    </Link>
+  );
+}
+
+/** One breadcrumb step: a link to an ancestor surface, or the terminal (current) step. */
+export interface Crumb {
+  readonly label: string;
+  readonly href?: string;
+}
+
+/**
+ * The context line every detail view carries — names where the viewer is, e.g.
+ * `Relationships / Avery & Rowan / Session 2 report`. The last crumb is the current page; every
+ * earlier one links to the surface it names.
+ */
+export function ContextLine({ crumbs }: { crumbs: readonly Crumb[] }) {
+  return (
+    <nav aria-label="Breadcrumb">
+      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
+        {crumbs.map((crumb, index) => {
+          const last = index === crumbs.length - 1;
+          return (
+            <li key={crumb.label} className="flex items-center gap-x-1.5">
+              {crumb.href !== undefined && !last ? (
+                <Link href={crumb.href} className="text-muted-foreground hover:text-foreground">
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className={last ? "font-medium text-foreground" : "text-muted-foreground"}>
+                  {crumb.label}
+                </span>
+              )}
+              {!last && (
+                <span aria-hidden="true" className="text-muted-foreground">
+                  /
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }

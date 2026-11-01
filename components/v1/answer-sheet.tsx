@@ -3,8 +3,15 @@
 
 import type { OpinionKind, Opinions } from "@/content/assessment";
 import { useV1Store } from "@/lib/v1/store";
-import { LoadingState, NotFoundState, SectionIntro, StageBadge } from "@/components/v1/v1-ui";
-import { gapSummary } from "@/lib/v1/derive";
+import { gapSummary, relationshipNameOf } from "@/lib/v1/derive";
+import {
+  BackLink,
+  ContextLine,
+  LoadingState,
+  NotFoundState,
+  SectionIntro,
+  StageBadge,
+} from "@/components/v1/v1-ui";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -43,6 +50,7 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
     persona === "initiator" ? "initiator" : persona === "counterparty" ? "counterparty" : null;
   const template = templates.find((t) => t.id === rel.templateId);
   const summary = gapSummary(rel);
+  const name = relationshipNameOf(rel, template?.title ?? "");
 
   if (role === null) {
     return (
@@ -100,6 +108,17 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-8">
+      <div className="space-y-2">
+        <BackLink href={`/v1/relationships/${rel.id}`} label="Back to the relationship" />
+        <ContextLine
+          crumbs={[
+            { label: "Relationships", href: "/v1/initiator/relationships" },
+            { label: name, href: `/v1/relationships/${rel.id}` },
+            { label: "Answer sheet" },
+          ]}
+        />
+      </div>
+
       <div className="flex items-center gap-2">
         <SectionIntro
           title={template?.title ?? "Answer the sheet"}
