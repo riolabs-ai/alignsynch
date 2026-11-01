@@ -3,9 +3,13 @@
 
 import type { AlignmentSetting, AssessmentMode } from "@/content/assessment";
 import { useV1Store } from "@/lib/v1/store";
+import { Reveal } from "@/components/v1/reveal";
 import { EmptyState, LoadingState, SectionIntro } from "@/components/v1/v1-ui";
 import Link from "next/link";
 import { useState } from "react";
+
+/** The status word, authored once so the card and the library agree. */
+const STATUS_WORD = { published: "Published", draft: "Draft", archived: "Archived" } as const;
 
 /** The Initiator's template library, with an inline "copy into a relationship" form. */
 export function TemplateLibrary() {
@@ -72,15 +76,46 @@ export function TemplateLibrary() {
           {templates.map((template) => (
             <li key={template.id} className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">{template.title}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    {template.summary}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {template.items.length} Aspect{template.items.length === 1 ? "" : "s"}
-                  </p>
-                </div>
+                <Reveal
+                  variant="peek"
+                  title={template.title}
+                  description={`${template.items.length} Aspect${template.items.length === 1 ? "" : "s"} · ${STATUS_WORD[template.status]}`}
+                  className="min-w-0 flex-1"
+                  summary={
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-semibold text-foreground">
+                        {template.title}
+                      </span>
+                      <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                        <span>
+                          {template.items.length} Aspect{template.items.length === 1 ? "" : "s"}
+                        </span>
+                        <span aria-hidden>·</span>
+                        <span>{STATUS_WORD[template.status]}</span>
+                      </span>
+                    </span>
+                  }
+                  detail={
+                    <div className="space-y-3">
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {template.summary}
+                      </p>
+                      <ul className="space-y-2">
+                        {template.items.map((item) => (
+                          <li
+                            key={item.id}
+                            className="rounded-md border border-border bg-muted/30 px-3 py-2"
+                          >
+                            <p className="text-xs font-medium text-foreground">{item.prompt}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {item.leftValue} (1) → {item.rightValue} (5)
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  }
+                />
                 <button
                   type="button"
                   onClick={() => {
