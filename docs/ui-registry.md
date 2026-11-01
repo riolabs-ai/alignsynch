@@ -16,10 +16,10 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **50** — 35 static, 15 dynamic, from `app/**/page.tsx`
-- component domains: **35** — 244 files under `components/`, 239 of them `.tsx`
+- component domains: **36** — 245 files under `components/`, 240 of them `.tsx`
 - route handlers: **12** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7
-- templates: Both templates 22 · AlignSynch 19 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 1
+- templates: Both templates 22 · AlignSynch 20 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -264,6 +264,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The AlignSynch landing sections — its own header, body and footer — rendered in their own chrome with no sidebar.
   - files (3): `marketing-footer.tsx`, `marketing-header.tsx`, `marketing-landing.tsx`
   - routes (1): `/welcome`
+
+- `components/v1` — **prototype**
+  - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.
+  - files (1): `template-editor.tsx`
+  - routes: none — no route imports this domain today
+  - notes: Guardrail #336, version 1. The first variation here is the template editor (`template-editor.tsx`), ancestor `components/create/quiz-editor.tsx`: tabbed authoring (Details / Aspects / Settings) with per-Aspect accordions, store-backed Save/Publish/Archive/Delete, and no preview — a preview that scores an answer is a lie. `prototype` until the owner approves it; the /v1 route that mounts it is a separate card.
 
 ## QuizHub
 
