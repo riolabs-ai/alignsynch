@@ -14,7 +14,7 @@ export function TemplateLibrary() {
   const [creatingId, setCreatingId] = useState<string | null>(null);
   const [initiatorName, setInitiatorName] = useState("Jordan");
   const [counterpartyName, setCounterpartyName] = useState("Sam");
-  const [mode, setMode] = useState<AssessmentMode>("basic");
+  const [mode, setMode] = useState<AssessmentMode>("advanced");
   const [setting, setSetting] = useState<AlignmentSetting>("soft");
   const [relationshipName, setRelationshipName] = useState("");
 
@@ -88,7 +88,7 @@ export function TemplateLibrary() {
                     setRelationshipName("");
                     setInitiatorName("Jordan");
                     setCounterpartyName("Sam");
-                    setMode("basic");
+                    setMode("advanced");
                     setSetting("soft");
                   }}
                   className="inline-flex h-11 shrink-0 items-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
@@ -133,9 +133,14 @@ export function TemplateLibrary() {
                           onChange={(event) => setMode(event.target.value as AssessmentMode)}
                           className="mt-1 h-11 w-full rounded-md border border-input bg-card px-2 text-sm"
                         >
-                          <option value="basic">Basic (Feel + Wish)</option>
                           <option value="advanced">Advanced (all four)</option>
+                          <option value="basic" disabled>
+                            Basic (Feel + Wish)
+                          </option>
                         </select>
+                        <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                          Basic is a subset of Advanced. Not in this prototype.
+                        </span>
                       </label>
                       <label className="text-xs font-medium text-foreground">
                         Setting

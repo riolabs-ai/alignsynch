@@ -10,8 +10,9 @@
  * shapes already match — the same rule `data/assessments.ts` follows for the live fixture.
  *
  * Three templates seed the library; five relationships span every stage the report can be
- * in (invited, connected-and-blind, sharing-unmet, aligned, advanced); five accounts and
- * three tickets seed the Service queue. A relationship's Aspects are a **copy** of the
+ * in (invited, connected-and-blind, sharing-unmet, aligned) and every one is played in
+ * Advanced Mode — Feel, Wish, Think and Guess; five accounts and three tickets seed the
+ * Service queue. A relationship's Aspects are a **copy** of the
  * template it names (never a reference), and its parties' answers are maps keyed by Aspect
  * id, which is what lets an invitation sit at `{}` without violating the real
  * `zAssessmentInstance` (which requires every party to answer every Aspect).
@@ -343,40 +344,42 @@ function aspectCopy(templateId: string): Aspect[] {
 /** The Answers maps the seeded instances use, keyed by Aspect id. */
 type AnswerMap = Record<string, Opinions>;
 
-/** Relationship Basics answered the way Avery and Rowan did: a Feel Gap of 3 on the first Aspect. */
+/** Relationship Basics answered the way Avery and Rowan did: a Feel Gap of 3 on the first
+ * Aspect, and predictions that miss each other on Conflict. */
 const averyAnswers: AnswerMap = {
-  "aspect-time": { feel: 2, wish: 5 },
-  "aspect-money": { feel: 4, wish: 4 },
-  "aspect-conflict": { feel: 3, wish: 5 },
+  "aspect-time": { feel: 2, wish: 5, think: 4, guess: 4 },
+  "aspect-money": { feel: 4, wish: 4, think: 4, guess: 4 },
+  "aspect-conflict": { feel: 3, wish: 5, think: 4, guess: 3 },
 };
 
 const rowanAnswers: AnswerMap = {
-  "aspect-time": { feel: 5, wish: 3 },
-  "aspect-money": { feel: 4, wish: 4 },
-  "aspect-conflict": { feel: 2, wish: 3 },
+  "aspect-time": { feel: 5, wish: 3, think: 3, guess: 4 },
+  "aspect-money": { feel: 4, wish: 4, think: 4, guess: 4 },
+  "aspect-conflict": { feel: 2, wish: 3, think: 1, guess: 5 },
 };
 
 /** Staff & Manager answered the way Marco did — the initiator side, used for the blind case. */
 const marcoAnswers: AnswerMap = {
-  "aspect-priorities": { feel: 2, wish: 5 },
-  "aspect-feedback": { feel: 3, wish: 4 },
-  "aspect-workload": { feel: 5, wish: 3 },
-  "aspect-decisions": { feel: 1, wish: 5 },
+  "aspect-priorities": { feel: 2, wish: 5, think: 4, guess: 3 },
+  "aspect-feedback": { feel: 3, wish: 4, think: 3, guess: 4 },
+  "aspect-workload": { feel: 5, wish: 3, think: 3, guess: 4 },
+  "aspect-decisions": { feel: 1, wish: 5, think: 2, guess: 5 },
 };
 
-/** Parent & Child answered by Ruth and Sam — every Gap is 0, so it is aligned. */
+/** Parent & Child answered by Ruth and Sam — every Gap is 0, predictions included, so it is
+ * aligned. */
 const ruthAnswers: AnswerMap = {
-  "aspect-trust": { feel: 4, wish: 5 },
-  "aspect-house-rules": { feel: 3, wish: 3 },
-  "aspect-one-to-one": { feel: 2, wish: 3 },
-  "aspect-privacy": { feel: 3, wish: 4 },
+  "aspect-trust": { feel: 4, wish: 5, think: 4, guess: 5 },
+  "aspect-house-rules": { feel: 3, wish: 3, think: 3, guess: 3 },
+  "aspect-one-to-one": { feel: 2, wish: 3, think: 2, guess: 3 },
+  "aspect-privacy": { feel: 3, wish: 4, think: 3, guess: 4 },
 };
 
 const samAnswers: AnswerMap = {
-  "aspect-trust": { feel: 4, wish: 5 },
-  "aspect-house-rules": { feel: 3, wish: 3 },
-  "aspect-one-to-one": { feel: 2, wish: 3 },
-  "aspect-privacy": { feel: 3, wish: 4 },
+  "aspect-trust": { feel: 4, wish: 5, think: 4, guess: 5 },
+  "aspect-house-rules": { feel: 3, wish: 3, think: 3, guess: 3 },
+  "aspect-one-to-one": { feel: 2, wish: 3, think: 2, guess: 3 },
+  "aspect-privacy": { feel: 3, wish: 4, think: 3, guess: 4 },
 };
 
 /** Parent & Child answered by Noor and Iris in Advanced Mode — all eight kinds are measured. */
@@ -399,7 +402,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     id: "rel-invited",
     templateId: "v1-template-basics",
     items: aspectCopy("v1-template-basics"),
-    mode: "basic",
+    mode: "advanced",
     setting: "soft",
     initiatorName: "Jordan",
     counterpartyName: null,
@@ -420,7 +423,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     id: "rel-connected-blind",
     templateId: "v1-template-business",
     items: aspectCopy("v1-template-business"),
-    mode: "basic",
+    mode: "advanced",
     setting: "soft",
     initiatorName: "Jordan",
     counterpartyName: "Sam",
@@ -442,7 +445,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     templateId: "v1-template-basics",
     name: "Avery & Rowan",
     items: aspectCopy("v1-template-basics"),
-    mode: "basic",
+    mode: "advanced",
     setting: "soft",
     initiatorName: "Avery",
     counterpartyName: "Rowan",
@@ -471,7 +474,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     templateId: "v1-template-personal",
     name: "Ruth & Sam",
     items: aspectCopy("v1-template-personal"),
-    mode: "basic",
+    mode: "advanced",
     setting: "soft",
     initiatorName: "Ruth",
     counterpartyName: "Sam",
