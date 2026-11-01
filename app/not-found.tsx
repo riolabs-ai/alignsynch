@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FloatingGlyphs } from "@/components/not-found/floating-glyphs";
 import { GoBackButton } from "@/components/not-found/go-back-button";
+import { brand, brandIdOf } from "@/data/brand";
 import { notFoundPageCopy } from "@/data/pages/not-found";
 import { hiddenNavHrefs } from "@/lib/flags";
+import { notFoundCopyFor } from "@/lib/not-found-copy";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
 import { BookOpen, Brain, Home, Search, Trophy } from "lucide-react";
@@ -50,12 +52,31 @@ export const metadata: Metadata = {
  * visitor reaches *by* following a dead link — must not hand them two more. Every row reads the
  * same `hiddenNav` list, which is why a surface joining the boundary needs no edit here beyond the
  * href it names; a row whose destination is gated simply is not drawn.
+ *
+ * **The words are brand-keyed (#351 follow-up).** This page is shared by both builds, and it used
+ * to print QuizHub's copy on both: "Oops! Quiz Not Found", quiz masters playing hide and seek, an
+ * emoji — the whole of it, on the first error page a new AlignSynch customer can see. `copy` is
+ * `lib/not-found-copy.ts::notFoundCopyFor`'s projection of `data/pages/not-found.ts`, resolved here
+ * from the brand record, so this module renders one set of ids (`message`, `fact`, `actions`) on
+ * either build and still holds no sentence of its own.
+ *
+ * The suggestion band goes with it: with every one of its three destinations gated off — which is
+ * the case on the alignment build — the page draws no band at all rather than a question
+ * ("Looking for something else?") with no answers under it.
  */
 export default function NotFound() {
-  const message = sectionOf(notFoundPageCopy, "message");
-  const fact = sectionOf(notFoundPageCopy, "fact");
-  const actions = sectionOf(notFoundPageCopy, "actions");
+  const copy = notFoundCopyFor(notFoundPageCopy, brandIdOf(brand));
+  const message = sectionOf(copy, "message");
+  const fact = sectionOf(copy, "fact");
+  const actions = sectionOf(copy, "actions");
   const hiddenNav = hiddenNavHrefs();
+  /**
+   * Is any of the three suggestions drawable? A band whose every row is gated off is a prompt with
+   * no answers — the alignment build's case — so it is not drawn at all.
+   */
+  const hasSuggestions = ["/explore", "/categories", "/leaderboard"].some(
+    (href) => !hiddenNav.includes(href),
+  );
 
   return (
     <div className="min-h-screen bg-foreground text-background relative overflow-hidden">

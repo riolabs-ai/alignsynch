@@ -35,6 +35,13 @@ export default async function Dashboard() {
   // is the quiz dashboard (balance, recent quizzes, quiz stats), and the alignment shell's account
   // chip points at `/settings` instead. A 404 here also means an alignment visitor is never
   // redirected to `/login` for a surface their product does not have.
+  //
+  // Which is exactly why the alignment **post-sign-in** destination is `/dashboard`, not this
+  // route (#351): `AFTER_SIGN_IN_BY_BRAND` (`lib/auth/paths.ts`) gives AlignSynch the console
+  // Overview, because a sign-in that lands here on that build answers 404 before the session is
+  // resolved — and a 404 cannot exchange the `?neon_auth_session_verifier=` Neon appends, so the
+  // person would be signed out by the landing page itself. The order stays: gate first, then
+  // session, then the read.
   requireQuizProduct();
   const user = await currentUser();
   if (user === null) redirect(loginPathFor("/dashboard/user"));
