@@ -59,10 +59,13 @@ describe("the demo panel's buttons", () => {
     }
   });
 
-  it("lands the two parties on the shared instance and the admin on the admin check", () => {
+  it("lands the two parties on the shared instance and the admin on the operator console", () => {
     expect(destinationFor("initiator")).toBe(`/assessment/instances/${DEMO_INSTANCE_ID}`);
     expect(destinationFor("counterparty")).toBe(`/assessment/instances/${DEMO_INSTANCE_ID}`);
-    // The admin answers no instance, so there is nothing blind for it to read.
-    expect(destinationFor("admin")).toBe("/demo/admin");
+    // The admin answers no instance, so there is nothing blind for it to read — and its Overview
+    // is three zeroes. The registry is the surface with something on it, so that is the landing.
+    expect(destinationFor("admin")).toBe("/admin/instances");
+    // `/demo/admin` stays as the gate's proof surface; it must not become a destination again.
+    expect(destinationFor("admin")).not.toBe("/demo/admin");
   });
 });

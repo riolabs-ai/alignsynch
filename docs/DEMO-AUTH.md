@@ -220,18 +220,27 @@ not a guessable value.
 | ------------ | ----------------------------------- | ------------------------------------------------------- |
 | Initiator    | `initiator@demo.alignsynch.test`    | `/assessment/instances/assessment-instance-avery-rowan` |
 | Counterparty | `counterparty@demo.alignsynch.test` | the same screen, as Rowan                               |
-| Admin        | `admin@demo.alignsynch.test`        | `/demo/admin`                                           |
+| Admin        | `admin@demo.alignsynch.test`        | `/admin/instances` (the operator console)               |
 
-The instance screen resolves its viewer from the party cookie **first** and from the signed-in
+The members' screen resolves its viewer from the party cookie **first** and from the signed-in
 account second (`lib/flow/store.ts::roleForUser`): the demo binds Avery and Rowan by
 `party.user_id`, so a demo sign-in shows that party's blind view without handing out an
 invitation token, and a browser that already holds a party cookie keeps the identity its link
 gave it.
 
-**`/demo/admin` is the admin check.** It is the first caller of `requireAdmin()`: an `admin`
-session sees it, a member gets the same 404 a missing page gets (never a 403), and a signed-out
-visitor is redirected to `/login`. The role it prints was read from Postgres for that request;
-no header, cookie or query value is consulted.
+The admin answers no instance, so its Overview (`/dashboard`) is three zeroes and "You have no
+relationships yet" — a real page with nothing on it. The button therefore lands on the operator's
+registry, which is the console surface that has rows: on the seeded dataset it reads
+`4 of 4 relationships` with four instances. `/admin/instances` calls `requireAdmin()` itself, so
+the landing is gated by the same rule as every other admin route.
+
+**`/demo/admin` is the admin check, not a destination.** Nothing in the flow links to it: its
+first caller is `requireAdmin()`, an `admin` session sees it, a member gets the same 404 a missing
+page gets (never a 403), and a signed-out visitor is redirected to `/login`. It stays reachable by
+URL because it is the surface that shows _which session_ and _which role_ let a request through —
+the role it prints was read from Postgres for that request, and no header, cookie or query value is
+consulted. The page carries a button to `/admin/instances` so a reader who arrives there has
+somewhere to go.
 
 **Startup logs one line.** `instrumentation.ts` prints `[demo-auth] mode=…` once per server
 process — `demo`, `off`, or `refused` with the reason. It names variables and the mode, never a
