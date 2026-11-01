@@ -336,9 +336,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The admin-only check behind the demo's Admin role button (drawn on `/login` under a valid unlock): it prints the session it read from Postgres, and a member account asking for it gets a 404 rather than a 403.",
+      "The admin-only check the demo's role buttons prove: it prints the session and the role it read from Postgres, and a member account asking for it gets a 404 rather than a 403. Reachable by URL — the demo's Admin button lands on `/admin/instances` instead, and this page's own button opens it.",
     notes:
-      "The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route.",
+      "The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route. A proof, not a destination: nothing in the flow links here.",
   },
   {
     kind: "route",

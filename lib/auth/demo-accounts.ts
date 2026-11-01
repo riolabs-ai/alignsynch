@@ -64,10 +64,23 @@ export function demoRoleOf(value: unknown): DemoRole | undefined {
  * Where a button sends the browser once the session exists.
  *
  * The two members land on the shared instance screen, where the blind rule decides what they
- * may read (`lib/flow/state.ts::visibleRoles`); the admin has no party to answer as, so it lands
- * on the demo's own admin-only check — the surface that proves `requireAdmin()` is wired to a
- * session rather than to a header.
+ * may read (`lib/flow/state.ts::visibleRoles`); the admin has no party to answer as, so the
+ * Overview would be three zeroes and an empty state, and it lands on the operator's registry
+ * instead — `/admin/instances`, the console surface that shows every relationship in the
+ * database. Measured on the seeded dataset: the admin's `/dashboard` reads 0 / 0 / 0 and "You
+ * have no relationships yet", while `/admin/instances` reads "4 of 4 relationships" with four
+ * real rows.
+ *
+ * **`/demo/admin` is a proof, not a destination.** It stays (it is the surface that shows a
+ * refusal is a 404 and a role came from Postgres), but a demo that ends on a paragraph about
+ * `user_profile.role` has nothing to click, so the button no longer points at it.
+ *
+ * The path is a literal, like the member one above, and the route it names is declared in
+ * `lib/admin/instance-registry.ts::ADMIN_INSTANCES_PATH`. This module is imported by the role
+ * buttons' client component (`components/auth/demo-roles.tsx`), and that module carries the
+ * registry's row type and derivations — importing the constant from it would put the whole
+ * registry in the browser bundle for one string.
  */
 export function destinationFor(role: DemoRole): string {
-  return role === "admin" ? "/demo/admin" : `/assessment/instances/${DEMO_INSTANCE_ID}`;
+  return role === "admin" ? "/admin/instances" : `/assessment/instances/${DEMO_INSTANCE_ID}`;
 }
