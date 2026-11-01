@@ -605,8 +605,14 @@ export interface V1SeedState {
   readonly tickets: readonly V1Ticket[];
 }
 
-/** Bump to invalidate a persisted store that predates a shape change. */
-export const SEED_VERSION = 1;
+/**
+ * Bump to invalidate a persisted store that predates a shape change.
+ *
+ * 1 → 2: the answer maps gained `think` and `guess` (Advanced Mode's pair). A store
+ * persisted under version 1 holds Feel/Wish only, so `loadFlow()` would adopt it and
+ * the report would render two of four opinions; bumping re-seeds from the fixtures.
+ */
+export const SEED_VERSION = 2;
 
 export function buildSeedState(): V1SeedState {
   return {
