@@ -1,7 +1,7 @@
 route  /
 brand  alignsynch
 
-headings (10)
+headings (12)
   h1  "How do you feel, against how they feel?"
   h2  "The same question, answered twice"
   h2  "Four templates"
@@ -12,21 +12,32 @@ headings (10)
   h2  "Two families"
   h3  "Business"
   h3  "Personal"
+  h3  "Quick Links"
+  h3  "Contact"
 
-landmarks (2)
+landmarks (3)
   banner         1
   contentinfo    1
+  navigation     1
 
-links (5 unique, 9 total)
-  /assessment/avery-rowan                              3
+links (13 unique, 20 total)
+  /                                                    1
+  /#questions                                          2
+  /#templates                                          2
+  /assessment/avery-rowan                              2
   /assessment/marco-priya                              2
   /assessment/ruth-sam                                 2
+  /login                                               1
+  /pricing                                             1
+  /privacy                                             2
+  /register                                            1
+  /support                                             2
+  /terms                                               1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.1.0-rc1 1
-  mailto:alignsynch@riolabs.ai                         1
 
 counts
-  elements  107
-  images    2
-  buttons   0
+  elements  170
+  images    3
+  buttons   1
   inputs    0
-  classes   106 (sha 495bb75e6408)
+  classes   182 (sha 2a8595676e6c)

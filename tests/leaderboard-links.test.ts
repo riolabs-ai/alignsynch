@@ -254,15 +254,30 @@ describe("every footer mount passes the list down", () => {
   }, {});
 
   it("finds the mounts it is meant to check (positive control)", () => {
-    const mounts = Object.values(tree).flatMap(footerTagsIn);
+    const mounts = Object.entries(tree)
+      .filter(([, source]) => footerTagsIn(source).length > 0)
+      .map(([path]) => path)
+      .sort();
 
-    // Five today: the three product routes that still render the shell footer themselves, and the
-    // two client shells that forward the prop. The other five the count used to hold left in #317:
-    // `/` twice (one mount per brand composition), `/pricing`, `/terms` and `/privacy` are public
-    // pages now and live in `app/(marketing)/`, where the group's own footer is the chrome — a
-    // public page that mounted this one would carry two footers, and the shell footer's nav is
-    // exactly what the boundary removes.
-    expect(mounts).toHaveLength(5);
+    // Six today. Five were already here: the three product routes that still render the shell
+    // footer themselves, and the two client shells that forward the prop. The sixth — and the one
+    // this list names that #317 had removed — is `app/(marketing)/layout.tsx`: the public group's
+    // chrome is now the shell footer itself, so `/` (twice in the shell footer, once per brand
+    // composition, as the product pages do), `/pricing`, `/welcome`, `/terms`, `/privacy` and
+    // `/support` all get this footer through one mount. #317 put those routes behind a bespoke
+    // three-line footer and no navigation at all; the owner's card reverses that decision, which is
+    // why the old note here — "a marketing page must not mount the shell footer" — is gone. What is
+    // still true is the count's point: a new mount cannot forget `hiddenNav`, and two footers on
+    // one page remains the bug this list would show.
+    expect(mounts).toEqual([
+      "app/(mainlayout)/affiliate/page.tsx",
+      "app/(mainlayout)/creator-tips/[slug]/page.tsx",
+      "app/(mainlayout)/creator-tips/page.tsx",
+      "app/(marketing)/layout.tsx",
+      "components/categories/categories-page.tsx",
+      "components/tournaments/tournament-page.tsx",
+    ]);
+    expect(mounts).toHaveLength(6);
   });
 
   it("leaves no `<Footer>` mount on the tree without hiddenNav", () => {
