@@ -1,3 +1,5 @@
+// template-ancestor: components/identity/account-home.tsx   (variation: another person's profile — cover, avatar, badges and follow actions, public cards only)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { ProfileCover } from "@/components/profile/profile-cover";
 import { Badge } from "@/components/ui/badge";

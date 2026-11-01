@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/home/featured-quizzes.tsx   (variation: the featured shelf as award tabs over one column, no card grid and no progress ring)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

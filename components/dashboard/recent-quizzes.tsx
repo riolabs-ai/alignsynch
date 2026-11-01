@@ -1,3 +1,5 @@
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: five recent rows with a publish badge and an edit action, no tabs and no filters)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

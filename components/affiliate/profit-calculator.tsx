@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/card.tsx   (variation: one card holding a slider, the figure it computes and a monthly table — the only interactive band here)
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { formatPercentValue } from "@/content/metrics";

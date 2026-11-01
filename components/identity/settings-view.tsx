@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/settings/account-settings.tsx   (variation: the settings page over the identity record — four cards, one form each)
+
 import { SignOutButton } from "@/components/identity/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

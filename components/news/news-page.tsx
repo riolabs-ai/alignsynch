@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: the news index — a lead card and a dated grid, no filters)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/console/stat-card-grid.tsx   (variation: a balance hero, four figure cards and a monthly table over the earnings fixture)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

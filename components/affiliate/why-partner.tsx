@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/card.tsx   (variation: the reasons band as a card grid over the brand record, each card an icon, a claim and one line)
+
 import { Card, CardContent } from "@/components/ui/card";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import {

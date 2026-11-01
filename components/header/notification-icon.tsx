@@ -1,5 +1,6 @@
 "use client";
 
+// template-ancestor: components/layout/header.tsx   (variation: the header's bell, resolving iconKey to a single element)
 /**
  * The ONLY place a notification's `iconKey` becomes a React element.
  *

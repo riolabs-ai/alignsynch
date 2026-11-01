@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/accordion.tsx   (variation: the filter rail — three accordion sections of radios and checkboxes, applied without a submit)
+
 import {
   Accordion,
   AccordionContent,

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/layout/sidebar.tsx   (variation: the rail's open and mobile state as a provider — no markup of its own)
+
 import { useWindowSize } from "@/hooks/use-window";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";

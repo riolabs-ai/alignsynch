@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: one create form per published template in place of the card grid's per-card link)
+ *
  * `/assessment`'s list: the published templates, each with its own create form (#146).
  *
  * One form per template rather than a template picker plus one form: the template is the

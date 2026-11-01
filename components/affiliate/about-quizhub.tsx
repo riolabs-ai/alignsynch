@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/card.tsx   (variation: the brand story band — four fact cards over the brand record, no quiz data)
+
 import { Media } from "@/components/media/media";
 import { FALLBACK_KIND } from "@/lib/media-entry";
 import { Card, CardContent } from "@/components/ui/card";

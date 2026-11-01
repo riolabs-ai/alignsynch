@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-filters.tsx   (variation: five selects in a bar, no accordion and no submit)
+
 import {
   Select,
   SelectContent,

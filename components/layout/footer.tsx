@@ -1,3 +1,5 @@
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the footer band — brand-keyed link columns, a legal row and the version badge)
+
 import { Button } from "@/components/ui/button";
 import { quizCategories } from "@/content/categories";
 import type { PageCopy, PageCopySection } from "@/content/pages";

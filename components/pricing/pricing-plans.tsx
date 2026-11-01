@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the plan grid — one card per plan, an interval switch, a feature list and a checkout button)
+
 import { PlanCheckoutButton } from "@/components/pricing/plan-checkout-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

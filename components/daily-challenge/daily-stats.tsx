@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/my-quizzes/quiz-statistics.tsx   (variation: the figure cards plus two bar charts over the player's own daily record)
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PageCopySection } from "@/content/pages";

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/page-header.tsx   (variation: the settings page — the page header primitive, then tabs over eight panels)
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "./profile-settings";

@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: tabs, status and search in the URL over one list page, rows instead of a card grid)
+ *
  * `/assessment/templates` — the template library (#console 5/5).
  *
  * A server component with no state and no handler: the page above it resolved the session, read

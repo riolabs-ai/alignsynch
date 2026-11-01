@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/leaderboard/leaderboard-table.tsx   (variation: today's top three, one tab per period, no filters and no pagination)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

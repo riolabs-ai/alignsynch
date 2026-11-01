@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/explore/explore-categories.tsx   (variation: the subject strip as a swiper with arrows, no scrollbar and no filter)
+
 import { categories } from "@/data/categories";
 import type { PageCopySection } from "@/content/pages";
 import { ChevronLeft, ChevronRight } from "lucide-react";

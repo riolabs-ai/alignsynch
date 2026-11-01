@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the security panel — password, two-factor and sessions, each a card of its own)
+
 import type React from "react";
 
 import { Button } from "@/components/ui/button";

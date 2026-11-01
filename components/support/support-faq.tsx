@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/accordion.tsx   (variation: the FAQ — brand-keyed groups, a search field and one accordion per group)
+
 import {
   Accordion,
   AccordionContent,

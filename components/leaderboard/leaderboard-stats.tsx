@@ -1,3 +1,5 @@
+// template-ancestor: components/console/stat-card-grid.tsx   (variation: three figures with a calendar caption, no links behind them)
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";

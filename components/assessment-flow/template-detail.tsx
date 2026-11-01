@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/identity/account-home.tsx   (variation: one template, read-only — a header band then the Aspect cards, with open and duplicate actions)
+ *
  * `/assessment/templates/[templateId]` — one template, read-only (#console 5/5).
  *
  * "Open" has to open something, and the spec keeps template *editing* for a later card: the

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/sonner.tsx   (variation: a one-line wrapper binding a library provider to the app's theme defaults — no markup of its own)
+
 import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from "next-themes";
 import { useEffect, useState } from "react";
 

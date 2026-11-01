@@ -1,6 +1,8 @@
 "use client";
 
 /**
+ * template-ancestor: components/ui/button.tsx   (variation: three role buttons with icons, a pending state and a per-role refusal line)
+ *
  * The three demo role buttons, on `/login`, only under a valid unlock (#218).
  *
  * `/demo` is the gate and this is the second half of the flow: the page draws this block only for
