@@ -16,10 +16,14 @@
  *
  * ## `status` — what is behind the surface
  *
- *   mock     renders literals, props or a stand-in; no data behind it
- *   fixture  reads a committed fixture under `data/`
- *   db       reads Postgres through `lib/db/`
- *   live     has a real write path — a mutating `/api` handler it calls
+ *   mock      renders literals, props or a stand-in; no data behind it
+ *   fixture   reads a committed fixture under `data/`
+ *   db        reads Postgres through `lib/db/`
+ *   live      has a real write path — a mutating `/api` handler it calls
+ *   prototype a variation rendered before it is wired: in-browser state, no `lib/db/` and no
+ *             `/api`, off behind a flag until a later pass wires it. The wiring check does not
+ *             assert it (a prototype may reach nothing real yet); `ancestor`/`version` name the
+ *             variation it copies.
  *
  * These are claims, and the gate checks them against the import graph: `db` must reach a
  * `lib/db/` module, `live` must reach an `/api` path, `fixture` must reach something under
@@ -70,7 +74,7 @@
 import { z } from "zod";
 
 /** What is behind a surface. See the header — the gate checks every value against the imports. */
-export const zUiStatus = z.enum(["mock", "fixture", "db", "live"]);
+export const zUiStatus = z.enum(["mock", "fixture", "db", "live", "prototype"]);
 
 /** The templates a surface can be picked for. An empty list means no template claims it yet. */
 export const zUiTemplate = z.enum(["quizhub", "alignsynch"]);
@@ -843,5 +847,15 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.",
     notes:
       "Renders only the props it is given; the tokens it paints with come from app/globals.css.",
+  },
+  {
+    kind: "domain",
+    surface: "components/v1",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.",
+    notes:
+      "Guardrail #336, version 1. The first variation here is the template editor (`template-editor.tsx`), ancestor `components/create/quiz-editor.tsx`: tabbed authoring (Details / Aspects / Settings) with per-Aspect accordions, store-backed Save/Publish/Archive/Delete, and no preview — a preview that scores an answer is a lie. `prototype` until the owner approves it; the /v1 route that mounts it is a separate card.",
   },
 ]);
