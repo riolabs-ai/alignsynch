@@ -77,6 +77,13 @@ function signInPage(
        * with `next build` still green, because it never renders `/login`.
        */
       sectionOf(copy, "legal"),
+      /**
+       * The Google button (issue #281). The same trap a third time: this projection rebuilds
+       * the section list, so a shared section the view resolves must be named here or it is
+       * dropped and `LoginView` throws `PageCopy: no section "google"` at request time —
+       * `next build` never renders `/login`, so a green build cannot see it.
+       */
+      sectionOf(copy, "google"),
     ],
   };
 }
