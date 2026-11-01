@@ -121,6 +121,7 @@ export function ogCard(brand: Brand): React.ReactElement {
           colours the record carries, so no third hex enters the tree. The badge is a 132 px
           `<img>` whose `src` is the mark as a data URI, not a hand-drawn letter.
         */}
+        {/* biome-ignore lint/performance/noImgElement: satori has no next/image build, so the data-URI mark renders only through an img. */}
         <img src={markDataUri(brand)} width={132} height={132} alt="" />
         {/*
           The product name, at the weight the card can actually draw. `next/og` ships one

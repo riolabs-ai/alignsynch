@@ -13,9 +13,9 @@
  * (`lib/brand-icon.ts`) and one colour pair (`brand.colors.action` / `actionForeground`):
  *
  *   public/brand/<id>-icon.svg                  the favicon — `brand.icon`, the app mark
- *   public/brand/<id>-apple-touch-icon.svg      180×180, full bleed, no transparency
- *   public/brand/<id>-icon-192.svg              192×192, full bleed, maskable-safe
- *   public/brand/<id>-icon-512.svg              512×512, full bleed, maskable-safe
+ *   public/brand/<id>-apple-touch-icon.png      180×180, full bleed, opaque, no transparency
+ *   public/brand/<id>-icon-192.png              192×192, full bleed, maskable-safe
+ *   public/brand/<id>-icon-512.png              512×512, full bleed, maskable-safe
  *
  * ## Both brands, one generator
  *
@@ -25,13 +25,16 @@
  * would be drift, not a variation. `pnpm data:check` re-draws every file with `--check`, so the
  * files cannot drift from the record or from each other.
  *
- * ## Why SVG, and why full bleed for the maskable set
+ * ## Why the favicon is SVG and the maskable set is PNG
  *
- * A path string compares byte-for-byte on any box, where a PNG's bytes depend on the rasteriser
- * (`lib/brand-og.tsx` documents the same decision). The favicon is a rounded box; the
- * apple-touch and PWA icons are full squares because iOS and the OS mask the corners themselves,
- * and a pre-rounded corner double-rounds. The glyph drops to 56 % so it sits inside the 80 %
- * safe circle the OS is allowed to crop to.
+ * The favicon is a text file because it is what the browser renders in the tab, and a path
+ * string compares byte-for-byte on any box. The apple-touch icon and the PWA 192/512 icons are
+ * *rasters* by contract — iOS renders no SVG for a home-screen icon and a manifest declares
+ * `image/png` — so those three surfaces are rasterised from the same `markSvg` output by
+ * `@resvg/resvg-js`, deterministic for a pinned version, and their bytes still compare exactly
+ * in `--check`. The favicon is a rounded box; the apple-touch and PWA icons are full squares
+ * because iOS and the OS mask the corners themselves, and a pre-rounded corner double-rounds.
+ * The glyph drops to 56 % so it sits inside the 80 % safe circle the OS is allowed to crop to.
  *
  * Usage:
  *   node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs           # write
@@ -40,6 +43,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { Resvg } from "@resvg/resvg-js";
 
 import {
   APP_GLYPH_FRACTION,
@@ -86,6 +91,21 @@ function surfaceSvg(brand, surface) {
   });
 }
 
+/**
+ * Rasterise the SVG to PNG and confirm the raster is the size the surface declares, so a resvg
+ * default that disagreed with the `width`/`height` attributes fails loudly instead of writing a
+ * mis-sized icon.
+ */
+function renderPng(svg, width, height) {
+  const png = new Resvg(svg).render().asPng();
+  const w = png.readUInt32BE(16);
+  const h = png.readUInt32BE(20);
+  if (w !== width || h !== height) {
+    throw new Error(`resvg rendered ${w}×${h}, expected ${width}×${height}`);
+  }
+  return png;
+}
+
 let stale = 0;
 let written = 0;
 for (const [id, brand] of Object.entries(brands)) {
@@ -99,16 +119,19 @@ for (const [id, brand] of Object.entries(brands)) {
     );
   }
   for (const surface of SURFACES) {
-    const svg = surfaceSvg(brand, surface);
     const file = paths[surface.surface].replace(/^\//, "");
+    const svg = surfaceSvg(brand, surface);
+    const bytes = file.endsWith(".png")
+      ? renderPng(svg, surface.width, surface.height)
+      : Buffer.from(svg, "utf8");
     if (CHECK) {
-      let current = "";
+      let current;
       try {
-        current = readFileSync(join(ROOT, "public", file), "utf8");
+        current = readFileSync(join(ROOT, "public", file));
       } catch {
-        current = "";
+        current = undefined;
       }
-      if (current !== svg) {
+      if (!current?.equals(bytes)) {
         stale++;
         console.error(
           `✗ brand icon: public/${file} is stale (or missing) — ` +
@@ -117,12 +140,12 @@ for (const [id, brand] of Object.entries(brands)) {
       }
       continue;
     }
-    writeFileSync(join(ROOT, "public", file), svg);
+    writeFileSync(join(ROOT, "public", file), bytes);
     written++;
   }
   if (!CHECK) {
     console.log(
-      `  wrote public/brand/${id}-icon.svg + 3 maskable (${brand.name}, ${brand.colors.action})`,
+      `  wrote public/brand/${id}-icon.svg + apple-touch 180 + PWA 192/512 (${brand.name}, ${brand.colors.action})`,
     );
   }
 }

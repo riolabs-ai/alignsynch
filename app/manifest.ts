@@ -27,10 +27,10 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     icons: [
-      { src: icons.icon192, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
-      { src: icons.icon192, sizes: "192x192", type: "image/svg+xml", purpose: "maskable" },
-      { src: icons.icon512, sizes: "512x512", type: "image/svg+xml", purpose: "any" },
-      { src: icons.icon512, sizes: "512x512", type: "image/svg+xml", purpose: "maskable" },
+      { src: icons.icon192, sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: icons.icon192, sizes: "192x192", type: "image/png", purpose: "maskable" },
+      { src: icons.icon512, sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: icons.icon512, sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

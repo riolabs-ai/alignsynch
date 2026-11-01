@@ -36,13 +36,13 @@ A brand-visible change — a re-pointed token, a renamed product, a new mark —
 
    ```
    public/brand/<id>-icon.svg                  favicon (the recorded `brand.icon`)
-   public/brand/<id>-apple-touch-icon.svg       180×180, full bleed
-   public/brand/<id>-icon-192.svg               192×192, full bleed, maskable-safe
-   public/brand/<id>-icon-512.svg               512×512, full bleed, maskable-safe
+   public/brand/<id>-apple-touch-icon.png       180×180, full bleed, opaque
+   public/brand/<id>-icon-192.png               192×192, full bleed, maskable-safe
+   public/brand/<id>-icon-512.png               512×512, full bleed, maskable-safe
    ```
 
    `pnpm data:check` re-runs it with `--check` in every non-docs lane, so a record edit that
-   leaves the files stale is a red gate. Never hand-edit an SVG in `public/` — regenerate.
+   leaves the files stale is a red gate. Never hand-edit an icon file in `public/` — regenerate.
 
 2. **`node scripts/gen-media.mjs`** — after adding or removing a file under `public/` (E18 keeps
    `data/media.ts` a bijection with the tree). `data:check` fails on a file with no registry key.

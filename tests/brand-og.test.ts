@@ -65,7 +65,8 @@ function markSvgOf(brand: Brand): string {
   const prefix = "data:image/svg+xml;base64,";
   const uri = strings(ogCard(brand)).find((value) => value.startsWith(prefix));
   expect(uri).toBeDefined();
-  return Buffer.from(uri!.slice(prefix.length), "base64").toString("utf8");
+  if (uri === undefined) throw new Error("card has no mark data URI");
+  return Buffer.from(uri.slice(prefix.length), "base64").toString("utf8");
 }
 
 describe("the share card", () => {

@@ -90,12 +90,13 @@ export const metadata: Metadata = {
    * maskable set live in `app/manifest.ts`, which is the file convention that injects the
    * `<link rel="manifest">` for the same brand.
    *
-   * `type` is stated because Next only infers it for its own generated icons; an SVG needs it
-   * for a reader (and a few crawlers) to accept the file.
+   * `type` is stated because Next only infers it for its own generated icons: the favicon is an
+   * SVG and the apple-touch icon is a PNG, and a reader (and a few crawlers) needs the type to
+   * accept either.
    */
   icons: {
     icon: [{ url: brand.icon, type: "image/svg+xml" }],
-    apple: { url: brandIconPaths(brandIdOf(brand)).appleTouchIcon, type: "image/svg+xml" },
+    apple: { url: brandIconPaths(brandIdOf(brand)).appleTouchIcon, type: "image/png" },
   },
 };
 

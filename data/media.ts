@@ -52,7 +52,7 @@ export const media = {
     kind: "illustration",
   },
   "brand.alignsynch-apple-touch-icon": {
-    src: "/brand/alignsynch-apple-touch-icon.svg",
+    src: "/brand/alignsynch-apple-touch-icon.png",
     alt: "Alignsynch Apple Touch Icon",
     width: 180,
     height: 180,
@@ -66,14 +66,14 @@ export const media = {
     kind: "illustration",
   },
   "brand.alignsynch-icon-192": {
-    src: "/brand/alignsynch-icon-192.svg",
+    src: "/brand/alignsynch-icon-192.png",
     alt: "Alignsynch Icon 192",
     width: 192,
     height: 192,
     kind: "illustration",
   },
   "brand.alignsynch-icon-512": {
-    src: "/brand/alignsynch-icon-512.svg",
+    src: "/brand/alignsynch-icon-512.png",
     alt: "Alignsynch Icon 512",
     width: 512,
     height: 512,
@@ -87,7 +87,7 @@ export const media = {
     kind: "illustration",
   },
   "brand.quizhub-apple-touch-icon": {
-    src: "/brand/quizhub-apple-touch-icon.svg",
+    src: "/brand/quizhub-apple-touch-icon.png",
     alt: "Quizhub Apple Touch Icon",
     width: 180,
     height: 180,
@@ -101,14 +101,14 @@ export const media = {
     kind: "illustration",
   },
   "brand.quizhub-icon-192": {
-    src: "/brand/quizhub-icon-192.svg",
+    src: "/brand/quizhub-icon-192.png",
     alt: "Quizhub Icon 192",
     width: 192,
     height: 192,
     kind: "illustration",
   },
   "brand.quizhub-icon-512": {
-    src: "/brand/quizhub-icon-512.svg",
+    src: "/brand/quizhub-icon-512.png",
     alt: "Quizhub Icon 512",
     width: 512,
     height: 512,

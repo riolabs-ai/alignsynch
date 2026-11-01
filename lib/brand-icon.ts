@@ -24,16 +24,18 @@
  * `text-*` token the box around it sets. So the hex still lives in exactly one home —
  * `data/brand.ts` — and this file holds none.
  *
- * ## Why SVG text, and why these numbers
+ * ## Why the favicon is SVG and the maskable set is PNG
  *
- * The generator re-draws every file and `--check` compares byte-for-byte, which is the reason
- * the mark is authored as text and not as a raster: a path string compares exactly on any box,
- * where a PNG's bytes depend on the rasteriser that drew it. The sizes are the ones a browser,
- * an OS task switcher and a PWA installer each ask for, and the two compositions differ for one
- * reason only:
+ * The generator re-draws every file and `--check` compares byte-for-byte. The favicon stays an
+ * SVG file because it is what the browser renders in the tab, and a path string compares exactly
+ * on any box at any size. The apple-touch icon and the PWA install icons are *rasters* by
+ * contract — iOS renders no SVG for a home-screen icon, and a web-app manifest declares
+ * `image/png` — so those three surfaces are rasterised from this same `markSvg` output by
+ * `@resvg/resvg-js`, which is deterministic for a pinned version and still compares byte-for-byte
+ * in `--check`. Either way the file is drawn from this module, never hand-edited.
  *
  *   - the favicon (`-icon.svg`) is the app mark: a rounded box, glyph at 62 % of the canvas.
- *   - the maskable set (`-apple-touch-icon.svg`, `-icon-192.svg`, `-icon-512.svg`) is full
+ *   - the maskable set (`-apple-touch-icon.png`, `-icon-192.png`, `-icon-512.png`) is full
  *     bleed — the background fills the square, no rounded corners, no transparency — because
  *     iOS and the OS mask it themselves, and a pre-rounded corner double-rounds. The glyph
  *     drops to 56 % so the mark sits inside the 80 % safe circle the OS is allowed to crop to.
@@ -78,12 +80,12 @@ export const APP_RADIUS_FRACTION = 0.2;
 export const ICON_SUFFIXES = {
   /** The favicon — also the value recorded as `brand.icon` in `data/brand.ts`. */
   icon: "-icon.svg",
-  /** `apple-touch-icon`, 180×180, full bleed. */
-  appleTouchIcon: "-apple-touch-icon.svg",
+  /** `apple-touch-icon`, 180×180, full bleed, opaque. */
+  appleTouchIcon: "-apple-touch-icon.png",
   /** The PWA 192 icon, full bleed, maskable-safe. */
-  icon192: "-icon-192.svg",
+  icon192: "-icon-192.png",
   /** The PWA 512 icon, full bleed, maskable-safe. */
-  icon512: "-icon-512.svg",
+  icon512: "-icon-512.png",
 } as const;
 
 export type IconSurface = keyof typeof ICON_SUFFIXES;
