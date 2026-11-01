@@ -117,6 +117,15 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "logout-pending", label: "Signing out…" },
           { id: "logout-error", label: "Couldn't sign out. Try again." },
+          /**
+           * The rail's pin control. The rail is expanded by default, and the pin collapses it to
+           * its icon-only 70px state (and back). The two ids are the control's accessible names in
+           * its two states: `pin` is the action a collapsed rail offers (re-expand), `unpin` the
+           * action an expanded rail offers (collapse) — the same state-worded pair as
+           * `logout-pending` above, so a screen reader hears the action, not an icon.
+           */
+          { id: "pin", label: "Pin sidebar" },
+          { id: "unpin", label: "Unpin sidebar" },
         ],
       },
       /**
@@ -409,6 +418,14 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "settings", label: "Settings" },
           { id: "settings-hint", label: "Preferences" },
           { id: "logout", label: "Log out" },
+          /**
+           * The account menu's sign-out states. The menu's "Log out" is the same action the rail's
+           * row performs, so it needs the same two words beside `logout` — the moment between the
+           * click and the session ending, and the failure said out loud rather than swallowed
+           * (issue #272's rule, on the header's control rather than the rail's).
+           */
+          { id: "logout-pending", label: "Signing out…" },
+          { id: "logout-error", label: "Couldn't sign out. Try again." },
         ],
       },
       {
