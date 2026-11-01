@@ -41,7 +41,10 @@ import {
 import {
   AFTER_SIGN_IN,
   AFTER_SIGN_IN_BY_BRAND,
+  GOOGLE_FAILURE_QUERY,
+  GOOGLE_FAILURE_VALUE,
   absoluteUrlFor,
+  googleFailedLoginPath,
   loginPathFor,
   safeNextPath,
 } from "@/lib/auth/paths";
@@ -156,6 +159,15 @@ describe("signInDestination — the same-site gate, then the exists-on-this-buil
     const path = loginPathFor("/profile/ada");
     const encoded = path.slice("?next=".length + "/login".length);
     expect(safeNextPath(decodeURIComponent(encoded))).toBe("/profile/ada");
+  });
+
+  it("googleFailedLoginPath remembers the destination and marks the failure", () => {
+    const url = googleFailedLoginPath("/dashboard");
+    expect(url).toBe(`/login?next=%2Fdashboard&${GOOGLE_FAILURE_QUERY}=${GOOGLE_FAILURE_VALUE}`);
+    // The `next` is still a same-site path the page can resolve.
+    const parsed = new URL(url, "https://alignsynch.com");
+    expect(parsed.searchParams.get("next")).toBe("/dashboard");
+    expect(parsed.searchParams.get(GOOGLE_FAILURE_QUERY)).toBe(GOOGLE_FAILURE_VALUE);
   });
 });
 
