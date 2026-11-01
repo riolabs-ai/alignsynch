@@ -27,6 +27,12 @@ import { notFound } from "next/navigation";
  *      the database.
  *
  * `force-dynamic` for the same reason `/demo` carries it: the mode is read per request.
+ *
+ * **A proof, not a destination.** The demo's Admin button lands on `/admin/instances` — the
+ * console, where there is something to read — and this page stays as the one surface that shows
+ * the gate itself: which session, which role, read from Postgres for this request. Nothing links
+ * here from the flow; the URL is reachable and `docs/DEMO-AUTH.md` names it as the evidence. A
+ * reader who did arrive here gets the console button below rather than only a way back.
  */
 export const dynamic = "force-dynamic";
 
@@ -66,6 +72,9 @@ export default async function DemoAdminPage() {
             Demo mode — not a real login. The role above was read from Postgres for this request; no
             header or cookie can claim it.
           </p>
+          <Button asChild className="w-full">
+            <Link href="/admin/instances">Open the console</Link>
+          </Button>
           <Button asChild variant="outline" className="w-full">
             <Link href="/login">Back to the demo accounts</Link>
           </Button>
