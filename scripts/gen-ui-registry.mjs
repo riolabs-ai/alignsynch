@@ -539,7 +539,7 @@ function renderPage(structure, entries) {
   );
   const staticRoutes = routeSurfaces.filter((route) => !route.id.includes("[")).length;
   const undocumented = entries.filter((entry) => entry.capability === UI_UNDOCUMENTED);
-  const statusLine = ["mock", "fixture", "db", "live"]
+  const statusLine = ["mock", "fixture", "db", "live", "prototype"]
     .map((status) => `**${status}** ${statusOf.get(status) ?? 0}`)
     .join(" · ");
   const groupLine = GROUP_TITLES.map(
