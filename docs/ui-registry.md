@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **70** — 49 static, 21 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 273 files under `components/`, 268 of them `.tsx`
+- routes: **71** — 50 static, 21 dynamic, from `app/**/page.tsx`
+- component domains: **36** — 276 files under `components/`, 271 of them `.tsx`
 - route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 21
-- templates: Both templates 22 · AlignSynch 40 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 22
+- templates: Both templates 22 · AlignSynch 41 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -147,7 +147,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (47): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/templates/[type]/demo`, `/welcome` — and every other route through `app/layout.tsx`
+  - routes (48): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/templates/[type]/demo`, `/welcome` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch
@@ -203,7 +203,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/assessment/templates/new` — **fixture**
   - capability: Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.
   - components: `components/assessment-flow`
-  - reads: an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `lib/auth/server.ts`
   - notes: `fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/save/route.ts` (moved one segment deeper when `/assessment/templates` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/assessment/templates`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app's only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.
 
 - `/dashboard` — **db**
@@ -299,6 +299,11 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/ui`, `components/v1`
   - reads: 1 record fixture — `data/v1/fixtures.ts`
 
+- `/v1/review` — **prototype**
+  - capability: The prototype's own review checklist — every /v1 screen with an approval state (unreviewed, changes requested, approved) and a note, persisted in the store so a review survives a reload.
+  - components: `components/ui`, `components/v1`
+  - reads: 1 record fixture — `data/v1/fixtures.ts`
+
 - `/v1/service` — **prototype**
   - capability: The Service user's landing: the support queue of invitations, accounts and stuck relationships, with a resolve action per ticket.
   - components: `components/v1`
@@ -367,9 +372,9 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/v1` — **prototype**
   - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.
-  - files (29): `accept-session.tsx`, `admin-home.tsx`, `answer-sheet.tsx`, `coach-home.tsx`, `comment-thread.tsx`, `counterparty-home.tsx`, `initiator-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `opinion-sheet.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `relationship-detail.tsx`, `relationship-list.tsx`, `report-body.tsx`, `report-verdict.tsx`, `report-view.tsx`, `reveal.tsx`, `service-home.tsx`, `session-timeline.tsx`, `start-relationship-button.tsx`, `subscription-status.tsx`, `template-catalogue.tsx`, `template-demo.tsx`, `template-editor.tsx`, `template-library.tsx`, `template-page.tsx`, `v1-shell.tsx`, `v1-ui.tsx`
-  - routes (18): `/v1`, `/v1/admin`, `/v1/coach`, `/v1/counterparty`, `/v1/initiator`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/service`, `/v1/support`, `/v1/templates`, `/v1/templates/[type]`, `/v1/templates/[type]/demo`
-  - notes: Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — six types with Aspect sets) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.
+  - files (32): `accept-session.tsx`, `admin-home.tsx`, `answer-sheet.tsx`, `coach-home.tsx`, `comment-thread.tsx`, `counterparty-home.tsx`, `initiator-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `onboarding-panel.tsx`, `opinion-sheet.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `relationship-detail.tsx`, `relationship-list.tsx`, `report-body.tsx`, `report-verdict.tsx`, `report-view.tsx`, `reveal.tsx`, `review-chip.tsx`, `review-list.tsx`, `service-home.tsx`, `session-timeline.tsx`, `start-relationship-button.tsx`, `subscription-status.tsx`, `template-catalogue.tsx`, `template-demo.tsx`, `template-editor.tsx`, `template-library.tsx`, `template-page.tsx`, `v1-shell.tsx`, `v1-ui.tsx`
+  - routes (19): `/v1`, `/v1/admin`, `/v1/coach`, `/v1/counterparty`, `/v1/initiator`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/service`, `/v1/support`, `/v1/templates`, `/v1/templates/[type]`, `/v1/templates/[type]/demo`
+  - notes: Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the onboarding panel (`onboarding-panel.tsx`) varies the same ancestor as a stepped wizard (three beats, one visible at a time, with Next/Back and a Step N of 3 progress line); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — six types with Aspect sets) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.
 
 ## QuizHub
 

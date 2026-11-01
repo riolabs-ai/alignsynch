@@ -632,6 +632,14 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/v1/review",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The prototype's own review checklist — every /v1 screen with an approval state (unreviewed, changes requested, approved) and a note, persisted in the store so a review survives a reload.",
+  },
+  {
+    kind: "route",
     surface: "/v1/relationships/[id]",
     status: "prototype",
     templates: ["alignsynch"],
@@ -1016,6 +1024,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.",
     notes:
-      "Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — six types with Aspect sets) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.",
+      "Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the onboarding panel (`onboarding-panel.tsx`) varies the same ancestor as a stepped wizard (three beats, one visible at a time, with Next/Back and a Step N of 3 progress line); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — six types with Aspect sets) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.",
   },
 ]);
