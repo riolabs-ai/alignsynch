@@ -1,3 +1,5 @@
+// template-ancestor: components/settings/account-settings.tsx   (variation: the settings cards without the page band — labels, selects and switches in one panel)
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";

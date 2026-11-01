@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/card.tsx   (variation: the identity header — avatar, name and subtitle — then the person's cards beneath it)
+
 import { SignOutButton } from "@/components/identity/sign-out-button";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";

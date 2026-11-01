@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/card.tsx   (variation: four hand-rolled bands — heading, copy and image — over the alignment brand's own record, no cards and no quiz shelves)
+
 import type { AlignmentHomeModel, AlignmentTemplate } from "@/lib/alignment-home";
 import Image from "next/image";
 import Link from "next/link";

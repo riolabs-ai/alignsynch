@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the sign-in card — email, password, one submit and the Google path under it)
+
 import { AppVersion } from "@/components/layout/app-version";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";

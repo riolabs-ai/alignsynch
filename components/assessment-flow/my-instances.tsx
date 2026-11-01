@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: the party's instances as cards — three invitation states, no per-row menu, and no score or count to draw)
+ *
  * `/assessment/instances` — the list of instances the signed-in account is a party to (#213).
  *
  * A server component with no state and no handler: the page above it resolved the session and

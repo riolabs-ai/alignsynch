@@ -128,9 +128,40 @@ Only the first one decides where a screen belongs.
 - **Not a ban on a brand-shaped surface.** A quiz player is quiz-shaped and is named for it. What the
   doctrine forbids is a general capability written in one brand's vocabulary, because the next
   expression then rewrites it rather than reusing it.
-- **Not self-enforcing.** `scripts/gen-ui-registry.mjs --check` runs in every lane, the `status` check
-  reads the import graph, and `tests/parity/boundary.ts` holds the brand boundary; the decision order
-  is a review question, and naming the surface you reused is the cheapest evidence a reviewer can read.
+- **Checked, not merely stated.** `scripts/gen-ui-registry.mjs --check` runs in every lane, the
+  `status` check reads the import graph, and `tests/parity/boundary.ts` holds the brand boundary;
+  the decision _order_ is still a review question, but the answered question is mechanical —
+  `data:check` **E35** (below) fails a component that renders JSX and names no ancestor, and
+  `.github/pull_request_template.md` asks the three questions so a reviewer reads the answer beside
+  the diff.
+
+## The header, and the check that reads it
+
+Question 1 is a comment now. Every file under `components/` that renders JSX carries, in its first
+comment block:
+
+```tsx
+// template-ancestor: components/quiz/quiz-play.tsx   (variation: five-notch bands, no timer)
+// template-ancestor: none — approved #336
+```
+
+`pnpm data:check` walks `components/**/*.tsx` (`components/ui/**` is excluded — the vendored
+primitives are the bottom of every chain, and they are legal _targets_), reads the header, and
+fails on a missing header, an ancestor path that does not exist, a file naming itself, an ancestry
+that closes on itself, a `(variation: …)` that says nothing, or a `none` whose approval is not a
+row in `TEMPLATE_ANCESTOR_EXEMPTIONS` (`scripts/template-ancestor.ts`). The census prints every run —
+`187 components walked, 181 with an ancestor, 6 approved exceptions` — because a walk that quietly
+found nothing passes every tree.
+
+The exemption array **only shrinks**. Each row names the issue that approved the surface, and a row
+whose file has since been rebuilt onto a real ancestor is itself a failure, so a rebuild card
+deletes its row rather than leaving a stale permission behind. It has already shrunk once: it opened
+at eight rows, and #335 took two (the public header became a variation of `nav-menus.tsx`, and the
+public footer was deleted rather than kept as a second one).
+
+A header that names the honest ancestor while the file hand-writes it (`the profile band
+hand-written — … no page-header primitive`) is a correct header and a recorded divergence: that is
+how the remaining debt stays visible instead of becoming invisible.
 
 ## A seam, so nobody reads it as a contradiction
 

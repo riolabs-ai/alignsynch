@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/profile/profile-following.tsx   (variation: the same person list read the other way — who follows this account)
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { type User, getUserFollowers } from "@/lib/data/users";

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/tooltip.tsx   (variation: the bubble hand-rolled — media, body, receipts and a timestamp, aligned by sender, no card primitive)
+
 import { Media } from "@/components/media/media";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { useState } from "react";

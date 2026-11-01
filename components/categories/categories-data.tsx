@@ -1,3 +1,5 @@
+// template-ancestor: components/header/notification-icon.tsx   (variation: category key to an icon element, held as a module-scope array instead of a key the renderer resolves)
+
 import {
   Atom,
   BookOpen,

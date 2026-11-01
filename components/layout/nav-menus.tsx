@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/navigation-menu.tsx   (variation: the nav definition hand-rolled as rows — role-filtered, brand-keyed groups, no navigation-menu primitive)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";

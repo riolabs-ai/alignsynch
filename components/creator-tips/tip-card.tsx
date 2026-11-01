@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the tip card hand-written as a link block — cover media, author, read time and a bookmark, no card primitive)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
 import { tipCategoryName } from "@/data/creator-tips-data";

@@ -110,6 +110,13 @@ import {
 import { durationLabels, findMetricLiterals, relativeLabels } from "./metric-refs";
 import { clientGraphFindings, hasClientDirective } from "./client-graph";
 import {
+  TEMPLATE_ANCESTOR_EXEMPTIONS,
+  TEMPLATE_ANCESTOR_MIN_WALKED,
+  ancestorCensus,
+  exportsJsx,
+  templateAncestorFindings,
+} from "./template-ancestor";
+import {
   danglingEntries,
   generatedKeys,
   registryProblems,
@@ -928,6 +935,61 @@ if (clientEntries.length === 0) {
   );
 }
 
+/**
+ * E35 — every component names the template it varies (#336)
+ *
+ * The repo is a base core webapp and AlignSynch is a brand variation of it, so a component that
+ * was authored from scratch is a component the next brand has to author again. That was not a
+ * hypothesis: `docs/UI-DIVERGENCE.md` read twenty-seven files, named six hand-built surfaces with
+ * an ancestor sitting beside each one, and measured **zero** variations actually derived from an
+ * ancestor. Docs did not stop it, so the claim is checked: the first comment block of every
+ * `components/` file that renders JSX must say either
+ *
+ *     template-ancestor: components/<path>.tsx   (variation: what changes)
+ *     template-ancestor: none — approved #<issue>
+ *
+ * and the second form is only legal for a file in `TEMPLATE_ANCESTOR_EXEMPTIONS`
+ * (`scripts/template-ancestor.ts`), the array that must only shrink.
+ *
+ * `scripts/template-ancestor.ts` owns the extraction — comment stripping, the header parse, the
+ * JSX test, the ancestry graph — and is pure, so `scripts/__tests__/template-ancestor.test.ts`
+ * drives every shape and its last section asserts the real tree is clean. The census is printed
+ * below on both paths, and the floor is the point: a rule that walks zero files passes every tree.
+ *
+ * `components/ui/**` is excluded: the vendored shadcn primitives are the bottom of every chain, so
+ * requiring them to name an ancestor would only make them name each other. They are legal targets.
+ * ------------------------------------------------------------------ */
+
+const repoPath = (path: string) => path.split("\\").join("/");
+
+const componentSources = uiSources
+  .map((file) => ({ path: repoPath(file.path), source: file.source }))
+  .filter(
+    (file) =>
+      file.path.startsWith("components/") &&
+      file.path.endsWith(".tsx") &&
+      !file.path.startsWith("components/ui/"),
+  );
+
+const ancestorFiles = componentSources.filter((file) => exportsJsx(file.source));
+
+for (const finding of templateAncestorFindings({
+  files: ancestorFiles,
+  exemptions: TEMPLATE_ANCESTOR_EXEMPTIONS,
+  exists: (path) => existsSync(join(process.cwd(), path)),
+})) {
+  err(finding.rule, finding.message);
+}
+
+if (ancestorFiles.length < TEMPLATE_ANCESTOR_MIN_WALKED) {
+  err(
+    "E35",
+    `the template-ancestor walk found ${ancestorFiles.length} JSX components under components/ and this rule is measured over at least ${TEMPLATE_ANCESTOR_MIN_WALKED} — a walk that quietly found nothing checks nothing`,
+  );
+}
+
+const ancestorCoverage = ancestorCensus(ancestorFiles);
+
 const imageTags = nextImageTags(imageSources);
 const imageMeasured = imageCensus(imageTags);
 
@@ -1640,6 +1702,9 @@ console.log(
 );
 console.log(
   `      ${clientEntries.length} "use client" entries walked, ${clientCrossings.length} reaching a server-only module (E34)`,
+);
+console.log(
+  `      ${ancestorCoverage.walked} components walked, ${ancestorCoverage.withAncestor} with an ancestor, ${ancestorCoverage.approved} approved exceptions (E35; components/ui/** is vendored and excluded from the walk)`,
 );
 console.log(
   `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,

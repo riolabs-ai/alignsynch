@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/home/top-players-carousel.tsx   (variation: winners instead of top players — a live badge, no rank titles and no view-all link)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";

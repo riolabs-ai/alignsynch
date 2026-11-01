@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/quiz/quiz-play.tsx   (variation: two seats scoring at once — both players' progress, a round clock, no question stepper)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

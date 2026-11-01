@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the person list — one card per account with an avatar, a badge and a follow button)
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { type User, getUserFollowing } from "@/lib/data/users";

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/admin/instance-registry.tsx   (variation: the ranking table — rank, player, tier, progress and streak columns in a horizontal scroll wrapper)
+
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";

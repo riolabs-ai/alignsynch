@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/radio-group.tsx   (variation: one question hand-rolled — prompt, media and one button per answer with its correct/incorrect state)
+
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { CheckCircle, XCircle } from "lucide-react";

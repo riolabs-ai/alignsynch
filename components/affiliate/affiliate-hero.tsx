@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/home/hero-section.tsx   (variation: hero with a three-fact checklist and two CTAs in place of the themed background image)
+
 import { Button } from "@/components/ui/button";
 import {
   formatCompactCount,

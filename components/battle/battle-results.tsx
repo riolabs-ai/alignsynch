@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/quiz/quiz-results.tsx   (variation: the result hero as a head-to-head — two avatars, a winner badge and a rematch action)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

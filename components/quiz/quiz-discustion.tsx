@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/quiz/quiz-discussion-page.tsx   (variation: one quiz's thread — question cards, a comment composer and a back link)
+
 import { QuestionDiscussion } from "@/components/quiz/question-discussion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

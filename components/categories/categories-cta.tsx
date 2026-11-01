@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/button.tsx   (variation: a centred close band — a heading, one line, one button and three icon facts)
+
 import { Button } from "@/components/ui/button";
 import type { PageCopySection } from "@/content/pages";
 import { itemOf, itemValue } from "@/lib/page-copy";

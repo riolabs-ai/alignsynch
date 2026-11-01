@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/tabs.tsx   (variation: the support band — a hand-written title and description above three tabs over the hub's sections)
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PageCopy } from "@/content/pages";
 import { itemLabel, sectionOf } from "@/lib/page-copy";

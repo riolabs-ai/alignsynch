@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/leaderboard/leaderboard-table.tsx   (variation: the tournament table with a round select and no podium)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

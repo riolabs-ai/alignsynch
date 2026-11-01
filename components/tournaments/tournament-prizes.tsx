@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the prize ladder — one card per place with an icon and an amount)
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPercentValue } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/accordion.tsx   (variation: the rules as accordion sections read from the fixture)
+
 import {
   Accordion,
   AccordionContent,

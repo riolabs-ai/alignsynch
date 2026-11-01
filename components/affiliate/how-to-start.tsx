@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/categories/categories-how-it-works.tsx   (variation: the numbered-steps band over the programme's four milestones, one link at the end)
+
 import { Button } from "@/components/ui/button";
 import type { PageCopySection } from "@/content/pages";
 import { fillLabel, itemLabel, itemOf } from "@/lib/page-copy";

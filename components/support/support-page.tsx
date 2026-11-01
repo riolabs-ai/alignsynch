@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: the support hub — header tabs, category cards, the FAQ, the contact form and the knowledge base)
+
 import type { SupportCategory } from "@/content/article";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { useState } from "react";

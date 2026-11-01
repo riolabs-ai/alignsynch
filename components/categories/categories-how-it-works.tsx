@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/card.tsx   (variation: three numbered steps hand-written as columns, each an icon chip and a line, no card primitive)
+
 import { Media } from "@/components/media/media";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import browse from "@/public/browse-category.png";

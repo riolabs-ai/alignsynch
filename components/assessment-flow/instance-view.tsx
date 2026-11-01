@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: none — approved #336
+ *
  * `/assessment/instances/[instanceId]` — the one screen both parties share (#146).
  *
  * Three states, and the third one is the only one that draws a score:

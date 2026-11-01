@@ -21,6 +21,7 @@
     "scripts/data-check*",
     "scripts/rule-codes.ts",
     "scripts/client-graph.ts",
+    "scripts/template-ancestor.ts",
     "scripts/ui-refs.ts",
     "scripts/metric-refs.ts",
     "scripts/metric-invariants.ts",

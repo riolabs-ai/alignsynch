@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/card.tsx   (variation: a hand-rolled rounded tile in place of components/ui/card.tsx — a generated gradient and a monogram, no border)
+
 import { gradientFor, monogramOf } from "@/lib/category-gradient";
 import Image from "next/image";
 

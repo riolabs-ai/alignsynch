@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: the same record list inside a tab — status tabs and a per-row menu, no page header and no search)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-filters.tsx   (variation: three dropdown pickers in a bar instead of an accordion rail)
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

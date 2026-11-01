@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/auth/login-view.tsx   (variation: the same card with name, username and role fields and a confirm-password row)
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

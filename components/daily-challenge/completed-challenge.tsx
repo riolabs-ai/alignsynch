@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/quiz/quiz-results.tsx   (variation: the completed state — a trophy hero and tabs for rewards, history and the leaderboard, no score)
+
 import { Button } from "@/components/ui/button";
 import {
   Card,

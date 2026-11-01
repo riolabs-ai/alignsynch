@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/sheet.tsx   (variation: the drawer hand-rolled as a positioned panel — an unread badge, mark-all-read and one row per notification)
+
 import type { Notification } from "@/content/social";
 import type { PageCopySection } from "@/content/pages";
 import { formatRelative } from "@/content/core";

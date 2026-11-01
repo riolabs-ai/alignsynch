@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quiz-list.tsx   (variation: the article grid — a search field, one card per article and a view-all link)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/button.tsx   (variation: a centred close band — a heading, one line and one primary button, no title band)
+
 import { Button } from "@/components/ui/button";
 import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";

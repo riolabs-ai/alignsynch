@@ -1,3 +1,5 @@
+// template-ancestor: none — approved #336
+
 import type { PageCopy, PageCopyLink, PageCopySection } from "@/content/pages";
 import { itemBody, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";

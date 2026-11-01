@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/ui/alert.tsx   (variation: the failure page hand-written in place of components/ui/alert.tsx — a page, not a panel)
+ *
  * The assessment screen when the database did not answer — a page, not a digest (#204).
  *
  * Every other failure on this route is already honest: a slug no instance carries is a 404

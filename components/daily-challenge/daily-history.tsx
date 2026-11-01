@@ -1,3 +1,5 @@
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: the history as dated rows with a completion badge and a link, no tabs and no filters)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

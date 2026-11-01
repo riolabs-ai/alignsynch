@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the rail — wordmark, the AppNav rows, a sign-out row and a close control below the breakpoint)
+
 import { AppNav, NavRow } from "@/components/layout/nav-menus";
 import { AppVersion } from "@/components/layout/app-version";
 import { useSidebar } from "@/components/layout/sidebar-context";

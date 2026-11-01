@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/circular-progress.tsx   (variation: seven single-path glyphs in the icon shape, written here because the icon set does not carry them)
+
 import { SVGProps } from "react";
 
 export const Activity = (props: SVGProps<SVGSVGElement>) => (

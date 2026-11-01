@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/quiz/quiz-play.tsx   (variation: the answer sheet as a no-JS POST form — five-notch opinion bands per Aspect, no timer, no stepper, no progress bar)
+ *
  * The answer sheet: every Aspect, and the scores **the instance's mode** asks (#146, #213, #273).
  *
  * `opinionKindsFor(mode)` is the list of kinds asked — `feel` and `wish` for Basic Mode, all
