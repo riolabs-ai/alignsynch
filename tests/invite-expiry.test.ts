@@ -162,6 +162,11 @@ const stub = vi.hoisted(() => {
     if (sql.startsWith("SELECT role FROM party")) {
       return { rows: [{ role: "initiator" }], rowCount: 1 };
     }
+    // The relationship-scoped party resolution (`lib/flow/membership.ts`): a party by bearer
+    // token (then by account), joined through the session to the relationship it belongs to.
+    if (sql.startsWith("SELECT p.role FROM party p")) {
+      return { rows: [{ role: "initiator" }], rowCount: 1 };
+    }
     // The instance bundle. Matched before the template read below: both open with
     // `SELECT to_jsonb(r) AS record,`, and only this one joins `session`.
     if (sql.includes("JOIN session ai ON ai.record_id = r.id")) {
