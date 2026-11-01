@@ -636,7 +636,15 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The one screen every role opens a relationship from — invitation, claim, progress, the blind answers table and the advice thread.",
+      "The one screen every role opens a relationship from — the subscription header (plan, status, period end, mock badge), invitation, claim, the blind answers table, the acceptance step, the comment threads and the advice thread.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/relationships/[id]/accept",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The acceptance step: each party reviews a value-free summary of the session and records their acceptance; the session completes only when both have accepted, and that is the instant the report unlocks.",
   },
   {
     kind: "route",
@@ -644,7 +652,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits.",
+      "The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits. Submission alone does not lift the blind rule.",
   },
   {
     kind: "route",
@@ -652,7 +660,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The report — the eight gap kinds grouped under the glossary's headings, with the Setting's verdict on top, unlocked only when both parties have submitted.",
+      "The report — the eight gap kinds grouped under the glossary's headings, with the Setting's verdict on top, unlocked only when both parties accept (never at the second submit).",
   },
   {
     kind: "route",

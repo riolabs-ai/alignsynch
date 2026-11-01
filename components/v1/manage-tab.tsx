@@ -3,7 +3,7 @@
 
 import type { Assessment } from "@/content/assessment";
 import { SETTING_LABELS } from "@/content/assessment";
-import { formatCurrency, formatDate } from "@/content/core";
+import { formatDate } from "@/content/core";
 import type { V1Relationship } from "@/data/v1/fixtures";
 import { gapSummary, meanGapOf, relationshipNameOf } from "@/lib/v1/derive";
 import { useV1Store } from "@/lib/v1/store";
@@ -39,7 +39,7 @@ export function ManageTab({ rel, template }: { rel: V1Relationship; template?: A
     return (
       <p className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
         Your session is open — you answer the sheet, so the manage numbers stay out of view until
-        both parties have submitted. Right now this relationship is{" "}
+        both parties accept. Right now this relationship is{" "}
         <span className="font-medium text-foreground">{summary.stage}</span>.
       </p>
     );
@@ -50,7 +50,7 @@ export function ManageTab({ rel, template }: { rel: V1Relationship; template?: A
   const completionPercent = opened === 0 ? null : `${Math.round((completed / opened) * 100)}%`;
   const completionFraction = opened === 0 ? null : `${completed} / ${opened}`;
   const nextSession = !complete
-    ? "opens when both submit"
+    ? "opens when both accept"
     : rel.counterpartyName === null
       ? "awaits a counterparty"
       : "available";
@@ -76,14 +76,14 @@ export function ManageTab({ rel, template }: { rel: V1Relationship; template?: A
           </div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4 text-center">
-          <div className="text-sm text-muted-foreground">What was paid</div>
-          <div className="mt-1 text-2xl font-semibold text-foreground">
-            {rel.purchase === null ? "—" : formatCurrency(rel.purchase.amountCents)}
+          <div className="text-sm text-muted-foreground">Subscription</div>
+          <div className="mt-1 text-2xl font-semibold capitalize text-foreground">
+            {rel.subscription === null ? "—" : rel.subscription.plan}
           </div>
           <div className="text-xs text-muted-foreground">
-            {rel.purchase === null
-              ? "nothing paid"
-              : `${rel.purchase.plan} · ${formatDate(rel.purchase.purchasedAt)}`}
+            {rel.subscription === null
+              ? "no subscription"
+              : `${rel.subscription.status} · ends ${formatDate(rel.subscription.periodEnd)}`}
           </div>
         </div>
       </div>

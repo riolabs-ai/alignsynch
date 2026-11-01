@@ -44,8 +44,10 @@ import {
   type Persona,
   type V1Account,
   type V1Relationship,
+  type V1SessionRecord,
   type V1Ticket,
 } from "@/data/v1/fixtures";
+import { unlockedAtOf } from "@/lib/v1/derive";
 import {
   createContext,
   useCallback,
@@ -181,6 +183,21 @@ export interface V1Store {
     role: "initiator" | "counterparty",
     answers: Readonly<Record<string, Opinions>>,
   ) => void;
+  readonly acceptSession: (relationshipId: string, role: "initiator" | "counterparty") => void;
+  /** Archive the complete session and reset the sheet; returns a refusal sentence, or null. */
+  readonly requestNewSession: (relationshipId: string) => string | null;
+  readonly addComment: (
+    relationshipId: string,
+    author: "initiator" | "counterparty",
+    body: string,
+  ) => void;
+  readonly addAspectComment: (
+    relationshipId: string,
+    itemId: string,
+    author: "initiator" | "counterparty",
+    body: string,
+  ) => void;
+  readonly restoreSubscription: (relationshipId: string) => void;
   readonly addCoachComment: (relationshipId: string, body: string) => void;
   readonly toggleShareWithCoach: (relationshipId: string) => void;
   readonly resolveTicket: (ticketId: string) => void;
@@ -282,6 +299,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         throw new Error(`no template "${input.templateId}" in the library`);
       }
       const items = template.items.map((item) => ({ ...item, scale: { ...item.scale } }));
+      const now = new Date().toISOString();
+      const periodEnd = new Date(Date.now() + 30 * 86_400_000).toISOString();
       const relationship: V1Relationship = {
         id: uid("rel"),
         templateId: input.templateId,
@@ -295,14 +314,24 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         counterpartyAnswers: {},
         initiatorSubmitted: false,
         counterpartySubmitted: false,
+        initiatorAccepted: false,
+        counterpartyAccepted: false,
+        initiatorAcceptedAt: null,
+        counterpartyAcceptedAt: null,
         inviteToken: null,
         sharedWithCoach: false,
         coachComments: [],
+        comments: [],
+        aspectComments: {},
         openedSessions: 0,
         completedSessions: 0,
-        purchase: null,
+        // The Initiator subscribes when the relationship is created. Mocked in the prototype —
+        // no charge, monthly by default; the subscribe flow (t_a202c680) is the path that lets a
+        // person pick quarterly.
+        subscription: { plan: "monthly", status: "active", periodEnd, startedAt: now },
+        history: [],
         lastSessionAt: null,
-        createdAt: new Date().toISOString(),
+        createdAt: now,
       };
       setRelationships((previous) => [...previous, relationship]);
       return relationship;
@@ -349,6 +378,110 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
           counterpartyAnswers: { ...rel.counterpartyAnswers, ...answers },
           counterpartySubmitted: true,
         };
+      });
+    },
+    [patchRelationship],
+  );
+
+  const acceptSession = useCallback(
+    (relationshipId: string, role: "initiator" | "counterparty") => {
+      patchRelationship(relationshipId, (rel) => {
+        const now = new Date().toISOString();
+        const next =
+          role === "initiator"
+            ? { ...rel, initiatorAccepted: true, initiatorAcceptedAt: now }
+            : { ...rel, counterpartyAccepted: true, counterpartyAcceptedAt: now };
+        const wasComplete = rel.initiatorAccepted && rel.counterpartyAccepted;
+        const isComplete = next.initiatorAccepted && next.counterpartyAccepted;
+        // The closing event: when the second party accepts, the session flips complete and the
+        // report unlocks at that instant.
+        if (!wasComplete && isComplete) {
+          return { ...next, completedSessions: next.completedSessions + 1, lastSessionAt: now };
+        }
+        return next;
+      });
+    },
+    [patchRelationship],
+  );
+
+  const requestNewSession = useCallback(
+    (relationshipId: string): string | null => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) return "This relationship does not exist.";
+      if (rel.subscription === null) {
+        return "There is no subscription on this relationship — subscribe to request a new session.";
+      }
+      if (rel.subscription.status === "lapsed") {
+        return "Your subscription has lapsed. Restore it to request a new session.";
+      }
+      if (rel.subscription.status === "past_due") {
+        return "Your subscription is past due. Update your payment to request a new session.";
+      }
+      const completedAt = unlockedAtOf(rel) ?? new Date().toISOString();
+      const record: V1SessionRecord = {
+        id: uid("ses"),
+        initiatorAnswers: rel.initiatorAnswers,
+        counterpartyAnswers: rel.counterpartyAnswers,
+        initiatorAcceptedAt: rel.initiatorAcceptedAt ?? completedAt,
+        counterpartyAcceptedAt: rel.counterpartyAcceptedAt ?? completedAt,
+        completedAt,
+      };
+      patchRelationship(rel.id, (current) => ({
+        ...current,
+        initiatorAnswers: {},
+        counterpartyAnswers: {},
+        initiatorSubmitted: false,
+        counterpartySubmitted: false,
+        initiatorAccepted: false,
+        counterpartyAccepted: false,
+        initiatorAcceptedAt: null,
+        counterpartyAcceptedAt: null,
+        history: [record, ...current.history],
+        openedSessions: current.openedSessions + 1,
+      }));
+      return null;
+    },
+    [relationships, patchRelationship],
+  );
+
+  const addComment = useCallback(
+    (relationshipId: string, author: "initiator" | "counterparty", body: string) => {
+      patchRelationship(relationshipId, (rel) => ({
+        ...rel,
+        comments: [...rel.comments, { id: uid("cmt"), author, body, at: new Date().toISOString() }],
+      }));
+    },
+    [patchRelationship],
+  );
+
+  const addAspectComment = useCallback(
+    (
+      relationshipId: string,
+      itemId: string,
+      author: "initiator" | "counterparty",
+      body: string,
+    ) => {
+      patchRelationship(relationshipId, (rel) => ({
+        ...rel,
+        aspectComments: {
+          ...rel.aspectComments,
+          [itemId]: [
+            ...(rel.aspectComments[itemId] ?? []),
+            { id: uid("cmt"), author, body, at: new Date().toISOString() },
+          ],
+        },
+      }));
+    },
+    [patchRelationship],
+  );
+
+  const restoreSubscription = useCallback(
+    (relationshipId: string) => {
+      patchRelationship(relationshipId, (rel) => {
+        if (rel.subscription === null) return rel;
+        const days = rel.subscription.plan === "quarterly" ? 90 : 30;
+        const periodEnd = new Date(Date.now() + days * 86_400_000).toISOString();
+        return { ...rel, subscription: { ...rel.subscription, status: "active", periodEnd } };
       });
     },
     [patchRelationship],
@@ -417,6 +550,11 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       sendInvite,
       claimInvite,
       submitAnswers,
+      acceptSession,
+      requestNewSession,
+      addComment,
+      addAspectComment,
+      restoreSubscription,
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,
@@ -437,6 +575,11 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       sendInvite,
       claimInvite,
       submitAnswers,
+      acceptSession,
+      requestNewSession,
+      addComment,
+      addAspectComment,
+      restoreSubscription,
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,

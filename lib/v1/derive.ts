@@ -7,6 +7,12 @@
  * relationship shape (`V1Relationship`), which the real `zAssessmentInstance` cannot hold while a
  * relationship is mid-flight. No React, no Next, no clock, no `lib/db/**` — the client store
  * imports it, and it stays out of the server graph for the same reason.
+ *
+ * The corrected model (#340) changed one hinge: a session is **complete when both parties
+ * accept it**, not when the second party submits. Submission is necessary but not sufficient —
+ * after both submit, each party reviews and accepts, and only then does the blind rule lift and
+ * the report unlock. Every "complete" derivation below reads that hinge, so a submission cannot
+ * leak a value.
  */
 import type { AspectGaps, AlignmentVerdict, GapKinds } from "@/content/gaps";
 import { gapKindsIn, gapKindsOf, instanceAlignment } from "@/content/gaps";
@@ -34,7 +40,7 @@ export function progressOf(rel: V1Relationship): RelationshipProgress {
   };
 }
 
-/** Both parties have answered every Aspect — the instant the blind rule lifts. */
+/** Both parties have answered every Aspect — necessary for completion, but not sufficient. */
 export function bothSubmittedOf(rel: V1Relationship): boolean {
   if (rel.counterpartyName === null) return false;
   if (rel.items.length === 0) return false;
@@ -42,6 +48,33 @@ export function bothSubmittedOf(rel: V1Relationship): boolean {
     (item) =>
       rel.initiatorAnswers[item.id] !== undefined && rel.counterpartyAnswers[item.id] !== undefined,
   );
+}
+
+/** Both parties have accepted — the closing event of a session. */
+export function bothAcceptedOf(rel: V1Relationship): boolean {
+  return rel.initiatorAccepted && rel.counterpartyAccepted;
+}
+
+/**
+ * A session is complete when both parties have submitted **and** both have accepted. Submission
+ * alone leaves the blind rule in force; acceptance is the event that lifts it.
+ */
+export function sessionCompleteOf(rel: V1Relationship): boolean {
+  return bothSubmittedOf(rel) && bothAcceptedOf(rel);
+}
+
+/** The moment the report unlocks: the later of the two acceptance instants, or null. */
+export function unlockedAtOf(rel: V1Relationship): string | null {
+  if (rel.initiatorAcceptedAt === null || rel.counterpartyAcceptedAt === null) return null;
+  // ISO-8601 UTC instants compare lexicographically in chronological order, so the later of the
+  // two acceptance instants is simply the greater string.
+  const instants = [rel.initiatorAcceptedAt, rel.counterpartyAcceptedAt].sort();
+  return instants[instants.length - 1];
+}
+
+/** Whether the relationship's subscription is in good standing (new sessions allowed). */
+export function subscriptionGoodStandingOf(rel: V1Relationship): boolean {
+  return rel.subscription !== null && rel.subscription.status === "active";
 }
 
 /** The Gaps of one Aspect, absent when either side has not answered it. */
@@ -57,20 +90,20 @@ export function allAspectGaps(rel: V1Relationship): AspectGaps[] {
   return rel.items.map((item) => ({ itemId: item.id, gaps: aspectGapsOf(rel, item.id) }));
 }
 
-/** The verdict under the relationship's Setting — null until both parties have submitted. */
+/** The verdict under the relationship's Setting — null until the session is complete (accepted). */
 export function verdictOf(rel: V1Relationship): AlignmentVerdict | null {
-  if (!bothSubmittedOf(rel)) return null;
+  if (!sessionCompleteOf(rel)) return null;
   return instanceAlignment(allAspectGaps(rel), rel.setting);
 }
 
 /**
- * The stage, derived exactly as `content/stages.ts` derives it: unclaimed → invited, claimed and
- * incomplete → connected, complete and unmet → sharing, complete and every Gap within the Setting
- * → aligned.
+ * The stage, derived exactly as `content/stages.ts` derives it, with the corrected hinge: the
+ * sheet is "complete" only when both parties have accepted. Unclaimed → invited; claimed and not
+ * accepted → connected; accepted and unmet → sharing; accepted and within the Setting → aligned.
  */
 export function stageOfRelationship(rel: V1Relationship): RelationshipStage {
   if (rel.counterpartyName === null) return "invited";
-  if (!bothSubmittedOf(rel)) return "connected";
+  if (!sessionCompleteOf(rel)) return "connected";
   const aspects = allAspectGaps(rel);
   if (aspects.length === 0) return "sharing";
   return stageOf({
@@ -113,11 +146,11 @@ export function relationshipNameOf(rel: V1Relationship, templateTitle: string): 
 
 /**
  * The mean Gap across the completed report — the "average alignment" figure the Manage
- * dashboard shows the Initiator (and Admin), never the Counterparty. Null until both parties
- * have submitted, or when nothing is measurable. Lower is more aligned.
+ * dashboard shows the Initiator (and Admin), never the Counterparty. Null until the session is
+ * complete, or when nothing is measurable. Lower is more aligned.
  */
 export function meanGapOf(rel: V1Relationship): number | null {
-  if (!bothSubmittedOf(rel)) return null;
+  if (!sessionCompleteOf(rel)) return null;
   let sum = 0;
   let count = 0;
   for (const item of rel.items) {

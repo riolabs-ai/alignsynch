@@ -2,10 +2,20 @@
 "use client";
 
 import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
-import { gapSummary, progressOf, relationshipNameOf } from "@/lib/v1/derive";
+import { formatDateTimeLong } from "@/content/core";
+import {
+  bothSubmittedOf,
+  gapSummary,
+  progressOf,
+  relationshipNameOf,
+  sessionCompleteOf,
+  unlockedAtOf,
+} from "@/lib/v1/derive";
 import { useV1Store } from "@/lib/v1/store";
 import { EmptyState, LoadingState, NotFoundState, StageBadge } from "@/components/v1/v1-ui";
+import { CommentThread } from "@/components/v1/comment-thread";
 import { ManageTab } from "@/components/v1/manage-tab";
+import { SubscriptionStatus } from "@/components/v1/subscription-status";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -16,6 +26,7 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   const store = useV1Store();
   const { hydrated, persona, relationships, templates } = store;
   const [comment, setComment] = useState("");
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("sessions");
 
   const rel = relationships.find((candidate) => candidate.id === relationshipId);
@@ -42,7 +53,8 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   const template = templates.find((t) => t.id === rel.templateId);
   const summary = gapSummary(rel);
   const progress = progressOf(rel);
-  const complete = summary.verdict !== null;
+  const complete = sessionCompleteOf(rel);
+  const bothAnswered = bothSubmittedOf(rel);
   const unclaimed = rel.counterpartyName === null;
 
   const viewer =
@@ -53,6 +65,10 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   const canSeeCounterparty = complete || viewer === "counterparty" || isAdmin;
 
   const answerLink = `/v1/relationships/${rel.id}/answer`;
+  const acceptLink = `/v1/relationships/${rel.id}/accept`;
+
+  const authorName = (author: "initiator" | "counterparty") =>
+    author === "initiator" ? rel.initiatorName : (rel.counterpartyName ?? "Counterparty");
 
   const opinionKinds =
     rel.mode === "advanced" ? ["feel", "wish", "think", "guess"] : ["feel", "wish"];
@@ -68,10 +84,15 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
     return value === undefined ? "—" : String(value);
   };
 
+  const handleRequestNewSession = () => {
+    const refusal = store.requestNewSession(rel.id);
+    setSessionNotice(refusal ?? "A new session is open — both of you can answer again.");
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
               {relationshipNameOf(rel, template?.title ?? "")}
@@ -93,6 +114,8 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
           Back
         </Link>
       </div>
+
+      <SubscriptionStatus rel={rel} />
 
       <div className="flex gap-2 border-b border-border">
         {(
@@ -183,14 +206,27 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    {complete ? "Report unlocked" : "Report locked until both parties submit"}
+                    {complete
+                      ? "Report unlocked"
+                      : bothAnswered
+                        ? "Both parties answered — review and accept"
+                        : "Report locked until both parties accept"}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Initiator answered {progress.initiatorAnswered}/{progress.aspectCount} ·
                     Counterparty {progress.counterpartyAnswered}/{progress.aspectCount}
                   </p>
+                  {complete && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Accepted by {rel.initiatorName} at{" "}
+                      {formatDateTimeLong(rel.initiatorAcceptedAt ?? "")} · by{" "}
+                      {rel.counterpartyName} at{" "}
+                      {formatDateTimeLong(rel.counterpartyAcceptedAt ?? "")} — report unlocked at{" "}
+                      {formatDateTimeLong(unlockedAtOf(rel) ?? "")}.
+                    </p>
+                  )}
                 </div>
-                {viewer !== null && !complete && (
+                {viewer !== null && !complete && !bothAnswered && (
                   <Link
                     href={answerLink}
                     className="inline-flex h-11 items-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
@@ -198,13 +234,30 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
                     {rel.mode === "advanced" ? "Answer all four" : "Answer Feel & Wish"}
                   </Link>
                 )}
+                {viewer !== null && !complete && bothAnswered && (
+                  <Link
+                    href={acceptLink}
+                    className="inline-flex h-11 items-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
+                  >
+                    Review and accept this session
+                  </Link>
+                )}
                 {complete && (
                   <Link
                     href={`/v1/relationships/${rel.id}/report`}
-                    className="inline-flex h-11 items-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
+                    className="inline-flex h-11 items-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
                   >
                     Read the report
                   </Link>
+                )}
+                {viewer !== null && complete && (
+                  <button
+                    type="button"
+                    onClick={handleRequestNewSession}
+                    className="inline-flex h-11 items-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
+                  >
+                    Request a new session
+                  </button>
                 )}
                 {(viewer === "initiator" || isAdmin) && (
                   <button
@@ -216,17 +269,22 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
                   </button>
                 )}
               </div>
+              {sessionNotice !== null && (
+                <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                  {sessionNotice}
+                </p>
+              )}
             </section>
           )}
 
-          {/* The answers, respecting the blind rule until both submit. */}
+          {/* The answers, respecting the blind rule until both accept. */}
           <section className="overflow-hidden rounded-lg border border-border bg-card">
             <div className="border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold text-foreground">Answers</h2>
               <p className="text-xs text-muted-foreground">
                 {complete
                   ? "Both sides are open."
-                  : "Each party sees only their own answers until both submit."}
+                  : "Each party sees only their own answers until both accept."}
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -276,6 +334,34 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
               </table>
             </div>
           </section>
+
+          {/* Comments — the relationship thread and one per Aspect, only after the session is
+              complete. A coach reads them read-only; an admin reads them read-only too. */}
+          {complete && (
+            <div className="space-y-4">
+              <CommentThread
+                heading="Relationship"
+                comments={rel.comments}
+                authorName={authorName}
+                canComment={viewer !== null}
+                placeholder="Comment on this relationship…"
+                onAdd={(body) => store.addComment(rel.id, viewer ?? "initiator", body)}
+              />
+              {rel.items.map((item) => (
+                <CommentThread
+                  key={item.id}
+                  heading={item.prompt}
+                  comments={rel.aspectComments[item.id] ?? []}
+                  authorName={authorName}
+                  canComment={viewer !== null}
+                  placeholder={`Comment on "${item.prompt}"…`}
+                  onAdd={(body) =>
+                    store.addAspectComment(rel.id, item.id, viewer ?? "initiator", body)
+                  }
+                />
+              ))}
+            </div>
+          )}
 
           {/* The advice thread — the coach's read-only surface. */}
           {(isCoach || rel.sharedWithCoach) && (
