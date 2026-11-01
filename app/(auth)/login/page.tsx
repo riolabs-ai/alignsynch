@@ -1,6 +1,7 @@
 import { LoginView } from "@/components/auth/login-view";
 import { brand, brandIdOf } from "@/data/brand";
 import { loginPageCopy } from "@/data/pages/login";
+import { AUTH_ENV_BASE_URL } from "@/lib/auth/config";
 import { demoMode } from "@/lib/auth/demo-mode";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
@@ -67,6 +68,23 @@ export default async function AuthPage({
   const { next } = await searchParams;
   const target = Array.isArray(next) ? next[0] : next;
 
+  /**
+   * The Neon Auth origin, read here and handed to the view so the browser can start a Google
+   * sign-in *there* rather than through `/api/auth` (the fix for the `state_mismatch` loop).
+   *
+   * The OAuth state cookie is set by whichever origin answers the initial `sign-in/social`
+   * call and checked by that same origin at `{NEON_AUTH_BASE_URL}/callback/google`. Started
+   * through the proxy the cookie lands on this app's origin while the callback happens on
+   * Neon's, so the callback finds no cookie. The view needs the *base URL* (scheme + host +
+   * its `/neondb/auth` path) to point its direct client at — it is public, the same origin a
+   * person already visits mid-flow, so handing it down is not handing down a secret.
+   *
+   * Empty means auth is not configured in this deployment (the gate, CI, the parity render):
+   * the view keeps drawing the button, and a click fails honestly rather than building an auth
+   * server the way `neonAuth()` would — this page must not require the cookie secret to render.
+   */
+  const authBaseUrl = process.env[AUTH_ENV_BASE_URL]?.trim() ?? "";
+
   const mode = demoMode();
   const surface = demoSurfaceFor(mode, mode.kind === "demo" ? await readDemoUnlock() : null);
   const demo: DemoViewProps =
@@ -80,6 +98,7 @@ export default async function AuthPage({
     <LoginView
       copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandIdOf(brand)), loginPageCopy)}
       next={safeNextPath(target)}
+      authBaseUrl={authBaseUrl}
       demo={demo}
       providerHint={isGoogleOnlySignIn}
     />
