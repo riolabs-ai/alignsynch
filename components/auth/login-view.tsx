@@ -13,13 +13,14 @@ import type { PageCopy } from "@/content/pages";
 import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
-import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
+import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
+import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { BookOpen, Loader2, Scale, Trophy, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 
 /**
  * The mark each stat tile draws, by the id the build's fixture declares.
@@ -50,6 +51,11 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
  *   - `credentials`  a wrong password renders **"Invalid email or password"** from the fixture.
  *                    Never `error.message` — the SDK's text is written for a developer and can
  *                    echo the identifier back.
+ *   - `google`       the same 401, for an account that has no password because it was created
+ *                    with the Google button. The auth server cannot say which cause it was (one
+ *                    code for both, on purpose), so `providerHint` is asked — a server action
+ *                    that reads the account's provider rows — and the refusal is upgraded to
+ *                    the fixture's Google sentence. Nothing about a password is claimed.
  *   - `network`      a request that never arrived says so. This is the state a `catch` around a
  *                    fetch usually swallows into "invalid credentials", which is the one wrong
  *                    answer for a flaky connection.
@@ -85,15 +91,41 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
  * in this tree to detect, so the guard is *pending* rather than guessed — when #280 lands it
  * belongs here as one boolean prop resolved on the server, the way `demo` already arrives,
  * never a `navigator.userAgent` check in a client component.
+ *
+ * **The Google-only refusal** is the second half of #281 and the one place this form asks the
+ * server a question of its own. `signIn.email` answers `INVALID_EMAIL_OR_PASSWORD` for a wrong
+ * password *and* for an account that has no password because it was created with Google — one
+ * code for both, deliberately, so the endpoint cannot be used to discover accounts. The cause is
+ * still knowable from the provider rows, so after a `credentials` refusal the form calls
+ * `providerHint(address)` — a server action, wired by the page — and upgrades the refusal to
+ * `google-account` when it answers true. The person then reads the fixture's Google sentence and
+ * is pointed at the button above; nobody is told their password is wrong.
+ *
+ * Two properties that upgrade keeps:
+ *
+ *   - **It only ever *adds* a cause.** The ordinary `credentials` sentence renders first, so a
+ *     slow lookup, a deployment with no database, or an address with no account at all leaves
+ *     the form exactly as it was. A lookup that fails never turns a refusal into a claim.
+ *   - **It cannot outlive its own attempt.** Every submit takes a ticket (`useRef`); a reply
+ *     that arrives after the person has submitted again, or pressed the Google button, is
+ *     dropped instead of relabelling the newer attempt.
  */
 export function LoginView({
   copy,
   next,
   demo,
+  providerHint,
 }: {
   copy: PageCopy;
   next: string;
   demo: DemoViewProps;
+  /**
+   * "Does this address exist only as a Google account?" — a server action from
+   * `app/(auth)/login/provider-hint-actions.ts`, wired by the page. `true` is the only answer
+   * that changes what the form says; `false`, a rejection and a slow reply all leave the
+   * ordinary refusal in place.
+   */
+  providerHint: (email: string) => Promise<boolean>;
 }) {
   const router = useRouter();
   const form = sectionOf(copy, "sign-in");
@@ -116,35 +148,63 @@ export function LoginView({
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [googlePending, setGooglePending] = useState(false);
-  const [failure, setFailure] = useState<AuthFailure | null>(null);
+  const [refusal, setRefusal] = useState<SignInRefusal | null>(null);
   const [fieldProblem, setFieldProblem] = useState(false);
+
+  /**
+   * The current attempt, as a number. A server answer is applied only if the attempt it was
+   * asked for is still the latest one — the guard that stops a slow provider lookup from
+   * relabelling a second submit (or a Google click) that has already replaced it.
+   */
+  const attempt = useRef(0);
+
+  /**
+   * Render a refusal, and — only for a rejected password — ask the server whether the address
+   * is a Google-only account. The ordinary sentence goes up first: the answer is an
+   * explanation, so nothing waits for it, and a lookup that cannot answer changes nothing.
+   */
+  const refuse = (error: unknown, address: string, ticket: number) => {
+    const kind: AuthFailure = authFailureOf(error);
+    setRefusal(kind);
+    setPending(false);
+    if (kind !== "invalid-credentials") return;
+
+    void providerHint(address).then(
+      (googleOnly) => {
+        if (googleOnly && attempt.current === ticket) setRefusal("google-account");
+      },
+      () => undefined, // an explanation that could not be fetched is not a failed sign-in
+    );
+  };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (email.trim() === "" || password === "") {
+    const ticket = attempt.current + 1;
+    attempt.current = ticket;
+    const address = email.trim();
+
+    if (address === "" || password === "") {
       setFieldProblem(true);
-      setFailure(null);
+      setRefusal(null);
       return;
     }
     setFieldProblem(false);
-    setFailure(null);
+    setRefusal(null);
     setPending(true);
 
     let result: { error?: unknown } | undefined;
     try {
-      result = await authClient.signIn.email({ email: email.trim(), password });
+      result = await authClient.signIn.email({ email: address, password });
     } catch (error) {
       // Not automatically a transport failure: the SDK throws a normalized `AuthApiError` for any
-      // non-2xx answer, so an origin rejection arrives here too (#203). `authFailureOf` decides —
-      // only a failure carrying no status and no code is a `network` one.
-      setFailure(authFailureOf(error));
-      setPending(false);
+      // non-2xx answer, so an origin rejection arrives here too (#203) — and so does a wrong
+      // password. `authFailureOf` decides; `refuse` then asks the one question it cannot answer.
+      refuse(error, address, ticket);
       return;
     }
 
     if (result?.error) {
-      setFailure(authFailureOf(result.error));
-      setPending(false);
+      refuse(result.error, address, ticket);
       return;
     }
 
@@ -170,8 +230,11 @@ export function LoginView({
    * during the redirect.
    */
   const startGoogle = async () => {
+    // A new attempt: a provider lookup still in flight for the password form must not relabel
+    // the refusal this click may produce.
+    attempt.current += 1;
     setFieldProblem(false);
-    setFailure(null);
+    setRefusal(null);
     setGooglePending(true);
 
     try {
@@ -180,11 +243,11 @@ export function LoginView({
         callbackURL: `${window.location.origin}${next}`,
       });
       if (result?.error) {
-        setFailure(authFailureOf(result.error));
+        setRefusal(authFailureOf(result.error));
         setGooglePending(false);
       }
     } catch (error) {
-      setFailure(authFailureOf(error));
+      setRefusal(authFailureOf(error));
       setGooglePending(false);
     }
   };
@@ -315,9 +378,11 @@ export function LoginView({
                   <AlertDescription>{itemLabel(form, "error-required")}</AlertDescription>
                 </Alert>
               )}
-              {failure !== null && (
+              {refusal !== null && (
                 <Alert variant="destructive">
-                  <AlertDescription>{itemLabel(form, authFailureItemId(failure))}</AlertDescription>
+                  <AlertDescription>
+                    {itemLabel(form, signInRefusalItemId(refusal))}
+                  </AlertDescription>
                 </Alert>
               )}
 
