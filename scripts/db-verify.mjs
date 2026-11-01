@@ -506,9 +506,10 @@ async function main() {
     //       empty, because that is the flag being off, not drift.
     //
     // The two members' party map is `DEMO_INSTANCE_ID` + the button's own role name; the admin
-    // answers no instance (`db:seed` gives it `party: null` and `destinationFor()` sends it to
-    // /demo/admin). Kept as two lines here rather than a shared constant the seed does not
-    // import, which would be a third copy of the mapping instead of the only one.
+    // answers no instance (`db:seed` gives it `party: null`, and `destinationFor()` sends it to the
+    // operator registry, which no party row can make true or false). Kept as two lines here rather
+    // than a shared constant the seed does not import, which would be a third copy of the mapping
+    // instead of the only one.
     const { rows: boundParties } = await client.query(
       `SELECT instance_record_id, role, user_id FROM party
         WHERE user_id IS NOT NULL
