@@ -248,12 +248,12 @@ describe("the brand record", () => {
   });
 
   it("carries the values the app paints with today", () => {
-    // The default record, named explicitly: this pins the transcription of `styles/globals.css`,
-    // which is a fact about QuizHub's record and is the same fact in either build lane.
+    // The default record, named explicitly: these are QuizHub's own values, painted onto
+    // `<html>` inline by `lib/brand-theme.ts`, which is the same fact in either build lane.
     expect(quizHubBrand.name).toBe("QuizHub");
     expect(quizHubBrand.domain).toBe("quizhub.com");
     expect(quizHubBrand.supportEmail).toBe("quizhub@riolabs.ai");
-    // `styles/globals.css` :root, resolved out of `hsl(var(--token))`.
+    // The record's colours, resolved out of `hsl(var(--token))` rather than left as references.
     expect(quizHubBrand.colors.primary).toBe("hsl(0 0% 9%)");
     expect(quizHubBrand.colors.background).toBe("hsl(0 0% 100%)");
   });
