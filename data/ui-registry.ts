@@ -16,10 +16,14 @@
  *
  * ## `status` — what is behind the surface
  *
- *   mock     renders literals, props or a stand-in; no data behind it
- *   fixture  reads a committed fixture under `data/`
- *   db       reads Postgres through `lib/db/`
- *   live     has a real write path — a mutating `/api` handler it calls
+ *   mock      renders literals, props or a stand-in; no data behind it
+ *   fixture   reads a committed fixture under `data/`
+ *   db        reads Postgres through `lib/db/`
+ *   live      has a real write path — a mutating `/api` handler it calls
+ *   prototype a variation rendered before it is wired: in-browser state, no `lib/db/` and no
+ *             `/api`, off behind a flag until a later pass wires it. The wiring check does not
+ *             assert it (a prototype may reach nothing real yet); `ancestor`/`version` name the
+ *             variation it copies.
  *
  * These are claims, and the gate checks them against the import graph: `db` must reach a
  * `lib/db/` module, `live` must reach an `/api` path, `fixture` must reach something under
