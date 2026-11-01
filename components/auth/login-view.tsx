@@ -14,6 +14,7 @@ import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
+import { directAuthClient } from "@/lib/auth/provider-client";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -113,11 +114,20 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
 export function LoginView({
   copy,
   next,
+  authBaseUrl,
   demo,
   providerHint,
 }: {
   copy: PageCopy;
   next: string;
+  /**
+   * The Neon Auth base URL (scheme + host + its `/neondb/auth` path), resolved by the
+   * page from `NEON_AUTH_BASE_URL`. The Google flow starts *there*, not through `/api/auth`,
+   * so the OAuth state cookie is first-party on the origin that reads it back at the
+   * provider callback (`lib/auth/provider-client.ts`). Empty when auth is not configured —
+   * the gate, CI, the parity render — and a click then fails honestly.
+   */
+  authBaseUrl: string;
   demo: DemoViewProps;
   /**
    * "Does this address exist only as a Google account?" — a server action from
@@ -215,12 +225,22 @@ export function LoginView({
   /**
    * Start the Google flow (issue #281).
    *
-   * `signIn.social` asks the proxy for the provider's authorize URL and the SDK then sends the
-   * browser to Google; the password form above is untouched by it. `callbackURL` is where Neon
-   * Auth returns the person *after* the flow — this origin plus the `?next=` path the server
-   * already validated (`lib/auth/paths.ts`) — and it is **not** the provider's authorized
-   * redirect URI, which is `{NEON_AUTH_BASE_URL}/callback/google` in the console. Confusing the
-   * two is the `redirect_uri_mismatch` this card documents once on purpose.
+   * The handshake must begin on the origin that finishes it, so this posts to Neon Auth's
+   * **own** base URL with a direct client (`lib/auth/provider-client.ts`) rather than the
+   * same-origin `/api/auth` proxy the password form and every session read use. The proxy is
+   * right for those — they are first-party calls — but wrong here: Better Auth's OAuth state
+   * cookie is set by whichever origin answers `sign-in/social` and read back by that same
+   * origin at `{NEON_AUTH_BASE_URL}/callback/google`. Started through the proxy the cookie is
+   * stored for the app origin while the callback lands on Neon's, which finds no cookie and
+   * answers `state_mismatch`. Started here, the browser sets the cookie on Neon's origin and
+   * the callback finds it. The SDK then sends the browser on to Google; the password form
+   * above is untouched by all of this.
+   *
+   * `callbackURL` is where Neon returns the person *after* the flow — this origin plus the
+   * `?next=` path the server already validated (`lib/auth/paths.ts`) — and it is **not** the
+   * provider's authorized redirect URI, which is `{NEON_AUTH_BASE_URL}/callback/google` in the
+   * console. Confusing the two is the `redirect_uri_mismatch` this card documents once on
+   * purpose.
    *
    * A failure here reaches the same `failure` state the form uses, so the person reads the
    * fixture's sentence for the cause it actually was — `origin` when the address is not on the
@@ -237,8 +257,17 @@ export function LoginView({
     setRefusal(null);
     setGooglePending(true);
 
+    // No auth server configured in this deployment (the gate, CI, the parity render): the
+    // button is drawn but there is nothing to start a sign-in against. Fail honestly rather
+    // than build a client against an empty URL.
+    if (authBaseUrl === "") {
+      setRefusal("unknown");
+      setGooglePending(false);
+      return;
+    }
+
     try {
-      const result = await authClient.signIn.social({
+      const result = await directAuthClient(authBaseUrl).signIn.social({
         provider: "google",
         callbackURL: `${window.location.origin}${next}`,
       });
