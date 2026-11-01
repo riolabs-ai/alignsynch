@@ -64,6 +64,13 @@ vi.mock("@/lib/db/user-profiles", () => ({
   writeUserProfile: vi.fn(async () => ({ ok: true })),
 }));
 
+/**
+ * The header's account menu now signs out through `endSession`, which reaches `@neon/auth`
+ * (unresolvable outside a Next server). Stubbed here for the same reason the session module above
+ * is: the file renders the header, not the auth client.
+ */
+vi.mock("@/lib/auth/sign-out", () => ({ endSession: vi.fn(async () => true) }));
+
 import { Header } from "@/components/layout/header";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { ConnectedAccounts } from "@/components/settings/connected-accounts";

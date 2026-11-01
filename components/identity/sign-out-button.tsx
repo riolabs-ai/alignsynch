@@ -47,7 +47,7 @@ export function SignOutButton({
       setFailed(true);
       return;
     }
-    router.replace("/login");
+    router.replace("/");
     router.refresh();
   };
 

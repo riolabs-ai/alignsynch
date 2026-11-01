@@ -34,9 +34,19 @@ type SidebarContextType = {
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
+/**
+ * The key the desktop rail's pin state is remembered under (localStorage). "Remembered per
+ * person" is "remembered per browser" in this app: there is no per-user preference store (the
+ * app owns no users table — `AGENTS.md`), so the one store a person's own browser keeps is the
+ * honest place. The value is `"1"` (collapsed) or `"0"` (expanded); the default when nothing is
+ * stored is expanded, which is rule 2 of the shell.
+ */
+const COLLAPSED_STORAGE_KEY = "app-sidebar-collapsed";
+
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const { width } = useWindowSize();
   const pathname = usePathname();
 
@@ -50,13 +60,56 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     setMobileOpen(false);
   };
 
+  /**
+   * Adopt the remembered pin once, after hydration. The first paint is the expanded rail
+   * (collapsed starts `false`), and only then is the stored value applied — so the server-rendered
+   * HTML and the browser's first render never disagree about the rail's width (React hydration
+   * rule #418). `hydrated` is set in the same effect so the persist effect below never writes the
+   * pre-load `false` back over a remembered `true` before this read has happened.
+   */
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === "1") {
+        setCollapsed(true);
+      }
+    } catch {
+      // Storage blocked (private mode): the rail stays expanded, which is the default.
+    }
+    setHydrated(true);
+  }, []);
+
+  /**
+   * Remember the pin. Written only at `xl` and up: below `xl` the rail has no desktop collapse
+   * state (the drawer is expanded whenever it is open), and persisting the forced-`false` there
+   * would erase a pin a person set on a desktop just because they opened the app on a phone.
+   */
+  useEffect(() => {
+    if (!hydrated) return;
+    if (width >= 1280) {
+      try {
+        window.localStorage.setItem(COLLAPSED_STORAGE_KEY, collapsed ? "1" : "0");
+      } catch {
+        // Storage blocked: the pin simply will not survive a reload.
+      }
+    }
+  }, [collapsed, hydrated, width]);
+
   useEffect(() => {
     if (!width) return;
     // `collapsed` is the desktop rail only. Below `xl` it has to stay false or the drawer
-    // would open in icon-only mode; at `xl` the rail still starts expanded on a resize,
-    // which is the behaviour it had before the two states were split.
-    setCollapsed(false);
-    if (width >= 1280) setMobileOpen(false);
+    // would open in icon-only mode; at `xl` the rail adopts the remembered pin rather than
+    // resetting to expanded on every resize (the pin is what a person chose, and a resize is
+    // not a choice to discard it).
+    if (width < 1280) {
+      setCollapsed(false);
+    } else {
+      setMobileOpen(false);
+      try {
+        setCollapsed(window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === "1");
+      } catch {
+        setCollapsed(false);
+      }
+    }
   }, [width]);
 
   // A drawer that survives a navigation covers the page it just navigated to. This is the

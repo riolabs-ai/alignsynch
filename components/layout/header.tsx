@@ -21,6 +21,7 @@ import { metric } from "@/data/metrics";
 import { notificationsFor } from "@/data/notifications";
 import { querySearchIndex } from "@/content/search";
 import { accountProfileHref } from "@/lib/auth/profile-href";
+import { endSession } from "@/lib/auth/sign-out";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { type NavViewer, seesQuizProduct } from "@/lib/nav";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -34,8 +35,6 @@ import {
   Menu,
   MessageCircleQuestion,
   MessageSquare,
-  PanelLeftClose,
-  PanelRightClose,
   Search,
   Settings,
   Tag,
@@ -161,9 +160,11 @@ export function Header({
 
   const pathname = usePathname();
   const router = useRouter();
-  const { toggleCollapsed, collapsed, toggleMobile, mobileOpen } = useSidebar();
+  const { toggleMobile, mobileOpen } = useSidebar();
   const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
   const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutFailed, setSignOutFailed] = useState(false);
 
   // Add useState for search functionality
   const [searchQuery, setSearchQuery] = useState("");
@@ -239,14 +240,32 @@ export function Header({
     setIsNotificationsDrawerOpen(false);
   };
 
+  /**
+   * Sign out from the account menu — the same step the rail's row runs, so one control does not
+   * pretend while the other revokes. On success the person lands on the marketing front page,
+   * signed out, with no dashboard chrome; a failure is said out loud under the button rather than
+   * swallowed (issue #272's rule, on the header's control).
+   */
+  const signOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutFailed(false);
+    if (!(await endSession())) {
+      setSigningOut(false);
+      setSignOutFailed(true);
+      return;
+    }
+    router.replace("/");
+    router.refresh();
+  };
+
   return (
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
         <div className="flex items-center gap-4">
-          {/* Two toggles, one per layout: below `xl` the sidebar is an overlay drawer, so
-              this opens it; at `xl` and up it is the rail collapse that has always been
-              here. Both are `size="icon"` buttons at the same position, so the desktop
-              header is unchanged. */}
+          {/* Below `xl` the sidebar is an overlay drawer, so this opens it. At `xl` and up
+              there is no header toggle: the rail is expanded by default and its one collapse
+              control is the pin at the top right of the sidebar (issue #383). */}
           <Button
             variant="ghost"
             size="icon"
@@ -257,18 +276,6 @@ export function Header({
             aria-controls="app-sidebar"
           >
             <Menu className="!text-3xl" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden xl:inline-flex"
-            onClick={toggleCollapsed}
-          >
-            {collapsed ? (
-              <PanelRightClose className="!text-3xl" />
-            ) : (
-              <PanelLeftClose className="!text-3xl" />
-            )}
           </Button>
 
           <div className="relative w-full md:w-64 lg:w-80 xl:w-96 max-md:hidden">
@@ -645,12 +652,24 @@ export function Header({
               </div>
 
               <div className="p-4 pt-0">
-                <Button variant="destructive" className="w-full justify-center" asChild>
-                  <Link href="/login" className="flex items-center gap-2">
-                    <LogOut className="h-4 w-4" />
-                    <span>{itemLabel(accountCopy, "logout")}</span>
-                  </Link>
+                <Button
+                  variant="destructive"
+                  className="w-full justify-center"
+                  onClick={signOut}
+                  disabled={signingOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>
+                    {signingOut
+                      ? itemLabel(accountCopy, "logout-pending")
+                      : itemLabel(accountCopy, "logout")}
+                  </span>
                 </Button>
+                {signOutFailed && (
+                  <p className="pt-2 text-sm text-red-600">
+                    {itemLabel(accountCopy, "logout-error")}
+                  </p>
+                )}
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
