@@ -16,7 +16,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **50** — 35 static, 15 dynamic, from `app/**/page.tsx`
-- component domains: **35** — 244 files under `components/`, 239 of them `.tsx`
+- component domains: **35** — 243 files under `components/`, 238 of them `.tsx`
 - route handlers: **12** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7
 - templates: Both templates 22 · AlignSynch 19 · QuizHub 42 · No template yet 2
@@ -261,8 +261,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: Reads nothing itself: counts and aggregates arrive as props from the route that read Postgres, which is why the domain is `mock` and the `/dashboard` and `/admin/gaps` routes above it are `db` (the same split `components/assessment` records). `stat-card-grid.tsx` is the extracted shape of `components/dashboard/dashboard-overview.tsx` with its metrics removed — `value` is a `number` the caller computed — so the next expression can pass its own rows through the grid without inheriting a wallet balance. Its two callers are `/dashboard` (the viewer's own counts, `lib/flow/overview.ts`) and `/admin/gaps` with AlignSynch's measure (`gapOf` over the eight kinds, `lib/admin/gap-aggregates.ts`); the quiz expression of the analytics surface is the per-question correct rate `components/my-quizzes/quiz-statistics.tsx` mocks. `data/pages/overview.ts` holds every word (E23 budget 0).
 
 - `components/marketing` — **fixture**
-  - capability: The AlignSynch landing sections — its own header, body and footer — rendered in their own chrome with no sidebar.
-  - files (3): `marketing-footer.tsx`, `marketing-header.tsx`, `marketing-landing.tsx`
+  - capability: The public pages' own chrome: the marketing header (the brand mark, the shell's public menu and a server-resolved account slot) and the landing page's bands. The footer is the shell's (`components/layout/footer.tsx`), mounted by the group's layout; there is no sidebar.
+  - files (2): `marketing-header.tsx`, `marketing-landing.tsx`
   - routes (1): `/welcome`
 
 ## QuizHub

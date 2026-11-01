@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 /**
  * The running version, linked to its GitHub release (issue #269).
  *
- * One component, four mounts: `/login` (centred under the credentials card), the bottom of
- * the marketing footer, the bottom of the signed-in left sidebar, and the bottom of the
- * `/welcome` band (`components/marketing/marketing-footer.tsx` — the second footer this tree
- * has, so "the footer" is two files and the badge is in both).
+ * One component, three mounts: `/login` (centred under the credentials card), the bottom of the
+ * footer (`components/layout/footer.tsx` — the one footer this tree has, on the product pages and,
+ * since the public chrome came back, on the marketing group too), and the bottom of the signed-in
+ * left sidebar.
  *
  * **The version has exactly one source: `package.json`'s `version`.** `next.config.mjs` reads
  * it at build time and declares it in its `env` block, and this module reads the inlined value.
