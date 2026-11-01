@@ -23,6 +23,7 @@
  */
 import { authConfigured } from "@/lib/auth/config";
 import { neonAuth } from "@/lib/auth/server";
+import { grantAdminIfAllowlisted } from "@/lib/auth/admin-allowlist";
 
 /** The session as the app uses it. No token, no session id, no roles. */
 export interface SessionUser {
@@ -45,11 +46,12 @@ export interface SessionUser {
  */
 export async function currentUser(): Promise<SessionUser | null> {
   const auth = neonAuth();
+  let sessionUser: SessionUser;
   try {
     const result = await auth.getSession();
     const user = result?.data?.user;
     if (user === undefined || user === null) return null;
-    return {
+    sessionUser = {
       userId: user.id,
       email: user.email,
       name: typeof user.name === "string" ? user.name : "",
@@ -58,6 +60,11 @@ export async function currentUser(): Promise<SessionUser | null> {
     console.error("auth: getSession failed — treating the request as signed out", error);
     return null;
   }
+  // The allowlist grant is outside the `try`: a failed session read is "signed out", but the
+  // grant must not be swallowed into that answer. It never throws (it fails closed and logs), and
+  // it is the one place a session's user is promoted after sign-in (`lib/auth/admin-allowlist.ts`).
+  await grantAdminIfAllowlisted(sessionUser);
+  return sessionUser;
 }
 
 /**
