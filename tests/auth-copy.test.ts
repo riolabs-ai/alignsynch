@@ -164,7 +164,7 @@ describe("the alignment build speaks its own product", () => {
     // The view asks for `sign-in` and `stats` on both brands; the projection is what makes
     // that one component, so the ids are the contract rather than an implementation detail.
     const copy = loginCopyFor(loginCopy(alignSynch), "alignsynch");
-    expect(sectionOf(copy, "sign-in").items).toHaveLength(15);
+    expect(sectionOf(copy, "sign-in").items).toHaveLength(16);
     expect(sectionOf(copy, "stats").items).toHaveLength(2);
   });
 });

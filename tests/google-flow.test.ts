@@ -420,7 +420,11 @@ describe("exchangeVerifier", () => {
       challenge: "c",
       verifier: "v",
     });
-    expect(exchanged).toMatchObject({ ok: false, status: 400 });
+    expect(exchanged).toMatchObject({
+      ok: false,
+      status: 400,
+      code: "SESSION_CHALLENGE_COOKIE_NOT_FOUND",
+    });
   });
 
   it("refuses when the verifier does not match the challenge", async () => {

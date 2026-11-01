@@ -63,7 +63,13 @@ export type StartResult =
 /** An exchange that produced cookies for our origin, or the refusal kind. */
 export type ExchangeResult =
   | { readonly ok: true; readonly setCookies: readonly string[] }
-  | { readonly ok: false; readonly failure: AuthFailure; readonly status?: number };
+  | {
+      readonly ok: false;
+      readonly failure: AuthFailure;
+      readonly status?: number;
+      /** The Better Auth code Neon answered with, when the body carried one (`VERIFICATION_NOT_FOUND`, …). */
+      readonly code?: string;
+    };
 
 /** Read a JSON body defensively: a proxy's HTML error page is not a `SyntaxError` we want to surface. */
 async function jsonOf(response: Response): Promise<Record<string, unknown> | null> {
@@ -176,6 +182,7 @@ export async function exchangeVerifier(options: {
     return {
       ok: false,
       status: response.status,
+      code: typeof body?.code === "string" ? body.code : undefined,
       failure: authFailureOf({ code: body?.code, status: response.status, message: body?.error }),
     };
   }

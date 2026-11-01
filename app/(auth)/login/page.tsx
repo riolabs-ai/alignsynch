@@ -6,7 +6,7 @@ import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
 import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
 import { signInDestination } from "@/lib/auth/next-path";
-import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
+import { AFTER_SIGN_IN_BY_BRAND, GOOGLE_FAILURE_VALUE } from "@/lib/auth/paths";
 import { loginCopyFor } from "@/lib/auth-copy";
 import type { Metadata } from "next";
 import { signInAsDemoRole } from "./demo-actions";
@@ -78,10 +78,11 @@ export const metadata: Metadata = {
 export default async function AuthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string | string[] }>;
+  searchParams: Promise<{ next?: string | string[]; google?: string | string[] }>;
 }) {
-  const { next } = await searchParams;
+  const { next, google } = await searchParams;
   const target = Array.isArray(next) ? next[0] : next;
+  const googleFailure = (Array.isArray(google) ? google[0] : google) === GOOGLE_FAILURE_VALUE;
 
   /**
    * This build's post-sign-in page (#351), and the fallback for every `?next=` that fails either
@@ -104,6 +105,7 @@ export default async function AuthPage({
     <LoginView
       copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandId), loginPageCopy)}
       next={signInDestination(target, destination)}
+      googleFailure={googleFailure}
       demo={demo}
       providerHint={isGoogleOnlySignIn}
       startGoogle={startGoogleSignIn}
