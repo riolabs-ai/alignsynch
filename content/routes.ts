@@ -86,6 +86,7 @@ const DYNAMIC_ROUTES = [
   "/support/articles/[slug]",
   "/tournaments/[id]",
   "/v1/relationships/[id]",
+  "/v1/relationships/[id]/accept",
   "/v1/relationships/[id]/answer",
   "/v1/relationships/[id]/report",
   "/v1/templates/[type]",

@@ -636,7 +636,15 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The one screen every role opens a relationship from — a session timeline, not a record: parties, stage and last session in the header, one primary action, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim and the advice thread for the roles that have them.",
+      "The one screen every role opens a relationship from — a session timeline, not a record: parties, stage, last session and the subscription header (plan, status, period end) in the header, one primary action that moves answer → accept → next session, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim, the comment threads and the advice thread for the roles that have them.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/relationships/[id]/accept",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The acceptance step: each party reviews a value-free summary of the session and records their acceptance; the session completes only when both have accepted, and that is the instant the report unlocks.",
   },
   {
     kind: "route",
@@ -644,7 +652,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits.",
+      "The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits. Submission alone does not lift the blind rule.",
   },
   {
     kind: "route",
@@ -652,7 +660,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The report — the eight gap kinds grouped under the glossary's headings, with the Setting's verdict on top, unlocked only when both parties have submitted.",
+      "The report — the eight gap kinds grouped under the glossary's headings, with the Setting's verdict on top, unlocked only when both parties accept (never at the second submit).",
   },
   {
     kind: "route",

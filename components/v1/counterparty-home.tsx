@@ -2,7 +2,7 @@
 "use client";
 
 import { PERSONA_META } from "@/data/v1/fixtures";
-import { gapSummary, relationshipNameOf } from "@/lib/v1/derive";
+import { bothSubmittedOf, gapSummary, relationshipNameOf } from "@/lib/v1/derive";
 import { useV1Store } from "@/lib/v1/store";
 import { EmptyState, LoadingState, SectionIntro, StageBadge } from "@/components/v1/v1-ui";
 import Link from "next/link";
@@ -81,6 +81,7 @@ export function CounterpartyHome() {
               const template = templates.find((t) => t.id === rel.templateId);
               const summary = gapSummary(rel);
               const yoursToAnswer = !rel.counterpartySubmitted && !summary.verdict;
+              const readyToAccept = bothSubmittedOf(rel) && !summary.verdict;
               return (
                 <li key={rel.id}>
                   <Link
@@ -94,9 +95,11 @@ export function CounterpartyHome() {
                       <p className="truncate text-xs text-muted-foreground">
                         {summary.verdict !== null
                           ? "Report unlocked"
-                          : yoursToAnswer
-                            ? "Yours to answer"
-                            : "Awaiting the other party"}
+                          : readyToAccept
+                            ? "Review and accept"
+                            : yoursToAnswer
+                              ? "Yours to answer"
+                              : "Awaiting the other party"}
                       </p>
                     </div>
                     <StageBadge stage={summary.stage} />

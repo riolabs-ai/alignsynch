@@ -5,8 +5,14 @@
 "use client";
 
 import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
-import { formatDate } from "@/content/core";
-import { gapSummary, relationshipNameOf } from "@/lib/v1/derive";
+import { formatDate, formatDateTimeLong } from "@/content/core";
+import {
+  bothSubmittedOf,
+  gapSummary,
+  relationshipNameOf,
+  sessionCompleteOf,
+  unlockedAtOf,
+} from "@/lib/v1/derive";
 import { useV1Store } from "@/lib/v1/store";
 import {
   BackLink,
@@ -16,7 +22,9 @@ import {
   NotFoundState,
   StageBadge,
 } from "@/components/v1/v1-ui";
+import { CommentThread } from "@/components/v1/comment-thread";
 import { ManageTab } from "@/components/v1/manage-tab";
+import { SubscriptionStatus } from "@/components/v1/subscription-status";
 import {
   PrimaryActionButton,
   SessionTimeline,
@@ -32,6 +40,7 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   const store = useV1Store();
   const { hydrated, persona, relationships, templates } = store;
   const [comment, setComment] = useState("");
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("timeline");
 
   const rel = relationships.find((candidate) => candidate.id === relationshipId);
@@ -58,7 +67,8 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   const template = templates.find((t) => t.id === rel.templateId);
   const summary = gapSummary(rel);
   const name = relationshipNameOf(rel, template?.title ?? "");
-  const complete = summary.verdict !== null;
+  const complete = sessionCompleteOf(rel);
+  const bothAnswered = bothSubmittedOf(rel);
   const unclaimed = rel.counterpartyName === null;
 
   const viewer =
@@ -67,14 +77,30 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   const isCoach = persona === "coach";
 
   const answerLink = `/v1/relationships/${rel.id}/answer`;
+  const acceptLink = `/v1/relationships/${rel.id}/accept`;
+
+  const authorName = (author: "initiator" | "counterparty") =>
+    author === "initiator" ? rel.initiatorName : (rel.counterpartyName ?? "Counterparty");
+
+  const handleRequestNewSession = () => {
+    const refusal = store.requestNewSession(rel.id);
+    setSessionNotice(refusal ?? "A new session is open — both of you can answer again.");
+  };
 
   // The one primary action. An unclaimed relationship's action is the invitation / claim
-  // card below — you cannot answer a session the other party has not joined yet.
+  // card below — you cannot answer a session the other party has not joined yet. Once both
+  // parties have answered, the action becomes acceptance; once accepted, it becomes the
+  // next session (gated by the subscription's standing).
   const primaryAction: PrimaryAction | null =
     !unclaimed && viewer !== null
       ? complete
-        ? { label: "Start a session", href: answerLink }
-        : { label: "Continue session", href: answerLink }
+        ? { label: "Request a new session", onClick: handleRequestNewSession }
+        : bothAnswered
+          ? { label: "Review and accept this session", href: acceptLink }
+          : {
+              label: rel.mode === "advanced" ? "Answer all four" : "Answer Feel & Wish",
+              href: answerLink,
+            }
       : null;
 
   const lastSessionLabel = complete
@@ -97,7 +123,7 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
 
       {/* Header — parties, stage, last session, and the one primary action. */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{name}</h1>
             <StageBadge stage={summary.stage} />
@@ -112,6 +138,15 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
           <p className="mt-1 text-sm text-muted-foreground" data-last-session>
             {lastSessionLabel}
           </p>
+          {complete && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Accepted by {rel.initiatorName} at{" "}
+              {formatDateTimeLong(rel.initiatorAcceptedAt ?? "")} · by{" "}
+              {rel.counterpartyName} at{" "}
+              {formatDateTimeLong(rel.counterpartyAcceptedAt ?? "")} — report unlocked at{" "}
+              {formatDateTimeLong(unlockedAtOf(rel) ?? "")}.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {primaryAction !== null && <PrimaryActionButton action={primaryAction} />}
@@ -123,6 +158,14 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
           </Link>
         </div>
       </div>
+
+      <SubscriptionStatus rel={rel} />
+
+      {sessionNotice !== null && (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          {sessionNotice}
+        </p>
+      )}
 
       <div className="flex gap-2 border-b border-border">
         {(
@@ -208,6 +251,34 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
           )}
 
           <SessionTimeline rel={rel} viewer={viewer} primaryAction={primaryAction} />
+
+          {/* Comments — the relationship thread and one per Aspect, only after the session is
+              complete. A coach reads them read-only; an admin reads them read-only too. */}
+          {complete && (
+            <div className="space-y-4">
+              <CommentThread
+                heading="Relationship"
+                comments={rel.comments}
+                authorName={authorName}
+                canComment={viewer !== null}
+                placeholder="Comment on this relationship…"
+                onAdd={(body) => store.addComment(rel.id, viewer ?? "initiator", body)}
+              />
+              {rel.items.map((item) => (
+                <CommentThread
+                  key={item.id}
+                  heading={item.prompt}
+                  comments={rel.aspectComments[item.id] ?? []}
+                  authorName={authorName}
+                  canComment={viewer !== null}
+                  placeholder={`Comment on "${item.prompt}"…`}
+                  onAdd={(body) =>
+                    store.addAspectComment(rel.id, item.id, viewer ?? "initiator", body)
+                  }
+                />
+              ))}
+            </div>
+          )}
 
           {/* The advice thread — the coach's read-only surface. */}
           {(isCoach || rel.sharedWithCoach) && (

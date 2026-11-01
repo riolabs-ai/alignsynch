@@ -38,11 +38,11 @@ export function ReportBody({ rel, templateTitle }: { rel: V1Relationship; templa
         <section className="rounded-lg border border-border bg-card p-6 text-center">
           <p className="text-sm font-semibold text-foreground">Report locked</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            The report unlocks only when both parties have submitted. The Initiator has answered{" "}
-            {progress.initiatorAnswered}/{progress.aspectCount} and the Counterparty{" "}
-            {progress.counterpartyAnswered}/{progress.aspectCount} Aspect
-            {progress.aspectCount === 1 ? "" : "s"} — one side is still answering, so the other
-            side&apos;s answers stay blind.
+            The report unlocks only when both parties accept — not when the second one submits. The
+            Initiator has answered {progress.initiatorAnswered}/{progress.aspectCount} and the
+            Counterparty {progress.counterpartyAnswered}/{progress.aspectCount} Aspect
+            {progress.aspectCount === 1 ? "" : "s"} — until both accept, each side&apos;s answers
+            stay blind.
           </p>
           <Link
             href={`/v1/relationships/${rel.id}`}

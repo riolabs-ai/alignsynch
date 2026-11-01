@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **69** — 49 static, 20 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 270 files under `components/`, 265 of them `.tsx`
+- routes: **70** — 49 static, 21 dynamic, from `app/**/page.tsx`
+- component domains: **36** — 273 files under `components/`, 268 of them `.tsx`
 - route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 20
-- templates: Both templates 22 · AlignSynch 39 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 21
+- templates: Both templates 22 · AlignSynch 40 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -280,17 +280,22 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: 3 fixture modules of page copy, assets or decisions — no records
 
 - `/v1/relationships/[id]` — **prototype**
-  - capability: The one screen every role opens a relationship from — a session timeline, not a record: parties, stage and last session in the header, one primary action, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim and the advice thread for the roles that have them.
+  - capability: The one screen every role opens a relationship from — a session timeline, not a record: parties, stage, last session and the subscription header (plan, status, period end) in the header, one primary action that moves answer → accept → next session, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim, the comment threads and the advice thread for the roles that have them.
   - components: `components/ui`, `components/v1`
   - reads: 1 record fixture — `data/v1/fixtures.ts`
 
+- `/v1/relationships/[id]/accept` — **prototype**
+  - capability: The acceptance step: each party reviews a value-free summary of the session and records their acceptance; the session completes only when both have accepted, and that is the instant the report unlocks.
+  - components: `components/v1`
+  - reads: 1 record fixture — `data/v1/fixtures.ts`
+
 - `/v1/relationships/[id]/answer` — **prototype**
-  - capability: The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits.
+  - capability: The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits. Submission alone does not lift the blind rule.
   - components: `components/v1`
   - reads: 1 record fixture — `data/v1/fixtures.ts`
 
 - `/v1/relationships/[id]/report` — **prototype**
-  - capability: The report — the eight gap kinds grouped under the glossary's headings, with the Setting's verdict on top, unlocked only when both parties have submitted.
+  - capability: The report — the eight gap kinds grouped under the glossary's headings, with the Setting's verdict on top, unlocked only when both parties accept (never at the second submit).
   - components: `components/ui`, `components/v1`
   - reads: 1 record fixture — `data/v1/fixtures.ts`
 
@@ -362,8 +367,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/v1` — **prototype**
   - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.
-  - files (26): `admin-home.tsx`, `answer-sheet.tsx`, `coach-home.tsx`, `counterparty-home.tsx`, `initiator-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `opinion-sheet.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `relationship-detail.tsx`, `relationship-list.tsx`, `report-body.tsx`, `report-verdict.tsx`, `report-view.tsx`, `reveal.tsx`, `service-home.tsx`, `session-timeline.tsx`, `start-relationship-button.tsx`, `template-catalogue.tsx`, `template-demo.tsx`, `template-editor.tsx`, `template-library.tsx`, `template-page.tsx`, `v1-shell.tsx`, `v1-ui.tsx`
-  - routes (17): `/v1`, `/v1/admin`, `/v1/coach`, `/v1/counterparty`, `/v1/initiator`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/service`, `/v1/support`, `/v1/templates`, `/v1/templates/[type]`, `/v1/templates/[type]/demo`
+  - files (29): `accept-session.tsx`, `admin-home.tsx`, `answer-sheet.tsx`, `coach-home.tsx`, `comment-thread.tsx`, `counterparty-home.tsx`, `initiator-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `opinion-sheet.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `relationship-detail.tsx`, `relationship-list.tsx`, `report-body.tsx`, `report-verdict.tsx`, `report-view.tsx`, `reveal.tsx`, `service-home.tsx`, `session-timeline.tsx`, `start-relationship-button.tsx`, `subscription-status.tsx`, `template-catalogue.tsx`, `template-demo.tsx`, `template-editor.tsx`, `template-library.tsx`, `template-page.tsx`, `v1-shell.tsx`, `v1-ui.tsx`
+  - routes (18): `/v1`, `/v1/admin`, `/v1/coach`, `/v1/counterparty`, `/v1/initiator`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/service`, `/v1/support`, `/v1/templates`, `/v1/templates/[type]`, `/v1/templates/[type]/demo`
   - notes: Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — six types with Aspect sets) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.
 
 ## QuizHub

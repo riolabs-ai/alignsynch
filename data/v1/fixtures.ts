@@ -9,10 +9,12 @@
  * Opinion/Setting/Mode sub-schemas, via `z.infer`), so the day the prototype is wired the
  * shapes already match — the same rule `data/assessments.ts` follows for the live fixture.
  *
- * Three templates seed the library; five relationships span every stage the report can be
- * in (invited, connected-and-blind, sharing-unmet, aligned) and every one is played in
- * Advanced Mode — Feel, Wish, Think and Guess; five accounts and three tickets seed the
- * Service queue. A relationship's Aspects are a **copy** of the
+ * Three templates seed the library; five relationships span the corrected model — a
+ * subscription per relationship (`active`, `past_due` or `lapsed`), a session that is complete
+ * only when **both** parties accept (the blind rule lifts at acceptance, never at submission),
+ * and a complete session's comment threads on the relationship and on single Aspects. Every
+ * relationship is played in Advanced Mode — Feel, Wish, Think and Guess; five accounts and
+ * three tickets seed the Service queue. A relationship's Aspects are a **copy** of the
  * template it names (never a reference), and its parties' answers are maps keyed by Aspect
  * id, which is what lets an invitation sit at `{}` without violating the real
  * `zAssessmentInstance` (which requires every party to answer every Aspect).
@@ -249,16 +251,76 @@ const zCoachComment = z
   .strict();
 
 /**
- * One purchase — there is only ever one per relationship in the prototype, never a running
- * total. `amountCents` is integer cents, the tree's money convention.
+ * The two subscription plans a relationship can be started on. The word is the prototype's
+ * own: the Initiator subscribes monthly or quarterly, per relationship, and the Counterparty
+ * pays nothing, ever.
  */
-const zPurchase = z
+export const zSubscriptionPlan = z.enum(["monthly", "quarterly"]);
+
+export type SubscriptionPlan = z.infer<typeof zSubscriptionPlan>;
+
+export const SUBSCRIPTION_PLANS = zSubscriptionPlan.options;
+
+/**
+ * The three states a subscription can be in. `active` is good standing; `past_due` is a
+ * payment that did not clear; `lapsed` is ended and blocks new sessions but keeps every
+ * response and the history readable.
+ */
+export const zSubscriptionStatus = z.enum(["active", "past_due", "lapsed"]);
+
+export type SubscriptionStatus = z.infer<typeof zSubscriptionStatus>;
+
+export const SUBSCRIPTION_STATUSES = zSubscriptionStatus.options;
+
+/**
+ * One subscription — there is only ever one per relationship in the prototype, mocked and
+ * never charged. `periodEnd` is an ISO instant, the same convention as every other date here.
+ */
+const zSubscription = z
   .object({
-    plan: z.string().min(1),
-    amountCents: z.number().int().min(0),
-    purchasedAt: z.string().min(1),
+    plan: zSubscriptionPlan,
+    status: zSubscriptionStatus,
+    periodEnd: z.string().min(1),
+    startedAt: z.string().min(1),
   })
   .strict();
+
+export type V1Subscription = z.infer<typeof zSubscription>;
+
+/**
+ * One comment a party writes on the relationship or on a single Aspect. `author` is the
+ * role, never a name — the name is the relationship's own field, so a rename follows the
+ * party and not every comment.
+ */
+const zComment = z
+  .object({
+    id: z.string().min(1),
+    author: z.enum(["initiator", "counterparty"]),
+    body: z.string().min(1),
+    at: z.string().min(1),
+  })
+  .strict();
+
+export type V1Comment = z.infer<typeof zComment>;
+
+/**
+ * A completed session, archived when a new one is requested — the answers the report was
+ * built from and the two acceptance instants, so history stays readable after the current
+ * sheet resets. `completedAt` is the later of the two acceptance instants: the moment the
+ * blind rule lifted.
+ */
+const zSessionRecord = z
+  .object({
+    id: z.string().min(1),
+    initiatorAnswers: z.record(z.string(), zOpinions),
+    counterpartyAnswers: z.record(z.string(), zOpinions),
+    initiatorAcceptedAt: z.string().min(1),
+    counterpartyAcceptedAt: z.string().min(1),
+    completedAt: z.string().min(1),
+  })
+  .strict();
+
+export type V1SessionRecord = z.infer<typeof zSessionRecord>;
 
 /**
  * One relationship through its whole life. The parties' answers are maps keyed by the Aspect id
@@ -282,17 +344,33 @@ export const zV1Relationship = z
     counterpartyAnswers: z.record(z.string(), zOpinions),
     initiatorSubmitted: z.boolean(),
     counterpartySubmitted: z.boolean(),
+    /**
+     * Acceptance is recorded per party and is the closing event of a session: a session is
+     * complete only when both parties have accepted, and the blind rule lifts at that instant —
+     * never at submission alone.
+     */
+    initiatorAccepted: z.boolean(),
+    counterpartyAccepted: z.boolean(),
+    /** When each party accepted, or null before they do — the acceptance record's timestamps. */
+    initiatorAcceptedAt: z.string().min(1).nullable(),
+    counterpartyAcceptedAt: z.string().min(1).nullable(),
     /** The claimable invite. Null before the first send; re-invite rotates it and the old one dies. */
     inviteToken: z.string().min(1).nullable(),
     /** Whether the Coach persona can see this relationship (read-only). */
     sharedWithCoach: z.boolean(),
     coachComments: z.array(zCoachComment),
+    /** The parties' thread on the relationship as a whole, open only after a session completes. */
+    comments: z.array(zComment),
+    /** A thread per Aspect, keyed by Aspect id, open only after a session completes. */
+    aspectComments: z.record(z.string(), z.array(zComment)),
     /** Sessions opened for this relationship, for the Manage dashboard's completion figure. */
     openedSessions: z.number().int().min(0),
     /** Sessions completed, for the same figure. */
     completedSessions: z.number().int().min(0),
-    /** The one purchase, or null when nothing has been paid. */
-    purchase: zPurchase.nullable(),
+    /** The one subscription, or null before the Initiator has subscribed. */
+    subscription: zSubscription.nullable(),
+    /** Completed sessions, archived newest-last, so history stays readable across a reset. */
+    history: z.array(zSessionRecord),
     /** The instant of the last completed session, or null before the first. */
     lastSessionAt: z.string().min(1).nullable(),
     createdAt: z.string().min(1),
@@ -410,12 +488,24 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAnswers: {},
     initiatorSubmitted: false,
     counterpartySubmitted: false,
+    initiatorAccepted: false,
+    counterpartyAccepted: false,
+    initiatorAcceptedAt: null,
+    counterpartyAcceptedAt: null,
     inviteToken: "inv-7f3a91c2",
     sharedWithCoach: false,
     coachComments: [],
+    comments: [],
+    aspectComments: {},
     openedSessions: 0,
     completedSessions: 0,
-    purchase: null,
+    subscription: {
+      plan: "monthly",
+      status: "active",
+      periodEnd: "2026-11-30T09:00:00.000Z",
+      startedAt: "2026-10-30T09:00:00.000Z",
+    },
+    history: [],
     lastSessionAt: null,
     createdAt: "2026-10-30T09:00:00.000Z",
   },
@@ -431,12 +521,24 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAnswers: {},
     initiatorSubmitted: true,
     counterpartySubmitted: false,
+    initiatorAccepted: false,
+    counterpartyAccepted: false,
+    initiatorAcceptedAt: null,
+    counterpartyAcceptedAt: null,
     inviteToken: "inv-9c2b04e1",
     sharedWithCoach: false,
     coachComments: [],
+    comments: [],
+    aspectComments: {},
     openedSessions: 1,
     completedSessions: 0,
-    purchase: { plan: "Basic", amountCents: 999, purchasedAt: "2026-10-30T11:30:00.000Z" },
+    subscription: {
+      plan: "monthly",
+      status: "active",
+      periodEnd: "2026-11-30T11:30:00.000Z",
+      startedAt: "2026-10-30T11:30:00.000Z",
+    },
+    history: [],
     lastSessionAt: null,
     createdAt: "2026-10-30T11:30:00.000Z",
   },
@@ -453,6 +555,13 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAnswers: rowanAnswers,
     initiatorSubmitted: true,
     counterpartySubmitted: true,
+    // Both parties submitted, but neither has accepted — the session is not complete and the
+    // blind rule still holds: this is the corrected model's proof that submission alone lifts
+    // nothing.
+    initiatorAccepted: false,
+    counterpartyAccepted: false,
+    initiatorAcceptedAt: null,
+    counterpartyAcceptedAt: null,
     inviteToken: "inv-5d41a8f0",
     sharedWithCoach: true,
     coachComments: [
@@ -463,10 +572,18 @@ const seedRelationshipRows: readonly V1Relationship[] = [
         at: "2026-10-30T12:00:00.000Z",
       },
     ],
+    comments: [],
+    aspectComments: {},
     openedSessions: 1,
-    completedSessions: 1,
-    purchase: { plan: "Basic", amountCents: 999, purchasedAt: "2026-10-28T18:00:00.000Z" },
-    lastSessionAt: "2026-10-30T12:00:00.000Z",
+    completedSessions: 0,
+    subscription: {
+      plan: "quarterly",
+      status: "past_due",
+      periodEnd: "2026-11-28T18:00:00.000Z",
+      startedAt: "2026-10-28T18:00:00.000Z",
+    },
+    history: [],
+    lastSessionAt: null,
     createdAt: "2026-10-28T18:30:00.000Z",
   },
   {
@@ -482,12 +599,54 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAnswers: samAnswers,
     initiatorSubmitted: true,
     counterpartySubmitted: true,
+    initiatorAccepted: true,
+    counterpartyAccepted: true,
+    initiatorAcceptedAt: "2026-10-29T09:55:00.000Z",
+    counterpartyAcceptedAt: "2026-10-29T10:00:00.000Z",
     inviteToken: "inv-2b8c17d4",
     sharedWithCoach: true,
     coachComments: [],
+    comments: [
+      {
+        id: "cmt-rel-1",
+        author: "counterparty",
+        body: "Thank you for sitting down for this. I want to keep the one-to-one time we agreed on.",
+        at: "2026-10-29T10:20:00.000Z",
+      },
+      {
+        id: "cmt-rel-2",
+        author: "initiator",
+        body: "Me too — let's put it on the calendar for every Saturday morning.",
+        at: "2026-10-29T10:35:00.000Z",
+      },
+    ],
+    aspectComments: {
+      "aspect-trust": [
+        {
+          id: "cmt-trust-1",
+          author: "initiator",
+          body: "The trust one surprised me — I did not expect us to be this close on it.",
+          at: "2026-10-29T10:40:00.000Z",
+        },
+      ],
+      "aspect-one-to-one": [
+        {
+          id: "cmt-one-1",
+          author: "counterparty",
+          body: "This is the one I most want to change.",
+          at: "2026-10-29T10:42:00.000Z",
+        },
+      ],
+    },
     openedSessions: 2,
     completedSessions: 2,
-    purchase: { plan: "Pro", amountCents: 1999, purchasedAt: "2026-10-28T18:45:00.000Z" },
+    subscription: {
+      plan: "quarterly",
+      status: "active",
+      periodEnd: "2026-11-28T18:45:00.000Z",
+      startedAt: "2026-10-28T18:45:00.000Z",
+    },
+    history: [],
     lastSessionAt: "2026-10-29T10:00:00.000Z",
     createdAt: "2026-10-28T19:00:00.000Z",
   },
@@ -504,12 +663,24 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAnswers: irisAnswers,
     initiatorSubmitted: true,
     counterpartySubmitted: true,
+    initiatorAccepted: true,
+    counterpartyAccepted: true,
+    initiatorAcceptedAt: "2026-10-25T15:00:00.000Z",
+    counterpartyAcceptedAt: "2026-10-25T15:10:00.000Z",
     inviteToken: "inv-8e0f22b5",
     sharedWithCoach: false,
     coachComments: [],
+    comments: [],
+    aspectComments: {},
     openedSessions: 4,
     completedSessions: 4,
-    purchase: { plan: "Pro", amountCents: 1999, purchasedAt: "2026-10-29T09:00:00.000Z" },
+    subscription: {
+      plan: "monthly",
+      status: "lapsed",
+      periodEnd: "2026-10-28T09:00:00.000Z",
+      startedAt: "2026-09-28T09:00:00.000Z",
+    },
+    history: [],
     lastSessionAt: "2026-10-30T15:00:00.000Z",
     createdAt: "2026-10-29T09:45:00.000Z",
   },
