@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: the discussion index — tabs over a list of discussion cards, no per-row menu)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/identity/account-home.tsx   (variation: the quiz page — a cover band and a stats row, then tabs of questions, discussion and about)
+
 import { ReviewModal } from "@/components/quiz/review-modal";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";

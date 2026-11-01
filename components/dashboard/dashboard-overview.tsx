@@ -1,3 +1,5 @@
+// template-ancestor: components/console/stat-card-grid.tsx   (variation: four figures with a chart card and a recent-activity card beneath them)
+
 import { EarningsChart } from "@/components/dashboard/earnings-chart";
 import { RecentQuizzes } from "@/components/dashboard/recent-quizzes";
 import { Button } from "@/components/ui/button";

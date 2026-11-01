@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/home/player-testimonials.tsx   (variation: the testimonial carousel over tournament players, arrow controls and no grid)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";

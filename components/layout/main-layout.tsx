@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/layout/sidebar.tsx   (variation: the shell — the fixed rail plus the top bar and one scrolling main slot)
+
 import { Header } from "@/components/layout/header";
 import { AppSidebar } from "@/components/layout/sidebar";
 import { useSidebar } from "@/components/layout/sidebar-context";

@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/badge.tsx   (variation: the version chip hand-written — package version and commit, no interactivity)
+
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";

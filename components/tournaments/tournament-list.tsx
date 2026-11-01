@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quiz-list.tsx   (variation: the card grid — dates, an entry count and a details link per card)
+
 import { Media } from "@/components/media/media";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { media } from "@/data/media";

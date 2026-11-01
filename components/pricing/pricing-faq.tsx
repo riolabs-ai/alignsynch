@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/support/support-faq.tsx   (variation: the FAQ with a search field and brand-keyed categories)
+
 import {
   Accordion,
   AccordionContent,

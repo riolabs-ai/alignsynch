@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/console/stat-card-grid.tsx   (variation: earnings figures, a tier card and a referral table, split across tabs)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

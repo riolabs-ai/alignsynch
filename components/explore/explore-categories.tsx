@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/scroll-area.tsx   (variation: the subject strip — icon chips in a horizontal scroller with a visible scrollbar)
+
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {

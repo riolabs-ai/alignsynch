@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/separator.tsx   (variation: the browse page stack — search header, subject strip, featured shelf, filter rail and card grid, in that order)
+
 import { Separator } from "@/components/ui/separator";
 import type { PageCopy } from "@/content/pages";
 import { sectionOf } from "@/lib/page-copy";

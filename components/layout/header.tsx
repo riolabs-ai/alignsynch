@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the top bar — wordmark, search, the drawer triggers and the account menu, over the same nav data as the rail)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { useSidebar } from "@/components/layout/sidebar-context";
 import { Button } from "@/components/ui/button";

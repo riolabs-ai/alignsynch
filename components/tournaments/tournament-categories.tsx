@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-categories.tsx   (variation: the subject strip as chips in a horizontal scroller)
+
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { PageCopySection } from "@/content/pages";

@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/card.tsx   (variation: the reward ladder as dated cards, a trophy per milestone and the claimed state on each)
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCount, formatDayCount } from "@/content/metrics";

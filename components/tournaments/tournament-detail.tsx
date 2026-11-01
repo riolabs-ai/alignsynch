@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/identity/account-home.tsx   (variation: one tournament — the header band, then five tabs of overview, schedule, prizes, rules and leaderboard)
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PageCopy } from "@/content/pages";
 import { brand } from "@/data/brand";

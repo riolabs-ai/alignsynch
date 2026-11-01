@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/input.tsx   (variation: the subscribe band hand-written — an email field, a submit button and an inline confirmation, no card)
+
 import type React from "react";
 
 import { Button } from "@/components/ui/button";

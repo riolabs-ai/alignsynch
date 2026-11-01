@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/card.tsx   (variation: the activity feed — dated icon rows inside one card)
+
 import { Card, CardContent } from "@/components/ui/card";
 import { formatClockTime, formatMonthDay } from "@/content/core";
 import type { Activity } from "@/lib/data/users";

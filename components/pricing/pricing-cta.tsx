@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/button.tsx   (variation: a close band — a heading, one button and a three-item benefits list)
+
 import { buttonVariants } from "@/components/ui/button";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";

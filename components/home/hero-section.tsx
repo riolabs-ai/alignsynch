@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/button.tsx   (variation: the hero hand-written — a themed background image, the brand heading, a subtitle and two buttons, no page-header primitive)
+
 import { Button } from "@/components/ui/button";
 import type { PageCopy } from "@/content/pages";
 import { media } from "@/data/media";

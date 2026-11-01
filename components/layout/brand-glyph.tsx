@@ -1,3 +1,4 @@
+// template-ancestor: components/layout/footer.tsx   (variation: the book mark as one inline geometry shared with the generated icon set)
 /**
  * The product mark, as the chrome draws it — the open book, one geometry with the icon set.
  *

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: the same record list read-only — a status badge and a per-row menu, no filters)
+
 import { Media } from "@/components/media/media";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";

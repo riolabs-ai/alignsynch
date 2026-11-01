@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/dialog.tsx   (variation: the compose dialog — a recipient row, a textarea, and send/cancel)
+
 import { useState } from "react";
 import {
   Dialog,

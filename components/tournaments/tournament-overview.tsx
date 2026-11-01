@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the overview tab — three cards: about, format and hosts)
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { quizCategoryLabel } from "@/content/categories";
 import type { PageCopy } from "@/content/pages";

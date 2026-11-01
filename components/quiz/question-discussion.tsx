@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the per-question thread — the question, the reader's answer, the comments and a composer)
+
 import { Comment } from "@/components/quiz/comment";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";

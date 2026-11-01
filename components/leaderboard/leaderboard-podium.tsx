@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/badge.tsx   (variation: the top three on pedestals — crown, medal and star above each avatar, one badge per place)
+
 import { Media } from "@/components/media/media";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the notifications panel — one switch per channel, a separator between groups)
+
 import { Button } from "@/components/ui/button";
 import {
   Card,

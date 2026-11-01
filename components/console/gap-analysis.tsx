@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: none — approved #336
+ *
  * The Gap across completed relationships — the body of `/admin/gaps` (#289 follow-up).
  *
  * The generic surface is **response analytics**: stat cards, one distribution per measure, a

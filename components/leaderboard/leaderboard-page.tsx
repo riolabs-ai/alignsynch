@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: the ranking page — period tabs over a podium, the table and three stat cards)
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {

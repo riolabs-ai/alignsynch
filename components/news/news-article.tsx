@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/support/article-detail.tsx   (variation: the article page with a like, share and save row and the related strip beneath the body)
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";

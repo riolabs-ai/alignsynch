@@ -1,6 +1,8 @@
 "use client";
 
 /**
+ * template-ancestor: components/support/article-detail.tsx   (variation: the body half of the article page — one switch over block kinds for news, tips and knowledge-base articles)
+ *
  * The ONE body renderer. `ContentBlock[]` replaced three section shapes (D8) and
  * the fourth inline re-declaration of the news section type that used to live in
  * `news-article.tsx`. News, tips and knowledge-base articles all render through

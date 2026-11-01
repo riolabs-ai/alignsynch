@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/support/support-faq.tsx   (variation: the accordion over the affiliate programme's own questions, no search and no groups)
+
 import {
   Accordion,
   AccordionContent,

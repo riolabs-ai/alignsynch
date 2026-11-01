@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/assessment-flow/template-form.tsx   (variation: two fields and one button, POST-only, drawn inside the invitation panel)
+ *
  * The re-invite control: one address field and one button (#275).
  *
  * It sits inside the invitation panel, below the state sentence, and it is drawn only while the

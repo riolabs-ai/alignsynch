@@ -1,3 +1,5 @@
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the public chrome — the brand mark, PublicNav and the account slot, no sidebar, search palette or drawers)
+
 import { PublicAccountSlot, PublicNav } from "@/components/layout/nav-menus";
 import type { Brand } from "@/content/brand";
 import type { PageCopy } from "@/content/pages";

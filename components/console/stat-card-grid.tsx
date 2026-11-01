@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/ui/card.tsx   (variation: the figure grid — one card per count, a required href on every card and no non-linking variant)
+ *
  * The stat-card grid — the console's one shape for "four numbers, each one a question"
  * (Console 2/5, extracted from `components/dashboard/dashboard-overview.tsx`).
  *

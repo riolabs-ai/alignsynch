@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: the tournament index — a featured band, filters, a subject strip, the list and three closing bands)
+
 import { Footer } from "@/components/layout/footer";
 import type { PageCopy } from "@/content/pages";
 import { sectionOf } from "@/lib/page-copy";

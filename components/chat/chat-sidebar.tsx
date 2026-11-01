@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: the list as a rail — contacts/conversations tabs, a search field, rows with an avatar and a timestamp)
+
 import { Media } from "@/components/media/media";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";

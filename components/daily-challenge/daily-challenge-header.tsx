@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/dashboard/dashboard-header.tsx   (variation: the countdown, the streak and the day's reward where the dashboard puts its two actions)
+
 import { Card, CardContent } from "@/components/ui/card";
 import { quizCategoryLabel } from "@/content/categories";
 import { formatDayCount, formatMetricValue } from "@/content/metrics";
