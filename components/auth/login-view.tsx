@@ -14,6 +14,7 @@ import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
+import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -115,6 +116,7 @@ export function LoginView({
   next,
   demo,
   providerHint,
+  startGoogle: startGoogleFlow,
 }: {
   copy: PageCopy;
   next: string;
@@ -126,6 +128,13 @@ export function LoginView({
    * ordinary refusal in place.
    */
   providerHint: (email: string) => Promise<boolean>;
+  /**
+   * "Start a Google sign-in" — the server action from `app/(auth)/login/google-actions.ts`, wired
+   * by the page the way the demo actions are. The browser never learns the auth URL, never holds
+   * the session challenge and never composes a `callbackURL`: it asks, and is handed one address on
+   * Neon's own origin to navigate to (`lib/auth/google-flow-neon.ts` explains why the hop moved).
+   */
+  startGoogle: (next: string) => Promise<StartGoogleSignInResult>;
 }) {
   const router = useRouter();
   const form = sectionOf(copy, "sign-in");
@@ -213,39 +222,46 @@ export function LoginView({
   };
 
   /**
-   * Start the Google flow (issue #281).
+   * Start the Google flow (#281, re-wired by #351's follow-up).
    *
-   * `signIn.social` asks the proxy for the provider's authorize URL and the SDK then sends the
-   * browser to Google; the password form above is untouched by it. `callbackURL` is where Neon
-   * Auth returns the person *after* the flow — this origin plus the `?next=` path the server
-   * already validated (`lib/auth/paths.ts`) — and it is **not** the provider's authorized
-   * redirect URI, which is `{NEON_AUTH_BASE_URL}/callback/google` in the console. Confusing the
-   * two is the `redirect_uri_mismatch` this card documents once on purpose.
+   * The button no longer talks to the auth server: it calls `startGoogleSignIn`, a server action
+   * (`app/(auth)/login/google-actions.ts`), and is handed back the URL of Neon's own init page to
+   * navigate to. The reason is a pair of cookies that fall out of **whichever response answers
+   * `sign-in/social`**: the OAuth *state* must live on Neon's origin (the callback runs there), and
+   * the session *challenge* must live where the verifier is exchanged — which, before this card,
+   * was nowhere, because a browser-side call put both on Neon's origin and nothing here could read
+   * the challenge (`HttpOnly`, their host). Started by our server, the challenge arrives in our
+   * response and `lib/auth/google-flow.ts` keeps it in a cookie of our own. The state still comes
+   * from Neon's init page, so #350's `state_mismatch` stays fixed. `lib/auth/google-flow-neon.ts`
+   * carries the full measured argument.
    *
-   * A failure here reaches the same `failure` state the form uses, so the person reads the
+   * A refusal reaches the same `failure` state the password form uses, so the person reads the
    * fixture's sentence for the cause it actually was — `origin` when the address is not on the
-   * branch's trusted-domain list (which fails *after* Google consent, and used to look like a
-   * code bug), `network` when the request never left. There is no success branch: the SDK has
-   * already navigated away by then, and clearing `pending` would only flash an idle button
-   * during the redirect.
+   * branch's trusted-domain list, `network` when the request never left. There is no success
+   * branch: `location.assign` has already started the navigation, and clearing `pending` would
+   * only flash an idle button during it.
    */
   const startGoogle = async () => {
     // A new attempt: a provider lookup still in flight for the password form must not relabel
     // the refusal this click may produce.
-    attempt.current += 1;
+    const ticket = attempt.current + 1;
+    attempt.current = ticket;
     setFieldProblem(false);
     setRefusal(null);
     setGooglePending(true);
 
     try {
-      const result = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: `${window.location.origin}${next}`,
-      });
-      if (result?.error) {
-        setRefusal(authFailureOf(result.error));
-        setGooglePending(false);
+      const started = await startGoogleFlow(next);
+      if (!started.ok) {
+        // A reply that arrives after a newer attempt was started is dropped, the same rule the
+        // password form's `refuse()` follows.
+        if (attempt.current === ticket) {
+          setRefusal(started.failure);
+          setGooglePending(false);
+        }
+        return;
       }
+      window.location.assign(started.url);
     } catch (error) {
       setRefusal(authFailureOf(error));
       setGooglePending(false);

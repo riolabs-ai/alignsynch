@@ -54,5 +54,52 @@ export const notFoundPageCopy: PageCopy = zPageCopy.parse({
         { id: "leaderboard", label: "Leaderboard" },
       ],
     },
+    /**
+     * The alignment build's words (#351 follow-up).
+     *
+     * The 404 is the first error page a new customer can see, and it is rendered by both builds:
+     * a dead link, a route the other product owns, a typed address. On AlignSynch the quiz
+     * sentences above told that person "Oops! Quiz Not Found", about quiz masters playing hide
+     * and seek, with an emoji — quiz vocabulary in a product that sells assessments (#188), in the
+     * one moment the product had already failed. So the words are brand-keyed here, exactly as
+     * `/login`'s and `/register`'s are (`lib/auth-copy.ts`), and `lib/not-found-copy.ts` is the one
+     * place that picks between them.
+     *
+     * Two deliberate limits: the fact band keeps a statement about the status code itself (it is
+     * true on both brands and it is not a debug screen — no stack, no id, no "contact your
+     * administrator"), and the quiz build's sections above are byte for byte what shipped, so this
+     * card changes nothing a QuizHub visitor reads.
+     *
+     * `actions-alignsynch` keeps the same three suggestion ids the shared section declares, so the
+     * page's contract is one contract, but all three destinations are quiz surfaces this build does
+     * not ship: `hiddenNavHrefs()` lists them, the page draws none of them, and it skips the prompt
+     * above them rather than printing a question with no answers. The labels are the only thing the
+     * view would read if an operator forced those surfaces on for this brand, which is not a
+     * supported configuration — hence "Browse", not "Browse Quizzes".
+     */
+    { id: "hero-alignsynch", heading: "This page isn't here" },
+    {
+      id: "message-alignsynch",
+      items: [
+        { id: "line-1", label: "The address you followed doesn't match anything in this product." },
+        { id: "line-2", label: "Check the link, or start again from the overview." },
+      ],
+    },
+    {
+      id: "fact-alignsynch",
+      heading: "What this means",
+      body: "404 is the status code the HTTP specification calls Not Found: the server answered, and there is nothing to show at that address.",
+    },
+    {
+      id: "actions-alignsynch",
+      items: [
+        { id: "home", label: "Back to Home" },
+        { id: "back", label: "Go Back" },
+        { id: "prompt", label: "Looking for something else?" },
+        { id: "browse", label: "Browse" },
+        { id: "categories", label: "Categories" },
+        { id: "leaderboard", label: "Leaderboard" },
+      ],
+    },
   ],
 });
