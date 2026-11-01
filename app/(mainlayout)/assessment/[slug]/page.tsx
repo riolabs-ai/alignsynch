@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 /**
  * `/assessment/[slug]` — the read of one answered assessment, from the database (#145, #204).
  *
- * The slug names an **instance** (an `assessment_instance` row and its `record`), not the
+ * The slug names an **instance** (an `session` row and its `record`), not the
  * template: the template has no parties, so it has no answers to draw. The title and summary
  * above the rows are read off the template the instance names, which is why a copy whose
  * `templateId` stopped resolving is a 404 here as well as a `db:verify` failure — there is no

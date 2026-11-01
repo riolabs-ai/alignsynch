@@ -1,7 +1,7 @@
 /**
  * The invitation's state, derived from the row at the instant it is read (#266).
  *
- * There are three states and there is no column for any of them. `instance_invite` carries
+ * There are three states and there is no column for any of them. `session_invite` carries
  * `claimed_at` and `expires_at`, and the state is the pair of them compared against the clock
  * the read path already handed down — the same rule `instanceStatusOf()` applies to the count of
  * answer rows and the same rule `gapOf()` applies to two scores. A stored `state`, a nightly job

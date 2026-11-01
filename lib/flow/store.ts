@@ -70,6 +70,7 @@ import {
 import { invitationLink } from "@/lib/flow/email";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
+import { relationshipRoleOf } from "@/lib/flow/membership";
 import { emailLooksDeliverable, resendRefusal, type ResendRefusal } from "@/lib/flow/resend";
 import {
   instanceStatusOf,
@@ -195,7 +196,7 @@ function required(value: string, field: string): string {
 /**
  * The account id a party row stores, or `null` for "nobody signed in" (#213 follow-up).
  *
- * Trimmed, and whitespace becomes NULL rather than an empty string: `party_instance_user_key`
+ * Trimmed, and whitespace becomes NULL rather than an empty string: `party_session_user_key`
  * is partial (`WHERE user_id IS NOT NULL`), so a row bound to `""` would be a binding that
  * matches no account while still counting as one on every read of that column — the worse of
  * the two wrong answers. The value itself is never validated into a shape here: it is Neon
@@ -292,7 +293,7 @@ export async function createInstanceFromTemplate(
     }>(
       `SELECT r.id, r.slug, r.title, r.record_type, r.status, r.author_user_id,
               (SELECT count(*) FROM item i WHERE i.record_id = r.id)::int AS aspects,
-              EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id) AS is_instance
+              EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id) AS is_instance
          FROM record r
         WHERE r.id = $1
           FOR SHARE OF r`,
@@ -365,27 +366,53 @@ export async function createInstanceFromTemplate(
       [instanceRecordId, found.id],
     );
 
+    // #340 — the relationship the session belongs to. Bought once, persists: one row here, and
+    // the session (this assessment cycle) points at it. The Initiator's account is the one the
+    // billing gate above already resolved (`initiatorUserId`); the Counterparty is NULL until the
+    // claim (`claimInvite`) binds them, and `plan` is NULL — the tier is the billing module's
+    // fact, not this store's. `purchased_at` is the acquisition instant, which in this create
+    // path is the same instant the row is written.
+    const relationshipId = cryptoRandomId();
     await client.query(
-      `INSERT INTO assessment_instance (record_id, template_record_id, mode, alignment_setting)
-       VALUES ($1, $2, $3, $4)`,
-      [instanceRecordId, found.id, mode.data, DEFAULT_ALIGNMENT_SETTING],
+      `INSERT INTO relationship
+         (id, template_id, initiator_user_id, counterparty_user_id, purchased_at, plan, created_at)
+       VALUES ($1, $2, $3, NULL, $4, NULL, $4)`,
+      [relationshipId, found.id, initiatorUserId, now.toISOString()],
+    );
+
+    await client.query(
+      `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [instanceRecordId, found.id, mode.data, DEFAULT_ALIGNMENT_SETTING, relationshipId],
     );
 
     // The Initiator's seat. `user_id` is the session's account when there is one, and NULL when
     // the creator is signed out (#213 follow-up) — the same row, the same transaction, so an
     // instance can never exist with a creator who was signed in and a party row that says
     // nobody was. It is an INSERT of a row that cannot pre-exist (the table's key is
-    // `(instance_record_id, role)` on a fresh id), so writing the binding here cannot overwrite
+    // `(session_record_id, role)` on a fresh id), so writing the binding here cannot overwrite
     // one: the "never rebind a bound row" rule has nothing to rebind.
     await client.query(
-      `INSERT INTO party (instance_record_id, role, name, access_token_hash, user_id)
+      `INSERT INTO party (session_record_id, role, name, access_token_hash, user_id)
        VALUES ($1, 'initiator', $2, $3, $4)`,
       [instanceRecordId, initiatorName, hashToken(initiatorToken), initiatorUserId],
     );
 
+    // #coach — the Initiator is a member of the relationship they just created, so a coach can
+    // later be invited by "the Initiator" (the gate reads `relationship_member`, not the party
+    // row). A signed-out create has no account, and a membership names an account, so the row is
+    // written only when the creator was signed in — the same NULL the party row just stored.
+    if (initiatorUserId !== null) {
+      await client.query(
+        `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
+         VALUES ($1, $2, 'initiator', $3)`,
+        [relationshipId, initiatorUserId, now.toISOString()],
+      );
+    }
+
     await client.query(
-      `INSERT INTO instance_invite
-         (instance_record_id, email, counterparty_name, token_hash, created_at, expires_at, initiator_email)
+      `INSERT INTO session_invite
+         (session_record_id, email, counterparty_name, token_hash, created_at, expires_at, initiator_email)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         instanceRecordId,
@@ -444,7 +471,7 @@ export interface ClaimInput {
    *
    * It also *refuses*: an account that already answers as a party to this instance cannot
    * claim the other seat (`already-a-party`), because one account cannot be both parties
-   * (`party_instance_user_key`) and filling both columns with one person is the defect #202
+   * (`party_session_user_key`) and filling both columns with one person is the defect #202
    * fixed for the cookie. Nothing posted by the browser reaches this property.
    */
   readonly viewerUserId?: string | null;
@@ -497,13 +524,13 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
   try {
     await client.query("BEGIN");
     const found = await client.query<{
-      instance_record_id: string;
+      session_record_id: string;
       counterparty_name: string;
       claimed_at: Date | null;
       expires_at: Date;
     }>(
-      `SELECT instance_record_id, counterparty_name, claimed_at, expires_at
-         FROM instance_invite
+      `SELECT session_record_id, counterparty_name, claimed_at, expires_at
+         FROM session_invite
         WHERE token_hash = $1
           FOR UPDATE`,
       [hashToken(token)],
@@ -539,10 +566,10 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     // redundant now that a party row carries `user_id` — a person can open their own
     // invitation in a browser holding no `flow_party_*` cookie, and without this the insert
     // below would either fill both columns with one person or collide with
-    // `party_instance_user_key` and answer a 500 instead of a refusal.
+    // `party_session_user_key` and answer a 500 instead of a refusal.
     const viewerRole =
-      (await partyRoleForTokens(client, invite.instance_record_id, input.viewerTokens ?? [])) ??
-      (await partyRoleForUser(client, invite.instance_record_id, claimerUserId));
+      (await partyRoleForTokens(client, invite.session_record_id, input.viewerTokens ?? [])) ??
+      (await partyRoleForUser(client, invite.session_record_id, claimerUserId));
     if (viewerRole !== undefined) {
       await client.query("ROLLBACK");
       return {
@@ -569,10 +596,10 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     // refusal protects (`claimed_at`, a bound seat) is decided above this line; the
     // `ON CONFLICT DO NOTHING` still answers a race with a refusal, never an update.
     const inserted = await client.query(
-      `INSERT INTO party (instance_record_id, role, name, access_token_hash, user_id)
+      `INSERT INTO party (session_record_id, role, name, access_token_hash, user_id)
        VALUES ($1, 'counterparty', $2, $3, $4)
-       ON CONFLICT (instance_record_id, role) DO NOTHING`,
-      [invite.instance_record_id, invite.counterparty_name, hashToken(sessionToken), claimerUserId],
+       ON CONFLICT (session_record_id, role) DO NOTHING`,
+      [invite.session_record_id, invite.counterparty_name, hashToken(sessionToken), claimerUserId],
     );
     if (inserted.rowCount === 0) {
       await client.query("ROLLBACK");
@@ -583,12 +610,24 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
           "that instance already has a Counterparty; a second one would answer in their place",
       };
     }
-    await client.query("UPDATE instance_invite SET claimed_at = $2 WHERE instance_record_id = $1", [
-      invite.instance_record_id,
+    await client.query("UPDATE session_invite SET claimed_at = $2 WHERE session_record_id = $1", [
+      invite.session_record_id,
       now.toISOString(),
     ]);
+    // #coach — the Counterparty is a member of the relationship they just joined, so the
+    // relationship's membership mirrors its parties. A signed-out claim has no account and so
+    // no membership row, the same NULL the party row just stored.
+    if (claimerUserId !== null) {
+      await client.query(
+        `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
+         SELECT s.relationship_id, $1, 'counterparty', $2
+           FROM session s WHERE s.record_id = $3
+         ON CONFLICT (relationship_id, user_id) DO NOTHING`,
+        [claimerUserId, now.toISOString(), invite.session_record_id],
+      );
+    }
     await client.query("COMMIT");
-    return { ok: true, instanceRecordId: invite.instance_record_id, sessionToken };
+    return { ok: true, instanceRecordId: invite.session_record_id, sessionToken };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
@@ -686,12 +725,12 @@ export async function resendInvite(input: ResendInput): Promise<ResendResult> {
       `SELECT iv.email, iv.counterparty_name, iv.claimed_at, iv.expires_at,
               iv.resent_at, iv.resent_count,
               (SELECT p.name FROM party p
-                WHERE p.instance_record_id = iv.instance_record_id AND p.role = 'initiator') AS initiator_name,
+                WHERE p.session_record_id = iv.session_record_id AND p.role = 'initiator') AS initiator_name,
               t.title
-         FROM instance_invite iv
-         JOIN assessment_instance ai ON ai.record_id = iv.instance_record_id
+         FROM session_invite iv
+         JOIN session ai ON ai.record_id = iv.session_record_id
          JOIN record t ON t.id = ai.template_record_id
-        WHERE iv.instance_record_id = $1
+        WHERE iv.session_record_id = $1
           FOR UPDATE OF iv, ai`,
       [input.instanceRecordId],
     );
@@ -747,10 +786,10 @@ export async function resendInvite(input: ResendInput): Promise<ResendResult> {
     const email = corrected ?? invite.email;
     const expiresAt = inviteExpiry(now);
     await client.query(
-      `UPDATE instance_invite
+      `UPDATE session_invite
           SET token_hash = $2, email = $3, expires_at = $4, resent_at = $5,
               resent_count = resent_count + 1
-        WHERE instance_record_id = $1`,
+        WHERE session_record_id = $1`,
       [
         input.instanceRecordId,
         hashToken(inviteToken),
@@ -877,7 +916,7 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
   try {
     await client.query("BEGIN");
     const locked = await client.query<{ record_id: string; mode: string }>(
-      "SELECT record_id, mode FROM assessment_instance WHERE record_id = $1 FOR UPDATE",
+      "SELECT record_id, mode FROM session WHERE record_id = $1 FOR UPDATE",
       [input.instanceRecordId],
     );
     if (locked.rows[0] === undefined) {
@@ -948,13 +987,13 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
 
     // Delete-then-insert: a submit is the party's whole sheet, so an Aspect they cleared
     // is gone rather than left behind from the previous version of the sheet.
-    await client.query("DELETE FROM opinion WHERE instance_record_id = $1 AND role = $2", [
+    await client.query("DELETE FROM opinion WHERE session_record_id = $1 AND role = $2", [
       input.instanceRecordId,
       role,
     ]);
     for (const answer of submission.answers) {
       await client.query(
-        `INSERT INTO opinion (instance_record_id, role, item_id, feel, wish, think, guess)
+        `INSERT INTO opinion (session_record_id, role, item_id, feel, wish, think, guess)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           input.instanceRecordId,
@@ -986,7 +1025,7 @@ async function partyRoleOf(
 ): Promise<PartyRole | undefined> {
   const found = await client.query<{ role: PartyRole }>(
     `SELECT role FROM party
-      WHERE instance_record_id = $1 AND access_token_hash = $2`,
+      WHERE session_record_id = $1 AND access_token_hash = $2`,
     [instanceRecordId, hashToken(token)],
   );
   return found.rows[0]?.role;
@@ -1010,7 +1049,7 @@ async function partyRoleForTokens(
   if (hashes.length === 0) return undefined;
   const found = await client.query<{ role: PartyRole }>(
     `SELECT role FROM party
-      WHERE instance_record_id = $1 AND access_token_hash = ANY($2::text[])`,
+      WHERE session_record_id = $1 AND access_token_hash = ANY($2::text[])`,
     [instanceRecordId, hashes],
   );
   return found.rows[0]?.role;
@@ -1034,7 +1073,7 @@ async function partyRoleForUser(
   if (userId === null) return undefined;
   const found = await client.query<{ role: PartyRole }>(
     `SELECT role FROM party
-      WHERE instance_record_id = $1 AND user_id = $2`,
+      WHERE session_record_id = $1 AND user_id = $2`,
     [instanceRecordId, userId],
   );
   return found.rows[0]?.role;
@@ -1043,10 +1082,10 @@ async function partyRoleForUser(
 async function progressOfClient(client: PoolClient, instanceRecordId: string, aspectCount: number) {
   const counts = await client.query<{ role: PartyRole; answered: number }>(
     `SELECT p.role, (SELECT count(*) FROM opinion o
-                      WHERE o.instance_record_id = p.instance_record_id
+                      WHERE o.session_record_id = p.session_record_id
                         AND o.role = p.role)::int AS answered
        FROM party p
-      WHERE p.instance_record_id = $1`,
+      WHERE p.session_record_id = $1`,
     [instanceRecordId],
   );
   const answered = (role: PartyRole) => counts.rows.find((row) => row.role === role)?.answered ?? 0;
@@ -1105,6 +1144,7 @@ export async function readInstanceBundle(
     template_record_id: string;
     mode: string;
     alignment_setting: string;
+    relationship_id: string;
     items: ItemRow[];
     options: OptionRow[];
   }>(
@@ -1112,17 +1152,18 @@ export async function readInstanceBundle(
             ai.template_record_id,
             ai.mode,
             ai.alignment_setting,
+            ai.relationship_id,
             COALESCE((SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id), '[]'::json) AS items,
             COALESCE((SELECT json_agg(to_jsonb(o) ORDER BY o.position) FROM response_option o WHERE o.record_id = r.id), '[]'::json) AS options
        FROM record r
-       JOIN assessment_instance ai ON ai.record_id = r.id
+       JOIN session ai ON ai.record_id = r.id
       WHERE r.id = $1 AND r.record_type = 'assessment'`,
     [instanceRecordId],
   );
   if (instance === undefined) return undefined;
 
   const parties = await query<PartyRow>(
-    "SELECT instance_record_id, role, name FROM party WHERE instance_record_id = $1 ORDER BY role",
+    "SELECT session_record_id, role, name FROM party WHERE session_record_id = $1 ORDER BY role",
     [instanceRecordId],
   );
   const [invite] = await query<{
@@ -1133,14 +1174,14 @@ export async function readInstanceBundle(
     resent_at: Date | null;
     resent_count: number;
   }>(
-    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM instance_invite WHERE instance_record_id = $1`,
+    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM session_invite WHERE session_record_id = $1`,
     [instanceRecordId],
   );
   const counts = await query<{ role: PartyRole; answered: number }>(
     `SELECT p.role, (SELECT count(*) FROM opinion o
-                      WHERE o.instance_record_id = p.instance_record_id AND o.role = p.role)::int AS answered
+                      WHERE o.session_record_id = p.session_record_id AND o.role = p.role)::int AS answered
        FROM party p
-      WHERE p.instance_record_id = $1`,
+      WHERE p.session_record_id = $1`,
     [instanceRecordId],
   );
 
@@ -1153,6 +1194,7 @@ export async function readInstanceBundle(
     instance: {
       record_id: instanceRecordId,
       template_record_id: instance.template_record_id,
+      relationship_id: instance.relationship_id,
       mode: instance.mode,
       setting: instance.alignment_setting,
     },
@@ -1219,9 +1261,9 @@ export async function readUnlockFacts(instanceRecordId: string): Promise<UnlockF
     `SELECT r.title, p.role, p.name,
             iv.email AS counterparty_email, iv.initiator_email
        FROM record r
-       JOIN assessment_instance ai ON ai.record_id = r.id
-       JOIN party p ON p.instance_record_id = r.id
-       LEFT JOIN instance_invite iv ON iv.instance_record_id = r.id
+       JOIN session ai ON ai.record_id = r.id
+       JOIN party p ON p.session_record_id = r.id
+       LEFT JOIN session_invite iv ON iv.session_record_id = r.id
       WHERE r.id = $1`,
     [instanceRecordId],
   );
@@ -1254,10 +1296,9 @@ export async function readUnlockFacts(instanceRecordId: string): Promise<UnlockF
 export async function readInstanceMode(
   instanceRecordId: string,
 ): Promise<AssessmentMode | undefined> {
-  const [row] = await query<{ mode: string }>(
-    "SELECT mode FROM assessment_instance WHERE record_id = $1",
-    [instanceRecordId],
-  );
+  const [row] = await query<{ mode: string }>("SELECT mode FROM session WHERE record_id = $1", [
+    instanceRecordId,
+  ]);
   if (row === undefined) return undefined;
   return zAssessmentMode.parse(row.mode);
 }
@@ -1275,7 +1316,7 @@ export async function readTemplate(recordId: string): Promise<Assessment | undef
        FROM record r
       WHERE r.id = $1
         AND r.record_type = 'assessment'
-        AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)`,
+        AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)`,
     [recordId],
   );
   if (template === undefined) return undefined;
@@ -1317,7 +1358,7 @@ export async function listPublishedTemplates(
       WHERE r.record_type = 'assessment'
         AND r.status = 'published'
         AND (r.author_user_id IS NULL OR r.author_user_id = $1)
-        AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)
+        AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
         AND EXISTS (SELECT 1 FROM item i WHERE i.record_id = r.id)
       ORDER BY r.title`,
     [viewerUserId],
@@ -1331,19 +1372,6 @@ export async function listPublishedTemplates(
   }));
 }
 
-/** The role a party token belongs to on one instance, or `undefined`. */
-export async function roleForToken(
-  instanceRecordId: string,
-  token: string | undefined,
-): Promise<PartyRole | undefined> {
-  if (token === undefined || token === "") return undefined;
-  const [row] = await query<{ role: PartyRole }>(
-    "SELECT role FROM party WHERE instance_record_id = $1 AND access_token_hash = $2",
-    [instanceRecordId, hashToken(token)],
-  );
-  return row?.role;
-}
-
 /**
  * The role a **signed-in account** is on one instance, or `undefined` (#183, part 2).
  *
@@ -1352,9 +1380,10 @@ export async function roleForToken(
  * screen has to be able to answer "which party is this session" — otherwise a demo sign-in as
  * Counterparty would land on a 404 and prove nothing about the blind rule.
  *
- * The token is still asked first (`readFlowScreen` below): a browser that carries the cookie
- * keeps the identity the invitation gave it, and a session is the fallback, not an override.
- * Both resolve to a `PartyRole` from Postgres; neither reads a claim out of the request.
+ * The session-scoped half of "who is this account": `previewInvite` uses it to refuse a claim by
+ * an account that already answers as a party. The screen's own read goes through
+ * `relationshipRoleOf()` (`lib/flow/membership.ts`), which resolves the same party binding scoped
+ * to the relationship. Neither reads a claim out of the request.
  */
 export async function roleForUser(
   instanceRecordId: string,
@@ -1362,7 +1391,7 @@ export async function roleForUser(
 ): Promise<PartyRole | undefined> {
   if (userId === null || userId === undefined || userId === "") return undefined;
   const [row] = await query<{ role: PartyRole }>(
-    "SELECT role FROM party WHERE instance_record_id = $1 AND user_id = $2",
+    "SELECT role FROM party WHERE session_record_id = $1 AND user_id = $2",
     [instanceRecordId, userId],
   );
   return row?.role;
@@ -1388,8 +1417,9 @@ export async function readFlowScreen(input: {
   /** The raw invitation token, held by the Initiator's own browser, if it still has it. */
   inviteToken?: string | null;
   /**
-   * The signed-in account, when there is one (#183, part 2). Consulted only if the cookie
-   * resolved nothing, so an invited party keeps the identity its link gave it.
+   * The signed-in account, when there is one (#183, part 2). Consulted after the cookie, so an
+   * invited party keeps the identity its link gave it — and the third thing consulted is the
+   * account's **relationship membership**, which is how a coach reads the screen at all.
    */
   viewerUserId?: string | null;
   /**
@@ -1401,13 +1431,19 @@ export async function readFlowScreen(input: {
    */
   now?: Date;
 }): Promise<FlowScreen | undefined> {
-  const viewerRole =
-    (await roleForToken(input.instanceRecordId, input.token)) ??
-    (await roleForUser(input.instanceRecordId, input.viewerUserId));
-  if (viewerRole === undefined) return undefined;
-
   const bundle = await readInstanceBundle(input.instanceRecordId);
   if (bundle === undefined) return undefined;
+
+  // The viewer is resolved against the *relationship* the session belongs to (#340 + coach): a
+  // party by bearer token, then by account, then a coach by membership. One resolution, so a
+  // missing check is a visible omission — `relationshipRoleOf()` is the same gate the card's
+  // `requireRelationshipRole()` wraps, and it is the only way a role enters this screen.
+  const viewerRole = await relationshipRoleOf(bundle.instance.relationship_id, {
+    userId: input.viewerUserId,
+    tokens: input.token === undefined || input.token === "" ? [] : [input.token],
+  });
+  if (viewerRole === undefined) return undefined;
+
   const template = await readTemplate(bundle.instance.template_record_id);
   if (template === undefined) return undefined;
 
@@ -1419,9 +1455,9 @@ export async function readFlowScreen(input: {
   });
   const roles = visibleRoles(viewerRole, status);
   const opinions = await query<OpinionRow>(
-    `SELECT instance_record_id, role, item_id, feel, wish, think, guess
+    `SELECT session_record_id, role, item_id, feel, wish, think, guess
        FROM opinion
-      WHERE instance_record_id = $1 AND role = ANY($2::text[])`,
+      WHERE session_record_id = $1 AND role = ANY($2::text[])`,
     [input.instanceRecordId, roles],
   );
 
@@ -1478,7 +1514,7 @@ export async function readFlowScreen(input: {
  * write that makes "last looked" mean something: the instance screen calls it on render once
  * both parties have answered, scoped to the party the request resolved as — so one person
  * reading the Gap clears their own row and leaves the other person's alone. That is the whole
- * per-party rule: the UPDATE names `(instance_record_id, role)`, and `role` came from Postgres by
+ * per-party rule: the UPDATE names `(session_record_id, role)`, and `role` came from Postgres by
  * way of `readFlowScreen`, never from the request.
  *
  * `unlock_seen_at IS NULL` in the predicate makes a re-open a no-op write rather than a second
@@ -1501,7 +1537,7 @@ export async function markUnlockSeen(input: {
   const now = input.now ?? new Date();
   const result = await getPool().query(
     `UPDATE party SET unlock_seen_at = $3
-      WHERE instance_record_id = $1 AND role = $2 AND unlock_seen_at IS NULL`,
+      WHERE session_record_id = $1 AND role = $2 AND unlock_seen_at IS NULL`,
     [input.instanceRecordId, input.role, now.toISOString()],
   );
   return (result.rowCount ?? 0) > 0;
@@ -1556,19 +1592,19 @@ export async function previewInvite(
   };
   if (!tokenIsWellFormed(token)) return empty;
   const [row] = await query<{
-    instance_record_id: string;
+    session_record_id: string;
     counterparty_name: string;
     claimed_at: Date | null;
     expires_at: Date;
     initiator_name: string | null;
     title: string;
   }>(
-    `SELECT iv.instance_record_id, iv.counterparty_name, iv.claimed_at, iv.expires_at,
+    `SELECT iv.session_record_id, iv.counterparty_name, iv.claimed_at, iv.expires_at,
             (SELECT p.name FROM party p
-              WHERE p.instance_record_id = iv.instance_record_id AND p.role = 'initiator') AS initiator_name,
+              WHERE p.session_record_id = iv.session_record_id AND p.role = 'initiator') AS initiator_name,
             t.title
-       FROM instance_invite iv
-       JOIN assessment_instance ai ON ai.record_id = iv.instance_record_id
+       FROM session_invite iv
+       JOIN session ai ON ai.record_id = iv.session_record_id
        JOIN record t ON t.id = ai.template_record_id
       WHERE iv.token_hash = $1`,
     [hashToken(token)],
@@ -1584,8 +1620,8 @@ export async function previewInvite(
   );
   const state: InviteState = derived === "unclaimed" ? "claimable" : derived;
   const viewerRole =
-    (await viewerRoleOf(row.instance_record_id, options.viewerTokens ?? [])) ??
-    (await roleForUser(row.instance_record_id, options.viewerUserId));
+    (await viewerRoleOf(row.session_record_id, options.viewerTokens ?? [])) ??
+    (await roleForUser(row.session_record_id, options.viewerUserId));
   return {
     state,
     initiatorName: row.initiator_name,
@@ -1604,10 +1640,265 @@ async function viewerRoleOf(
   if (hashes.length === 0) return undefined;
   const [row] = await query<{ role: PartyRole }>(
     `SELECT role FROM party
-      WHERE instance_record_id = $1 AND access_token_hash = ANY($2::text[])`,
+      WHERE session_record_id = $1 AND access_token_hash = ANY($2::text[])`,
     [instanceRecordId, hashes],
   );
   return row?.role;
+}
+
+/* ------------------------------------------------------------------ *\
+ * Coach — invite, claim, revoke
+ * ------------------------------------------------------------------ */
+
+export const COACH_INVITE_REFUSALS = [
+  "not-initiator",
+  "already-invited",
+  "invalid-email",
+  "unknown",
+  "claimed",
+  "expired",
+  "revoked",
+  "already-a-member",
+  "no-invite",
+] as const;
+
+export type CoachInviteRefusal = (typeof COACH_INVITE_REFUSALS)[number];
+
+export interface InviteCoachInput {
+  /** The relationship the coach is being invited to read. */
+  readonly relationshipId: string;
+  /** The coach's address — a real invitation, delivered the way the counterparty's is. */
+  readonly email: string;
+  /** The Initiator's account. Only the Initiator may invite a coach. */
+  readonly viewerUserId: string;
+  readonly now?: Date;
+}
+
+export type InviteCoachResult =
+  | {
+      readonly ok: true;
+      readonly relationshipId: string;
+      readonly inviteToken: string;
+      readonly email: string;
+    }
+  | { readonly ok: false; readonly code: CoachInviteRefusal; readonly reason: string };
+
+/**
+ * Invite a coach, the same shape the counterparty's invitation takes (#146): a single-use,
+ * revocable token minted by `lib/flow/tokens.ts`, stored as its hash, never the raw token. The
+ * coach is **not** a party and not a billable seat — this only creates the invitation; the coach
+ * becomes a member (`relationship_member`, role `coach`) when the claim below spends the token.
+ *
+ * Only the Initiator may send it, and one live invitation per relationship is structural
+ * (`coach_invite_relationship_key`): a second invite while one is live is `already-invited`, so
+ * the honest action is to revoke and re-invite, not to mint two links.
+ */
+export async function inviteCoach(input: InviteCoachInput): Promise<InviteCoachResult> {
+  const email = input.email.trim();
+  if (!emailLooksDeliverable(email)) {
+    return {
+      ok: false,
+      code: "invalid-email",
+      reason: `"${email}" is not an address a message can be sent to`,
+    };
+  }
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const inviter = await client.query<{ role: string }>(
+      `SELECT role FROM relationship_member WHERE relationship_id = $1 AND user_id = $2 FOR UPDATE`,
+      [input.relationshipId, input.viewerUserId],
+    );
+    if (inviter.rows[0]?.role !== "initiator") {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "not-initiator",
+        reason: "only the Initiator of a relationship may invite a coach",
+      };
+    }
+    const live = await client.query(
+      `SELECT 1 FROM coach_invite WHERE relationship_id = $1 AND claimed_at IS NULL AND revoked_at IS NULL`,
+      [input.relationshipId],
+    );
+    if (live.rows[0] !== undefined) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "already-invited",
+        reason:
+          "that relationship already has a live coach invitation; revoke it before inviting again",
+      };
+    }
+    const now = input.now ?? new Date();
+    const inviteToken = mintToken();
+    await client.query(
+      `INSERT INTO coach_invite (relationship_id, token_hash, email, invited_by_user_id, created_at, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        input.relationshipId,
+        hashToken(inviteToken),
+        email,
+        input.viewerUserId,
+        now.toISOString(),
+        inviteExpiry(now).toISOString(),
+      ],
+    );
+    await client.query("COMMIT");
+    return { ok: true, relationshipId: input.relationshipId, inviteToken, email };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export interface ClaimCoachInviteInput {
+  readonly token: string;
+  /** The signed-in account claiming the coach role. Membership is account-bound, never token-bound. */
+  readonly viewerUserId: string;
+  readonly now?: Date;
+}
+
+export type ClaimCoachInviteResult =
+  | { readonly ok: true; readonly relationshipId: string }
+  | { readonly ok: false; readonly code: CoachInviteRefusal; readonly reason: string };
+
+/**
+ * Spend a coach invitation exactly once, binding the claiming account as the coach member.
+ *
+ * Six refusals, named, and only the success writes: `unknown`, `claimed`, `expired`, `revoked`,
+ * `already-a-member` (the account is already the Initiator, the Counterparty or a coach of this
+ * relationship), and the same `FOR UPDATE` single-use guarantee `claimInvite` gives the
+ * counterparty's token — two simultaneous claims serialise, and the second reads `claimed_at`.
+ * The claim writes the token's hash was already stored at invite time, so the raw token never
+ * reaches a row here either.
+ */
+export async function claimCoachInvite(
+  input: ClaimCoachInviteInput,
+): Promise<ClaimCoachInviteResult> {
+  if (!tokenIsWellFormed(input.token)) {
+    return { ok: false, code: "unknown", reason: "that token is not a coach invitation token" };
+  }
+  const userId = input.viewerUserId.trim();
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query<{
+      relationship_id: string;
+      claimed_at: Date | null;
+      revoked_at: Date | null;
+      expires_at: Date;
+    }>(
+      `SELECT relationship_id, claimed_at, revoked_at, expires_at FROM coach_invite WHERE token_hash = $1 FOR UPDATE`,
+      [hashToken(input.token)],
+    );
+    const invite = found.rows[0];
+    if (invite === undefined) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "unknown", reason: "no coach invitation carries that token" };
+    }
+    if (invite.claimed_at !== null) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "claimed", reason: "that coach invitation was already claimed" };
+    }
+    if (invite.revoked_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "revoked",
+        reason: "that coach invitation was revoked by the Initiator",
+      };
+    }
+    const now = input.now ?? new Date();
+    if (invite.expires_at.getTime() <= now.getTime()) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "expired", reason: "that coach invitation has expired" };
+    }
+    const existing = await client.query<{ role: string }>(
+      `SELECT role FROM relationship_member WHERE relationship_id = $1 AND user_id = $2`,
+      [invite.relationship_id, userId],
+    );
+    if (existing.rows[0] !== undefined) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "already-a-member",
+        reason: `this account is already the ${existing.rows[0].role} of that relationship`,
+      };
+    }
+    await client.query(
+      `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
+       VALUES ($1, $2, 'coach', $3)`,
+      [invite.relationship_id, userId, now.toISOString()],
+    );
+    await client.query("UPDATE coach_invite SET claimed_at = $2 WHERE token_hash = $1", [
+      hashToken(input.token),
+      now.toISOString(),
+    ]);
+    await client.query("COMMIT");
+    return { ok: true, relationshipId: invite.relationship_id };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export interface RevokeCoachInviteInput {
+  readonly relationshipId: string;
+  /** The Initiator's account — only the seat that invited may un-invite. */
+  readonly viewerUserId: string;
+}
+
+export type RevokeCoachInviteResult =
+  | { readonly ok: true; readonly relationshipId: string }
+  | { readonly ok: false; readonly code: CoachInviteRefusal; readonly reason: string };
+
+/**
+ * Revoke a live coach invitation. Revoke-and-replace, never delete: the row's `revoked_at` is
+ * set, so the token that was already in a mailbox stops naming an invitation (`claimCoachInvite`
+ * refuses `revoked`), and the history of who was invited is still the row it always was.
+ */
+export async function revokeCoachInvite(
+  input: RevokeCoachInviteInput,
+): Promise<RevokeCoachInviteResult> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const inviter = await client.query<{ role: string }>(
+      `SELECT role FROM relationship_member WHERE relationship_id = $1 AND user_id = $2`,
+      [input.relationshipId, input.viewerUserId],
+    );
+    if (inviter.rows[0]?.role !== "initiator") {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "not-initiator",
+        reason: "only the Initiator may revoke a coach invitation",
+      };
+    }
+    const updated = await client.query(
+      `UPDATE coach_invite SET revoked_at = now() WHERE relationship_id = $1 AND claimed_at IS NULL AND revoked_at IS NULL`,
+      [input.relationshipId],
+    );
+    await client.query("COMMIT");
+    if ((updated.rowCount ?? 0) === 0) {
+      return {
+        ok: false,
+        code: "no-invite",
+        reason: "that relationship has no live coach invitation to revoke",
+      };
+    }
+    return { ok: true, relationshipId: input.relationshipId };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 /* ------------------------------------------------------------------ *\

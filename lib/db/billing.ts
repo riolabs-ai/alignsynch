@@ -278,16 +278,16 @@ export async function activeInstanceCount(userId: string): Promise<number> {
   const rows = await queryRows<{ n: number }>(
     `SELECT count(*)::int AS n
        FROM party vp
-       JOIN assessment_instance ai ON ai.record_id = vp.instance_record_id
+       JOIN session ai ON ai.record_id = vp.session_record_id
       WHERE vp.user_id = $1
         AND (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id) > 0
         AND (
           (SELECT count(*) FROM opinion o
-            WHERE o.instance_record_id = ai.record_id AND o.role = 'initiator')
+            WHERE o.session_record_id = ai.record_id AND o.role = 'initiator')
             < (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)
           OR
           (SELECT count(*) FROM opinion o
-            WHERE o.instance_record_id = ai.record_id AND o.role = 'counterparty')
+            WHERE o.session_record_id = ai.record_id AND o.role = 'counterparty')
             < (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)
         )`,
     [userId],

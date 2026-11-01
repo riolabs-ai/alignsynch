@@ -24,14 +24,21 @@ const LEDGER = `
   )
 `;
 
-/** The six content tables — the acceptance list, so a run that applied nothing still proves it. */
+/**
+ * The content tables plus the one container that holds them — the acceptance list, so a run that
+ * applied nothing still proves it. `session` is what #145 called the assessment-cycle table
+ * (the rename is `0013_relationship_sessions.sql`); the six content tables are record, item,
+ * response_option, session, party, opinion, and `relationship` is the seventh table the model
+ * (#340) adds above them.
+ */
 const CONTENT_TABLES = [
   "record",
   "item",
   "response_option",
-  "assessment_instance",
+  "session",
   "party",
   "opinion",
+  "relationship",
 ];
 
 async function main() {
@@ -90,11 +97,31 @@ async function main() {
       );
     }
 
+    // #340 — the old noun is gone, like the Gap's column. `instance` may name no table and no
+    // column in `public` after the split: the three objects that carried it are renamed by
+    // `0013_relationship_sessions.sql`. Both shapes are checked because the noun hid in each.
+    const instanceTables = await client.query(
+      `SELECT count(*)::int AS n FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name ILIKE '%instance%'`,
+    );
+    const instanceColumns = await client.query(
+      `SELECT count(*)::int AS n FROM information_schema.columns
+        WHERE table_schema = 'public' AND column_name ILIKE '%instance%'`,
+    );
+    if (instanceTables.rows[0].n !== 0 || instanceColumns.rows[0].n !== 0) {
+      throw new Error(
+        `a table or column named like \`instance\` exists in public (${instanceTables.rows[0].n} table(s), ${instanceColumns.rows[0].n} column(s)) — the old noun is gone, it is relationship + session now`,
+      );
+    }
+
     console.log(
       `\n✓ db:migrate — ${changed} file(s) applied, ${files.length - changed} already applied`,
     );
     console.log(`  public tables: ${present.join(", ")}`);
     console.log(`  gap columns: ${gapColumns.rows[0].n}`);
+    console.log(
+      `  instance tables: ${instanceTables.rows[0].n}, instance columns: ${instanceColumns.rows[0].n}`,
+    );
   } finally {
     await client.end();
   }

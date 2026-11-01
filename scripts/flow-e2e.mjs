@@ -261,7 +261,7 @@ async function main() {
       initiatorScreen.html.includes("Basic Mode"),
     'data-mode="basic"',
   );
-  const basicModeRow = await db.query("SELECT mode FROM assessment_instance WHERE record_id = $1", [
+  const basicModeRow = await db.query("SELECT mode FROM session WHERE record_id = $1", [
     instanceId,
   ]);
   check(
@@ -271,7 +271,7 @@ async function main() {
   );
 
   const inviteRow = await db.query(
-    "SELECT email, counterparty_name, token_hash, claimed_at, expires_at, created_at FROM instance_invite WHERE instance_record_id = $1",
+    "SELECT email, counterparty_name, token_hash, claimed_at, expires_at, created_at FROM session_invite WHERE session_record_id = $1",
     [instanceId],
   );
   const stored = inviteRow.rows[0];
@@ -322,8 +322,8 @@ async function main() {
 
   const afterSelfClaim = await db.query(
     `SELECT iv.claimed_at,
-            (SELECT count(*) FROM party p WHERE p.instance_record_id = iv.instance_record_id)::int AS parties
-       FROM instance_invite iv WHERE iv.instance_record_id = $1`,
+            (SELECT count(*) FROM party p WHERE p.session_record_id = iv.session_record_id)::int AS parties
+       FROM session_invite iv WHERE iv.session_record_id = $1`,
     [instanceId],
   );
   check(
@@ -364,7 +364,7 @@ async function main() {
   check(
     "the GET did not claim the invite",
     (
-      await db.query("SELECT claimed_at FROM instance_invite WHERE instance_record_id = $1", [
+      await db.query("SELECT claimed_at FROM session_invite WHERE session_record_id = $1", [
         instanceId,
       ])
     ).rows[0].claimed_at === null,
@@ -386,8 +386,8 @@ async function main() {
   );
   const afterRefusals = await db.query(
     `SELECT iv.claimed_at,
-            (SELECT count(*) FROM party p WHERE p.instance_record_id = iv.instance_record_id)::int AS parties
-       FROM instance_invite iv WHERE iv.instance_record_id = $1`,
+            (SELECT count(*) FROM party p WHERE p.session_record_id = iv.session_record_id)::int AS parties
+       FROM session_invite iv WHERE iv.session_record_id = $1`,
     [instanceId],
   );
   check(
@@ -407,7 +407,7 @@ async function main() {
     counterparty.cookies.has(`flow_party_${instanceId}`),
   );
   const claimed = await db.query(
-    "SELECT claimed_at,(SELECT count(*) FROM party WHERE instance_record_id = $1)::int AS parties FROM instance_invite WHERE instance_record_id = $1",
+    "SELECT claimed_at,(SELECT count(*) FROM party WHERE session_record_id = $1)::int AS parties FROM session_invite WHERE session_record_id = $1",
     [instanceId],
   );
   check(
@@ -472,7 +472,7 @@ async function main() {
     "reason line",
   );
   const counterpartyOpinions = await db.query(
-    "SELECT count(*)::int AS n FROM opinion WHERE instance_record_id = $1 AND role = 'counterparty'",
+    "SELECT count(*)::int AS n FROM opinion WHERE session_record_id = $1 AND role = 'counterparty'",
     [instanceId],
   );
   check(
@@ -481,7 +481,7 @@ async function main() {
     `n=${counterpartyOpinions.rows[0].n}`,
   );
   const initiatorAfterRefusal = await db.query(
-    "SELECT count(*)::int AS n FROM opinion WHERE instance_record_id = $1 AND role = 'initiator'",
+    "SELECT count(*)::int AS n FROM opinion WHERE session_record_id = $1 AND role = 'initiator'",
     [instanceId],
   );
   check(
@@ -509,7 +509,7 @@ async function main() {
     advancedFieldOnBasic.html.match(/<li>[^<]*<\/li>/)?.[0],
   );
   const afterBasicRefusal = await db.query(
-    "SELECT count(*)::int AS n FROM opinion WHERE instance_record_id = $1",
+    "SELECT count(*)::int AS n FROM opinion WHERE session_record_id = $1",
     [instanceId],
   );
   check(
@@ -620,7 +620,7 @@ async function main() {
     editAttempt.html.includes("Both of you have submitted, so an answer cannot be changed."),
   );
   const storedFeel = await db.query(
-    "SELECT feel, wish FROM opinion WHERE instance_record_id = $1 AND role = 'initiator' AND item_id = $2",
+    "SELECT feel, wish FROM opinion WHERE session_record_id = $1 AND role = 'initiator' AND item_id = $2",
     [instanceId, TIME],
   );
   check(
@@ -659,7 +659,7 @@ async function main() {
 
   /* 9. every party is reachable by hash only ------------------------- */
   const partyHashes = await db.query(
-    "SELECT role, access_token_hash FROM party WHERE instance_record_id = $1 ORDER BY role",
+    "SELECT role, access_token_hash FROM party WHERE session_record_id = $1 ORDER BY role",
     [instanceId],
   );
   check(
@@ -726,7 +726,7 @@ async function main() {
     advScreen.html.includes('data-mode="advanced"') && advScreen.html.includes("Advanced Mode"),
     'data-mode="advanced"',
   );
-  const advModeRow = await db.query("SELECT mode FROM assessment_instance WHERE record_id = $1", [
+  const advModeRow = await db.query("SELECT mode FROM session WHERE record_id = $1", [
     advInstanceId,
   ]);
   check(

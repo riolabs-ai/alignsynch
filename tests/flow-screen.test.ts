@@ -57,8 +57,8 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 }));
 
 const parties: PartyRow[] = [
-  { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
 ];
 
 /** feel/wish for one party; every Aspect not named here is 3/3. */
@@ -69,7 +69,7 @@ function opinionsFor(
   return template.items.map((item) => {
     const override = overrides[item.id];
     return {
-      instance_record_id: INSTANCE_ID,
+      session_record_id: INSTANCE_ID,
       role,
       item_id: item.id,
       feel: override?.feel ?? 3,
@@ -88,7 +88,7 @@ function advancedOpinionsFor(
   return template.items.map((item) => {
     const override = overrides[item.id];
     return {
-      instance_record_id: INSTANCE_ID,
+      session_record_id: INSTANCE_ID,
       role,
       item_id: item.id,
       feel: override?.feel ?? 3,
@@ -119,6 +119,7 @@ function rowsWith(
     instance: {
       record_id: INSTANCE_ID,
       template_record_id: template?.id ?? "",
+      relationship_id: "relationship-test",
       mode,
       setting: "soft",
     },
@@ -178,6 +179,69 @@ describe("the blind state", () => {
     });
     expect(screen.waiting).toEqual(["counterparty"]);
     expect(screen.invite?.state).toBe("claimed");
+  });
+});
+
+describe("the coach's read-only view", () => {
+  const initiatorAnswers = opinionsFor("initiator", {
+    [TIME]: { feel: 2, wish: 5 },
+    [MONEY]: { feel: 4, wish: 4 },
+  });
+
+  it("is blind on an unfinished session — no report, no score, no count", () => {
+    const screen = projectScreen({
+      rows: rowsWith(initiatorAnswers, { initiator: items.length, counterparty: 0 }),
+      template,
+      viewerRole: "coach",
+      invite,
+    });
+
+    expect(screen.status).toBe("answering");
+    expect(screen.viewer.role).toBe("coach");
+    expect(screen.viewer.name).toBe("");
+    // The blind rule outranks the coach: no report, and nothing of the parties' answers is in
+    // the view model — no score, no Gap, no count.
+    expect(screen.report).toBeNull();
+    expect(screen.aspects.every((aspect) => aspect.own === null)).toBe(true);
+    const serialized = JSON.stringify(screen);
+    expect(serialized).not.toContain("data-feel-gap");
+    expect(serialized).not.toContain('"initiator":2');
+  });
+
+  it("reads the report only once the session is scored", () => {
+    const both = [
+      ...opinionsFor("initiator", { [TIME]: { feel: 2, wish: 5 }, [MONEY]: { feel: 4, wish: 4 } }),
+      ...opinionsFor("counterparty", {
+        [TIME]: { feel: 5, wish: 3 },
+        [MONEY]: { feel: 4, wish: 4 },
+      }),
+    ];
+    const screen = projectScreen({
+      rows: rowsWith(both, { initiator: items.length, counterparty: items.length }),
+      template,
+      viewerRole: "coach",
+      invite,
+    });
+
+    expect(screen.status).toBe("complete");
+    expect(screen.report).not.toBeNull();
+  });
+
+  it("draws the Coach badge and no answering control", () => {
+    const screen = projectScreen({
+      rows: rowsWith(initiatorAnswers, { initiator: items.length, counterparty: 0 }),
+      template,
+      viewerRole: "coach",
+      invite,
+    });
+    const markup = renderToStaticMarkup(
+      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+    );
+
+    expect(markup).toContain('data-coach-badge="true"');
+    // A coach never answers: the answer form is not drawn, and the viewer band says so.
+    expect(markup).not.toContain("Submit answers");
+    expect(markup).toContain("You are viewing as Coach");
   });
 });
 

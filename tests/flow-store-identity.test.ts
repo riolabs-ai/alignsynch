@@ -20,7 +20,7 @@
  *                   other seat (`already-a-party`), and a seat that is already taken cannot be
  *                   taken again (`already-bound`). Nothing on any path `UPDATE`s `party`, so an
  *                   existing non-NULL `user_id` is never overwritten — and one account cannot
- *                   be both parties (`party_instance_user_key`).
+ *                   be both parties (`party_session_user_key`).
  *
  * **The client is a stub, on purpose.** The gate is database-free (`docs/GATE.md`), so the
  * store's SQL is driven through a recording `PoolClient` and the claims above are asserted on
@@ -61,7 +61,7 @@ const stub = vi.hoisted(() => {
     /** The invitation the claim locks, or `undefined` for an unknown token. */
     invite:
       | {
-          readonly instance_record_id: string;
+          readonly session_record_id: string;
           readonly counterparty_name: string;
           readonly claimed_at: Date | null;
           readonly expires_at: Date;
@@ -130,7 +130,7 @@ const stub = vi.hoisted(() => {
     if (sql.startsWith("INSERT INTO party")) {
       return state.seatTaken ? { rows: [], rowCount: 0 } : wrote;
     }
-    if (sql.startsWith("SELECT instance_record_id, counterparty_name, claimed_at, expires_at")) {
+    if (sql.startsWith("SELECT session_record_id, counterparty_name, claimed_at, expires_at")) {
       return { rows: state.invite === undefined ? [] : [state.invite], rowCount: 1 };
     }
     if (sql.includes("access_token_hash = ANY")) {
@@ -149,9 +149,10 @@ const stub = vi.hoisted(() => {
       sql.startsWith("INSERT INTO record") ||
       sql.startsWith("INSERT INTO item") ||
       sql.startsWith("INSERT INTO response_option") ||
-      sql.startsWith("INSERT INTO assessment_instance") ||
-      sql.startsWith("INSERT INTO instance_invite") ||
-      sql.startsWith("UPDATE instance_invite")
+      sql.startsWith("INSERT INTO relationship") ||
+      sql.startsWith("INSERT INTO session") ||
+      sql.startsWith("INSERT INTO session_invite") ||
+      sql.startsWith("UPDATE session_invite")
     ) {
       return wrote;
     }
@@ -168,7 +169,7 @@ const stub = vi.hoisted(() => {
     const sql = narrow(text);
     // No subscription row: the account is on the Free plan.
     if (sql.includes("FROM billing_subscription")) return [] as T[];
-    if (sql.includes("FROM party vp") && sql.includes("JOIN assessment_instance ai")) {
+    if (sql.includes("FROM party vp") && sql.includes("JOIN session ai")) {
       return [{ n: state.activeInstances }] as T[];
     }
     throw new Error(`the stub has no rows for: ${sql.slice(0, 80)}`);
@@ -223,7 +224,7 @@ const INVITE_TOKEN = mintToken();
 
 function invite(over: Partial<NonNullable<typeof stub.state.invite>> = {}) {
   return {
-    instance_record_id: "assessment-instance-fresh",
+    session_record_id: "assessment-instance-fresh",
     counterparty_name: "Rowan",
     claimed_at: null,
     expires_at: new Date(Date.now() + 60_000),
@@ -266,7 +267,7 @@ describe("createInstanceFromTemplate binds the creator", () => {
     expect(stub.narrow(partyInserts()[0].text)).not.toContain("'counterparty'");
     // The invitation names them, and carries no account: the row that would be theirs does not
     // exist until they claim it.
-    const [invitation] = callsMatching(/^INSERT INTO instance_invite/);
+    const [invitation] = callsMatching(/^INSERT INTO session_invite/);
     expect(invitation.values).not.toContain("account-avery");
   });
 
@@ -355,7 +356,7 @@ describe("claimInvite binds the claimer", () => {
 
     const insertAt = stub.calls.indexOf(insert);
     expect(insertAt).toBeGreaterThan(onlyIndex(/^BEGIN$/));
-    expect(insertAt).toBeLessThan(onlyIndex(/^UPDATE instance_invite /));
+    expect(insertAt).toBeLessThan(onlyIndex(/^UPDATE session_invite /));
     expect(insertAt).toBeLessThan(onlyIndex(/^COMMIT$/));
   });
 
@@ -397,7 +398,7 @@ describe("a seat already held is not taken twice", () => {
 
     expect(result).toMatchObject({ ok: false, code: "already-a-party", role: "initiator" });
     expect(partyInserts()).toHaveLength(0);
-    expect(callsMatching(/^UPDATE instance_invite /)).toHaveLength(0);
+    expect(callsMatching(/^UPDATE session_invite /)).toHaveLength(0);
     expect(callsMatching(/^ROLLBACK$/)).toHaveLength(1);
   });
 
@@ -433,9 +434,9 @@ describe("a seat already held is not taken twice", () => {
 
     expect(result).toMatchObject({ ok: false, code: "already-bound" });
     const [insert] = partyInserts();
-    expect(stub.narrow(insert.text)).toContain("ON CONFLICT (instance_record_id, role) DO NOTHING");
+    expect(stub.narrow(insert.text)).toContain("ON CONFLICT (session_record_id, role) DO NOTHING");
     expect(stub.narrow(insert.text)).not.toContain("DO UPDATE");
-    expect(callsMatching(/^UPDATE instance_invite /)).toHaveLength(0);
+    expect(callsMatching(/^UPDATE session_invite /)).toHaveLength(0);
   });
 
   it("cannot be made to write a binding through any UPDATE on party", async () => {
