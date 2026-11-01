@@ -1,4 +1,4 @@
-// template-ancestor: components/marketing/marketing-landing.tsx
+// template-ancestor: components/marketing/marketing-landing.tsx   (variation: the public bands, rendered inside the prototype)
 import { billingPlans } from "@/data/billing-plans";
 import { brand } from "@/data/brand";
 import { formatCurrency } from "@/content/core";

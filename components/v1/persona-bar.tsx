@@ -1,4 +1,4 @@
-// template-ancestor: none — prototype screen, approved for /v1
+// template-ancestor: components/layout/header.tsx   (variation: the persona switcher stands in for the header's account menu)
 "use client";
 
 import { PERSONA_META, PERSONAS, type Persona } from "@/data/v1/fixtures";

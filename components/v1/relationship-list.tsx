@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/my-instances.tsx
+// template-ancestor: components/assessment-flow/my-instances.tsx   (variation: relationships by stage, blind-safe rows)
 "use client";
 
 import { OPINION_LABELS, SETTING_LABELS, opinionKindsFor } from "@/content/assessment";

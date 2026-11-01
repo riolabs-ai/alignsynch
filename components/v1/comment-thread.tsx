@@ -1,4 +1,4 @@
-// template-ancestor: components/quiz/quiz-comments.tsx
+// template-ancestor: components/quiz/question-discussion.tsx   (variation: threads on a relationship and per aspect, opened after a session closes)
 "use client";
 
 import type { V1Comment } from "@/data/v1/fixtures";

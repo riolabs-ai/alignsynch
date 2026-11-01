@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/answer-form.tsx
+// template-ancestor: components/assessment-flow/answer-form.tsx   (variation: four opinions per aspect in two passes, no correctness feedback)
 "use client";
 
 import type { OpinionKind, Opinions } from "@/content/assessment";

@@ -1,4 +1,4 @@
-// template-ancestor: components/my-quizzes/quiz-details.tsx
+// template-ancestor: components/my-quizzes/quiz-details.tsx   (variation: the relationship's manage view: stage, sessions, one action)
 "use client";
 
 import type { Assessment } from "@/content/assessment";

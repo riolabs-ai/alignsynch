@@ -1,4 +1,4 @@
-// template-ancestor: components/console/overview.tsx
+// template-ancestor: components/console/overview.tsx   (variation: the initiator's counts and awaiting list)
 "use client";
 
 import { gapSummary, relationshipNameOf } from "@/lib/v1/derive";

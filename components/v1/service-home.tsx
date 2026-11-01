@@ -1,4 +1,4 @@
-// template-ancestor: components/support/support-page.tsx
+// template-ancestor: components/assessment-flow/my-instances.tsx   (variation: the support queue over stalled invitations)
 "use client";
 
 import { useV1Store } from "@/lib/v1/store";

@@ -1,4 +1,4 @@
-// template-ancestor: none — prototype screen, approved for /v1
+// template-ancestor: components/assessment-flow/my-instances.tsx   (variation: invitations awaiting a claim)
 "use client";
 
 import { PERSONA_META } from "@/data/v1/fixtures";

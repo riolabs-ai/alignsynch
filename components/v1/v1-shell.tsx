@@ -1,4 +1,4 @@
-// template-ancestor: none — prototype screen, approved for /v1
+// template-ancestor: components/layout/main-layout.tsx   (variation: the prototype's shell: same gutter and chrome, its own navigation)
 "use client";
 
 import { V1StoreProvider } from "@/lib/v1/store";

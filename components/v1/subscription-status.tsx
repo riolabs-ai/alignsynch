@@ -1,4 +1,4 @@
-// template-ancestor: components/pricing/pricing-plans.tsx
+// template-ancestor: components/my-quizzes/quiz-details.tsx   (variation: the subscription state in a relationship header)
 "use client";
 
 import { formatDate } from "@/content/core";

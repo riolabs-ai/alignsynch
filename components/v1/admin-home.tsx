@@ -1,4 +1,4 @@
-// template-ancestor: components/admin/instance-registry.tsx
+// template-ancestor: components/admin/instance-registry.tsx   (variation: the operator's registry, read-only)
 "use client";
 
 import { RELATIONSHIP_STAGES, type RelationshipStage } from "@/content/stages";

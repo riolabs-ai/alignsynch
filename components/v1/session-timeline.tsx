@@ -1,3 +1,4 @@
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: sessions as a timeline rather than a list)
 // template-ancestors: components/my-quizzes/my-quizzes.tsx (status rows),
 //   components/explore/explore-quiz-list.tsx (card list),
 //   components/my-quizzes/quiz-statistics.tsx (chart over components/ui/chart.tsx),

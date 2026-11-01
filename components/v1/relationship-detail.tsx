@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/instance-view.tsx
+// template-ancestor: components/assessment-flow/instance-view.tsx   (variation: a session timeline rather than a record)
 // The relationship page is a session timeline, not a record: header (parties, stage, last
 // session, one action) → open session (blind) → one computed trend line → completed
 // sessions newest-first. See components/v1/session-timeline.tsx.

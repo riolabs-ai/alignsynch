@@ -1,4 +1,4 @@
-// template-ancestor: components/auth/login-view.tsx
+// template-ancestor: components/auth/login-view.tsx   (variation: choosing a persona instead of signing in)
 "use client";
 
 import { PERSONA_META, PERSONAS, type Persona } from "@/data/v1/fixtures";

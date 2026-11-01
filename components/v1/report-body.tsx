@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment/assessment-report.tsx
+// template-ancestor: components/assessment/assessment-report.tsx   (variation: four opinions per aspect with prediction-derived gaps)
 "use client";
 
 import { GAP_KIND_LABELS, gapKindsIn, groupsIn } from "@/content/gaps";

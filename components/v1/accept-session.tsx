@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/instance-view.tsx
+// template-ancestor: components/assessment-flow/instance-view.tsx   (variation: both parties accept before the blind rule lifts)
 "use client";
 
 import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";

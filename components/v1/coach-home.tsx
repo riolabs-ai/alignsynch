@@ -1,4 +1,4 @@
-// template-ancestor: none — prototype screen, approved for /v1
+// template-ancestor: components/assessment-flow/my-instances.tsx   (variation: the coach's read-only relationship list)
 "use client";
 
 import { gapSummary, relationshipNameOf } from "@/lib/v1/derive";

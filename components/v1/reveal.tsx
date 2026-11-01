@@ -1,4 +1,4 @@
-// template-ancestor: components/ui — the reveal primitive assembles hover-card, popover,
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: peek and expand on a summary row)
 // collapsible and drawer (vaul) into one surface-choosing component; it is not a variation
 // of a single screen.
 "use client";

@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/template-library.tsx
+// template-ancestor: components/explore/explore-quiz-list.tsx   (variation: the template catalogue grid)
 "use client";
 
 import type { AlignmentSetting, AssessmentMode } from "@/content/assessment";
