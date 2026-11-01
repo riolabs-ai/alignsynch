@@ -159,8 +159,11 @@ export const zBrand = z
      * component names one.
      *
      * The file is drawn from the record by `scripts/gen-brand-icons.mjs` — the ground is
-     * `colors.action` and the mark is `colors.actionForeground` on the brand's initial — so the
-     * hex is not authored twice, and `pnpm data:check` re-draws it with `--check`.
+     * `colors.action` and the mark is the open book (`lib/brand-icon.ts`) stroked in
+     * `colors.actionForeground` — so the hex is not authored twice, and `pnpm data:check`
+     * re-draws it with `--check`. The same generator emits the apple-touch and PWA maskable
+     * set; those paths are derived from the brand id in `lib/brand-icon.ts`, not carried here,
+     * because they are the one mark at four sizes, not four separate facts.
      */
     icon: zBrandLogoPath,
     colors: zBrandColors,

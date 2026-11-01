@@ -1,7 +1,8 @@
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { brand } from "@/data/brand";
+import { brand, brandIdOf } from "@/data/brand";
+import { brandIconPaths } from "@/lib/brand-icon";
 import { brandThemeVars } from "@/lib/brand-theme";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -73,7 +74,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
   },
   /**
-   * The tab icon, read from the record (#187 stage 4).
+   * The icon set, read from the record (#187 stage 4) and its generated maskable set.
    *
    * `app/favicon.ico` used to be the whole answer, and it is one static file: the browser tab,
    * a bookmark and the history entry showed the template's mark on an AlignSynch build. The
@@ -84,11 +85,17 @@ export const metadata: Metadata = {
    * `<link rel="icon">` tags would leave the choice of which brand a reader sees to the
    * browser's tie-break rules.
    *
+   * The apple-touch icon is the same mark at 180×180, full bleed, from the same generator; the
+   * path is derived in `lib/brand-icon.ts` (never a literal here — E17). The PWA 192/512 and
+   * maskable set live in `app/manifest.ts`, which is the file convention that injects the
+   * `<link rel="manifest">` for the same brand.
+   *
    * `type` is stated because Next only infers it for its own generated icons; an SVG needs it
    * for a reader (and a few crawlers) to accept the file.
    */
   icons: {
     icon: [{ url: brand.icon, type: "image/svg+xml" }],
+    apple: { url: brandIconPaths(brandIdOf(brand)).appleTouchIcon, type: "image/svg+xml" },
   },
 };
 
