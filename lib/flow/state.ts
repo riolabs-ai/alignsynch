@@ -75,11 +75,14 @@ export function answersRemaining(progress: InstanceProgress): Record<PartyRole, 
 /**
  * The parties whose Opinions a viewer may read.
  *
- * `complete` unlocks both; before that a viewer reads their own and nothing else. A
- * component cannot widen this by asking for it: the roles are the return value, and the
+ * `complete` unlocks both; before that a party reads their own and nothing else. A **coach**
+ * (a `coach` role, not a party) reads nothing before `complete` — the blind rule outranks the
+ * coach, so a session's contents stay behind the same wall a party's do — and both once it is
+ * scored. A component cannot widen this by asking for it: the roles are the return value, and the
  * read path (`lib/flow/store.ts`) only queries the opinions these roles name.
  */
-export function visibleRoles(viewer: PartyRole, status: InstanceStatus): PartyRole[] {
+export function visibleRoles(viewer: PartyRole | "coach", status: InstanceStatus): PartyRole[] {
+  if (viewer === "coach") return status === "complete" ? ["initiator", "counterparty"] : [];
   if (status === "complete") return ["initiator", "counterparty"];
   return [viewer];
 }

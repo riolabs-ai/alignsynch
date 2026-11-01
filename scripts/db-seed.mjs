@@ -421,6 +421,27 @@ async function removeDemoAccounts(client) {
           ])
         ).rowCount ?? 0);
 
+  // #coach — a membership row is an account's view into a relationship, so it dies with the demo
+  // account that held it, exactly as the party binding does. A coach invite is invited by an
+  // account too, so it goes the same way.
+  const members =
+    ids.length === 0
+      ? 0
+      : ((
+          await client.query("DELETE FROM relationship_member WHERE user_id = ANY($1::text[])", [
+            ids,
+          ])
+        ).rowCount ?? 0);
+  const coachInvites =
+    ids.length === 0
+      ? 0
+      : ((
+          await client.query(
+            "DELETE FROM coach_invite WHERE invited_by_user_id = ANY($1::text[])",
+            [ids],
+          )
+        ).rowCount ?? 0);
+
   const profiles =
     ids.length === 0
       ? 0
@@ -447,7 +468,32 @@ async function removeDemoAccounts(client) {
       ).rowCount ?? 0;
   }
 
-  return { authUsers, profiles: profiles + orphanHandles, credentials, unbound };
+  return {
+    authUsers,
+    profiles: profiles + orphanHandles,
+    credentials,
+    unbound,
+    members,
+    coachInvites,
+  };
+}
+
+/**
+ * The membership rows the backfilled parties hold, re-derived from `party.user_id` so a re-seed
+ * converges on the same rows the migration's backfill (`0014_relationship_membership.sql`) wrote.
+ * A coach is never seeded here: a coach is invited (`coach_invite`), and this only mirrors the two
+ * answering parties into members. `ON CONFLICT DO NOTHING` keeps it a no-op on a converged run.
+ */
+async function syncRelationshipMembers(client) {
+  await client.query(
+    `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
+     SELECT s.relationship_id, p.user_id, p.role, COALESCE(p.submitted_at, r.date, now())
+       FROM party p
+       JOIN session s ON s.record_id = p.session_record_id
+       JOIN record r ON r.id = s.record_id
+      WHERE p.user_id IS NOT NULL AND p.role IN ('initiator', 'counterparty')
+     ON CONFLICT (relationship_id, user_id) DO NOTHING`,
+  );
 }
 
 /** Creates the three, from scratch: a fresh password each, stored only in `demo_account`. */
@@ -644,7 +690,7 @@ async function main() {
     console.log(
       `  · demo accounts: ${
         demo
-          ? `${removed.credentials} credential row(s), ${removed.authUsers} auth user(s), ${removed.profiles} profile row(s), ${removed.unbound} party binding(s) removed before re-seeding`
+          ? `${removed.credentials} credential row(s), ${removed.authUsers} auth user(s), ${removed.profiles} profile row(s), ${removed.unbound} party binding(s), ${removed.members} membership row(s), ${removed.coachInvites} coach invite(s) removed before re-seeding`
           : `${removed.credentials} credential row(s) removed, none created (DEMO_AUTH is not 1)`
       }`,
     );
@@ -676,6 +722,9 @@ async function main() {
     if (demo) {
       const accounts = await seedDemoAccounts(client);
       const bound = await bindDemoParties(client, accounts);
+      // #coach — the two bound parties become relationship members, so the relationship they
+      // answer is the one they can see. A coach is never added here: a coach is invited.
+      await syncRelationshipMembers(client);
       console.log(
         `  · demo accounts created: ${accounts.length} (${accounts.map((account) => `${account.email}=${account.role}`).join(", ")})`,
       );

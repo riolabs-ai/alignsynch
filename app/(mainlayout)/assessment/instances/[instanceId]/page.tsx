@@ -79,6 +79,9 @@ async function viewerUserId(): Promise<string | null> {
  */
 async function recordUnlockSeen(screen: FlowScreen): Promise<void> {
   if (screen.status !== "complete") return;
+  // A coach has no party row to mark: `unlock_seen_at` is a party's own fact, and a coach reads
+  // without answering, so there is nothing of theirs to clear.
+  if (screen.viewer.role === "coach") return;
   const prefetch = (await headers()).get("next-router-prefetch");
   if (prefetch === "1") return;
 

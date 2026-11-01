@@ -70,6 +70,7 @@ import {
 import { invitationLink } from "@/lib/flow/email";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
+import { relationshipRoleOf } from "@/lib/flow/membership";
 import { emailLooksDeliverable, resendRefusal, type ResendRefusal } from "@/lib/flow/resend";
 import {
   instanceStatusOf,
@@ -397,6 +398,18 @@ export async function createInstanceFromTemplate(
       [instanceRecordId, initiatorName, hashToken(initiatorToken), initiatorUserId],
     );
 
+    // #coach — the Initiator is a member of the relationship they just created, so a coach can
+    // later be invited by "the Initiator" (the gate reads `relationship_member`, not the party
+    // row). A signed-out create has no account, and a membership names an account, so the row is
+    // written only when the creator was signed in — the same NULL the party row just stored.
+    if (initiatorUserId !== null) {
+      await client.query(
+        `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
+         VALUES ($1, $2, 'initiator', $3)`,
+        [relationshipId, initiatorUserId, now.toISOString()],
+      );
+    }
+
     await client.query(
       `INSERT INTO session_invite
          (session_record_id, email, counterparty_name, token_hash, created_at, expires_at, initiator_email)
@@ -601,6 +614,18 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       invite.session_record_id,
       now.toISOString(),
     ]);
+    // #coach — the Counterparty is a member of the relationship they just joined, so the
+    // relationship's membership mirrors its parties. A signed-out claim has no account and so
+    // no membership row, the same NULL the party row just stored.
+    if (claimerUserId !== null) {
+      await client.query(
+        `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
+         SELECT s.relationship_id, $1, 'counterparty', $2
+           FROM session s WHERE s.record_id = $3
+         ON CONFLICT (relationship_id, user_id) DO NOTHING`,
+        [claimerUserId, now.toISOString(), invite.session_record_id],
+      );
+    }
     await client.query("COMMIT");
     return { ok: true, instanceRecordId: invite.session_record_id, sessionToken };
   } catch (error) {
@@ -1347,19 +1372,6 @@ export async function listPublishedTemplates(
   }));
 }
 
-/** The role a party token belongs to on one instance, or `undefined`. */
-export async function roleForToken(
-  instanceRecordId: string,
-  token: string | undefined,
-): Promise<PartyRole | undefined> {
-  if (token === undefined || token === "") return undefined;
-  const [row] = await query<{ role: PartyRole }>(
-    "SELECT role FROM party WHERE session_record_id = $1 AND access_token_hash = $2",
-    [instanceRecordId, hashToken(token)],
-  );
-  return row?.role;
-}
-
 /**
  * The role a **signed-in account** is on one instance, or `undefined` (#183, part 2).
  *
@@ -1368,9 +1380,10 @@ export async function roleForToken(
  * screen has to be able to answer "which party is this session" — otherwise a demo sign-in as
  * Counterparty would land on a 404 and prove nothing about the blind rule.
  *
- * The token is still asked first (`readFlowScreen` below): a browser that carries the cookie
- * keeps the identity the invitation gave it, and a session is the fallback, not an override.
- * Both resolve to a `PartyRole` from Postgres; neither reads a claim out of the request.
+ * The session-scoped half of "who is this account": `previewInvite` uses it to refuse a claim by
+ * an account that already answers as a party. The screen's own read goes through
+ * `relationshipRoleOf()` (`lib/flow/membership.ts`), which resolves the same party binding scoped
+ * to the relationship. Neither reads a claim out of the request.
  */
 export async function roleForUser(
   instanceRecordId: string,
@@ -1404,8 +1417,9 @@ export async function readFlowScreen(input: {
   /** The raw invitation token, held by the Initiator's own browser, if it still has it. */
   inviteToken?: string | null;
   /**
-   * The signed-in account, when there is one (#183, part 2). Consulted only if the cookie
-   * resolved nothing, so an invited party keeps the identity its link gave it.
+   * The signed-in account, when there is one (#183, part 2). Consulted after the cookie, so an
+   * invited party keeps the identity its link gave it — and the third thing consulted is the
+   * account's **relationship membership**, which is how a coach reads the screen at all.
    */
   viewerUserId?: string | null;
   /**
@@ -1417,13 +1431,19 @@ export async function readFlowScreen(input: {
    */
   now?: Date;
 }): Promise<FlowScreen | undefined> {
-  const viewerRole =
-    (await roleForToken(input.instanceRecordId, input.token)) ??
-    (await roleForUser(input.instanceRecordId, input.viewerUserId));
-  if (viewerRole === undefined) return undefined;
-
   const bundle = await readInstanceBundle(input.instanceRecordId);
   if (bundle === undefined) return undefined;
+
+  // The viewer is resolved against the *relationship* the session belongs to (#340 + coach): a
+  // party by bearer token, then by account, then a coach by membership. One resolution, so a
+  // missing check is a visible omission — `relationshipRoleOf()` is the same gate the card's
+  // `requireRelationshipRole()` wraps, and it is the only way a role enters this screen.
+  const viewerRole = await relationshipRoleOf(bundle.instance.relationship_id, {
+    userId: input.viewerUserId,
+    tokens: input.token === undefined || input.token === "" ? [] : [input.token],
+  });
+  if (viewerRole === undefined) return undefined;
+
   const template = await readTemplate(bundle.instance.template_record_id);
   if (template === undefined) return undefined;
 
@@ -1624,6 +1644,261 @@ async function viewerRoleOf(
     [instanceRecordId, hashes],
   );
   return row?.role;
+}
+
+/* ------------------------------------------------------------------ *\
+ * Coach — invite, claim, revoke
+ * ------------------------------------------------------------------ */
+
+export const COACH_INVITE_REFUSALS = [
+  "not-initiator",
+  "already-invited",
+  "invalid-email",
+  "unknown",
+  "claimed",
+  "expired",
+  "revoked",
+  "already-a-member",
+  "no-invite",
+] as const;
+
+export type CoachInviteRefusal = (typeof COACH_INVITE_REFUSALS)[number];
+
+export interface InviteCoachInput {
+  /** The relationship the coach is being invited to read. */
+  readonly relationshipId: string;
+  /** The coach's address — a real invitation, delivered the way the counterparty's is. */
+  readonly email: string;
+  /** The Initiator's account. Only the Initiator may invite a coach. */
+  readonly viewerUserId: string;
+  readonly now?: Date;
+}
+
+export type InviteCoachResult =
+  | {
+      readonly ok: true;
+      readonly relationshipId: string;
+      readonly inviteToken: string;
+      readonly email: string;
+    }
+  | { readonly ok: false; readonly code: CoachInviteRefusal; readonly reason: string };
+
+/**
+ * Invite a coach, the same shape the counterparty's invitation takes (#146): a single-use,
+ * revocable token minted by `lib/flow/tokens.ts`, stored as its hash, never the raw token. The
+ * coach is **not** a party and not a billable seat — this only creates the invitation; the coach
+ * becomes a member (`relationship_member`, role `coach`) when the claim below spends the token.
+ *
+ * Only the Initiator may send it, and one live invitation per relationship is structural
+ * (`coach_invite_relationship_key`): a second invite while one is live is `already-invited`, so
+ * the honest action is to revoke and re-invite, not to mint two links.
+ */
+export async function inviteCoach(input: InviteCoachInput): Promise<InviteCoachResult> {
+  const email = input.email.trim();
+  if (!emailLooksDeliverable(email)) {
+    return {
+      ok: false,
+      code: "invalid-email",
+      reason: `"${email}" is not an address a message can be sent to`,
+    };
+  }
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const inviter = await client.query<{ role: string }>(
+      `SELECT role FROM relationship_member WHERE relationship_id = $1 AND user_id = $2 FOR UPDATE`,
+      [input.relationshipId, input.viewerUserId],
+    );
+    if (inviter.rows[0]?.role !== "initiator") {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "not-initiator",
+        reason: "only the Initiator of a relationship may invite a coach",
+      };
+    }
+    const live = await client.query(
+      `SELECT 1 FROM coach_invite WHERE relationship_id = $1 AND claimed_at IS NULL AND revoked_at IS NULL`,
+      [input.relationshipId],
+    );
+    if (live.rows[0] !== undefined) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "already-invited",
+        reason:
+          "that relationship already has a live coach invitation; revoke it before inviting again",
+      };
+    }
+    const now = input.now ?? new Date();
+    const inviteToken = mintToken();
+    await client.query(
+      `INSERT INTO coach_invite (relationship_id, token_hash, email, invited_by_user_id, created_at, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        input.relationshipId,
+        hashToken(inviteToken),
+        email,
+        input.viewerUserId,
+        now.toISOString(),
+        inviteExpiry(now).toISOString(),
+      ],
+    );
+    await client.query("COMMIT");
+    return { ok: true, relationshipId: input.relationshipId, inviteToken, email };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export interface ClaimCoachInviteInput {
+  readonly token: string;
+  /** The signed-in account claiming the coach role. Membership is account-bound, never token-bound. */
+  readonly viewerUserId: string;
+  readonly now?: Date;
+}
+
+export type ClaimCoachInviteResult =
+  | { readonly ok: true; readonly relationshipId: string }
+  | { readonly ok: false; readonly code: CoachInviteRefusal; readonly reason: string };
+
+/**
+ * Spend a coach invitation exactly once, binding the claiming account as the coach member.
+ *
+ * Six refusals, named, and only the success writes: `unknown`, `claimed`, `expired`, `revoked`,
+ * `already-a-member` (the account is already the Initiator, the Counterparty or a coach of this
+ * relationship), and the same `FOR UPDATE` single-use guarantee `claimInvite` gives the
+ * counterparty's token — two simultaneous claims serialise, and the second reads `claimed_at`.
+ * The claim writes the token's hash was already stored at invite time, so the raw token never
+ * reaches a row here either.
+ */
+export async function claimCoachInvite(
+  input: ClaimCoachInviteInput,
+): Promise<ClaimCoachInviteResult> {
+  if (!tokenIsWellFormed(input.token)) {
+    return { ok: false, code: "unknown", reason: "that token is not a coach invitation token" };
+  }
+  const userId = input.viewerUserId.trim();
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query<{
+      relationship_id: string;
+      claimed_at: Date | null;
+      revoked_at: Date | null;
+      expires_at: Date;
+    }>(
+      `SELECT relationship_id, claimed_at, revoked_at, expires_at FROM coach_invite WHERE token_hash = $1 FOR UPDATE`,
+      [hashToken(input.token)],
+    );
+    const invite = found.rows[0];
+    if (invite === undefined) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "unknown", reason: "no coach invitation carries that token" };
+    }
+    if (invite.claimed_at !== null) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "claimed", reason: "that coach invitation was already claimed" };
+    }
+    if (invite.revoked_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "revoked",
+        reason: "that coach invitation was revoked by the Initiator",
+      };
+    }
+    const now = input.now ?? new Date();
+    if (invite.expires_at.getTime() <= now.getTime()) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "expired", reason: "that coach invitation has expired" };
+    }
+    const existing = await client.query<{ role: string }>(
+      `SELECT role FROM relationship_member WHERE relationship_id = $1 AND user_id = $2`,
+      [invite.relationship_id, userId],
+    );
+    if (existing.rows[0] !== undefined) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "already-a-member",
+        reason: `this account is already the ${existing.rows[0].role} of that relationship`,
+      };
+    }
+    await client.query(
+      `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
+       VALUES ($1, $2, 'coach', $3)`,
+      [invite.relationship_id, userId, now.toISOString()],
+    );
+    await client.query("UPDATE coach_invite SET claimed_at = $2 WHERE token_hash = $1", [
+      hashToken(input.token),
+      now.toISOString(),
+    ]);
+    await client.query("COMMIT");
+    return { ok: true, relationshipId: invite.relationship_id };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export interface RevokeCoachInviteInput {
+  readonly relationshipId: string;
+  /** The Initiator's account — only the seat that invited may un-invite. */
+  readonly viewerUserId: string;
+}
+
+export type RevokeCoachInviteResult =
+  | { readonly ok: true; readonly relationshipId: string }
+  | { readonly ok: false; readonly code: CoachInviteRefusal; readonly reason: string };
+
+/**
+ * Revoke a live coach invitation. Revoke-and-replace, never delete: the row's `revoked_at` is
+ * set, so the token that was already in a mailbox stops naming an invitation (`claimCoachInvite`
+ * refuses `revoked`), and the history of who was invited is still the row it always was.
+ */
+export async function revokeCoachInvite(
+  input: RevokeCoachInviteInput,
+): Promise<RevokeCoachInviteResult> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const inviter = await client.query<{ role: string }>(
+      `SELECT role FROM relationship_member WHERE relationship_id = $1 AND user_id = $2`,
+      [input.relationshipId, input.viewerUserId],
+    );
+    if (inviter.rows[0]?.role !== "initiator") {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "not-initiator",
+        reason: "only the Initiator may revoke a coach invitation",
+      };
+    }
+    const updated = await client.query(
+      `UPDATE coach_invite SET revoked_at = now() WHERE relationship_id = $1 AND claimed_at IS NULL AND revoked_at IS NULL`,
+      [input.relationshipId],
+    );
+    await client.query("COMMIT");
+    if ((updated.rowCount ?? 0) === 0) {
+      return {
+        ok: false,
+        code: "no-invite",
+        reason: "that relationship has no live coach invitation to revoke",
+      };
+    }
+    return { ok: true, relationshipId: input.relationshipId };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 /* ------------------------------------------------------------------ *\
