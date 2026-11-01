@@ -11,7 +11,7 @@ import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
-import { LogOut, X } from "lucide-react";
+import { LogOut, Pin, PinOff, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -54,7 +54,7 @@ export function AppSidebar({
   const nav = sectionOf(copy, "nav");
   const pathname = usePathname();
 
-  const { collapsed, mobileOpen, closeMobile } = useSidebar();
+  const { collapsed, mobileOpen, closeMobile, toggleCollapsed } = useSidebar();
 
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
@@ -69,6 +69,8 @@ export function AppSidebar({
   const logoutLabel = itemLabel(nav, "logout");
   const logoutPendingLabel = itemLabel(nav, "logout-pending");
   const logoutErrorLabel = itemLabel(nav, "logout-error");
+  const pinLabel = itemLabel(nav, "pin");
+  const unpinLabel = itemLabel(nav, "unpin");
 
   /**
    * Sign out — for real (issue #272).
@@ -89,7 +91,7 @@ export function AppSidebar({
       return;
     }
     closeMobile();
-    router.replace("/login");
+    router.replace("/");
     router.refresh();
   };
 
@@ -159,6 +161,25 @@ export function AppSidebar({
           aria-label="Close navigation"
         >
           <X className="size-5" />
+        </button>
+        {/*
+         * The pin — the rail's one collapse control, at the top right of the sidebar (issue
+         * #383's shell rules). Expanded (pinned) is the default; clicking unpins the rail to its
+         * icon-only 70px state and clicking again re-pins it. `aria-pressed` carries the pinned
+         * state so the control announces it, and the preference is remembered per person by the
+         * `SidebarProvider` (localStorage). It is *not* the only way to reach navigation: below
+         * `xl` the header's hamburger opens the drawer, and a collapsed rail still renders every
+         * row as an icon the person can follow.
+         */}
+        <button
+          type="button"
+          className="hidden xl:inline-flex"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? pinLabel : unpinLabel}
+          aria-pressed={!collapsed}
+          aria-controls="app-sidebar"
+        >
+          {collapsed ? <PinOff className="size-5" /> : <Pin className="size-5" />}
         </button>
       </div>
 

@@ -42,6 +42,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => {}, replace: () => {}, refresh: () => {} }),
 }));
 
+/**
+ * The header imports `endSession` (its account-menu sign-out), which reaches `@neon/auth` and
+ * cannot resolve in a node process. Stubbed so this file renders the header's notification rows,
+ * not the auth client.
+ */
+vi.mock("@/lib/auth/sign-out", () => ({ endSession: vi.fn(async () => true) }));
+
 /** A closed Radix menu renders no rows; these two are open in the header's markup. */
 vi.mock("@/components/ui/dropdown-menu", () => {
   const Box = ({ children }: { children?: ReactNode }) => createElement("div", null, children);
