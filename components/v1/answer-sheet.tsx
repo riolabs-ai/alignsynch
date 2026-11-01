@@ -5,18 +5,58 @@ import type { OpinionKind, Opinions } from "@/content/assessment";
 import { useV1Store } from "@/lib/v1/store";
 import { LoadingState, NotFoundState, SectionIntro, StageBadge } from "@/components/v1/v1-ui";
 import { gapSummary } from "@/lib/v1/derive";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const SCORES = [1, 2, 3, 4, 5] as const;
 
+/** The opinion-kind names, capitalised the way the subtitle and the report spell them. */
+const KIND_LABEL: Record<OpinionKind, string> = {
+  feel: "Feel",
+  wish: "Wish",
+  think: "Think",
+  guess: "Guess",
+};
+
 type Draft = Record<string, Partial<Record<OpinionKind, number>>>;
 
-/** The answer sheet — one party answers every Aspect, Feel and Wish (or all four). */
+/** One unanswered (Aspect, kind) — the unit an inline error names and the summary counts. */
+interface MissingField {
+  readonly itemId: string;
+  readonly kind: OpinionKind;
+}
+
+/**
+ * The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode).
+ *
+ * Validation is unchanged: a kind is unanswered when its score is outside 1..5 (the draft or the
+ * prior answer resolves to `0`). What changed is how the failure is shown — instead of one banner
+ * under the form, every unanswered control group marks itself with an inline sentence, and one
+ * summary sits above the first field naming the count and linking to each unanswered Aspect. The
+ * summary carries `role="alert"` and takes focus on a failed submit, so a screen reader is told
+ * what is missing and a keyboard can navigate straight to it.
+ *
+ * The submit bar is `fixed` to the viewport bottom below `sm` (576px), not `sticky`: the app
+ * shell's `main` carries `overflow: auto` while the *body* scrolls, which makes an in-`main`
+ * `position: sticky` never stick. `fixed` is the same pinned-bottom result, so the form carries
+ * bottom padding equal to the bar height and the bar pays `env(safe-area-inset-bottom)` on the
+ * home-indicator edge. Above `sm` it is static, in the form footer as before.
+ */
 export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
   const { hydrated, persona, relationships, templates, submitAnswers } = useV1Store();
   const [draft, setDraft] = useState<Draft>({});
-  const [problem, setProblem] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
+  const [submitNonce, setSubmitNonce] = useState(0);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
+
+  // Focus the summary once it is in the DOM after a failed submit. A nonce (not a boolean) so a
+  // second failed submit re-focuses it too, after the alert is committed.
+  useEffect(() => {
+    if (submitNonce === 0) return;
+    summaryRef.current?.focus();
+  }, [submitNonce]);
 
   const rel = relationships.find((candidate) => candidate.id === relationshipId);
 
@@ -74,26 +114,42 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
     }));
   };
 
+  // The same rule the submit payload enforces, enumerated once: an unanswered kind is a score
+  // outside 1..5. The summary, the inline errors and the submit guard all read this one list, so
+  // the message can never name a field the payload would accept.
+  const missing: MissingField[] = [];
+  for (const item of rel.items) {
+    for (const kind of kinds) {
+      const value = seed(item.id, kind);
+      if (value < 1 || value > 5) missing.push({ itemId: item.id, kind });
+    }
+  }
+  const unansweredAspects = rel.items.filter((item) =>
+    missing.some((entry) => entry.itemId === item.id),
+  );
+  const showErrors = attempted && missing.length > 0;
+  // Inline errors and the summary appear only after a submit attempt, but the list is computed
+  // from the live draft, so an answer the person gives clears its own error immediately.
+  const visibleMissing = attempted ? missing : [];
+
   const onSubmit = () => {
+    if (missing.length > 0) {
+      setAttempted(true);
+      setSubmitNonce((nonce) => nonce + 1);
+      return;
+    }
     const next: Record<string, Opinions> = {};
     for (const item of rel.items) {
       const values: Record<string, number> = {};
       for (const kind of kinds) {
-        const value = seed(item.id, kind);
-        if (value < 1 || value > 5) {
-          setProblem(
-            `Answer every ${rel.mode === "advanced" ? "of the four opinions" : "Feel and Wish"} on every Aspect before submitting.`,
-          );
-          return;
-        }
-        values[kind] = value;
+        values[kind] = seed(item.id, kind);
       }
       next[item.id] =
         rel.mode === "advanced"
           ? { feel: values.feel, wish: values.wish, think: values.think, guess: values.guess }
           : { feel: values.feel, wish: values.wish };
     }
-    setProblem(null);
+    setAttempted(false);
     submitAnswers(rel.id, role, next);
     window.location.assign(`/v1/relationships/${rel.id}`);
   };
@@ -108,66 +164,103 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
         <StageBadge stage={summary.stage} />
       </div>
 
-      <div className="space-y-4">
-        {rel.items.map((item) => (
-          <div key={item.id} className="rounded-lg border border-border bg-card p-4">
-            <p className="text-sm font-medium text-foreground">{item.prompt}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {item.leftValue} (1) → {item.rightValue} (5)
-            </p>
-            <div className="mt-3 space-y-3">
-              {kinds.map((kind) => (
-                <div key={kind}>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {kind}
-                  </p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {SCORES.map((score) => {
-                      const selected = seed(item.id, kind) === score;
-                      return (
-                        <button
-                          key={score}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => choose(item.id, kind, score)}
-                          className={
-                            selected
-                              ? "flex h-11 items-center justify-center rounded-md bg-action text-sm font-semibold text-action-foreground"
-                              : "flex h-11 items-center justify-center rounded-md border border-border bg-card text-sm text-foreground hover:bg-muted"
-                          }
-                        >
-                          {score}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+      {showErrors && (
+        <Alert
+          variant="destructive"
+          ref={summaryRef}
+          tabIndex={-1}
+          className="outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <AlertTitle>
+            {missing.length} {missing.length === 1 ? "answer" : "answers"} still needed
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="mt-1 list-disc space-y-1 pl-5">
+              {unansweredAspects.map((item) => (
+                <li key={item.id}>
+                  <a
+                    href={`#answer-${item.id}`}
+                    className="font-medium underline underline-offset-2"
+                  >
+                    {item.prompt}
+                  </a>
+                </li>
               ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {problem !== null && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {problem}
-        </p>
+            </ul>
+          </AlertDescription>
+        </Alert>
       )}
 
-      <div className="flex justify-end gap-2">
-        <Link
-          href={`/v1/relationships/${rel.id}`}
-          className="inline-flex h-11 items-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
-        >
-          Cancel
-        </Link>
-        <button
-          type="button"
-          onClick={onSubmit}
-          className="inline-flex h-11 items-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
-        >
+      <div className="space-y-4 pb-16 sm:pb-0">
+        {rel.items.map((item) => {
+          const itemMissing = new Set(
+            visibleMissing.filter((entry) => entry.itemId === item.id).map((entry) => entry.kind),
+          );
+          return (
+            <div
+              key={item.id}
+              id={`answer-${item.id}`}
+              className="rounded-lg border border-border bg-card p-4"
+            >
+              <p className="text-sm font-medium text-foreground">{item.prompt}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {item.leftValue} (1) → {item.rightValue} (5)
+              </p>
+              <div className="mt-3 space-y-3">
+                {kinds.map((kind) => {
+                  const isMissing = itemMissing.has(kind);
+                  const errorId = `${item.id}-${kind}-error`;
+                  return (
+                    <fieldset
+                      key={kind}
+                      aria-invalid={isMissing ? true : undefined}
+                      aria-describedby={isMissing ? errorId : undefined}
+                      className="m-0 min-w-0 border-0 p-0"
+                    >
+                      <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {KIND_LABEL[kind]}
+                      </legend>
+                      <div className="grid grid-cols-5 gap-2">
+                        {SCORES.map((score) => {
+                          const selected = seed(item.id, kind) === score;
+                          return (
+                            <button
+                              key={score}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => choose(item.id, kind, score)}
+                              className={
+                                selected
+                                  ? "flex h-11 items-center justify-center rounded-md bg-action text-sm font-semibold text-action-foreground"
+                                  : "flex h-11 items-center justify-center rounded-md border border-border bg-card text-sm text-foreground hover:bg-muted"
+                              }
+                            >
+                              {score}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {isMissing && (
+                        <p id={errorId} className="mt-1 text-sm font-medium text-red-600">
+                          {KIND_LABEL[kind]} needs an answer
+                        </p>
+                      )}
+                    </fieldset>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-10 flex justify-end gap-2 border-t border-border bg-background px-4 pt-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))] sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:px-0 sm:pt-0 sm:pb-0">
+        <Button asChild variant="outline" size="lg">
+          <Link href={`/v1/relationships/${rel.id}`}>Cancel</Link>
+        </Button>
+        <Button type="button" size="lg" onClick={onSubmit}>
           Submit answers
-        </button>
+        </Button>
       </div>
     </div>
   );
