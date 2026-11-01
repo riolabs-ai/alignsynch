@@ -27,7 +27,7 @@
  *   - `logo` is `placeholder-logo` in `data/media.ts` (`/placeholder-logo.svg`, 215x48 —
  *     the lockup size the sidebar and the footer draw). It is a *path*, per D-P2-1, and
  *     E19's rule: a fixture holds the `src` the registry already carries.
- *   - `colors` are the `:root` values in `styles/globals.css`, resolved out of
+ *   - `colors` are the `:root` values in `app/globals.css`, resolved out of
  *     `hsl(var(--token))`, plus the `indigo-500` the sidebar paints the active nav with.
  *     The dark theme is not in this record: it is the same tokens under `.dark`, and a
  *     skin that wants to own dark mode is a schema change, not a second field here.

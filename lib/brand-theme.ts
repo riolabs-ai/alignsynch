@@ -1,7 +1,7 @@
 /**
  * The brand's accent tokens as CSS custom properties, for the one place that can paint them.
  *
- * `styles/globals.css` owns the app's theme: `:root` is the light set, `.dark` is the same
+ * `app/globals.css` owns the app's theme: `:root` is the light set, `.dark` is the same
  * tokens at night, and Tailwind's `bg-primary` / `text-accent` resolve through them
  * (`primary: "hsl(var(--primary))"` in `tailwind.config.ts`). A brand record carries the
  * same token names with resolved values, and this module is the bridge: hex or `hsl()` in
@@ -24,7 +24,7 @@
  *      guard against a second theme is rule 1, not a shorter list: the template's values
  *      are skipped, so its markup still carries no `style` attribute.
  *   3. **`navActive` and `action` travel even though the template's values do not.** They are
- *      the two colours the schema carries that `styles/globals.css` has no `:root` value for
+ *      the two colours the schema carries that `app/globals.css` has no `:root` value for
  *      (#187), so "only what the brand changes" cannot apply to them: `hsl(var(--action))` with
  *      the variable unset is an invalid declaration and `bg-action` renders as nothing at all.
  *      So the always-painted list below is painted for *every* brand, and the cost is stated
@@ -60,7 +60,7 @@ const PAINTED: readonly (readonly [keyof BrandColors, string])[] = [
 ];
 
 /**
- * The roles `styles/globals.css` has no default for, painted for every brand (rule 3).
+ * The roles `app/globals.css` has no default for, painted for every brand (rule 3).
  *
  * They cannot be "overrides": there is no value underneath to override. A separate list rather
  * than a flag on `PAINTED` because the reason differs — one list is "what this brand changed",
