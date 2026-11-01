@@ -62,24 +62,40 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "submit", label: "Sign In" },
           { id: "pending", label: "Signing in…" },
           /**
-           * The rejected-password sentence, and it names the other way in (issue #281).
+           * The rejected-password sentence — and, one item below, the refusal Better Auth
+           * cannot express (issue #281).
            *
-           * A person who created their account with Google has no password. Better Auth
-           * 1.7.6 cannot tell that apart from a wrong one: `signInEmail` looks up the
-           * credential account and answers `INVALID_EMAIL_OR_PASSWORD` (401) when the user
-           * is missing, when there is **no credential account at all** (the Google case),
-           * when the row has no password, and when the password does not verify — the same
-           * code, deliberately, so the endpoint is not an account-existence oracle
+           * `signInEmail` answers `INVALID_EMAIL_OR_PASSWORD` (401) for a wrong password, for an
+           * address with no user, for a user with **no credential account at all** (the
+           * Google-only case) and for a credential row with no password — the same code,
+           * deliberately, so the endpoint is not an account-existence oracle
            * (`better-auth`'s sign-in route — `api/routes/sign-in.mjs` in the package — where the
            * four `throw APIError.from` branches after `findUserByEmail` all name it). So this
-           * surface cannot branch on "Google
-           * account" versus "wrong password" without inventing a signal: the sentence says
-           * both things instead of guessing one.
+           * sentence claims exactly what the server said: the pair did not match. A password
+           * account with a bad password reads it, and nothing else.
+           */
+          { id: "error-invalid-credentials", label: "Invalid email or password." },
+          /**
+           * The Google-only refusal (#281, part 2), and the one string here whose cause the app
+           * determines rather than the auth server.
+           *
+           * The server's answer is the same 401 the sentence above describes, so
+           * `components/auth/login-view.tsx` asks `providerHint` after a credentials refusal and
+           * renders *this* id only when the server says the account has no password to check:
+           * `neon_auth.account` has rows, every one of them `google`
+           * (`lib/auth/provider-link.ts::isGoogleOnlyAccount`). A lookup that fails, a
+           * deployment with no database and an address with no account all keep the sentence
+           * above — this one is never a guess.
+           *
+           * It does not say the password is wrong, because there is no password to be wrong, and
+           * it points at the Google button above by name. That phrase is the `google` section's
+           * `label` written out a second time, on purpose: a sentence cannot be assembled from
+           * two fixture items without a placeholder, and a placeholder here would render as
+           * literal braces anywhere this id is drawn without its values. Keep the two in step.
            */
           {
-            id: "error-invalid-credentials",
-            label:
-              "Invalid email or password. If you signed up with Google, use Continue with Google instead.",
+            id: "error-google-account",
+            label: "This account uses Google sign-in. Use Continue with Google above.",
           },
           { id: "error-network", label: "Couldn't reach the server. Check your connection." },
           {

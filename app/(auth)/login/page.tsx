@@ -9,6 +9,7 @@ import { loginCopyFor } from "@/lib/auth-copy";
 import { safeNextPath } from "@/lib/auth/paths";
 import type { Metadata } from "next";
 import { signInAsDemoRole } from "./demo-actions";
+import { isGoogleOnlySignIn } from "./provider-hint-actions";
 
 export const metadata: Metadata = {
   title: "Log In",
@@ -51,6 +52,12 @@ export const metadata: Metadata = {
  * need it. The demo state then adds its own section (`demoCopyFor`): the view is handed one
  * `PageCopy` and Next serialises it into the response, so a section left in the prop is text in
  * the HTML even when nothing draws it — with demo mode off those words are absent entirely.
+ *
+ * **The Google-only hint is wired here** (#281, part 2). `isGoogleOnlySignIn` is a server action
+ * (`./provider-hint-actions.ts`) that the form calls after a refused password, and it arrives the
+ * way the demo actions do: as a function reference. The view can therefore ask one question of
+ * the account rows — "does this address exist only through Google?" — and never holds a database
+ * handle, a `DATABASE_URL` or a `neon_auth` query of its own.
  */
 export default async function AuthPage({
   searchParams,
@@ -74,6 +81,7 @@ export default async function AuthPage({
       copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandIdOf(brand)), loginPageCopy)}
       next={safeNextPath(target)}
       demo={demo}
+      providerHint={isGoogleOnlySignIn}
     />
   );
 }
