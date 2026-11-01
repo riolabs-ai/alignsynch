@@ -103,9 +103,7 @@ export default function NotFound() {
           {/* Error Message */}
           <Card className="bg-white/10 backdrop-blur-lg border-white/20 mb-8 xl:pt-6">
             <CardContent className="p-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                {notFoundPageCopy.heading}
-              </h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{copy.heading}</h2>
               <p className="text-lg text-gray-200 mb-6 leading-relaxed">
                 {itemLabel(message, "line-1")}
                 <br />
@@ -135,39 +133,41 @@ export default function NotFound() {
             </CardContent>
           </Card>
 
-          {/* Search Suggestion */}
-          <div className="text-center">
-            <p className="text-gray-300 mb-4">{itemLabel(actions, "prompt")}</p>
-            <div className="flex justify-center space-x-4 text-sm">
-              {!hiddenNav.includes("/explore") && (
-                <Link
-                  href="/explore"
-                  className="text-background/80 hover:text-background transition-colors flex items-center"
-                >
-                  <Search className="w-4 h-4 mr-1" />
-                  {itemLabel(actions, "browse")}
-                </Link>
-              )}
-              {!hiddenNav.includes("/categories") && (
-                <Link
-                  href="/categories"
-                  className="text-blue-400 hover:text-blue-300 transition-colors flex items-center"
-                >
-                  <Brain className="w-4 h-4 mr-1" />
-                  {itemLabel(actions, "categories")}
-                </Link>
-              )}
-              {!hiddenNav.includes("/leaderboard") && (
-                <Link
-                  href="/leaderboard"
-                  className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center"
-                >
-                  <Trophy className="w-4 h-4 mr-1" />
-                  {itemLabel(actions, "leaderboard")}
-                </Link>
-              )}
+          {/* Search Suggestion — only when at least one of its three rows can be drawn */}
+          {hasSuggestions && (
+            <div className="text-center">
+              <p className="text-gray-300 mb-4">{itemLabel(actions, "prompt")}</p>
+              <div className="flex justify-center space-x-4 text-sm">
+                {!hiddenNav.includes("/explore") && (
+                  <Link
+                    href="/explore"
+                    className="text-background/80 hover:text-background transition-colors flex items-center"
+                  >
+                    <Search className="w-4 h-4 mr-1" />
+                    {itemLabel(actions, "browse")}
+                  </Link>
+                )}
+                {!hiddenNav.includes("/categories") && (
+                  <Link
+                    href="/categories"
+                    className="text-blue-400 hover:text-blue-300 transition-colors flex items-center"
+                  >
+                    <Brain className="w-4 h-4 mr-1" />
+                    {itemLabel(actions, "categories")}
+                  </Link>
+                )}
+                {!hiddenNav.includes("/leaderboard") && (
+                  <Link
+                    href="/leaderboard"
+                    className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center"
+                  >
+                    <Trophy className="w-4 h-4 mr-1" />
+                    {itemLabel(actions, "leaderboard")}
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
