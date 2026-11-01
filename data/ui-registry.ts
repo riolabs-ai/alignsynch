@@ -584,6 +584,14 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/v1/flow/[draftId]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The relationship flow after the template page: name it, personalize the aspects, buy it once (mocked, no charge), then invite the counterparty — resumable from the relationship list as a draft.",
+  },
+  {
+    kind: "route",
     surface: "/v1/initiator",
     status: "prototype",
     templates: ["alignsynch"],
@@ -604,7 +612,15 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The Initiator's template library, with an inline form that copies a template into a relationship.",
+      "The Initiator's template library, one card per template, each opening into the relationship flow.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/initiator/templates/[templateId]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "One template and its starter aspects, with the 'Start this relationship' action that opens the relationship flow.",
   },
   {
     kind: "route",

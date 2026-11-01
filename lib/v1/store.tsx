@@ -29,6 +29,7 @@
 import {
   zAssessment,
   type AlignmentSetting,
+  type Aspect,
   type Assessment,
   type AssessmentMode,
   type Opinions,
@@ -37,12 +38,14 @@ import {
   PERSONA_META,
   SEED_VERSION,
   zPersona,
+  zV1FlowDraft,
   v1Templates,
   seedAccounts,
   seedRelationships,
   seedTickets,
   type Persona,
   type V1Account,
+  type V1FlowDraft,
   type V1Relationship,
   type V1Ticket,
 } from "@/data/v1/fixtures";
@@ -65,6 +68,12 @@ const FLOW_STORAGE_KEY = "alignsynch.v1.relationships.v1";
 
 /** The persona's own key — `v1_persona` in localStorage and mirrored to a cookie of that name. */
 const PERSONA_KEY = "v1_persona";
+
+/** The key the relationship-flow drafts persist under — an abandoned flow resumes from here. */
+const DRAFTS_STORAGE_KEY = "alignsynch.v1.drafts.v1";
+
+/** Drafts are versioned apart from the flow slice, so a draft shape change re-seeds only drafts. */
+const DRAFTS_VERSION = 1;
 
 /* ------------------------------------------------------------------ *
  * Small helpers
@@ -145,6 +154,22 @@ function parsePersona(raw: string | null | undefined): Persona | null {
   return result.success ? result.data : null;
 }
 
+/** The persisted drafts, or an empty list when none have been written yet. */
+function loadDrafts(): readonly V1FlowDraft[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(DRAFTS_STORAGE_KEY);
+    if (raw === null) return [];
+    const parsed = JSON.parse(raw) as { version: number; drafts: readonly V1FlowDraft[] };
+    if (parsed.version !== DRAFTS_VERSION) return [];
+    const result = zV1FlowDraft.array().safeParse(parsed.drafts);
+    return result.success ? result.data : [];
+  } catch (error) {
+    console.warn("v1 store: could not read persisted drafts, re-seeding", error);
+    return [];
+  }
+}
+
 /* ------------------------------------------------------------------ *
  * Context
  * ------------------------------------------------------------------ */
@@ -171,9 +196,22 @@ export interface V1Store {
   readonly relationships: readonly V1Relationship[];
   readonly accounts: readonly V1Account[];
   readonly tickets: readonly V1Ticket[];
+  readonly drafts: readonly V1FlowDraft[];
 
   readonly setPersona: (persona: Persona) => void;
   readonly createRelationship: (input: RelationshipInput) => V1Relationship;
+  readonly startDraft: (templateId: string) => V1FlowDraft;
+  readonly updateDraft: (
+    draftId: string,
+    patch: Partial<
+      Pick<
+        V1FlowDraft,
+        "step" | "counterpartyName" | "counterpartyEmail" | "aspects" | "purchase" | "inviteToken"
+      >
+    >,
+  ) => void;
+  readonly removeDraft: (draftId: string) => void;
+  readonly commitDraft: (draftId: string) => V1Relationship;
   readonly sendInvite: (relationshipId: string) => void;
   readonly claimInvite: (relationshipId: string) => void;
   readonly submitAnswers: (
@@ -194,6 +232,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
   const [relationships, setRelationships] = useState<readonly V1Relationship[]>(seedRelationships);
   const [accounts, setAccounts] = useState<readonly V1Account[]>(seedAccounts);
   const [tickets, setTickets] = useState<readonly V1Ticket[]>(seedTickets);
+  const [drafts, setDrafts] = useState<readonly V1FlowDraft[]>([]);
   const [persona, setPersonaState] = useState<Persona>("visitor");
   const [hydrated, setHydrated] = useState(false);
   const hydratedRef = useRef(false);
@@ -208,6 +247,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     setRelationships(flow.relationships);
     setAccounts(flow.accounts);
     setTickets(flow.tickets);
+    setDrafts(loadDrafts());
     setPersonaState(nextPersona);
     setHydrated(true);
   }, []);
@@ -232,6 +272,18 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       console.warn("v1 store: could not persist flow (private mode?)", error);
     }
   }, [relationships, accounts, tickets, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      window.localStorage.setItem(
+        DRAFTS_STORAGE_KEY,
+        JSON.stringify({ version: DRAFTS_VERSION, drafts }),
+      );
+    } catch (error) {
+      console.warn("v1 store: could not persist drafts (private mode?)", error);
+    }
+  }, [drafts, hydrated]);
 
   const saveTemplate = useCallback((template: Assessment) => {
     setTemplates((previous) => {
@@ -291,6 +343,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         setting: input.setting,
         initiatorName: input.initiatorName.trim() || PERSONA_META.initiator.name,
         counterpartyName: null,
+        counterpartyDisplayName: null,
         initiatorAnswers: {},
         counterpartyAnswers: {},
         initiatorSubmitted: false,
@@ -308,6 +361,105 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       return relationship;
     },
     [templates],
+  );
+
+  const startDraft = useCallback(
+    (templateId: string): V1FlowDraft => {
+      const template = templates.find((candidate) => candidate.id === templateId);
+      if (template === undefined) {
+        throw new Error(`no template "${templateId}" in the library`);
+      }
+      const draft: V1FlowDraft = {
+        id: uid("draft"),
+        templateId,
+        step: "name",
+        counterpartyName: "",
+        counterpartyEmail: "",
+        aspects: template.items.map((item) => ({
+          id: item.id,
+          prompt: item.prompt,
+          leftValue: item.leftValue,
+          rightValue: item.rightValue,
+        })),
+        mode: "advanced",
+        setting: "soft",
+        purchase: null,
+        inviteToken: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setDrafts((previous) => [...previous, draft]);
+      return draft;
+    },
+    [templates],
+  );
+
+  const updateDraft = useCallback(
+    (
+      draftId: string,
+      patch: Partial<
+        Pick<
+          V1FlowDraft,
+          "step" | "counterpartyName" | "counterpartyEmail" | "aspects" | "purchase" | "inviteToken"
+        >
+      >,
+    ) => {
+      setDrafts((previous) =>
+        previous.map((draft) =>
+          draft.id === draftId
+            ? { ...draft, ...patch, updatedAt: new Date().toISOString() }
+            : draft,
+        ),
+      );
+    },
+    [],
+  );
+
+  const removeDraft = useCallback((draftId: string) => {
+    setDrafts((previous) => previous.filter((draft) => draft.id !== draftId));
+  }, []);
+
+  const commitDraft = useCallback(
+    (draftId: string): V1Relationship => {
+      const draft = drafts.find((candidate) => candidate.id === draftId);
+      if (draft === undefined) {
+        throw new Error(`no draft "${draftId}"`);
+      }
+      const items: Aspect[] = draft.aspects.map((aspect) => ({
+        id: aspect.id,
+        prompt: aspect.prompt.trim(),
+        scale: { kind: "score", min: 1, max: 5 },
+        leftValue: aspect.leftValue.trim(),
+        rightValue: aspect.rightValue.trim(),
+      }));
+      const relationship: V1Relationship = {
+        id: uid("rel"),
+        templateId: draft.templateId,
+        name: undefined,
+        items,
+        mode: draft.mode,
+        setting: draft.setting,
+        initiatorName: PERSONA_META.initiator.name,
+        counterpartyName: null,
+        counterpartyDisplayName: draft.counterpartyName.trim() || null,
+        initiatorAnswers: {},
+        counterpartyAnswers: {},
+        initiatorSubmitted: false,
+        counterpartySubmitted: false,
+        inviteToken: draft.inviteToken,
+        sharedWithCoach: false,
+        coachComments: [],
+        openedSessions: 0,
+        completedSessions: 0,
+        purchase: draft.purchase,
+        lastSessionAt: null,
+        createdAt: new Date().toISOString(),
+      };
+      setRelationships((previous) => [...previous, relationship]);
+      setDrafts((previous) => previous.filter((candidate) => candidate.id !== draftId));
+      return relationship;
+    },
+    [drafts],
   );
 
   const sendInvite = useCallback(
@@ -412,8 +564,13 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       relationships,
       accounts,
       tickets,
+      drafts,
       setPersona,
       createRelationship,
+      startDraft,
+      updateDraft,
+      removeDraft,
+      commitDraft,
       sendInvite,
       claimInvite,
       submitAnswers,
@@ -432,8 +589,13 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       relationships,
       accounts,
       tickets,
+      drafts,
       setPersona,
       createRelationship,
+      startDraft,
+      updateDraft,
+      removeDraft,
+      commitDraft,
       sendInvite,
       claimInvite,
       submitAnswers,

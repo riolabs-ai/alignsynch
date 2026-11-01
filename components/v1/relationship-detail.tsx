@@ -2,7 +2,7 @@
 "use client";
 
 import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
-import { gapSummary, progressOf, relationshipNameOf } from "@/lib/v1/derive";
+import { counterpartyLabelOf, gapSummary, progressOf, relationshipNameOf } from "@/lib/v1/derive";
 import { useV1Store } from "@/lib/v1/store";
 import { EmptyState, LoadingState, NotFoundState, StageBadge } from "@/components/v1/v1-ui";
 import { ManageTab } from "@/components/v1/manage-tab";
@@ -80,10 +80,10 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {rel.initiatorName}
-            {rel.counterpartyName !== null
-              ? ` and ${rel.counterpartyName}`
-              : " · counterparty not claimed"}{" "}
-            · {MODE_LABELS[rel.mode]} · {SETTING_LABELS[rel.setting]} setting
+            {(() => {
+              const label = counterpartyLabelOf(rel);
+              return label !== null ? ` and ${label}` : " · counterparty not claimed";
+            })()} · {MODE_LABELS[rel.mode]} · {SETTING_LABELS[rel.setting]} setting
           </p>
         </div>
         <Link

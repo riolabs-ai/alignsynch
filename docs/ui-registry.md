@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **66** — 48 static, 18 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 260 files under `components/`, 255 of them `.tsx`
+- routes: **68** — 48 static, 20 dynamic, from `app/**/page.tsx`
+- component domains: **36** — 262 files under `components/`, 257 of them `.tsx`
 - route handlers: **12** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 17
-- templates: Both templates 22 · AlignSynch 36 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 19
+- templates: Both templates 22 · AlignSynch 38 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -249,6 +249,11 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/v1`
   - reads: 1 record fixture — `data/v1/fixtures.ts`
 
+- `/v1/flow/[draftId]` — **prototype**
+  - capability: The relationship flow after the template page: name it, personalize the aspects, buy it once (mocked, no charge), then invite the counterparty — resumable from the relationship list as a draft.
+  - components: `components/v1`
+  - reads: 1 record fixture — `data/v1/fixtures.ts`
+
 - `/v1/initiator` — **prototype**
   - capability: The Initiator persona's landing: their templates, their relationships, and the counts that link to each list.
   - components: `components/v1`
@@ -260,7 +265,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: 1 record fixture — `data/v1/fixtures.ts`
 
 - `/v1/initiator/templates` — **prototype**
-  - capability: The Initiator's template library, with an inline form that copies a template into a relationship.
+  - capability: The Initiator's template library, one card per template, each opening into the relationship flow.
+  - components: `components/v1`
+  - reads: 1 record fixture — `data/v1/fixtures.ts`
+
+- `/v1/initiator/templates/[templateId]` — **prototype**
+  - capability: One template and its starter aspects, with the 'Start this relationship' action that opens the relationship flow.
   - components: `components/v1`
   - reads: 1 record fixture — `data/v1/fixtures.ts`
 
@@ -347,8 +357,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/v1` — **prototype**
   - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.
-  - files (17): `admin-home.tsx`, `answer-sheet.tsx`, `coach-home.tsx`, `counterparty-home.tsx`, `initiator-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `relationship-detail.tsx`, `relationship-list.tsx`, `report-view.tsx`, `service-home.tsx`, `template-editor.tsx`, `template-library.tsx`, `v1-shell.tsx`, `v1-ui.tsx`
-  - routes (14): `/v1`, `/v1/admin`, `/v1/coach`, `/v1/counterparty`, `/v1/initiator`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/service`, `/v1/support`
+  - files (19): `admin-home.tsx`, `answer-sheet.tsx`, `coach-home.tsx`, `counterparty-home.tsx`, `initiator-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `relationship-detail.tsx`, `relationship-flow.tsx`, `relationship-list.tsx`, `report-view.tsx`, `service-home.tsx`, `template-detail.tsx`, `template-editor.tsx`, `template-library.tsx`, `v1-shell.tsx`, `v1-ui.tsx`
+  - routes (16): `/v1`, `/v1/admin`, `/v1/coach`, `/v1/counterparty`, `/v1/flow/[draftId]`, `/v1/initiator`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/[templateId]`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/service`, `/v1/support`
   - notes: Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. `prototype` until the owner approves it.
 
 ## QuizHub

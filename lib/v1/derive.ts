@@ -111,6 +111,11 @@ export function relationshipNameOf(rel: V1Relationship, templateTitle: string): 
   return rel.name ?? templateTitle;
 }
 
+/** The counterparty's display name: the one typed at the name step, else the claimed identity. */
+export function counterpartyLabelOf(rel: V1Relationship): string | null {
+  return rel.counterpartyDisplayName ?? rel.counterpartyName;
+}
+
 /**
  * The mean Gap across the completed report — the "average alignment" figure the Manage
  * dashboard shows the Initiator (and Admin), never the Counterparty. Null until both parties

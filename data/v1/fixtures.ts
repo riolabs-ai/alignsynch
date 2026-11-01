@@ -252,13 +252,15 @@ const zCoachComment = z
  * One purchase — there is only ever one per relationship in the prototype, never a running
  * total. `amountCents` is integer cents, the tree's money convention.
  */
-const zPurchase = z
+export const zPurchase = z
   .object({
     plan: z.string().min(1),
     amountCents: z.number().int().min(0),
     purchasedAt: z.string().min(1),
   })
   .strict();
+
+export type Purchase = z.infer<typeof zPurchase>;
 
 /**
  * One relationship through its whole life. The parties' answers are maps keyed by the Aspect id
@@ -278,6 +280,8 @@ export const zV1Relationship = z
     initiatorName: z.string().min(1),
     /** Null until the invite is claimed; that is the whole difference between `invited` and the rest. */
     counterpartyName: z.string().min(1).nullable(),
+    /** The display name the Initiator typed at the name step, before the claim. Null means "use `counterpartyName`". */
+    counterpartyDisplayName: z.string().min(1).nullable(),
     initiatorAnswers: z.record(z.string(), zOpinions),
     counterpartyAnswers: z.record(z.string(), zOpinions),
     initiatorSubmitted: z.boolean(),
@@ -406,6 +410,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     setting: "soft",
     initiatorName: "Jordan",
     counterpartyName: null,
+    counterpartyDisplayName: null,
     initiatorAnswers: {},
     counterpartyAnswers: {},
     initiatorSubmitted: false,
@@ -427,6 +432,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     setting: "soft",
     initiatorName: "Jordan",
     counterpartyName: "Sam",
+    counterpartyDisplayName: null,
     initiatorAnswers: marcoAnswers,
     counterpartyAnswers: {},
     initiatorSubmitted: true,
@@ -449,6 +455,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     setting: "soft",
     initiatorName: "Avery",
     counterpartyName: "Rowan",
+    counterpartyDisplayName: null,
     initiatorAnswers: averyAnswers,
     counterpartyAnswers: rowanAnswers,
     initiatorSubmitted: true,
@@ -478,6 +485,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     setting: "soft",
     initiatorName: "Ruth",
     counterpartyName: "Sam",
+    counterpartyDisplayName: null,
     initiatorAnswers: ruthAnswers,
     counterpartyAnswers: samAnswers,
     initiatorSubmitted: true,
@@ -500,6 +508,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     setting: "full",
     initiatorName: "Noor",
     counterpartyName: "Iris",
+    counterpartyDisplayName: null,
     initiatorAnswers: noorAnswers,
     counterpartyAnswers: irisAnswers,
     initiatorSubmitted: true,
@@ -618,3 +627,82 @@ export function buildSeedState(): V1SeedState {
     tickets: seedTickets,
   };
 }
+
+/* ------------------------------------------------------------------ *
+ * The relationship purchase — one plan, one price (#340's model)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The one thing a relationship costs, bought once by the Initiator. The counterparty never
+ * pays. There is no free trial, no discount, no annual plan and no enterprise tier in this
+ * flow: the purchase step renders exactly this, one price, mocked and clearly labelled.
+ *
+ * `priceCents` is integer cents, the tree's money convention (`formatCurrency` renders it).
+ */
+export const V1_RELATIONSHIP_PLAN = {
+  id: "relationship",
+  name: "One relationship",
+  priceCents: 1_999,
+  includes: [
+    "One relationship between you and the person you name",
+    "The full report, one line per Gap",
+    "Advanced Mode — Feel, Wish, Think and Guess",
+    "Invite the counterparty by link or email",
+  ],
+} as const;
+
+export type V1RelationshipPlan = typeof V1_RELATIONSHIP_PLAN;
+
+/* ------------------------------------------------------------------ *
+ * The relationship flow draft — start → name → personalize → purchase → invite
+ * ------------------------------------------------------------------ */
+
+/**
+ * One editable Aspect while a relationship is being set up. The model's `Aspect` minus the
+ * fixed 1–5 `score` scale (every starter Aspect carries it, and the commit re-attaches it), so
+ * a just-added row may sit blank while the person is still typing without violating `zAspect`'s
+ * non-empty ends.
+ */
+export const zV1FlowAspect = z
+  .object({
+    id: z.string().min(1),
+    prompt: z.string(),
+    leftValue: z.string(),
+    rightValue: z.string(),
+  })
+  .strict();
+
+export type V1FlowAspect = z.infer<typeof zV1FlowAspect>;
+
+/** The four steps after the template page's "Start this relationship". */
+export const FLOW_STEPS = ["name", "personalize", "purchase", "invite"] as const;
+
+export type FlowStep = (typeof FLOW_STEPS)[number];
+
+/** The most Aspects the personalize step may hold — the same bound the template editor draws. */
+export const MAX_RELATIONSHIP_ASPECTS = 8;
+
+/**
+ * A relationship mid-setup, persisted under its own key so an abandoned flow resumes from the
+ * relationship list as a draft. `step` is the last screen reached; `aspects` is the working
+ * set (starter Aspects, editable), `purchase` becomes non-null the moment the mock checkout
+ * completes, and `inviteToken` is minted on the invite step.
+ */
+export const zV1FlowDraft = z
+  .object({
+    id: z.string().min(1),
+    templateId: z.string().min(1),
+    step: z.enum(FLOW_STEPS),
+    counterpartyName: z.string(),
+    counterpartyEmail: z.string(),
+    aspects: z.array(zV1FlowAspect),
+    mode: zAssessmentMode,
+    setting: zAlignmentSetting,
+    purchase: zPurchase.nullable(),
+    inviteToken: z.string().min(1).nullable(),
+    createdAt: z.string().min(1),
+    updatedAt: z.string().min(1),
+  })
+  .strict();
+
+export type V1FlowDraft = z.infer<typeof zV1FlowDraft>;

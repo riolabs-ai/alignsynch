@@ -1,7 +1,7 @@
 // template-ancestor: components/console/overview.tsx
 "use client";
 
-import { gapSummary, relationshipNameOf } from "@/lib/v1/derive";
+import { counterpartyLabelOf, gapSummary, relationshipNameOf } from "@/lib/v1/derive";
 import { useV1Store } from "@/lib/v1/store";
 import {
   EmptyState,
@@ -93,9 +93,10 @@ export function InitiatorOverview() {
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
                         {rel.initiatorName}
-                        {rel.counterpartyName !== null
-                          ? ` · ${rel.counterpartyName}`
-                          : " · unclaimed"}
+                        {(() => {
+                          const label = counterpartyLabelOf(rel);
+                          return label !== null ? ` · ${label}` : " · unclaimed";
+                        })()}
                       </p>
                     </div>
                     <StageBadge stage={summary.stage} />
