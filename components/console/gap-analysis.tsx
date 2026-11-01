@@ -7,6 +7,23 @@
  * what is measured: eight `gapOf` kinds, judged under each relationship's Setting. So the body
  * takes its numbers as props (`GapAggregate`) and knows no rule about what counts.
  *
+ * **What it composes** (`docs/UI-DIVERGENCE.md`, one row per divergence):
+ *
+ *   the title band  `components/ui/page-header.tsx` — `copy.heading` over `copy.subtitle`, the
+ *                   primitive thirty files had hand-written before this one called it.
+ *   the counts      `components/ui/card.tsx` at `components/console/stat-card-grid.tsx`'s rhythm
+ *                   (`grid gap-4 md:grid-cols-2 lg:grid-cols-4`). The grid itself is *not* used:
+ *                   its `href` is required and means "the list of exactly these rows", and a
+ *                   population count on this screen has no such list — complete / excluded /
+ *                   Soft / Full are partitions of the read, not filters over an operator's list.
+ *                   `stat-card-grid.tsx` keeps its one job rather than growing a non-linking
+ *                   variant for this caller.
+ *   the kinds table `components/ui/table.tsx`, as `components/admin/instance-registry.tsx`
+ *                   already composes it: the same eight rows, one `<TableRow>` per kind, the
+ *                   five column labels still resolved from the fixture.
+ *   the failure     `components/ui/alert.tsx` with the `warning` variant — the amber block is the
+ *                   eleventh copy in this tree and this is the first caller of the variant.
+ *
  * What it is *not* allowed to be, and how each refusal is structural rather than promised:
  *
  *   no names      `GapAggregate` has no field a party name could travel in, and the read that
@@ -28,14 +45,33 @@ import type { PageCopy, PageCopySection } from "@/content/pages";
 import type { GapAggregate, KindRow, SettingReading } from "@/lib/admin/gap-aggregates";
 import { itemLabel, sectionBody, sectionOf, fillLabel } from "@/lib/page-copy";
 import { GapHistogram } from "@/components/console/gap-histogram";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-/** A stat card: the number over the words that say what it counts. */
-function StatCard({ value, label }: { value: number; label: string }) {
+/**
+ * A population count: one figure over the words that say what it counts. `Card` at the stat-card
+ * grid's rhythm, without the grid's link — see the header comment for why there is no list.
+ */
+function PopulationCard({ value, label }: { value: number; label: string }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <p className="text-2xl font-semibold tabular-nums text-card-foreground">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-    </div>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold tabular-nums">{value}</div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -65,31 +101,33 @@ function KindTableRow({
           ? itemLabel(absence, "no-advanced")
           : itemLabel(absence, "no-answer");
     return (
-      <tr data-gap-kind={row.kind} data-gap-state="unmeasured">
-        <th scope="row" className="py-2 pr-3 text-left text-sm font-medium">
+      <TableRow data-gap-kind={row.kind} data-gap-state="unmeasured">
+        <TableHead scope="row" className="text-sm text-foreground">
           {row.label}
-        </th>
-        <td colSpan={4} className="py-2 text-sm text-muted-foreground">
+        </TableHead>
+        <TableCell colSpan={4} className="text-sm text-muted-foreground">
           {sentence}
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
     );
   }
   const measured = row.reading;
   return (
-    <tr data-gap-kind={row.kind} data-gap-state="measured">
-      <th scope="row" className="py-2 pr-3 text-left text-sm font-medium">
+    <TableRow data-gap-kind={row.kind} data-gap-state="measured">
+      <TableHead scope="row" className="text-sm text-foreground">
         {row.label}
-      </th>
-      <td className="py-2 pr-3 text-right text-sm tabular-nums">{measured.count}</td>
-      <td className="py-2 pr-3 text-right text-sm font-semibold tabular-nums">{measured.median}</td>
-      <td className="py-2 pr-3 text-right text-sm tabular-nums">
+      </TableHead>
+      <TableCell className="text-right text-sm tabular-nums">{measured.count}</TableCell>
+      <TableCell className="text-right text-sm font-semibold tabular-nums">
+        {measured.median}
+      </TableCell>
+      <TableCell className="text-right text-sm tabular-nums">
         {`${measured.min}–${measured.max}`}
-      </td>
-      <td className="py-2 text-right font-mono text-xs text-muted-foreground">
+      </TableCell>
+      <TableCell className="text-right font-mono text-xs text-muted-foreground">
         {spreadOf(measured.histogram)}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -153,28 +191,30 @@ function SettingSection({
         </figure>
       ) : null}
 
-      <table className="w-full border-t">
-        <caption className="pb-2 text-left text-sm font-semibold">{kinds.heading}</caption>
-        <thead>
-          <tr className="border-b">
-            <th scope="col" className="py-1 pr-3 text-left text-xs font-semibold uppercase">
+      <Table>
+        <TableCaption className="pb-2 text-left text-sm font-semibold">
+          {kinds.heading}
+        </TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead scope="col" className="text-xs font-semibold uppercase">
               {itemLabel(kinds, "column-kind")}
-            </th>
-            <th scope="col" className="py-1 pr-3 text-right text-xs font-semibold uppercase">
+            </TableHead>
+            <TableHead scope="col" className="text-right text-xs font-semibold uppercase">
               {itemLabel(kinds, "column-gaps")}
-            </th>
-            <th scope="col" className="py-1 pr-3 text-right text-xs font-semibold uppercase">
+            </TableHead>
+            <TableHead scope="col" className="text-right text-xs font-semibold uppercase">
               {itemLabel(kinds, "column-median")}
-            </th>
-            <th scope="col" className="py-1 pr-3 text-right text-xs font-semibold uppercase">
+            </TableHead>
+            <TableHead scope="col" className="text-right text-xs font-semibold uppercase">
               {itemLabel(kinds, "column-range")}
-            </th>
-            <th scope="col" className="py-1 text-right text-xs font-semibold uppercase">
+            </TableHead>
+            <TableHead scope="col" className="text-right text-xs font-semibold uppercase">
               {itemLabel(kinds, "column-spread")}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {reading.kinds.map((row) => (
             <KindTableRow
               key={row.kind}
@@ -184,8 +224,8 @@ function SettingSection({
               floor={aggregate.floor}
             />
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       <p className="text-xs text-muted-foreground">
         {/* Each id is a literal at its own `itemLabel` call so E23 can resolve it; one
             relationship is the case a plural noun would get wrong ("1 relationships"). */}
@@ -204,17 +244,12 @@ export function AdminGapsView({ copy, aggregate }: { copy: PageCopy; aggregate: 
   const statistic = sectionOf(copy, "statistic");
 
   const card = (id: "complete" | "excluded" | "soft" | "full", count: number) => (
-    <StatCard value={count} label={itemLabel(population, id)} />
+    <PopulationCard value={count} label={itemLabel(population, id)} />
   );
 
   return (
     <div className="container mx-auto max-w-5xl space-y-8 px-4 py-8">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">{copy.heading}</h1>
-        {copy.subtitle === undefined ? null : (
-          <p className="max-w-3xl text-sm text-muted-foreground">{copy.subtitle}</p>
-        )}
-      </header>
+      <PageHeader title={copy.heading} description={copy.subtitle} />
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{population.heading}</h2>
@@ -245,20 +280,22 @@ export function AdminGapsView({ copy, aggregate }: { copy: PageCopy; aggregate: 
  * Same rule as `components/assessment/assessment-unreadable.tsx`: no partial rows, no "last
  * known" numbers, no spinner. A Gap computed from half a read would be a lie about two people,
  * so the screen says it has nothing and offers the only real action, which is reading again.
+ *
+ * The panel is `Alert` + the `warning` variant; the heading stays an `<h1>` rather than
+ * `AlertTitle`, because this is the whole document and `AlertTitle` renders an `<h5>` — a page
+ * whose only heading is level five is a regression a screen reader reads out loud.
  */
 export function AdminGapsUnreadable({ copy, reason }: { copy: PageCopy; reason: string }) {
   const section = sectionOf(copy, "unreadable");
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
-      <div
-        data-gap-unreadable=""
-        role="alert"
-        className="rounded-lg border border-amber-300 bg-amber-50 p-6 dark:border-amber-700 dark:bg-amber-950"
-      >
+      <Alert variant="warning" className="p-6" data-gap-unreadable="">
         <h1 className="text-2xl font-bold">{section.heading}</h1>
-        <p className="mt-2 text-sm">{reason}</p>
-        <p className="mt-3 text-sm">{sectionBody(section)}</p>
-      </div>
+        <AlertDescription className="mt-2 space-y-2">
+          <p>{reason}</p>
+          <p>{sectionBody(section)}</p>
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }
