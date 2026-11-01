@@ -379,7 +379,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "live",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "Sign in with a real Neon Managed Auth session, with pending, invalid-credentials and network states.",
+      "Sign in with a real Neon Managed Auth session, with pending, invalid-credentials, Google-only and network states.",
   },
   {
     kind: "route",
