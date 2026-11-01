@@ -749,7 +749,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["alignsynch"],
     capability:
-      "The AlignSynch landing sections — its own header, body and footer — rendered in their own chrome with no sidebar.",
+      "The public pages' own chrome: the marketing header (the brand mark, the shell's public menu and a server-resolved account slot) and the landing page's bands. The footer is the shell's (`components/layout/footer.tsx`), mounted by the group's layout; there is no sidebar.",
   },
   {
     kind: "domain",

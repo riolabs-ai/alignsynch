@@ -14,7 +14,7 @@
  *      shell and login fixtures carry the same three ids, so `BRAND=alignsynch` renders a badge
  *      rather than throwing `PageCopy: no section "version"`.
  *
- * The placements (`/login`, both footers, the sidebar) and the tab order are not unit-testable:
+ * The placements (`/login`, the footer, the sidebar) and the tab order are not unit-testable:
  * they are checked on the built page, and `tests/parity/` hashes the two routes that render the
  * shell. This file is about the component's own contract.
  */

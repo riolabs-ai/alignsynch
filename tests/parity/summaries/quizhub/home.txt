@@ -1,7 +1,7 @@
 route  /
 brand  quizhub
 
-headings (66)
+headings (69)
   h2  "Your Quiz Adventure Starts Here: Play, Share, Earn!"
   h2  "Quiz Categories"
   h2  "Latest Quizzes"
@@ -68,13 +68,19 @@ headings (66)
   h3  "Optimizing quiz length for maximum engagement"
   h3  "Effective strategies for promoting your quiz"
   h2  "Get Quiz Insights Weekly"
+  h3  "Quick Links"
+  h3  "Categories"
+  h3  "Contact"
 
-landmarks (2)
+landmarks (3)
   banner         1
   contentinfo    1
+  navigation     1
 
-links (64 unique, 74 total)
+links (72 unique, 89 total)
+  /                                                    1
   /battle                                              1
+  /categories                                          1
   /categories/animal                                   1
   /categories/architecture                             1
   /categories/art                                      1
@@ -86,22 +92,26 @@ links (64 unique, 74 total)
   /categories/general-knowledge                        1
   /categories/geography                                1
   /categories/health                                   1
-  /categories/history                                  1
+  /categories/history                                  2
   /categories/language                                 1
-  /categories/literature                               1
-  /categories/math                                     1
+  /categories/literature                               2
+  /categories/math                                     2
   /categories/movies                                   1
   /categories/music                                    1
   /categories/politics                                 1
   /categories/puzzle                                   1
-  /categories/science                                  1
+  /categories/science                                  2
   /categories/space                                    1
-  /categories/sports                                   1
+  /categories/sports                                   2
   /categories/technology                               1
   /categories/trivia                                   1
   /categories/video-game                               1
-  /create/editor                                       1
-  /explore                                             2
+  /create/editor                                       2
+  /dashboard/user                                      1
+  /explore                                             1
+  /login                                               1
+  /pricing                                             2
+  /privacy                                             2
   /profile/alexjohnson                                 2
   /profile/davidwilson                                 2
   /profile/emilydavis                                  2
@@ -136,12 +146,14 @@ links (64 unique, 74 total)
   /quiz/quiz-world-geography-challenge-capitals-landmarks 1
   /quiz/quiz-world-history-through-time                1
   /quiz/quiz-world-literature-classics                 1
+  /register                                            1
+  /support                                             1
+  /terms                                               1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.1.0-rc1 1
-  mailto:quizhub@riolabs.ai                            1
 
 counts
-  elements  2155
+  elements  2238
   images    16
-  buttons   31
+  buttons   32
   inputs    1
-  classes   447 (sha d2b92e1204ed)
+  classes   473 (sha bcc8ed6d5ea4)

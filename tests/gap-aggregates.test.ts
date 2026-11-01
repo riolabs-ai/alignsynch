@@ -135,9 +135,18 @@ function settingSection(html: string, setting: "soft" | "full"): string {
   return match[0];
 }
 
-/** The body cells of one kind's row, as text. */
+/**
+ * The body cells of one kind's row, as text.
+ *
+ * The row is found by its attributes rather than by their position in the tag: the row now comes
+ * from `components/ui/table.tsx`, whose `TableRow` emits `class` before the props it is handed,
+ * so `<tr data-gap-kind=` is an assertion about the primitive's attribute order rather than about
+ * the screen. The attributes themselves are still the contract.
+ */
 function rowCells(section: string, kind: string): string[] {
-  const match = section.match(new RegExp(`<tr data-gap-kind="${kind}"[^>]*>([\\s\\S]*?)</tr>`));
+  const match = section.match(
+    new RegExp(`<tr [^>]*data-gap-kind="${kind}"[^>]*>([\\s\\S]*?)</tr>`),
+  );
   if (match === null) throw new Error(`no row for kind "${kind}"`);
   return [...match[1].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g)].map((cell) =>
     cell[1].replace(/<[^>]*>/g, "").trim(),
@@ -290,7 +299,7 @@ describe("the rendered screen", () => {
     expect(full).toContain("Not charted: 1 finished under Full");
     expect(full).toContain("a distribution is read from 3");
     expect(full).toContain("16 Gaps measured in this one relationship");
-    for (const row of full.matchAll(/<tr data-gap-kind="[^"]+" data-gap-state="(\w+)"/g)) {
+    for (const row of full.matchAll(/<tr [^>]*data-gap-kind="[^"]+"[^>]*data-gap-state="(\w+)"/g)) {
       expect(row[1]).toBe("unmeasured");
     }
     // Four rows have a reading (the Soft Basic kinds) and twelve do not — eight withheld under

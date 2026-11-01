@@ -11,6 +11,14 @@ const alertVariants = cva(
         default: "bg-background text-foreground",
         destructive:
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        /**
+         * "Something did not answer" — the amber panel ten files had written verbatim before this
+         * variant existed (`rounded-lg border border-amber-300 bg-amber-50 p-6`). A status hue is
+         * deliberately outside the brand-token rule (AGENTS.md): a read that failed means the same
+         * thing under both expressions, so this is not a `bg-action` candidate.
+         */
+        warning:
+          "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400",
       },
     },
     defaultVariants: {
