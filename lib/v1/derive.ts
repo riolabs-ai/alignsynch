@@ -1,0 +1,134 @@
+/**
+ * lib/v1/derive.ts — the /v1 prototype's derivations, all pure.
+ *
+ * The one thing the prototype must not re-implement is the arithmetic: a Gap is
+ * `content/gaps.ts::gapKindsOf`, a verdict is `instanceAlignment`, a stage is
+ * `content/stages.ts::stageOf`. This module only wraps them around the prototype's own
+ * relationship shape (`V1Relationship`), which the real `zAssessmentInstance` cannot hold while a
+ * relationship is mid-flight. No React, no Next, no clock, no `lib/db/**` — the client store
+ * imports it, and it stays out of the server graph for the same reason.
+ */
+import type { AspectGaps, AlignmentVerdict, GapKinds } from "@/content/gaps";
+import { gapKindsIn, gapKindsOf, instanceAlignment } from "@/content/gaps";
+import { stageOf, type RelationshipStage } from "@/content/stages";
+import type { V1Relationship } from "@/data/v1/fixtures";
+
+/** The counts one relationship contributes to its own status. */
+export interface RelationshipProgress {
+  readonly aspectCount: number;
+  readonly hasCounterparty: boolean;
+  readonly initiatorAnswered: number;
+  readonly counterpartyAnswered: number;
+}
+
+export function progressOf(rel: V1Relationship): RelationshipProgress {
+  const aspectCount = rel.items.length;
+  const hasCounterparty = rel.counterpartyName !== null;
+  const answered = (map: Readonly<Record<string, unknown>>) =>
+    rel.items.filter((item) => map[item.id] !== undefined).length;
+  return {
+    aspectCount,
+    hasCounterparty,
+    initiatorAnswered: answered(rel.initiatorAnswers),
+    counterpartyAnswered: answered(rel.counterpartyAnswers),
+  };
+}
+
+/** Both parties have answered every Aspect — the instant the blind rule lifts. */
+export function bothSubmittedOf(rel: V1Relationship): boolean {
+  if (rel.counterpartyName === null) return false;
+  if (rel.items.length === 0) return false;
+  return rel.items.every(
+    (item) =>
+      rel.initiatorAnswers[item.id] !== undefined && rel.counterpartyAnswers[item.id] !== undefined,
+  );
+}
+
+/** The Gaps of one Aspect, absent when either side has not answered it. */
+export function aspectGapsOf(rel: V1Relationship, itemId: string): GapKinds {
+  const initiator = rel.initiatorAnswers[itemId];
+  const counterparty = rel.counterpartyAnswers[itemId];
+  if (initiator === undefined || counterparty === undefined) return {};
+  return gapKindsOf(initiator, counterparty);
+}
+
+/** Every Aspect's Gaps, in the instance's own order, for `instanceAlignment`. */
+export function allAspectGaps(rel: V1Relationship): AspectGaps[] {
+  return rel.items.map((item) => ({ itemId: item.id, gaps: aspectGapsOf(rel, item.id) }));
+}
+
+/** The verdict under the relationship's Setting — null until both parties have submitted. */
+export function verdictOf(rel: V1Relationship): AlignmentVerdict | null {
+  if (!bothSubmittedOf(rel)) return null;
+  return instanceAlignment(allAspectGaps(rel), rel.setting);
+}
+
+/**
+ * The stage, derived exactly as `content/stages.ts` derives it: unclaimed → invited, claimed and
+ * incomplete → connected, complete and unmet → sharing, complete and every Gap within the Setting
+ * → aligned.
+ */
+export function stageOfRelationship(rel: V1Relationship): RelationshipStage {
+  if (rel.counterpartyName === null) return "invited";
+  if (!bothSubmittedOf(rel)) return "connected";
+  const aspects = allAspectGaps(rel);
+  if (aspects.length === 0) return "sharing";
+  return stageOf({
+    counterpartyClaimed: true,
+    bothSubmitted: true,
+    setting: rel.setting,
+    aspects,
+  });
+}
+
+/** The numbers a screen prints about a relationship: stage, gap totals and the verdict. */
+export interface GapSummary {
+  readonly stage: RelationshipStage;
+  readonly totalGaps: number;
+  readonly unmetGaps: number;
+  readonly aligned: boolean;
+  readonly verdict: AlignmentVerdict | null;
+}
+
+export function gapSummary(rel: V1Relationship): GapSummary {
+  const stage = stageOfRelationship(rel);
+  const verdict = verdictOf(rel);
+  const totalGaps = rel.items.reduce(
+    (sum, item) => sum + gapKindsIn(aspectGapsOf(rel, item.id)).length,
+    0,
+  );
+  return {
+    stage,
+    totalGaps,
+    unmetGaps: verdict?.unmet.length ?? 0,
+    aligned: verdict?.aligned ?? false,
+    verdict,
+  };
+}
+
+/** The relationship's display name: its own, else the template's title. */
+export function relationshipNameOf(rel: V1Relationship, templateTitle: string): string {
+  return rel.name ?? templateTitle;
+}
+
+/**
+ * The mean Gap across the completed report — the "average alignment" figure the Manage
+ * dashboard shows the Initiator (and Admin), never the Counterparty. Null until both parties
+ * have submitted, or when nothing is measurable. Lower is more aligned.
+ */
+export function meanGapOf(rel: V1Relationship): number | null {
+  if (!bothSubmittedOf(rel)) return null;
+  let sum = 0;
+  let count = 0;
+  for (const item of rel.items) {
+    const gaps = aspectGapsOf(rel, item.id);
+    for (const kind of gapKindsIn(gaps)) {
+      const gap = gaps[kind];
+      if (gap !== undefined) {
+        sum += gap;
+        count += 1;
+      }
+    }
+  }
+  return count === 0 ? null : sum / count;
+}
