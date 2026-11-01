@@ -44,6 +44,8 @@ const STATIC_ROUTES = [
   "/news",
   "/pricing",
   "/privacy",
+  "/prototype",
+  "/prototype/admin",
   "/quiz-discussions",
   "/register",
   "/search",

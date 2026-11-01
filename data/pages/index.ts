@@ -43,6 +43,7 @@ import { notFoundPageCopy } from "./not-found";
 import { overviewPageCopy } from "./overview";
 import { pricingPageCopy } from "./pricing";
 import { profilePageCopy } from "./profile";
+import { prototypeAdminPageCopy, prototypeIndexPageCopy } from "./prototype-console";
 import { registerPageCopy } from "./register";
 import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
@@ -79,6 +80,12 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/pricing": pricingPageCopy,
   "/privacy": legalPages.privacy,
   "/profile/[username]": profilePageCopy,
+  // The prototype namespace (#console cohort 1): two screens, one module — see that file's header
+  // for why the index and the overview share it. `data/pages/budget.ts` records both with the same
+  // `fixture` and the same `mounts` (the subtree's layout), so the band's sentence is inside the
+  // ratchet too.
+  "/prototype": prototypeIndexPageCopy,
+  "/prototype/admin": prototypeAdminPageCopy,
   "/register": registerPageCopy,
   /**
    * `/search` is the one route that points at the shell's fixture (issue #156 follow-up).

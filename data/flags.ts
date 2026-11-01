@@ -26,7 +26,7 @@
  *      surface reviewable: `/leaderboard` is off for every visitor and still reachable by the
  *      one person who needs to look at it before it ships. It is opt-in per flag and never
  *      global — a flag that does not declare it keeps the three steps above exactly as they
- *      were, which is why `adminBypass` is absent on the other seven.
+ *      were, which is why `adminBypass` is absent on every other flag.
  *
  *      The role is **not** read here and is not read by the resolver: a caller passes it in,
  *      resolved server-side from the request's own session (`lib/auth/flag-gate.ts` is the one
@@ -44,20 +44,25 @@
  * EVERY DEFAULT IS `false`, and that is the rule, not a coincidence: a surface that is still a
  * mock must not be on by default, because "mocked and on by default" is how a mock reaches a
  * client. A flag is turned on when its surface is worth showing, not when it is written down
- * here. Nothing is deleted or implemented by declaring one — the eight below are the deferred
- * group, the payment-gated pair and the two save-path surfaces, declared so that hiding one is
- * an env change rather than a find-and-replace.
+ * here. Nothing is deleted or implemented by declaring one — the deferred group, the payment-gated
+ * pair, the two save-path surfaces and the prototype namespace below are declared so that hiding
+ * one is an env change rather than a find-and-replace.
  *
- * `templates` is empty on the eight deferred surfaces: each has the same status on both templates,
- * so an override would be a claim nobody made. The field is schema, not decoration — the resolver
- * reads it and `tests/flags.test.ts` proves it beats `default` and loses to the env. It has
- * exactly one real user, `product.quiz-surfaces` (#300): the quiz product's surfaces ship on
- * `quizhub` and not on `alignsynch`, which is a per-template *on* and nothing else.
+ * `templates` is absent on every flag declared here but `product.quiz-surfaces`: the others have the
+ * same status on both templates, so an override would be a claim nobody made. The field is schema,
+ * not decoration — the resolver reads it and `tests/flags.test.ts` proves it beats `default` and
+ * loses to the env. It has exactly one real user, `product.quiz-surfaces` (#300): the quiz product's
+ * surfaces ship on `quizhub` and not on `alignsynch`, which is a per-template *on* and nothing else.
+ * `console.prototypes` omits it for the opposite reason to "nobody made the claim": a template entry
+ * resolves *before* the role, so it would turn the review screens on for every visitor.
  *
- * `adminBypass` is set on **one** flag, `community.leaderboard`, and it does not weaken the rule
- * above: the surface still ships off for every visitor, and an admin reaching it is a review
- * path, not a release. A second flag opting in is a decision to argue for, and
- * `tests/flags.test.ts` fails until that argument is made in the test as well as in the record.
+ * `adminBypass` is set on **two** flags, and neither weakens the rule above: both surfaces still ship
+ * off for every visitor, and an admin reaching one is a review path, not a release.
+ * `community.leaderboard` (#184) is the first — a mocked board made reviewable. `console.prototypes`
+ * is the second, and it is the case the bypass was built for: a prototype screen has no records
+ * behind it, so the only person who can sensibly look at it is the one reviewing it. A third flag
+ * opting in is a decision to argue for, and `tests/flags.test.ts` fails until that argument is made
+ * in the test as well as in the record.
  *
  * Adding a flag: add a line here, then gate the surface (`lib/flags.ts` names the three places a
  * flagged-off surface has to be off) and add it to the panel that proves the mechanism.
@@ -105,6 +110,7 @@ export const zFlags = z
     "community.chat": zFlagDefinition,
     "commerce.pricing": zFlagDefinition,
     "commerce.affiliate": zFlagDefinition,
+    "console.prototypes": zFlagDefinition,
     "create.editor": zFlagDefinition,
     "create.generator": zFlagDefinition,
     "product.quiz-surfaces": zFlagDefinition,
@@ -140,6 +146,31 @@ export const flags: Flags = zFlags.parse({
   "commerce.affiliate": {
     default: false,
     note: "Fixture-backed programme with no payout path: wait on payments. Off for the same reason as pricing.",
+  },
+  /**
+   * The prototype screens (#console cohort 1) — the one flag whose subject is a *review surface*
+   * rather than a shipped one.
+   *
+   * `/prototype` and `/prototype/admin` render `data/prototypes/console.ts`: six relationships, four
+   * templates and the four counts derived from them. Nothing is read from Postgres, nothing is
+   * written, and no screen behind this flag claims a real relationship — which is why the default
+   * is `false` and every visitor gets the 404.
+   *
+   * **`adminBypass` and no `templates`, and the omission is the mechanism.** `resolveFlag` reads
+   * the bypass first, then the env, then `templates`, then `default`. A `templates: ["alignsynch"]`
+   * entry here would resolve the flag **on for every visitor** of the alignment build, because the
+   * template step runs before the role is ever consulted — the screens would read as "gated" while
+   * being served to everyone. With only `adminBypass`, an `admin` resolves it on and a member or a
+   * signed-out visitor resolves it off, which is the one reader these screens are for.
+   * `tests/prototype-gate.test.ts` pins both halves: the bypass, and the *absence* of `templates`.
+   *
+   * `FLAG_CONSOLE_PROTOTYPES=1` is the second review lever (the env wins over everything but the
+   * bypass), and it is what the acceptance uses to photograph the screens without an admin session.
+   */
+  "console.prototypes": {
+    default: false,
+    adminBypass: true,
+    note: "Prototype screens with no records behind them: `/prototype` and `/prototype/admin` render `data/prototypes/console.ts` — no database read, no write path, no route handler in the subtree. Off for every visitor; an admin session reaches them through the bypass, and `FLAG_CONSOLE_PROTOTYPES=1` is the review lever.",
   },
   "create.editor": {
     default: false,

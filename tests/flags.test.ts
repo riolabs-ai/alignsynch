@@ -127,7 +127,7 @@ describe("the environment value", () => {
 });
 
 describe("the record", () => {
-  it("declares the eight deferred surfaces and the brand boundary, and nothing else", () => {
+  it("declares the deferred surfaces, the brand boundary and the prototype namespace", () => {
     expect(Object.keys(flags).sort()).toEqual([
       "commerce.affiliate",
       "commerce.pricing",
@@ -135,6 +135,7 @@ describe("the record", () => {
       "community.chat",
       "community.leaderboard",
       "community.tournaments",
+      "console.prototypes",
       "create.editor",
       "create.generator",
       "product.quiz-surfaces",
@@ -321,16 +322,18 @@ describe("the admin bypass (#184)", () => {
     expect(resolveFlag(explicit, { template: "quizhub", role: "admin" })).toBe(false);
   });
 
-  it("is declared by exactly one flag — `community.leaderboard` — and never by a second", () => {
+  it("is declared by exactly two flags — `community.leaderboard` and `console.prototypes`", () => {
     const optedIn = Object.entries(flags)
       .filter(([, flag]) => flag.adminBypass === true)
       .map(([name]) => name);
-    expect(optedIn).toEqual(["community.leaderboard"]);
+    // `console.prototypes` opts in because its surface has no records behind it: a prototype screen
+    // exists to be reviewed before it is wired up, so the admin session is the only audience it has.
+    expect(optedIn).toEqual(["community.leaderboard", "console.prototypes"]);
 
     // Absent is the default, and it must stay absent: a flag that gains the field is a decision
     // somebody has to make in this test as well as in the record.
     for (const [name, flag] of Object.entries(flags)) {
-      if (name === "community.leaderboard") continue;
+      if (name === "community.leaderboard" || name === "console.prototypes") continue;
       expect(flag.adminBypass, `${name} opted in to the admin bypass`).toBeUndefined();
     }
   });
@@ -362,6 +365,9 @@ describe("the admin bypass (#184)", () => {
 
   it("names the opt-in, so a caller can skip the session read for a flag that has none", () => {
     expect(declaresAdminBypass("community.leaderboard")).toBe(true);
+    // The second opt-in: a prototype screen has no records behind it, so an admin session is its
+    // only audience (#console cohort 1).
+    expect(declaresAdminBypass("console.prototypes")).toBe(true);
     expect(declaresAdminBypass("commerce.pricing")).toBe(false);
     expect(declaresAdminBypass("create.editor")).toBe(false);
     // And the resolver's own predicate agrees with it, per role.

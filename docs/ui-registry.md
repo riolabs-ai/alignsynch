@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **50** — 35 static, 15 dynamic, from `app/**/page.tsx`
-- component domains: **35** — 244 files under `components/`, 239 of them `.tsx`
+- routes: **52** — 37 static, 15 dynamic, from `app/**/page.tsx`
+- component domains: **36** — 247 files under `components/`, 242 of them `.tsx`
 - route handlers: **12** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7
-- templates: Both templates 22 · AlignSynch 19 · QuizHub 42 · No template yet 2
+- status: **mock** 14 · **fixture** 53 · **db** 14 · **live** 7
+- templates: Both templates 22 · AlignSynch 22 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -147,7 +147,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (39): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]` — and every other route through `app/layout.tsx`
+  - routes (41): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/prototype`, `/prototype/admin`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch
@@ -229,6 +229,18 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/assessment-flow`
   - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
 
+- `/prototype` — **fixture**
+  - capability: The index the owner reviews prototype screens from: one card per prototype route that renders today, naming the screen and the wired route it is standing in for.
+  - components: `components/prototype`, `components/ui`
+  - reads: 1 record fixture — `data/prototypes/console.ts`
+  - notes: Gated by `console.prototypes` (`lib/prototype-gate.ts::requirePrototypeScreens()`, called once in `app/(mainlayout)/prototype/layout.tsx`), so a member and a signed-out visitor both get the 404 the flag's own precedence defines and an admin session resolves it on (#console cohort 1). **Ancestors (#336):** `components/dashboard/dashboard-overview.tsx` (the quiz dashboard's card grid) → `components/console/stat-card-grid.tsx` (that grid with the metrics removed) for the card, and `components/identity/account-home.tsx` → `components/console/overview.tsx` for the `h1` + subtitle header — this route is a variation of two shipped files, not a new surface. Reads `data/prototypes/console.ts` for the screens and `data/pages/prototype-console.ts` for the words; no database read and no write path anywhere in the subtree. The figure is removed from the card because a destination has no number — one column instead of four. Cohorts 2 to 5 append to the record and the index picks the screen up without a component change.
+
+- `/prototype/admin` — **fixture**
+  - capability: The admin overview as a prototype: four counts over six fixture relationships and four templates, the relationships that need attention with their seat state and days idle, and the two screens a later cohort adds.
+  - components: `components/prototype`, `components/ui`
+  - reads: 1 record fixture — `data/prototypes/console.ts`
+  - notes: The screen that replaces the missing `/admin` index, drawn over `data/prototypes/console.ts` before it is wired to `lib/db/admin-instances.ts`. **Ancestors (#336):** `components/identity/account-home.tsx` (the identity header) → `components/console/overview.tsx` (that header without the avatar, over four count cards) → `components/console/stat-card-grid.tsx` / `components/dashboard/dashboard-overview.tsx` for the card anatomy; and `components/my-quizzes/my-quizzes.tsx` → `components/admin/instance-registry.tsx` for the `Table` + `Badge` row shape. Every figure is `countsOf()` over the fixture arrays and every attention row is `needsAttention()` over the same six, so a number cannot disagree with its rows; nothing here carries an opinion, a score or a Gap. Its four counts are deliberately **not** `StatCardGrid` cards: `StatCard.href` is required by that component's design and the lists these counts open are cohort 2's and cohort 4's, so the cards carry no link and the coming destinations are text rows (`docs/PROTOTYPE-CONSOLE.md`).
+
 - `/welcome` — **fixture**
   - capability: The public AlignSynch landing page in its own chrome: what a Gap is, how it works, four opinions and two modes.
   - components: `components/marketing`
@@ -264,6 +276,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The AlignSynch landing sections — its own header, body and footer — rendered in their own chrome with no sidebar.
   - files (3): `marketing-footer.tsx`, `marketing-header.tsx`, `marketing-landing.tsx`
   - routes (1): `/welcome`
+
+- `components/prototype` — **mock**
+  - capability: The prototype screens' three views: the index of screens under review, the admin overview (four counts, the needs-attention table and the not-yet table) and the band every prototype route carries.
+  - files (3): `admin-overview.tsx`, `prototype-band.tsx`, `prototype-index.tsx`
+  - routes (2): `/prototype`, `/prototype/admin`
+  - notes: `mock` in this file's vocabulary — every view renders the props the page hands it, and none imports a data module, which is why the two routes above are `fixture` and this domain is not. The types it declares (`CountFigures`, `AttentionRow`) are declared beside it rather than imported from `data/prototypes/console.ts` for the same reason: a type import is still an import-graph edge, and the registry would then read this domain as one that reaches a record fixture. The pattern a later cohort copies is the namespace, not these three files: `console.prototypes` + `lib/prototype-gate.ts` + a gated layout + a fixture is what makes a screen reviewable before it has records behind it.
 
 ## QuizHub
 

@@ -447,6 +447,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/prototype",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The index the owner reviews prototype screens from: one card per prototype route that renders today, naming the screen and the wired route it is standing in for.",
+    notes:
+      "Gated by `console.prototypes` (`lib/prototype-gate.ts::requirePrototypeScreens()`, called once in `app/(mainlayout)/prototype/layout.tsx`), so a member and a signed-out visitor both get the 404 the flag's own precedence defines and an admin session resolves it on (#console cohort 1). **Ancestors (#336):** `components/dashboard/dashboard-overview.tsx` (the quiz dashboard's card grid) → `components/console/stat-card-grid.tsx` (that grid with the metrics removed) for the card, and `components/identity/account-home.tsx` → `components/console/overview.tsx` for the `h1` + subtitle header — this route is a variation of two shipped files, not a new surface. Reads `data/prototypes/console.ts` for the screens and `data/pages/prototype-console.ts` for the words; no database read and no write path anywhere in the subtree. The figure is removed from the card because a destination has no number — one column instead of four. Cohorts 2 to 5 append to the record and the index picks the screen up without a component change.",
+  },
+  {
+    kind: "route",
+    surface: "/prototype/admin",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The admin overview as a prototype: four counts over six fixture relationships and four templates, the relationships that need attention with their seat state and days idle, and the two screens a later cohort adds.",
+    notes:
+      "The screen that replaces the missing `/admin` index, drawn over `data/prototypes/console.ts` before it is wired to `lib/db/admin-instances.ts`. **Ancestors (#336):** `components/identity/account-home.tsx` (the identity header) → `components/console/overview.tsx` (that header without the avatar, over four count cards) → `components/console/stat-card-grid.tsx` / `components/dashboard/dashboard-overview.tsx` for the card anatomy; and `components/my-quizzes/my-quizzes.tsx` → `components/admin/instance-registry.tsx` for the `Table` + `Badge` row shape. Every figure is `countsOf()` over the fixture arrays and every attention row is `needsAttention()` over the same six, so a number cannot disagree with its rows; nothing here carries an opinion, a score or a Gap. Its four counts are deliberately **not** `StatCardGrid` cards: `StatCard.href` is required by that component's design and the lists these counts open are cohort 2's and cohort 4's, so the cards carry no link and the coming destinations are text rows (`docs/PROTOTYPE-CONSOLE.md`).",
+  },
+  {
+    kind: "route",
     surface: "/quiz-discussions",
     status: "fixture",
     templates: ["quizhub"],
@@ -791,6 +811,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["quizhub", "alignsynch"],
     capability:
       "The public profile in ten parts: cover, header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.",
+  },
+  {
+    kind: "domain",
+    surface: "components/prototype",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The prototype screens' three views: the index of screens under review, the admin overview (four counts, the needs-attention table and the not-yet table) and the band every prototype route carries.",
+    notes:
+      "`mock` in this file's vocabulary — every view renders the props the page hands it, and none imports a data module, which is why the two routes above are `fixture` and this domain is not. The types it declares (`CountFigures`, `AttentionRow`) are declared beside it rather than imported from `data/prototypes/console.ts` for the same reason: a type import is still an import-graph edge, and the registry would then read this domain as one that reaches a record fixture. The pattern a later cohort copies is the namespace, not these three files: `console.prototypes` + `lib/prototype-gate.ts` + a gated layout + a fixture is what makes a screen reviewable before it has records behind it.",
   },
   {
     kind: "domain",

@@ -162,6 +162,33 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/profile",
     budget: 0,
   },
+  /**
+   * The prototype namespace (#console cohort 1). Two routes, one module, one budget each, and each
+   * entry names the subtree's **layout** as a mount: the band's sentence and the component that draws
+   * it hang off `app/(mainlayout)/prototype/layout.tsx`, which no page imports, so without the mount
+   * the band would be outside the ratchet. Both entries are budget 0 from the first commit — every
+   * word on both screens is `data/pages/prototype-console.ts`, so the next literal written in
+   * `components/prototype/**` is a red build.
+   *
+   * `dirs` is one directory for both entries, which is not an exemption for either: attribution is by
+   * each page's own import closure, so `/prototype` counts `prototype-index.tsx` (and the band, via
+   * the mount) while `/prototype/admin` counts `admin-overview.tsx` (and the band) — never the other
+   * page's view.
+   */
+  "/prototype": {
+    page: "app/(mainlayout)/prototype/page.tsx",
+    mounts: ["app/(mainlayout)/prototype/layout.tsx"],
+    dirs: ["components/prototype"],
+    fixture: "data/pages/prototype-console",
+    budget: 0,
+  },
+  "/prototype/admin": {
+    page: "app/(mainlayout)/prototype/admin/page.tsx",
+    mounts: ["app/(mainlayout)/prototype/layout.tsx"],
+    dirs: ["components/prototype"],
+    fixture: "data/pages/prototype-console",
+    budget: 0,
+  },
   "/settings": {
     page: "app/(mainlayout)/settings/page.tsx",
     dirs: ["components/identity"],
