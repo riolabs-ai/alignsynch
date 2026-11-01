@@ -20,7 +20,17 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { brands } from "@/data/brand";
+import { createElement, type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
+/** `next/link` renders an anchor here, exactly as `tests/leaderboard-links.test.ts` mocks it. */
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...rest }: { href: string; children?: ReactNode }) =>
+    createElement("a", { href, ...rest }, children),
+}));
+
+import NotFound from "@/app/not-found";
+import { brand, brandIdOf, brands } from "@/data/brand";
 import { notFoundPageCopy } from "@/data/pages/not-found";
 import {
   namesHiddenSurface,
@@ -261,5 +271,35 @@ describe("notFoundCopyFor — the 404 speaks the brand's language", () => {
     expect(copy.heading).toBe(notFoundPageCopy.heading);
     expect(copy.sections?.map((section) => section.id)).toEqual(["message", "fact", "actions"]);
     expect(copy.sections?.[0]).toStrictEqual(notFoundPageCopy.sections?.[0]);
+  });
+
+  /**
+   * The page must render the *projection*, not the fixture — the defect this catches is a
+   * half-applied change: every section was switched to `copy` and the `<h2>` kept reading
+   * `notFoundPageCopy.heading`, so the alignment build printed "Oops! Quiz Not Found" above
+   * correctly-keyed sections. A unit test of the projection cannot see that; only the rendered
+   * page can. On QuizHub the two headings are the same string by design, so the alignment-only
+   * assertions below are the ones that carry the guard — that is the leg that broke.
+   */
+  it("renders the projection's words, and no quiz vocabulary on the alignment build", () => {
+    const copy = notFoundCopyFor(notFoundPageCopy, brandIdOf(brand));
+    const html = renderToStaticMarkup(createElement(NotFound));
+    const text = html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&#x27;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ");
+
+    expect(text).toContain(copy.heading);
+
+    if (brandIdOf(brand) === "alignsynch") {
+      expect(text).not.toMatch(/quiz/i);
+      expect(text).not.toContain(notFoundPageCopy.heading);
+      // The suggestion band is not drawn at all: all three of its rows are surfaces this build
+      // does not ship, and a prompt with no answers under it reads as a broken page.
+      expect(html).not.toContain("/explore");
+      expect(html).not.toContain('id="browse"');
+    }
   });
 });
