@@ -88,6 +88,12 @@ export interface GoogleFlowState {
   readonly challenge: string;
   /** Where this build should land the person once the exchange succeeds. A path on this site. */
   readonly next: string;
+  /**
+   * When the start set the cookie, in whole epoch seconds. Written by the server action, read by
+   * the callback to report the cookie's age — the measurement that tells a round-trip that
+   * outlived `GOOGLE_FLOW_TTL_SECONDS` apart from one that was never started.
+   */
+  readonly iat: number;
 }
 
 /**
@@ -170,7 +176,9 @@ export function challengeFromSetCookies(setCookies: readonly string[]): string |
  * and in a test.
  */
 export function encodeFlowCookie(state: GoogleFlowState): string {
-  return encodeURIComponent(JSON.stringify({ challenge: state.challenge, next: state.next }));
+  return encodeURIComponent(
+    JSON.stringify({ challenge: state.challenge, next: state.next, iat: state.iat }),
+  );
 }
 
 /**
@@ -191,11 +199,23 @@ export function decodeFlowCookie(value: string | undefined | null): GoogleFlowSt
   }
   if (parsed === null || typeof parsed !== "object") return null;
   const source = parsed as Record<string, unknown>;
-  const { challenge, next } = source;
+  const { challenge, next, iat } = source;
   if (typeof challenge !== "string" || challenge === "") return null;
   if (typeof next !== "string" || next === "") return null;
   if (!next.startsWith("/") || next.startsWith("//")) return null;
-  return { challenge, next };
+  if (typeof iat !== "number" || !Number.isFinite(iat)) return null;
+  return { challenge, next, iat };
+}
+
+/**
+ * The flow cookie's age at the callback, in whole seconds — how long the Google round-trip took.
+ *
+ * `iat` is written by the start (`Date.now()` in epoch seconds); the callback compares it with its
+ * own clock to report how much of the ten-minute lifetime had elapsed when the person came back. A
+ * cookie minted on a host whose clock is ahead clamps to zero rather than logging a negative age.
+ */
+export function flowCookieAgeSeconds(iat: number, nowSeconds: number): number {
+  return Math.max(0, Math.floor(nowSeconds - iat));
 }
 
 /**
