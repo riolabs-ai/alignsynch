@@ -636,7 +636,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The one screen every role opens a relationship from — invitation, claim, progress, the blind answers table and the advice thread.",
+      "The one screen every role opens a relationship from — a session timeline, not a record: parties, stage and last session in the header, one primary action, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim and the advice thread for the roles that have them.",
   },
   {
     kind: "route",

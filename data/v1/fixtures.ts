@@ -508,7 +508,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     sharedWithCoach: false,
     coachComments: [],
     openedSessions: 4,
-    completedSessions: 3,
+    completedSessions: 4,
     purchase: { plan: "Pro", amountCents: 1999, purchasedAt: "2026-10-29T09:00:00.000Z" },
     lastSessionAt: "2026-10-30T15:00:00.000Z",
     createdAt: "2026-10-29T09:45:00.000Z",
@@ -518,6 +518,143 @@ const seedRelationshipRows: readonly V1Relationship[] = [
 export const seedRelationships: readonly V1Relationship[] = z
   .array(zV1Relationship)
   .parse(seedRelationshipRows);
+
+/* ------------------------------------------------------------------ *
+ * Session history — the timeline's rows
+ * ------------------------------------------------------------------ */
+
+/**
+ * One completed session in a relationship's history. The two parties' answers, keyed by
+ * Aspect id exactly as the relationship's own maps are, so the timeline derives the
+ * verdict, the widest Gap and the trend with the **same** arithmetic the report uses —
+ * never stored, never authored as a number (`content/gaps.ts` owns the arithmetic, and a
+ * stored Gap would be a second copy of it, exactly the defect the Gap-as-column rule
+ * forbids).
+ *
+ * The store does not persist these: a `V1Relationship` holds only the latest answers, and
+ * changing that shape is out of scope for this card. These rows are the fixture the
+ * timeline reads to give a relationship a **past** — the newest row of each completed
+ * relationship reuses the same answer maps the relationship's current answers hold, so the
+ * timeline's newest row and the report always agree.
+ */
+export const zV1Session = z
+  .object({
+    id: z.string().min(1),
+    relationshipId: z.string().min(1),
+    /** The instant both parties submitted — the session's date on the timeline. */
+    completedAt: z.string().min(1),
+    initiatorAnswers: z.record(z.string(), zOpinions),
+    counterpartyAnswers: z.record(z.string(), zOpinions),
+  })
+  .strict();
+
+export type V1Session = z.infer<typeof zV1Session>;
+
+/**
+ * The three earlier Noor & Iris sessions. The fourth — the newest — is the relationship's
+ * current answers (`noorAnswers` / `irisAnswers` above), so the timeline's newest row and
+ * the report read the same numbers. Each earlier map is authored further apart, so the
+ * trend the timeline computes is a closing one, never a number pasted into a sentence.
+ */
+const noorSession1: AnswerMap = {
+  "aspect-trust": { feel: 1, wish: 5, think: 2, guess: 5 },
+  "aspect-house-rules": { feel: 1, wish: 5, think: 2, guess: 5 },
+  "aspect-one-to-one": { feel: 1, wish: 4, think: 1, guess: 4 },
+  "aspect-privacy": { feel: 2, wish: 5, think: 2, guess: 5 },
+};
+
+const irisSession1: AnswerMap = {
+  "aspect-trust": { feel: 5, wish: 1, think: 4, guess: 2 },
+  "aspect-house-rules": { feel: 5, wish: 2, think: 4, guess: 2 },
+  "aspect-one-to-one": { feel: 5, wish: 2, think: 5, guess: 1 },
+  "aspect-privacy": { feel: 5, wish: 1, think: 4, guess: 1 },
+};
+
+const noorSession2: AnswerMap = {
+  "aspect-trust": { feel: 2, wish: 5, think: 2, guess: 5 },
+  "aspect-house-rules": { feel: 2, wish: 5, think: 3, guess: 4 },
+  "aspect-one-to-one": { feel: 1, wish: 4, think: 2, guess: 4 },
+  "aspect-privacy": { feel: 2, wish: 4, think: 2, guess: 4 },
+};
+
+const irisSession2: AnswerMap = {
+  "aspect-trust": { feel: 5, wish: 2, think: 4, guess: 2 },
+  "aspect-house-rules": { feel: 5, wish: 3, think: 4, guess: 2 },
+  "aspect-one-to-one": { feel: 4, wish: 2, think: 4, guess: 2 },
+  "aspect-privacy": { feel: 5, wish: 2, think: 4, guess: 1 },
+};
+
+const noorSession3: AnswerMap = {
+  "aspect-trust": { feel: 2, wish: 5, think: 3, guess: 5 },
+  "aspect-house-rules": { feel: 2, wish: 5, think: 3, guess: 4 },
+  "aspect-one-to-one": { feel: 1, wish: 4, think: 2, guess: 3 },
+  "aspect-privacy": { feel: 3, wish: 3, think: 2, guess: 4 },
+};
+
+const irisSession3: AnswerMap = {
+  "aspect-trust": { feel: 5, wish: 3, think: 5, guess: 2 },
+  "aspect-house-rules": { feel: 5, wish: 2, think: 4, guess: 3 },
+  "aspect-one-to-one": { feel: 4, wish: 2, think: 4, guess: 1 },
+  "aspect-privacy": { feel: 4, wish: 4, think: 3, guess: 4 },
+};
+
+/** Every completed session, oldest-to-newest within a relationship. */
+const seedSessionRows: readonly V1Session[] = [
+  // Avery & Rowan — one completed session, the relationship's current answers.
+  {
+    id: "sess-avery-rowan-1",
+    relationshipId: "rel-sharing-unmet",
+    completedAt: "2026-10-30T12:00:00.000Z",
+    initiatorAnswers: averyAnswers,
+    counterpartyAnswers: rowanAnswers,
+  },
+  // Ruth & Sam — two aligned sessions (the comparison is "held at 0.2").
+  {
+    id: "sess-ruth-sam-1",
+    relationshipId: "rel-aligned",
+    completedAt: "2026-10-28T20:00:00.000Z",
+    initiatorAnswers: ruthAnswers,
+    counterpartyAnswers: samAnswers,
+  },
+  {
+    id: "sess-ruth-sam-2",
+    relationshipId: "rel-aligned",
+    completedAt: "2026-10-29T10:00:00.000Z",
+    initiatorAnswers: ruthAnswers,
+    counterpartyAnswers: samAnswers,
+  },
+  // Noor & Iris — four sessions, closing; the newest is the relationship's current answers.
+  {
+    id: "sess-noor-iris-1",
+    relationshipId: "rel-advanced",
+    completedAt: "2026-10-29T10:00:00.000Z",
+    initiatorAnswers: noorSession1,
+    counterpartyAnswers: irisSession1,
+  },
+  {
+    id: "sess-noor-iris-2",
+    relationshipId: "rel-advanced",
+    completedAt: "2026-10-29T18:00:00.000Z",
+    initiatorAnswers: noorSession2,
+    counterpartyAnswers: irisSession2,
+  },
+  {
+    id: "sess-noor-iris-3",
+    relationshipId: "rel-advanced",
+    completedAt: "2026-10-30T09:00:00.000Z",
+    initiatorAnswers: noorSession3,
+    counterpartyAnswers: irisSession3,
+  },
+  {
+    id: "sess-noor-iris-4",
+    relationshipId: "rel-advanced",
+    completedAt: "2026-10-30T15:00:00.000Z",
+    initiatorAnswers: noorAnswers,
+    counterpartyAnswers: irisAnswers,
+  },
+];
+
+export const seedSessions: readonly V1Session[] = z.array(zV1Session).parse(seedSessionRows);
 
 /* ------------------------------------------------------------------ *
  * Seed accounts and tickets — the Service persona's queue
@@ -606,7 +743,7 @@ export interface V1SeedState {
 }
 
 /** Bump to invalidate a persisted store that predates a shape change. */
-export const SEED_VERSION = 1;
+export const SEED_VERSION = 2;
 
 export function buildSeedState(): V1SeedState {
   return {
