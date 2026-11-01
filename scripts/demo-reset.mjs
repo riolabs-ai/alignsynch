@@ -741,16 +741,19 @@ async function resetContent(connectionString) {
       (await client.query("SELECT to_regclass($1) IS NOT NULL AS present", [qualified])).rows[0]
         .present;
 
-    // Dependency order: opinion → party → session_invite → session → relationship → item
-    // (cascades response_option) → record. `session.template_record_id` and
-    // `relationship.template_id` have no ON DELETE CASCADE, so the session and relationship rows
-    // have to go before the records they name — and the session before the relationship it
-    // belongs to (`session.relationship_id` is NOT NULL with an FK).
+    // Dependency order: opinion → party → session_invite → session → relationship_member /
+    // coach_invite → relationship → item (cascades response_option) → record.
+    // `session.template_record_id` and `relationship.template_id` have no ON DELETE CASCADE, so
+    // the session and relationship rows have to go before the records they name — and the session
+    // before the relationship it belongs to (`session.relationship_id` is NOT NULL with an FK).
+    // Membership and coach invites reference `relationship` (CASCADE), so they go before it.
     const statements = [
       ["opinion", "public.opinion", "DELETE FROM opinion"],
       ["party", "public.party", "DELETE FROM party"],
       ["session_invite", "public.session_invite", "DELETE FROM session_invite"],
       ["session", "public.session", "DELETE FROM session"],
+      ["relationship_member", "public.relationship_member", "DELETE FROM relationship_member"],
+      ["coach_invite", "public.coach_invite", "DELETE FROM coach_invite"],
       ["relationship", "public.relationship", "DELETE FROM relationship"],
       ["item", "public.item", "DELETE FROM item"],
       ["response_option", "public.response_option", "DELETE FROM response_option"],

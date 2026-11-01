@@ -58,6 +58,14 @@
  *   V18 a scored session is immutable (#340): there is no `UPDATE` path against `session` or
  *       `opinion` anywhere in `lib/`, `scripts/` or `app/` — the rows a score is read from can
  *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten.
+ *   V19 the membership's initiator (coach card): a relationship that has any member has exactly
+ *       one `initiator` member — the backfill (0014) writes one for the bound Initiator, and a
+ *       coach invited into a relationship with no initiator member is drift, not a relationship.
+ *       A relationship with no members is the signed-out state (its parties never signed in),
+ *       which is the only case this check deliberately does not require an initiator for.
+ *   V20 the membership's coach (coach card): a relationship has at most one `coach` member. The
+ *       unique key already forbids two identical accounts; this pins "one coach per relationship"
+ *       on the rows so a second coach invited by hand is named, not assumed.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -222,6 +230,41 @@ async function main() {
         relationshipOrphans += 1;
         fail("V17", `session "${row.record_id}" points at a relationship that does not exist`);
       }
+    }
+
+    // V19 + V20 — the membership's two invariants (coach card). The rows are grouped per
+    // relationship and each is named rather than assumed: a relationship with members must have
+    // exactly one initiator member (the backfill's one), and no relationship may hold two coaches.
+    // Guarded on the table's existence so a database migrated before 0014 fails with the fix named
+    // rather than with a missing-table read.
+    let memberRelationshipsChecked = 0;
+    if (present.includes("relationship_member")) {
+      const { rows: memberCounts } = await client.query(
+        `SELECT relationship_id,
+                count(*)::int AS members,
+                count(*) FILTER (WHERE role = 'initiator')::int AS initiators,
+                count(*) FILTER (WHERE role = 'coach')::int AS coaches
+           FROM relationship_member
+          GROUP BY relationship_id
+          ORDER BY relationship_id`,
+      );
+      for (const row of memberCounts) {
+        memberRelationshipsChecked += 1;
+        if (row.members > 0 && row.initiators !== 1) {
+          fail(
+            "V19",
+            `relationship "${row.relationship_id}" has ${row.initiators} initiator member(s) across ${row.members} member(s) — exactly one initiator`,
+          );
+        }
+        if (row.coaches > 1) {
+          fail(
+            "V20",
+            `relationship "${row.relationship_id}" has ${row.coaches} coach members — at most one`,
+          );
+        }
+      }
+    } else {
+      fail("V19", "public.relationship_member does not exist — run `pnpm db:migrate`");
     }
 
     // V11 — the column the unlock marker writes (#252). Checked before the per-instance loop
@@ -797,7 +840,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

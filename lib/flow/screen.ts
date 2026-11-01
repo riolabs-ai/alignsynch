@@ -108,7 +108,12 @@ export interface FlowScreen {
    * row (`zAssessmentMode.parse`): a value the model rejects is drift, never a default.
    */
   readonly mode: AssessmentMode;
-  readonly viewer: { readonly role: PartyRole; readonly name: string };
+  /**
+   * Who is reading. `role` is the seat this request answers as, **or `coach`** — the invited,
+   * read-only membership role (`lib/flow/membership.ts`). A coach has no party row, so `name` is
+   * the empty string and the view renders the coach's own band instead of a party name.
+   */
+  readonly viewer: { readonly role: PartyRole | "coach"; readonly name: string };
   readonly aspects: readonly FlowAspect[];
   readonly initiatorName: string;
   readonly counterpartyName: string | null;
@@ -138,12 +143,15 @@ export interface FlowInstanceRows {
 export interface ProjectInput {
   readonly rows: FlowInstanceRows;
   readonly template: Assessment;
-  readonly viewerRole: PartyRole;
+  readonly viewerRole: PartyRole | "coach";
   readonly invite: FlowInvite | null;
 }
 
 /** The party row for a role, or `undefined` — the caller's "not your instance" branch. */
-export function partyIn(parties: readonly PartyRow[], role: PartyRole): PartyRow | undefined {
+export function partyIn(
+  parties: readonly PartyRow[],
+  role: PartyRole | "coach",
+): PartyRow | undefined {
   return parties.find((party) => party.role === role);
 }
 
@@ -165,7 +173,11 @@ export function progressOf(rows: FlowInstanceRows): InstanceProgress {
  * read path applies — except that a partial sheet is *normal* here, so "no row" is
  * `null` and not an error.
  */
-function ownOpinion(rows: FlowInstanceRows, role: PartyRole, itemId: string): Opinions | null {
+function ownOpinion(
+  rows: FlowInstanceRows,
+  role: PartyRole | "coach",
+  itemId: string,
+): Opinions | null {
   const row = rows.opinions.find((opinion) => opinion.role === role && opinion.item_id === itemId);
   if (row === undefined) return null;
   const parsed = zOpinions.safeParse({
@@ -181,7 +193,7 @@ function ownOpinion(rows: FlowInstanceRows, role: PartyRole, itemId: string): Op
 export function projectScreen(input: ProjectInput): FlowScreen {
   const { rows, template, viewerRole, invite } = input;
   const viewerRow = partyIn(rows.parties, viewerRole);
-  if (viewerRow === undefined) {
+  if (viewerRole !== "coach" && viewerRow === undefined) {
     throw new Error(
       `instance "${rows.record.slug}" has no ${viewerRole} party — there is no screen to project`,
     );
@@ -193,7 +205,8 @@ export function projectScreen(input: ProjectInput): FlowScreen {
   // The report is built from the same rows the read path always builds from, and only when
   // every party has answered every Aspect — `zAssessmentInstance` would reject a partial
   // sheet, which is the second half of the blind rule: a report of unfinished answers is
-  // not a report, it is a leak with extra steps.
+  // not a report, it is a leak with extra steps. A coach reaches this the same way a party
+  // does: the report exists only once the status is `complete`.
   const report =
     status === "complete"
       ? assessmentReport(
@@ -216,7 +229,9 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     summary: template.summary,
     status,
     mode: zAssessmentMode.parse(rows.instance.mode),
-    viewer: { role: viewerRole, name: viewerRow.name },
+    // A coach has no party row, so their name is the empty string and the view renders the
+    // coach's own band (`viewer` copy id) rather than a party name.
+    viewer: { role: viewerRole, name: viewerRole === "coach" ? "" : (viewerRow?.name ?? "") },
     aspects: orderedItems(rows.items).map((item) => ({
       itemId: item.item_id,
       prompt: item.prompt,

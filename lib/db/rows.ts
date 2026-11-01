@@ -118,6 +118,18 @@ export interface RelationshipRow {
   readonly created_at: Date | string;
 }
 
+/**
+ * One `relationship_member` row (`0014_relationship_membership.sql`): the account a relationship
+ * is visible to, and the role it holds — `initiator`, `counterparty` or `coach`. The first two
+ * mirror `party.role` (backfilled from the party rows); `coach` is the invited, read-only role.
+ */
+export interface RelationshipMemberRow {
+  readonly relationship_id: string;
+  readonly user_id: string;
+  readonly role: string;
+  readonly joined_at: Date | string;
+}
+
 /** One `opinion` row: a party's scores on one Aspect. */
 export interface OpinionRow {
   readonly session_record_id: string;
