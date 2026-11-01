@@ -48,8 +48,12 @@ with the board:
    (PR #339), and it documents cohort 1 only. Its own text defers the rest: "Cohort 2's
    `/prototype/relationships` and cohort 4's `/prototype/admin/gaps` are listed on the overview as
    **text rows** with their routes, not as links, until the cohort that mounts them adds the link."
-3. **The screenshots the gate was waiting on do not exist for four cohorts.** Cohort 1's captures
-   are attached to `t_e0484f0d`, not committed; cohorts 2–5 never ran a dev server.
+3. **The screenshots the gate was waiting on do not exist anywhere.** PR #339's body says the
+   captures are "Attached to the kanban card (§ Done means)", and the branch commits none — but
+   `t_e0484f0d` has **zero** attachment rows, and no attachment on the board has "prototype" in its
+   name (152 attachments in `kanban.db`, none of them these). So cohort 1's review artefacts are not
+   where the PR says they are, and cohorts 2–5 never ran a dev server. Nothing was put in front of
+   the owner, which is why nothing could have been approved.
 4. **The architecture moved while the cohorts were open.** At 09:12–09:20 the board created `/v1`
    (`t_6271a7a3`, "the whole product clickable at `/v1`", with a persona switcher and an in-browser
    store) and four variation cards (`t_a97eea09` template editor, `t_d0450aa5` catalogue + grid,
@@ -356,7 +360,10 @@ file, not a prototype that was never drawn.
 | W4   | C4 · opinions + gap | 0       | no — nothing was prototyped                 |
 | W5   | C5 · admin reach    | 0       | no — nothing was prototyped                 |
 
-W1 carries the precondition rather than assuming it: PR #339 merged **and** the owner's approval of
-`/prototype/admin` at 1440 and 390 recorded on `t_e0484f0d`. With either missing, the card blocks
-instead of wiring a screen nobody signed off. That is the same gate the sprint put on cohort 5, moved
-to the one place where it still has a subject.
+W1 carries the precondition rather than assuming it: PR #339 merged, **and** the owner's approval
+recorded on the card. Since nothing was ever put in front of the owner, the first half of that
+precondition is on the wiring card itself — run the merged screen at 1440×900 and 390×844 with
+`FLAG_CONSOLE_PROTOTYPES=1`, attach both captures, and let the approval be a comment rather than a
+sentence repeated from a PR body. With either missing the card blocks, instead of wiring a screen
+nobody signed off. That is the same gate the sprint put on cohort 5, moved to the one place where it
+still has a subject.
