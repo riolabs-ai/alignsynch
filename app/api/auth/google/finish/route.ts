@@ -47,7 +47,12 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { loginPathFor, safeNextPath } from "@/lib/auth/paths";
+import {
+  GOOGLE_FAILURE_QUERY,
+  GOOGLE_FAILURE_VALUE,
+  googleFailedLoginPath,
+  safeNextPath,
+} from "@/lib/auth/paths";
 import {
   appOriginOf,
   clearFlowCookieHeader,
@@ -78,19 +83,34 @@ export async function GET(request: Request): Promise<Response> {
   const jar = await cookies();
   const flow = decodeFlowCookie(jar.get(GOOGLE_FLOW_COOKIE)?.value);
 
+  // One line per arrival, before any branch, so a loop back to `/login` can be told apart from a
+  // handler that was never reached. The three fields are the three hypotheses this card tests:
+  // whether the flow cookie survived the Google round-trip, whether Neon's verifier is in the
+  // query, and what origin this build believes it is.
+  console.info(
+    `[auth:google-finish] reached flow=${flow === null ? "absent" : "present"}` +
+      ` verifier=${verifier === "" ? "absent" : "present"}` +
+      ` origin=${origin === null ? "absent" : origin.origin}`,
+  );
+
   // No flow cookie means this callback was not started by this browser (or it took longer than the
   // challenge lives). There is nothing to exchange and nothing to blame: send them to sign in again.
   // No `?next=` is composed from a cookie that is not there — `/login` resolves the brand's own
   // destination when nothing was asked for.
   if (flow === null) {
-    console.warn("[auth] the Google callback arrived with no flow cookie — signing in again");
-    redirect("/login");
+    console.warn("[auth:google-finish] fail=no-flow-cookie redirect=/login");
+    redirect(`/login?${GOOGLE_FAILURE_QUERY}=${GOOGLE_FAILURE_VALUE}`);
   }
 
   const next = safeNextPath(flow.next);
   if (verifier === "" || origin === null) {
-    console.warn("[auth] the Google callback arrived without a verifier or without an origin");
-    redirect(loginPathFor(next));
+    console.warn(
+      `[auth:google-finish] fail=no-verifier-or-origin` +
+        ` verifier=${verifier === "" ? "absent" : "present"}` +
+        ` origin=${origin === null ? "absent" : "present"}` +
+        ` redirect=${googleFailedLoginPath(next)}`,
+    );
+    redirect(googleFailedLoginPath(next));
   }
 
   const exchanged = await exchangeVerifier({
@@ -101,10 +121,12 @@ export async function GET(request: Request): Promise<Response> {
 
   if (!exchanged.ok) {
     console.warn(
-      `[auth] the Google verifier exchange failed (${exchanged.failure}` +
-        `${exchanged.status === undefined ? "" : `, ${exchanged.status}`}) — signing in again`,
+      `[auth:google-finish] fail=exchange kind=${exchanged.failure}` +
+        ` status=${exchanged.status === undefined ? "none" : String(exchanged.status)}` +
+        ` code=${exchanged.code ?? "none"}` +
+        ` redirect=${googleFailedLoginPath(next)}`,
     );
-    redirect(loginPathFor(next));
+    redirect(googleFailedLoginPath(next));
   }
 
   if (!origin.secure) {
@@ -115,6 +137,9 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const target = new URL(safeNextPath(next), origin.origin);
+  console.info(
+    `[auth:google-finish] ok cookies=${exchanged.setCookies.length} target=${target.toString()}`,
+  );
   const response = new Response(null, {
     status: 307,
     headers: { location: target.toString(), "cache-control": "no-store" },

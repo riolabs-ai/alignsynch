@@ -97,6 +97,14 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
             id: "error-google-account",
             label: "This account uses Google sign-in. Use Continue with Google above.",
           },
+          /**
+           * The one sentence a failed Google *finish* shows (#351 follow-up). The exchange fails
+           * closed: every refusal redirects to `/login` signed out, which is byte-for-byte the page
+           * a person who never tried sees. The finish route appends `?google=failed` so this sentence
+           * is drawn only for a real attempt that came back empty — never for a cold visit — and it
+           * is one sentence for both brands, exactly the words the card specifies.
+           */
+          { id: "error-google-failed", label: "We couldn't finish signing you in. Try again." },
           { id: "error-network", label: "Couldn't reach the server. Check your connection." },
           {
             id: "error-origin",

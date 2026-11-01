@@ -114,12 +114,20 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
 export function LoginView({
   copy,
   next,
+  googleFailure: googleFailureProp,
   demo,
   providerHint,
   startGoogle: startGoogleFlow,
 }: {
   copy: PageCopy;
   next: string;
+  /**
+   * Whether this visit came back from a Google finish that failed. Read by the page from the
+   * `?google=failed` query the finish route appends, so a failed attempt is not indistinguishable
+   * from never having tried. Rendered as the fixture's `error-google-failed` sentence, and cleared
+   * the moment a new attempt begins.
+   */
+  googleFailure: boolean;
   demo: DemoViewProps;
   /**
    * "Does this address exist only as a Google account?" — a server action from
@@ -159,6 +167,8 @@ export function LoginView({
   const [googlePending, setGooglePending] = useState(false);
   const [refusal, setRefusal] = useState<SignInRefusal | null>(null);
   const [fieldProblem, setFieldProblem] = useState(false);
+  /** A failed Google finish, remembered from `?google=failed` until the next attempt replaces it. */
+  const [googleFailure, setGoogleFailure] = useState(googleFailureProp);
 
   /**
    * The current attempt, as a number. A server answer is applied only if the attempt it was
@@ -190,6 +200,7 @@ export function LoginView({
     event.preventDefault();
     const ticket = attempt.current + 1;
     attempt.current = ticket;
+    setGoogleFailure(false);
     const address = email.trim();
 
     if (address === "" || password === "") {
@@ -248,6 +259,7 @@ export function LoginView({
     attempt.current = ticket;
     setFieldProblem(false);
     setRefusal(null);
+    setGoogleFailure(false);
     setGooglePending(true);
 
     try {
@@ -322,6 +334,11 @@ export function LoginView({
              * still defaults to submit in older user agents, and a stray submit would run the
              * password handler over two empty fields.
              */}
+            {googleFailure && (
+              <Alert variant="destructive">
+                <AlertDescription>{itemLabel(form, "error-google-failed")}</AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-4">
               <Button
                 type="button"

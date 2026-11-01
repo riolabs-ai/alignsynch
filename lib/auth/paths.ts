@@ -60,6 +60,27 @@ export function loginPathFor(next: string): string {
 }
 
 /**
+ * The query parameter `/login` reads to know a Google sign-in could not be finished (#351 follow-up).
+ *
+ * The finish route fails closed — every exchange failure redirects to `/login` signed out, which is
+ * byte-for-byte the same page a person who never tried sees. Appending this parameter is how the two
+ * are told apart: the page renders its one sentence ("We couldn't finish signing you in…") only for a
+ * real attempt that failed, never for a cold visit.
+ */
+export const GOOGLE_FAILURE_QUERY = "google";
+
+/** The one value that marks a failed finish. Anything else is a cold visit. */
+export const GOOGLE_FAILURE_VALUE = "failed";
+
+/**
+ * `/login?next=<path>&google=failed` — a failed Google exchange, with the destination remembered so
+ * the second attempt still returns the person where they were going.
+ */
+export function googleFailedLoginPath(next: string): string {
+  return `${loginPathFor(next)}&${GOOGLE_FAILURE_QUERY}=${GOOGLE_FAILURE_VALUE}`;
+}
+
+/**
  * The inverse: a `?next=` value that is safe to navigate to, or the fallback.
  *
  * `startsWith("/")` alone is not enough — `//host/path` is protocol-relative and leaves the site —
