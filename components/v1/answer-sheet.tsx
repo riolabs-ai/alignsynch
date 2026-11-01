@@ -1,7 +1,12 @@
 // template-ancestor: components/assessment-flow/answer-form.tsx
 "use client";
 
-import type { OpinionKind, Opinions } from "@/content/assessment";
+import {
+  OPINION_DEFINITIONS,
+  OPINION_LABELS,
+  type OpinionKind,
+  type Opinions,
+} from "@/content/assessment";
 import { useV1Store } from "@/lib/v1/store";
 import { LoadingState, NotFoundState, SectionIntro, StageBadge } from "@/components/v1/v1-ui";
 import { gapSummary } from "@/lib/v1/derive";
@@ -10,9 +15,54 @@ import { useState } from "react";
 
 const SCORES = [1, 2, 3, 4, 5] as const;
 
+/** Pass one — the pair a party answers about themselves. */
+const OWN_KINDS: readonly OpinionKind[] = ["feel", "wish"];
+/** Pass two — the pair a party answers to predict the other party. */
+const PREDICTION_KINDS: readonly OpinionKind[] = ["think", "guess"];
+
 type Draft = Record<string, Partial<Record<OpinionKind, number>>>;
 
-/** The answer sheet — one party answers every Aspect, Feel and Wish (or all four). */
+/** One opinion, asked as a label over a 1..5 scale — the product's words, not a bare id. */
+function OpinionScale({
+  kind,
+  value,
+  onChoose,
+}: {
+  kind: OpinionKind;
+  value: number;
+  onChoose: (value: number) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-1 text-sm font-medium text-foreground">
+        {OPINION_LABELS[kind]}
+        <span className="text-muted-foreground"> — {OPINION_DEFINITIONS[kind]}</span>
+      </p>
+      <div className="grid grid-cols-5 gap-2">
+        {SCORES.map((score) => {
+          const selected = value === score;
+          return (
+            <button
+              key={score}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onChoose(score)}
+              className={
+                selected
+                  ? "flex h-11 items-center justify-center rounded-md bg-action text-sm font-semibold text-action-foreground"
+                  : "flex h-11 items-center justify-center rounded-md border border-border bg-card text-sm text-foreground hover:bg-muted"
+              }
+            >
+              {score}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** The answer sheet — one party answers every Aspect in two passes: own, then prediction. */
 export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
   const { hydrated, persona, relationships, templates, submitAnswers } = useV1Store();
   const [draft, setDraft] = useState<Draft>({});
@@ -57,8 +107,10 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
   }
 
   const existing = role === "initiator" ? rel.initiatorAnswers : rel.counterpartyAnswers;
-  const kinds: OpinionKind[] =
-    rel.mode === "advanced" ? ["feel", "wish", "think", "guess"] : ["feel", "wish"];
+  const isAdvanced = rel.mode === "advanced";
+  const allKinds: readonly OpinionKind[] = isAdvanced
+    ? [...OWN_KINDS, ...PREDICTION_KINDS]
+    : OWN_KINDS;
 
   const seed = (itemId: string, kind: OpinionKind): number => {
     const explicit = draft[itemId]?.[kind];
@@ -78,20 +130,19 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
     const next: Record<string, Opinions> = {};
     for (const item of rel.items) {
       const values: Record<string, number> = {};
-      for (const kind of kinds) {
+      for (const kind of allKinds) {
         const value = seed(item.id, kind);
         if (value < 1 || value > 5) {
           setProblem(
-            `Answer every ${rel.mode === "advanced" ? "of the four opinions" : "Feel and Wish"} on every Aspect before submitting.`,
+            `Answer every ${isAdvanced ? "of the four opinions" : "Feel and Wish"} on every Aspect before submitting.`,
           );
           return;
         }
         values[kind] = value;
       }
-      next[item.id] =
-        rel.mode === "advanced"
-          ? { feel: values.feel, wish: values.wish, think: values.think, guess: values.guess }
-          : { feel: values.feel, wish: values.wish };
+      next[item.id] = isAdvanced
+        ? { feel: values.feel, wish: values.wish, think: values.think, guess: values.guess }
+        : { feel: values.feel, wish: values.wish };
     }
     setProblem(null);
     submitAnswers(rel.id, role, next);
@@ -103,7 +154,7 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
       <div className="flex items-center gap-2">
         <SectionIntro
           title={template?.title ?? "Answer the sheet"}
-          subtitle={`Answering as ${role} — ${rel.mode === "advanced" ? "Feel, Wish, Think and Guess" : "Feel and Wish"} on every Aspect.`}
+          subtitle={`Answering as ${role} — ${isAdvanced ? "Feel, Wish, Think and Guess" : "Feel and Wish"} on every Aspect.`}
         />
         <StageBadge stage={summary.stage} />
       </div>
@@ -115,35 +166,40 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
             <p className="mt-0.5 text-xs text-muted-foreground">
               {item.leftValue} (1) → {item.rightValue} (5)
             </p>
-            <div className="mt-3 space-y-3">
-              {kinds.map((kind) => (
-                <div key={kind}>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {kind}
-                  </p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {SCORES.map((score) => {
-                      const selected = seed(item.id, kind) === score;
-                      return (
-                        <button
-                          key={score}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => choose(item.id, kind, score)}
-                          className={
-                            selected
-                              ? "flex h-11 items-center justify-center rounded-md bg-action text-sm font-semibold text-action-foreground"
-                              : "flex h-11 items-center justify-center rounded-md border border-border bg-card text-sm text-foreground hover:bg-muted"
-                          }
-                        >
-                          {score}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+
+            <div className="mt-4">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Your answers
+              </h3>
+              <div className="space-y-3">
+                {OWN_KINDS.map((kind) => (
+                  <OpinionScale
+                    key={kind}
+                    kind={kind}
+                    value={seed(item.id, kind)}
+                    onChoose={(value) => choose(item.id, kind, value)}
+                  />
+                ))}
+              </div>
             </div>
+
+            {isAdvanced && (
+              <div className="mt-4">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Predict their answers
+                </h3>
+                <div className="space-y-3">
+                  {PREDICTION_KINDS.map((kind) => (
+                    <OpinionScale
+                      key={kind}
+                      kind={kind}
+                      value={seed(item.id, kind)}
+                      onChoose={(value) => choose(item.id, kind, value)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

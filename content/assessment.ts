@@ -47,6 +47,33 @@ export type OpinionKind = z.infer<typeof zOpinionKind>;
 
 export const OPINION_KINDS = zOpinionKind.options;
 
+/**
+ * The four opinions' names, authored once in the model — a heading reads "Feel", never
+ * "feel" or a quiz word like "answer 1". The pair a party answers for themselves
+ * (`feel`, `wish`) and the pair they answer to predict the other party (`think`, `guess`)
+ * are the same words in the report and the sheet, so no screen capitalises a kind id on
+ * its own.
+ */
+export const OPINION_LABELS: Record<OpinionKind, string> = {
+  feel: "Feel",
+  wish: "Wish",
+  think: "Think",
+  guess: "Guess",
+};
+
+/**
+ * Each opinion's one-line definition — the product's words beside the name, so the sheet
+ * and the report tell a reader what a kind means rather than leaving the word bare.
+ * `feel` is how the Aspect is now, `wish` how it should be, `think` how the party predicts
+ * the other feels, `guess` how the party predicts the other wishes it.
+ */
+export const OPINION_DEFINITIONS: Record<OpinionKind, string> = {
+  feel: "how it is now",
+  wish: "how it should be",
+  think: "how you predict they feel",
+  guess: "how you predict they wish it",
+};
+
 /** Basic Mode: two opinions per Aspect per party. */
 export const BASIC_OPINION_KINDS = ["feel", "wish"] as const;
 
