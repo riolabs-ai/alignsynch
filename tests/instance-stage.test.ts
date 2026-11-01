@@ -52,7 +52,7 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 /** Every Aspect answered by one party: Feel 3, Wish 4 — the numbers do not matter here. */
 function answeredBy(role: "initiator" | "counterparty", feel = 3, wish = 4): OpinionRow[] {
   return items.map((item) => ({
-    instance_record_id: INSTANCE_ID,
+    session_record_id: INSTANCE_ID,
     role,
     item_id: item.item_id,
     feel,
@@ -63,8 +63,8 @@ function answeredBy(role: "initiator" | "counterparty", feel = 3, wish = 4): Opi
 }
 
 const bothParties: PartyRow[] = [
-  { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
 ];
 
 interface Case {
@@ -89,6 +89,7 @@ function rowsWith({ parties, opinions, counts }: Case): FlowInstanceRows {
     instance: {
       record_id: INSTANCE_ID,
       template_record_id: template.id,
+      relationship_id: "relationship-test",
       mode: "basic",
       setting: "soft",
     },

@@ -588,7 +588,8 @@ function countQueries() {
     ["assessment record", "SELECT count(*)::int AS n FROM record WHERE record_type = 'assessment'"],
     ["item", "SELECT count(*)::int AS n FROM item"],
     ["response_option", "SELECT count(*)::int AS n FROM response_option"],
-    ["assessment_instance", "SELECT count(*)::int AS n FROM assessment_instance"],
+    ["session", "SELECT count(*)::int AS n FROM session"],
+    ["relationship", "SELECT count(*)::int AS n FROM relationship"],
     ["party", "SELECT count(*)::int AS n FROM party"],
     ["party (bound to a user)", "SELECT count(*)::int AS n FROM party WHERE user_id IS NOT NULL"],
     ["opinion", "SELECT count(*)::int AS n FROM opinion"],
@@ -616,7 +617,8 @@ const BUNDLE_KEYS = {
         ),
       0,
     ),
-  assessment_instance: (payload) => payload.instances.length,
+  session: (payload) => payload.instances.length,
+  relationship: (payload) => payload.instances.length,
   party: (payload) =>
     payload.instances.reduce((total, instance) => total + instance.parties.length, 0),
   opinion: (payload) =>
@@ -632,7 +634,8 @@ const COMPARED = [
   ["record", "record"],
   ["item", "item"],
   ["response_option", "response_option"],
-  ["assessment_instance", "assessment_instance"],
+  ["session", "session"],
+  ["relationship", "relationship"],
   ["party", "party"],
   ["opinion", "opinion"],
 ];
@@ -738,14 +741,17 @@ async function resetContent(connectionString) {
       (await client.query("SELECT to_regclass($1) IS NOT NULL AS present", [qualified])).rows[0]
         .present;
 
-    // Dependency order: opinion → party → instance_invite → assessment_instance → item
-    // (cascades response_option) → record. `assessment_instance.template_record_id` has no
-    // ON DELETE CASCADE, so the instance rows have to go before the records they name.
+    // Dependency order: opinion → party → session_invite → session → relationship → item
+    // (cascades response_option) → record. `session.template_record_id` and
+    // `relationship.template_id` have no ON DELETE CASCADE, so the session and relationship rows
+    // have to go before the records they name — and the session before the relationship it
+    // belongs to (`session.relationship_id` is NOT NULL with an FK).
     const statements = [
       ["opinion", "public.opinion", "DELETE FROM opinion"],
       ["party", "public.party", "DELETE FROM party"],
-      ["instance_invite", "public.instance_invite", "DELETE FROM instance_invite"],
-      ["assessment_instance", "public.assessment_instance", "DELETE FROM assessment_instance"],
+      ["session_invite", "public.session_invite", "DELETE FROM session_invite"],
+      ["session", "public.session", "DELETE FROM session"],
+      ["relationship", "public.relationship", "DELETE FROM relationship"],
       ["item", "public.item", "DELETE FROM item"],
       ["response_option", "public.response_option", "DELETE FROM response_option"],
       ["record", "public.record", "DELETE FROM record"],

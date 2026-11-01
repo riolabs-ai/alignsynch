@@ -57,8 +57,8 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 }));
 
 const parties: PartyRow[] = [
-  { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
 ];
 
 /** feel/wish for one party; every Aspect not named here is 3/3. */
@@ -69,7 +69,7 @@ function opinionsFor(
   return template.items.map((item) => {
     const override = overrides[item.id];
     return {
-      instance_record_id: INSTANCE_ID,
+      session_record_id: INSTANCE_ID,
       role,
       item_id: item.id,
       feel: override?.feel ?? 3,
@@ -88,7 +88,7 @@ function advancedOpinionsFor(
   return template.items.map((item) => {
     const override = overrides[item.id];
     return {
-      instance_record_id: INSTANCE_ID,
+      session_record_id: INSTANCE_ID,
       role,
       item_id: item.id,
       feel: override?.feel ?? 3,
@@ -119,6 +119,7 @@ function rowsWith(
     instance: {
       record_id: INSTANCE_ID,
       template_record_id: template?.id ?? "",
+      relationship_id: "relationship-test",
       mode,
       setting: "soft",
     },

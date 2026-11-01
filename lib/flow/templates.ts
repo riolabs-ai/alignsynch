@@ -5,7 +5,7 @@
  * one, the answer screen reads a copy, the report draws a copy. This module is where the template
  * itself comes from, and it writes exactly what the model already describes
  * (`content/assessment.ts::zAssessment`): a `record` row of type `assessment`, `published`, and its
- * `item` rows — **no `assessment_instance` row, no `party` row, no `response_option` row**. That
+ * `item` rows — **no `session` row, no `party` row, no `response_option` row**. That
  * absence is not a missing feature: a template with parties is an instance by definition, which is
  * `strict()` in the schema and a foreign key in SQL.
  *
@@ -179,7 +179,7 @@ interface WritableTemplateRow {
  * **Archiving is not deletion, and it cannot break an instance.** An instance copies its Aspects
  * into its own `item` rows when it is created (`INSERT … SELECT` in `store.ts`), and
  * `/assessment/[slug]` renders from those copies; nothing joins back to the template to draw an
- * answered instance. The template row keeps existing, so `assessment_instance.template_record_id`
+ * answered instance. The template row keeps existing, so `session.template_record_id`
  * still resolves and the report still opens. What changes is two reads that ask for `published`:
  * the catalogue at `/assessment` stops listing it, and `createInstanceFromTemplate` refuses it —
  * so archiving hides it from pickers and blocks new instances, while leaving every existing one
@@ -205,7 +205,7 @@ export async function setTemplateStatus(
          FROM record r
         WHERE r.id = $1
           AND r.record_type = 'assessment'
-          AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)
+          AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
           FOR UPDATE OF r`,
       [recordId],
     );
@@ -263,7 +263,7 @@ export async function duplicateTemplate(
          FROM record r
         WHERE r.id = $1
           AND r.record_type = 'assessment'
-          AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)
+          AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
           FOR SHARE OF r`,
       [recordId],
     );
