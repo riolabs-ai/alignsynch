@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { ReviewChip } from "@/components/v1/review-chip";
 import { useRouter } from "next/navigation";
 
 /**
@@ -102,6 +103,7 @@ export function PersonaBar() {
               Reset demo
             </span>
           </button>
+          <ReviewChip className="hidden sm:inline-flex" />
         </div>
 
         {/* Mobile controls — one menu button at `sm` and below, so the line never wraps. */}
