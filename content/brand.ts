@@ -24,7 +24,7 @@
  *                 the registry is generated from `public/` and a path it does not carry
  *                 is a 404
  *   colors        the theme tokens the app already paints with, named the way
- *                 `styles/globals.css` names them; a value here is the *resolved* colour
+ *                 `app/globals.css` names them; a value here is the *resolved* colour
  *                 (`hsl(0 0% 9%)`), not a `var(--primary)` reference, because the point
  *                 of the record is to carry the value that reference resolves to
  *   supportEmail  the address the footer and the support pages print
@@ -72,7 +72,7 @@ export type BrandColor = z.infer<typeof zBrandColor>;
 
 /**
  * The theme tokens the app paints the shell with, named after the custom properties in
- * `styles/globals.css` (`--primary` -> `primary`). `navActive` is the one colour that is
+ * `app/globals.css` (`--primary` -> `primary`). `navActive` is the one colour that is
  * not a custom property: the sidebar paints the active nav with the Tailwind palette step
  * `indigo-500`, so the record carries that step's value under the role it plays.
  *
