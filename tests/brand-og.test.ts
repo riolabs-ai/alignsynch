@@ -1,18 +1,19 @@
 /**
- * The share card is a function of the brand record, and it is the same mark as the tab icon.
+ * The share card is a function of the brand record, and its mark is the same book the icons draw.
  *
  * The failure this pins, in the order it costs: the tree shipped no open-graph image at all, so
  * every route's preview was whatever a crawler made of `<title>`; then — the trap a generated
  * card introduces — a card drawn from a *copy* of the palette, which renders fine, looks right,
- * and is a second hex free to drift the moment a brand re-points `colors.action`. So the claims
- * here are mostly about what is *not* in the card:
+ * and is a second hex free to drift the moment a brand re-points `colors.action`. Then the mark
+ * itself split: the card and the tab icon drew the brand's *initial* while every page drew a
+ * `BookOpen` glyph. So the claims here are about what the card shares with the icon set:
  *
- *   1. the only colours in the element tree are the record's two, which is what makes "no second
- *      hex" a check instead of a comment;
- *   2. the letter and the two colours are the same three values the tab icon's own file carries,
- *      so the mark a reader sees at 16 px and at 1200 px is one mark;
- *   3. the two brands' cards differ, and each carries its own action colour rather than the
- *      template's.
+ *   1. the only colours in the mark are the record's two, which is what makes "no second hex" a
+ *      check instead of a comment;
+ *   2. the mark embedded in the card is the open book from `lib/brand-icon.ts` — the same two
+ *      paths the generated favicon carries — so a reader at 16 px and at 1200 px sees one mark;
+ *   3. the two brands' cards differ, each carries its own action colour rather than the
+ *      template's, and the *geometry* is identical across brands.
  *
  * What this file cannot prove is the one thing the handoff has to: that satori *renders* it. A
  * raster needs `next/og` (which imports a wasm build of resvg and is not resolvable from a node
@@ -27,8 +28,8 @@ import { describe, expect, it } from "vitest";
 import type { Brand } from "@/content/brand";
 import { quizHubBrand } from "@/data/brand";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
-import { brandInitial } from "@/lib/brand-initial";
-import { OG_SIZE, ogCard } from "@/lib/brand-og";
+import { MARK_PATHS } from "@/lib/brand-icon";
+import { OG_SIZE, markDataUri, ogCard } from "@/lib/brand-og";
 
 /** The two records a build can ship. Same pair `scripts/gen-brand-icons.mjs` draws icons for. */
 const brands: readonly (readonly [string, Brand])[] = [
@@ -36,7 +37,7 @@ const brands: readonly (readonly [string, Brand])[] = [
   ["alignsynch", alignSynchBrand],
 ];
 
-/** Every string the element tree carries — text nodes and style values alike. */
+/** Every string the element tree carries — text nodes, attribute values and style values alike. */
 function strings(value: unknown): string[] {
   const out: string[] = [];
   const walk = (node: unknown): void => {
@@ -59,9 +60,13 @@ function strings(value: unknown): string[] {
   return out;
 }
 
-/** The colours a string carries, in the two forms `content/brand.ts` accepts. */
-function colours(values: readonly string[]): string[] {
-  return values.filter((value) => /^#[0-9a-fA-F]{3,8}$/.test(value) || /^hsla?\(/.test(value));
+/** The mark's data URI, decoded back to the SVG the generator would write. */
+function markSvgOf(brand: Brand): string {
+  const prefix = "data:image/svg+xml;base64,";
+  const uri = strings(ogCard(brand)).find((value) => value.startsWith(prefix));
+  expect(uri).toBeDefined();
+  if (uri === undefined) throw new Error("card has no mark data URI");
+  return Buffer.from(uri.slice(prefix.length), "base64").toString("utf8");
 }
 
 describe("the share card", () => {
@@ -79,30 +84,35 @@ describe("the share card", () => {
 
   for (const [id, brand] of brands) {
     describe(`${id} (${brand.name})`, () => {
-      it("draws the record's two colours and no third", () => {
-        const found = colours(strings(ogCard(brand)));
-        expect(new Set(found)).toEqual(
-          new Set([brand.colors.action, brand.colors.actionForeground]),
-        );
-      });
-
-      it("prints the name, the initial and the record's host", () => {
+      it("prints the name and the record's host", () => {
         const carried = strings(ogCard(brand));
         expect(carried).toContain(brand.name);
-        expect(carried).toContain(brandInitial(brand.name));
         expect(carried).toContain(brand.domain);
       });
 
-      it("is the same mark as the tab icon: one letter, the same two colours", () => {
+      it("embeds the open book in the record's two colours, inverted", () => {
+        const mark = markSvgOf(brand);
+        // Inverted from the icon: the action colour strokes the glyph on the action-foreground
+        // square. No third hex can appear.
+        expect(mark).toContain(`fill="${brand.colors.actionForeground}"`);
+        expect(mark).toContain(`stroke="${brand.colors.action}"`);
+        for (const path of MARK_PATHS) expect(mark).toContain(`<path d="${path}"/>`);
+      });
+
+      it("is the same mark as the tab icon: one geometry, the same two colours", () => {
         const icon = readFileSync(
           join(process.cwd(), "public", brand.icon.replace(/^\//, "")),
           "utf8",
         );
-        // The icon paints `action` as its ground and `actionForeground` as the type over the
-        // letter; the card paints the same pair inverted. Same three values, one derivation.
+        const mark = markSvgOf(brand);
+        // The icon paints `action` as its ground and `actionForeground` as the book's ink; the
+        // card paints the same pair inverted. Same two paths, one derivation.
         expect(icon).toContain(`fill="${brand.colors.action}"`);
-        expect(icon).toContain(`fill="${brand.colors.actionForeground}"`);
-        expect(icon).toContain(`>${brandInitial(brand.name)}<`);
+        expect(icon).toContain(`stroke="${brand.colors.actionForeground}"`);
+        for (const path of MARK_PATHS) {
+          expect(icon).toContain(`<path d="${path}"/>`);
+          expect(mark).toContain(`<path d="${path}"/>`);
+        }
       });
     });
   }
@@ -116,16 +126,23 @@ describe("the share card", () => {
     expect(alignsynch).toContain(alignSynchBrand.colors.action);
     expect(alignsynch).not.toContain(quizHubBrand.colors.action);
   });
-});
 
-describe("brandInitial", () => {
-  it("is the first letter of the name the record prints, upper-cased", () => {
-    expect(brandInitial("QuizHub")).toBe("Q");
-    expect(brandInitial("AlignSynch")).toBe("A");
-    expect(brandInitial("  two words")).toBe("T");
-  });
-
-  it("refuses a name it cannot draw, instead of rendering an empty badge", () => {
-    expect(() => brandInitial("123")).toThrow(/has no letters/);
+  it("draws the same geometry for both brands — colour is the only difference", () => {
+    // The mark's shape is a constant; the two brands may only differ by the two tokens they pass
+    // into `markSvg`. Decode the data URIs, strip the hexes and the names, and the two SVGs are
+    // identical.
+    const decode = (brand: Brand) => {
+      const prefix = "data:image/svg+xml;base64,";
+      return Buffer.from(markDataUri(brand).slice(prefix.length), "base64").toString("utf8");
+    };
+    const strip = (svg: string) =>
+      svg
+        .replaceAll(quizHubBrand.colors.action, "ACTION")
+        .replaceAll(quizHubBrand.colors.actionForeground, "INK")
+        .replaceAll(alignSynchBrand.colors.action, "ACTION")
+        .replaceAll(alignSynchBrand.colors.actionForeground, "INK")
+        .replaceAll("QuizHub", "NAME")
+        .replaceAll("AlignSynch", "NAME");
+    expect(strip(decode(quizHubBrand))).toBe(strip(decode(alignSynchBrand)));
   });
 });

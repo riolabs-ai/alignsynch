@@ -16,7 +16,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **50** — 35 static, 15 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 244 files under `components/`, 239 of them `.tsx`
+- component domains: **36** — 245 files under `components/`, 240 of them `.tsx`
 - route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 1
 - templates: Both templates 22 · AlignSynch 20 · QuizHub 42 · No template yet 2
@@ -115,7 +115,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/layout` — **fixture**
   - capability: The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.
-  - files (7): `app-version.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
+  - files (8): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
   - routes (6): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/tournaments` — and every other route through `app/layout.tsx`
 
 - `components/legal` — **mock**

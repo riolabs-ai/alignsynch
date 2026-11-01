@@ -8,8 +8,9 @@ import { hiddenNavHrefs } from "@/lib/flags";
 import { notFoundCopyFor } from "@/lib/not-found-copy";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
-import { BookOpen, Brain, Home, Search, Trophy } from "lucide-react";
+import { Brain, Home, Search, Trophy } from "lucide-react";
 import Link from "next/link";
+import { BrandGlyph } from "@/components/layout/brand-glyph";
 
 /**
  * Next 16 reads `metadata` from the root `app/not-found.tsx`, so the 404 carries a
@@ -94,7 +95,7 @@ export default function NotFound() {
               </h1>
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center animate-bounce">
-                  <BookOpen className="w-12 h-12 text-white" />
+                  <BrandGlyph className="w-12 h-12 text-white" />
                 </div>
               </div>
             </div>

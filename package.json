@@ -17,7 +17,7 @@
     "parity:update": "node scripts/parity.mjs --update",
     "bundles": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/bundles.js",
     "gen": "node scripts/gen-fixtures.mjs",
-    "icons": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs",
+    "brand:icons": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",
     "ui:registry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs",
@@ -101,6 +101,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.3",
+    "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
