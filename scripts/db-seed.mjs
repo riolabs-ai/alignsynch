@@ -40,6 +40,14 @@
  * With `DEMO_AUTH` unset, the three demo accounts are **removed** and none are created — the
  * flag is a switch, and a switch that only ever adds leaves a demo backdoor behind on every
  * machine that ever ran a demo.
+ *
+ * **The platform admins.** With `ADMIN_NN_EMAIL` / `ADMIN_NN_PASS` present, this script also
+ * ensures each pair is a durable `admin` account: created through the same sign-up path when
+ * absent, reconciled (role corrected in place) when present, and — when the password has changed
+ * — removed in phase 1 and recreated, never duplicated and never failing. The password comes
+ * from the environment and is written nowhere: no `demo_account` row, no log line, no file.
+ * With no `ADMIN_*` set (CI, a fresh clone, the gate) the pass is skipped with a printed line,
+ * which is the point — a platform admin is opt-in, not a default.
  */
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -356,14 +364,14 @@ function randomPassword() {
  * One real auth user, created through the branch's own `sign-up/email` endpoint.
  *
  * No SDK and no SQL INSERT into `neon_auth`: the endpoint is the thing the app's `/api/auth`
- * proxy calls, so a demo account is created exactly the way a person's account is (password
- * hashed by Better Auth, `account` row and all) and part 2 signs in through the real path.
+ * proxy calls, so an account is created exactly the way a person's is (password hashed by
+ * Better Auth, `account` row and all) and signs in through the real path afterward.
  *
  * The response carries a session token. It is never read, printed or stored — only `user.id`.
  * An error is reported by status and Better Auth's code, because the message can echo the
  * request.
  */
-async function createDemoAuthUser(email, password, name) {
+async function createAuthUser(email, password, name) {
   const base = requireVariable(["NEON_AUTH_BASE_URL"]).replace(/\/+$/, "");
   const response = await fetch(`${base}/sign-up/email`, {
     method: "POST",
@@ -374,12 +382,12 @@ async function createDemoAuthUser(email, password, name) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(
-      `demo account ${email}: sign-up answered HTTP ${response.status}${body.code ? ` (${body.code})` : ""} — is NEON_AUTH_BASE_URL this branch's auth server?`,
+      `account ${email}: sign-up answered HTTP ${response.status}${body.code ? ` (${body.code})` : ""} — is NEON_AUTH_BASE_URL this branch's auth server?`,
     );
   }
   const userId = body?.user?.id;
   if (typeof userId !== "string" || userId.length === 0) {
-    throw new Error(`demo account ${email}: sign-up answered ${response.status} with no user id`);
+    throw new Error(`account ${email}: sign-up answered ${response.status} with no user id`);
   }
   return userId;
 }
@@ -501,7 +509,7 @@ async function seedDemoAccounts(client) {
   const created = [];
   for (const account of DEMO_ACCOUNTS) {
     const password = randomPassword();
-    const userId = await createDemoAuthUser(account.email, password, account.name);
+    const userId = await createAuthUser(account.email, password, account.name);
 
     await client.query(
       `INSERT INTO demo_account (email, user_id, password)
@@ -576,12 +584,189 @@ async function demoReport(client) {
   );
   const { rows: totals } = await client.query(
     `SELECT (SELECT count(*)::int FROM demo_account)                                  AS accounts,
-            (SELECT count(*)::int FROM user_profile WHERE role = 'admin')             AS admins,
+            (SELECT count(*)::int FROM user_profile WHERE role = 'admin'
+               AND user_id IN (SELECT user_id FROM demo_account))                    AS admins,
+            (SELECT count(*)::int FROM user_profile WHERE role = 'admin'
+               AND user_id NOT IN (SELECT user_id FROM demo_account))                AS platform_admins,
             (SELECT count(*)::int FROM user_profile WHERE role = 'member'
                AND user_id IN (SELECT user_id FROM demo_account))                    AS demo_members,
             (SELECT count(*)::int FROM party WHERE user_id IS NOT NULL)               AS bound_parties`,
   );
   return { accounts, totals: totals[0] };
+}
+
+/* ------------------------------------------------------------------ *\
+ * The platform admins — ADMIN_NN_EMAIL / ADMIN_NN_PASS
+ * ------------------------------------------------------------------ */
+
+/**
+ * The admin seats, read from the environment in numeric order.
+ *
+ * The spelling is `ADMIN_01_EMAIL` / `ADMIN_01_PASS`, `ADMIN_02_EMAIL` / `ADMIN_02_PASS`, and so
+ * on — two zero-padded digits, read as a pair. Every `ADMIN_<nn>_EMAIL` / `ADMIN_<nn>_PASS` key in
+ * the environment is a seat, so the count is whatever is configured — two today, one or three
+ * tomorrow — and a half-configured pair (an email with no password, or the reverse) is a refusal,
+ * not a silent skip: the owner clearly meant to configure a seat and broke it. With no `ADMIN_*`
+ * key at all the whole pass is skipped with a printed line, which is the CI and gate state, never
+ * an error. Two seats naming the same address are a refusal for the same reason: "two seats" with
+ * one email is not a state the seed can converge on, and guessing which address the owner meant is
+ * exactly the mistake the refusal exists to avoid.
+ *
+ * The password is read here and passed only to the sign-up / sign-in calls. It is never printed,
+ * never stored in a table and never returned — unlike the demo accounts, which write their
+ * generated password to `demo_account` precisely because theirs is *generated*, an admin password
+ * is a secret that already has a home (the environment) and must not gain a second one.
+ */
+function readAdminAccounts() {
+  const suffixes = new Set();
+  for (const key of Object.keys(process.env)) {
+    const match = key.match(/^ADMIN_(\d+)_(EMAIL|PASS)$/);
+    if (match) suffixes.add(match[1]);
+  }
+  const sorted = [...suffixes].sort((a, b) => Number(a) - Number(b));
+  const accounts = [];
+  const seen = new Map();
+  for (const suffix of sorted) {
+    const email = process.env[`ADMIN_${suffix}_EMAIL`]?.trim() || "";
+    const password = process.env[`ADMIN_${suffix}_PASS`]?.trim() || "";
+    if (email === "" || password === "") {
+      throw new Error(
+        `ADMIN_${suffix}_EMAIL and ADMIN_${suffix}_PASS must both be set (or neither) — the seed found only one`,
+      );
+    }
+    const first = seen.get(email);
+    if (first !== undefined) {
+      throw new Error(
+        `ADMIN_${first}_EMAIL and ADMIN_${suffix}_EMAIL name the same address — two seats need two distinct emails, fix one in .env.local`,
+      );
+    }
+    seen.set(email, suffix);
+    accounts.push({ suffix, email, password });
+  }
+  return accounts;
+}
+
+/**
+ * The profile identity for a seat. The handle carries the seat number, never the email — the
+ * address is a credential and belongs in no URL, and no `ADMIN_*` value provides a name.
+ */
+function adminProfileFor(suffix) {
+  return { handle: `admin-${suffix}`, displayName: "Platform Admin" };
+}
+
+/** The auth user id for an email, or `null` when no `neon_auth` user answers to it. */
+async function findAuthUserId(client, email) {
+  const tables = await authTables(client);
+  if (!tables.users) return null;
+  const { rows } = await client.query(
+    `SELECT id::text AS id FROM neon_auth."${tables.users}" WHERE email = $1`,
+    [email],
+  );
+  return rows[0]?.id ?? null;
+}
+
+/**
+ * Is the env password the one the auth service has? Answered by signing in with it, never by
+ * reading or writing a hash: a 200 means the credentials match, a 401 means they do not, and
+ * anything else is a failure to report rather than a password to guess at.
+ */
+async function adminPasswordMatches(email, password) {
+  const base = requireVariable(["NEON_AUTH_BASE_URL"]).replace(/\/+$/, "");
+  const response = await fetch(`${base}/sign-in/email`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: DEMO_ORIGIN },
+    body: JSON.stringify({ email, password }),
+  });
+  if (response.ok) return true;
+  if (response.status === 401) return false;
+  const body = await response.json().catch(() => ({}));
+  throw new Error(
+    `admin ${email}: sign-in answered HTTP ${response.status}${body.code ? ` (${body.code})` : ""} — cannot tell whether the password matches`,
+  );
+}
+
+/**
+ * An admin whose password changed since the last seed is removed here — auth user and profile —
+ * so phase 2 can recreate it through the sign-up path. The removal runs in phase 1 with the other
+ * removals because a sign-up cannot see an uncommitted DELETE: removing and re-creating inside one
+ * transaction would answer `USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL`. An admin with a matching
+ * password is left alone (phase 2 reconciles its role in place), and an absent admin is left for
+ * phase 2 to create. Returns the emails that were removed, by name only.
+ */
+async function removeStaleAdmins(client, accounts) {
+  const removed = [];
+  for (const account of accounts) {
+    const userId = await findAuthUserId(client, account.email);
+    if (userId === null) continue; // absent — phase 2 creates it
+    if (await adminPasswordMatches(account.email, account.password)) continue; // matches — keep it
+
+    const tables = await authTables(client);
+    if (tables.users) {
+      await client.query(`DELETE FROM neon_auth."${tables.users}" WHERE email = $1`, [
+        account.email,
+      ]);
+    }
+    await client.query("DELETE FROM user_profile WHERE user_id = $1", [userId]);
+    removed.push(account.email);
+  }
+  return removed;
+}
+
+/**
+ * The admin seats, converged on the environment. Runs in phase 2 after any stale admin was removed
+ * in phase 1: an absent user is created through the sign-up path (the same mechanism the demo
+ * accounts use), an existing one is kept and its `user_profile` reconciled to `role = 'admin'`.
+ * `ON CONFLICT (user_id)` is what makes a re-run a reconciliation rather than a duplicate. The
+ * password is written nowhere — no `demo_account` row, no log line, no return value.
+ */
+async function seedAdminAccounts(client, accounts, removedEmails) {
+  if (accounts.length === 0) {
+    console.log("  ○ admins: skipped (no ADMIN_* set)");
+    return [];
+  }
+
+  const removed = new Set(removedEmails);
+  const results = [];
+  for (const account of accounts) {
+    const profile = adminProfileFor(account.suffix);
+    const existing = await findAuthUserId(client, account.email);
+    const userId =
+      existing ?? (await createAuthUser(account.email, account.password, profile.displayName));
+
+    // The handle is the seat's alone: a stale profile that holds it under another user id (a
+    // leftover from a deleted auth user, or a handle taken by hand) must not block the seat's
+    // write. Deleting it here — and only the other holder, never the seat's own row — is what
+    // keeps a re-run a reconciliation instead of a unique-violation.
+    await client.query("DELETE FROM user_profile WHERE handle = $1 AND user_id <> $2", [
+      profile.handle,
+      userId,
+    ]);
+
+    // Role is written here, exactly like the demo accounts write theirs: this is the only writer
+    // allowed to name it.
+    await client.query(
+      `INSERT INTO user_profile (user_id, handle, display_name, role)
+       VALUES ($1, $2, $3, 'admin')
+       ON CONFLICT (user_id) DO UPDATE SET
+         handle       = EXCLUDED.handle,
+         display_name = EXCLUDED.display_name,
+         role         = EXCLUDED.role,
+         updated_at   = now()`,
+      [userId, profile.handle, profile.displayName],
+    );
+
+    const action = removed.has(account.email)
+      ? "updated"
+      : existing === null
+        ? "created"
+        : "reconciled";
+    results.push({ ...account, userId, action });
+  }
+
+  console.log(
+    `  · admins: ${results.length} seat(s) (${results.map((account) => `${account.email}=${account.action}`).join(", ")})`,
+  );
+  return results;
 }
 
 /* ------------------------------------------------------------------ *\
@@ -610,6 +795,10 @@ async function counts(client) {
 
 async function main() {
   loadEnv();
+
+  // The platform admins, read once before any phase so the removal and the seed share one list.
+  // An absent pair is the whole pass being skipped, not a half-read account.
+  const adminAccounts = readAdminAccounts();
 
   const demo = demoAuthEnabled();
   // With DEMO_AUTH=1 the demo dataset file is the source of the rows (asserted canonical);
@@ -673,11 +862,15 @@ async function main() {
     await client.query("BEGIN");
     let deleted;
     let removed;
+    let staleAdmins;
     try {
       deleted = await deleteTempUsers(client);
       // Removing before writing is what makes the demo accounts idempotent *and* what makes
       // DEMO_AUTH unset a real switch: the rows are gone, not merely not-created.
       removed = await removeDemoAccounts(client);
+      // An admin whose password changed is removed here — committed before the phase-2 sign-up —
+      // so the recreate below is a sign-up against an absent user, never a USER_ALREADY_EXISTS.
+      staleAdmins = await removeStaleAdmins(client, adminAccounts);
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK").catch(() => {});
@@ -733,6 +926,10 @@ async function main() {
       }
     }
 
+    // The admin seats — durable, independent of DEMO_AUTH. Runs in phase 2 (with the other
+    // writes) after phase 1 committed any stale-admin removals.
+    await seedAdminAccounts(client, adminAccounts, staleAdmins);
+
     const actual = await counts(client);
     for (const [table, count] of Object.entries(expected)) {
       if (actual[table] !== count) {
@@ -755,6 +952,11 @@ async function main() {
         );
       }
     }
+    if (report.totals.platform_admins !== adminAccounts.length) {
+      throw new Error(
+        `platform admins: expected ${adminAccounts.length} seat(s) from ADMIN_*, found ${report.totals.platform_admins}`,
+      );
+    }
 
     await client.query("COMMIT");
 
@@ -763,7 +965,8 @@ async function main() {
       console.log(`    ${table.padEnd(20)} ${count}`);
     }
     console.log(`    ${"demo_account".padEnd(20)} ${report.totals.accounts}`);
-    console.log(`    ${"user_profile(admin)".padEnd(20)} ${report.totals.admins}`);
+    console.log(`    ${"demo admin".padEnd(20)} ${report.totals.admins}`);
+    console.log(`    ${"platform admin".padEnd(20)} ${report.totals.platform_admins}`);
     console.log(`    ${"party(user bound)".padEnd(20)} ${report.totals.bound_parties}`);
 
     if (demo) {
