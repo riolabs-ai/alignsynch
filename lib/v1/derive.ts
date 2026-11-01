@@ -11,7 +11,7 @@
 import type { AspectGaps, AlignmentVerdict, GapKinds } from "@/content/gaps";
 import { gapKindsIn, gapKindsOf, instanceAlignment } from "@/content/gaps";
 import { stageOf, type RelationshipStage } from "@/content/stages";
-import type { V1Relationship } from "@/data/v1/fixtures";
+import type { V1Relationship, V1Session } from "@/data/v1/fixtures";
 
 /** The counts one relationship contributes to its own status. */
 export interface RelationshipProgress {
@@ -131,4 +131,109 @@ export function meanGapOf(rel: V1Relationship): number | null {
     }
   }
   return count === 0 ? null : sum / count;
+}
+
+/* ------------------------------------------------------------------ *
+ * The session timeline's derivations
+ * ------------------------------------------------------------------ */
+
+/** The gap facts of one completed session — everything a timeline row and the trend read. */
+export interface SessionSummary {
+  readonly completedAt: string;
+  readonly verdict: AlignmentVerdict;
+  readonly aligned: boolean;
+  readonly unmetCount: number;
+  /** The single widest Gap across every Aspect, or null when nothing is measurable. */
+  readonly widestGap: number | null;
+  /** The mean Gap across every kind the session measured, or null when nothing is. */
+  readonly meanGap: number | null;
+}
+
+/**
+ * One completed session, read through the same arithmetic the report reads: the verdict is
+ * `instanceAlignment` over the session's own answers, the widest and mean Gaps are computed
+ * from those answers. Nothing here is stored — a timeline row that quoted a stored number
+ * would be the Gap-as-column defect one level up.
+ */
+export function sessionSummaryOf(rel: V1Relationship, session: V1Session): SessionSummary {
+  const aspects: AspectGaps[] = [];
+  for (const item of rel.items) {
+    const initiator = session.initiatorAnswers[item.id];
+    const counterparty = session.counterpartyAnswers[item.id];
+    if (initiator === undefined || counterparty === undefined) continue;
+    aspects.push({ itemId: item.id, gaps: gapKindsOf(initiator, counterparty) });
+  }
+  const verdict = instanceAlignment(aspects, rel.setting);
+  let widest: number | null = null;
+  let sum = 0;
+  let count = 0;
+  for (const aspect of aspects) {
+    for (const kind of gapKindsIn(aspect.gaps)) {
+      const gap = aspect.gaps[kind];
+      if (gap === undefined) continue;
+      if (widest === null || gap > widest) widest = gap;
+      sum += gap;
+      count += 1;
+    }
+  }
+  return {
+    completedAt: session.completedAt,
+    verdict,
+    aligned: verdict.aligned,
+    unmetCount: verdict.unmet.length,
+    widestGap: widest,
+    meanGap: count === 0 ? null : sum / count,
+  };
+}
+
+/**
+ * The one trend sentence, computed from the completed sessions' mean Gaps — never a stored
+ * percent, never a `+23% better`. `pending` is the honest state for a relationship with one
+ * session (there is nothing to compare against yet); `closed` / `widened` / `held` compare
+ * the oldest session's mean Gap with the newest's. The `points` array (oldest → newest mean
+ * Gap) is what the sparkline plots, so the line and the sentence cannot disagree.
+ */
+export type GapTrendKind = "none" | "pending" | "closed" | "widened" | "held";
+
+export interface GapTrend {
+  readonly kind: GapTrendKind;
+  readonly sentence: string | null;
+  readonly points: readonly number[];
+}
+
+const fmtGap = (value: number): string => value.toFixed(1);
+
+export function trendOf(summaries: readonly SessionSummary[]): GapTrend {
+  const ordered = [...summaries].sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+  const means = ordered.map((summary) => summary.meanGap);
+  if (means.some((mean) => mean === null)) {
+    return { kind: "none", sentence: null, points: [] };
+  }
+  const points = means as number[];
+  if (points.length === 0) return { kind: "none", sentence: null, points };
+  if (points.length === 1) {
+    return { kind: "pending", sentence: "First comparison available after this session.", points };
+  }
+  const first = points[0];
+  const last = points[points.length - 1];
+  const count = points.length;
+  if (last < first) {
+    return {
+      kind: "closed",
+      sentence: `Gap closed from ${fmtGap(first)} to ${fmtGap(last)} across ${count} sessions.`,
+      points,
+    };
+  }
+  if (last > first) {
+    return {
+      kind: "widened",
+      sentence: `Gap widened from ${fmtGap(first)} to ${fmtGap(last)} across ${count} sessions.`,
+      points,
+    };
+  }
+  return {
+    kind: "held",
+    sentence: `Gap held at ${fmtGap(first)} across ${count} sessions.`,
+    points,
+  };
 }
