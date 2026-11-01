@@ -1,6 +1,10 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+/** This file's directory — the repository root, for `git` and for `package.json`. */
+const ROOT = dirname(fileURLToPath(import.meta.url));
 
 /**
  * The running version, read from `package.json` — the one source (issue #269).
@@ -18,9 +22,53 @@ import { fileURLToPath } from "node:url";
  * The path is resolved from this file, not `process.cwd()`: `next build` may run from a parent
  * directory in a monorepo, and a relative read would then throw at the wrong time.
  */
-const { version: APP_VERSION } = JSON.parse(
-  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "package.json"), "utf8"),
-);
+const { version: APP_VERSION } = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
+
+/**
+ * The commit this build was made from — the value `scripts/deploy-check.mjs` reads back out of
+ * production to answer "is the site serving `main`?".
+ *
+ * A version is not a commit. `package.json` carries one version per release candidate, so every
+ * merge between two release cuts ships the same badge; the badge cannot tell a fresh production
+ * from one three merges behind, which is exactly the failure that froze `alignsynch.com` at an
+ * old build for hours with every check in this repository green. The commit can.
+ *
+ * It is baked into the artifact at build time rather than read at request time: a runtime lookup
+ * would describe the environment the function happens to run in, and the point of the value is
+ * to be a fact about the code that is answering.
+ *
+ * Three sources, in order, each a fact about this build rather than a guess:
+ *
+ *   1. `VERCEL_GIT_COMMIT_SHA` — the commit Vercel is building. Public, and Vercel sets it.
+ *   2. `git rev-parse HEAD` — a local or CI build of a real checkout.
+ *   3. `"unknown"` — no git and no Vercel (a tarball, a Docker build without `.git`).
+ *
+ * Case 3 is not papered over: `scripts/deploy-check.mjs` reports `UNKNOWN` for it and exits 2.
+ * Inventing a plausible SHA here would be the one reading that says `OK` while production is
+ * stale, which is worse than no check at all.
+ */
+function resolveCommit() {
+  const SHA = /^[0-9a-f]{40}$/;
+  const fromVercel = (process.env.VERCEL_GIT_COMMIT_SHA ?? "").trim().toLowerCase();
+  if (SHA.test(fromVercel)) return fromVercel;
+
+  try {
+    const local = execFileSync("git", ["rev-parse", "HEAD"], {
+      cwd: ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .trim()
+      .toLowerCase();
+    if (SHA.test(local)) return local;
+  } catch {
+    // Not a checkout. Fall through to the honest answer below.
+  }
+
+  return "unknown";
+}
+
+const APP_COMMIT = resolveCommit();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -42,6 +90,12 @@ const nextConfig = {
     BRAND: process.env.BRAND || "quizhub",
     /** `package.json`'s `version`, read at the top of this file — see `AppVersion` (#269). */
     APP_VERSION,
+    /**
+     * The commit this build came from, resolved above. Public (the repository is public) and
+     * baked in, so `/api/version` can report it and `scripts/deploy-check.mjs` can compare it
+     * with `main`. Never a secret, and never resolved at request time.
+     */
+    APP_COMMIT,
   },
   // typescript: {
   //   ignoreBuildErrors: true,
