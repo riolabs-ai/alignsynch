@@ -914,7 +914,7 @@ export interface V1SeedState {
 }
 
 /** Bump to invalidate a persisted store that predates a shape change. */
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 export function buildSeedState(): V1SeedState {
   return {
