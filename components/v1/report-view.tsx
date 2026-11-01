@@ -6,6 +6,8 @@ import { SETTING_LABELS } from "@/content/assessment";
 import { aspectGapsOf, gapSummary, progressOf, relationshipNameOf } from "@/lib/v1/derive";
 import { useV1Store } from "@/lib/v1/store";
 import {
+  BackLink,
+  ContextLine,
   GapPill,
   LoadingState,
   NotFoundState,
@@ -16,7 +18,7 @@ import Link from "next/link";
 
 /** The report — the eight gap kinds, grouped, with the Setting's verdict on top. */
 export function ReportView({ relationshipId }: { relationshipId: string }) {
-  const { hydrated, relationships, templates } = useV1Store();
+  const { hydrated, persona, relationships, templates } = useV1Store();
 
   const rel = relationships.find((candidate) => candidate.id === relationshipId);
 
@@ -43,11 +45,30 @@ export function ReportView({ relationshipId }: { relationshipId: string }) {
   const summary = gapSummary(rel);
   const progress = progressOf(rel);
 
+  const name = relationshipNameOf(rel, template?.title ?? "");
+  const viewer =
+    persona === "initiator" ? "initiator" : persona === "counterparty" ? "counterparty" : null;
+  const canStartNext = viewer === "initiator";
+  const nextReady = summary.verdict !== null;
+  const sessionLabel =
+    rel.completedSessions === 0 ? "Report" : `Session ${rel.completedSessions} report`;
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8">
+      <div className="space-y-2">
+        <BackLink href={`/v1/relationships/${rel.id}`} label="Back to the relationship" />
+        <ContextLine
+          crumbs={[
+            { label: "Relationships", href: "/v1/initiator/relationships" },
+            { label: name, href: `/v1/relationships/${rel.id}` },
+            { label: sessionLabel },
+          ]}
+        />
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <SectionIntro
-          title={`Report — ${relationshipNameOf(rel, template?.title ?? "")}`}
+          title={`Report — ${name}`}
           subtitle={`${MODE_WORD[rel.mode]} · ${SETTING_LABELS[rel.setting]} setting`}
         />
         <StageBadge stage={summary.stage} />
@@ -63,12 +84,6 @@ export function ReportView({ relationshipId }: { relationshipId: string }) {
             {progress.aspectCount === 1 ? "" : "s"} — one side is still answering, so the other
             side&apos;s answers stay blind.
           </p>
-          <Link
-            href={`/v1/relationships/${rel.id}`}
-            className="mt-4 inline-flex h-11 items-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            Back to the relationship
-          </Link>
         </section>
       ) : (
         <>
@@ -151,6 +166,47 @@ export function ReportView({ relationshipId }: { relationshipId: string }) {
           </div>
         </>
       )}
+
+      <section className="space-y-3 border-t border-border pt-4">
+        <h2 className="text-sm font-semibold text-muted-foreground">What happens next</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/v1/relationships/${rel.id}`}
+            className="inline-flex h-11 items-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Back to the relationship
+          </Link>
+          <Link
+            href="/v1/initiator/relationships"
+            className="inline-flex h-11 items-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            All relationships
+          </Link>
+          {canStartNext ? (
+            nextReady ? (
+              <Link
+                href={`/v1/relationships/${rel.id}/answer`}
+                className="inline-flex h-11 items-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
+              >
+                Start the next session
+              </Link>
+            ) : (
+              <span className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex h-11 cursor-not-allowed items-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground opacity-50"
+                >
+                  Start the next session
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  Not time yet — both parties must submit before the next session can start.
+                </span>
+              </span>
+            )
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }

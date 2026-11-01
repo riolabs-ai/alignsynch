@@ -4,7 +4,14 @@
 import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
 import { gapSummary, progressOf, relationshipNameOf } from "@/lib/v1/derive";
 import { useV1Store } from "@/lib/v1/store";
-import { EmptyState, LoadingState, NotFoundState, StageBadge } from "@/components/v1/v1-ui";
+import {
+  BackLink,
+  ContextLine,
+  EmptyState,
+  LoadingState,
+  NotFoundState,
+  StageBadge,
+} from "@/components/v1/v1-ui";
 import { ManageTab } from "@/components/v1/manage-tab";
 import Link from "next/link";
 import { useState } from "react";
@@ -42,6 +49,7 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   const template = templates.find((t) => t.id === rel.templateId);
   const summary = gapSummary(rel);
   const progress = progressOf(rel);
+  const name = relationshipNameOf(rel, template?.title ?? "");
   const complete = summary.verdict !== null;
   const unclaimed = rel.counterpartyName === null;
 
@@ -70,12 +78,20 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8">
+      <div className="space-y-2">
+        <BackLink href="/v1/initiator/relationships" label="Back to relationships" />
+        <ContextLine
+          crumbs={[
+            { label: "Relationships", href: "/v1/initiator/relationships" },
+            { label: name },
+          ]}
+        />
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-              {relationshipNameOf(rel, template?.title ?? "")}
-            </h1>
+            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{name}</h1>
             <StageBadge stage={summary.stage} />
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -86,12 +102,6 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
             · {MODE_LABELS[rel.mode]} · {SETTING_LABELS[rel.setting]} setting
           </p>
         </div>
-        <Link
-          href="/v1/initiator"
-          className="inline-flex h-11 items-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
-        >
-          Back
-        </Link>
       </div>
 
       <div className="flex gap-2 border-b border-border">
