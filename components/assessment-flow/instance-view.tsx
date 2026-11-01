@@ -140,6 +140,11 @@ export function AssessmentInstanceView({
           counterparty: screen.invite?.counterpartyName ?? screen.counterpartyName ?? "",
         });
   const answered = screen.aspects.some((aspect) => aspect.own !== null);
+  // A coach reads the relationship, never answers it: the badge is drawn and every answering
+  // control is withheld. `readFlowScreen` resolved the role from membership, so this flag cannot
+  // be true for a party and the store is still the authority — the view only decides what is
+  // drawn, not what is allowed.
+  const isCoach = screen.viewer.role === "coach";
   // The re-invite is the Initiator's action, and only while the invitation is unclaimed: `claimed`
   // is terminal (the seat is taken), so the panel says so and offers nothing. The store is the
   // authority — this only decides what is drawn.
@@ -179,6 +184,14 @@ export function AssessmentInstanceView({
           className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
         >
           {MODE_LABELS[screen.mode]}
+          {isCoach ? (
+            <span
+              data-coach-badge="true"
+              className="ml-2 inline-block rounded-full border border-gray-300 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
+            >
+              {itemLabel(viewerBand, "coach-badge")}
+            </span>
+          ) : null}
         </p>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>
       </header>
@@ -215,7 +228,7 @@ export function AssessmentInstanceView({
 
       {screen.report === null ? (
         <>
-          {screen.invite === null ? null : (
+          {isCoach ? null : screen.invite === null ? null : (
             <section
               data-invite-state={screen.invite.state}
               className={`mb-6 rounded-lg border p-4 text-sm ${INVITE_TONES[screen.invite.state]}`}
@@ -289,13 +302,15 @@ export function AssessmentInstanceView({
             </p>
           </section>
 
-          <AnswerForm
-            copy={copy}
-            aspects={screen.aspects}
-            action={answersPath(screen.instanceRecordId)}
-            hasAnswers={answered}
-            mode={screen.mode}
-          />
+          {isCoach ? null : (
+            <AnswerForm
+              copy={copy}
+              aspects={screen.aspects}
+              action={answersPath(screen.instanceRecordId)}
+              hasAnswers={answered}
+              mode={screen.mode}
+            />
+          )}
         </>
       ) : (
         <>

@@ -14,7 +14,7 @@
  * inferring it from a join. An incomplete instance contributes no row, so it cannot contribute
  * a number: a partial relationship has no Gap.
  *
- * **Names never leave Postgres.** The statement selects no `party.name`, no `instance_invite`
+ * **Names never leave Postgres.** The statement selects no `party.name`, no `session_invite`
  * and no `user_id`, so the screen cannot print a party even by accident. The party rows are
  * joined only for their Opinions. That is the population rule held structurally rather than by
  * a promise: the aggregate's input type has no field a name could travel in.
@@ -45,7 +45,7 @@ interface PopulationCountRow {
 
 /** One answered Aspect of one complete instance: both parties' four scores. */
 interface GapAspectRow {
-  readonly instance_record_id: string;
+  readonly session_record_id: string;
   readonly alignment_setting: string;
   readonly item_id: string;
   readonly item_position: number;
@@ -60,7 +60,7 @@ interface GapAspectRow {
 }
 
 /**
- * The population counters: every `assessment_instance` on an assessment record, and how many of
+ * The population counters: every `session` on an assessment record, and how many of
  * those are complete. One statement, so the two numbers cannot be read a minute apart and
  * disagree with the rows below them.
  */
@@ -68,25 +68,25 @@ const POPULATION_SQL = `
   WITH aspect_count AS (
     SELECT i.record_id, count(*)::int AS items FROM item i GROUP BY i.record_id
   ), answered AS (
-    SELECT o.instance_record_id, o.role, count(*)::int AS answered
-    FROM opinion o GROUP BY o.instance_record_id, o.role
+    SELECT o.session_record_id, o.role, count(*)::int AS answered
+    FROM opinion o GROUP BY o.session_record_id, o.role
   )
   SELECT
     count(*)::int AS total,
     count(*) FILTER (
       WHERE EXISTS (SELECT 1 FROM party p
-                     WHERE p.instance_record_id = ai.record_id AND p.role = 'initiator')
+                     WHERE p.session_record_id = ai.record_id AND p.role = 'initiator')
         AND EXISTS (SELECT 1 FROM party p
-                     WHERE p.instance_record_id = ai.record_id AND p.role = 'counterparty')
+                     WHERE p.session_record_id = ai.record_id AND p.role = 'counterparty')
         AND COALESCE(ac.items, 0) > 0
         AND COALESCE(ia.answered, 0) >= COALESCE(ac.items, 0)
         AND COALESCE(ca.answered, 0) >= COALESCE(ac.items, 0)
     )::int AS complete
-  FROM assessment_instance ai
+  FROM session ai
   JOIN record r ON r.id = ai.record_id AND r.record_type = 'assessment'
   LEFT JOIN aspect_count ac ON ac.record_id = ai.record_id
-  LEFT JOIN answered ia ON ia.instance_record_id = ai.record_id AND ia.role = 'initiator'
-  LEFT JOIN answered ca ON ca.instance_record_id = ai.record_id AND ca.role = 'counterparty'
+  LEFT JOIN answered ia ON ia.session_record_id = ai.record_id AND ia.role = 'initiator'
+  LEFT JOIN answered ca ON ca.session_record_id = ai.record_id AND ca.role = 'counterparty'
 `;
 
 /**
@@ -100,25 +100,25 @@ const GAP_ROWS_SQL = `
   WITH aspect_count AS (
     SELECT i.record_id, count(*)::int AS items FROM item i GROUP BY i.record_id
   ), answered AS (
-    SELECT o.instance_record_id, o.role, count(*)::int AS answered
-    FROM opinion o GROUP BY o.instance_record_id, o.role
+    SELECT o.session_record_id, o.role, count(*)::int AS answered
+    FROM opinion o GROUP BY o.session_record_id, o.role
   ), complete AS (
     SELECT ai.record_id, ai.alignment_setting
-    FROM assessment_instance ai
+    FROM session ai
     JOIN record r ON r.id = ai.record_id AND r.record_type = 'assessment'
     LEFT JOIN aspect_count ac ON ac.record_id = ai.record_id
-    LEFT JOIN answered ia ON ia.instance_record_id = ai.record_id AND ia.role = 'initiator'
-    LEFT JOIN answered ca ON ca.instance_record_id = ai.record_id AND ca.role = 'counterparty'
+    LEFT JOIN answered ia ON ia.session_record_id = ai.record_id AND ia.role = 'initiator'
+    LEFT JOIN answered ca ON ca.session_record_id = ai.record_id AND ca.role = 'counterparty'
     WHERE EXISTS (SELECT 1 FROM party p
-                   WHERE p.instance_record_id = ai.record_id AND p.role = 'initiator')
+                   WHERE p.session_record_id = ai.record_id AND p.role = 'initiator')
       AND EXISTS (SELECT 1 FROM party p
-                   WHERE p.instance_record_id = ai.record_id AND p.role = 'counterparty')
+                   WHERE p.session_record_id = ai.record_id AND p.role = 'counterparty')
       AND COALESCE(ac.items, 0) > 0
       AND COALESCE(ia.answered, 0) >= COALESCE(ac.items, 0)
       AND COALESCE(ca.answered, 0) >= COALESCE(ac.items, 0)
   )
   SELECT
-    c.record_id                        AS instance_record_id,
+    c.record_id                        AS session_record_id,
     c.alignment_setting                AS alignment_setting,
     i.item_id                          AS item_id,
     i.position                         AS item_position,
@@ -133,9 +133,9 @@ const GAP_ROWS_SQL = `
   FROM complete c
   JOIN record r ON r.id = c.record_id
   JOIN item i ON i.record_id = c.record_id
-  JOIN opinion io ON io.instance_record_id = c.record_id
+  JOIN opinion io ON io.session_record_id = c.record_id
                  AND io.role = 'initiator' AND io.item_id = i.item_id
-  JOIN opinion co ON co.instance_record_id = c.record_id
+  JOIN opinion co ON co.session_record_id = c.record_id
                  AND co.role = 'counterparty' AND co.item_id = i.item_id
   ORDER BY r.date DESC, r.slug, i.position
 `;
@@ -193,26 +193,26 @@ export async function readGapPopulation(): Promise<GapPopulation> {
   const byInstance = new Map<string, { setting: AlignmentSetting; aspects: GapAspect[] }>();
   const order: string[] = [];
   for (const row of rows) {
-    const existing = byInstance.get(row.instance_record_id);
+    const existing = byInstance.get(row.session_record_id);
     const aspect = {
       itemId: row.item_id,
       initiator: {
-        feel: scoreOf(row.initiator_feel, "initiator_feel", row.instance_record_id),
-        wish: scoreOf(row.initiator_wish, "initiator_wish", row.instance_record_id),
-        ...predictionOf(row.initiator_think, row.initiator_guess, row.instance_record_id),
+        feel: scoreOf(row.initiator_feel, "initiator_feel", row.session_record_id),
+        wish: scoreOf(row.initiator_wish, "initiator_wish", row.session_record_id),
+        ...predictionOf(row.initiator_think, row.initiator_guess, row.session_record_id),
       } satisfies GapOpinions,
       counterparty: {
-        feel: scoreOf(row.counterparty_feel, "counterparty_feel", row.instance_record_id),
-        wish: scoreOf(row.counterparty_wish, "counterparty_wish", row.instance_record_id),
-        ...predictionOf(row.counterparty_think, row.counterparty_guess, row.instance_record_id),
+        feel: scoreOf(row.counterparty_feel, "counterparty_feel", row.session_record_id),
+        wish: scoreOf(row.counterparty_wish, "counterparty_wish", row.session_record_id),
+        ...predictionOf(row.counterparty_think, row.counterparty_guess, row.session_record_id),
       } satisfies GapOpinions,
     };
     if (existing === undefined) {
-      byInstance.set(row.instance_record_id, {
-        setting: settingOf(row.alignment_setting, row.instance_record_id),
+      byInstance.set(row.session_record_id, {
+        setting: settingOf(row.alignment_setting, row.session_record_id),
         aspects: [aspect],
       });
-      order.push(row.instance_record_id);
+      order.push(row.session_record_id);
       continue;
     }
     existing.aspects.push(aspect);

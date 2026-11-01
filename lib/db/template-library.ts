@@ -13,7 +13,7 @@
  * role — the id is the session's (`lib/auth/session.ts`), which is the same rule
  * `lib/db/my-instances.ts` follows for `party.user_id`.
  *
- * **A template is a record with no `assessment_instance` row.** The `NOT EXISTS` is the
+ * **A template is a record with no `session` row.** The `NOT EXISTS` is the
  * definition `TEMPLATE_BY_ID_SQL` and `listPublishedTemplates()` already use, repeated here
  * rather than joined, so an instance can never be listed as a template and archived as one.
  *
@@ -40,7 +40,7 @@ interface LibraryRow {
 const LIBRARY_COLUMNS = `
   r.id, r.slug, r.title, r.summary, r.status, r.date, r.author_user_id,
   (SELECT count(*) FROM item i WHERE i.record_id = r.id)::int AS aspects,
-  (SELECT count(*) FROM assessment_instance ai WHERE ai.template_record_id = r.id)::int AS instances
+  (SELECT count(*) FROM session ai WHERE ai.template_record_id = r.id)::int AS instances
 `;
 
 /** `record.date` as the model's one UTC instant, whichever way `pg` hands the column back. */
@@ -88,7 +88,7 @@ export async function listLibraryTemplates(
        FROM record r
       WHERE r.record_type = 'assessment'
         AND (r.status <> 'draft' OR r.author_user_id = $1)
-        AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)
+        AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
         AND (r.author_user_id IS NULL OR r.author_user_id = $1)
       ORDER BY r.title`,
     [viewerUserId],
@@ -136,7 +136,7 @@ export async function readLibraryTemplate(
        FROM record r
       WHERE r.id = $1
         AND r.record_type = 'assessment'
-        AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)
+        AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
         AND (r.author_user_id IS NULL OR r.author_user_id = $2)`,
     [recordId, viewerUserId],
   );

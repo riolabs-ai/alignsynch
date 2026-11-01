@@ -20,13 +20,13 @@
  * decides whether the marker is drawn on a row that is already `complete`.
  *
  * **A row is only listed when it can be opened.** The template join keeps the definition
- * `TEMPLATE_BY_ID_SQL` uses — a template is a record with no `assessment_instance` row — so an
+ * `TEMPLATE_BY_ID_SQL` uses — a template is a record with no `session` row — so an
  * instance whose template no longer resolves is absent from the list instead of being a link to
  * the 404 `/assessment/instances/[instanceId]` answers for it. `db:verify` reports that drift on
  * its own; a list is not the place to re-litigate it.
  *
  * **The other party's name comes from the invite until they claim.** Creation writes the
- * Initiator's party row and the invitation, not a Counterparty row: `instance_invite` carries
+ * Initiator's party row and the invitation, not a Counterparty row: `session_invite` carries
  * the name they were invited under, so an unclaimed instance still names two people. Once they
  * claim, `party.name` wins.
  *
@@ -70,7 +70,7 @@ export interface MyInstance {
 }
 
 interface MyInstanceRow {
-  readonly instance_record_id: string;
+  readonly session_record_id: string;
   readonly slug: string;
   readonly template_title: string;
   readonly viewer_role: string;
@@ -92,7 +92,7 @@ interface MyInstanceRow {
  */
 const MY_INSTANCES_SQL = `
   SELECT
-    r.id                                    AS instance_record_id,
+    r.id                                    AS session_record_id,
     r.slug                                  AS slug,
     t.title                                 AS template_title,
     vp.role                                 AS viewer_role,
@@ -100,21 +100,21 @@ const MY_INSTANCES_SQL = `
     COALESCE(op.name, ii.counterparty_name) AS other_name,
     (SELECT count(*) FROM item i WHERE i.record_id = r.id)::int AS aspect_count,
     (SELECT count(*) FROM opinion o
-      WHERE o.instance_record_id = r.id AND o.role = vp.role)::int AS viewer_answered,
+      WHERE o.session_record_id = r.id AND o.role = vp.role)::int AS viewer_answered,
     (SELECT count(*) FROM opinion o
-      WHERE o.instance_record_id = r.id AND o.role <> vp.role)::int AS other_answered,
+      WHERE o.session_record_id = r.id AND o.role <> vp.role)::int AS other_answered,
     EXISTS (SELECT 1 FROM party cp
-             WHERE cp.instance_record_id = r.id AND cp.role = 'counterparty') AS has_counterparty,
+             WHERE cp.session_record_id = r.id AND cp.role = 'counterparty') AS has_counterparty,
     vp.unlock_seen_at                       AS viewer_unlock_seen_at
   FROM party vp
-  JOIN record r             ON r.id = vp.instance_record_id AND r.record_type = 'assessment'
-  JOIN assessment_instance ai ON ai.record_id = r.id
+  JOIN record r             ON r.id = vp.session_record_id AND r.record_type = 'assessment'
+  JOIN session ai ON ai.record_id = r.id
   JOIN record t             ON t.id = ai.template_record_id
                            AND t.record_type = 'assessment'
-                           AND NOT EXISTS (SELECT 1 FROM assessment_instance ti
+                           AND NOT EXISTS (SELECT 1 FROM session ti
                                             WHERE ti.record_id = t.id)
-  LEFT JOIN party op        ON op.instance_record_id = r.id AND op.role <> vp.role
-  LEFT JOIN instance_invite ii ON ii.instance_record_id = r.id
+  LEFT JOIN party op        ON op.session_record_id = r.id AND op.role <> vp.role
+  LEFT JOIN session_invite ii ON ii.session_record_id = r.id
   WHERE vp.user_id = $1
   ORDER BY r.date DESC, r.slug
 `;
@@ -156,7 +156,7 @@ export async function listMyInstances(userId: string): Promise<MyInstance[]> {
     });
 
     return {
-      instanceRecordId: row.instance_record_id,
+      instanceRecordId: row.session_record_id,
       slug: row.slug,
       templateTitle: row.template_title,
       viewerRole,

@@ -28,7 +28,7 @@
  * needs, while "wait a day" would imply a fourth send that the cap forbids.
  *
  * **One live token is structural, not here.** This module never decides how many links exist: the
- * PK on `instance_record_id` allows one row and the UPDATE replaces that row's only `token_hash`,
+ * PK on `session_record_id` allows one row and the UPDATE replaces that row's only `token_hash`,
  * so "one live token per relationship" is a property of the storage, and the rules below are only
  * about whether the write may happen.
  *
@@ -65,7 +65,7 @@ export function resendRefusalOf(value: string | undefined): ResendRefusal | unde
 export interface ResendFacts {
   /** The role this request answers as on the instance, or `undefined` for a stranger. */
   readonly viewerRole: PartyRole | undefined;
-  /** Whether an `instance_invite` row exists for the instance at all. */
+  /** Whether an `session_invite` row exists for the instance at all. */
   readonly inviteExists: boolean;
   /** `instanceStatusOf(progress) === "complete"` — both parties answered every Aspect. */
   readonly complete: boolean;

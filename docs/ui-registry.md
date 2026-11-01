@@ -16,8 +16,8 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **50** — 35 static, 15 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 244 files under `components/`, 239 of them `.tsx`
-- route handlers: **12** — `app/**/route.ts`, listed below and not a UI surface
+- component domains: **36** — 245 files under `components/`, 240 of them `.tsx`
+- route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 1
 - templates: Both templates 22 · AlignSynch 20 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -47,7 +47,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/login` — **live**
   - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials, Google-only and network states.
   - components: `components/auth`, `components/layout`, `components/ui`
-  - reads: Postgres — `lib/db/account-providers.ts`, `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/client.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/account-providers.ts`, `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/client.ts`, `lib/auth/google-flow-neon.ts`, `lib/auth/google-flow.ts`, `lib/auth/server.ts`
 
 - `/privacy` — **fixture**
   - capability: The draft privacy policy: what the build actually collects, why, where it lives and what the reader can ask for, behind a draft notice that cannot be dismissed.
@@ -115,7 +115,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/layout` — **fixture**
   - capability: The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.
-  - files (7): `app-version.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
+  - files (8): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
   - routes (6): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/tournaments` — and every other route through `app/layout.tsx`
 
 - `components/legal` — **mock**
@@ -519,6 +519,7 @@ Catalogued, claimed by no template yet.
 HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they carry no template affinity and no status of their own. The surfaces they serve are catalogued above.
 
 - `/api/auth/[...path]` — `app/api/auth/[...path]/route.ts`
+- `/api/auth/google/finish` — `app/api/auth/google/finish/route.ts`
 - `/api/billing/checkout` — `app/api/billing/checkout/route.ts`
 - `/api/billing/webhook` — `app/api/billing/webhook/route.ts`
 - `/api/profile` — `app/api/profile/route.ts`

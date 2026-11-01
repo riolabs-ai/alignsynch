@@ -50,13 +50,13 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 }));
 
 const parties: PartyRow[] = [
-  { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
 ];
 
 /** One answered Aspect — Feel 4, Wish 2 — so the round-trip can be read off the rendered DOM. */
 const answered: OpinionRow = {
-  instance_record_id: INSTANCE_ID,
+  session_record_id: INSTANCE_ID,
   role: "initiator",
   item_id: items[0].item_id,
   feel: 4,
@@ -81,6 +81,7 @@ function rowsWith(opinions: readonly OpinionRow[]): FlowInstanceRows {
     instance: {
       record_id: INSTANCE_ID,
       template_record_id: template.id,
+      relationship_id: "relationship-test",
       mode: "basic",
       setting: "soft",
     },

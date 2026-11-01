@@ -20,22 +20,20 @@
  * ## No second hex
  *
  * Every colour below is read from the `Brand` record — `colors.action` is the ground and
- * `colors.actionForeground` is the type and the badge. There is no literal in this file, so
- * the card cannot drift from `data/brand.ts` the way a hand-drawn PNG would: re-point a brand's
- * action colour and the next build's card is that colour, with no asset to re-export. The
- * badge is the icon's composition inverted (ground-coloured letter on a type-coloured square)
- * rather than a third colour, which is why the mark reads as the same mark at 132 px and at 16.
+ * `colors.actionForeground` is the type, and the badge is the same pair inverted. There is no
+ * literal in this file, so the card cannot drift from `data/brand.ts` the way a hand-drawn PNG
+ * would: re-point a brand's action colour and the next build's card is that colour, with no
+ * asset to re-export.
  *
- * ## Why the mark is the initial rather than `brand.logo`
+ * ## The mark is the book, and it is the icon
  *
- * `brand.logo` is a path into `data/media.ts`, and half the brands' logos are light-ground
- * lockups (AlignSynch's wordmark is black "Align" beside gray "Synch"; QuizHub's is a
- * `fallback` placeholder the shell does not draw at all — see `lib/brand-mark.ts`). Compositing
- * a PNG lockup into a satori tree also means fetching and base64-ing bytes at render time for a
- * file whose ground was not designed for this one. The mark the *tab icon* uses is the letter
- * on the action ground, drawn by `scripts/gen-brand-icons.mjs`, and it is the one composition
- * that is correct on both brands and needs no second asset. `tests/brand-og.test.ts` holds the
- * two surfaces to the same letter and the same two colours.
+ * The badge embeds the *same* mark the icon set draws: `markSvg` from `lib/brand-icon.ts`, the
+ * open book, as a data URI with the pair inverted (action-coloured glyph on the
+ * action-foreground square). The mark used to be the brand's initial (`lib/brand-initial.ts`),
+ * which disagreed with the `BookOpen` icon every page drew; now the share card, the favicon and
+ * the in-app chrome are one geometry from one module. satori renders no `<svg>` element, but it
+ * does render an `<img>` whose `src` is a data URI, so the vector mark travels as text and stays
+ * byte-comparable in tests — no committed PNG, for the same reason the icons are SVG.
  *
  * ## Why a route file and not a committed `public/brand/<id>-og.png`
  *
@@ -62,7 +60,7 @@
  * image and no `metadata.openGraph.images` array is a second list to keep in step.
  */
 import type { Brand } from "@/content/brand";
-import { brandInitial } from "@/lib/brand-initial";
+import { APP_GLYPH_FRACTION, APP_RADIUS_FRACTION, MARK_SIZE, markSvg } from "@/lib/brand-icon";
 import type React from "react";
 
 /**
@@ -70,6 +68,27 @@ import type React from "react";
  * Twitter's `summary_large_image` — the one aspect ratio that is not cropped by either.
  */
 export const OG_SIZE = { width: 1200, height: 630 } as const;
+
+/**
+ * The mark as a data URI — the icon's composition inverted (the glyph in the brand's action
+ * colour on the action-foreground square), at the canvas the icon generator authors against.
+ *
+ * Base64, not URL-encoded: satori's `<img>` parses the `src` as a data URI and rejects the raw
+ * `%` escapes of an URL-encoded SVG with `InvalidCharacterError`. This module is server-only
+ * (`app/opengraph-image.tsx` and the test), so `Buffer` is always present.
+ */
+export function markDataUri(brand: Brand): string {
+  const svg = markSvg({
+    ground: brand.colors.actionForeground,
+    ink: brand.colors.action,
+    radius: APP_RADIUS_FRACTION * MARK_SIZE,
+    glyph: APP_GLYPH_FRACTION,
+    width: MARK_SIZE,
+    height: MARK_SIZE,
+    title: brand.name,
+  });
+  return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
+}
 
 /**
  * The card, as an element tree satori can render.
@@ -98,31 +117,12 @@ export function ogCard(brand: Brand): React.ReactElement {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 34 }}>
         {/*
-          The icon's composition, inverted and scaled: the same square, the same radius, the
-          same letter — in the two colours the record carries, so no third hex enters the tree.
+          The icon's composition, inverted: the same rounded square, the same book — in the two
+          colours the record carries, so no third hex enters the tree. The badge is a 132 px
+          `<img>` whose `src` is the mark as a data URI, not a hand-drawn letter.
         */}
-        <div
-          style={{
-            display: "flex",
-            width: 132,
-            height: 132,
-            borderRadius: 30,
-            background: brand.colors.actionForeground,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              fontSize: 84,
-              lineHeight: 1,
-              color: brand.colors.action,
-            }}
-          >
-            {brandInitial(brand.name)}
-          </div>
-        </div>
+        {/* biome-ignore lint/performance/noImgElement: satori has no next/image build, so the data-URI mark renders only through an img. */}
+        <img src={markDataUri(brand)} width={132} height={132} alt="" />
         {/*
           The product name, at the weight the card can actually draw. `next/og` ships one
           bundled face (Noto Sans regular) so `fontWeight: 700` here would be a request satori

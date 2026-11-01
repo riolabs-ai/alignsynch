@@ -8,11 +8,12 @@ import { brandMark } from "@/lib/brand-mark";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { BookOpen, ExternalLink, Mail } from "lucide-react";
+import { ExternalLink, Mail } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 import { AppVersion } from "@/components/layout/app-version";
+import { BrandGlyph } from "@/components/layout/brand-glyph";
 
 /**
  * The footer — the one shell band the pages render themselves, so it takes the whole
@@ -43,9 +44,9 @@ import { AppVersion } from "@/components/layout/app-version";
  *   - the ground: the white-to-slate pair becomes `from-background to-muted`, which is the same
  *     two stops the theme already names (`slate-100` and `--muted` are within a percent of
  *     each other on both brands).
- *   - the product mark: `BookOpen` in a purple→indigo 600 box, and a wordmark filled by the
- *     same gradient, become `brandMark(brand.logo)` beside `text-action`. The record's mark
- *     when it has one, the old icon when `data/media.ts` calls it a fallback.
+ *   - the product mark: the open book (`BrandGlyph`) in a solid brand box, and a wordmark filled
+ *     by the same action colour, become `brandMark(brand.logo)` beside `text-action`. The
+ *     record's mark when it has one, the book glyph when `data/media.ts` calls it a fallback.
  *
  * The old class names are deliberately not quoted here: the acceptance test is a `git grep` for
  * the three palette prefixes over the card's paths, and a comment that repeats a banned literal
@@ -109,10 +110,11 @@ export function Footer({
    *
    * `brandMark` is the same call `components/layout/sidebar.tsx` makes: `undefined` for
    * `brand.logo` when the registry marks the file a `fallback`, so the template build keeps the
-   * `BookOpen` icon it has always drawn and gains no markup, and the real size and `src` of an
-   * exported lockup otherwise. A footer that hardcoded its own glyph was drawing "a generic quiz
-   * icon" on an AlignSynch page — the exact sentence in issue #187 — so the mark is read from the
-   * record here for the same reason the sidebar reads it.
+   * book mark it has always drawn (`BrandGlyph`, the open book the icon set is drawn from) and
+   * gains no markup, and the real size and `src` of an exported lockup otherwise. A footer that
+   * hardcoded its own glyph was drawing "a generic quiz icon" on an AlignSynch page — the exact
+   * sentence in issue #187 — so the mark is read from the record here for the same reason the
+   * sidebar reads it.
    */
   const mark = brandMark(brand.logo);
 
@@ -151,7 +153,7 @@ export function Footer({
                 </span>
               ) : (
                 <div className="bg-action p-2 rounded-lg">
-                  <BookOpen className="h-6 w-6 text-action-foreground" />
+                  <BrandGlyph className="h-6 w-6 text-action-foreground" />
                 </div>
               )}
               <span className="text-2xl font-bold text-action">{copy.heading}</span>

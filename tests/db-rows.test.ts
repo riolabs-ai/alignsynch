@@ -58,17 +58,18 @@ function instanceRows(instance: AssessmentInstance): AssessmentInstanceRows {
     instance: {
       record_id: instance.id,
       template_record_id: instance.templateId,
+      relationship_id: `relationship-${instance.id}`,
       mode: instance.mode,
       setting: instance.setting,
     },
     parties: instance.parties.map((party) => ({
-      instance_record_id: instance.id,
+      session_record_id: instance.id,
       role: party.role,
       name: party.name,
     })),
     opinions: instance.parties.flatMap((party) =>
       party.opinions.map((answer) => ({
-        instance_record_id: instance.id,
+        session_record_id: instance.id,
         role: party.role,
         item_id: answer.itemId,
         feel: answer.opinions.feel,

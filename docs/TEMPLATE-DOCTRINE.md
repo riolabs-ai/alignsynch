@@ -19,6 +19,10 @@ one `lib/`, configured by `data/brand.ts` and the `BRAND` variable, with `pnpm p
 routes under both brands so neither moves without the other noticing. The form-based interactivity the
 owner names — a questionnaire in, an answer out — is the third, not built yet.
 
+A brand is tokens + name + mark, and how a brand version is released without breaking that parity is
+[`BRAND-RELEASE.md`](BRAND-RELEASE.md): edit the record, regenerate the icon set, rewrite the parity
+manifest with a reason, both-brand CI green.
+
 The core is the product. A template is a configuration of it: a brand record, a copy fixture set, and
 the subset of the catalogue its product story claims. That is why `data/brand.ts` swaps a record and
 not a page, and why the registry's `templates` field is a scope decision rather than a render fact.

@@ -8,7 +8,7 @@
  *   answering               both parties exist, and at least one Aspect is unanswered
  *   complete                both parties exist and both answered every Aspect
  *
- * There is no `status` column anywhere (#145's `assessment_instance` has two columns, and
+ * There is no `status` column anywhere (#145's `session` has two columns, and
  * `0002_two_party_flow.sql` adds none). A stored status would be a second authored copy of
  * a fact the opinion rows already carry, and nothing in SQL could compare the two — the
  * same reason the Gap is `gapOf()` and not a column.
@@ -75,11 +75,14 @@ export function answersRemaining(progress: InstanceProgress): Record<PartyRole, 
 /**
  * The parties whose Opinions a viewer may read.
  *
- * `complete` unlocks both; before that a viewer reads their own and nothing else. A
- * component cannot widen this by asking for it: the roles are the return value, and the
+ * `complete` unlocks both; before that a party reads their own and nothing else. A **coach**
+ * (a `coach` role, not a party) reads nothing before `complete` — the blind rule outranks the
+ * coach, so a session's contents stay behind the same wall a party's do — and both once it is
+ * scored. A component cannot widen this by asking for it: the roles are the return value, and the
  * read path (`lib/flow/store.ts`) only queries the opinions these roles name.
  */
-export function visibleRoles(viewer: PartyRole, status: InstanceStatus): PartyRole[] {
+export function visibleRoles(viewer: PartyRole | "coach", status: InstanceStatus): PartyRole[] {
+  if (viewer === "coach") return status === "complete" ? ["initiator", "counterparty"] : [];
   if (status === "complete") return ["initiator", "counterparty"];
   return [viewer];
 }
@@ -129,7 +132,7 @@ export type RawAnswer = {
  * not a partial write.
  *
  * **The mode is an argument, never a form field.** `submitAnswers` passes the value it read
- * from the locked `assessment_instance` row, so the sheet a post is parsed against cannot be
+ * from the locked `session` row, so the sheet a post is parsed against cannot be
  * chosen by the post. Basic refuses a Think/Guess value outright (a field nobody reads is the
  * silent success the freeze rule exists to prevent); Advanced requires the pair on every
  * Aspect, because that is the sheet its mode asks.

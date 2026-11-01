@@ -119,24 +119,46 @@ async function seedTemplate(client, template) {
 async function seedInstance(client, instance) {
   await upsertRecord(client, instance);
   await replaceItems(client, instance);
+  // #340 — the relationship the instance was split into. One per instance, idempotent by the
+  // same deterministic id the migration's backfill uses (`relationship-<record_id>`), so a
+  // re-seed converges on the same row. The two account columns stay NULL here: the demo accounts
+  // do not exist yet (they are created and bound later, in phase 2), and the relationship's
+  // Initiator/Counterparty are the parties' bindings, which `bindDemoParties` writes on `party`
+  // and nowhere else. `purchased_at` is NULL — no demo relationship records a purchase.
   await client.query(
-    `INSERT INTO assessment_instance (record_id, template_record_id, mode, alignment_setting)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO relationship
+       (id, template_id, initiator_user_id, counterparty_user_id, purchased_at, plan, created_at)
+     VALUES ($1, $2, NULL, NULL, NULL, NULL, $3)
+     ON CONFLICT (id) DO UPDATE SET
+       template_id = EXCLUDED.template_id,
+       created_at  = EXCLUDED.created_at`,
+    [`relationship-${instance.id}`, instance.templateId, instance.date],
+  );
+  await client.query(
+    `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
+     VALUES ($1, $2, $3, $4, $5)
      ON CONFLICT (record_id) DO UPDATE SET template_record_id = EXCLUDED.template_record_id,
                                           mode = EXCLUDED.mode,
-                                          alignment_setting = EXCLUDED.alignment_setting`,
-    [instance.id, instance.templateId, instance.mode, instance.setting],
+                                          alignment_setting = EXCLUDED.alignment_setting,
+                                          relationship_id = EXCLUDED.relationship_id`,
+    [
+      instance.id,
+      instance.templateId,
+      instance.mode,
+      instance.setting,
+      `relationship-${instance.id}`,
+    ],
   );
-  await client.query("DELETE FROM party WHERE instance_record_id = $1", [instance.id]);
+  await client.query("DELETE FROM party WHERE session_record_id = $1", [instance.id]);
   for (const party of instance.parties) {
-    await client.query("INSERT INTO party (instance_record_id, role, name) VALUES ($1, $2, $3)", [
+    await client.query("INSERT INTO party (session_record_id, role, name) VALUES ($1, $2, $3)", [
       instance.id,
       party.role,
       party.name,
     ]);
     for (const answer of party.opinions) {
       await client.query(
-        `INSERT INTO opinion (instance_record_id, role, item_id, feel, wish, think, guess)
+        `INSERT INTO opinion (session_record_id, role, item_id, feel, wish, think, guess)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           instance.id,
@@ -399,6 +421,27 @@ async function removeDemoAccounts(client) {
           ])
         ).rowCount ?? 0);
 
+  // #coach — a membership row is an account's view into a relationship, so it dies with the demo
+  // account that held it, exactly as the party binding does. A coach invite is invited by an
+  // account too, so it goes the same way.
+  const members =
+    ids.length === 0
+      ? 0
+      : ((
+          await client.query("DELETE FROM relationship_member WHERE user_id = ANY($1::text[])", [
+            ids,
+          ])
+        ).rowCount ?? 0);
+  const coachInvites =
+    ids.length === 0
+      ? 0
+      : ((
+          await client.query(
+            "DELETE FROM coach_invite WHERE invited_by_user_id = ANY($1::text[])",
+            [ids],
+          )
+        ).rowCount ?? 0);
+
   const profiles =
     ids.length === 0
       ? 0
@@ -425,7 +468,32 @@ async function removeDemoAccounts(client) {
       ).rowCount ?? 0;
   }
 
-  return { authUsers, profiles: profiles + orphanHandles, credentials, unbound };
+  return {
+    authUsers,
+    profiles: profiles + orphanHandles,
+    credentials,
+    unbound,
+    members,
+    coachInvites,
+  };
+}
+
+/**
+ * The membership rows the backfilled parties hold, re-derived from `party.user_id` so a re-seed
+ * converges on the same rows the migration's backfill (`0014_relationship_membership.sql`) wrote.
+ * A coach is never seeded here: a coach is invited (`coach_invite`), and this only mirrors the two
+ * answering parties into members. `ON CONFLICT DO NOTHING` keeps it a no-op on a converged run.
+ */
+async function syncRelationshipMembers(client) {
+  await client.query(
+    `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
+     SELECT s.relationship_id, p.user_id, p.role, COALESCE(p.submitted_at, r.date, now())
+       FROM party p
+       JOIN session s ON s.record_id = p.session_record_id
+       JOIN record r ON r.id = s.record_id
+      WHERE p.user_id IS NOT NULL AND p.role IN ('initiator', 'counterparty')
+     ON CONFLICT (relationship_id, user_id) DO NOTHING`,
+  );
 }
 
 /** Creates the three, from scratch: a fresh password each, stored only in `demo_account`. */
@@ -475,7 +543,7 @@ async function bindDemoParties(client, accounts) {
     if (account.party === null) continue;
     const { rows } = await client.query(
       `UPDATE party SET user_id = $1
-        WHERE instance_record_id = $2 AND role = $3
+        WHERE session_record_id = $2 AND role = $3
         RETURNING name`,
       [account.userId, account.party.instance, account.party.role],
     );
@@ -498,13 +566,13 @@ async function demoReport(client) {
     `SELECT da.email,
             up.role,
             up.handle,
-            p.instance_record_id,
+            p.session_record_id,
             p.role  AS party_role,
             p.name  AS party_name
        FROM demo_account da
        JOIN user_profile up ON up.user_id = da.user_id
        LEFT JOIN party p    ON p.user_id = da.user_id
-      ORDER BY p.instance_record_id NULLS LAST, p.role`,
+      ORDER BY p.session_record_id NULLS LAST, p.role`,
   );
   const { rows: totals } = await client.query(
     `SELECT (SELECT count(*)::int FROM demo_account)                                  AS accounts,
@@ -524,7 +592,8 @@ const COUNT_SQL = {
   record: `SELECT count(*)::int AS n FROM record WHERE record_type = 'assessment'`,
   item: "SELECT count(*)::int AS n FROM item",
   response_option: "SELECT count(*)::int AS n FROM response_option",
-  assessment_instance: "SELECT count(*)::int AS n FROM assessment_instance",
+  session: "SELECT count(*)::int AS n FROM session",
+  relationship: "SELECT count(*)::int AS n FROM relationship",
   party: "SELECT count(*)::int AS n FROM party",
   opinion: "SELECT count(*)::int AS n FROM opinion",
   billing_plan: "SELECT count(*)::int AS n FROM billing_plan",
@@ -571,7 +640,8 @@ async function main() {
         ),
       0,
     ),
-    assessment_instance: assessmentInstances.length,
+    session: assessmentInstances.length,
+    relationship: assessmentInstances.length,
     party: assessmentInstances.reduce((total, instance) => total + instance.parties.length, 0),
     opinion: assessmentInstances.reduce(
       (total, instance) =>
@@ -620,7 +690,7 @@ async function main() {
     console.log(
       `  · demo accounts: ${
         demo
-          ? `${removed.credentials} credential row(s), ${removed.authUsers} auth user(s), ${removed.profiles} profile row(s), ${removed.unbound} party binding(s) removed before re-seeding`
+          ? `${removed.credentials} credential row(s), ${removed.authUsers} auth user(s), ${removed.profiles} profile row(s), ${removed.unbound} party binding(s), ${removed.members} membership row(s), ${removed.coachInvites} coach invite(s) removed before re-seeding`
           : `${removed.credentials} credential row(s) removed, none created (DEMO_AUTH is not 1)`
       }`,
     );
@@ -652,6 +722,9 @@ async function main() {
     if (demo) {
       const accounts = await seedDemoAccounts(client);
       const bound = await bindDemoParties(client, accounts);
+      // #coach — the two bound parties become relationship members, so the relationship they
+      // answer is the one they can see. A coach is never added here: a coach is invited.
+      await syncRelationshipMembers(client);
       console.log(
         `  · demo accounts created: ${accounts.length} (${accounts.map((account) => `${account.email}=${account.role}`).join(", ")})`,
       );
@@ -697,9 +770,9 @@ async function main() {
       console.log("\n  demo accounts (passwords are not printed, by design):");
       for (const account of report.accounts) {
         const party =
-          account.instance_record_id === null
+          account.session_record_id === null
             ? "no party (the admin does not answer an instance)"
-            : `${account.party_name} — ${account.instance_record_id}/${account.party_role}`;
+            : `${account.party_name} — ${account.session_record_id}/${account.party_role}`;
         console.log(`    ${account.email.padEnd(34)} ${account.role.padEnd(7)} ${party}`);
       }
     } else {

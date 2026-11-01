@@ -125,10 +125,12 @@ function AlignSynchHome() {
  * door's bundle.
  *
  * Option (a) was chosen over (b), and the reason is that a signed-in person does not need a second
- * `/`: their home is `/dashboard/user`, which is where the sign-in flow already lands them
- * (`lib/auth/paths.ts`'s `AFTER_SIGN_IN`, which `register-view.tsx` pushes explicitly).
- * Splitting `/` by session would have made the front door request-time to answer a chrome
- * question that the group already answers.
+ * `/`: their home is the brand's post-sign-in page — `AFTER_SIGN_IN_BY_BRAND` in
+ * `lib/auth/paths.ts`, which `/login` and `/register` both navigate to: `/dashboard/user` on
+ * QuizHub, `/dashboard` (this console's Overview) on AlignSynch (#351), because `/dashboard/user`
+ * is QuizHub's account home and answers 404 on the alignment build. Splitting `/` by session would
+ * have made the front door request-time to answer a chrome question that the group already
+ * answers.
  *
  * The shell's footer is no longer mounted by the page: the group's footer is the chrome now, and
  * two footers on one page was the old arrangement's accident, not a design.

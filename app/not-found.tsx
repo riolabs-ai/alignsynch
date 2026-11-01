@@ -2,12 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FloatingGlyphs } from "@/components/not-found/floating-glyphs";
 import { GoBackButton } from "@/components/not-found/go-back-button";
+import { brand, brandIdOf } from "@/data/brand";
 import { notFoundPageCopy } from "@/data/pages/not-found";
 import { hiddenNavHrefs } from "@/lib/flags";
+import { notFoundCopyFor } from "@/lib/not-found-copy";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
-import { BookOpen, Brain, Home, Search, Trophy } from "lucide-react";
+import { Brain, Home, Search, Trophy } from "lucide-react";
 import Link from "next/link";
+import { BrandGlyph } from "@/components/layout/brand-glyph";
 
 /**
  * Next 16 reads `metadata` from the root `app/not-found.tsx`, so the 404 carries a
@@ -50,12 +53,31 @@ export const metadata: Metadata = {
  * visitor reaches *by* following a dead link — must not hand them two more. Every row reads the
  * same `hiddenNav` list, which is why a surface joining the boundary needs no edit here beyond the
  * href it names; a row whose destination is gated simply is not drawn.
+ *
+ * **The words are brand-keyed (#351 follow-up).** This page is shared by both builds, and it used
+ * to print QuizHub's copy on both: "Oops! Quiz Not Found", quiz masters playing hide and seek, an
+ * emoji — the whole of it, on the first error page a new AlignSynch customer can see. `copy` is
+ * `lib/not-found-copy.ts::notFoundCopyFor`'s projection of `data/pages/not-found.ts`, resolved here
+ * from the brand record, so this module renders one set of ids (`message`, `fact`, `actions`) on
+ * either build and still holds no sentence of its own.
+ *
+ * The suggestion band goes with it: with every one of its three destinations gated off — which is
+ * the case on the alignment build — the page draws no band at all rather than a question
+ * ("Looking for something else?") with no answers under it.
  */
 export default function NotFound() {
-  const message = sectionOf(notFoundPageCopy, "message");
-  const fact = sectionOf(notFoundPageCopy, "fact");
-  const actions = sectionOf(notFoundPageCopy, "actions");
+  const copy = notFoundCopyFor(notFoundPageCopy, brandIdOf(brand));
+  const message = sectionOf(copy, "message");
+  const fact = sectionOf(copy, "fact");
+  const actions = sectionOf(copy, "actions");
   const hiddenNav = hiddenNavHrefs();
+  /**
+   * Is any of the three suggestions drawable? A band whose every row is gated off is a prompt with
+   * no answers — the alignment build's case — so it is not drawn at all.
+   */
+  const hasSuggestions = ["/explore", "/categories", "/leaderboard"].some(
+    (href) => !hiddenNav.includes(href),
+  );
 
   return (
     <div className="min-h-screen bg-foreground text-background relative overflow-hidden">
@@ -73,7 +95,7 @@ export default function NotFound() {
               </h1>
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center animate-bounce">
-                  <BookOpen className="w-12 h-12 text-white" />
+                  <BrandGlyph className="w-12 h-12 text-white" />
                 </div>
               </div>
             </div>
@@ -82,9 +104,7 @@ export default function NotFound() {
           {/* Error Message */}
           <Card className="bg-white/10 backdrop-blur-lg border-white/20 mb-8 xl:pt-6">
             <CardContent className="p-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                {notFoundPageCopy.heading}
-              </h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{copy.heading}</h2>
               <p className="text-lg text-gray-200 mb-6 leading-relaxed">
                 {itemLabel(message, "line-1")}
                 <br />
@@ -114,39 +134,41 @@ export default function NotFound() {
             </CardContent>
           </Card>
 
-          {/* Search Suggestion */}
-          <div className="text-center">
-            <p className="text-gray-300 mb-4">{itemLabel(actions, "prompt")}</p>
-            <div className="flex justify-center space-x-4 text-sm">
-              {!hiddenNav.includes("/explore") && (
-                <Link
-                  href="/explore"
-                  className="text-background/80 hover:text-background transition-colors flex items-center"
-                >
-                  <Search className="w-4 h-4 mr-1" />
-                  {itemLabel(actions, "browse")}
-                </Link>
-              )}
-              {!hiddenNav.includes("/categories") && (
-                <Link
-                  href="/categories"
-                  className="text-blue-400 hover:text-blue-300 transition-colors flex items-center"
-                >
-                  <Brain className="w-4 h-4 mr-1" />
-                  {itemLabel(actions, "categories")}
-                </Link>
-              )}
-              {!hiddenNav.includes("/leaderboard") && (
-                <Link
-                  href="/leaderboard"
-                  className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center"
-                >
-                  <Trophy className="w-4 h-4 mr-1" />
-                  {itemLabel(actions, "leaderboard")}
-                </Link>
-              )}
+          {/* Search Suggestion — only when at least one of its three rows can be drawn */}
+          {hasSuggestions && (
+            <div className="text-center">
+              <p className="text-gray-300 mb-4">{itemLabel(actions, "prompt")}</p>
+              <div className="flex justify-center space-x-4 text-sm">
+                {!hiddenNav.includes("/explore") && (
+                  <Link
+                    href="/explore"
+                    className="text-background/80 hover:text-background transition-colors flex items-center"
+                  >
+                    <Search className="w-4 h-4 mr-1" />
+                    {itemLabel(actions, "browse")}
+                  </Link>
+                )}
+                {!hiddenNav.includes("/categories") && (
+                  <Link
+                    href="/categories"
+                    className="text-blue-400 hover:text-blue-300 transition-colors flex items-center"
+                  >
+                    <Brain className="w-4 h-4 mr-1" />
+                    {itemLabel(actions, "categories")}
+                  </Link>
+                )}
+                {!hiddenNav.includes("/leaderboard") && (
+                  <Link
+                    href="/leaderboard"
+                    className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center"
+                  >
+                    <Trophy className="w-4 h-4 mr-1" />
+                    {itemLabel(actions, "leaderboard")}
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

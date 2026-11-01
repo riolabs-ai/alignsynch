@@ -62,10 +62,15 @@ export interface OptionRow {
   readonly text: string;
 }
 
-/** One `assessment_instance` row: the row that makes a record an instance. */
+/** One `session` row: the row that makes a record an instance. */
 export interface InstanceRow {
   readonly record_id: string;
   readonly template_record_id: string;
+  /**
+   * The relationship this cycle belongs to (`0013_relationship_sessions.sql`). Every session
+   * has exactly one; the relationship is the thing that persists between cycles.
+   */
+  readonly relationship_id: string;
   /**
    * `basic` or `advanced`, as text — the schema decides whether it is a mode, so a row that
    * says `nonsense` fails the parse with the instance named rather than rendering as one.
@@ -87,7 +92,7 @@ export interface InstanceRow {
 
 /** One `party` row. */
 export interface PartyRow {
-  readonly instance_record_id: string;
+  readonly session_record_id: string;
   readonly role: string;
   readonly name: string;
   /**
@@ -97,9 +102,37 @@ export interface PartyRow {
   readonly submitted_at?: Date | string | null;
 }
 
+/**
+ * One `relationship` row (`0013_relationship_sessions.sql`): the container a session belongs to,
+ * bought once by the Initiator and persisting across assessment cycles. `initiator_user_id`,
+ * `purchased_at`, `plan` and `counterparty_user_id` are all nullable — a backfilled or seeded
+ * relationship may predate an account binding or a purchase, and NULL is the honest absence.
+ */
+export interface RelationshipRow {
+  readonly id: string;
+  readonly template_id: string;
+  readonly initiator_user_id: string | null;
+  readonly purchased_at: Date | string | null;
+  readonly plan: string | null;
+  readonly counterparty_user_id: string | null;
+  readonly created_at: Date | string;
+}
+
+/**
+ * One `relationship_member` row (`0014_relationship_membership.sql`): the account a relationship
+ * is visible to, and the role it holds — `initiator`, `counterparty` or `coach`. The first two
+ * mirror `party.role` (backfilled from the party rows); `coach` is the invited, read-only role.
+ */
+export interface RelationshipMemberRow {
+  readonly relationship_id: string;
+  readonly user_id: string;
+  readonly role: string;
+  readonly joined_at: Date | string;
+}
+
 /** One `opinion` row: a party's scores on one Aspect. */
 export interface OpinionRow {
-  readonly instance_record_id: string;
+  readonly session_record_id: string;
   readonly role: string;
   readonly item_id: string;
   readonly feel: number;

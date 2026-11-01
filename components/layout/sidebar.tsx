@@ -11,11 +11,12 @@ import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
-import { BookOpen, LogOut, X } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { BrandGlyph } from "@/components/layout/brand-glyph";
 
 /**
  * The sidebar: the brand's mark, the brand's menu, and the sign-out row.
@@ -147,7 +148,7 @@ export function AppSidebar({
               />
             </span>
           ) : (
-            <BookOpen className="h-6 w-6 text-primary" />
+            <BrandGlyph className="h-6 w-6 text-primary" />
           )}
           {!collapsed && <span className="text-xl font-bold">{copy.heading}</span>}
         </Link>

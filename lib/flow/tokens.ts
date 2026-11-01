@@ -5,13 +5,13 @@
  *
  *   the invitation token   the one link in the email, or the one the Initiator copies out
  *                          of the app when no email key is configured. Single-use: claiming
- *                          it writes `instance_invite.claimed_at`, and a second claim reads
+ *                          it writes `session_invite.claimed_at`, and a second claim reads
  *                          that column and is refused.
  *   the party token        what a party's browser carries afterwards, in one cookie per
  *                          instance. It is what makes "my answers" mine and nobody else's.
  *
  * Neither is ever written to a row: `party.access_token_hash` and
- * `instance_invite.token_hash` hold SHA-256 of the token, so reading the database does not
+ * `session_invite.token_hash` hold SHA-256 of the token, so reading the database does not
  * hand anyone a working link. The hash is unsalted on purpose — the token is 256 bits of
  * `randomBytes`, so there is no dictionary to rainbow, and an unsalted hash is what lets a
  * request be resolved by a single indexed equality (`WHERE access_token_hash = $1`).
@@ -21,7 +21,7 @@
  */
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
-/** 7 days, from the issue's spec. `instance_invite.expires_at` is written from this. */
+/** 7 days, from the issue's spec. `session_invite.expires_at` is written from this. */
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
