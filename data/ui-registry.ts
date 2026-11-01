@@ -678,6 +678,30 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The same draft Terms of Service the live page renders, shown inside the prototype's chrome.",
   },
+  {
+    kind: "route",
+    surface: "/v1/templates",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The catalogue of six relationship types — one card each with the name, who it is for, its Aspect count, the price, and the two actions View and See an example.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/templates/[type]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The template page a person decides on — who the type is for and not for, the Aspects listed plainly, a three-step session walkthrough with the blind rule, the price with the counterparty paying nothing, and one primary Start action.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/templates/[type]/demo",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "A real completed-session report rendered from fixture answers for the type, labelled Example with You/Them names, sharing the live report's body component — the value shown before anyone pays.",
+  },
 
   /* ------------------------------------------------------------------ *
    * Component domains — `components/<domain>/`
@@ -984,6 +1008,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.",
     notes:
-      "Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. `prototype` until the owner approves it.",
+      "Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — six types with Aspect sets) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.",
   },
 ]);

@@ -64,6 +64,7 @@ const STATIC_ROUTES = [
   "/v1/privacy",
   "/v1/service",
   "/v1/support",
+  "/v1/templates",
   "/v1/terms",
 ] as const;
 
@@ -87,6 +88,8 @@ const DYNAMIC_ROUTES = [
   "/v1/relationships/[id]",
   "/v1/relationships/[id]/answer",
   "/v1/relationships/[id]/report",
+  "/v1/templates/[type]",
+  "/v1/templates/[type]/demo",
 ] as const;
 
 /**

@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **66** — 48 static, 18 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 260 files under `components/`, 255 of them `.tsx`
+- routes: **69** — 49 static, 20 dynamic, from `app/**/page.tsx`
+- component domains: **36** — 265 files under `components/`, 260 of them `.tsx`
 - route handlers: **12** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 17
-- templates: Both templates 22 · AlignSynch 36 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 20
+- templates: Both templates 22 · AlignSynch 39 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -304,6 +304,21 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/v1`
   - reads: an `/api` path — `data/billing-plans.ts`
 
+- `/v1/templates` — **prototype**
+  - capability: The catalogue of six relationship types — one card each with the name, who it is for, its Aspect count, the price, and the two actions View and See an example.
+  - components: `components/v1`
+  - reads: 1 record fixture — `data/v1/relationship-types.ts`
+
+- `/v1/templates/[type]` — **prototype**
+  - capability: The template page a person decides on — who the type is for and not for, the Aspects listed plainly, a three-step session walkthrough with the blind rule, the price with the counterparty paying nothing, and one primary Start action.
+  - components: `components/v1`
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
+
+- `/v1/templates/[type]/demo` — **prototype**
+  - capability: A real completed-session report rendered from fixture answers for the type, labelled Example with You/Them names, sharing the live report's body component — the value shown before anyone pays.
+  - components: `components/v1`
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
+
 - `/v1/terms` — **prototype**
   - capability: The same draft Terms of Service the live page renders, shown inside the prototype's chrome.
   - components: `components/legal`
@@ -347,9 +362,9 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/v1` — **prototype**
   - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.
-  - files (17): `admin-home.tsx`, `answer-sheet.tsx`, `coach-home.tsx`, `counterparty-home.tsx`, `initiator-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `relationship-detail.tsx`, `relationship-list.tsx`, `report-view.tsx`, `service-home.tsx`, `template-editor.tsx`, `template-library.tsx`, `v1-shell.tsx`, `v1-ui.tsx`
-  - routes (14): `/v1`, `/v1/admin`, `/v1/coach`, `/v1/counterparty`, `/v1/initiator`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/service`, `/v1/support`
-  - notes: Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. `prototype` until the owner approves it.
+  - files (22): `admin-home.tsx`, `answer-sheet.tsx`, `coach-home.tsx`, `counterparty-home.tsx`, `initiator-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `relationship-detail.tsx`, `relationship-list.tsx`, `report-body.tsx`, `report-view.tsx`, `service-home.tsx`, `start-relationship-button.tsx`, `template-catalogue.tsx`, `template-demo.tsx`, `template-editor.tsx`, `template-library.tsx`, `template-page.tsx`, `v1-shell.tsx`, `v1-ui.tsx`
+  - routes (17): `/v1`, `/v1/admin`, `/v1/coach`, `/v1/counterparty`, `/v1/initiator`, `/v1/initiator/relationships`, `/v1/initiator/templates`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/service`, `/v1/support`, `/v1/templates`, `/v1/templates/[type]`, `/v1/templates/[type]/demo`
+  - notes: Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — six types with Aspect sets) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.
 
 ## QuizHub
 
