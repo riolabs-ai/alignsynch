@@ -32,6 +32,11 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "initiator", label: "You are answering as {name}, the Initiator." },
         { id: "counterparty", label: "You are answering as {name}, the Counterparty." },
+        // The coach's band: a coach reads the relationship but never answers it, so there is no
+        // `{name}` to fill — the sentence is the whole fact, and the badge beside the mode name
+        // is the one word of it (`coach-badge`).
+        { id: "coach", label: "You are viewing as Coach — read-only." },
+        { id: "coach-badge", label: "Coach" },
       ],
     },
     // #274 — the one stage sentence, and the only place the four stage names are authored on

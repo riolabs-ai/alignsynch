@@ -98,6 +98,15 @@ describe("blind until both submit", () => {
     expect(visibleRoles("initiator", "complete")).toEqual(["initiator", "counterparty"]);
     expect(visibleRoles("counterparty", "complete")).toEqual(["initiator", "counterparty"]);
   });
+
+  it("keeps a coach blind until the session is scored, then unlocks both parties", () => {
+    // The blind rule outranks the coach: a coach reads nothing before `complete`, exactly as a
+    // party reads nothing but their own — and once it is scored, the coach reads the parties'
+    // scores the same way a party does, no more and no less.
+    expect(visibleRoles("coach", "answering")).toEqual([]);
+    expect(visibleRoles("coach", "awaiting_counterparty")).toEqual([]);
+    expect(visibleRoles("coach", "complete")).toEqual(["initiator", "counterparty"]);
+  });
 });
 
 describe("answers freeze when both parties have submitted", () => {
