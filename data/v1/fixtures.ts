@@ -185,6 +185,13 @@ export interface PersonaMeta {
   readonly label: string;
   /** The display name used when this persona is a party in a relationship. */
   readonly name: string;
+  /**
+   * A short surname the notice banner appends to `name` so the context string reads
+   * `Counterparty [Sam Carter]` rather than a bare first name. It lives here, in the fixture,
+   * so the banner reads it instead of inventing a last name in the component. Empty for a
+   * role-word persona (Visitor, Admin, Service) that has no person behind it.
+   */
+  readonly surname: string;
   /** One line describing what this persona can do, for the picker card. */
   readonly blurb: string;
   /** Where the picker sends this persona after it is chosen. */
@@ -196,6 +203,7 @@ export const PERSONA_META: Readonly<Record<Persona, PersonaMeta>> = {
     id: "visitor",
     label: "Visitor",
     name: "Visitor",
+    surname: "",
     blurb: "Read the marketing pages, then start a relationship as the Initiator.",
     landing: "/v1",
   },
@@ -203,6 +211,7 @@ export const PERSONA_META: Readonly<Record<Persona, PersonaMeta>> = {
     id: "initiator",
     label: "Initiator",
     name: "Jordan",
+    surname: "Lee",
     blurb: "Author templates, create relationships, invite the counterparty, read the report.",
     landing: "/v1/initiator",
   },
@@ -210,6 +219,7 @@ export const PERSONA_META: Readonly<Record<Persona, PersonaMeta>> = {
     id: "counterparty",
     label: "Counterparty",
     name: "Sam",
+    surname: "Carter",
     blurb: "Claim the invitation, answer the same Aspects from your side, read the report.",
     landing: "/v1/counterparty",
   },
@@ -217,6 +227,7 @@ export const PERSONA_META: Readonly<Record<Persona, PersonaMeta>> = {
     id: "coach",
     label: "Coach",
     name: "Riley",
+    surname: "Brooks",
     blurb: "Observe shared relationships and leave advice — no scoring, no answering.",
     landing: "/v1/coach",
   },
@@ -224,6 +235,7 @@ export const PERSONA_META: Readonly<Record<Persona, PersonaMeta>> = {
     id: "admin",
     label: "Admin",
     name: "Admin",
+    surname: "",
     blurb: "Inspect every relationship, every template, and the gap aggregates.",
     landing: "/v1/admin",
   },
@@ -231,6 +243,7 @@ export const PERSONA_META: Readonly<Record<Persona, PersonaMeta>> = {
     id: "service",
     label: "Service",
     name: "Service",
+    surname: "",
     blurb: "Work the support queue: invitations, accounts and stuck relationships.",
     landing: "/v1/service",
   },
@@ -915,6 +928,13 @@ export interface V1SeedState {
 
 /** Bump to invalidate a persisted store that predates a shape change. */
 export const SEED_VERSION = 3;
+
+/**
+ * The prototype's own version, rendered as the `[V1]` tag in the persona notice banner. The
+ * `V1` is the prototype's designation — the `/v1` route group, the `v1_*` store keys — so the
+ * banner says what the owner is looking at, not the product release `package.json` carries.
+ */
+export const V1_VERSION = "V1";
 
 export function buildSeedState(): V1SeedState {
   return {
