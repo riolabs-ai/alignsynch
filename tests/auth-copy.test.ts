@@ -164,7 +164,7 @@ describe("the alignment build speaks its own product", () => {
     // The view asks for `sign-in` and `stats` on both brands; the projection is what makes
     // that one component, so the ids are the contract rather than an implementation detail.
     const copy = loginCopyFor(loginCopy(alignSynch), "alignsynch");
-    expect(sectionOf(copy, "sign-in").items).toHaveLength(14);
+    expect(sectionOf(copy, "sign-in").items).toHaveLength(15);
     expect(sectionOf(copy, "stats").items).toHaveLength(2);
   });
 });
@@ -188,19 +188,24 @@ describe("the Google button's copy (issue #281)", () => {
   });
 
   /**
-   * The password form's rejection sentence names the Google path. Better Auth answers
-   * `INVALID_EMAIL_OR_PASSWORD` for an account that has no credential row exactly as it does
-   * for a wrong password — there is no code to branch on — so "Invalid email or password"
-   * alone would send a Google-only account looking for a reset flow this product does not
-   * have. The sentence claims both, and this pins the half that names the real cause.
+   * The password form's rejections name one cause each (issue #281).
+   *
+   * Better Auth answers `INVALID_EMAIL_OR_PASSWORD` for an account that has no credential row
+   * exactly as it does for a wrong password — there is no code to branch on — so the first
+   * version of this card said both things in one sentence. The second half of the card asks the
+   * account rows instead (`lib/auth/provider-link.ts`), which makes the causes separable: the
+   * ordinary sentence claims only that the pair did not match, and the Google sentence is
+   * rendered on evidence. `tests/provider-link.test.ts` owns that rule; this pins that both
+   * ids survive the brand projection, because `/login`'s copy is what the view resolves.
    */
-  it("names the other way in when a password sign-in is rejected", () => {
+  it("carries the ordinary rejection and the Google-only one, as two items", () => {
     for (const [id, record] of [
       ["quizhub", quizHub],
       ["alignsynch", alignSynch],
     ] as const) {
       const card = sectionOf(loginCopyFor(loginCopy(record), id), "sign-in");
-      expect(itemLabel(card, "error-invalid-credentials")).toContain("Continue with Google");
+      expect(itemLabel(card, "error-invalid-credentials")).not.toMatch(/google/i);
+      expect(itemLabel(card, "error-google-account")).toContain("Continue with Google");
     }
   });
 });

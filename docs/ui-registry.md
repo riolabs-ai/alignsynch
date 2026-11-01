@@ -45,9 +45,9 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/login` — **live**
-  - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials and network states.
+  - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials, Google-only and network states.
   - components: `components/auth`, `components/layout`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/client.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/account-providers.ts`, `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/client.ts`, `lib/auth/server.ts`
 
 - `/privacy` — **fixture**
   - capability: The draft privacy policy: what the build actually collects, why, where it lives and what the reader can ask for, behind a draft notice that cannot be dismissed.
