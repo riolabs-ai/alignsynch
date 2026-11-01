@@ -69,6 +69,23 @@ they would open is a cohort that has not landed. If the owner prefers those coun
 change is to relax `StatCard.href` to optional in `components/console/**` — a decision on that
 component, not on this screen.
 
+### Mobile mechanics (measured, not assumed)
+
+`docs/UI-MAPPING.md` is the tree's map of ancestors and its measured mobile mechanics; this cohort
+copies them rather than re-deriving them. What was checked on these two screens at a 390px phone:
+
+| mechanic                     | measured on `0fff36e2` + `origin/main`                                                                                                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| page gutter                  | free from `components/layout/main-layout.tsx` — the layout adds no second padding (that is the `px-4 py-10` divergence the map records)                                                                                                           |
+| document overflow at 390px   | none — `documentElement.scrollWidth` 390 = `clientWidth` 390                                                                                                                                                                                      |
+| the two wide tables at 390px | each scrolls inside `components/ui/table.tsx`'s own `relative w-full overflow-auto` wrapper (512px of content in a 364px wrapper) — the scroll-sideways half of the leaderboard mechanic, unchanged from `components/admin/instance-registry.tsx` |
+| count cards                  | `grid gap-4 md:grid-cols-2 lg:grid-cols-4` — `components/console/stat-card-grid.tsx`'s string, so one column below `md` (768px here, not Tailwind's)                                                                                              |
+| icons, badges, avatars       | lucide at the caller's `h-4 w-4`, `components/ui/badge.tsx` variants, no images on either screen                                                                                                                                                  |
+
+No column is dropped at `md` on the attention table, because its ancestor
+(`components/admin/instance-registry.tsx`) keeps all nine and dropping columns here would be a new
+mechanic rather than a reuse of one.
+
 ### Evidence
 
 - `bash scripts/verify.sh` → `EXIT=0`, `lane=code`, green including `data:check` (both routes measure
