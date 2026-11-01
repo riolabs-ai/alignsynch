@@ -10,6 +10,8 @@ This page turns that into a decision rule. It is normative: a card that adds a s
 questions below before it writes a component, and a card that cannot answer them says so in its handoff
 instead of guessing.
 
+Two worked tables of the answer, per file: [UI-DIVERGENCE.md](UI-DIVERGENCE.md) audits every bespoke surface, and [UI-MAPPING.md](UI-MAPPING.md) maps every quiz ancestor to its AlignSynch variation with the measured mobile mechanics.
+
 ## This repo is a base core webapp
 
 AlignSynch is one expression of the core. QuizHub is the second: one route table, one `components/ui`,
