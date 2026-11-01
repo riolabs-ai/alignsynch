@@ -73,7 +73,6 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
 
   const viewer =
     persona === "initiator" ? "initiator" : persona === "counterparty" ? "counterparty" : null;
-  const isAdmin = persona === "admin";
   const isCoach = persona === "coach";
 
   const answerLink = `/v1/relationships/${rel.id}/answer`;
@@ -140,11 +139,9 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
           </p>
           {complete && (
             <p className="mt-1 text-xs text-muted-foreground">
-              Accepted by {rel.initiatorName} at{" "}
-              {formatDateTimeLong(rel.initiatorAcceptedAt ?? "")} · by{" "}
-              {rel.counterpartyName} at{" "}
-              {formatDateTimeLong(rel.counterpartyAcceptedAt ?? "")} — report unlocked at{" "}
-              {formatDateTimeLong(unlockedAtOf(rel) ?? "")}.
+              Accepted by {rel.initiatorName} at {formatDateTimeLong(rel.initiatorAcceptedAt ?? "")}{" "}
+              · by {rel.counterpartyName} at {formatDateTimeLong(rel.counterpartyAcceptedAt ?? "")}{" "}
+              — report unlocked at {formatDateTimeLong(unlockedAtOf(rel) ?? "")}.
             </p>
           )}
         </div>
