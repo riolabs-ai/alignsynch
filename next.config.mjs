@@ -96,6 +96,14 @@ const nextConfig = {
      * with `main`. Never a secret, and never resolved at request time.
      */
     APP_COMMIT,
+    /**
+     * The /v1 prototype's environment label, read by the persona notice banner
+     * (`components/v1/persona-bar.tsx`). `local` renders the `[LOCAL]` tag; unset (or any other
+     * value) renders no environment tag at all, so a deployed prototype never claims LOCAL. Public
+     * by design — it is a display label, not a secret — and inlined like `BRAND` so the server
+     * render and the browser render agree.
+     */
+    V1_ENV: process.env.V1_ENV || "",
   },
   // typescript: {
   //   ignoreBuildErrors: true,
