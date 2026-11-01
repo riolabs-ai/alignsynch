@@ -34,8 +34,14 @@ const STEPS = ["step-1", "step-2"] as const;
  * quiz-interests and quiz-skill step that both brands rendered and nothing read; it is
  * gone, so the component carries no interest state, no skill state and no newsletter
  * opt-in next to a newsletter that does not exist.
+ *
+ * `destination` is this build's post-sign-in page (#351), for the same reason `copy` is a prop:
+ * the brand is a server decision. It used to be the literal `/dashboard/user` below, which is the
+ * quiz product's account home — a 404 on the alignment build, so a successful sign-up there landed
+ * on a not-found page. The value is `AFTER_SIGN_IN_BY_BRAND[brandId]` (`lib/auth/paths.ts`), and
+ * this component never learns which brand it is.
  */
-export function RegisterView({ copy }: { copy: PageCopy }) {
+export function RegisterView({ copy, destination }: { copy: PageCopy; destination: string }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -136,8 +142,10 @@ export function RegisterView({ copy }: { copy: PageCopy }) {
     }
 
     // Into the product, not onto `/`: the session the sign-up just created is what the
-    // account page reads, so this is also the first proof to the person that it worked.
-    router.push("/dashboard/user");
+    // destination reads, so this is also the first proof to the person that it worked. The page is
+    // the build's own (#351) — the server decided which one, so this line cannot send an
+    // AlignSynch sign-up to a route that brand does not ship.
+    router.push(destination);
     router.refresh();
   };
 

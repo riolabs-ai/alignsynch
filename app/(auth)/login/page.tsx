@@ -6,8 +6,9 @@ import { demoMode } from "@/lib/auth/demo-mode";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
 import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
+import { signInDestination } from "@/lib/auth/next-path";
+import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import { loginCopyFor } from "@/lib/auth-copy";
-import { safeNextPath } from "@/lib/auth/paths";
 import type { Metadata } from "next";
 import { signInAsDemoRole } from "./demo-actions";
 import { isGoogleOnlySignIn } from "./provider-hint-actions";
@@ -25,9 +26,23 @@ export const metadata: Metadata = {
  * `?next=` is read **here**, not in the client view (issue #164): `useSearchParams()` in the
  * client component would need a `<Suspense>` boundary around a form that renders nothing async,
  * and the value would then be read from a URL the browser controls. The server validates it with
- * `safeNextPath` (a same-site path, or `/dashboard/user`) and passes the result down, so the
- * client only ever receives something it is allowed to navigate to. Reading `searchParams` makes
- * this route request-time — correct for a form that must never be cached with somebody's `next=`.
+ * two questions, in this order, and passes the answer down:
+ *
+ *   1. **same-site** — `safeNextPath` (`lib/auth/paths.ts`) keeps a path on this site and replaces
+ *      anything else (`//host/…`, `https://…`, `javascript:…`) with the brand's destination;
+ *   2. **exists on this build** — `signInDestination` (`lib/auth/next-path.ts`) replaces a path whose
+ *      surface this build does not ship with that same destination. A `next` naming a quiz-only
+ *      surface used to reproduce the very dead end #351 is about: `/dashboard/user` answers 404
+ *      before it resolves the session, so the verifier Neon appended to the callback is never
+ *      exchanged and a person who just signed in lands signed out.
+ *
+ * Reading `searchParams` makes this route request-time — correct for a form that must never be
+ * cached with somebody's `next=`.
+ *
+ * **The destination is per brand** (#351): `AFTER_SIGN_IN_BY_BRAND[brandIdOf(brand)]` — `/dashboard`
+ * on AlignSynch (the console Overview, ungated, and it resolves the session before anything else),
+ * `/dashboard/user` on QuizHub. It is resolved here and never in the view: the view is a client
+ * module and `lib/flags.ts` is server-only.
  *
  * **The demo block is a server decision too** (#218), and the same three states `/demo` already
  * understands (`lib/auth/demo-surface.ts`):
@@ -69,6 +84,14 @@ export default async function AuthPage({
   const target = Array.isArray(next) ? next[0] : next;
 
   /**
+   * This build's post-sign-in page (#351), and the fallback for every `?next=` that fails either
+   * of the two validations above. Resolved from the brand record, never from a literal, so a third
+   * brand is a `tsc` error in `lib/auth/paths.ts` rather than an inherited dead end.
+   */
+  const brandId = brandIdOf(brand);
+  const destination = AFTER_SIGN_IN_BY_BRAND[brandId];
+
+  /**
    * The Neon Auth origin, read here and handed to the view so the browser can start a Google
    * sign-in *there* rather than through `/api/auth` (the fix for the `state_mismatch` loop).
    *
@@ -96,8 +119,8 @@ export default async function AuthPage({
 
   return (
     <LoginView
-      copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandIdOf(brand)), loginPageCopy)}
-      next={safeNextPath(target)}
+      copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandId), loginPageCopy)}
+      next={signInDestination(target, destination)}
       authBaseUrl={authBaseUrl}
       demo={demo}
       providerHint={isGoogleOnlySignIn}

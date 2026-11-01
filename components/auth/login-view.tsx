@@ -16,6 +16,7 @@ import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
 import { directAuthClient } from "@/lib/auth/provider-client";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
+import { absoluteUrlFor } from "@/lib/auth/paths";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { BookOpen, Loader2, Scale, Trophy, type LucideIcon } from "lucide-react";
@@ -242,6 +243,12 @@ export function LoginView({
    * console. Confusing the two is the `redirect_uri_mismatch` this card documents once on
    * purpose.
    *
+   * The absolute URL is composed by `absoluteUrlFor` (`URL`, never string concatenation), so the
+   * path's own query, fragment and percent-encoding survive and no query parameter can land in
+   * the *path*. Neon appends `?neon_auth_session_verifier=…` to whatever this is, and a callback
+   * address that reads like `/dashboard/user/neon_auth_session_verifier-…` is a
+   * signed-in-looking 404.
+   *
    * A failure here reaches the same `failure` state the form uses, so the person reads the
    * fixture's sentence for the cause it actually was — `origin` when the address is not on the
    * branch's trusted-domain list (which fails *after* Google consent, and used to look like a
@@ -269,7 +276,7 @@ export function LoginView({
     try {
       const result = await directAuthClient(authBaseUrl).signIn.social({
         provider: "google",
-        callbackURL: `${window.location.origin}${next}`,
+        callbackURL: absoluteUrlFor(window.location.origin, next),
       });
       if (result?.error) {
         setRefusal(authFailureOf(result.error));
