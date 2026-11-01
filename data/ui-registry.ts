@@ -550,6 +550,166 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The public AlignSynch landing page in its own chrome: what a Gap is, how it works, four opinions and two modes.",
   },
+  {
+    kind: "route",
+    surface: "/v1",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The prototype's persona picker — a stand-in for /login that offers the six personas instead of an email/password form, and lands the chosen persona on their own screen.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/admin",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The Admin persona's landing: every relationship and template in the store, with the gap aggregates counted across the population.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/coach",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The Coach persona's landing — read-only observation of relationships shared with the coach, with an advice thread and no scoring or answering.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/counterparty",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The Counterparty persona's landing: claimable invitations and the relationships they have joined, each pointing at the shared answer sheet.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/initiator",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The Initiator persona's landing: their templates, their relationships, and the counts that link to each list.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/initiator/relationships",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The Initiator's relationships and invitations, with the invite and re-invite action inline on each row.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/initiator/templates",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The Initiator's template library, with an inline form that copies a template into a relationship.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/initiator/templates/new",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The template author — a variation of the quiz editor that writes a template to the in-browser store.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/pricing",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The four plan tiers re-painted from the live fixture, with every paid CTA disabled so nothing is charged in the prototype.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/privacy",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The same draft Privacy Policy the live page renders, shown inside the prototype's chrome.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/relationships/[id]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The one screen every role opens a relationship from — a session timeline, not a record: parties, stage, last session and the subscription header (plan, status, period end) in the header, one primary action that moves answer → accept → next session, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim, the comment threads and the advice thread for the roles that have them.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/relationships/[id]/accept",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The acceptance step: each party reviews a value-free summary of the session and records their acceptance; the session completes only when both have accepted, and that is the instant the report unlocks.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/relationships/[id]/answer",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits. Submission alone does not lift the blind rule.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/relationships/[id]/report",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The report — the eight gap kinds grouped under the glossary's headings, with the Setting's verdict on top, unlocked only when both parties accept (never at the second submit).",
+  },
+  {
+    kind: "route",
+    surface: "/v1/service",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The Service user's landing: the support queue of invitations, accounts and stuck relationships, with a resolve action per ticket.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/support",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The help centre stated without the taxonomy the alignment build does not offer, reading the brand record's mailbox for the contact line.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/terms",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The same draft Terms of Service the live page renders, shown inside the prototype's chrome.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/templates",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The catalogue of six relationship types — one card each with the name, who it is for, its Aspect count, the price, and the two actions View and See an example.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/templates/[type]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The template page a person decides on — who the type is for and not for, the Aspects listed plainly, a three-step session walkthrough with the blind rule, the price with the counterparty paying nothing, and one primary Start action.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/templates/[type]/demo",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "A real completed-session report rendered from fixture answers for the type, labelled Example with You/Them names, sharing the live report's body component — the value shown before anyone pays.",
+  },
 
   /* ------------------------------------------------------------------ *
    * Component domains — `components/<domain>/`
@@ -856,6 +1016,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.",
     notes:
-      "Guardrail #336, version 1. The first variation here is the template editor (`template-editor.tsx`), ancestor `components/create/quiz-editor.tsx`: tabbed authoring (Details / Aspects / Settings) with per-Aspect accordions, store-backed Save/Publish/Archive/Delete, and no preview — a preview that scores an answer is a lie. `prototype` until the owner approves it; the /v1 route that mounts it is a separate card.",
+      "Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — six types with Aspect sets) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.",
   },
 ]);

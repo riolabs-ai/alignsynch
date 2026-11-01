@@ -52,6 +52,20 @@ const STATIC_ROUTES = [
   "/terms",
   "/tournaments",
   "/welcome",
+  "/v1",
+  "/v1/admin",
+  "/v1/coach",
+  "/v1/counterparty",
+  "/v1/initiator",
+  "/v1/initiator/relationships",
+  "/v1/initiator/templates",
+  "/v1/initiator/templates/new",
+  "/v1/pricing",
+  "/v1/privacy",
+  "/v1/service",
+  "/v1/support",
+  "/v1/templates",
+  "/v1/terms",
 ] as const;
 
 /** Routes with `[param]` segments, as Next spells them. */
@@ -71,6 +85,12 @@ const DYNAMIC_ROUTES = [
   "/quiz/[id]/play",
   "/support/articles/[slug]",
   "/tournaments/[id]",
+  "/v1/relationships/[id]",
+  "/v1/relationships/[id]/accept",
+  "/v1/relationships/[id]/answer",
+  "/v1/relationships/[id]/report",
+  "/v1/templates/[type]",
+  "/v1/templates/[type]/demo",
 ] as const;
 
 /**

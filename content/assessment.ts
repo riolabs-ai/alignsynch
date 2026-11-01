@@ -47,6 +47,14 @@ export type OpinionKind = z.infer<typeof zOpinionKind>;
 
 export const OPINION_KINDS = zOpinionKind.options;
 
+/** The glossary's own four words, authored once: "Feel", "Wish", "Think", "Guess". */
+export const OPINION_LABELS: Record<OpinionKind, string> = {
+  feel: "Feel",
+  wish: "Wish",
+  think: "Think",
+  guess: "Guess",
+};
+
 /** Basic Mode: two opinions per Aspect per party. */
 export const BASIC_OPINION_KINDS = ["feel", "wish"] as const;
 
