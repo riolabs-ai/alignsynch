@@ -33,12 +33,22 @@
  *
  * **Failure is a panel.** The counts are database rows, and a read that did not answer prints the
  * database layer's own sentence with a link that tries again — never Next's 500, never a zero that
- * reads like "nothing waiting on you". Same rule as `/assessment/instances` (#213).
+ * reads like "nothing waiting on you". Same rule as `/assessment/instances` (#213). The panel is
+ * `components/ui/alert.tsx` with the `warning` variant, which is the block ten files had copied
+ * verbatim; the heading stays an `<h1>` rather than `AlertTitle`, because this is the whole
+ * document and `AlertTitle` renders an `<h5>`.
+ *
+ * **The identity header is `components/ui/page-header.tsx`.** The avatar and the person's name in
+ * a heading is the shape `components/identity/account-home.tsx` drew first and this file copied;
+ * the heading and its subtitle now come from the primitive, so the two account homes cannot drift
+ * into two type scales.
  */
 import { StatCardGrid, type StatCard } from "@/components/console/stat-card-grid";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import type { PageCopy } from "@/content/pages";
 import { type OverviewRow, overviewCountsOf, overviewFilterPath } from "@/lib/flow/overview";
 import { ASSESSMENTS_PATH, OVERVIEW_PATH } from "@/lib/flow/paths";
@@ -68,20 +78,18 @@ export function ConsoleOverview({
   if (unreadable !== null) {
     return (
       <div className="container mx-auto max-w-4xl px-4 py-10">
-        <div
-          data-overview-unreadable="true"
-          role="alert"
-          className="rounded-lg border border-amber-300 bg-amber-50 p-6 dark:border-amber-700 dark:bg-amber-950"
-        >
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{failure.heading}</h1>
-          <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{sectionBody(failure)}</p>
-          <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{unreadable}</p>
-          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-            <Link className="underline" href={OVERVIEW_PATH}>
-              {itemLabel(failure, "reload")}
-            </Link>
-          </p>
-        </div>
+        <Alert variant="warning" className="p-6" data-overview-unreadable="true">
+          <h1 className="text-2xl font-bold">{failure.heading}</h1>
+          <AlertDescription className="mt-2 space-y-2">
+            <p>{sectionBody(failure)}</p>
+            <p>{unreadable}</p>
+            <p>
+              <Link className="underline" href={OVERVIEW_PATH}>
+                {itemLabel(failure, "reload")}
+              </Link>
+            </p>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -129,10 +137,7 @@ export function ConsoleOverview({
     <div className="container mx-auto max-w-4xl space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <GeneratedAvatar name={name} seed={name} size={72} />
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">{fillLabel(copy.heading, { name })}</h1>
-          {copy.subtitle !== undefined && <p className="text-muted-foreground">{copy.subtitle}</p>}
-        </div>
+        <PageHeader title={fillLabel(copy.heading, { name })} description={copy.subtitle} />
       </header>
 
       <section data-overview-counts="true" className="space-y-3">
