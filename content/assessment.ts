@@ -254,7 +254,7 @@ export type Party = z.infer<typeof zParty>;
 
 /**
  * How long a relationship's own name may be. A label a person writes, not a paragraph: the limit
- * is authored here once and mirrored by the CHECK on `assessment_instance.name`
+ * is authored here once and mirrored by the CHECK on `session.name`
  * (`db/migrations/0011_console_columns.sql`), so the database cannot store a name the model would
  * reject.
  */

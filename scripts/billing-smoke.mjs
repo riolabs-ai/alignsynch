@@ -84,7 +84,7 @@ async function main() {
          FROM record r
         WHERE r.record_type = 'assessment'
           AND r.status = 'published'
-          AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)
+          AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
           AND (SELECT count(*) FROM item i WHERE i.record_id = r.id) > 0
         ORDER BY r.id
         LIMIT 1`,

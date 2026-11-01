@@ -20,7 +20,7 @@
  * the rendered HTML carries no answer value.
  *
  * **`complete` is decided in SQL-shaped counts, not in the view.** The second statement's `WHERE
- * o.instance_record_id = ANY($1)` is handed only the ids whose two answered counts reached the
+ * o.session_record_id = ANY($1)` is handed only the ids whose two answered counts reached the
  * Aspect count — the same comparison `instanceStatusOf()` makes — so an unfinished instance can
  * not contribute a row to a stage, exactly as §5 requires ("Admin surfaces filter to `complete`
  * in SQL before reading `opinion`").
@@ -29,7 +29,7 @@
  * card is read-and-filter, and the next card that acts on somebody's relationship gets its own
  * confirmation design rather than a button on this table.
  *
- * **No invitation address, no party token.** `instance_invite` is read for three instants and its
+ * **No invitation address, no party token.** `session_invite` is read for three instants and its
  * state; `party` is read for a name and whether an account holds it. `access_token_hash`,
  * `initiator_email`, `counterparty_name` and the invitation `email` are not selected, so a row
  * cannot print them even if a later view asked.
@@ -61,7 +61,7 @@ interface InviteJson {
 }
 
 interface RegistryQueryRow {
-  readonly instance_record_id: string;
+  readonly session_record_id: string;
   readonly slug: string;
   readonly instance_name: string | null;
   readonly instance_title: string;
@@ -92,7 +92,7 @@ interface RegistryQueryRow {
  */
 const ADMIN_INSTANCES_SQL = `
   SELECT
-    r.id                            AS instance_record_id,
+    r.id                            AS session_record_id,
     r.slug                          AS slug,
     r.title                         AS instance_title,
     ai.name                         AS instance_name,
@@ -101,30 +101,30 @@ const ADMIN_INSTANCES_SQL = `
     ai.alignment_setting            AS alignment_setting,
     r.date                          AS created,
     (SELECT max(m.at) FROM (
-       SELECT ii2.created_at AS at FROM instance_invite ii2 WHERE ii2.instance_record_id = r.id
+       SELECT ii2.created_at AS at FROM session_invite ii2 WHERE ii2.session_record_id = r.id
        UNION ALL
-       SELECT ii2.claimed_at  FROM instance_invite ii2 WHERE ii2.instance_record_id = r.id
+       SELECT ii2.claimed_at  FROM session_invite ii2 WHERE ii2.session_record_id = r.id
        UNION ALL
-       SELECT ii2.resent_at   FROM instance_invite ii2 WHERE ii2.instance_record_id = r.id
+       SELECT ii2.resent_at   FROM session_invite ii2 WHERE ii2.session_record_id = r.id
        UNION ALL
-       SELECT p2.submitted_at FROM party p2 WHERE p2.instance_record_id = r.id
+       SELECT p2.submitted_at FROM party p2 WHERE p2.session_record_id = r.id
      ) m)                           AS last_activity,
     (SELECT count(*) FROM item i WHERE i.record_id = r.id)::int AS aspect_count,
     (SELECT count(*) FROM opinion o
-       WHERE o.instance_record_id = r.id AND o.role = 'initiator')::int AS initiator_answered,
+       WHERE o.session_record_id = r.id AND o.role = 'initiator')::int AS initiator_answered,
     (SELECT count(*) FROM opinion o
-       WHERE o.instance_record_id = r.id AND o.role = 'counterparty')::int AS counterparty_answered,
+       WHERE o.session_record_id = r.id AND o.role = 'counterparty')::int AS counterparty_answered,
     (SELECT json_build_object('name', p.name, 'has_account', p.user_id IS NOT NULL)
        FROM party p
-      WHERE p.instance_record_id = r.id AND p.role = 'initiator') AS initiator,
+      WHERE p.session_record_id = r.id AND p.role = 'initiator') AS initiator,
     (SELECT json_build_object('name', p.name, 'has_account', p.user_id IS NOT NULL)
        FROM party p
-      WHERE p.instance_record_id = r.id AND p.role = 'counterparty') AS counterparty,
+      WHERE p.session_record_id = r.id AND p.role = 'counterparty') AS counterparty,
     (SELECT json_build_object('claimed_at', ii.claimed_at, 'expires_at', ii.expires_at)
-       FROM instance_invite ii
-      WHERE ii.instance_record_id = r.id) AS invite
+       FROM session_invite ii
+      WHERE ii.session_record_id = r.id) AS invite
   FROM record r
-  JOIN assessment_instance ai ON ai.record_id = r.id
+  JOIN session ai ON ai.record_id = r.id
   LEFT JOIN record t
     ON t.id = ai.template_record_id
    AND t.record_type = 'assessment'
@@ -140,14 +140,14 @@ const ADMIN_INSTANCES_SQL = `
  * party name, no address, no invitation.
  */
 const COMPLETE_OPINIONS_SQL = `
-  SELECT instance_record_id, role, item_id, feel, wish, think, guess
+  SELECT session_record_id, role, item_id, feel, wish, think, guess
   FROM opinion
-  WHERE instance_record_id = ANY($1::text[])
-  ORDER BY instance_record_id, item_id
+  WHERE session_record_id = ANY($1::text[])
+  ORDER BY session_record_id, item_id
 `;
 
 interface OpinionQueryRow {
-  readonly instance_record_id: string;
+  readonly session_record_id: string;
   readonly role: string;
   readonly item_id: string;
   readonly feel: number;
@@ -160,14 +160,14 @@ interface OpinionQueryRow {
 function modeOf(value: string): AssessmentMode {
   if (value === "basic" || value === "advanced") return value;
   throw new Error(
-    `assessment_instance.mode "${value}" is neither basic nor advanced — the row does not satisfy the model`,
+    `session.mode "${value}" is neither basic nor advanced — the row does not satisfy the model`,
   );
 }
 
 function settingOf(value: string): AlignmentSetting {
   if (value === "soft" || value === "full") return value;
   throw new Error(
-    `assessment_instance.alignment_setting "${value}" is neither soft nor full — the row does not satisfy the model`,
+    `session.alignment_setting "${value}" is neither soft nor full — the row does not satisfy the model`,
   );
 }
 
@@ -219,7 +219,7 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
         row.initiator_answered >= row.aspect_count &&
         row.counterparty_answered >= row.aspect_count,
     )
-    .map((row) => row.instance_record_id);
+    .map((row) => row.session_record_id);
 
   // No complete instance means no opinion read at all: the statement is not sent for a list that
   // could not use it, and a registry with only invitations never touches the opinion table.
@@ -229,10 +229,10 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
       : await readCompleteAspects(completeIds);
 
   return rows.map((row) => {
-    const pairs = aspectsById.get(row.instance_record_id) ?? [];
+    const pairs = aspectsById.get(row.session_record_id) ?? [];
     return registryRowOf(
       {
-        instanceRecordId: row.instance_record_id,
+        instanceRecordId: row.session_record_id,
         slug: row.slug,
         name: row.instance_name,
         templateTitle: row.template_title ?? row.instance_title,
@@ -275,10 +275,10 @@ async function readCompleteAspects(
   >();
   for (const row of rows) {
     if (row.role !== "initiator" && row.role !== "counterparty") continue;
-    let byItem = byInstance.get(row.instance_record_id);
+    let byItem = byInstance.get(row.session_record_id);
     if (byItem === undefined) {
       byItem = new Map();
-      byInstance.set(row.instance_record_id, byItem);
+      byInstance.set(row.session_record_id, byItem);
     }
     let pair = byItem.get(row.item_id);
     if (pair === undefined) {

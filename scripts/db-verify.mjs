@@ -28,7 +28,7 @@
  *   V11 the unlock mark (#252) exists, and a `party.unlock_seen_at` is set only on an instance
  *       that is already `complete` — a mark written too early would silently swallow the event
  *       the marker exists to announce
- *   V12 the Setting (#259): `assessment_instance.alignment_setting` exists, every row carries
+ *   V12 the Setting (#259): `session.alignment_setting` exists, every row carries
  *       one of the two values, and each seeded instance carries the setting its fixture
  *       authors — one line per seeded instance, so which they are never has to be guessed
  *       from a DEFAULT. It is a lens over the Gaps and not a Gap, so this check adds no
@@ -44,27 +44,80 @@
  *       the two columns are one fact, and a row where they disagree cannot be measured against
  *       the cooldown or the cap. (Numbered after #289's V13, which landed first.)
  *   V15 the console's three columns (#289 follow-up, `0011_console_columns.sql`):
- *       `record.author_user_id`, `assessment_instance.name` and `party.submitted_at` exist, are
+ *       `record.author_user_id`, `session.name` and `party.submitted_at` exist, are
  *       nullable and carry no DEFAULT — each is an absence until somebody writes it — and a seat
  *       carrying `submitted_at` has answered every Aspect of its instance, because "submitted"
  *       on a sheet with a blank line is the one state a support read would draw as done.
+ *   V16 no table and no column in `public` is named like the old noun `instance` (#340): the
+ *       split renamed the three objects that carried it (see `0013_relationship_sessions.sql`),
+ *       and this is the standing guard, the same shape as V2's Gap guard, so a later migration
+ *       that resurrects the noun fails here.
+ *   V17 every session has a relationship (#340): `session.relationship_id` is the model's
+ *       `NOT NULL` FK, and this re-states it on the rows — no session reads as its own
+ *       relationship, no session points at a relationship that does not exist.
+ *   V18 a scored session is immutable (#340): there is no `UPDATE` path against `session` or
+ *       `opinion` anywhere in `lib/`, `scripts/` or `app/` — the rows a score is read from can
+ *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
 import { Client } from "pg";
-import { loadEnv, writeDatabaseUrl } from "./load-env.mjs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 
 const CONTENT_TABLES = [
   "record",
   "item",
   "response_option",
-  "assessment_instance",
+  "session",
   "party",
   "opinion",
+  "relationship",
 ];
 
 const problems = [];
 const fail = (code, message) => problems.push({ code, message });
+
+/**
+ * V18's scan: find every `UPDATE` statement that targets the `session` or `opinion` table in the
+ * shipped source (`lib/`, `scripts/`, `app/`). A scored session is immutable, so neither table may
+ * be UPDATEd — a score is written once by the gated INSERT in `submitAnswers` and never rewritten.
+ *
+ * Comments are stripped before matching, so a doc comment that explains *why* there is no such
+ * statement (including this one) cannot trip its own check. The return value carries the census
+ * (`files` scanned) and every `{ file, line, table }` violation, so the caller can name them.
+ */
+function scanForUpdatePaths() {
+  const roots = ["lib", "scripts", "app"].map((dir) => join(repoRoot, dir));
+  const exts = new Set([".ts", ".tsx", ".mjs", ".mts"]);
+  const skip = new Set([".next", ".datacheck", "node_modules"]);
+  const files = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (!skip.has(entry.name)) walk(join(dir, entry.name));
+      } else if (exts.has(entry.name.slice(entry.name.lastIndexOf(".")))) {
+        files.push(join(dir, entry.name));
+      }
+    }
+  };
+  for (const root of roots) walk(root);
+
+  // `UPDATE session` (or `ONLY`, or `public.`-qualified) and the same for `opinion`. `\b` after
+  // the table name means `session_invite` is not caught — the invitation's own UPDATEs are legal.
+  const pattern = /\bUPDATE\s+(?:ONLY\s+)?(?:public\.)?(session|opinion)\b/gi;
+  const violations = [];
+  for (const file of files) {
+    const source = readFileSync(file, "utf8");
+    const stripped = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    for (const match of stripped.matchAll(pattern)) {
+      const line = stripped.slice(0, match.index).split("\n").length;
+      violations.push({ file, line, table: match[1] });
+    }
+  }
+  return { files: files.length, violations };
+}
 
 async function main() {
   loadEnv();
@@ -104,6 +157,73 @@ async function main() {
       );
     }
 
+    // V16 — the old noun, the same standing guard as V2 (#340). No table and no column in
+    // `public` may be named like `instance` after the split; a later migration that resurrects
+    // the noun fails here, by name, rather than shipping a second schema.
+    const { rows: instanceTables } = await client.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name ILIKE '%instance%' ORDER BY table_name`,
+    );
+    const { rows: instanceColumns } = await client.query(
+      `SELECT table_name, column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND column_name ILIKE '%instance%' ORDER BY table_name, column_name`,
+    );
+    for (const table of instanceTables) {
+      fail(
+        "V16",
+        `public.${table.table_name} names the old noun — the model is a relationship holding sessions`,
+      );
+    }
+    for (const column of instanceColumns) {
+      fail(
+        "V16",
+        `public.${column.table_name}.${column.column_name} names the old noun — it is session_record_id now`,
+      );
+    }
+
+    // V18 — a scored session is immutable (#340): no UPDATE path against the two tables a score
+    // is read from. Scanned over the source the gate ships, not the live database, because
+    // "there is no UPDATE statement" is a fact about the code, not the rows. An UPDATE against
+    // the `session` or `opinion` tables would rewrite a scored row; the gated INSERT in
+    // `submitAnswers`, the unlock-mark write on `party` and the reissue on the invitation table
+    // are all on other tables and pass. The census line proves the scan looked.
+    const updatePaths = scanForUpdatePaths();
+    for (const violation of updatePaths.violations) {
+      fail(
+        "V18",
+        `${violation.file}:${violation.line} UPDATEs \`${violation.table}\` — a scored session is immutable`,
+      );
+    }
+
+    // V17 — every session has a relationship (#340). The column is `NOT NULL` with an FK, so the
+    // structural guarantee is in the schema; this re-states it on the rows so a drift is named
+    // rather than assumed. Checked beside V11/V12 for the same reason: on a database migrated
+    // before 0013 the read would fail with a missing column instead of this check naming the fix.
+    const { rows: relationshipColumn } = await client.query(
+      `SELECT 1 AS present FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'session'
+          AND column_name = 'relationship_id'`,
+    );
+    const hasRelationshipColumn = relationshipColumn.length > 0;
+    if (!hasRelationshipColumn) {
+      fail(
+        "V17",
+        "public.session.relationship_id does not exist — a session has no relationship (run `pnpm db:migrate`)",
+      );
+    }
+    let relationshipOrphans = 0;
+    if (hasRelationshipColumn && present.includes("relationship")) {
+      const { rows: orphans } = await client.query(
+        `SELECT s.record_id FROM session s
+          LEFT JOIN relationship r ON r.id = s.relationship_id
+         WHERE r.id IS NULL ORDER BY s.record_id`,
+      );
+      for (const row of orphans) {
+        relationshipOrphans += 1;
+        fail("V17", `session "${row.record_id}" points at a relationship that does not exist`);
+      }
+    }
+
     // V11 — the column the unlock marker writes (#252). Checked before the per-instance loop
     // because a database migrated before #252 has no place to put the mark, and the list would
     // then read a missing column on every request instead of this check naming the fix.
@@ -125,13 +245,13 @@ async function main() {
     // read would fail with a missing column instead of this check naming the fix.
     const { rows: settingColumn } = await client.query(
       `SELECT 1 AS present FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'assessment_instance'
+        WHERE table_schema = 'public' AND table_name = 'session'
           AND column_name = 'alignment_setting'`,
     );
     if (settingColumn.length === 0) {
       fail(
         "V12",
-        "public.assessment_instance.alignment_setting does not exist — the Setting cannot be read (run `pnpm db:migrate`)",
+        "public.session.alignment_setting does not exist — the Setting cannot be read (run `pnpm db:migrate`)",
       );
     }
     const hasSettingColumn = settingColumn.length > 0;
@@ -146,7 +266,7 @@ async function main() {
     // defaulted column would be a backfilled value a reader could not tell from an authored one.
     const CONSOLE_COLUMNS = [
       { table: "record", column: "author_user_id", type: "text" },
-      { table: "assessment_instance", column: "name", type: "text" },
+      { table: "session", column: "name", type: "text" },
       { table: "party", column: "submitted_at", type: "timestamp with time zone" },
     ];
     const { rows: consoleColumns } = await client.query(
@@ -155,7 +275,7 @@ async function main() {
         WHERE table_schema = 'public'
           AND (table_name, column_name) IN
               (('record', 'author_user_id'),
-               ('assessment_instance', 'name'),
+               ('session', 'name'),
                ('party', 'submitted_at'))`,
     );
     const consoleColumnOf = new Map(
@@ -204,7 +324,7 @@ async function main() {
     );
     const { rows: badSettings } = await client.query(
       `SELECT r.slug, ai.alignment_setting
-         FROM assessment_instance ai
+         FROM session ai
          JOIN record r ON r.id = ai.record_id
         WHERE ai.alignment_setting NOT IN ('soft', 'full')
         ORDER BY r.slug`,
@@ -248,7 +368,7 @@ async function main() {
       }
 
       const { rows: partyCounts } = await client.query(
-        `SELECT role, count(*)::int AS n FROM party WHERE instance_record_id = $1 GROUP BY role ORDER BY role`,
+        `SELECT role, count(*)::int AS n FROM party WHERE session_record_id = $1 GROUP BY role ORDER BY role`,
         [listed.recordId],
       );
       const byRole = new Map(partyCounts.map((row) => [row.role, row.n]));
@@ -267,7 +387,7 @@ async function main() {
                 resent_count,
                 (resent_at IS NULL) = (resent_count = 0) AS resent_consistent,
                 resent_at IS NULL OR resent_at >= created_at AS resent_after_creation
-           FROM instance_invite WHERE instance_record_id = $1`,
+           FROM session_invite WHERE session_record_id = $1`,
         [listed.recordId],
       );
       const invite = inviteRows[0];
@@ -296,7 +416,7 @@ async function main() {
       if (invite !== undefined && !invite.hashed) {
         fail(
           "V8",
-          `instance "${listed.slug}": instance_invite.token_hash is not a SHA-256 hex digest — the raw token must never be stored`,
+          `instance "${listed.slug}": session_invite.token_hash is not a SHA-256 hex digest — the raw token must never be stored`,
         );
       }
       if (invite !== undefined && !invite.sane_window) {
@@ -310,7 +430,7 @@ async function main() {
       if (invite !== undefined && !invite.resent_consistent) {
         fail(
           "V14",
-          `instance "${listed.slug}": instance_invite.resent_at and resent_count disagree about whether the invitation was re-sent (resent_at null=${invite.never_resent}, count=${invite.resent_count})`,
+          `instance "${listed.slug}": session_invite.resent_at and resent_count disagree about whether the invitation was re-sent (resent_at null=${invite.never_resent}, count=${invite.resent_count})`,
         );
       }
       if (invite !== undefined && !invite.resent_after_creation) {
@@ -319,9 +439,9 @@ async function main() {
 
       const { rows: answerCounts } = await client.query(
         `SELECT p.role, (SELECT count(*) FROM opinion o
-                          WHERE o.instance_record_id = p.instance_record_id
+                          WHERE o.session_record_id = p.session_record_id
                             AND o.role = p.role)::int AS answered
-           FROM party p WHERE p.instance_record_id = $1`,
+           FROM party p WHERE p.session_record_id = $1`,
         [listed.recordId],
       );
       const answeredBy = (role) => answerCounts.find((row) => row.role === role)?.answered ?? 0;
@@ -339,7 +459,7 @@ async function main() {
       if (hasUnlockColumn && status !== "complete") {
         const { rows: premature } = await client.query(
           `SELECT role FROM party
-            WHERE instance_record_id = $1 AND unlock_seen_at IS NOT NULL
+            WHERE session_record_id = $1 AND unlock_seen_at IS NOT NULL
             ORDER BY role`,
           [listed.recordId],
         );
@@ -360,14 +480,14 @@ async function main() {
           `SELECT p.role, p.submitted_at,
                   EXISTS (
                     SELECT 1 FROM item i
-                     WHERE i.record_id = p.instance_record_id
+                     WHERE i.record_id = p.session_record_id
                        AND NOT EXISTS (
                          SELECT 1 FROM opinion o
-                          WHERE o.instance_record_id = p.instance_record_id
+                          WHERE o.session_record_id = p.session_record_id
                             AND o.role = p.role
                             AND o.item_id = i.item_id)) AS has_open_lines
              FROM party p
-            WHERE p.instance_record_id = $1 AND p.submitted_at IS NOT NULL
+            WHERE p.session_record_id = $1 AND p.submitted_at IS NOT NULL
             ORDER BY p.role`,
           [listed.recordId],
         );
@@ -404,12 +524,12 @@ async function main() {
         const { rows: unanswered } = await client.query(
           `SELECT p.role, i.item_id
              FROM party p
-             JOIN item i ON i.record_id = p.instance_record_id
+             JOIN item i ON i.record_id = p.session_record_id
              LEFT JOIN opinion o
-               ON o.instance_record_id = p.instance_record_id
+               ON o.session_record_id = p.session_record_id
               AND o.role = p.role
               AND o.item_id = i.item_id
-            WHERE p.instance_record_id = $1 AND o.item_id IS NULL
+            WHERE p.session_record_id = $1 AND o.item_id IS NULL
             ORDER BY p.role, i.position`,
           [listed.recordId],
         );
@@ -429,13 +549,13 @@ async function main() {
     }
 
     const { rows: halfPair } = await client.query(
-      `SELECT instance_record_id, role, item_id FROM opinion
-        WHERE (think IS NULL) <> (guess IS NULL) ORDER BY instance_record_id, role, item_id`,
+      `SELECT session_record_id, role, item_id FROM opinion
+        WHERE (think IS NULL) <> (guess IS NULL) ORDER BY session_record_id, role, item_id`,
     );
     for (const row of halfPair) {
       fail(
         "V6",
-        `instance "${row.instance_record_id}": ${row.role} answers Aspect "${row.item_id}" with half of Think/Guess — they come together`,
+        `instance "${row.session_record_id}": ${row.role} answers Aspect "${row.item_id}" with half of Think/Guess — they come together`,
       );
     }
 
@@ -446,7 +566,7 @@ async function main() {
     // slipped past the app is named here, before a report draws it as a Gap.
     const { rows: instancedModes } = await client.query(
       `SELECT ai.record_id, r.slug, ai.mode
-         FROM assessment_instance ai
+         FROM session ai
          JOIN record r ON r.id = ai.record_id
         ORDER BY r.slug`,
     );
@@ -459,7 +579,7 @@ async function main() {
       const { rows: offenders } = await client.query(
         `SELECT role, item_id, (think IS NOT NULL) AS has_think
            FROM opinion
-          WHERE instance_record_id = $1
+          WHERE session_record_id = $1
             AND (think IS NOT NULL) <> $2::boolean
           ORDER BY role, item_id`,
         [row.record_id, advanced],
@@ -478,15 +598,15 @@ async function main() {
     // are bearer credentials, so the row may carry a SHA-256 digest and nothing else; a
     // plain-text token here would be readable by anyone with database access.
     const { rows: badPartyHashes } = await client.query(
-      `SELECT instance_record_id, role, access_token_hash FROM party
+      `SELECT session_record_id, role, access_token_hash FROM party
         WHERE access_token_hash IS NOT NULL
           AND access_token_hash !~ '^[0-9a-f]{64}$'
-        ORDER BY instance_record_id, role`,
+        ORDER BY session_record_id, role`,
     );
     for (const row of badPartyHashes) {
       fail(
         "V8",
-        `instance "${row.instance_record_id}": the ${row.role}'s access_token_hash is not a SHA-256 hex digest`,
+        `instance "${row.session_record_id}": the ${row.role}'s access_token_hash is not a SHA-256 hex digest`,
       );
     }
 
@@ -511,9 +631,9 @@ async function main() {
     // than a shared constant the seed does not import, which would be a third copy of the mapping
     // instead of the only one.
     const { rows: boundParties } = await client.query(
-      `SELECT instance_record_id, role, user_id FROM party
+      `SELECT session_record_id, role, user_id FROM party
         WHERE user_id IS NOT NULL
-        ORDER BY instance_record_id, role`,
+        ORDER BY session_record_id, role`,
     );
     if (boundParties.length > 0) {
       const { rows: authTables } = await client.query(
@@ -533,12 +653,12 @@ async function main() {
         if (known === null) {
           fail(
             "V10",
-            `instance "${party.instance_record_id}": the ${party.role} is bound to account "${party.user_id}", but this branch has no neon_auth users table to own it`,
+            `instance "${party.session_record_id}": the ${party.role} is bound to account "${party.user_id}", but this branch has no neon_auth users table to own it`,
           );
         } else if (!known.has(party.user_id)) {
           fail(
             "V10",
-            `instance "${party.instance_record_id}": the ${party.role} is bound to account "${party.user_id}", which neon_auth."${usersTable}" does not have`,
+            `instance "${party.session_record_id}": the ${party.role} is bound to account "${party.user_id}", which neon_auth."${usersTable}" does not have`,
           );
         }
       }
@@ -562,7 +682,7 @@ async function main() {
         const accountId = accountOf.get(email);
         if (accountId === undefined) continue;
         const { rows: seat } = await client.query(
-          "SELECT user_id, name FROM party WHERE instance_record_id = $1 AND role = $2",
+          "SELECT user_id, name FROM party WHERE session_record_id = $1 AND role = $2",
           [DEMO_INSTANCE_ID, role],
         );
         const bound = seat[0];
@@ -582,15 +702,12 @@ async function main() {
     }
 
     const { rows: orphanInstances } = await client.query(
-      `SELECT ai.record_id FROM assessment_instance ai
+      `SELECT ai.record_id FROM session ai
          JOIN record r ON r.id = ai.record_id
         WHERE r.record_type <> 'assessment' ORDER BY ai.record_id`,
     );
     for (const row of orphanInstances) {
-      fail(
-        "V3",
-        `assessment_instance "${row.record_id}" is attached to a record that is not an assessment`,
-      );
+      fail("V3", `session "${row.record_id}" is attached to a record that is not an assessment`);
     }
 
     const { rows: unlockMarks } = hasUnlockColumn
@@ -680,7 +797,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

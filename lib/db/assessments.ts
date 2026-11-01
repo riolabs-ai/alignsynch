@@ -30,6 +30,7 @@ import {
   type OptionRow,
   type PartyRow,
   type RecordRow,
+  type RelationshipRow,
 } from "@/lib/db/rows";
 import type { Assessment, AssessmentInstance } from "@/content/assessment";
 
@@ -43,6 +44,7 @@ const INSTANCE_BY_SLUG_SQL = `
     ai.mode,
     ai.alignment_setting,
     ai.name,
+    ai.relationship_id,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
       '[]'::json
@@ -54,23 +56,23 @@ const INSTANCE_BY_SLUG_SQL = `
     ) AS options,
     COALESCE(
       (SELECT json_agg(to_jsonb(p) ORDER BY p.role)
-         FROM party p WHERE p.instance_record_id = r.id),
+         FROM party p WHERE p.session_record_id = r.id),
       '[]'::json
     ) AS parties,
     COALESCE(
       (SELECT json_agg(to_jsonb(opinion))
-         FROM opinion WHERE opinion.instance_record_id = r.id),
+         FROM opinion WHERE opinion.session_record_id = r.id),
       '[]'::json
     ) AS opinions
   FROM record r
-  JOIN assessment_instance ai ON ai.record_id = r.id
+  JOIN session ai ON ai.record_id = r.id
   WHERE r.slug = $1 AND r.record_type = 'assessment'
 `;
 
 /**
  * One template record plus its items.
  *
- * A template is a record with `record_type = 'assessment'` and **no** `assessment_instance`
+ * A template is a record with `record_type = 'assessment'` and **no** `session`
  * row, so the `NOT EXISTS` is the definition and not a defensive filter: an id that names an
  * instance must not resolve as the template it was copied from.
  */
@@ -89,7 +91,7 @@ const TEMPLATE_BY_ID_SQL = `
   FROM record r
   WHERE r.id = $1
     AND r.record_type = 'assessment'
-    AND NOT EXISTS (SELECT 1 FROM assessment_instance ai WHERE ai.record_id = r.id)
+    AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
 `;
 
 interface InstanceQueryRow {
@@ -99,6 +101,7 @@ interface InstanceQueryRow {
   readonly alignment_setting: string;
   /** `NULL` is unnamed (`0011_console_columns.sql`); a surface falls back to the template title. */
   readonly name: string | null;
+  readonly relationship_id: string;
   readonly items: readonly ItemRow[];
   readonly options: readonly OptionRow[];
   readonly parties: readonly PartyRow[];
@@ -116,7 +119,7 @@ interface InstanceQueryRow {
  * `template_record` is `NULL` when the copy's `templateId` no longer resolves — the state the
  * page turns into `notFound()` and `db:verify` reports as drift. The template subselect keeps
  * the same `NOT EXISTS` definition as `TEMPLATE_BY_ID_SQL`: a template is a record with **no**
- * `assessment_instance` row, so an instance can never stand in for the template it was copied
+ * `session` row, so an instance can never stand in for the template it was copied
  * from.
  */
 const SCREEN_BY_SLUG_SQL = `
@@ -126,6 +129,7 @@ const SCREEN_BY_SLUG_SQL = `
     ai.mode,
     ai.alignment_setting,
     ai.name,
+    ai.relationship_id,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
       '[]'::json
@@ -137,18 +141,18 @@ const SCREEN_BY_SLUG_SQL = `
     ) AS options,
     COALESCE(
       (SELECT json_agg(to_jsonb(p) ORDER BY p.role)
-         FROM party p WHERE p.instance_record_id = r.id),
+         FROM party p WHERE p.session_record_id = r.id),
       '[]'::json
     ) AS parties,
     COALESCE(
       (SELECT json_agg(to_jsonb(opinion))
-         FROM opinion WHERE opinion.instance_record_id = r.id),
+         FROM opinion WHERE opinion.session_record_id = r.id),
       '[]'::json
     ) AS opinions,
     (SELECT to_jsonb(t) FROM record t
       WHERE t.id = ai.template_record_id
         AND t.record_type = 'assessment'
-        AND NOT EXISTS (SELECT 1 FROM assessment_instance ti WHERE ti.record_id = t.id)
+        AND NOT EXISTS (SELECT 1 FROM session ti WHERE ti.record_id = t.id)
     ) AS template_record,
     COALESCE(
       (SELECT json_agg(to_jsonb(ti) ORDER BY ti.position)
@@ -161,7 +165,7 @@ const SCREEN_BY_SLUG_SQL = `
       '[]'::json
     ) AS template_options
   FROM record r
-  JOIN assessment_instance ai ON ai.record_id = r.id
+  JOIN session ai ON ai.record_id = r.id
   WHERE r.slug = $1 AND r.record_type = 'assessment'
 `;
 
@@ -189,6 +193,7 @@ export async function readAssessmentInstanceRowsBySlug(
   const instance: InstanceRow = {
     record_id: row.record.id,
     template_record_id: row.template_record_id,
+    relationship_id: row.relationship_id,
     mode: row.mode,
     setting: row.alignment_setting,
     name: row.name,
@@ -264,6 +269,7 @@ export const readAssessmentScreenBySlug = cache(
         instance: {
           record_id: row.record.id,
           template_record_id: row.template_record_id,
+          relationship_id: row.relationship_id,
           mode: row.mode,
           setting: row.alignment_setting,
           name: row.name,
@@ -291,7 +297,7 @@ export async function listAssessmentInstances(): Promise<
     mode: string;
   }>(
     `SELECT r.slug, ai.record_id, ai.template_record_id, ai.mode
-       FROM assessment_instance ai
+       FROM session ai
        JOIN record r ON r.id = ai.record_id
       WHERE r.record_type = 'assessment'
       ORDER BY r.slug`,
@@ -312,3 +318,23 @@ export async function listAssessmentInstanceSlugs(): Promise<string[]> {
 
 /** Re-exported so a caller can compare a copy's ids without reaching into `rows.ts`. */
 export { itemIdsOf };
+
+/**
+ * The relationship a session belongs to, or `undefined` — the relationship-scoped read (#340).
+ *
+ * A session is one assessment cycle; the relationship is the container that persists across
+ * cycles and carries the two accounts, the plan and the purchase instant. The session read
+ * above exposes `relationship_id`, and this is the second half: the row itself, for the queries
+ * that are about the relationship rather than one cycle (`/admin/instances`, `/assessment/instances`).
+ */
+export async function readRelationshipById(
+  relationshipId: string,
+): Promise<RelationshipRow | undefined> {
+  const [row] = await queryRows<RelationshipRow>(
+    `SELECT id, template_id, initiator_user_id, purchased_at, plan, counterparty_user_id, created_at
+       FROM relationship
+      WHERE id = $1`,
+    [relationshipId],
+  );
+  return row;
+}

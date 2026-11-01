@@ -89,13 +89,13 @@ const stub = vi.hoisted(() => {
     }
     if (
       sql.startsWith(
-        "SELECT role FROM party WHERE instance_record_id = $1 AND access_token_hash = ANY",
+        "SELECT role FROM party WHERE session_record_id = $1 AND access_token_hash = ANY",
       )
     ) {
       const role = state.roles[0];
       return { rows: role === undefined ? [] : [{ role }], rowCount: role === undefined ? 0 : 1 };
     }
-    if (sql.startsWith("SELECT role FROM party WHERE instance_record_id = $1 AND user_id")) {
+    if (sql.startsWith("SELECT role FROM party WHERE session_record_id = $1 AND user_id")) {
       const role = state.roles[0];
       return { rows: role === undefined ? [] : [{ role }], rowCount: role === undefined ? 0 : 1 };
     }
@@ -108,7 +108,7 @@ const stub = vi.hoisted(() => {
         : ["initiator"];
       return { rows: roles.map((role) => ({ role, answered: state.answered[role] })), rowCount: 2 };
     }
-    if (sql.startsWith("UPDATE instance_invite SET token_hash = $2")) {
+    if (sql.startsWith("UPDATE session_invite SET token_hash = $2")) {
       return { rows: [], rowCount: 1 };
     }
     throw new Error(`the stub client has no answer for: ${sql.slice(0, 90)}`);
@@ -279,7 +279,7 @@ describe("resendInvite writes one replacement token", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const [update] = callsMatching(/^UPDATE instance_invite SET token_hash/);
+    const [update] = callsMatching(/^UPDATE session_invite SET token_hash/);
     expect(update).toBeDefined();
     expect(update.values[1]).toBe(hashToken(result.inviteToken));
     expect(update.values[1]).not.toBe(result.inviteToken);
@@ -296,7 +296,7 @@ describe("resendInvite writes one replacement token", () => {
     unclaimedInvitation();
     await resendInvite({ instanceRecordId: INSTANCE_ID, viewerTokens: ["t"], now: NOW });
 
-    const [update] = callsMatching(/^UPDATE instance_invite SET token_hash/);
+    const [update] = callsMatching(/^UPDATE session_invite SET token_hash/);
     expect(update.values[3]).toBe(new Date(NOW.getTime() + INVITE_TTL_MS).toISOString());
     expect(update.values[4]).toBe(NOW.toISOString());
     // `created_at` is the instance's own fact and is not rewritten by a reissue.
@@ -308,7 +308,7 @@ describe("resendInvite writes one replacement token", () => {
     unclaimedInvitation();
     await resendInvite({ instanceRecordId: INSTANCE_ID, viewerTokens: ["t"], now: NOW });
 
-    const [update] = callsMatching(/^UPDATE instance_invite SET token_hash/);
+    const [update] = callsMatching(/^UPDATE session_invite SET token_hash/);
     expect(update.values[2]).toBe("rowan@example.com");
   });
 
@@ -324,7 +324,7 @@ describe("resendInvite writes one replacement token", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.email).toBe("rowan.corrected@example.com");
-    const [update] = callsMatching(/^UPDATE instance_invite SET token_hash/);
+    const [update] = callsMatching(/^UPDATE session_invite SET token_hash/);
     expect(update.values[2]).toBe("rowan.corrected@example.com");
     // The email's own facts come from the row read under the lock, not from a second query.
     expect(result.initiatorName).toBe("Avery");
@@ -429,6 +429,6 @@ describe("every refusal writes nothing", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.code).toBe("invalid-email");
-    expect(callsMatching(/^UPDATE instance_invite/)).toHaveLength(0);
+    expect(callsMatching(/^UPDATE session_invite/)).toHaveLength(0);
   });
 });

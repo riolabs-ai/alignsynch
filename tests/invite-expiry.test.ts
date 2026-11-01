@@ -109,7 +109,7 @@ const copiedItems: ItemRow[] = instanceItems();
 /** A Counterparty who has answered everything — the answers the Initiator must never see. */
 function counterpartyOpinions(): OpinionRow[] {
   return template.items.map((item) => ({
-    instance_record_id: INSTANCE_ID,
+    session_record_id: INSTANCE_ID,
     role: "counterparty",
     item_id: item.id,
     feel: 5,
@@ -163,8 +163,8 @@ const stub = vi.hoisted(() => {
       return { rows: [{ role: "initiator" }], rowCount: 1 };
     }
     // The instance bundle. Matched before the template read below: both open with
-    // `SELECT to_jsonb(r) AS record,`, and only this one joins `assessment_instance`.
-    if (sql.includes("JOIN assessment_instance ai ON ai.record_id = r.id")) {
+    // `SELECT to_jsonb(r) AS record,`, and only this one joins `session`.
+    if (sql.includes("JOIN session ai ON ai.record_id = r.id")) {
       return {
         rows: [
           {
@@ -172,6 +172,7 @@ const stub = vi.hoisted(() => {
             template_record_id: TEMPLATE_RECORD_ID,
             mode: "basic",
             alignment_setting: "soft",
+            relationship_id: "relationship-test",
             items: copiedItems,
             options: templateOptions,
           },
@@ -179,7 +180,7 @@ const stub = vi.hoisted(() => {
         rowCount: 1,
       };
     }
-    if (sql.startsWith("SELECT instance_record_id, role, name FROM party")) {
+    if (sql.startsWith("SELECT session_record_id, role, name FROM party")) {
       return { rows: state.parties, rowCount: state.parties.length };
     }
     if (sql.startsWith("SELECT email, counterparty_name, claimed_at")) {
@@ -213,7 +214,7 @@ const stub = vi.hoisted(() => {
         rowCount: 1,
       };
     }
-    if (sql.startsWith("SELECT instance_record_id, role, item_id, feel, wish, think, guess")) {
+    if (sql.startsWith("SELECT session_record_id, role, item_id, feel, wish, think, guess")) {
       // What a correct store asks for: `role = ANY($2)`, and $2 is the visible roles only.
       const roles = values[1] as readonly string[];
       return {
@@ -293,7 +294,7 @@ function unclaimedInvitation(over: Partial<NonNullable<(typeof stub.state)["invi
     resent_count: 0,
     ...over,
   };
-  stub.state.parties = [{ instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" }];
+  stub.state.parties = [{ session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" }];
 }
 
 /* ------------------------------------------------------------------ *\
@@ -306,7 +307,7 @@ describe("the instance bundle reads the invitation's deadline", () => {
     await initiatorScreen(BEFORE_EXPIRY);
 
     const [bundleQuery] = callsMatching(
-      /^SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM instance_invite/,
+      /^SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM session_invite/,
     );
     expect(bundleQuery).toBeDefined();
     expect(bundleQuery.values).toEqual([INSTANCE_ID]);
@@ -392,8 +393,8 @@ describe("the Initiator's screen draws three states", () => {
   it("quotes claimed, unchanged", async () => {
     unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
     stub.state.parties = [
-      { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-      { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+      { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+      { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
     ];
 
     const markup = render(await initiatorScreen(AFTER_EXPIRY));
@@ -411,8 +412,8 @@ describe("the Initiator's screen draws three states", () => {
 
     unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
     stub.state.parties = [
-      { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-      { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+      { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+      { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
     ];
     const taken = render(await initiatorScreen(AFTER_EXPIRY));
 
@@ -431,15 +432,15 @@ describe("the blind rule survives the new read", () => {
   it("asks for the viewer's own opinions only, while the Counterparty has answered", async () => {
     unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
     stub.state.parties = [
-      { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-      { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+      { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+      { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
     ];
     // Their answers exist in the "database" — 5/1 on every Aspect. The Initiator has none.
     stub.state.opinions = counterpartyOpinions();
 
     const screen = await initiatorScreen(BEFORE_EXPIRY);
 
-    const [opinionQuery] = callsMatching(/^SELECT instance_record_id, role, item_id, feel/);
+    const [opinionQuery] = callsMatching(/^SELECT session_record_id, role, item_id, feel/);
     expect(opinionQuery).toBeDefined();
     // The one query that could leak: `role = ANY($2)` bound to nothing but the viewer's role.
     expect(opinionQuery.values[1]).toEqual(["initiator"]);
@@ -525,8 +526,8 @@ describe("the Initiator's panel offers one recovery action", () => {
   it("is not drawn once the invitation is claimed — the seat is taken", async () => {
     unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
     stub.state.parties = [
-      { instance_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-      { instance_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+      { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
+      { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
     ];
 
     const markup = renderWith(await initiatorScreen(AFTER_EXPIRY));
