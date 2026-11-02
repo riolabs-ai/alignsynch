@@ -74,6 +74,12 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   const viewer =
     persona === "initiator" ? "initiator" : persona === "counterparty" ? "counterparty" : null;
   const isCoach = persona === "coach";
+  // A party who has already answered has no form until the next session — the same rule the
+  // answer sheet enforces, read here so the primary action cannot lead into a gate.
+  const viewerSubmitted =
+    viewer === "initiator"
+      ? rel.initiatorSubmitted
+      : viewer === "counterparty" && rel.counterpartySubmitted;
 
   const answerLink = `/v1/relationships/${rel.id}/answer`;
   const acceptLink = `/v1/relationships/${rel.id}/accept`;
@@ -89,17 +95,21 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
   // The one primary action. An unclaimed relationship's action is the invitation / claim
   // card below — you cannot answer a session the other party has not joined yet. Once both
   // parties have answered, the action becomes acceptance; once accepted, it becomes the
-  // next session (gated by the subscription's standing).
+  // next session (gated by the subscription's standing). A party who has already answered
+  // while the other has not gets no action at all: the timeline says who we are waiting on,
+  // and there is no form to open until the next session.
   const primaryAction: PrimaryAction | null =
     !unclaimed && viewer !== null
       ? complete
         ? { label: "Request a new session", onClick: handleRequestNewSession }
         : bothAnswered
           ? { label: "Review and accept this session", href: acceptLink }
-          : {
-              label: rel.mode === "advanced" ? "Answer all four" : "Answer Feel & Wish",
-              href: answerLink,
-            }
+          : viewerSubmitted
+            ? null
+            : {
+                label: rel.mode === "advanced" ? "Answer all four" : "Answer Feel & Wish",
+                href: answerLink,
+              }
       : null;
 
   const lastSessionLabel = complete

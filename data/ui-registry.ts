@@ -730,7 +730,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The acceptance step: each party reviews a value-free summary of the session and records their acceptance; the session completes only when both have accepted, and that is the instant the report unlocks.",
+      "The acceptance step: the Initiator and the Counterparty side by side, each party's acceptance and their own submission in view — reviewable and changeable until that party accepts, with the other side sealed — and the session completes only when both have accepted, which is the instant the report unlocks.",
   },
   {
     kind: "route",

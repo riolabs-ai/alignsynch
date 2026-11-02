@@ -65,8 +65,20 @@ interface MissingField {
  * `position: sticky` never stick. `fixed` is the same pinned-bottom result, so the form carries
  * bottom padding equal to the bar height and the bar pays `env(safe-area-inset-bottom)` on the
  * home-indicator edge. Above `sm` it is static, in the form footer as before.
+ *
+ * `editing` is the acceptance step's way back in: `?edit=1` re-opens the sheet a party already
+ * submitted, seeded from their own answers, and saves back over them. It is the same form, so the
+ * Mode's kinds, the Setting's definition and the validation cannot drift between answering and
+ * revising — only the labels and the destination change, and `answerGateFor(rel, persona, { edit })`
+ * decides whether the door is open (it closes again once that party accepts).
  */
-export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
+export function AnswerSheet({
+  relationshipId,
+  editing = false,
+}: {
+  relationshipId: string;
+  editing?: boolean;
+}) {
   const { hydrated, persona, relationships, templates, submitAnswers } = useV1Store();
   const [draft, setDraft] = useState<Draft>({});
   const [attempted, setAttempted] = useState(false);
@@ -120,8 +132,9 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
   }
 
   // The same gate the server page applies from the cookie, re-read from the live store: a party
-  // who already submitted has no form to open until the next session.
-  const gate = answerGateFor(rel, persona);
+  // who has not submitted has the form, and a submitted party has it again only through the
+  // acceptance step's `edit` path, until they accept.
+  const gate = answerGateFor(rel, persona, { edit: editing });
   if (gate !== null) {
     return (
       <div className="mx-auto max-w-3xl space-y-4 p-4 sm:p-8">
@@ -191,7 +204,11 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
     }
     setAttempted(false);
     submitAnswers(rel.id, role, next);
-    window.location.assign(`/v1/relationships/${rel.id}`);
+    // Answering lands on the relationship; revising lands back on the acceptance step, so the
+    // reader returns to the sheet they were reviewing instead of hunting for it again.
+    window.location.assign(
+      editing ? `/v1/relationships/${rel.id}/accept` : `/v1/relationships/${rel.id}`,
+    );
   };
 
   return (
@@ -211,10 +228,20 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
         <div className="flex items-center gap-2">
           <SectionIntro
             title={template?.title ?? "Answer the sheet"}
-            subtitle={`Answering as ${role} — ${rel.mode === "advanced" ? "Feel, Wish, Think and Guess" : "Feel and Wish"} on every Aspect.`}
+            subtitle={
+              editing
+                ? `Editing your submission as ${role} — saving replaces the answers this session holds for you.`
+                : `Answering as ${role} — ${rel.mode === "advanced" ? "Feel, Wish, Think and Guess" : "Feel and Wish"} on every Aspect.`
+            }
           />
           <StageBadge stage={summary.stage} />
         </div>
+        {editing && (
+          <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+            Nothing you change here is visible to the other party — only acceptance lifts the blind
+            rule. If you have already accepted, this sheet is locked.
+          </p>
+        )}
         <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
           {SETTING_LABELS[rel.setting]} setting — {SETTING_DEFINITIONS[rel.setting]}
         </p>
@@ -312,10 +339,14 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
 
       <div className="fixed inset-x-0 bottom-0 z-10 flex justify-end gap-2 border-t border-border bg-background px-4 pt-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))] sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:px-0 sm:pt-0 sm:pb-0">
         <Button asChild variant="outline" size="lg">
-          <Link href={`/v1/relationships/${rel.id}`}>Cancel</Link>
+          <Link
+            href={editing ? `/v1/relationships/${rel.id}/accept` : `/v1/relationships/${rel.id}`}
+          >
+            Cancel
+          </Link>
         </Button>
         <Button type="button" size="lg" onClick={onSubmit}>
-          Submit answers
+          {editing ? "Save changes" : "Submit answers"}
         </Button>
       </div>
     </div>

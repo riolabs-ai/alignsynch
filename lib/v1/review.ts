@@ -123,7 +123,7 @@ export const REVIEW_SCREENS: readonly ReviewScreen[] = [
     route: "/v1/relationships/[id]/accept",
     href: "/v1/relationships/rel-sharing-unmet/accept",
     description:
-      "The acceptance step — each party reviews the value-free summary and records acceptance; the report unlocks only when both accept.",
+      "The acceptance step — each party compares the two sides' acceptance state, reviews and can still change their own submission, then accepts; the other party's answers stay sealed, and the report unlocks only when both accept.",
   },
   {
     route: "/v1/relationships/[id]/answer",
