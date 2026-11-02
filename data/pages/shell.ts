@@ -130,18 +130,37 @@ export function shellCopy(brand: Brand): PageCopy {
        *
        * Only destinations that exist today, and each one is honest:
        *
-       *   Home         `/`               the alignment front page
-       *   Templates    the `#templates` band of `/` — the four records' own heading
-       *   How it works the `#questions` band of `/` — how the two questions are asked
-       *   Pricing      `/pricing`        the public price page (the marketing header's fourth row)
-       *   Support      `/support`        the shell's existing support route, brand-projected
-       *   Overview     `/dashboard`      the signed-in console's front page (console 2/5)
-       *   Your templates `/assessment/templates` — the library: built-ins plus this account's
+       *   Home           `/`                      the marketing header's front-page row
+       *   Dashboard      `/dashboard`             the signed-in console's front page (console 2/5)
+       *   How it works   the `#questions` band of `/` — how the two questions are asked
+       *   My Relationships `/assessment/instances` — the relationship list R1 ships, read from
+       *                                             Postgres; not the browser-local `/v1/` prototype
+       *   Library        `/assessment/templates`  the template catalogue: built-ins plus this
+       *                                             account's
+       *   Templates      the `#templates` band of `/` — the four records' own heading
+       *   Pricing        `/pricing`               the public price page (the marketing header's
+       *                                             fourth row)
+       *   Support        `/support`               the shell's existing support route,
+       *                                             brand-projected
        *
-       * The console's two rows are the last, so the menu reads front page → console → operator and
-       * the alignment band above them keeps the order issue #156 shipped. Both are routes this
-       * build serves to every viewer: a signed-out request is answered with the route's own
-       * redirect to `/login?next=…`, never a 404, so a member's row is a row that works.
+       * **The rail opens on Dashboard, and there is one row for `/dashboard`.** "Home" and the
+       * separate "Overview" row used to name two different things and pointed at one product
+       * whose front page is the console — so the owner's review merged them: the rail's first row
+       * is Dashboard at `/dashboard`, and no second row aims at the same route. `home` survives
+       * below because the *marketing header* still draws a front-page row at `/` out of this
+       * section (`AlignSynchPublicNav`); it is the public chrome's word, not a sidebar row.
+       *
+       * **Library sits directly under My Relationships**, because they are the console's two
+       * lists — what you own and what you build from — and reading them apart is what made "Your
+       * templates" look like a settings page. Templates then follows, one row above Support,
+       * which is the order the review asked for: the marketing bands end the menu rather than
+       * interrupting the console.
+       *
+       * Every console row here is a route this build serves to every viewer: a signed-out request
+       * is answered with the route's own redirect to `/login?next=…`, never a 404, so a member's
+       * row is a row that works. None of them renders on the quiz brand — whose rail is its own
+       * menu (`components/layout/nav-menus.tsx`'s `QuizHubMenu`), so an AlignSynch destination
+       * cannot reach a quiz build.
        *
        * There is no About: no route answers "about this company", and the closest thing
        * (`/welcome`, the marketing page) is a landing page, not an About page. Pointing at
@@ -155,24 +174,32 @@ export function shellCopy(brand: Brand): PageCopy {
        * `/admin/instances` console 3/5). Each is drawn only for a viewer carrying `admin-console`,
        * because a row that leads to a 404 for a member advertises a surface the member must not
        * learn exists — a 404 is the whole refusal. A six-row menu for everybody else is the
-       * alignment menu plus the console's own two destinations.
+       * alignment menu plus the console's own three destinations.
        */
       {
         id: "nav-alignsynch",
         items: [
-          { id: "home", label: "Home" },
-          { id: "templates", label: "Templates" },
-          { id: "how-it-works", label: "How it works" },
           /**
-           * The public menu's fourth row. The sidebar does not ask for this id — it reads Home,
-           * Templates, How it works, Support and then the console's rows — and the word is
-           * shared deliberately: the marketing header and the quiz brand's nav both say
-           * "Pricing", and a second spelling for one destination is the drift a fixture avoids.
+           * The marketing header's front-page row, kept apart from the rail's first row: `home`
+           * is `/` and the public chrome draws it, while the sidebar opens on `dashboard` and
+           * never asks for this id. One destination per row — a rail row labelled Home that went
+           * to `/dashboard` is how the word stopped matching the page.
+           */
+          { id: "home", label: "Home" },
+          { id: "dashboard", label: "Dashboard" },
+          { id: "how-it-works", label: "How it works" },
+          { id: "my-relationships", label: "My Relationships" },
+          { id: "template-library", label: "Library" },
+          { id: "templates", label: "Templates" },
+          /**
+           * The public menu's fourth row. The sidebar does not ask for this id — it reads
+           * Dashboard, How it works, My Relationships, Library, Templates, Support and then the
+           * console's operator rows — and the word is shared deliberately: the marketing header
+           * and the quiz brand's nav both say "Pricing", and a second spelling for one
+           * destination is the drift a fixture avoids.
            */
           { id: "pricing", label: "Pricing" },
           { id: "support", label: "Support" },
-          { id: "console-overview", label: "Overview" },
-          { id: "template-library", label: "Your templates" },
           { id: "console-gaps", label: "Gap Analysis" },
           { id: "admin-instances", label: "Relationships" },
           { id: "quiz-tools", label: "Quiz tools" },
