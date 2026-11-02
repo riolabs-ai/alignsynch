@@ -40,11 +40,15 @@
  * draws it holds no words and no ids — `components/home/alignment-home.tsx` receives this
  * object and prints its fields.
  */
-import type { Assessment, AssessmentInstance } from "@/content/assessment";
+import type { Assessment, AssessmentInstance, Party } from "@/content/assessment";
 import type { Brand } from "@/content/brand";
+import { formatCurrency } from "@/content/core";
+import { GAP_KIND_LABELS } from "@/content/gaps";
 import type { PageCopy, PageCopySection } from "@/content/pages";
+import { gapOf } from "@/content/record";
 import {
   REALMS,
+  demoAnswersFor,
   isPurchasable,
   purchasableRelationshipTypes,
   type RelationshipType,
@@ -71,6 +75,8 @@ export interface AlignmentTemplate {
   readonly slug: string;
   readonly title: string;
   readonly aspects: string;
+  /** The create route — `/assessment/templates/<id>/create`. Always present. */
+  readonly create: string;
   /** The family this template's Relationship Type names — absent when it names none. */
   readonly family?: string;
   /** The descriptor inside that family (`Parent / Child`) — absent with the family. */
@@ -79,6 +85,35 @@ export interface AlignmentTemplate {
   readonly link?: { readonly href: string; readonly label: string };
   /** Present instead of `link`: the template nobody answered, and what that means. */
   readonly note?: { readonly label: string; readonly body: string };
+}
+
+/**
+ * One card of the catalogue view: a purchasable Relationship Type, projected for a public page.
+ *
+ * It is a projection and not the record itself because the card needs five derived strings
+ * (`roles`, `aspects`, `price`, and the two hrefs) and nothing else — the Aspects and the
+ * descriptor belong to the type's own page, not to a band that lists twenty-six of them.
+ */
+export interface AlignmentCatalogueType {
+  readonly id: string;
+  readonly name: string;
+  readonly realm: string;
+  /** `"Staff ↔ Manager"` — the two ends, joined by a fixture-owned frame. */
+  readonly roles: string;
+  /** `"6 Aspects"` — counted, never typed. */
+  readonly aspects: string;
+  /** `"$9.99"` — the fixture's integer cents, through the tree's one formatter. */
+  readonly price: string;
+  /** The create route for this type: `/v1/templates/<id>/create`. */
+  readonly href: string;
+  /** The worked example, **only** for a type whose demo sheet exists in the fixture. */
+  readonly example?: string;
+}
+
+/** One tab of the templates band: the value the toggle holds, and the words on its trigger. */
+export interface AlignmentTemplateTab {
+  readonly value: "catalogue" | "library" | "mine";
+  readonly label: string;
 }
 
 /** One family, with the Relationship Types of the templates that name it. */
@@ -106,6 +141,47 @@ export interface AlignmentRealmCount {
   readonly count: number;
 }
 
+/**
+ * One row of the hero's worked-example card: an Aspect as the template asks it, the two Feel
+ * scores that were actually given on it, and the sentence their difference comes to.
+ *
+ * Every field is read off the featured instance — the prompt, the scale's two endpoints and
+ * both parties' `feel` — and the Gap is `gapOf()`, the one Gap function the app has. There is
+ * no authored score here: a worked example that printed a number nobody answered would be the
+ * page's central claim faked in the markup that makes it.
+ */
+export interface AlignmentAspectScore {
+  readonly id: string;
+  /** The Aspect, in the template's own words — never a paraphrase this card invents. */
+  readonly label: string;
+  /** `"Rare → Constant · Feel Gap 3"`, or the glossary's In Synch when the two answers match. */
+  readonly note: string;
+  /** The screen-reader name of the two bar groups: `"Avery 2, Rowan 5"`. */
+  readonly scores: string;
+  /** The initiator's Feel score, and the counterparty's — each a cell count out of `max`. */
+  readonly you: number;
+  readonly them: number;
+  /** The scale's top: a 1..5 score draws five cells. */
+  readonly max: number;
+}
+
+/**
+ * The hero's proof: the featured relationship's five Aspects, both parties' answers to each,
+ * and the Gap between them — the one thing on this page a reader can check against a record.
+ */
+export interface AlignmentWorkedExample {
+  /** `"Worked example · Relationship Basics"`. */
+  readonly title: string;
+  /** The mode the instance was answered in — `"Basic"`, and it is the record's, not a design's. */
+  readonly mode: string;
+  /** The two parties, named, because the bars are two people's answers and not two abstractions. */
+  readonly you: string;
+  readonly them: string;
+  readonly rows: readonly AlignmentAspectScore[];
+  /** Under the rows: what the distance between two answers is for. */
+  readonly note: string;
+}
+
 /** The scope band's numbers — every one of them counted, none of them typed. */
 export interface AlignmentScope {
   readonly types: number;
@@ -124,29 +200,57 @@ export interface AlignmentHomeModel {
     readonly accentForeground: string;
   };
   readonly hero: {
+    /** The line above the `h1` — the page's position in one phrase. */
+    readonly eyebrow?: string;
     readonly heading: string;
     readonly subtitle?: string;
-    readonly cta?: { readonly label: string; readonly href: string };
-    /** Under the CTA: bought once, and which seat the reader is named to. */
+    /** The action the reader came to take; painted with the brand's action colour. */
+    readonly primary?: { readonly label: string; readonly href: string };
+    /** The proof link beside it — the worked example, in the outline treatment. */
+    readonly secondary?: { readonly label: string; readonly href: string };
+    /** Under the CTAs: bought once, and which seat the reader is named to. */
     readonly fineprint?: string;
   };
+  /** The hero's right-hand card: the featured relationship's own answers. */
+  readonly workedExample: AlignmentWorkedExample;
   readonly sides: { readonly you: string; readonly them: string };
   readonly practice: {
+    readonly eyebrow?: string;
     readonly heading?: string;
     readonly body?: string;
     readonly items: readonly AlignmentCard[];
   };
   readonly questions: {
+    readonly eyebrow?: string;
     readonly heading?: string;
     readonly body?: string;
     readonly items: readonly AlignmentQuestion[];
   };
   readonly templates: {
+    readonly eyebrow?: string;
     readonly heading?: string;
     readonly body?: string;
-    readonly items: readonly AlignmentTemplate[];
+    /** The three views, in toggle order. The catalogue is the one that opens. */
+    readonly tabs: readonly AlignmentTemplateTab[];
+    /** The words on the two card actions — fixture-owned, never typed in a card. */
+    readonly actions: { readonly use: string; readonly example: string };
+    /** Every purchasable Relationship Type, projected — the shop's shelf. */
+    readonly catalogue: readonly AlignmentCatalogueType[];
+    /** The templates this deployment has built — `data/assessments.ts`. */
+    readonly library: readonly AlignmentTemplate[];
+    /**
+     * The third view, and it is a door rather than a list. `/` is a public page: a signed-in
+     * visitor's relationships are not rendered here, not serialised into the payload, and not
+     * reachable without a session. This band says where they are and links to the route that
+     * decides who may see them.
+     */
+    readonly mine: {
+      readonly body: string;
+      readonly link: { readonly label: string; readonly href: string };
+    };
   };
   readonly families: {
+    readonly eyebrow?: string;
     /** The filled heading: `"Twenty-seven relationship types, across seven realms."` */
     readonly heading?: string;
     readonly body?: string;
@@ -154,6 +258,7 @@ export interface AlignmentHomeModel {
     readonly scope: AlignmentScope;
   };
   readonly seats: {
+    readonly eyebrow?: string;
     readonly heading?: string;
     readonly body?: string;
     readonly items: readonly AlignmentCard[];
@@ -312,6 +417,105 @@ function cardsOf(section: PageCopySection): AlignmentCard[] {
 }
 
 /**
+ * A band's eyebrow, when the fixture declares one. Authored on the page rather than in the
+ * section so `cardsOf()` never mistakes it for a card: a section item there must carry a body.
+ */
+function eyebrowOf(copy: PageCopy, id: string): string | undefined {
+  return copy.items?.find((item) => item.id === id)?.label;
+}
+
+/** The party holding one seat on the instance — by role, never by array position. */
+function partyIn(instance: AssessmentInstance, role: Party["role"]): Party {
+  const party = instance.parties.find((candidate) => candidate.role === role);
+  if (party === undefined) {
+    throw new Error(
+      `alignmentHome: relationship "${instance.slug}" has no ${role} — a worked example draws both seats`,
+    );
+  }
+  return party;
+}
+
+/** One party's Feel score on one Aspect, or a refusal: a blank bar is not a missing answer. */
+function feelOf(party: Party, itemId: string): number {
+  const answer = party.opinions.find((row) => row.itemId === itemId);
+  const feel = answer?.opinions.feel;
+  if (feel === undefined) {
+    throw new Error(
+      `alignmentHome: "${party.name}" has no Feel score on "${itemId}" — the worked-example card draws one bar per party per Aspect`,
+    );
+  }
+  return feel;
+}
+
+/**
+ * The hero's card, read off the featured instance.
+ *
+ * The rows are the instance's own Aspects in the fixture's order, each carrying the template's
+ * prompt, the scale's two endpoints and both parties' Feel answers. The Gap is `gapOf()` — the
+ * same call the report makes — so the number on the front page cannot say something the record
+ * does not. A Gap of 0 is printed as the glossary's In Synch rather than "Feel Gap 0".
+ *
+ * The mode pill is the instance's `mode`, not a design choice: the featured relationship was
+ * answered in Basic Mode, so the card says Basic.
+ */
+function workedExampleOf(instance: AssessmentInstance, copy: PageCopy): AlignmentWorkedExample {
+  const initiator = partyIn(instance, "initiator");
+  const counterparty = partyIn(instance, "counterparty");
+  const card = pageItemOf(copy, "worked-example");
+  const noteBody = card.body;
+  if (noteBody === undefined) {
+    throw new Error(
+      'alignmentHome: page item "worked-example" has no body — the card would close on nothing',
+    );
+  }
+  const rowLabel = pageItemOf(copy, "worked-example-row").label;
+  const inSynchLabel = pageItemOf(copy, "worked-example-in-synch").label;
+  const scoresLabel = pageItemOf(copy, "worked-example-scores").label;
+  const mode =
+    instance.mode === "advanced"
+      ? pageItemOf(copy, "worked-example-mode-advanced").label
+      : pageItemOf(copy, "worked-example-mode-basic").label;
+
+  const rows: AlignmentAspectScore[] = instance.items.map((item) => {
+    if (item.scale.kind !== "score") {
+      throw new Error(
+        `alignmentHome: Aspect "${item.id}" is not a 1..5 score — the worked-example card draws bars, and a choice scale has no count to draw`,
+      );
+    }
+    const you = feelOf(initiator, item.id);
+    const them = feelOf(counterparty, item.id);
+    const gap = gapOf(you, them);
+    const ends = { from: item.leftValue, to: item.rightValue };
+    return {
+      id: item.id,
+      label: item.prompt,
+      note:
+        gap === 0
+          ? fillLabel(inSynchLabel, ends)
+          : fillLabel(rowLabel, { ...ends, kind: GAP_KIND_LABELS.feel, gap }),
+      scores: fillLabel(scoresLabel, {
+        you: initiator.name,
+        yours: you,
+        them: counterparty.name,
+        theirs: them,
+      }),
+      you,
+      them,
+      max: item.scale.max,
+    };
+  });
+
+  return {
+    title: fillLabel(card.label, { title: instance.title }),
+    mode,
+    you: initiator.name,
+    them: counterparty.name,
+    rows,
+    note: noteBody,
+  };
+}
+
+/**
  * The page, joined.
  *
  * `featuredSlug` is the relationship the hero leads with, and it is required to resolve: a
@@ -378,6 +582,17 @@ export function alignmentHome(
   }));
 
   const readLabel = pageItemOf(copy, "template-read").label;
+  const useLabel = pageItemOf(copy, "template-use").label;
+  const exampleLabel = pageItemOf(copy, "template-example").label;
+  const rolesLabel = pageItemOf(copy, "template-roles").label;
+  const mineItem = pageItemOf(copy, "templates-mine");
+  const mineBody = mineItem.body;
+  const mineHref = mineItem.value;
+  if (mineBody === undefined || mineHref === undefined) {
+    throw new Error(
+      'alignmentHome: page item "templates-mine" needs a body and the route it links to — the third view is a door, and a door with no handle renders blank',
+    );
+  }
   const unplayed = pageItemOf(copy, "template-unplayed");
   if (unplayed.body === undefined) {
     throw new Error(
@@ -397,6 +612,7 @@ export function alignmentHome(
       slug: template.slug,
       title: template.title,
       aspects: fillLabel(aspectsLabel, { count: template.items.length }),
+      create: `/assessment/templates/${template.id}/create`,
       ...(type === undefined ? {} : { family: type.family, type: type.type }),
       ...(answered === undefined
         ? {
@@ -433,12 +649,35 @@ export function alignmentHome(
     families.push({ name: row.family, types: [row] });
   }
 
-  const featuredParties = featured.parties.map((party) => party.name);
-  const templatesBody = fillLabel(sectionBody(templatesSection), {
-    title: featured.title,
-    left: featuredParties[0] ?? "",
-    right: featuredParties[1] ?? "",
-  });
+  /**
+   * The catalogue view: every purchasable Relationship Type, projected for the card. The same
+   * `isPurchasable` gate the scope band counts by, so the shelf a reader can click and the
+   * number above it cannot disagree. `example` is present only where `demoAnswersByType` holds a
+   * sheet — the demo is a real report, so a link to a missing one is a 404 dressed as a door.
+   */
+  const catalogue: AlignmentCatalogueType[] = relationshipTypes
+    .filter(isPurchasable)
+    .map((type) => ({
+      id: type.id,
+      name: type.name,
+      realm: type.realm,
+      roles: fillLabel(rolesLabel, {
+        initiator: type.roles.initiator,
+        counterparty: type.roles.counterparty,
+      }),
+      aspects: fillLabel(aspectsLabel, { count: type.aspects.length }),
+      price: formatCurrency(type.price),
+      href: `/v1/templates/${type.id}/create`,
+      ...(demoAnswersFor(type.id) === undefined
+        ? {}
+        : { example: `/v1/templates/${type.id}/demo` }),
+    }));
+
+  const tabs: AlignmentTemplateTab[] = [
+    { value: "catalogue", label: pageItemOf(copy, "templates-tab-catalogue").label },
+    { value: "library", label: pageItemOf(copy, "templates-tab-library").label },
+    { value: "mine", label: pageItemOf(copy, "templates-tab-mine").label },
+  ];
 
   return {
     brand: {
@@ -450,31 +689,54 @@ export function alignmentHome(
       accentForeground: brand.colors.accentForeground,
     },
     hero: {
+      ...(copy.eyebrow === undefined ? {} : { eyebrow: copy.eyebrow }),
       heading: copy.heading,
       ...(copy.subtitle === undefined ? {} : { subtitle: copy.subtitle }),
-      ...(copy.cta === undefined ? {} : { cta: { label: copy.cta.label, href: copy.cta.href } }),
+      ...(copy.cta === undefined
+        ? {}
+        : { primary: { label: copy.cta.label, href: copy.cta.href } }),
+      ...(copy.secondaryCta === undefined
+        ? {}
+        : { secondary: { label: copy.secondaryCta.label, href: copy.secondaryCta.href } }),
       fineprint: pageItemOf(copy, "hero-fineprint").label,
     },
+    workedExample: workedExampleOf(featured, copy),
     sides: {
       you: pageItemOf(copy, "side-you").label,
       them: pageItemOf(copy, "side-them").label,
     },
     practice: {
+      ...(eyebrowOf(copy, "eyebrow-practice") === undefined
+        ? {}
+        : { eyebrow: eyebrowOf(copy, "eyebrow-practice") }),
       ...(practiceSection.heading === undefined ? {} : { heading: practiceSection.heading }),
       ...(practiceSection.body === undefined ? {} : { body: practiceSection.body }),
       items: cardsOf(practiceSection),
     },
     questions: {
+      ...(eyebrowOf(copy, "eyebrow-questions") === undefined
+        ? {}
+        : { eyebrow: eyebrowOf(copy, "eyebrow-questions") }),
       ...(questionsSection.heading === undefined ? {} : { heading: questionsSection.heading }),
       ...(questionsSection.body === undefined ? {} : { body: questionsSection.body }),
       items: questions,
     },
     templates: {
+      ...(eyebrowOf(copy, "eyebrow-templates") === undefined
+        ? {}
+        : { eyebrow: eyebrowOf(copy, "eyebrow-templates") }),
       ...(templatesSection.heading === undefined ? {} : { heading: templatesSection.heading }),
-      body: templatesBody,
-      items: rows,
+      body: sectionBody(templatesSection),
+      tabs,
+      actions: { use: useLabel, example: exampleLabel },
+      catalogue,
+      library: rows,
+      mine: { body: mineBody, link: { label: mineItem.label, href: mineHref } },
     },
     families: {
+      ...(eyebrowOf(copy, "eyebrow-families") === undefined
+        ? {}
+        : { eyebrow: eyebrowOf(copy, "eyebrow-families") }),
       /**
        * The filled heading, capitalised at the sentence's first letter: the fixture begins it
        * with the count (`"{types} relationship types, …"`), and the count arrives lowercase so
@@ -491,6 +753,9 @@ export function alignmentHome(
       scope,
     },
     seats: {
+      ...(eyebrowOf(copy, "eyebrow-seats") === undefined
+        ? {}
+        : { eyebrow: eyebrowOf(copy, "eyebrow-seats") }),
       ...(seatsSection.heading === undefined ? {} : { heading: seatsSection.heading }),
       ...(seatsSection.body === undefined ? {} : { body: seatsSection.body }),
       items: cardsOf(seatsSection).map((seat) => ({
