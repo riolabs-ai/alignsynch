@@ -1,28 +1,32 @@
 /**
  * data/v1/relationship-types.ts — the /v1 prototype's relationship taxonomy.
  *
- * Six relationship types, each with a name, a one-line "who it's for", a one-line "who it is
- * **not** for", and a starter set of Aspects written in the product's own language. These are
- * the public face of the prototype: `/v1/templates` (the catalogue), `/v1/templates/[type]`
- * (the decide-before-you-pay page) and `/v1/templates/[type]/demo` (a real report from
- * fixture answers) all render from this one file.
+ * The owner supplied a 29-row catalogue (issue #385, preserved verbatim at
+ * `docs/RELATIONSHIP-TYPES-SOURCE.md`). This file is the **normalised** form of it: every row
+ * is a typed record, the three source typos are corrected, the `purchasable` field is real,
+ * and each of the 26 purchasable types carries its Aspects exactly as the issue wrote them.
+ * Three rows — the dating set — are kept with `purchasable: false` and no Aspects, because
+ * "no dating" is a product decision the owner made explicitly; a type is excluded by a field,
+ * not by deletion, so flipping `purchasable` is the whole change if the owner ever wants them.
  *
- * The Aspects are typed against the **real** model (`content/assessment.ts::zAspect`, a
- * 1..5 `score` scale with two named ends), so the day a type is wired into the store the
- * shapes already match — the same rule `data/v1/fixtures.ts` follows for its templates.
+ * A seventh type, `co-founders`, is **kept** even though it has no source row: it ships today,
+ * the owner added it separately, and the reconciliation in §4 of the issue says to keep it.
+ *
+ * The record shape is `id` (the stable slug/key), `name`, `shortName`, `realm`, `roles`
+ * (initiator + counterparty), `descriptor` (the "who it is for / who it is **not** for" pair),
+ * `aspects`, `price` and `purchasable`.
  *
  * ## The aspect rule — observable, answerable from both sides, never an instrument
  *
  * Every Aspect is a question **both** parties can answer about the relationship as it is
- * today ("How much say do you each have in big decisions?"), with a Left Value (notch 1)
- * and a Right Value (notch 5). None is leading, none diagnoses, none is clinical, and none
- * invents a psychometric: there are no scores from instruments we do not run, no borrowed
- * clinical labels, no invented match score. This is a conversation aid — a way to put two
- * people's answers side by side — not an assessment instrument, and the words here stay on
- * the observable side of that line.
+ * today, on a 1–5 scale with two named ends (Left Value = notch 1, Right Value = notch 5).
+ * None is leading, none diagnoses, none is clinical, and none invents a psychometric: there
+ * are no scores from instruments we do not run, no borrowed clinical labels, no invented
+ * match score. This is a conversation aid — a way to put two people's answers side by side —
+ * not an assessment instrument. The words here stay on the observable side of that line.
  *
- * Two or three types may share an Aspect (a manager-and-report pair *is* a lead-and-member
- * pair); the six sets are deliberately not six copies of one list.
+ * Types may share an Aspect (every parent–child variant asks `time`, every friendship asks
+ * `support`); the sets are deliberately not copies of one list.
  *
  * ## Price
  *
@@ -42,27 +46,66 @@ import { zAspect, type Aspect, type Opinions } from "../../content/assessment";
  * The shape
  * ------------------------------------------------------------------ */
 
-/** One relationship type — the catalogue card and the template page. */
+/** The seven realms, in the order the catalogue groups them. */
+export const REALMS = [
+  "Office",
+  "Business",
+  "Property",
+  "School",
+  "Medical",
+  "Home",
+  "Social",
+] as const;
+
+export type Realm = (typeof REALMS)[number];
+
+/** The two roles a relationship is between — two named ends, never one judge of the other. */
+export interface RelationshipRoles {
+  readonly initiator: string;
+  readonly counterparty: string;
+}
+
+/** The "who it is for / who it is **not** for" pair, written with the type. */
+export interface RelationshipDescriptor {
+  readonly whoItsFor: string;
+  readonly whoItsNotFor: string;
+}
+
+/** One relationship type — the catalogue card, the template page and the shop picker. */
 export interface RelationshipType {
   /** The slug — the `[type]` route segment and the demo-answer key. */
   readonly id: string;
-  /** The display name, capitalised: "Partners". */
+  /** The full name, as §1 of #385 writes it: "Staff–Manager". */
   readonly name: string;
-  /** One line on who this type is for. */
-  readonly whoItsFor: string;
-  /** One line on who this type is **not** for — read aloud on the template page. */
-  readonly whoItsNotFor: string;
-  /** The starter Aspects, 5–8 of them, each a real `Aspect`. */
+  /** The short name, as §1 writes it: "Coworkers". */
+  readonly shortName: string;
+  /** The realm the catalogue groups by — a real field, never inferred from prose. */
+  readonly realm: Realm;
+  /** The two roles, initiator first. */
+  readonly roles: RelationshipRoles;
+  /** Who it is for and who it is not for, written with the type. */
+  readonly descriptor: RelationshipDescriptor;
+  /** The Aspects — 5–10 for a purchasable type, none for the excluded dating rows. */
   readonly aspects: readonly Aspect[];
+  /** One relationship's price, integer cents. */
+  readonly price: number;
+  /** Whether this type is for sale. `false` for the dating set, a field not a deletion. */
+  readonly purchasable: boolean;
 }
 
 export const zRelationshipType = z
   .object({
     id: z.string().min(1),
     name: z.string().min(1),
-    whoItsFor: z.string().min(1),
-    whoItsNotFor: z.string().min(1),
-    aspects: z.array(zAspect).min(5).max(8),
+    shortName: z.string().min(1),
+    realm: z.enum(REALMS),
+    roles: z.object({ initiator: z.string().min(1), counterparty: z.string().min(1) }).strict(),
+    descriptor: z
+      .object({ whoItsFor: z.string().min(1), whoItsNotFor: z.string().min(1) })
+      .strict(),
+    aspects: z.array(zAspect).max(10),
+    price: z.number().int().positive(),
+    purchasable: z.boolean(),
   })
   .strict();
 
@@ -71,61 +114,419 @@ function aspect(id: string, prompt: string, leftValue: string, rightValue: strin
   return { id, prompt, scale: { kind: "score", min: 1, max: 5 }, leftValue, rightValue };
 }
 
+/**
+ * One relationship costs one price — the initiator pays this, the counterparty pays nothing.
+ * Integer cents, the tree's money convention: `999` is `$9.99`, the Basic plan's monthly price.
+ * Uniform until per-type pricing is a decision rather than a guess.
+ */
+export const RELATIONSHIP_PRICE_CENTS = 999;
+
 /* ------------------------------------------------------------------ *
- * The six types
+ * The taxonomy — 29 source rows plus the kept co-founders
  * ------------------------------------------------------------------ */
 
 export const relationshipTypes: readonly RelationshipType[] = [
+  /* ------------------------------------------------ Office */
   {
-    id: "partners",
-    name: "Partners",
-    whoItsFor: "A couple who want to see where they stand.",
-    whoItsNotFor:
-      "A couple in crisis, or anyone looking for a diagnosis rather than a conversation.",
+    id: "staff-manager",
+    name: "Staff–Manager",
+    shortName: "Staff–Manager",
+    realm: "Office",
+    roles: { initiator: "Staff", counterparty: "Manager" },
+    descriptor: {
+      whoItsFor:
+        "A staff member and their manager, checking how the working relationship actually works.",
+      whoItsNotFor:
+        "Anyone in a dispute that should go through HR, or looking for a performance review rather than a conversation.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
     aspects: [
       aspect(
-        "partners-money",
-        "How are money and the decisions about it handled?",
-        "Kept separate",
-        "Fully shared",
+        "say-in-decisions",
+        "How much say does each of you have in decisions that affect the work?",
+        "Manager decides alone",
+        "Staff decides alone",
       ),
       aspect(
-        "partners-decisions",
-        "How much say do you each have in big decisions?",
-        "One decides",
-        "Decided together",
+        "feedback-flow",
+        "When feedback happens, how freely does it move both ways?",
+        "Only manager to staff",
+        "Both give and take it",
       ),
       aspect(
-        "partners-time",
-        "How is time together chosen in a normal week?",
-        "Fits around everything else",
-        "Made a priority",
+        "clarity-of-expectations",
+        "How clearly are expectations about the job spelled out right now?",
+        "Nothing written or agreed",
+        "Explicit and current",
       ),
       aspect(
-        "partners-conflict",
-        "When you disagree, how is it raised?",
-        "Left unsaid",
-        "Said plainly",
+        "workload-reality",
+        "How close is the stated workload to what is actually being carried?",
+        "Very far apart",
+        "Matches",
       ),
       aspect(
-        "partners-plans",
-        "How are plans for the future made?",
-        "Kept to ourselves",
-        "Made together",
+        "credit",
+        "When work goes well, how is credit shared?",
+        "All with the manager",
+        "Shared as each contributed",
       ),
       aspect(
-        "partners-hard-days",
-        "When one of you is having a hard day, what happens?",
-        "Handled alone",
-        "Talked through together",
+        "escalation",
+        "If something goes wrong, how safe is it to raise it early?",
+        "Unsafe — better to hide it",
+        "Safe and routine",
+      ),
+    ],
+  },
+  {
+    id: "colleagues",
+    name: "Coworker–Colleague",
+    shortName: "Coworkers",
+    realm: "Office",
+    roles: { initiator: "Coworker", counterparty: "Colleague" },
+    descriptor: {
+      whoItsFor: "Two coworkers who share work and want the handovers and the credit to feel fair.",
+      whoItsNotFor:
+        "Two people with no shared work, or anyone settling a dispute through an employer.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "handoffs",
+        "How well do work handovers between you actually work?",
+        "Things get dropped",
+        "Nothing dropped",
+      ),
+      aspect(
+        "shared-context",
+        "How much do you each know about what the other is working on?",
+        "Nothing",
+        "Current picture on both sides",
+      ),
+      aspect(
+        "credit",
+        "When a shared result lands, how is credit handled?",
+        "One name on it",
+        "Both named",
+      ),
+      aspect(
+        "conflict",
+        "When you disagree about how to do something, how does it get resolved?",
+        "Avoided or escalated",
+        "Talked through directly",
+      ),
+      aspect(
+        "reliability",
+        "How reliably do the commitments you make to each other hold?",
+        "Frequently slip",
+        "Held as agreed",
+      ),
+    ],
+  },
+  {
+    id: "business-partners",
+    name: "Business Partner A–Business Partner B",
+    shortName: "Business Partners",
+    realm: "Office",
+    roles: { initiator: "Business Partner A", counterparty: "Business Partner B" },
+    descriptor: {
+      whoItsFor: "Two business partners who want the split of decisions and money out in the open.",
+      whoItsNotFor:
+        "A pair who need a legal agreement rather than a conversation, or a partnership already dissolving.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "decision-rights",
+        "How clearly are decision rights split between you?",
+        "Unclear, re-litigated",
+        "Written and respected",
+      ),
+      aspect(
+        "money-picture",
+        "How much does each of you know about the business's actual money position?",
+        "One holds it all",
+        "Both see the same numbers",
+      ),
+      aspect(
+        "contribution",
+        "How fairly does the effort each of you puts in compare to what each expected?",
+        "Very uneven",
+        "As expected on both sides",
+      ),
+      aspect(
+        "disagreement",
+        "When you disagree about the business, what happens?",
+        "Stalls or simmers",
+        "Resolved with a rule",
+      ),
+      aspect(
+        "exit",
+        "How clear is what happens if one of you wants out?",
+        "Never discussed",
+        "Documented and understood",
+      ),
+      aspect(
+        "risk-appetite",
+        "How aligned are your appetites for risk right now?",
+        "Opposite",
+        "Aligned",
+      ),
+    ],
+  },
+  {
+    id: "project-manager-member",
+    name: "Project Manager–Team Member",
+    shortName: "Project Manager–Team Member",
+    realm: "Office",
+    roles: { initiator: "Project Manager", counterparty: "Team Member" },
+    descriptor: {
+      whoItsFor: "A project manager and a team member on the same project.",
+      whoItsNotFor:
+        "A whole team of more than two, or anyone looking to document performance rather than talk.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "plan-vs-reality",
+        "How close is the plan to what can actually be delivered?",
+        "Fantasy",
+        "Realistic",
+      ),
+      aspect(
+        "priorities",
+        "How clear is which work comes first?",
+        "Everything is urgent",
+        "Ordered and agreed",
+      ),
+      aspect(
+        "blockers",
+        "When something blocks the work, how fast does it get raised and cleared?",
+        "Weeks, or never",
+        "Same day",
+      ),
+      aspect(
+        "autonomy",
+        "How much latitude does each of you have over how the work is done?",
+        "None",
+        "Full, within the goal",
+      ),
+      aspect(
+        "status-honesty",
+        "How honest is the status each of you reports?",
+        "Green until it fails",
+        "Accurate even when bad",
+      ),
+    ],
+  },
+  {
+    id: "team",
+    name: "Project Teammate A–Project Teammate B",
+    shortName: "Project Teammates",
+    realm: "Office",
+    roles: { initiator: "Project Teammate A", counterparty: "Project Teammate B" },
+    descriptor: {
+      whoItsFor: "Two teammates on the same project whose work meets in the middle.",
+      whoItsNotFor:
+        "A lead and a report — that is project-manager-member — or a whole team of more than two.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "interfaces",
+        "How well-defined is the boundary where your work meets?",
+        "Vague",
+        "Explicit",
+      ),
+      aspect(
+        "interruptions",
+        "How much are your own priorities disrupted by each other?",
+        "Constantly",
+        "Rarely",
+      ),
+      aspect(
+        "quality-bar",
+        "How close is the standard each of you holds to the other's?",
+        "Far apart",
+        "Same bar",
+      ),
+      aspect(
+        "credit",
+        "When the project lands, how is credit shared?",
+        "Unequal",
+        "As contributed",
+      ),
+      aspect(
+        "repair",
+        "When one of you drops something, how is it handled?",
+        "Blamed",
+        "Fixed and learned from",
+      ),
+    ],
+  },
+
+  /* ------------------------------------------------ Business */
+  {
+    id: "customer-vendor-product",
+    name: "Customer–Vendor Product",
+    shortName: "Customer–Vendor Product",
+    realm: "Business",
+    roles: { initiator: "Customer", counterparty: "Vendor Product" },
+    descriptor: {
+      whoItsFor:
+        "A customer and a product vendor checking whether the product delivers what was bought.",
+      whoItsNotFor:
+        "A one-off purchase with no ongoing relationship, or a legal dispute over a contract.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "expectation-fit",
+        "How close is what the product does to what the customer expected?",
+        "Far off",
+        "As expected",
+      ),
+      aspect(
+        "support-access",
+        "When something goes wrong, how reachable is real help?",
+        "No path",
+        "Direct and answered",
+      ),
+      aspect(
+        "price-value",
+        "How does the price compare to the value each side thinks it delivers?",
+        "Mismatched",
+        "Fair on both sides",
+      ),
+      aspect(
+        "roadmap-influence",
+        "How much can the customer influence what gets built next?",
+        "No channel",
+        "Directly and visibly",
+      ),
+      aspect(
+        "renewal-intent",
+        "How likely is each of you to continue the arrangement?",
+        "Looking for an exit",
+        "Renewing without debate",
+      ),
+    ],
+  },
+  {
+    id: "customer-vendor-services",
+    name: "Customer–Vendor Services",
+    shortName: "Customer–Vendor Service",
+    realm: "Business",
+    roles: { initiator: "Customer", counterparty: "Vendor Services" },
+    descriptor: {
+      whoItsFor:
+        "A customer and a services vendor checking whether the engagement is working on both sides.",
+      whoItsNotFor:
+        "A finished engagement with nothing ongoing, or a disagreement headed for a lawyer.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "scope-clarity",
+        "How clearly is the scope of the work written down?",
+        "Nothing in writing",
+        "Explicit and current",
+      ),
+      aspect(
+        "delivery-reliability",
+        "How reliably are the committed dates met?",
+        "Routinely missed",
+        "Met",
+      ),
+      aspect(
+        "change-handling",
+        "When the customer wants something added, how does that get handled?",
+        "Ad hoc, resentfully",
+        "A stated process",
+      ),
+      aspect(
+        "communication-cadence",
+        "How predictable are the updates each side gets?",
+        "Silence until asked",
+        "Regular and expected",
+      ),
+      aspect(
+        "payment-terms",
+        "How well do the payment terms match what each side expected?",
+        "Contested",
+        "Clear and met",
+      ),
+    ],
+  },
+  {
+    id: "investor-entrepreneur",
+    name: "Investor–SponsorEntrepreneur",
+    shortName: "Investor–SponsorEntrepreneur",
+    realm: "Business",
+    roles: { initiator: "Investor", counterparty: "SponsorEntrepreneur" },
+    descriptor: {
+      whoItsFor:
+        "An investor and a founder who want the reporting and the decision rights to feel honest.",
+      whoItsNotFor:
+        "A purely transactional funding round, or anyone looking for an audit rather than a conversation.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "reporting",
+        "How predictable and honest is the reporting the investor gets?",
+        "Rare or polished",
+        "Regular and candid",
+      ),
+      aspect(
+        "involvement",
+        "How well does the investor's involvement match what the founder wants?",
+        "Too much or none",
+        "As wanted",
+      ),
+      aspect(
+        "bad-news",
+        "How quickly does bad news travel between you?",
+        "Late or hidden",
+        "Immediately",
+      ),
+      aspect("horizon", "How aligned are your time horizons?", "Opposite", "Same"),
+      aspect(
+        "decision-authority",
+        "How clear is who decides what?",
+        "Overlapping",
+        "Split and respected",
+      ),
+      aspect(
+        "terms-fit",
+        "How well do the agreed terms match what both understood at the time?",
+        "Contested",
+        "Understood the same",
       ),
     ],
   },
   {
     id: "co-founders",
     name: "Co-founders",
-    whoItsFor: "Two people building something together.",
-    whoItsNotFor: "Solo founders, or a pair who need a legal document rather than a conversation.",
+    shortName: "Co-founders",
+    realm: "Business",
+    roles: { initiator: "Co-founder A", counterparty: "Co-founder B" },
+    descriptor: {
+      whoItsFor: "Two people building something together.",
+      whoItsNotFor:
+        "Solo founders, or a pair who need a legal document rather than a conversation.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
     aspects: [
       aspect(
         "cofounder-ownership",
@@ -171,195 +572,901 @@ export const relationshipTypes: readonly RelationshipType[] = [
       ),
     ],
   },
+
+  /* ------------------------------------------------ Property */
   {
-    id: "colleagues",
-    name: "Colleagues",
-    whoItsFor: "A manager and their report, or two peers.",
-    whoItsNotFor:
-      "Two people with no working relationship, or anyone settling a dispute through an employer.",
+    id: "hoa-board-owner",
+    name: "HOA Board Member–Owner",
+    shortName: "HOA Board Member–Owner",
+    realm: "Property",
+    roles: { initiator: "HOA Board Member", counterparty: "Owner" },
+    descriptor: {
+      whoItsFor:
+        "An HOA board member and an owner checking whether the property is being run fairly.",
+      whoItsNotFor: "A formal dispute that belongs with the association's own process or a lawyer.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
     aspects: [
       aspect(
-        "colleague-priorities",
-        "How is the work prioritized in a normal week?",
-        "Set for me",
-        "Agreed together",
+        "fee-transparency",
+        "How clear is what the fees are spent on?",
+        "Opaque",
+        "Itemised and explained",
       ),
       aspect(
-        "colleague-feedback",
-        "How is feedback on the work given?",
-        "Never said",
-        "Said directly",
+        "rule-clarity",
+        "How clear are the rules that apply to owners?",
+        "Word of mouth",
+        "Written and accessible",
       ),
       aspect(
-        "colleague-workload",
-        "How is the workload split between the two of you?",
-        "All on one",
-        "Evenly shared",
+        "voice",
+        "How much can an owner influence a board decision?",
+        "None",
+        "A real channel",
       ),
       aspect(
-        "colleague-decisions",
-        "How are decisions about the work made?",
-        "One decides",
-        "Decided together",
+        "responsiveness",
+        "How quickly does the board respond to an owner's issue?",
+        "Never",
+        "Promptly",
       ),
       aspect(
-        "colleague-setbacks",
-        "When something goes wrong, how is it handled?",
-        "Blamed",
-        "Figured out together",
+        "enforcement-fairness",
+        "How consistently are rules applied across owners?",
+        "Selectively",
+        "The same for all",
       ),
       aspect(
-        "colleague-goals",
-        "How much do you each know about the other's goals?",
-        "Little",
-        "Most of it",
+        "maintenance-reality",
+        "How does the state of shared property compare to what owners were told?",
+        "Much worse",
+        "As described",
+      ),
+    ],
+  },
+
+  /* ------------------------------------------------ School */
+  {
+    id: "parent-teacher",
+    name: "Parent–Teacher",
+    shortName: "Parent–Teacher",
+    realm: "School",
+    roles: { initiator: "Parent", counterparty: "Teacher" },
+    descriptor: {
+      whoItsFor: "A parent and a teacher who want the picture of the child to match on both sides.",
+      whoItsNotFor:
+        "A formal complaint, or anyone expecting the school to make a decision through this conversation.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "progress-visibility",
+        "How clear a picture does the parent have of how the child is doing?",
+        "Nothing until reports",
+        "Current and specific",
+      ),
+      aspect(
+        "contact",
+        "How easy is it for either of you to raise something?",
+        "Only at set events",
+        "When it matters",
+      ),
+      aspect(
+        "support-at-home",
+        "How well does what happens at home match what the classroom needs?",
+        "Unconnected",
+        "Consistent",
+      ),
+      aspect(
+        "expectations",
+        "How aligned are your expectations of the child?",
+        "Far apart",
+        "Shared",
+      ),
+      aspect(
+        "concern-handling",
+        "When there is a concern, how is it raised?",
+        "Late or through others",
+        "Early and direct",
       ),
     ],
   },
   {
-    id: "family",
-    name: "Family",
-    whoItsFor: "A parent and their adult child, or two siblings.",
-    whoItsNotFor: "Parents of minor children, or family in a dispute that needs a counsellor.",
+    id: "teacher-student",
+    name: "Teacher–Student",
+    shortName: "Teacher–Student",
+    realm: "School",
+    roles: { initiator: "Teacher", counterparty: "Student" },
+    descriptor: {
+      whoItsFor: "A teacher and a student checking whether the teaching is landing.",
+      whoItsNotFor: "A grade appeal or a disciplinary matter — those go through the school.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
     aspects: [
       aspect(
-        "family-rules",
-        "How are the rules of the house agreed?",
-        "Set for one",
-        "Agreed together",
+        "expectation-clarity",
+        "How clear is what is expected of the student, week to week?",
+        "Guessed",
+        "Explicit",
       ),
       aspect(
-        "family-trust",
-        "How much do you trust each other with the hard things?",
-        "Kept hidden",
-        "Shared openly",
+        "feedback-usefulness",
+        "How useful is the feedback each of you gets?",
+        "Generic",
+        "Specific and actionable",
       ),
       aspect(
-        "family-time",
-        "How often do you make time for just the two of you?",
-        "Rarely",
-        "Often",
+        "ask-safety",
+        "How safe is it for the student to say they do not understand?",
+        "Risky",
+        "Normal",
       ),
       aspect(
-        "family-space",
-        "How is each of you allowed your own space?",
+        "pace-fit",
+        "How well does the pace match what the student can actually absorb?",
+        "Far off",
+        "Matches",
+      ),
+      aspect(
+        "effort-recognition",
+        "How much is genuine effort noticed?",
+        "Invisible",
+        "Recognised",
+      ),
+    ],
+  },
+
+  /* ------------------------------------------------ Medical */
+  {
+    id: "patient-caregiver",
+    name: "Patient–Caregiver",
+    shortName: "Patient–Caregiver",
+    realm: "Medical",
+    roles: { initiator: "Patient", counterparty: "Caregiver" },
+    descriptor: {
+      whoItsFor:
+        "A patient and a caregiver who want the care and the load to feel shared and respected.",
+      whoItsNotFor:
+        "Medical advice, a diagnosis, or anything a clinician should decide — this is about the relationship, not the treatment.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "say-in-care",
+        "How much say does the patient have in decisions about their own care?",
         "None",
-        "Fully respected",
+        "Fully",
       ),
       aspect(
-        "family-conflict",
-        "When there's a disagreement, how is it raised?",
-        "Left unsaid",
-        "Said plainly",
+        "information",
+        "How well informed does each of you feel about what is happening?",
+        "In the dark",
+        "Told and explained",
+      ),
+      aspect("load", "How fairly is the day-to-day load distributed?", "All on one", "Balanced"),
+      aspect(
+        "privacy",
+        "How well does the current arrangement respect what the patient wants kept private?",
+        "Overstepped",
+        "Respected",
+      ),
+      aspect("rest", "How much real relief does each of you get?", "None", "Enough"),
+      aspect(
+        "outside-help",
+        "How able are you to bring in help when it is needed?",
+        "Not at all",
+        "Easily",
+      ),
+    ],
+  },
+
+  /* ------------------------------------------------ Home */
+  {
+    id: "spouses",
+    name: "Spouse A–Spouse B",
+    shortName: "Spouses",
+    realm: "Home",
+    roles: { initiator: "Spouse A", counterparty: "Spouse B" },
+    descriptor: {
+      whoItsFor: "Two spouses who want to see where they stand on the everyday stuff.",
+      whoItsNotFor:
+        "A couple in crisis, or anyone looking for a diagnosis rather than a conversation.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "household-load",
+        "How fairly is the everyday work of the household split?",
+        "All on one",
+        "Balanced",
       ),
       aspect(
-        "family-support",
-        "How are money or support between you handled?",
-        "Unspoken",
+        "money-decisions",
+        "How much say does each of you have over money decisions?",
+        "One holds it",
+        "Shared",
+      ),
+      aspect(
+        "time-together",
+        "How does the time you actually spend together compare to what each wants?",
+        "Far short",
+        "As wanted",
+      ),
+      aspect(
+        "conflict-repair",
+        "When you argue, how well do you get back to normal?",
+        "Simmers for days",
+        "Repaired quickly",
+      ),
+      aspect(
+        "outside-relationships",
+        "How comfortable is each of you with the other's friendships and family time?",
+        "Resented",
+        "Supported",
+      ),
+      aspect(
+        "future-picture",
+        "How aligned are your pictures of the next few years?",
+        "Opposite",
+        "Same",
+      ),
+    ],
+  },
+  {
+    id: "parent-child",
+    name: "Parent–Child",
+    shortName: "Parent–Child",
+    realm: "Home",
+    roles: { initiator: "Parent", counterparty: "Child" },
+    descriptor: {
+      whoItsFor: "A parent and their adult child, checking how the relationship is working now.",
+      whoItsNotFor: "Parents of minor children, or a family in a dispute that needs a counsellor.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "voice",
+        "How much does the child's view change what happens?",
+        "Never asked",
+        "Genuinely weighed",
+      ),
+      aspect(
+        "rules-consistency",
+        "How consistent are the rules from day to day?",
+        "Change by mood",
+        "Steady",
+      ),
+      aspect("trust", "How much does each of you trust the other's word?", "Not much", "Fully"),
+      aspect(
+        "time",
+        "How does the time you spend compare to what each wants?",
+        "Far short",
+        "Enough",
+      ),
+      aspect(
+        "independence",
+        "How well does the amount of independence given match what is needed now?",
+        "Too much or too little",
+        "About right",
+      ),
+      aspect(
+        "repair",
+        "After a blow-up, how does it get back to normal?",
+        "Left to cool",
         "Talked through",
       ),
     ],
   },
+  {
+    id: "father-son",
+    name: "Father–Son",
+    shortName: "Father–Son",
+    realm: "Home",
+    roles: { initiator: "Father", counterparty: "Son" },
+    descriptor: {
+      whoItsFor: "A father and his son, at an age where both are adults.",
+      whoItsNotFor:
+        "A father and a minor son, or a relationship in crisis that needs a counsellor.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "being-heard",
+        "How much does the son's view change what the father does?",
+        "Not at all",
+        "Genuinely",
+      ),
+      aspect(
+        "expectations",
+        "How well do the father's expectations match what the son wants for himself?",
+        "Imposed",
+        "Shared",
+      ),
+      aspect(
+        "time",
+        "How does the time you spend compare to what each wants?",
+        "Far short",
+        "Enough",
+      ),
+      aspect("advice", "How is advice received when it is offered?", "As criticism", "As help"),
+      aspect(
+        "pride",
+        "How clearly does each of you know the other is proud of them?",
+        "Assumed",
+        "Said",
+      ),
+    ],
+  },
+  {
+    id: "father-daughter",
+    name: "Father–Daughter",
+    shortName: "Father–Daughter",
+    realm: "Home",
+    roles: { initiator: "Father", counterparty: "Daughter" },
+    descriptor: {
+      whoItsFor: "A father and his daughter, at an age where both are adults.",
+      whoItsNotFor:
+        "A father and a minor daughter, or a relationship in crisis that needs a counsellor.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "being-heard",
+        "How much does the daughter's view change what the father does?",
+        "Not at all",
+        "Genuinely",
+      ),
+      aspect(
+        "protection-space",
+        "How well does the care taken match the independence wanted?",
+        "Over-protective",
+        "About right",
+      ),
+      aspect(
+        "time",
+        "How does the time you spend compare to what each wants?",
+        "Far short",
+        "Enough",
+      ),
+      aspect("trust", "How much does each trust the other's judgement?", "Not much", "Fully"),
+      aspect(
+        "pride",
+        "How clearly does each of you know the other is proud of them?",
+        "Assumed",
+        "Said",
+      ),
+    ],
+  },
+  {
+    id: "mother-son",
+    name: "Mother–Son",
+    shortName: "Mother–Son",
+    realm: "Home",
+    roles: { initiator: "Mother", counterparty: "Son" },
+    descriptor: {
+      whoItsFor: "A mother and her son, at an age where both are adults.",
+      whoItsNotFor:
+        "A mother and a minor son, or a relationship in crisis that needs a counsellor.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "being-heard",
+        "How much does the son's view change what the mother does?",
+        "Not at all",
+        "Genuinely",
+      ),
+      aspect(
+        "independence",
+        "How well does the room given match what is needed now?",
+        "Too much or too little",
+        "About right",
+      ),
+      aspect(
+        "time",
+        "How does the time you spend compare to what each wants?",
+        "Far short",
+        "Enough",
+      ),
+      aspect("worry", "How does the mother's worry land with the son?", "As control", "As care"),
+      aspect(
+        "pride",
+        "How clearly does each of you know the other is proud of them?",
+        "Assumed",
+        "Said",
+      ),
+    ],
+  },
+  {
+    id: "mother-daughter",
+    name: "Mother–Daughter",
+    shortName: "Mother–Daughter",
+    realm: "Home",
+    roles: { initiator: "Mother", counterparty: "Daughter" },
+    descriptor: {
+      whoItsFor: "A mother and her daughter, at an age where both are adults.",
+      whoItsNotFor:
+        "A mother and a minor daughter, or a relationship in crisis that needs a counsellor.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "being-heard",
+        "How much does the daughter's view change what the mother does?",
+        "Not at all",
+        "Genuinely",
+      ),
+      aspect("advice", "How is advice received when it is offered?", "As criticism", "As help"),
+      aspect(
+        "time",
+        "How does the time you spend compare to what each wants?",
+        "Far short",
+        "Enough",
+      ),
+      aspect(
+        "boundaries",
+        "How well are the boundaries between your lives respected?",
+        "Overstepped",
+        "Respected",
+      ),
+      aspect(
+        "pride",
+        "How clearly does each of you know the other is proud of them?",
+        "Assumed",
+        "Said",
+      ),
+    ],
+  },
+  {
+    id: "siblings",
+    name: "Sibling A–Sibling B",
+    shortName: "Siblings",
+    realm: "Home",
+    roles: { initiator: "Sibling A", counterparty: "Sibling B" },
+    descriptor: {
+      whoItsFor: "Two adult siblings who want the old questions to feel settled.",
+      whoItsNotFor: "Siblings in a dispute over an estate or a guardianship — that needs a lawyer.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "contact",
+        "How does how often you are in touch compare to what each wants?",
+        "Far short",
+        "As wanted",
+      ),
+      aspect(
+        "fairness-history",
+        "How settled do old questions of fairness feel now?",
+        "Still raw",
+        "Settled",
+      ),
+      aspect(
+        "support",
+        "When one of you needs something, how reliably does the other show up?",
+        "Rarely",
+        "Always",
+      ),
+      aspect(
+        "parents",
+        "How well do you handle decisions about your parents together?",
+        "Avoided or fought",
+        "Shared and agreed",
+      ),
+      aspect(
+        "comparison",
+        "How much does comparison between you affect how you treat each other?",
+        "Constantly",
+        "Not at all",
+      ),
+    ],
+  },
+  {
+    id: "brother-sister",
+    name: "Brother–Sister",
+    shortName: "Brother–Sister",
+    realm: "Home",
+    roles: { initiator: "Brother", counterparty: "Sister" },
+    descriptor: {
+      whoItsFor:
+        "A brother and a sister who want to treat each other as adults, not as their old roles.",
+      whoItsNotFor: "A brother and sister in a dispute that needs a lawyer or a counsellor.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "contact",
+        "How does how often you are in touch compare to what each wants?",
+        "Far short",
+        "As wanted",
+      ),
+      aspect(
+        "assumptions",
+        "How much do old roles still decide how you treat each other?",
+        "Entirely",
+        "Not at all",
+      ),
+      aspect(
+        "support",
+        "When one of you needs something, how reliably does the other show up?",
+        "Rarely",
+        "Always",
+      ),
+      aspect(
+        "parents",
+        "How well do you handle decisions about your parents together?",
+        "Avoided or fought",
+        "Shared and agreed",
+      ),
+      aspect(
+        "respect",
+        "How much does each of you feel respected by the other?",
+        "Not much",
+        "Fully",
+      ),
+    ],
+  },
+  {
+    id: "sisters",
+    name: "Sister A–Sister B",
+    shortName: "Sisters",
+    realm: "Home",
+    roles: { initiator: "Sister A", counterparty: "Sister B" },
+    descriptor: {
+      whoItsFor: "Two sisters who want the closeness without the comparison.",
+      whoItsNotFor: "Sisters in a dispute that needs a lawyer or a counsellor.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "contact",
+        "How does how often you are in touch compare to what each wants?",
+        "Far short",
+        "As wanted",
+      ),
+      aspect(
+        "comparison",
+        "How much does comparison between you affect how you treat each other?",
+        "Constantly",
+        "Not at all",
+      ),
+      aspect(
+        "support",
+        "When one of you needs something, how reliably does the other show up?",
+        "Rarely",
+        "Always",
+      ),
+      aspect(
+        "secrets",
+        "How much does each of you keep to yourselves that the other would want to know?",
+        "A lot",
+        "Openly shared",
+      ),
+      aspect(
+        "parents",
+        "How well do you handle decisions about your parents together?",
+        "Avoided or fought",
+        "Shared and agreed",
+      ),
+    ],
+  },
+  {
+    id: "brothers",
+    name: "Brother A–Brother B",
+    shortName: "Brothers",
+    realm: "Home",
+    roles: { initiator: "Brother A", counterparty: "Brother B" },
+    descriptor: {
+      whoItsFor: "Two brothers who want to talk plainly without the competition.",
+      whoItsNotFor: "Brothers in a dispute that needs a lawyer or a counsellor.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "contact",
+        "How does how often you are in touch compare to what each wants?",
+        "Far short",
+        "As wanted",
+      ),
+      aspect(
+        "competition",
+        "How much does competition between you colour how you treat each other?",
+        "Constantly",
+        "Not at all",
+      ),
+      aspect(
+        "support",
+        "When one of you needs something, how reliably does the other show up?",
+        "Rarely",
+        "Always",
+      ),
+      aspect(
+        "straight-talk",
+        "How directly can you say a hard thing to each other?",
+        "Never",
+        "Plainly",
+      ),
+      aspect(
+        "parents",
+        "How well do you handle decisions about your parents together?",
+        "Avoided or fought",
+        "Shared and agreed",
+      ),
+    ],
+  },
+
+  /* ------------------------------------------------ Social (non-dating) */
   {
     id: "friends",
-    name: "Friends",
-    whoItsFor: "A long-standing friendship.",
-    whoItsNotFor: "New acquaintances, or a friendship one person has already decided to end.",
+    name: "Friend A–Friend B",
+    shortName: "Friends",
+    realm: "Social",
+    roles: { initiator: "Friend A", counterparty: "Friend B" },
+    descriptor: {
+      whoItsFor: "A long-standing friendship, checking whether the effort still flows both ways.",
+      whoItsNotFor: "New acquaintances, or a friendship one person has already decided to end.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
     aspects: [
       aspect(
-        "friend-contact",
-        "How often do you actually see or speak to each other?",
+        "contact",
+        "How does how often you are in touch compare to what each wants?",
+        "Far short",
+        "As wanted",
+      ),
+      aspect("reciprocity", "How evenly does effort flow between you?", "All one way", "Even"),
+      aspect("honesty", "How honestly can you tell each other a hard thing?", "Never", "Plainly"),
+      aspect(
+        "support",
+        "When one of you is in trouble, how reliably does the other show up?",
         "Rarely",
-        "Often",
+        "Always",
       ),
       aspect(
-        "friend-struggles",
-        "When one of you is struggling, what happens?",
-        "Handled alone",
-        "Shared",
-      ),
-      aspect(
-        "friend-lives",
-        "How much do you know about each other's lives right now?",
-        "Little",
-        "Most of it",
-      ),
-      aspect(
-        "friend-conflict",
-        "When you disagree, how is it handled?",
-        "Avoided",
-        "Talked through",
-      ),
-      aspect(
-        "friend-plans",
-        "How are the plans you make together kept?",
-        "Dropped",
-        "Followed through",
-      ),
-      aspect(
-        "friend-effort",
-        "How even is the effort in the friendship?",
-        "Mostly one side",
-        "Both sides",
+        "respect-boundaries",
+        "How well does each of you respect what the other does not want to talk about?",
+        "Overstepped",
+        "Respected",
       ),
     ],
   },
   {
-    id: "team",
-    name: "Team",
-    whoItsFor: "A lead and a team member.",
-    whoItsNotFor:
-      "A whole team of more than two — and not yet the coach-and-client case, which rides on this later.",
+    id: "guy-friends",
+    name: "Guy Friend A–Guy Friend B",
+    shortName: "Guy Friends",
+    realm: "Social",
+    roles: { initiator: "Guy Friend A", counterparty: "Guy Friend B" },
+    descriptor: {
+      whoItsFor: "Two male friends who want the support and the straight talk to feel even.",
+      whoItsNotFor: "New acquaintances, or a friendship one person has already decided to end.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
     aspects: [
       aspect(
-        "team-direction",
-        "How is the member's work directed in a normal week?",
-        "Told what to do",
-        "Worked out together",
-      ),
-      aspect("team-feedback", "How is feedback on the work given?", "Never said", "Said directly"),
-      aspect(
-        "team-load",
-        "How much does the lead know about the member's workload?",
-        "Little",
-        "Most of it",
+        "contact",
+        "How does how often you are in touch compare to what each wants?",
+        "Far short",
+        "As wanted",
       ),
       aspect(
-        "team-blocks",
-        "When the member hits a block, what happens?",
-        "Left to figure it out",
-        "Worked through together",
+        "openness",
+        "How much of what is actually going on does each of you share?",
+        "Nothing real",
+        "Openly",
       ),
       aspect(
-        "team-decisions",
-        "How are decisions that affect the member's work made?",
-        "Made without them",
-        "Made together",
+        "support",
+        "When one of you is in trouble, how reliably does the other show up?",
+        "Rarely",
+        "Always",
       ),
       aspect(
-        "team-credit",
-        "How is recognition or credit for the work shared?",
-        "Taken by one",
-        "Shared",
+        "initiative",
+        "How evenly is the effort to organise things split?",
+        "All one way",
+        "Even",
+      ),
+      aspect(
+        "straight-talk",
+        "How directly can you say a hard thing to each other?",
+        "Never",
+        "Plainly",
       ),
     ],
+  },
+  {
+    id: "gal-friends",
+    name: "Gal Friend A–Gal Friend B",
+    shortName: "Gal Friends",
+    realm: "Social",
+    roles: { initiator: "Gal Friend A", counterparty: "Gal Friend B" },
+    descriptor: {
+      whoItsFor: "Two female friends who want the trust and the honesty to feel even.",
+      whoItsNotFor: "New acquaintances, or a friendship one person has already decided to end.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "contact",
+        "How does how often you are in touch compare to what each wants?",
+        "Far short",
+        "As wanted",
+      ),
+      aspect(
+        "trust",
+        "How much does each of you trust the other with what matters?",
+        "Not much",
+        "Fully",
+      ),
+      aspect(
+        "support",
+        "When one of you is in trouble, how reliably does the other show up?",
+        "Rarely",
+        "Always",
+      ),
+      aspect("honesty", "How honestly can you tell each other a hard thing?", "Never", "Plainly"),
+      aspect(
+        "jealousy",
+        "How much does comparison between you affect how you treat each other?",
+        "A lot",
+        "Not at all",
+      ),
+    ],
+  },
+  {
+    id: "guy-friend-gal-friend",
+    name: "Guy Friend–Gal Friend",
+    shortName: "GuyFriend–GalFriend",
+    realm: "Social",
+    roles: { initiator: "Guy Friend", counterparty: "Gal Friend" },
+    descriptor: {
+      whoItsFor: "A male and a female friend who want the assumptions out in the open.",
+      whoItsNotFor: "New acquaintances, or a friendship one person has already decided to end.",
+    },
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: true,
+    aspects: [
+      aspect(
+        "contact",
+        "How does how often you are in touch compare to what each wants?",
+        "Far short",
+        "As wanted",
+      ),
+      aspect(
+        "assumptions",
+        "How much do assumptions about the friendship shape how you treat each other?",
+        "A lot",
+        "Not at all",
+      ),
+      aspect(
+        "respect-boundaries",
+        "How well does each of you respect what the other does not want to talk about?",
+        "Overstepped",
+        "Respected",
+      ),
+      aspect(
+        "support",
+        "When one of you is in trouble, how reliably does the other show up?",
+        "Rarely",
+        "Always",
+      ),
+      aspect("honesty", "How honestly can you tell each other a hard thing?", "Never", "Plainly"),
+    ],
+  },
+
+  /* ------------------------------------------------ Excluded — the dating set, kept as records */
+  {
+    id: "girlfriend-boyfriend",
+    name: "Girlfriend–Boyfriend",
+    shortName: "Girlfriend–Boyfriend",
+    realm: "Social",
+    roles: { initiator: "Girlfriend", counterparty: "Boyfriend" },
+    descriptor: {
+      whoItsFor: "A girlfriend and a boyfriend checking where they stand.",
+      whoItsNotFor: "Not offered — dating is outside this product, by the owner's instruction.",
+    },
+    aspects: [],
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: false,
+  },
+  {
+    id: "dating",
+    name: "Date A–Date B",
+    shortName: "Dating",
+    realm: "Social",
+    roles: { initiator: "Date A", counterparty: "Date B" },
+    descriptor: {
+      whoItsFor: "Two people who are dating.",
+      whoItsNotFor: "Not offered — dating is outside this product, by the owner's instruction.",
+    },
+    aspects: [],
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: false,
+  },
+  {
+    id: "committed-significant-others",
+    name: "Committed Significant Other A–B",
+    shortName: "Committed Significant Others",
+    realm: "Social",
+    roles: { initiator: "CSO A", counterparty: "CSO B" },
+    descriptor: {
+      whoItsFor: "Two committed significant others.",
+      whoItsNotFor: "Not offered — dating is outside this product, by the owner's instruction.",
+    },
+    aspects: [],
+    price: RELATIONSHIP_PRICE_CENTS,
+    purchasable: false,
   },
 ];
 
-/** The ids, in catalogue order — the `[type]` segments and `generateStaticParams` keys. */
-export const RELATIONSHIP_TYPE_IDS = relationshipTypes.map((type) => type.id);
+/* ------------------------------------------------------------------ *
+ * The purchasable gate — one source for the catalogue, the shop and the review list
+ * ------------------------------------------------------------------ */
 
-/** The type, or `undefined` when a segment names no type. Never a default. */
+/**
+ * Types that are **never** for sale, whatever a flag says. The dating set is a product
+ * exclusion, so the gate is not just `purchasable` — a dating row that somehow flips its
+ * flag to `true` still cannot reach the catalogue, the shop or the review list.
+ */
+export const EXCLUDED_TYPE_IDS: readonly string[] = [
+  "girlfriend-boyfriend",
+  "dating",
+  "committed-significant-others",
+];
+
+/** Is this type allowed in the catalogue, the shop and the review list? */
+export function isPurchasable(type: RelationshipType): boolean {
+  return type.purchasable && !EXCLUDED_TYPE_IDS.includes(type.id);
+}
+
+/** The types the catalogue, the shop picker and the review list draw from. */
+export const purchasableRelationshipTypes: readonly RelationshipType[] =
+  relationshipTypes.filter(isPurchasable);
+
+/** The type by id, or `undefined` when a segment names no type. Never a default. */
 export function relationshipType(id: string): RelationshipType | undefined {
   return relationshipTypes.find((type) => type.id === id);
 }
 
+/** The purchasable type by id — the `[type]` route resolves only what may be shown. */
+export function purchasableRelationshipType(id: string): RelationshipType | undefined {
+  return purchasableRelationshipTypes.find((type) => type.id === id);
+}
+
+/** One realm's purchasable types, in catalogue order. */
+export interface RealmGroup {
+  readonly realm: Realm;
+  readonly types: readonly RelationshipType[];
+}
+
 /**
- * One relationship costs one price — the initiator pays this, the counterparty pays nothing.
- * Integer cents, the tree's money convention: `999` is `$9.99`, the Basic plan's monthly price.
- * Uniform until per-type pricing is a decision rather than a guess.
+ * The purchasable types grouped by realm, in the order `REALMS` declares. The catalogue
+ * and the shop's type picker both render this — one grouping, not two.
  */
-export const RELATIONSHIP_PRICE_CENTS = 999;
+export function purchasableTypesByRealm(): readonly RealmGroup[] {
+  return REALMS.map((realm) => ({
+    realm,
+    types: purchasableRelationshipTypes.filter((type) => type.realm === realm),
+  })).filter((group) => group.types.length > 0);
+}
 
 /* ------------------------------------------------------------------ *
  * Demo answers — one completed sheet per type, rendered by /demo
@@ -374,31 +1481,12 @@ export interface TypeDemoAnswers {
 }
 
 /**
- * One completed Advanced-Mode sheet per type. Every Aspect is answered Feel, Wish, Think and
- * Guess by both parties, so the demo renders the full eight-kind report — the same shape a
- * finished live session has. The numbers are authored to read like two people who really
- * answered, not to score anything: some Aspects are In Synch, some show a Small Gap, and at
- * least one per type shows a Gap wide enough to be "not yet aligned".
+ * One completed Advanced-Mode sheet per type. Only `co-founders` keeps a demo today: its
+ * Aspects are unchanged from before this taxonomy, so its answers still match. Every other
+ * type's Aspects are new (#385), and the issue does not author demo answers — a type with no
+ * sheet renders the demo page's "no example yet" state rather than a fabricated report.
  */
 export const demoAnswersByType: Readonly<Record<string, TypeDemoAnswers>> = {
-  partners: {
-    you: {
-      "partners-money": { feel: 2, wish: 4, think: 3, guess: 4 },
-      "partners-decisions": { feel: 3, wish: 5, think: 4, guess: 3 },
-      "partners-time": { feel: 2, wish: 4, think: 2, guess: 4 },
-      "partners-conflict": { feel: 2, wish: 4, think: 2, guess: 4 },
-      "partners-plans": { feel: 4, wish: 4, think: 4, guess: 4 },
-      "partners-hard-days": { feel: 4, wish: 5, think: 4, guess: 5 },
-    },
-    them: {
-      "partners-money": { feel: 4, wish: 4, think: 4, guess: 3 },
-      "partners-decisions": { feel: 2, wish: 3, think: 2, guess: 4 },
-      "partners-time": { feel: 3, wish: 3, think: 2, guess: 3 },
-      "partners-conflict": { feel: 1, wish: 3, think: 1, guess: 4 },
-      "partners-plans": { feel: 4, wish: 5, think: 3, guess: 5 },
-      "partners-hard-days": { feel: 4, wish: 5, think: 4, guess: 5 },
-    },
-  },
   "co-founders": {
     you: {
       "cofounder-ownership": { feel: 3, wish: 5, think: 3, guess: 4 },
@@ -419,78 +1507,6 @@ export const demoAnswersByType: Readonly<Record<string, TypeDemoAnswers>> = {
       "cofounder-exit": { feel: 2, wish: 3, think: 2, guess: 4 },
     },
   },
-  colleagues: {
-    you: {
-      "colleague-priorities": { feel: 2, wish: 4, think: 3, guess: 4 },
-      "colleague-feedback": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "colleague-workload": { feel: 4, wish: 4, think: 4, guess: 4 },
-      "colleague-decisions": { feel: 2, wish: 4, think: 3, guess: 4 },
-      "colleague-setbacks": { feel: 3, wish: 5, think: 3, guess: 4 },
-      "colleague-goals": { feel: 2, wish: 4, think: 3, guess: 3 },
-    },
-    them: {
-      "colleague-priorities": { feel: 4, wish: 4, think: 3, guess: 4 },
-      "colleague-feedback": { feel: 4, wish: 4, think: 4, guess: 4 },
-      "colleague-workload": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "colleague-decisions": { feel: 4, wish: 4, think: 4, guess: 3 },
-      "colleague-setbacks": { feel: 4, wish: 5, think: 4, guess: 4 },
-      "colleague-goals": { feel: 3, wish: 4, think: 3, guess: 4 },
-    },
-  },
-  family: {
-    you: {
-      "family-rules": { feel: 2, wish: 3, think: 3, guess: 2 },
-      "family-trust": { feel: 4, wish: 5, think: 4, guess: 5 },
-      "family-time": { feel: 2, wish: 3, think: 2, guess: 3 },
-      "family-space": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "family-conflict": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "family-support": { feel: 3, wish: 4, think: 3, guess: 4 },
-    },
-    them: {
-      "family-rules": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "family-trust": { feel: 4, wish: 5, think: 4, guess: 5 },
-      "family-time": { feel: 2, wish: 3, think: 2, guess: 3 },
-      "family-space": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "family-conflict": { feel: 2, wish: 4, think: 2, guess: 4 },
-      "family-support": { feel: 4, wish: 4, think: 3, guess: 4 },
-    },
-  },
-  friends: {
-    you: {
-      "friend-contact": { feel: 2, wish: 4, think: 3, guess: 4 },
-      "friend-struggles": { feel: 3, wish: 5, think: 3, guess: 4 },
-      "friend-lives": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "friend-conflict": { feel: 2, wish: 4, think: 2, guess: 4 },
-      "friend-plans": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "friend-effort": { feel: 2, wish: 4, think: 3, guess: 4 },
-    },
-    them: {
-      "friend-contact": { feel: 3, wish: 3, think: 3, guess: 3 },
-      "friend-struggles": { feel: 4, wish: 4, think: 4, guess: 4 },
-      "friend-lives": { feel: 4, wish: 4, think: 4, guess: 3 },
-      "friend-conflict": { feel: 1, wish: 3, think: 1, guess: 4 },
-      "friend-plans": { feel: 4, wish: 4, think: 4, guess: 4 },
-      "friend-effort": { feel: 4, wish: 4, think: 3, guess: 4 },
-    },
-  },
-  team: {
-    you: {
-      "team-direction": { feel: 2, wish: 4, think: 3, guess: 4 },
-      "team-feedback": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "team-load": { feel: 2, wish: 4, think: 2, guess: 4 },
-      "team-blocks": { feel: 3, wish: 5, think: 3, guess: 4 },
-      "team-decisions": { feel: 2, wish: 4, think: 2, guess: 4 },
-      "team-credit": { feel: 3, wish: 4, think: 3, guess: 4 },
-    },
-    them: {
-      "team-direction": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "team-feedback": { feel: 4, wish: 4, think: 4, guess: 4 },
-      "team-load": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "team-blocks": { feel: 4, wish: 5, think: 4, guess: 4 },
-      "team-decisions": { feel: 4, wish: 4, think: 3, guess: 4 },
-      "team-credit": { feel: 4, wish: 4, think: 4, guess: 4 },
-    },
-  },
 };
 
 /** The demo answers for one type, or `undefined` when the type has no demo yet. */
@@ -499,20 +1515,62 @@ export function demoAnswersFor(typeId: string): TypeDemoAnswers | undefined {
 }
 
 /* ------------------------------------------------------------------ *
- * Validate at import — a typo in the taxonomy or the demo is a red build
+ * Validate at import — a typo in the taxonomy or a drifted gate is a red build
  * ------------------------------------------------------------------ */
 
-/** The taxonomy itself: six types, each a strict `RelationshipType`. */
+/** The taxonomy itself, each record a strict `RelationshipType`. */
 export const validRelationshipTypes: readonly RelationshipType[] = z
   .array(zRelationshipType)
   .parse(relationshipTypes);
 
-/** Every type has a demo, and both parties answer exactly the Aspects the type names. */
+/** Every record carries a `purchasable` field and a descriptor free of placeholders. */
+for (const type of validRelationshipTypes) {
+  if (type.purchasable !== true && type.purchasable !== false) {
+    throw new Error(`relationship-types: "${type.id}" has no purchasable field`);
+  }
+  if (/placeholder|\[.*tbd.*\]/i.test(type.descriptor.whoItsFor + type.descriptor.whoItsNotFor)) {
+    throw new Error(`relationship-types: "${type.id}" descriptor still carries a placeholder`);
+  }
+}
+
+/** A purchasable type asks 5–10 Aspects; an excluded one asks none. */
+for (const type of validRelationshipTypes) {
+  const count = type.aspects.length;
+  if (type.purchasable && (count < 5 || count > 10)) {
+    throw new Error(
+      `relationship-types: purchasable type "${type.id}" has ${count} Aspects (5–10 required)`,
+    );
+  }
+  if (!type.purchasable && count !== 0) {
+    throw new Error(
+      `relationship-types: excluded type "${type.id}" has ${count} Aspects (an excluded type carries none)`,
+    );
+  }
+}
+
+/** No two records share an id — the reconciliation renames, it never duplicates. */
+{
+  const ids = validRelationshipTypes.map((type) => type.id);
+  const seen = new Set<string>();
+  for (const id of ids) {
+    if (seen.has(id)) throw new Error(`relationship-types: duplicate id "${id}"`);
+    seen.add(id);
+  }
+}
+
+/** The gate excludes the dating set even if a flag were flipped — the negative case, enforced. */
+for (const id of EXCLUDED_TYPE_IDS) {
+  const type = relationshipType(id);
+  if (type === undefined) throw new Error(`relationship-types: excluded id "${id}" has no record`);
+  if (isPurchasable(type)) {
+    throw new Error(`relationship-types: excluded type "${id}" slipped past the gate`);
+  }
+}
+
+/** A type that has a demo is answered, by both parties, on exactly the Aspects it names. */
 for (const type of validRelationshipTypes) {
   const demo = demoAnswersByType[type.id];
-  if (demo === undefined) {
-    throw new Error(`relationship-types: no demo answers authored for "${type.id}"`);
-  }
+  if (demo === undefined) continue;
   const expected = type.aspects.map((item) => item.id).sort();
   for (const party of ["you", "them"] as const) {
     const keys = Object.keys(demo[party]).sort();

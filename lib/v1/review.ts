@@ -105,7 +105,7 @@ export const REVIEW_SCREENS: readonly ReviewScreen[] = [
   {
     route: "/v1/templates",
     href: "/v1/templates",
-    description: "The catalogue of six relationship types, one card each.",
+    description: "The catalogue of relationship types grouped by realm, one card each.",
   },
   {
     route: "/v1/terms",
@@ -137,12 +137,12 @@ export const REVIEW_SCREENS: readonly ReviewScreen[] = [
   },
   {
     route: "/v1/templates/[type]",
-    href: "/v1/templates/partners",
+    href: "/v1/templates/business-partners",
     description: "The page a person decides on before paying: Aspects, walkthrough, price, Start.",
   },
   {
     route: "/v1/templates/[type]/demo",
-    href: "/v1/templates/partners/demo",
+    href: "/v1/templates/co-founders/demo",
     description: "A completed-session report rendered from fixture answers for the type.",
   },
 ];
