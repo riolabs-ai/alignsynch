@@ -18,6 +18,10 @@
  *   3. the card carries the product sentence and no number, rating, comparative or other brand's
  *      name, because a link preview is a claim about the product to someone who has not opened it.
  *
+ * The route itself no longer draws: `app/opengraph-image.png` is the owner's supplied card,
+ * committed byte-identical and served by the file convention. `lib/brand-og` is retained for the
+ * cases below (and for a future brand that wants a drawn card), not as what the route serves.
+ *
  * What this file cannot prove is the one thing the handoff has to: that satori *renders* it. A raster
  * needs `next/og` (which imports a wasm build of resvg and is not resolvable from a node process —
  * `next/og` has no exports map entry, so plain ESM asks for `next/og.js`), so the pixels are checked
@@ -87,12 +91,15 @@ describe("the share card", () => {
     expect(OG_SIZE).toEqual({ width: 1200, height: 630 });
   });
 
-  it("has a route-file convention to be served from", () => {
-    // Next only injects og:image into a route's head when the file exists; the module next to it is
-    // the wiring, so its absence is the whole feature going quiet rather than a build error.
-    expect(readFileSync(join(process.cwd(), "app", "opengraph-image.tsx"), "utf8")).toContain(
-      "ImageResponse",
-    );
+  it("is served from the framework's file convention: the committed PNG, 1200x630", () => {
+    // Next injects og:image into every route's head from `opengraph-image.*` in `app/` and from
+    // nothing else, so a missing file is the whole feature going quiet rather than a build error.
+    // The bytes here are the owner's supplied card, committed as-is: checked for existence and box,
+    // never re-derived — an adjusted share card is the defect this replaced.
+    const png = readFileSync(join(process.cwd(), "app", "opengraph-image.png"));
+    expect(png.subarray(1, 4).toString("latin1")).toBe("PNG");
+    expect(png.readUInt32BE(16)).toBe(OG_SIZE.width);
+    expect(png.readUInt32BE(20)).toBe(OG_SIZE.height);
   });
 
   for (const [id, brand] of brands) {
