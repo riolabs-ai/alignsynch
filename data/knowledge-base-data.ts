@@ -1205,7 +1205,7 @@ export const articlesData: readonly KbArticle[] = [
       },
       {
         type: "note",
-        text: `There is no ticket queue: write to ${brand.supportEmail} with what you were doing, what you expected, and the URL you were on. Replies come when they can — not on a fixed schedule.`,
+        text: `There is no ticket queue: send us a message from the contact form on the Help page with what you were doing, what you expected, and the URL you were on. Replies come when they can — not on a fixed schedule.`,
       },
     ],
   },

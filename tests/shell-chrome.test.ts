@@ -184,20 +184,25 @@ describe("the footer's brand-owned bands", () => {
     }
   });
 
-  it("declares the same item ids on both brands' contact bands", () => {
-    // The footer resolves one set of ids whichever section the brand chose, exactly as the two
-    // `search` sections do — so a variant that renamed an id is a throw, not a blank row.
-    const ids = (band: { items?: { id: string }[] }) => (band.items ?? []).map((item) => item.id);
-    expect(ids(footer("alignsynch").contact)).toEqual(ids(footer("quizhub").contact));
-    // The mailbox and the button are the rows a contact block can honestly print (#272): the
-    // street line and the telephone number were invented, so both brands lost them together.
-    expect(ids(footer("quizhub").contact)).toEqual(["email", "cta"]);
+  it("declares the same shape on both brands' contact bands", () => {
+    // The footer resolves one section whichever brand it drew, so the two bands must not drift
+    // apart. Since the owner's 2026-11-02 rule they carry **no items at all**: a sentence and a
+    // link to the one form on `/help`, and no mailbox row (#272 removed the street line and the
+    // telephone number; this card removed the address).
+    const contactOf = (brandId: "quizhub" | "alignsynch") => footer(brandId).contact;
+    for (const brandId of ["quizhub", "alignsynch"] as const) {
+      const contact = contactOf(brandId);
+      expect(contact.items).toBeUndefined();
+      expect(contact.body?.length ?? 0).toBeGreaterThan(0);
+      expect(contact.cta).toEqual({ label: "Contact us", href: "/help" });
+    }
+    expect(contactOf("alignsynch").body).toBe(contactOf("quizhub").body);
   });
 
   it("keeps the quiz build on the words it shipped, typo corrected", () => {
     const words = footer("quizhub");
     expect(sectionBody(words.brand)).toContain("quiz creators");
-    expect(itemLabel(words.contact, "cta")).toBe("Contact Support");
+    expect(words.contact.cta?.label).toBe("Contact us");
     // #188 fixed the spelling on both brands; it is the one string that moved on this build.
     const account = sectionOf(shellPageCopy, "account");
     expect(itemLabel(account, "quizzes")).toBe("My Quizzes");
@@ -208,21 +213,23 @@ describe("the footer's brand-owned bands", () => {
     const words = footer("alignsynch");
     const text = [
       sectionBody(words.brand),
-      // The mailbox is the record's, not the fixture's: `quizhub@riolabs.ai` contains the word
-      // and is asserted as an address in its own case below. Matching it here would make the
-      // test a statement about the ambient record rather than about the alignment copy.
-      ...(words.contact.items ?? [])
-        .filter((item) => item.id !== "email")
-        .map((item) => item.label),
+      // The contact band's words, which carry no address: the mailbox this build mails is the
+      // record's (`support@alignsynch.com`) and never reaches a fixture.
+      words.contact.body ?? "",
+      words.contact.cta?.label ?? "",
       words.contact.heading ?? "",
     ].join("\n");
     expect(text).not.toMatch(/quiz/i);
     expect(text.length).toBeGreaterThan(0);
   });
 
-  it("prints the record's support address in both brands' contact bands", () => {
+  it("prints no support address in either brand's contact band", () => {
     for (const brandId of ["quizhub", "alignsynch"] as const) {
-      expect(itemLabel(footer(brandId).contact, "email")).toBe(brand.supportEmail);
+      const contact = footer(brandId).contact;
+      const json = JSON.stringify(contact);
+      expect(json).not.toMatch(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}/);
+      expect(json).not.toContain("mailto:");
+      expect(contact.cta?.href).toBe("/help");
     }
   });
 });

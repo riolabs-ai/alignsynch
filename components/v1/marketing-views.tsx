@@ -1,10 +1,11 @@
 // template-ancestor: components/marketing/marketing-landing.tsx   (variation: the public bands, rendered inside the prototype)
-import { brand } from "@/data/brand";
+import Link from "next/link";
 import { SectionIntro } from "@/components/v1/v1-ui";
 
 /**
  * The /v1 support surface — the facts the live support page states, minus the taxonomy the
- * alignment build does not offer. The contact line reads the brand record's mailbox.
+ * alignment build does not offer. The contact line is a link to the contact form, not an address:
+ * no public page prints a mailbox (owner, 2026-11-02).
  */
 export function V1Support() {
   return (
@@ -34,13 +35,10 @@ export function V1Support() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Email us at{" "}
-        <a
-          href={`mailto:${brand.supportEmail}`}
-          className="font-medium text-action hover:underline"
-        >
-          {brand.supportEmail}
-        </a>
+        Send us a message from{" "}
+        <Link href="/help" className="font-medium text-action hover:underline">
+          the contact form on the Help page
+        </Link>
         .
       </p>
     </div>

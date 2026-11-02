@@ -31,14 +31,15 @@
  *     `hsl(var(--token))`, plus the `indigo-500` the sidebar paints the active nav with.
  *     The dark theme is not in this record: it is the same tokens under `.dark`, and a
  *     skin that wants to own dark mode is a schema change, not a second field here.
- *   - `supportEmail` is the address the shell prints: the header account block
- *     (`display-email`) and footer contact (`footer-contact/email`), the pricing FAQ's
- *     contact link and the support FAQ's "email us" line all read it, because a second
- *     address typed into a fixture is a second source of truth for the same fact.
- *   - `affiliateEmail` is the partner surface: the `/affiliate` closing CTA's address and
- *     the `mailto:` beside it. A second field and not `supportEmail`, because it is a
- *     second surface a skin may route elsewhere; on this template both are the brand's one
- *     mailbox at `@riolabs.ai`, and `domain` is not consulted to build either.
+ *   - `supportEmail` is the contact form's **recipient**, read on the server by
+ *     `app/api/contact/route.ts` and `lib/contact/mail.ts` and printed by no page (owner,
+ *     2026-11-02). It used to be the address the shell printed; the footer, the pricing FAQ and
+ *     the support FAQ all render a link to `/help` now.
+ *   - `affiliateEmail` is the partner surface's recipient, for the same reason and with the same
+ *     rule: `/affiliate`'s closing band links to the contact form, and the address is not on the
+ *     page. A second field and not `supportEmail`, because it is a second surface a skin may
+ *     route elsewhere; on this template both are the brand's one mailbox at `@riolabs.ai`, and
+ *     `domain` is not consulted to build either.
  *   - `referralBase` is the origin half of the dashboard's referral link; the `/ref/` path
  *     and the demo's `username123` stay in the component that composes them, because a
  *     handle is not brand data.

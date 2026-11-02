@@ -236,7 +236,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
    */
   "/help": {
     page: "app/(marketing)/help/page.tsx",
-    dirs: ["components/support"],
+    dirs: ["components/support", "components/contact"],
     fixture: "data/pages/help",
     budget: 0,
   },

@@ -16,9 +16,14 @@
  * route rather than that it is absent.
  *
  * These cases pin the *markup* that replaced them, which is the half `rg` cannot see: the footer
- * draws no social row on either brand, prints no fabricated contact row, has no subscribe band,
- * and a row that acts is a `<button type="button">` rather than a link with an empty `href`. The
- * other half — that the anchors which remain point at real routes — is `data:check` E10.
+ * draws no social row on either brand, prints no fabricated contact row, and a row that acts is a
+ * `<button type="button">` rather than a link with an empty `href`. The other half — that the
+ * anchors which remain point at real routes — is `data:check` E10.
+ *
+ * The subscribe box is the one of the three that came *back*: it was removed for having no
+ * handler, and this card gave it one (`/api/news/subscribe` writes `news_signup` and sends through
+ * `lib/flow/email.ts`). The case below therefore asserts the field exists and names its route,
+ * because "a field with nowhere to post" is the defect and "a field" is not.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -78,13 +83,23 @@ describe("the footer claims no social presence it cannot back", () => {
       ]);
     });
 
-    it(`${brandId}: prints no invented street line, telephone number or subscribe box`, () => {
+    it(`${brandId}: prints no invented street line or telephone number, and the signup it prints is wired`, () => {
       const html = footer(brandId);
       expect(html).not.toMatch(/Alignment Way|Quiz Street|\b555\b/);
-      expect(html).not.toContain("Subscribe");
-      expect(html).not.toMatch(/type="email"/);
-      // The rows that survive the contact block, so this is not a claim about an empty block.
-      expect(html).toContain("Contact Support");
+      /**
+       * The signup's *absence* used to be the claim (#272: a box with no handler and no sender).
+       * The owner's card built the sender, so the same defect is checked from the other side —
+       * the field exists *and* it has somewhere to go. A field added back with no action fails
+       * here.
+       */
+      expect(html).toContain('type="email"');
+      expect(html).toContain('action="/api/news/subscribe"');
+      expect(html).toContain(sectionOf(shellPageCopy, "footer-news").heading ?? "");
+      // And the contact band's one link survives, so this is not a claim about an empty block:
+      // it points at the contact form now instead of printing a mailbox (owner, 2026-11-02).
+      expect(html).toContain("Send us a message from the contact form");
+      expect(html).toContain('href="/help"');
+      expect(html).not.toContain("mailto:");
     });
 
     it(`${brandId}: still renders its columns, so the row was the only thing removed`, () => {

@@ -28,13 +28,15 @@
  *   Terms §4.3 "Usage Limits" — the product defines no usage limits; dropped rather than filled
  *     with invented numbers.
  *   Terms §14.6/§15 physical address — no address is published anywhere in the repo; the contact
- *     section says email is the supported channel.
+ *     section says the contact form is the supported channel.
  *   Privacy DPO and EU-representative blocks — the company has neither; the copy says so.
  *   Privacy SOC 2 / audits / penetration tests / AES-256-at-rest / automated backups / 72-hour
  *     breach notification / SCCs and DPAs / a numeric retention table — none of it is
  *     implemented or evidenced in this tree; the copy states what is true instead.
  *   Privacy "How we use" marketing-consent rows, payment-processor and OAuth-provider rows —
- *     no marketing email, no payments and no OAuth provider exist in this build.
+ *     no payments and no OAuth provider exist in this build, and the one email list there is
+ *     (the footer's product-news signup, §2.7) is described as the thing it is: an address, the
+ *     page it came from and the time, added only by the form itself.
  *
  * Shape — the same as `data/pages/assessment.ts`: one `zPageCopy.parse({ … })` per route, sections
  * with `id` / `heading` / `body`, and `items` (`{ id, label, body }`) for sub-clauses. Paragraphs
@@ -60,7 +62,7 @@ export function draftNotice(record: Pick<Brand, "name">): string {
 }
 
 /** The brand facts these pages need. Deliberately narrower than `Brand`: no colour, no logo. */
-export type LegalBrand = Pick<Brand, "name" | "domain" | "supportEmail">;
+export type LegalBrand = Pick<Brand, "name" | "domain">;
 
 /**
  * The two pages, for one brand record.
@@ -72,6 +74,18 @@ export type LegalBrand = Pick<Brand, "name" | "domain" | "supportEmail">;
 export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageCopy } {
   const entity = "RioLabs";
   const notice = draftNotice(record);
+  /**
+   * The one contact path these pages name, and the reason it is a phrase rather than an address
+   * (owner, 2026-11-02): a published mailbox is a string a scraper harvests and a visitor without
+   * a mail client cannot use. `/help`'s form stores the message before it is mailed, so every
+   * request the policy describes — deletion, a copy of the data, a security report, a dispute —
+   * has a channel that works, and a regulator reading the document has one place to write.
+   *
+   * **The one requirement this trades away**, stated rather than hidden: neither policy prints a
+   * postal address or a named officer, and a jurisdiction that demands a served address on the
+   * policy itself would need one added back. The form reaches the same mailbox the address did.
+   */
+  const contact = "the contact form on the Help page";
 
   const terms: PageCopy = zPageCopy.parse({
     heading: "Terms of Service",
@@ -106,12 +120,12 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "security",
             label: "3.2 Account security",
-            body: `You are responsible for keeping your credentials secure and confidential, and for all activity that occurs under your account, whether or not you authorized it. Notify us immediately at ${record.supportEmail} of any unauthorized use of your account.`,
+            body: `You are responsible for keeping your credentials secure and confidential, and for all activity that occurs under your account, whether or not you authorized it. Notify us immediately through ${contact} of any unauthorized use of your account.`,
           },
           {
             id: "termination",
             label: "3.3 Account termination",
-            body: `We reserve the right to suspend or terminate your account for violation of these Terms, fraudulent or abusive conduct, or requests by law enforcement or government agencies.\n\nThe current build has no self-service account deletion. To request deletion of your account and its data, write to ${record.supportEmail}.`,
+            body: `We reserve the right to suspend or terminate your account for violation of these Terms, fraudulent or abusive conduct, or requests by law enforcement or government agencies.\n\nThe current build has no self-service account deletion. To request deletion of your account and its data, send us a message through ${contact}.`,
           },
         ],
       },
@@ -169,7 +183,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "removal",
             label: "6.3 Content removal and the freeze",
-            body: `Once both people in an assessment have answered and accepted their answers, the answers are frozen by design and can no longer be changed. Before a person accepts, they may resubmit their own answers.\n\nTo ask us to remove content, write to ${record.supportEmail}. There is no automated content or account deletion in the current build; requests are handled manually.`,
+            body: `Once both people in an assessment have answered and accepted their answers, the answers are frozen by design and can no longer be changed. Before a person accepts, they may resubmit their own answers.\n\nTo ask us to remove content, send us a message through ${contact}. There is no automated content or account deletion in the current build; requests are handled manually.`,
           },
         ],
       },
@@ -205,7 +219,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "informal",
             label: "11.2 Informal resolution",
-            body: `Before filing any formal dispute, you agree to first attempt to resolve the issue informally by contacting us at ${record.supportEmail}. We will attempt to resolve the dispute informally within 30 days.`,
+            body: `Before filing any formal dispute, you agree to first attempt to resolve the issue informally by contacting us through ${contact}. We will attempt to resolve the dispute informally within 30 days.`,
           },
           {
             id: "venue",
@@ -256,14 +270,14 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "notices",
             label: "13.6 Notices",
-            body: `We may provide notices to you via email to the address associated with your account, or through the Service. Notices to us should be sent to ${record.supportEmail}.`,
+            body: `We may provide notices to you via email to the address associated with your account, or through the Service. Notices to us should be sent through ${contact}.`,
           },
         ],
       },
       {
         id: "contact",
         heading: "14. Contact Information",
-        body: `If you have questions about these Terms of Service, contact us:\n\n- ${record.name}, operated by ${entity}\n- Email: ${record.supportEmail}\n- Website: ${record.domain}\n\n${record.name} does not currently publish a postal address; email is the supported channel for questions about these Terms.`,
+        body: `If you have questions about these Terms of Service, contact us:\n\n- ${record.name}, operated by ${entity}\n- Contact: ${contact}\n- Website: ${record.domain}\n\n${record.name} does not currently publish a postal address; the contact form is the supported channel for questions about these Terms.`,
       },
       {
         id: "attribution",
@@ -286,7 +300,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
       {
         id: "intro",
         heading: "1. Introduction",
-        body: `${record.name} ("we," "our," or "us"), operated by ${entity}, operates the ${record.name} application (the "Service"), in which two people answer the same questions about their relationship. Each person answers, for each question, how things feel now and how they wish things were; neither person can see the other's answers until both have submitted, and the difference between the two answers is called the Gap. The Service is provided at ${record.domain} and at any address a build of the Service is deployed to.\n\nThis Privacy Policy explains what information we collect, how we use it, and your choices. ${record.name} does not currently publish a postal address; privacy questions go to ${record.supportEmail}.`,
+        body: `${record.name} ("we," "our," or "us"), operated by ${entity}, operates the ${record.name} application (the "Service"), in which two people answer the same questions about their relationship. Each person answers, for each question, how things feel now and how they wish things were; neither person can see the other's answers until both have submitted, and the difference between the two answers is called the Gap. The Service is provided at ${record.domain} and at any address a build of the Service is deployed to.\n\nThis Privacy Policy explains what information we collect, how we use it, and your choices. ${record.name} does not currently publish a postal address; privacy questions go through ${contact}.`,
       },
       {
         id: "collects",
@@ -322,6 +336,11 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
             label: "2.6 What we do not collect",
             body: "The Service does not process payments, so we never collect payment card numbers, billing details or anything a payment provider would hold.",
           },
+          {
+            id: "news",
+            label: "2.7 Product news signup",
+            body: `The footer of the public pages carries a signup for product news. If you use it, we store the email address you typed, the path of the page you signed up from, and the time you did it — three fields, in our own database, and nothing else. There is no account behind it and it is not linked to one. The form is the only way onto that list; we do not add addresses to it from anywhere else.`,
+          },
         ],
       },
       {
@@ -345,8 +364,8 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           },
           {
             id: "no-marketing",
-            label: "We do not send marketing email",
-            body: "The only messages the Service sends are the two transactional ones above, and only when a deployment has a mail provider configured. There is no newsletter, no product announcements list, and no advertising.",
+            label: "Product news, only if you asked for it",
+            body: `The Service sends no advertising, no third-party marketing and no campaign email, and it never sells or shares an address. The one list it keeps is the product-news list described in Section 2.7, and an address reaches it only by being typed into the footer form. What we send is a note when something in the product changes — no fixed schedule, and no claim of one — and every message says how to stop. To leave the list, reply to any message from it or write through ${contact}; the address is removed and no further announcement is sent to it.`,
           },
         ],
       },
@@ -393,8 +412,8 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           },
           {
             id: "resend",
-            label: "Resend (transactional email, when configured)",
-            body: "Sends the invitation email and the completion notice on deployments where a mail provider is configured. Receives the recipient's address and the message text.",
+            label: "Resend (email, when configured)",
+            body: "Sends the invitation email, the completion notice and the product-news confirmation on deployments where a mail provider is configured. Receives the recipient's address and the message text.",
           },
         ],
       },
@@ -442,7 +461,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "deletion",
             label: "Deletion",
-            body: `There is no automated deletion in the current build. You may request deletion of your account and its data by writing to ${record.supportEmail}; requests are handled manually and answered within a reasonable time.`,
+            body: `There is no automated deletion in the current build. You may request deletion of your account and its data by sending us a message through ${contact}; requests are handled manually and answered within a reasonable time.`,
           },
         ],
       },
@@ -453,7 +472,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "access",
             label: "Access, correction and deletion",
-            body: `You may ask us for a copy of the personal information we hold about you, ask for corrections, or ask that we delete it, by writing to ${record.supportEmail}. Self-service tools in the current build are limited, so email is the supported channel.`,
+            body: `You may ask us for a copy of the personal information we hold about you, ask for corrections, or ask that we delete it, by sending us a message through ${contact}. Self-service tools in the current build are limited, so the contact form is the supported channel.`,
           },
           {
             id: "california",
@@ -496,7 +515,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
       {
         id: "children",
         heading: "11. Children's Privacy",
-        body: `The Service is not intended for people under 16 years of age, and we do not knowingly collect personal information from children under that age. If you believe a child has provided us personal information, contact ${record.supportEmail} and we will delete it.`,
+        body: `The Service is not intended for people under 16 years of age, and we do not knowingly collect personal information from children under that age. If you believe a child has provided us personal information, reach us through ${contact} and we will delete it.`,
       },
       {
         id: "changes",
@@ -506,7 +525,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
       {
         id: "contact",
         heading: "13. Contact",
-        body: `For privacy-related inquiries:\n\n- Email: ${record.supportEmail}\n- ${record.name}, operated by ${entity}\n- ${record.name} does not currently publish a postal address, and no Data Protection Officer has been appointed.`,
+        body: `For privacy-related inquiries:\n\n- Contact: ${contact}\n- ${record.name}, operated by ${entity}\n- ${record.name} does not currently publish a postal address, and no Data Protection Officer has been appointed.`,
       },
       {
         id: "attribution",

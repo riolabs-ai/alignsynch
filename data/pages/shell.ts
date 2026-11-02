@@ -210,7 +210,7 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "home", label: "Home" },
           { id: "dashboard", label: "Dashboard" },
-          { id: "how-it-works", label: "How it works" },
+          { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
           { id: "template-library", label: "Library" },
           { id: "templates", label: "Templates" },
@@ -448,8 +448,8 @@ export function shellCopy(brand: Brand): PageCopy {
            * is not a second `signed-out` — the two links are different destinations, and a slot
            * that derived one from the other would have to spell an href in a component.
            */
-          { id: "signed-out", label: "Sign in" },
-          { id: "sign-up", label: "Sign up" },
+          { id: "signed-out", label: "Sign In" },
+          { id: "sign-up", label: "Sign Up" },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
@@ -540,7 +540,7 @@ export function shellCopy(brand: Brand): PageCopy {
         heading: "Quick Links",
         items: [
           { id: "templates", label: "Templates" },
-          { id: "how-it-works", label: "How it works" },
+          { id: "how-it-works", label: "How It Works" },
           /**
            * The footer's help row (Help/Support split). The footer is mounted by the public pages
            * *and* by four product pages, so this column carries the public destination — `help` —
@@ -561,44 +561,99 @@ export function shellCopy(brand: Brand): PageCopy {
         id: "footer-contact",
         heading: "Contact",
         /**
-         * Two rows, not four (issue #272). The block used to print a street line and a telephone
-         * number. Neither is a fact about this company: the street was invented, and the number
-         * came from the range reserved for fiction, so it cannot reach anyone. A mailbox someone
-         * can write to and a button that opens the support surface are the two rows that
-         * survive; a real address or number comes back only from the brand record, when someone
-         * supplies one.
+         * **A form, not a mailbox** (owner, 2026-11-02). This block printed the brand record's
+         * address as a dead row — a string on every page of both builds, and on the AlignSynch
+         * side one a visitor could not write to without a mail client. The contact path is one
+         * link to the contact form, and the fixture names no address at all: an address no
+         * fixture carries cannot be printed by accident.
+         *
+         * The street line and the telephone number left in #272 for the same reason: neither was
+         * a fact. `cta.href` is checked against the route manifest by E23, so the row cannot
+         * outlive the page it points at.
          */
-        items: [
-          { id: "email", label: brand.supportEmail },
-          { id: "cta", label: "Contact Support" },
-        ],
+        body: "Send us a message from the contact form and we will reply to the address you leave.",
+        cta: { label: "Contact us", href: "/help" },
       },
       /**
-       * The alignment brand's contact block — the same ids, because the footer resolves one set
-       * of ids whichever section the brand picked.
+       * The alignment brand's contact block — the same shape, because the footer resolves one
+       * section either way.
        *
-       * It differs in nothing but the words the brands do not share; the two fabricated rows
-       * (street line, 555 number) are gone from both sections because the ids have to match and
-       * neither value is a fact about either product. The mailbox is the record's, read twice on
-       * purpose: the two brands route to different inboxes and the address is a field, not a
-       * literal.
+       * It differs in nothing but the words the brands do not share. Neither section names a
+       * mailbox: `supportEmail` is the contact form's *recipient*, read on the server by
+       * `app/api/contact/route.ts`, and a rendering rule that kept it out of one brand's footer
+       * and not the other's would be the same defect with a brand check in front of it.
        */
       {
         id: "footer-contact-alignsynch",
         heading: "Contact",
-        items: [
-          { id: "email", label: brand.supportEmail },
-          { id: "cta", label: "Contact Support" },
-        ],
+        body: "Send us a message from the contact form and we will reply to the address you leave.",
+        cta: { label: "Contact us", href: "/help" },
       },
       /**
-       * No mailing-list band (issue #272). The footer carried a box that took an address and a
-       * button that did nothing with it: no handler, and no marketing mail exists in this app
-       * (an invitation and an unlock notice are the only messages it sends). A box that promises
-       * a subscription on every page of both builds is a claim about a feature nobody can reach,
-       * so the band, its two sections and the projection that chose between them are gone. It
-       * comes back with the sender behind it.
+       * The footer's news band — the second life of the box #272 removed.
+       *
+       * #272 deleted it because it took an address and the button had no handler: a promise of
+       * delivery with no sender behind it. The band is back because the sender is real now —
+       * `app/api/news/subscribe/route.ts` writes the row and `lib/news/message.ts` sends through
+       * the one transport in `lib/flow/email.ts` — and it lives in the *footer* rather than on a
+       * band of `/`, so it appears on every marketing page and on the three product pages that
+       * mount the same footer.
+       *
+       * Six of these items are the six states the route can answer with, and the mapping is
+       * one-to-one (`components/layout/news-signup.tsx`): a person is never told their address
+       * was kept when it was not, and never told it was lost when it was kept. `duplicate` is a
+       * sentence about nothing having changed, because a second submit sending a second
+       * confirmation would be a spam loop with a friendly face.
+       *
+       * **The body claims no cadence.** "No schedule" is the phrase, because nobody has
+       * committed to one and a fixture is not the place to invent one. The two `confirm-*` items
+       * are the email itself: what the person asked for, that this note confirms it, and how to
+       * stop — the only two facts a subscription note owes a reader.
        */
+      {
+        id: "footer-news",
+        heading: "Product news",
+        body: "A note when we ship something that changes how the product works. No schedule, and every message says how to stop.",
+        items: [
+          { id: "field-label", label: "Email address" },
+          /**
+           * No address-shaped placeholder (owner, 2026-11-02): the sweep in
+           * `tests/public-contact.test.tsx` reads every string in this fixture for an
+           * address, and `you@example.com` is one — a placeholder a visitor can copy is the
+           * same harvestable string as a real one, and it is not an address this product owns.
+           */
+          { id: "placeholder", label: "Where should we send it?" },
+          { id: "submit", label: "Sign Up" },
+          { id: "pending", label: "Signing up…" },
+          { id: "back", label: "Back to the page" },
+          {
+            id: "subscribed",
+            label: "You're on the list. A confirmation is on its way to that address.",
+          },
+          {
+            id: "duplicate",
+            label:
+              "That address was already on the list — nothing changed, and nothing was sent again.",
+          },
+          {
+            id: "send-failed",
+            label:
+              "You're on the list. We couldn't send the confirmation, so there may be nothing in your inbox.",
+          },
+          { id: "invalid", label: "That doesn't look like an email address. Nothing was saved." },
+          {
+            id: "storage-failed",
+            label: "We couldn't save that just now. Nothing was stored — try again in a moment.",
+          },
+          { id: "confirm-subject", label: "You're on the {brand} product news list" },
+          {
+            id: "confirm-body",
+            label:
+              "You asked for product news from {brand}, so the address {email} is on the list.\n\nWe send a note when something in the product changes, and nothing on a schedule. To stop receiving them, reply to this message or write to {support} and the address is removed.\n\nThis is the only message you will get until we ship something.",
+          },
+        ],
+      },
+
       {
         id: "footer-legal",
         items: [

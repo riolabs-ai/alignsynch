@@ -8,12 +8,13 @@ import { brandMark } from "@/lib/brand-mark";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { ExternalLink, Mail } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 import { AppVersion } from "@/components/layout/app-version";
 import { BrandGlyph } from "@/components/layout/brand-glyph";
+import { NewsSignup } from "@/components/layout/news-signup";
 
 /**
  * The footer — the one shell band the pages render themselves, so it takes the whole
@@ -118,6 +119,21 @@ export function Footer({
    */
   const mark = brandMark(brand.logo);
 
+  /**
+   * The footer's news band.
+   *
+   * It stands where the band #272 deleted stood — under the link columns, above the legal row —
+   * because that is where a footer's signup belongs and it is the position the old markup had.
+   * It appears on every page that mounts this footer, which is why it lives here and not on a
+   * band of `/`: the card's acceptance is "every marketing route", and the marketing chrome is
+   * this component.
+   *
+   * The section is handed down as data; the form is a client component
+   * (`components/layout/news-signup.tsx`) that reads its words from it, so this file still holds
+   * no copy and still value-imports nothing that reaches `lib/db/**`.
+   */
+  const news = sectionOf(copy, "footer-news");
+
   return (
     <footer className="relative overflow-hidden bg-muted pt-16 pb-8 sm:px-4 xl:px-8">
       {/* Decorative elements */}
@@ -185,35 +201,37 @@ export function Footer({
                   <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-action"></span>
                 </h3>
                 {/*
-                 * One row: the mailbox. The street line and the telephone number that stood
-                 * above it are gone (#272) — an invented address and a number from the block
-                 * reserved for fiction, printed as this company's details on every page of
-                 * both builds. A row comes back when a real value does; a placeholder that
-                 * looks like a fact is the defect, not the empty space.
+                 * One sentence and one link (owner, 2026-11-02). The row that stood here printed
+                 * `brand.supportEmail` — an address on every public page of both builds, and a
+                 * mail link is not a contact path a visitor without a mail client can use. The
+                 * destination is now the form on `/help`, where a message is stored before it is
+                 * mailed, so nothing is lost when the sender has no mail app.
+                 *
+                 * The fixture carries no address at all (`footer-contact` / its alignment twin),
+                 * and `contact.cta.href` is E23's to check against the route manifest.
                  */}
-                <ul className="space-y-4">
-                  <li className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                      <Mail className="h-4 w-4 text-action" />
-                    </div>
-                    <span className="text-slate-600 dark:text-slate-400">
-                      {itemLabel(contact, "email")}
-                    </span>
-                  </li>
-                </ul>
-                <Button variant={"action"}>{itemLabel(contact, "cta")}</Button>
+                {contact.body !== undefined && (
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                    {sectionBody(contact)}
+                  </p>
+                )}
+                {contact.cta !== undefined && (
+                  <Button asChild variant={"action"}>
+                    <Link href={contact.cta.href}>{contact.cta.label}</Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         {/*
-         * No mailing-list band (#272). It took an email address and offered to deliver news to
-         * it, with a button that had no handler and no sender behind it — this app sends an
-         * invitation and an unlock notice, nothing else. A box that promises a subscription on
-         * every page of both builds is the same defect as a link that goes nowhere; the band
-         * returns when something can keep the promise.
+         * The news signup. It replaced the comment that stood here — #272 had removed a
+         * mailing band because it took an address with no sender behind it. The sender is real
+         * now: `app/api/news/subscribe/route.ts` writes the address to `news_signup` and sends
+         * through `lib/flow/email.ts`, so the band can make the promise its markup implies.
          */}
+        <NewsSignup section={news} />
 
         {/* Bottom footer */}
         <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
