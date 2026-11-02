@@ -23,6 +23,7 @@ import { myInstancesPageCopy } from "./assessment-instances";
 import { assessmentTemplatePageCopy } from "./assessment-template-new";
 import { templateDetailPageCopy } from "./assessment-template-detail";
 import { templateLibraryPageCopy } from "./assessment-templates";
+import { relationshipReportPageCopy } from "./assessment-relationship-report";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
@@ -60,6 +61,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/assessment": assessmentPageCopy,
   "/assessment/instances": myInstancesPageCopy,
   "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
+  "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
   "/assessment/templates": templateLibraryPageCopy,
   "/assessment/templates/[templateId]": templateDetailPageCopy,
   "/assessment/templates/new": assessmentTemplatePageCopy,

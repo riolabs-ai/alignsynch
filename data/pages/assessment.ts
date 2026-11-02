@@ -51,6 +51,33 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
       body: "An instance copies the template's Aspects when it is created. Editing a template later never touches an instance someone has answered.",
     },
     {
+      /**
+       * The catalogue card (#409), the same one `/assessment/templates` draws. The picker needs
+       * two words of its own only because its card carries the create form: the link out, and the
+       * type/realm the template's summary names.
+       */
+      id: "card",
+      items: [
+        { id: "view-details", label: "View details" },
+        { id: "aspects", label: "{count} Aspects" },
+        { id: "type", label: "Relationship Type" },
+        { id: "realm", label: "Realm" },
+        { id: "unnamed-type", label: "No relationship type" },
+        { id: "unnamed-realm", label: "Not stated" },
+        { id: "roles", label: "{initiator} / {counterparty}" },
+      ],
+    },
+    {
+      /** The v1 library's two groups, plus the one for templates that name no type (#409). */
+      id: "groups",
+      heading: "By relationship type",
+      items: [
+        { id: "business", label: "Business" },
+        { id: "personal", label: "Personal" },
+        { id: "other", label: "Other templates" },
+      ],
+    },
+    {
       id: "empty",
       heading: "No published template",
       body: "A template has to be published before an instance can be created from it.",

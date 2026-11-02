@@ -319,6 +319,16 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-instance",
     budget: 0,
   },
+  // #409 — the relationship report, the one read surface the app did not have. Budget 0 from the
+  // first commit, for the same reason: the locked state, the verdict band, the opinion matrix and
+  // the Gap table's four headings are all in `data/pages/assessment-relationship-report.ts`, so
+  // the next literal written in `report-view.tsx` is a red build.
+  "/assessment/instances/[instanceId]/report": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/report/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-relationship-report",
+    budget: 0,
+  },
   // #255 — the template authoring form. Budget 0 from the first commit, for the reason the
   // three flow surfaces above are: every word is in `data/pages/assessment-template-new.ts`,
   // including the six refusals, so the next literal written in the form is a red build.
