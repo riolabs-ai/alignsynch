@@ -126,7 +126,7 @@ export const DEMO_SOCIAL_STORAGE_KEY = "alignsynch.v1.social.v1";
  * cannot simply spread every row over strangers — that would empty both personas' dashboards.
  * Each list keeps its anchors (the first row of every Stage is Jordan's, the first claimed row of
  * every Stage is Sam's) and the rest of the set rotates over the roster, which is what makes this a
- * directory of parties rather than one pair repeated 27 times.
+ * directory of parties rather than one pair repeated across the set.
  *
  * `PERSONA_META` fixes the two names the personas read: Jordan (initiator) and Sam (counterparty).
  * The two pools are disjoint so a person is never their own counterparty, and every name here
@@ -174,6 +174,10 @@ interface DemoPlanEntry {
  *                          two half-finished, two answered-but-never-accepted
  *   sharing           15   the bulk, so a report has something to read
  *   aligned            2   one Full (every Gap 0 — the In Synch end) and one Soft (every Gap 1)
+ *
+ * The table is one pass over the catalogue (`DEMO_TYPE_COUNT` entries), and `planFor` cycles it —
+ * so a set of `types × DEMO_ROWS_PER_TYPE` rows plays this exact mix once per copy instead of
+ * re-weighting toward the top of the table.
  */
 const PLAN: readonly DemoPlanEntry[] = [
   { stage: "invited", sheet: "none" },
@@ -470,7 +474,7 @@ interface PartyPair {
 }
 
 /**
- * The names for every catalogue slot, in catalogue order.
+ * The names for every slot, in catalogue order — `DEMO_ROWS_PER_TYPE` passes over the catalogue.
  *
  * Two rules, both there so a persona's dashboard is populated rather than merely present:
  *
@@ -492,9 +496,17 @@ function partyPairs(count: number): PartyPair[] {
     const claimed = stage !== "invited";
     const anchor = !anchors.has(stage);
     anchors.add(stage);
-    // `anchor || index % 3 === 0` is a grouped condition, not a chained ternary: the first row of
-    // each Stage and every third row belong to the demo's own initiator.
-    const owner = anchor || index % 3 === 0 ? OWNER_NAMES[0] : OWNER_NAMES[1 + (index % 2)];
+    // Which copy of this type the slot is, and where in the catalogue it sits — the two numbers
+    // that keep a type's second row from restating its first. The rotation below is phased per
+    // copy (`slot % 3 === copy % 3`), so the rows the demo's own initiator owns are a different
+    // third of the catalogue in each copy: without that phase, a type whose first row is an
+    // unclaimed invite would get a second one from the same person, with no counterparty to tell
+    // the two apart in a list.
+    const copy = Math.floor(index / DEMO_TYPE_COUNT);
+    const slot = index % DEMO_TYPE_COUNT;
+    // `anchor || slot % 3 === copy % 3` is a grouped condition, not a chained ternary: the first row
+    // of each Stage and the copy's own third belong to the demo's initiator.
+    const owner = anchor || slot % 3 === copy % 3 ? OWNER_NAMES[0] : OWNER_NAMES[1 + (index % 2)];
     let counterparty: string | null = null;
     if (claimed) {
       counterparty = anchor
@@ -694,6 +706,7 @@ function chatFor(
 function demoRelationship(
   type: RelationshipType,
   index: number,
+  copy: number,
   party: PartyPair,
   inSynchCount: number,
   rng: () => number,
@@ -730,7 +743,7 @@ function demoRelationship(
   const counterpartySubmitted = answersBoth;
   const complete = scored;
 
-  const id = `rel-demo-${type.id}`;
+  const id = copy === 0 ? `rel-demo-${type.id}` : `rel-demo-${type.id}-${copy + 1}`;
   const initiatorAcceptedAt = complete ? at(-(index % 9) - 2) : null;
   const counterpartyAcceptedAt = complete ? at(-(index % 9) - 1) : null;
   const claimed = stage !== "invited";
@@ -781,7 +794,7 @@ function demoRelationship(
     counterpartyAccepted: complete,
     initiatorAcceptedAt,
     counterpartyAcceptedAt,
-    inviteToken: `inv-demo-${type.id}`,
+    inviteToken: copy === 0 ? `inv-demo-${type.id}` : `inv-demo-${type.id}-${copy + 1}`,
     // Every eighth invite has lapsed against the demo clock; the rest have three days left. Both
     // invite states a list can print are reachable without waiting for a clock to move.
     inviteExpiresAt: stage === "invited" ? (index % 8 === 0 ? at(-48) : at(72)) : null,
@@ -821,14 +834,59 @@ export interface PersistedDemoFlow {
   readonly tickets: readonly V1Ticket[];
 }
 
-/** Every purchasable type's demo relationship, in catalogue order. */
+/**
+ * How many demo relationships each purchasable type carries.
+ *
+ * The set used to be one row per type — 27 rows, a limit the /v1 dev panel asserted in its own
+ * copy. A demo list of 27 rows is a list you scroll, not a list you search: the admin console and
+ * the initiator's own list both read as a single screen of data.
+ *
+ * Two rows per type is the smallest count that stops reading as one-per-type, and it is the
+ * cheapest count that keeps the **plan's** mix exact: `PLAN` holds 27 entries, so cycling it over
+ * `types × 2` plays every entry twice and the Stage mix (4 / 6 / 15 / 2) doubles rather than
+ * skewing. A count that is not a multiple of the plan would silently re-weight the set toward the
+ * front of the table — more invites and blanks, fewer scored rows.
+ *
+ * The first copy of every type keeps the row id it always had (`rel-demo-<type>`), so a link or a
+ * test naming one seeded row still resolves; the extra copies take `-2`. Nothing else about a row
+ * is derived from this number: the plan, the parties, the subscription state and the chat are all
+ * indexed, so the additional rows fall out of the same rules.
+ */
+export const DEMO_ROWS_PER_TYPE = 2;
+
+/** The catalogue's purchasable types — what the dev panel's sentence counts against. */
+export const DEMO_TYPE_COUNT = purchasableRelationshipTypes.length;
+
+/** How many relationships `demoRelationships()` returns, and what the seed writes. */
+export const DEMO_ROW_COUNT = DEMO_TYPE_COUNT * DEMO_ROWS_PER_TYPE;
+
+/** Every purchasable type's demo relationships, in catalogue order, `DEMO_ROWS_PER_TYPE` each. */
 export function demoRelationships(seed: number = DEMO_SEED): readonly V1Relationship[] {
-  const inSynch = inSynchCounts(purchasableRelationshipTypes.map((type) => type.aspects.length));
-  const parties = partyPairs(purchasableRelationshipTypes.length);
-  return purchasableRelationshipTypes.map((type, index) => {
-    const party = parties[index] ?? { owner: OWNER_NAMES[0], counterparty: null };
-    return demoRelationship(type, index, party, inSynch[index], demoRng(seed + index * 7919));
-  });
+  // Catalogue order, repeated — so the first pass over the types is the set the demo has always
+  // had, row for row, and the additional copies follow it rather than interleaving with it.
+  const slots: {
+    readonly index: number;
+    readonly copy: number;
+    readonly type: RelationshipType;
+  }[] = [];
+  for (let index = 0; index < DEMO_ROW_COUNT; index += 1) {
+    const type = purchasableRelationshipTypes[index % DEMO_TYPE_COUNT];
+    if (type === undefined) continue;
+    slots.push({ index, copy: Math.floor(index / DEMO_TYPE_COUNT), type });
+  }
+
+  const inSynch = inSynchCounts(slots.map((slot) => slot.type.aspects.length));
+  const parties = partyPairs(slots.length);
+  return slots.map((slot, position) =>
+    demoRelationship(
+      slot.type,
+      slot.index,
+      slot.copy,
+      parties[position] ?? { owner: OWNER_NAMES[0], counterparty: null },
+      inSynch[position] ?? 0,
+      demoRng(seed + slot.index * 7919),
+    ),
+  );
 }
 
 /**
