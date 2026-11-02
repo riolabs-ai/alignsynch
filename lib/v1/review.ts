@@ -69,7 +69,8 @@ export const REVIEW_SCREENS: readonly ReviewScreen[] = [
   {
     route: "/v1/initiator/relationships",
     href: "/v1/initiator/relationships",
-    description: "The Initiator's relationships and invitations, with invite and re-invite inline.",
+    description:
+      "The Initiator's relationships as cards: stage tabs, search, sessions N of M, plan and period.",
   },
   {
     route: "/v1/initiator/templates",
