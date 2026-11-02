@@ -14,6 +14,7 @@ import Link from "next/link";
 import type React from "react";
 import { AppVersion } from "@/components/layout/app-version";
 import { BrandGlyph } from "@/components/layout/brand-glyph";
+import { NewsSignup } from "@/components/layout/news-signup";
 
 /**
  * The footer — the one shell band the pages render themselves, so it takes the whole
@@ -118,6 +119,21 @@ export function Footer({
    */
   const mark = brandMark(brand.logo);
 
+  /**
+   * The footer's news band.
+   *
+   * It stands where the band #272 deleted stood — under the link columns, above the legal row —
+   * because that is where a footer's signup belongs and it is the position the old markup had.
+   * It appears on every page that mounts this footer, which is why it lives here and not on a
+   * band of `/`: the card's acceptance is "every marketing route", and the marketing chrome is
+   * this component.
+   *
+   * The section is handed down as data; the form is a client component
+   * (`components/layout/news-signup.tsx`) that reads its words from it, so this file still holds
+   * no copy and still value-imports nothing that reaches `lib/db/**`.
+   */
+  const news = sectionOf(copy, "footer-news");
+
   return (
     <footer className="relative overflow-hidden bg-muted pt-16 pb-8 sm:px-4 xl:px-8">
       {/* Decorative elements */}
@@ -208,12 +224,12 @@ export function Footer({
         </div>
 
         {/*
-         * No mailing-list band (#272). It took an email address and offered to deliver news to
-         * it, with a button that had no handler and no sender behind it — this app sends an
-         * invitation and an unlock notice, nothing else. A box that promises a subscription on
-         * every page of both builds is the same defect as a link that goes nowhere; the band
-         * returns when something can keep the promise.
+         * The news signup. It replaced the comment that stood here — #272 had removed a
+         * mailing band because it took an address with no sender behind it. The sender is real
+         * now: `app/api/news/subscribe/route.ts` writes the address to `news_signup` and sends
+         * through `lib/flow/email.ts`, so the band can make the promise its markup implies.
          */}
+        <NewsSignup section={news} />
 
         {/* Bottom footer */}
         <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
