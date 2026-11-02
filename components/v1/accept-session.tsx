@@ -107,7 +107,7 @@ function PartyPanel({
         <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {seat}
         </span>
-        <Badge variant={accepted ? "success" : submitted ? "outline" : "muted"}>{state}</Badge>
+        <Badge variant={accepted ? "success" : submitted ? "muted" : "outline"}>{state}</Badge>
       </div>
       <p
         className={cn(
@@ -304,7 +304,7 @@ export function AcceptSession({ relationshipId }: { relationshipId: string }) {
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-lg">Acceptance</CardTitle>
-            <Badge variant={bothAccepted ? "success" : "outline"}>
+            <Badge variant={bothAccepted ? "success" : "muted"}>
               {bothAccepted ? "Both accepted" : "Both must accept"}
             </Badge>
           </div>
