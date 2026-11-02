@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **79** — 47 static, 32 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 295 files under `components/`, 290 of them `.tsx`
+- routes: **80** — 47 static, 33 dynamic, from `app/**/page.tsx`
+- component domains: **36** — 306 files under `components/`, 301 of them `.tsx`
 - route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 52 · **db** 16 · **live** 7 · **prototype** 27
-- templates: Both templates 25 · AlignSynch 46 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 52 · **db** 16 · **live** 7 · **prototype** 28
+- templates: Both templates 25 · AlignSynch 47 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -145,7 +145,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/media` — **mock**
   - capability: The one media resolver: a file, a remote URL or a generated default drawn from a seed, in that order, with a fallback on error and no image file behind the last tier.
   - files (2): `generated-avatar.tsx`, `media.tsx`
-  - routes (28): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/settings`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`
+  - routes (31): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/settings`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/profile`, `/v1/[persona]/settings`, `/v1/profile/[handle]`
 
 - `components/not-found` — **mock**
   - capability: The 404 body: floating glyph decoration and a go-back button.
@@ -155,7 +155,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/profile` — **fixture**
   - capability: The public profile in ten parts: cover, header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.
   - files (11): `message-modal.tsx`, `profile-achievements.tsx`, `profile-activity.tsx`, `profile-cover.tsx`, `profile-created-quizzes.tsx`, `profile-followers.tsx`, `profile-following.tsx`, `profile-header.tsx`, `profile-quiz-history.tsx`, `profile-stats.tsx`, `user-profile.tsx`
-  - routes (1): `/profile/[username]`
+  - routes (3): `/profile/[username]`, `/v1/[persona]/profile`, `/v1/profile/[handle]`
 
 - `components/support` — **fixture**
   - capability: The support centre: header, help categories, knowledge base, FAQ, contact form and the article detail.
@@ -165,7 +165,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (59): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/templates`, `/v1/admin/console`, `/v1/initiator/templates/new`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/templates/[type]/demo`, `/welcome` — and every other route through `app/layout.tsx`
+  - routes (60): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/templates`, `/v1/admin/console`, `/v1/initiator/templates/new`, `/v1/profile/[handle]`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/templates/[type]/demo`, `/welcome` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch
@@ -274,8 +274,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/v1/[persona]/profile` — **prototype**
   - capability: The persona's profile — relationship history instead of quiz history, reachable by every dashboard persona.
-  - components: `components/ui`, `components/v1`
-  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
+  - components: `components/media`, `components/profile`, `components/ui`, `components/v1`
+  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
 
 - `/v1/[persona]/relationships` — **prototype**
   - capability: The persona's relationships, status-led: relationship name, type, stage, next session and the session count — an initiator sees theirs, a counterparty the ones they belong to, a coach the ones they coach, an admin all.
@@ -289,8 +289,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/v1/[persona]/settings` — **prototype**
   - capability: The persona's settings — account, appearance, notifications, privacy and connected accounts.
-  - components: `components/ui`, `components/v1`
-  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
+  - components: `components/media`, `components/ui`, `components/v1`
+  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
 
 - `/v1/[persona]/shop` — **prototype**
   - capability: The per-relationship subscription and checkout — initiator only; a counterparty never sees a price.
@@ -321,6 +321,11 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The same draft Privacy Policy the live page renders, shown inside the prototype's chrome.
   - components: `components/legal`
   - reads: 3 fixture modules of page copy, assets or decisions — no records
+
+- `/v1/profile/[handle]` — **prototype**
+  - capability: The public, read-only profile — the same component as the in-app profile with its actions hidden, resolved from a persona's handle.
+  - components: `components/media`, `components/profile`, `components/ui`, `components/v1`
+  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
 
 - `/v1/relationships/[id]` — **prototype**
   - capability: The one screen every role opens a relationship from — a session timeline, not a record: parties, stage, last session and the subscription header (plan, status, period end) in the header, one primary action that moves answer → accept → next session, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim, the comment threads and the advice thread for the roles that have them.
@@ -415,8 +420,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/v1` — **prototype**
   - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.
-  - files (47): `accept-session.tsx`, `account-menu.tsx`, `answer-sheet.tsx`, `comment-thread.tsx`, `dashboard-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `notification-bell.tsx`, `onboarding-panel.tsx`, `opinion-sheet.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `persona-relationship-detail.tsx`, `relationship-aspects-editor.tsx`, `relationship-detail.tsx`, `relationship-library.tsx`, `relationship-type-card.tsx`, `relationships-list.tsx`, `report-body.tsx`, `report-verdict.tsx`, `report-view.tsx`, `reveal.tsx`, `review-chip.tsx`, `review-list.tsx`, `section-stub.tsx`, `service-home.tsx`, `session-timeline.tsx`, `start-relationship-button.tsx`, `subscription-status.tsx`, `template-catalogue.tsx`, `template-demo.tsx`, `template-editor.tsx`, `template-page.tsx`, `v1-chat-input.tsx`, `v1-chat-message.tsx`, `v1-chat-page.tsx`, `v1-chat-thread-list.tsx`, `v1-chat-thread.tsx`, `v1-checkout.tsx`, `v1-nav-menus.tsx`, `v1-notification-icon.tsx`, `v1-notifications.tsx`, `v1-shell.tsx`, `v1-shop.tsx`, `v1-sidebar.tsx`, `v1-template-library.tsx`, `v1-ui.tsx`
-  - routes (24): `/v1`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/shop`, `/v1/[persona]/templates`, `/v1/admin/console`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/service`, `/v1/support`, `/v1/templates`, `/v1/templates/[type]`, `/v1/templates/[type]/demo`
+  - files (58): `accept-session.tsx`, `account-menu.tsx`, `answer-sheet.tsx`, `comment-thread.tsx`, `dashboard-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `notification-bell.tsx`, `onboarding-panel.tsx`, `opinion-sheet.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `persona-relationship-detail.tsx`, `profile/achievements.tsx`, `profile/activity.tsx`, `profile/member-profile.tsx`, `relationship-aspects-editor.tsx`, `relationship-detail.tsx`, `relationship-library.tsx`, `relationship-type-card.tsx`, `relationships-list.tsx`, `report-body.tsx`, `report-verdict.tsx`, `report-view.tsx`, `reveal.tsx`, `review-chip.tsx`, `review-list.tsx`, `section-stub.tsx`, `service-home.tsx`, `session-timeline.tsx`, `settings/account-settings.tsx`, `settings/appearance-settings.tsx`, `settings/connected-accounts.tsx`, `settings/notification-settings.tsx`, `settings/privacy-settings.tsx`, `settings/settings-view.tsx`, `start-relationship-button.tsx`, `subscription-status.tsx`, `subscription/payer-notifications.tsx`, `subscription/subscription-settings.tsx`, `template-catalogue.tsx`, `template-demo.tsx`, `template-editor.tsx`, `template-page.tsx`, `v1-chat-input.tsx`, `v1-chat-message.tsx`, `v1-chat-page.tsx`, `v1-chat-thread-list.tsx`, `v1-chat-thread.tsx`, `v1-checkout.tsx`, `v1-nav-menus.tsx`, `v1-notification-icon.tsx`, `v1-notifications.tsx`, `v1-shell.tsx`, `v1-shop.tsx`, `v1-sidebar.tsx`, `v1-template-library.tsx`, `v1-ui.tsx`
+  - routes (25): `/v1`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/shop`, `/v1/[persona]/templates`, `/v1/admin/console`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/profile/[handle]`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/service`, `/v1/support`, `/v1/templates`, `/v1/templates/[type]`, `/v1/templates/[type]/demo`
   - notes: Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The persona-scoped relationships surface is four components over that store: `relationships-list.tsx` varies `components/my-quizzes/my-quizzes.tsx` (the card grid: the ancestor's title row with the primary action, its search field in a filter row and its stage Tabs, three-up on large screens and one-up on a phone — each card's metric row translating Players / Completion / Average Score / `N Questions` to sessions `N of M`, session completion %, average alignment (the mean Gap, `—` until a session is scored) and `N Aspects`, the four Y/O/P/R Gap-flag counts kept as one compact row, and what was paid — plan and period — on the Initiator's card alone); `persona-relationship-detail.tsx` varies `components/my-quizzes/quiz-details.tsx` (header, per-stage primary action, session timeline, Timeline/Aspects/Manage tabs, comments after scoring); `relationship-aspects-editor.tsx` varies `template-editor.tsx` (initiator-only add/rename/reorder, AlertDialog delete and a restorable soft delete); `relationship-library.tsx` varies `components/explore/explore-quiz-list.tsx` (built-in templates vs the initiator's saved sets, stated on the page). The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the onboarding panel (`onboarding-panel.tsx`) varies the same ancestor as a stepped wizard (three beats, one visible at a time, with Next/Back and a Step N of 3 progress line); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — 29 source rows plus the kept co-founders, grouped by realm) drives `template-catalogue.tsx`, `template-page.tsx` and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.
 
 ## QuizHub
