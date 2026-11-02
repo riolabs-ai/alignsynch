@@ -55,6 +55,19 @@ export const OPINION_LABELS: Record<OpinionKind, string> = {
   guess: "Guess",
 };
 
+/**
+ * Each opinion's one-line definition — the product's words beside the name, so the answer sheet
+ * and the report say what a kind means instead of leaving the word bare. `feel` is how the
+ * Aspect is now, `wish` how it should be, `think` how the party predicts the other feels, and
+ * `guess` how the party predicts the other wishes it.
+ */
+export const OPINION_DEFINITIONS: Record<OpinionKind, string> = {
+  feel: "how it is now",
+  wish: "how it should be",
+  think: "how they predict the other feels",
+  guess: "how they predict the other wishes",
+};
+
 /** Basic Mode: two opinions per Aspect per party. */
 export const BASIC_OPINION_KINDS = ["feel", "wish"] as const;
 
