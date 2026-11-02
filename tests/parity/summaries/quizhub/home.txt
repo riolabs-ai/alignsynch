@@ -1,7 +1,7 @@
 route  /
 brand  quizhub
 
-headings (69)
+headings (70)
   h2  "Your Quiz Adventure Starts Here: Play, Share, Earn!"
   h2  "Quiz Categories"
   h2  "Latest Quizzes"
@@ -71,6 +71,7 @@ headings (69)
   h3  "Quick Links"
   h3  "Categories"
   h3  "Contact"
+  h3  "Product news"
 
 landmarks (3)
   banner         1
@@ -152,8 +153,8 @@ links (72 unique, 89 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
 
 counts
-  elements  2238
+  elements  2253
   images    16
-  buttons   32
-  inputs    1
-  classes   473 (sha bcc8ed6d5ea4)
+  buttons   33
+  inputs    3
+  classes   492 (sha 6da5348889ca)

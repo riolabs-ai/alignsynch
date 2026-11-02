@@ -30,7 +30,7 @@ import { BrandGlyph } from "@/components/layout/brand-glyph";
  * **The rail is sticky, always present, and never a drawer.** The owner's review of the console
  * asked for one column that answers the viewport instead of a phone overlay: `sticky top-0` with
  * a full-height column, `w-14` at the narrowest phone, `w-16` from `sm`, and the full 250px from
- * `xl`. Below `xl` the rows are **icons only** — the label is `hidden xl:inline`, and every row
+ * `lg`. Below `lg` the rows are **icons only** — the label is `hidden lg:inline`, and every row
  * carries the same words in `title` and `aria-label` (`NavRow`), so the icon-only rail is usable
  * with a pointer and announced correctly to a screen reader. There is **no close control, no
  * scrim and no `-translate-x-full` state**: a shadowed panel that slides over the page reads as a
@@ -126,10 +126,10 @@ export function AppSidebar({
       id="app-sidebar"
       className={cn(
         "sticky top-0 flex h-screen shrink-0 flex-col border-r bg-background",
-        "w-14 sm:w-16 xl:w-[250px]",
+        "w-14 sm:w-16 lg:w-[250px]",
       )}
     >
-      <div className="flex h-16 items-center justify-center gap-2 border-b px-2 xl:justify-start xl:px-4">
+      <div className="flex h-16 items-center justify-center gap-2 border-b px-2 lg:justify-start lg:px-4">
         <Link
           href="/"
           aria-label={mark ? copy.heading : undefined}
@@ -167,7 +167,7 @@ export function AppSidebar({
           ) : (
             <BrandGlyph className="h-6 w-6 text-primary" />
           )}
-          <span className="hidden text-xl font-bold xl:inline">{copy.heading}</span>
+          <span className="hidden text-xl font-bold lg:inline">{copy.heading}</span>
         </Link>
       </div>
 
@@ -205,11 +205,11 @@ export function AppSidebar({
           to. Two forms, one anchor each, from the same fixture (`AppVersion`'s `compact` item):
           the long form needs the 250px column, and an icon rail has 56px. Only the form the
           width shows is in the accessibility tree — the other is `display:none`. */}
-      <div className="border-t px-1 py-3 text-center xl:px-2">
-        <span className="xl:hidden">
+      <div className="border-t px-1 py-3 text-center lg:px-2">
+        <span className="lg:hidden">
           <AppVersion copy={copy} compact />
         </span>
-        <span className="hidden xl:inline">
+        <span className="hidden lg:inline">
           <AppVersion copy={copy} />
         </span>
       </div>
