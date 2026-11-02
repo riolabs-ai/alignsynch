@@ -576,6 +576,14 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/v1/profile/[handle]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The public, read-only profile — the same component as the in-app profile with its actions hidden, resolved from a persona's handle.",
+  },
+  {
+    kind: "route",
     surface: "/v1/[persona]/settings",
     status: "prototype",
     templates: ["alignsynch"],

@@ -125,6 +125,23 @@ export function sameSectionHref(persona: DashboardPersona, pathname: string): st
   return overviewHref(persona);
 }
 
+/**
+ * The persona's public handle — the `/v1/profile/[handle]` segment and the seed the profile cover
+ * is drawn from. Derived from the fixture's name + surname (`Jordan Lee` → `jordan-lee`), so the
+ * cover is a pure function of the handle and no two personas share one (#384). A role-word
+ * persona with no person behind it (admin) uses the bare lowercased name.
+ */
+export function personaHandle(persona: DashboardPersona): string {
+  const meta = PERSONA_META[persona];
+  return [meta.name, meta.surname].filter(Boolean).join("-").toLowerCase();
+}
+
+/** Resolve a `/v1/profile/[handle]` segment back to a dashboard persona, or `null`. */
+export function personaFromHandle(handle: string): DashboardPersona | null {
+  const found = DASHBOARD_PERSONAS.find((persona) => personaHandle(persona) === handle);
+  return found ?? null;
+}
+
 /** The relationships this persona can see — their own, the ones they are party to, the ones they coach, or all. */
 export function relationshipsVisibleTo(
   persona: Persona,
@@ -153,6 +170,6 @@ export const SECTION_SUMMARIES: Readonly<Record<NavSection, string>> = {
   shop: "The per-relationship subscription and checkout — initiator only.",
   profile: "Your public profile and relationship history.",
   settings: "Account, appearance, notifications, privacy and connected accounts.",
-  notifications: "Invite accepted, session scored, new comment, payment failed.",
+  notifications: "The events the product sends you — the ones that can reach your persona.",
   admin: "The admin console: records, relationships, templates and users.",
 };
