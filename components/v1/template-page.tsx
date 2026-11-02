@@ -38,18 +38,21 @@ export function TemplatePage({ type }: { type: RelationshipType }) {
         </Link>
       </nav>
 
-      <SectionIntro title={type.name} subtitle={type.whoItsFor} />
+      <SectionIntro
+        title={type.name}
+        subtitle={`${type.roles.initiator} · ${type.roles.counterparty} — ${type.descriptor.whoItsFor}`}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <section className="rounded-lg border border-border bg-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">For</p>
-          <p className="mt-1 text-sm text-foreground">{type.whoItsFor}</p>
+          <p className="mt-1 text-sm text-foreground">{type.descriptor.whoItsFor}</p>
         </section>
         <section className="rounded-lg border border-border bg-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Not for
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">{type.whoItsNotFor}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{type.descriptor.whoItsNotFor}</p>
         </section>
       </div>
 
