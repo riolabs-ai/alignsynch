@@ -291,10 +291,14 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
     // The column, then the legal row (#270): Terms and Privacy point at the routes now that they
     // exist, and the Cookie Policy row points at `/privacy` too — §9 of that page is the cookie
     // policy, and a third `/cookies` route is a route nobody asked for (issue #270, refinement 2).
+    //
+    // `/help` and not `/support`: the footer mounts on the public pages (and four product pages),
+    // so its column carries the public help centre — the account page is the rail's row, and a
+    // marketing footer pointing at it is the mistake the Help/Support split exists to remove.
     expect(hrefs).toEqual([
       "/#templates",
       "/#questions",
-      "/support",
+      "/help",
       "/privacy",
       "/terms",
       "/privacy",
@@ -303,7 +307,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
 
   it("restores them for a viewer with the quiz capability", () => {
     const hrefs = footerHrefs("alignsynch", viewerWith("quiz-surfaces"));
-    expect(hrefs.slice(0, 3)).toEqual(["/#templates", "/#questions", "/support"]);
+    expect(hrefs.slice(0, 3)).toEqual(["/#templates", "/#questions", "/help"]);
     expect(hrefs).toContain("/leaderboard");
     expect(hrefs.some((href) => href.startsWith("/categories/"))).toBe(true);
   });

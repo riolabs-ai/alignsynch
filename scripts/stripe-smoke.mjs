@@ -115,7 +115,7 @@ async function main() {
 
   const appUrl = argOf("url", "http://localhost:3131").replace(/\/+$/, "");
   const account = argOf("account", "billing-stripe-smoke");
-  const planId = argOf("plan", "pro");
+  const planId = argOf("plan", "principal");
   const interval = argOf("interval", "month") === "y" ? "year" : "month";
   const waitSeconds = Number.parseInt(argOf("wait", "600"), 10);
   const keep = process.argv.includes("--keep");

@@ -1,42 +1,44 @@
 /**
- * The plan fixture — the four tiers as data (#289).
+ * The plan fixture — the three tiers as data.
  *
- * The pricing page states four tiers and two prices per tier. Billing needs the same facts in
- * three more places: `billing_plan` rows (the seed), the entitlement table (is this tier paid?),
- * and the checkout (what is charged). Four readers, one authored list — a second copy would be a
- * price that drifts from the amount a checkout charges, which is the defect this file exists to
- * make impossible.
+ * The pricing page states three tiers and two prices per tier. Billing needs the same facts in
+ * three more places: `billing_plan` rows (the migration and the seed), the entitlement table (is
+ * this tier paid?), and the checkout (what is charged). Four readers, one authored list — a second
+ * copy would be a price that drifts from the amount a checkout charges, which is the defect this
+ * file exists to make impossible.
  *
- *   `scripts/db-seed.mjs`        writes `billing_plan` rows, one per tier × interval
- *   `scripts/db-verify.mjs`      V13 proves those rows still equal this file
- *   `lib/billing/entitlements.ts`  plan → what the server allows
- *   `scripts/billing-smoke.mjs`  the keyless demo, which buys a tier through the mock adapter
- *   `lib/billing/catalogue.ts`   the plan grid's rows: this file's words, `billing_plan`'s prices
+ *   `db/migrations/0018_billing_plan_rows.sql`   inserts these rows and deletes the two retired ones
+ *   `scripts/billing-plans.mjs`                  the same upsert, for `db:seed` and the smoke scripts
+ *   `scripts/db-verify.mjs`                      V13 proves those rows still equal this file
+ *   `lib/billing/entitlements.ts`                plan → what the server allows
+ *   `lib/billing/catalogue.ts`                   the plan grid's rows: this file's words, `billing_plan`'s prices
  *
- * **The plan table renders these rows, and types no price of its own.** Card 3 of #289 moved
- * `components/pricing/pricing-plans.tsx` off the `PLANS_DATA` copy it used to carry: the page now
- * reads `billing_plan` (through `lib/billing/catalogue.ts`) for every figure, and this file for
- * every word. A retired row (`active = false`) or a missing one is a card with no CTA at all,
- * which is how "a button that cannot work does not render" is enforced by data.
+ * **The plan table renders these rows, and types no price of its own.** The page reads
+ * `billing_plan` (through `lib/billing/catalogue.ts`) for every figure, and this file for every
+ * word. A retired row (`active = false`) or a missing one is a card with no CTA at all, which is
+ * how "a button that cannot work does not render" is enforced by data.
  * `tests/billing-plans.test.ts` reads the component's source and fails the build if a price
  * literal reappears under `components/pricing/`, so the two lists cannot diverge again.
  *
+ * **The tier set is exactly three (owner, 2026-11-02).** `pro` was renamed to `principal` — a
+ * rename, not a new tier, so every id, string and row follows it; `enterprise` was removed, not
+ * hidden, so it has no card, no row and no copy. `tests/billing-plan-migration.test.ts` asserts
+ * that the migration's rows and this file's rows are the same list, which is what keeps a price
+ * change from reaching one and not the other.
+ *
  * **Money is integer cents**, the convention the rest of the tree already follows
- * (`QuizStats.rewardCents`, `data/metrics.ts`): `999` is `$9.99`, and no price is a float that
+ * (`QuizStats.rewardCents`, `data/metrics.ts`): `895` is `$8.95`, and no price is a float that
  * `0.1 + 0.2` can move.
  *
- * **The prices are the ones the page renders today and they do not change here.** The
- * pricing-table card (t_dd21895e) ruled that all four tiers and every price stay while billing is
- * built underneath them; this file carries them verbatim, so that ruling has one home.
- *
- * `yearlyCents` is **the amount charged once a year**, not the monthly-equivalent the card
- * prints: `$7.99` beside "/mo, billed yearly" is `9588 / 12`. A `billing_plan` row is what a
- * checkout charges, so it holds 9588 — an amount the page renders but a checkout never charges
- * would be exactly the drift this fixture prevents.
+ * **`yearlyCents` is the amount charged once a year**, not the monthly-equivalent the card prints:
+ * `$85.92` beside "/mo, billed yearly" is `8_592 / 12`. A `billing_plan` row is what a checkout
+ * charges, so it holds 8_592 — an amount the page renders but a checkout never charges would be
+ * exactly the drift this fixture prevents. The yearly rate is **20% off the monthly rate × 12**
+ * (`895 × 12 × 0.8 = 8_592`), the discount the page's `pricing.annualDiscount` metric prints.
  */
 
-/** The tiers, in the order the page draws them. */
-export const BILLING_PLAN_IDS = ["free", "basic", "pro", "enterprise"] as const;
+/** The tiers, in the order the page draws them: cheapest first, the recommended one in the middle. */
+export const BILLING_PLAN_IDS = ["free", "basic", "principal"] as const;
 
 export type BillingPlanId = (typeof BILLING_PLAN_IDS)[number];
 
@@ -49,13 +51,11 @@ export type BillingInterval = (typeof BILLING_INTERVALS)[number];
  * Where a tier's button goes.
  *
  * `/register` is a route, and `checkout` is the plan table's own button: it posts to
- * `/api/billing/checkout`, which starts a purchase through whichever adapter is configured
- * (#289 card 3). The literal `"support"` is resolved by the surface that renders it to
- * `mailto:${brand.supportEmail}` — the address is per-brand (`data/brand.ts`), so a mailto
- * written here would pin one brand's address into both builds, and a data module that imported a
- * brand could not also be imported by a seed script.
+ * `/api/billing/checkout`, which starts a purchase through whichever adapter is configured.
+ * There is no third kind any more: the tier that was sold by conversation (`enterprise`, whose
+ * CTA was the support mailbox) is not in the catalogue, so neither is the branch.
  */
-export type BillingPlanCtaHref = "/register" | "support" | "checkout";
+export type BillingPlanCtaHref = "/register" | "checkout";
 
 export interface BillingPlan {
   /** The tier. `billing_plan.id` — one row per (tier, interval). */
@@ -72,39 +72,50 @@ export interface BillingPlan {
   readonly limitations: readonly string[];
   /** The card's button. */
   readonly cta: { readonly label: string; readonly href: BillingPlanCtaHref };
-  /** Drawn with the "Recommended" ribbon. */
+  /**
+   * Drawn with the "Recommended" ribbon.
+   *
+   * Exactly one plan carries it, and the card reads this field rather than an index or a
+   * literal, so moving the ribbon is a data edit. `billingPlanProblems()` is what makes "exactly
+   * one" a checked fact instead of a convention.
+   */
   readonly popular: boolean;
   /**
    * Whether a checkout will sell this tier.
    *
-   * `false` for Free (nothing to buy — every account already has it) and for Enterprise (the
-   * card's CTA is a conversation, not a price form). A checkout for a tier with `false` is
-   * refused with a sentence that names the tier, not silently ignored.
+   * `false` for Free (nothing to buy — every account already has it). A checkout for a tier with
+   * `false` is refused with a sentence that names the tier, not silently ignored.
    */
   readonly checkout: boolean;
 }
 
 /**
- * The four tiers — the pricing page's own rows, one home.
+ * The three tiers — the pricing page's own rows, one home.
  *
- * Every string here is rendered by `components/pricing/pricing-plans.tsx` today (the
- * reconciliation test proves it), so an edit to a feature bullet is a visible edit, not a data
- * change nobody notices.
+ * **Every feature line is something this build does**, not something a pricing table usually
+ * promises: the two-party assessment, the template a practice authors, the blind answer, the
+ * report, the Gap and its Steps, the coach seat. Basic and Principal carry the same enforced
+ * entitlement today (`lib/billing/entitlements.ts`: every paid tier is unlimited active
+ * relationships and both modes), and the page says so by listing the same product on both — no
+ * line claims a capability the server would refuse. A tier that buys something more needs the
+ * gate in that file to change first; until then the difference the page draws is who each tier
+ * is for, which is what a plan's `description` is.
  */
 export const billingPlans: readonly BillingPlan[] = [
   {
     id: "free",
     name: "Free",
-    description: "For trying the assessment format",
+    description: "For one relationship at a time",
     monthlyCents: 0,
     yearlyCents: 0,
     features: [
-      "Basic Mode: Feel and Wish on every Aspect",
+      "One active relationship, start to finish",
+      "Basic Mode: how it feels to each side, and how each wishes it to be",
+      "Blind answers — neither party sees the other's until both have answered",
       "The report, one line per Gap",
-      "Your assessments in one list",
       "Invite the other party by link",
     ],
-    limitations: ["One active assessment at a time", "Advanced Mode needs a paid plan"],
+    limitations: ["One active relationship at a time", "Advanced Mode needs a paid plan"],
     cta: { label: "Start free", href: "/register" },
     popular: false,
     checkout: false,
@@ -112,50 +123,40 @@ export const billingPlans: readonly BillingPlan[] = [
   {
     id: "basic",
     name: "Basic",
-    description: "For a two-party practice",
-    monthlyCents: 999,
-    yearlyCents: 9_588, // 7.99 × 12 — the monthly rate, billed yearly
+    description: "For a coach running a practice",
+    monthlyCents: 895,
+    yearlyCents: 8_592, // 8.95 × 12, less 20% — the yearly rate, charged once
     features: [
-      "Unlimited active assessments",
+      "Unlimited active relationships",
       "Basic Mode and Advanced Mode",
-      "The report, one line per Gap",
-      "Your assessments in one list",
-      "Invite the other party by link",
+      "Your own templates — the Aspects you actually work on, reused for every client",
+      "The report: every Gap by kind and size, and the Steps that follow from it",
+      "Blind answers from both parties, and the coach seat that runs the session",
+      "Invite either side by link",
     ],
     limitations: [],
     cta: { label: "Choose Basic", href: "checkout" },
-    popular: false,
-    checkout: true,
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    description: "For a busier two-party practice",
-    monthlyCents: 1_999,
-    yearlyCents: 20_388, // 16.99 × 12
-    features: [
-      "Unlimited active assessments",
-      "Basic Mode and Advanced Mode",
-      "The report, one line per Gap",
-      "Your assessments in one list",
-      "Invite the other party by link",
-    ],
-    limitations: [],
-    cta: { label: "Choose Pro", href: "checkout" },
     popular: true,
     checkout: true,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "For organisations that want to agree terms first",
-    monthlyCents: 4_999,
-    yearlyCents: 47_988, // 39.99 × 12
-    features: ["Everything in Pro", "Volume, procurement and terms, agreed by email"],
-    limitations: ["SSO, team management, custom reporting and integrations are not built"],
-    cta: { label: "Contact us", href: "support" },
+    id: "principal",
+    name: "Principal",
+    description: "For a practice running several relationships at once",
+    monthlyCents: 1_695,
+    yearlyCents: 16_272, // 16.95 × 12, less 20% — the yearly rate, charged once
+    features: [
+      "Everything in Basic",
+      "Unlimited active relationships",
+      "Basic Mode and Advanced Mode",
+      "Your own templates — the Aspects you actually work on, reused for every client",
+      "The report: every Gap by kind and size, and the Steps that follow from it",
+      "Blind answers from both parties, and the coach seat that runs the session",
+    ],
+    limitations: [],
+    cta: { label: "Choose Principal", href: "checkout" },
     popular: false,
-    checkout: false,
+    checkout: true,
   },
 ];
 
@@ -169,7 +170,7 @@ export function planPriceCents(plan: BillingPlan, interval: BillingInterval): nu
   return interval === "month" ? plan.monthlyCents : plan.yearlyCents;
 }
 
-/** One `billing_plan` row per tier × interval, in fixture order — what the seed writes. */
+/** One `billing_plan` row per tier × interval, in fixture order — what the migration and seed write. */
 export interface BillingPlanRow {
   readonly id: BillingPlanId;
   readonly interval: BillingInterval;
@@ -179,7 +180,7 @@ export interface BillingPlanRow {
   readonly active: boolean;
 }
 
-/** The rows `billing_plan` holds. `db:seed` writes them, `db:verify` (V13) compares them. */
+/** The rows `billing_plan` holds. `0018`, `db:seed` and `db:verify` (V13) all compare to this. */
 export function billingPlanRows(): BillingPlanRow[] {
   return billingPlans.flatMap((plan) =>
     BILLING_INTERVALS.map((interval) => ({
@@ -235,6 +236,14 @@ export function billingPlanProblems(): string[] {
   }
   for (const id of BILLING_PLAN_IDS) {
     if (!billingPlans.some((plan) => plan.id === id)) problems.push(`plan "${id}" has no row`);
+  }
+  // The ribbon is a claim about the catalogue, so "exactly one" is checked here rather than left
+  // to the page: two ribbons tell a reader nothing, and none tells them nothing either.
+  const recommended = billingPlans.filter((plan) => plan.popular);
+  if (recommended.length !== 1) {
+    problems.push(
+      `exactly one plan must be recommended; ${recommended.length} are (${recommended.map((plan) => plan.id).join(", ") || "none"})`,
+    );
   }
   return problems;
 }

@@ -74,7 +74,7 @@ function adapter() {
 function checkoutRequest(over: Record<string, unknown> = {}) {
   return {
     userId: "account-avery",
-    planId: "pro",
+    planId: "principal",
     interval: "month" as const,
     successUrl: "https://example.test/pricing?billing=complete",
     cancelUrl: "https://example.test/pricing?billing=cancelled",
@@ -97,7 +97,7 @@ describe("the mock checkout writes a subscription row", () => {
     const [row] = db.state.written;
     expect(row).toMatchObject({
       userId: "account-avery",
-      planId: "pro",
+      planId: "principal",
       interval: "month",
       provider: "mock",
       status: "active",
@@ -145,7 +145,7 @@ describe("a webhook delivered twice applies once", () => {
       id: "evt_mock_1",
       type: "subscription.updated",
       user_id: "account-avery",
-      plan_id: "pro",
+      plan_id: "principal",
       interval: "month",
       status: "active",
       current_period_end: "2027-01-31T00:00:00.000Z",
@@ -195,7 +195,7 @@ describe("the mock adapter's entitlement is the plan's", () => {
 
     await port.startCheckout(checkoutRequest());
     const entitlement = await port.entitlementFor("account-avery");
-    expect(entitlement.planId).toBe("pro");
+    expect(entitlement.planId).toBe("principal");
     expect(entitlement.maxActiveInstances).toBeNull();
     expect(entitlement.advancedMode).toBe(true);
   });

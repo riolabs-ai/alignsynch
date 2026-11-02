@@ -74,9 +74,9 @@ describe("the support contact form is disconnected, not simulated", () => {
     const form = mount();
     const sentence = textOf(form);
 
-    expect(sentence).toContain("This form isn't connected yet");
+    expect(sentence).toContain("This form has no sender yet");
     expect(sentence).toContain(brand.supportEmail);
-    expect(sentence).toContain("instead.");
+    expect(sentence).toContain("instead");
 
     const mailto = form.querySelector(`a[href="mailto:${brand.supportEmail}"]`);
     expect(mailto, "no mailto link for the brand's support address").not.toBeNull();
@@ -92,6 +92,19 @@ describe("the support contact form is disconnected, not simulated", () => {
     expect(form.querySelector("form")).not.toBeNull();
     const submit = form.querySelector('button[type="submit"]');
     expect(submit, "the submit control was removed instead of disabled").not.toBeNull();
+  });
+
+  it("prints its own state beside the control it disables, and names it for a screen reader", () => {
+    const form = mount();
+    const submit = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const noteId = submit.getAttribute("aria-describedby");
+    expect(noteId, "the disabled submit names no reason").toBeTruthy();
+    const note = form.querySelector(`#${noteId}`);
+    expect(note, "the id the submit points at renders nothing").not.toBeNull();
+    expect(textOf(note as HTMLElement)).toContain("disabled until this form is connected");
+    // The line sits at the foot of the form, beside the control — not only in a banner at the top.
+    const formElement = form.querySelector("form") as HTMLFormElement;
+    expect(formElement.contains(note)).toBe(true);
   });
 
   it("cannot be submitted: the control is disabled, clicking it sends nothing, nothing claims a send", () => {

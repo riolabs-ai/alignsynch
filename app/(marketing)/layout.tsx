@@ -6,6 +6,7 @@ import { shellAccount } from "@/lib/auth/shell-account";
 import { brandMark } from "@/lib/brand-mark";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { navViewer } from "@/lib/nav";
+import { publicChromeCopy } from "@/lib/shell-copy";
 import type React from "react";
 
 /**
@@ -44,12 +45,17 @@ import type React from "react";
  * and CI carry no auth environment, `authConfigured()` is false there, and `next build` therefore
  * still prerenders them — the same shape the product shell has had since #212.
  *
- * **The copy is the shell fixture's.** Header and footer read `data/pages/shell.ts`, the one
- * fixture that owns chrome words on both brands (its `nav` / `nav-alignsynch`, `account`,
- * `footer-*` sections and their brand projection). `marketingPageCopy` stays the landing page's:
- * `/welcome` renders it through `marketing-landing.tsx`, and this layout no longer chooses a copy
- * fixture by brand — `shellCopy(brand)` already is that projection, and a second one here would be
- * two answers to the same question.
+ * **The copy is the shell fixture's, cut to the public chrome.** Header and footer read
+ * `data/pages/shell.ts`, the one fixture that owns chrome words on both brands (its `nav` /
+ * `nav-alignsynch`, `account`, `footer-*` sections and their brand projection). `marketingPageCopy`
+ * stays the landing page's: `/welcome` renders it through `marketing-landing.tsx`, and this layout
+ * no longer chooses a copy fixture by brand — `shellCopy(brand)` already is that projection, and a
+ * second one here would be two answers to the same question.
+ *
+ * The header gets `publicChromeCopy(shellPageCopy, brandId)` and not the whole fixture, because
+ * `PublicNav` is a client component: every prop crosses into the browser's payload, and a public
+ * page has no business shipping the console's destinations. The footer takes the whole fixture and
+ * is a server component, so its columns cost the payload nothing.
  *
  * `mark` is resolved here, not in the header: `brandMark` reads the media registry, and the header
  * is where an image is drawn — the lookup happens on the server and only the three fields
@@ -68,7 +74,7 @@ export default async function MarketingLayout({
         account={account}
         brand={brand}
         brandId={brandId}
-        copy={shellPageCopy}
+        copy={publicChromeCopy(shellPageCopy, brandId)}
         mark={brandMark(brand.logo)}
       />
       <div className="flex-1">{children}</div>

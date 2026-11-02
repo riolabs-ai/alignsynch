@@ -141,7 +141,7 @@ function checkoutSession(over: Record<string, unknown> = {}) {
     subscription: "sub_test_1",
     customer: "cus_test_1",
     client_reference_id: "account-avery",
-    metadata: { user_id: "account-avery", plan_id: "pro", interval: "month" },
+    metadata: { user_id: "account-avery", plan_id: "principal", interval: "month" },
     ...over,
   };
 }
@@ -153,9 +153,9 @@ function subscriptionObject(over: Record<string, unknown> = {}) {
     object: "subscription",
     status: "active",
     current_period_end: NOW_SECONDS + 30 * 24 * 60 * 60,
-    metadata: { user_id: "account-avery", plan_id: "pro", interval: "month" },
+    metadata: { user_id: "account-avery", plan_id: "principal", interval: "month" },
     items: {
-      data: [{ price: { id: "price_1", unit_amount: 1999, recurring: { interval: "month" } } }],
+      data: [{ price: { id: "price_1", unit_amount: 1695, recurring: { interval: "month" } } }],
     },
     ...over,
   };
@@ -337,7 +337,7 @@ describe("a checkout session is created from the fixture's price", () => {
     });
     const session = await adapter(impl).startCheckout({
       userId: "account-avery",
-      planId: "pro",
+      planId: "principal",
       interval: "month",
       successUrl: "https://example.test/pricing?billing=complete",
       cancelUrl: "https://example.test/pricing?billing=cancelled",
@@ -361,7 +361,7 @@ describe("a checkout session is created from the fixture's price", () => {
 
     const form = new URLSearchParams(call?.body);
     expect(form.get("mode")).toBe("subscription");
-    expect(form.get("line_items[0][price_data][unit_amount]")).toBe("1999");
+    expect(form.get("line_items[0][price_data][unit_amount]")).toBe("1695");
     expect(form.get("line_items[0][price_data][currency]")).toBe("usd");
     expect(form.get("line_items[0][price_data][recurring][interval]")).toBe("month");
     expect(form.get("line_items[0][quantity]")).toBe("1");
@@ -370,7 +370,7 @@ describe("a checkout session is created from the fixture's price", () => {
     // `customer.subscription.*` delivery can be mapped without a customer→account table.
     expect(form.get("client_reference_id")).toBe("account-avery");
     expect(form.get("subscription_data[metadata][user_id]")).toBe("account-avery");
-    expect(form.get("subscription_data[metadata][plan_id]")).toBe("pro");
+    expect(form.get("subscription_data[metadata][plan_id]")).toBe("principal");
     expect(form.get("subscription_data[metadata][interval]")).toBe("month");
   });
 
@@ -381,14 +381,14 @@ describe("a checkout session is created from the fixture's price", () => {
     });
     await adapter(impl).startCheckout({
       userId: "account-avery",
-      planId: "pro",
+      planId: "principal",
       interval: "year",
       successUrl: "https://example.test/ok",
       cancelUrl: "https://example.test/no",
     });
     const form = new URLSearchParams(calls[0]?.body);
     // The fixture's yearly figure is the amount charged once, not the monthly equivalent.
-    expect(form.get("line_items[0][price_data][unit_amount]")).toBe("20388");
+    expect(form.get("line_items[0][price_data][unit_amount]")).toBe("16272");
     expect(form.get("line_items[0][price_data][recurring][interval]")).toBe("year");
     expect(form.get("customer_email")).toBeNull();
   });
@@ -421,7 +421,7 @@ describe("a checkout session is created from the fixture's price", () => {
     await expect(
       adapter(refused.impl).startCheckout({
         userId: "a",
-        planId: "pro",
+        planId: "principal",
         interval: "month",
         successUrl: "https://example.test/ok",
         cancelUrl: "https://example.test/no",
@@ -432,7 +432,7 @@ describe("a checkout session is created from the fixture's price", () => {
     await expect(
       adapter(down.impl).startCheckout({
         userId: "a",
-        planId: "pro",
+        planId: "principal",
         interval: "month",
         successUrl: "https://example.test/ok",
         cancelUrl: "https://example.test/no",
@@ -454,7 +454,7 @@ describe("a delivery is applied to our rows, at most once", () => {
     expect(db.state.written).toEqual([
       {
         userId: "account-avery",
-        planId: "pro",
+        planId: "principal",
         interval: "month",
         provider: "stripe",
         providerSubscriptionId: "sub_test_1",
@@ -606,7 +606,7 @@ describe("the entitlement comes from the row the webhook wrote", () => {
     await port.handleWebhook(delivery(event("checkout.session.completed", checkoutSession())));
 
     const entitlement = await port.entitlementFor("account-avery");
-    expect(entitlement.planId).toBe("pro");
+    expect(entitlement.planId).toBe("principal");
     expect(entitlement.paid).toBe(true);
     expect(entitlement.advancedMode).toBe(true);
   });
