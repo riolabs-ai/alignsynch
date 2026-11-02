@@ -53,3 +53,6 @@ data/generated/
 # tests/parity/manifest.txt. Written only when a route fails, uploaded by CI on a red
 # leg, never committed — the committed half is the manifest and the summaries.
 tests/parity/artifacts/
+
+# Hermes profile/board state occasionally lands in a card workspace; never commit it.
+.hermes/
