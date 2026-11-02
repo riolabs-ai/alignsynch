@@ -136,6 +136,8 @@ const SITES: readonly { site: string; html: (hiddenNav: readonly string[]) => st
           account: null,
           searchIndex: searchIndexFor("quizhub", PLATFORM_VIEWER),
           hiddenNav,
+          navigationOpen: false,
+          onOpenNavigation: () => undefined,
         }),
       ),
   },

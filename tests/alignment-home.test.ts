@@ -33,6 +33,7 @@ import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home
 import {
   EXCLUDED_TYPE_IDS,
   REALMS,
+  demoAnswersByType,
   purchasableRelationshipTypes,
   relationshipTypes,
 } from "@/data/v1/relationship-types";
@@ -110,24 +111,26 @@ describe("relationship types are read from the templates, not invented", () => {
   });
 });
 
-describe("the four templates, and the one nobody answered", () => {
+describe("the library view: the four templates, and the one nobody answered", () => {
   it("lists exactly the four records, in the fixture's order", () => {
-    expect(model.templates.items.map((template) => template.title)).toEqual(templateTitles);
+    expect(model.templates.library.map((template) => template.title)).toEqual(templateTitles);
   });
 
-  it("links a template only where a relationship answered it", () => {
-    const bySlug = new Map(model.templates.items.map((template) => [template.slug, template]));
+  it("gives every template a create route, and a relationship link only where one answered it", () => {
+    const bySlug = new Map(model.templates.library.map((template) => [template.slug, template]));
 
     const basics = bySlug.get("relationship-basics");
     expect(basics?.link?.href).toBe("/assessment/avery-rowan");
     expect(basics?.note).toBeUndefined();
+    expect(basics?.create).toBe("/assessment/templates/assessment-relationship-basics/create");
 
     const blank = bySlug.get("blank-template");
     expect(blank?.link).toBeUndefined();
     expect(blank?.note?.body).toContain("Nobody has answered this template yet");
+    expect(blank?.create).toBe("/assessment/templates/assessment-blank-template/create");
 
     // Every link the page draws names a slug the route can prerender.
-    for (const template of model.templates.items) {
+    for (const template of model.templates.library) {
       if (template.link === undefined) continue;
       const slug = template.link.href.replace("/assessment/", "");
       expect(assessmentInstances.some((instance) => instance.slug === slug)).toBe(true);
@@ -142,12 +145,58 @@ describe("the four templates, and the one nobody answered", () => {
       throw new Error(`featured slug "${ALIGN_SYNCH_FEATURED_SLUG}" is not an instance`);
     }
 
-    expect(model.hero.cta?.href).toBe(`/assessment/${ALIGN_SYNCH_FEATURED_SLUG}`);
-    expect(model.hero.cta?.label).toBe("See a worked example");
-    for (const party of featured.parties) {
-      expect(model.templates.body).toContain(party.name);
+    expect(model.hero.secondary?.href).toBe(`/assessment/${ALIGN_SYNCH_FEATURED_SLUG}`);
+    expect(model.hero.secondary?.label).toBe("See a worked example");
+    expect(model.hero.primary?.href).toBe("/register");
+    expect(model.hero.primary?.label).toBe("Create your first assessment");
+    expect(model.workedExample.title).toBe(`Worked example · ${featured.title}`);
+    expect(model.workedExample.note).toContain("the Gap");
+  });
+});
+
+describe("the catalogue and the two doors beside the library", () => {
+  it("projects every purchasable type, and only those", () => {
+    expect(model.templates.catalogue.map((type) => type.id)).toEqual(
+      relationshipTypes
+        .filter((type) => type.purchasable && !EXCLUDED_TYPE_IDS.includes(type.id))
+        .map((type) => type.id),
+    );
+    // The three dating rows are excluded by the product decision, so the shelf is smaller.
+    expect(model.templates.catalogue.length).toBeLessThan(relationshipTypes.length);
+  });
+
+  it("counts aspects and formats the price instead of typing either", () => {
+    const staffManager = model.templates.catalogue.find((type) => type.id === "staff-manager");
+    const record = relationshipTypes.find((type) => type.id === "staff-manager");
+    expect(staffManager?.aspects).toBe(`${record?.aspects.length} Aspects`);
+    expect(staffManager?.price).toBe("$9.99");
+    expect(staffManager?.realm).toBe("Office");
+  });
+
+  it("points every card at the create route, and offers an example only where a demo exists", () => {
+    for (const type of model.templates.catalogue) {
+      expect(type.href).toBe(`/v1/templates/${type.id}/create`);
+      if (type.example === undefined) continue;
+      expect(type.example).toBe(`/v1/templates/${type.id}/demo`);
+      expect(demoAnswersByType[type.id]).toBeDefined();
     }
-    expect(model.templates.body).toContain(featured.title);
+    // Exactly the fixture's demo sheets, and no third claim.
+    expect(
+      model.templates.catalogue
+        .filter((type) => type.example !== undefined)
+        .map((type) => type.id)
+        .sort(),
+    ).toEqual(Object.keys(demoAnswersByType).sort());
+  });
+
+  it("opens on the catalogue, and the third view is a door rather than a list", () => {
+    expect(model.templates.tabs.map((tab) => tab.value)).toEqual(["catalogue", "library", "mine"]);
+    expect(model.templates.tabs[0]?.label).toBe("Relationship templates");
+    expect(model.templates.mine.link.href).toBe("/assessment/instances");
+    // No relationship of the console's is rendered on a public page: the panel carries words
+    // and a link, and the page body carries no row marker of the sort a list would emit.
+    expect(html).not.toContain("data-relationship=");
+    expect(html).not.toContain("data-relationship-row");
   });
 });
 
@@ -158,6 +207,52 @@ describe("the page is six bands, in the order the argument runs", () => {
     for (const id of bandIds) {
       expect(html).toContain(`id="${id}"`);
     }
+  });
+
+  /**
+   * The composition this page is *for*: six bands on a page, not six copies of one bordered box.
+   * The failure this pins shipped once already — every band carried the same
+   * `rounded-xl border p-6` string, so the page had no hero and no ground of its own, and every
+   * text grep in the world passed on it.
+   */
+  it("gives the six bands six different class strings", () => {
+    const classes = bandIds.map((id) => {
+      const match = new RegExp(`<section[^>]*class="([^"]*)"[^>]*id="${id}"`).exec(html);
+      if (match?.[1] === undefined) throw new Error(`band "${id}" is not a <section> with a class`);
+      return match[1];
+    });
+    expect(new Set(classes).size).toBe(bandIds.length);
+    // And none of them is the old one-box string, on any band.
+    for (const value of classes) expect(value).not.toContain("rounded-xl border border-gray-200");
+  });
+
+  it("draws the hero's proof card from the featured relationship", () => {
+    const card = model.workedExample;
+    const featured = assessmentInstances.find(
+      (instance) => instance.slug === ALIGN_SYNCH_FEATURED_SLUG,
+    );
+    if (featured === undefined) throw new Error("the featured relationship is not an instance");
+
+    // Every Aspect of the record, in its order, in the template's own words.
+    expect(card.rows.map((row) => row.label)).toEqual(featured.items.map((item) => item.prompt));
+    expect(card.you).toBe(featured.parties.find((party) => party.role === "initiator")?.name);
+    expect(card.them).toBe(featured.parties.find((party) => party.role === "counterparty")?.name);
+
+    // The scores are the parties' own Feel answers, and the Gap is the difference of them.
+    for (const row of card.rows) {
+      const answers = featured.parties.map(
+        (party) => party.opinions.find((entry) => entry.itemId === row.id)?.opinions.feel,
+      );
+      expect([row.you, row.them]).toEqual(answers);
+      expect(row.max).toBe(5);
+    }
+
+    // The card is in the markup, with both bar tones, and it is the only proof on the page.
+    expect(html).toContain('data-worked-example=""');
+    expect(html).toContain('data-score-tone="action"');
+    expect(html).toContain('data-score-tone="accent"');
+    expect(card.title).toContain(featured.title);
+    expect(card.mode).toBe("Basic");
   });
 
   it("leads with the hero the practice framing asks for", () => {
@@ -288,12 +383,18 @@ describe("the scope band counts the fixture", () => {
 });
 
 describe("the render", () => {
-  it("carries the four template titles and the featured relationship", () => {
-    for (const title of templateTitles) {
-      // `&` is escaped in markup: "Staff & Manager" arrives as "Staff &amp; Manager".
-      const escaped = title.replace(/&/g, "&amp;");
+  it("carries the catalogue in the served markup, and the library behind its tab", () => {
+    // The band opens on the catalogue, so every purchasable type is in the served HTML.
+    for (const type of model.templates.catalogue) {
+      const escaped = type.name.replace(/&/g, "&amp;");
       expect(html).toContain(escaped);
+      expect(html).toContain(`data-catalogue-type="${type.id}"`);
     }
+    // The library is the second view: its four records are the model's, and the toggle — not a
+    // second page — is what reveals them. An inactive `TabsContent` is not in the served markup,
+    // which is why the titles are asserted on the model and the trigger on the render.
+    expect(model.templates.library.map((template) => template.title)).toEqual(templateTitles);
+    expect(html).toContain('data-template-tab="library"');
     expect(html).toContain("/assessment/avery-rowan");
   });
 
@@ -307,7 +408,6 @@ describe("the render", () => {
     // The absence half. Every one of these is a claim the product has no evidence for, and the
     // page sells honesty, so a single hit is a regression rather than a wording choice.
     const forbidden = [
-      "$",
       "£",
       "€",
       "earn",
@@ -324,6 +424,21 @@ describe("the render", () => {
     for (const claim of forbidden) {
       expect(lowered.includes(claim.toLowerCase()), `the page says "${claim}"`).toBe(false);
     }
+  });
+
+  /**
+   * The one place a `$` legitimately appears: the catalogue card's price.
+   *
+   * The owner's product catalogue sells one relationship for a fixed price, so the card carries
+   * it (`{type.price}`, `formatCurrency` over the fixture's integer cents). That is not the claim
+   * the absence rule exists to stop — what a practice *earns* — so the assertion is the set and
+   * not the symbol's absence: every dollar figure on the page is one of the catalogue's own.
+   */
+  it("prints money only as the catalogue's own price", () => {
+    const printed = [...html.matchAll(/\$[\d.,]+/g)].map((match) => match[0]);
+    const prices = new Set(model.templates.catalogue.map((type) => type.price));
+    expect(printed.length).toBe(model.templates.catalogue.length);
+    for (const price of printed) expect(prices.has(price)).toBe(true);
   });
 
   it("names nobody who is not on a relationship it links", () => {
@@ -360,11 +475,24 @@ describe("the render", () => {
     }
   });
 
-  it("paints from the brand record rather than a class", () => {
-    expect(html).toContain(alignSynchBrand.colors.primary);
-    expect(html).toContain(alignSynchBrand.colors.accent);
-    // `next/image` carries the mark through the optimizer, which URL-encodes the path.
-    expect(html).toContain(encodeURIComponent(alignSynchBrand.logo));
+  /**
+   * The palette has one home (#187): this file paints `bg-action` / `bg-accent`, which
+   * `lib/brand-theme.ts` resolves out of `data/brand.ts` onto `<html>`. A hex in the component
+   * would be the view deciding a colour, which is exactly what the brand-class rule exists to
+   * stop — and a green typed here would survive a brand whose accent is not green.
+   */
+  it("paints through the design tokens, never a palette step or a raw hex", () => {
+    const source = readFileSync("components/home/alignment-home.tsx", "utf8");
+    expect(source).not.toMatch(/#[0-9a-f]{6}\b/i);
+    expect(source).not.toMatch(/(?:indigo|purple|violet)-/);
+    expect(html).toContain("bg-action");
+    expect(html).toContain("bg-accent");
+  });
+
+  it("draws no brand mark of its own — the header carries it", () => {
+    // Both forms count: a literal `<img>` and next/image's optimizer path.
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("/_next/image");
   });
 
   it("writes no user-facing string in the component", () => {

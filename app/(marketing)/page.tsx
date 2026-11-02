@@ -11,7 +11,7 @@ import { QuizzesByDifficulty } from "@/components/home/quizzes-by-difficulty";
 import { ResourcesAndReferral } from "@/components/home/resources-and-referral";
 import { TopPlayersCarousel } from "@/components/home/top-players-carousel";
 import type { Brand } from "@/content/brand";
-import { assessmentInstances, assessments } from "@/data/assessments";
+import { assessmentInstances, starterTemplates } from "@/data/assessments";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
 import { homePageCopy, homeTitle } from "@/data/pages/home";
 import {
@@ -101,17 +101,21 @@ function QuizHubHome({ hiddenNav }: { hiddenNav: readonly string[] }) {
  */
 function AlignSynchHome() {
   return (
-    <div className="space-y-4 xl:space-y-8 pb-8">
-      <AlignmentHomeView
-        model={alignmentHome(
-          brand,
-          alignSynchHomeCopy,
-          assessments,
-          assessmentInstances,
-          ALIGN_SYNCH_FEATURED_SLUG,
-        )}
-      />
-    </div>
+    <AlignmentHomeView
+      model={alignmentHome(
+        brand,
+        alignSynchHomeCopy,
+        /*
+         * `starterTemplates`, not `assessments`: since #catalogue the fixture carries 29 records
+         * (the four hand-authored ones plus one per purchasable type), and this band maps every
+         * template it is handed. The front page introduces the platform's starter set; the
+         * catalogue at `/assessment/templates` is what a practitioner shops from.
+         */
+        starterTemplates,
+        assessmentInstances,
+        ALIGN_SYNCH_FEATURED_SLUG,
+      )}
+    />
   );
 }
 
