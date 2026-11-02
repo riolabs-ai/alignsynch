@@ -9,14 +9,36 @@
  * Opinion/Setting/Mode sub-schemas, via `z.infer`), so the day the prototype is wired the
  * shapes already match — the same rule `data/assessments.ts` follows for the live fixture.
  *
- * Three templates seed the library; five relationships span the corrected model — a
+ * Three templates seed the library; six relationships span the corrected model — a
  * subscription per relationship (`active`, `past_due` or `lapsed`), a session that is complete
  * only when **both** parties accept (the blind rule lifts at acceptance, never at submission),
- * and a complete session's comment threads on the relationship and on single Aspects. Every
- * relationship is played in Advanced Mode — Feel, Wish, Think and Guess; five accounts and
- * three tickets seed the Service queue. A relationship's Aspects are a **copy** of the
- * template it names (never a reference), and its parties' answers are maps keyed by Aspect
- * id, which is what lets an invitation sit at `{}` without violating the real
+ * and a complete session's comment threads on the relationship and on single Aspects. Both
+ * Modes and both Settings are seeded, on purpose: four relationships play Basic (Feel and Wish
+ * only — a full report with the two Basic groups and no prediction rows) and two play Advanced
+ * (Feel, Wish, Think and Guess — three groups, all eight kinds); two relationships are played
+ * under Full and the rest under Soft.
+ *
+ * **What a Setting changes, and what it does not.** A Setting is a tolerance over the Gaps
+ * (`content/assessment.ts::SETTING_GAP_LIMITS`), so it changes **no number and no question**:
+ * the answer sheet asks exactly what the Mode asks, and prints the Setting and its glossary
+ * definition so the person answering knows the bar they are being held to. What moves is the
+ * **report's verdict**: a Gap of 1 is "Aligned" under Soft and "not yet aligned" under Full on
+ * otherwise identical numbers. `rel-aligned` (Soft) and `rel-same-sheet-full` (Full) are the
+ * controlled pair that proves it — same template, same Mode, the **same answers**, only the
+ * Setting differs — so a reviewer comparing the two reports is looking at one variable. If the
+ * product wants a Setting to change what the sheet asks, that is a schema decision, not a
+ * fixture one; nothing here fakes it.
+ *
+ *   Reviewing a Basic relationship — open `rel-aligned`'s report and confirm two groups
+ *   ("Feelings and Wishes Differ", "Desires To Change"), four Gaps per Aspect, and **no**
+ *   "Prediction Gaps and Analysis" heading: Basic is proven by absences that are deliberate,
+ *   never by a stripped screen. What only an Advanced one demonstrates — open `rel-advanced`'s
+ *   report and confirm the third group exists, with each prediction Gap naming a party's Think
+ *   or Guess against the **other** party's Feel or Wish, never against that party's own.
+ *
+ * Five accounts and three tickets seed the Service queue. A relationship's Aspects are a
+ * **copy** of the template it names (never a reference), and its parties' answers are maps
+ * keyed by Aspect id, which is what lets an invitation sit at `{}` without violating the real
  * `zAssessmentInstance` (which requires every party to answer every Aspect).
  *
  * Imported through relative paths on purpose: `tsconfig.datacheck.json` compiles this file
@@ -27,6 +49,7 @@
  */
 import { z } from "zod";
 import {
+  MODE_LABELS,
   zAlignmentSetting,
   zAssessment,
   zAssessmentMode,
@@ -435,18 +458,18 @@ function aspectCopy(templateId: string): Aspect[] {
 /** The Answers maps the seeded instances use, keyed by Aspect id. */
 type AnswerMap = Record<string, Opinions>;
 
-/** Relationship Basics answered the way Avery and Rowan did: a Feel Gap of 3 on the first
- * Aspect, and predictions that miss each other on Conflict. */
+/** Relationship Basics answered by Avery and Rowan, in Basic Mode: Feel and Wish only — a Feel
+ * Gap of 3 on Time, and a Wish Gap on Conflict that each reads from a different end. */
 const averyAnswers: AnswerMap = {
-  "aspect-time": { feel: 2, wish: 5, think: 4, guess: 4 },
-  "aspect-money": { feel: 4, wish: 4, think: 4, guess: 4 },
-  "aspect-conflict": { feel: 3, wish: 5, think: 4, guess: 3 },
+  "aspect-time": { feel: 2, wish: 5 },
+  "aspect-money": { feel: 4, wish: 4 },
+  "aspect-conflict": { feel: 3, wish: 5 },
 };
 
 const rowanAnswers: AnswerMap = {
-  "aspect-time": { feel: 5, wish: 3, think: 3, guess: 4 },
-  "aspect-money": { feel: 4, wish: 4, think: 4, guess: 4 },
-  "aspect-conflict": { feel: 2, wish: 3, think: 1, guess: 5 },
+  "aspect-time": { feel: 5, wish: 3 },
+  "aspect-money": { feel: 4, wish: 4 },
+  "aspect-conflict": { feel: 2, wish: 3 },
 };
 
 /** Staff & Manager answered the way Marco did — the initiator side, used for the blind case. */
@@ -457,32 +480,35 @@ const marcoAnswers: AnswerMap = {
   "aspect-decisions": { feel: 1, wish: 5, think: 2, guess: 5 },
 };
 
-/** Parent & Child answered by Ruth and Sam — every Gap is 0, predictions included, so it is
- * aligned. */
+/** Parent & Child answered by Ruth and Sam, in Basic Mode — Feel and Wish only, every Gap 0 or
+ * 1, so the pair is aligned under Soft (a Gap of 1 is "OK") and the report's two groups read
+ * as a complete, deliberate sheet rather than a stripped one. */
 const ruthAnswers: AnswerMap = {
-  "aspect-trust": { feel: 4, wish: 5, think: 4, guess: 5 },
-  "aspect-house-rules": { feel: 3, wish: 3, think: 3, guess: 3 },
-  "aspect-one-to-one": { feel: 2, wish: 3, think: 2, guess: 3 },
-  "aspect-privacy": { feel: 3, wish: 4, think: 3, guess: 4 },
+  "aspect-trust": { feel: 4, wish: 4 },
+  "aspect-house-rules": { feel: 3, wish: 3 },
+  "aspect-one-to-one": { feel: 2, wish: 3 },
+  "aspect-privacy": { feel: 3, wish: 4 },
 };
 
 const samAnswers: AnswerMap = {
-  "aspect-trust": { feel: 4, wish: 5, think: 4, guess: 5 },
-  "aspect-house-rules": { feel: 3, wish: 3, think: 3, guess: 3 },
-  "aspect-one-to-one": { feel: 2, wish: 3, think: 2, guess: 3 },
-  "aspect-privacy": { feel: 3, wish: 4, think: 3, guess: 4 },
+  "aspect-trust": { feel: 4, wish: 5 },
+  "aspect-house-rules": { feel: 3, wish: 3 },
+  "aspect-one-to-one": { feel: 2, wish: 3 },
+  "aspect-privacy": { feel: 3, wish: 4 },
 };
 
-/** Parent & Child answered by Noor and Iris in Advanced Mode — all eight kinds are measured. */
+/** Parent & Child answered by Noor and Iris in Advanced Mode — all eight kinds are measured,
+ * and the Gaps deliberately span all four flag severities (1..4), so a report under Full shows
+ * Yellow, Orange, Pink and Red flags at once rather than one colour repeated. */
 const noorAnswers: AnswerMap = {
-  "aspect-trust": { feel: 5, wish: 5, think: 4, guess: 5 },
+  "aspect-trust": { feel: 1, wish: 5, think: 4, guess: 2 },
   "aspect-house-rules": { feel: 2, wish: 4, think: 3, guess: 1 },
   "aspect-one-to-one": { feel: 1, wish: 4, think: 2, guess: 3 },
   "aspect-privacy": { feel: 3, wish: 2, think: 2, guess: 4 },
 };
 
 const irisAnswers: AnswerMap = {
-  "aspect-trust": { feel: 4, wish: 3, think: 5, guess: 2 },
+  "aspect-trust": { feel: 5, wish: 1, think: 4, guess: 3 },
   "aspect-house-rules": { feel: 5, wish: 2, think: 4, guess: 3 },
   "aspect-one-to-one": { feel: 3, wish: 1, think: 4, guess: 1 },
   "aspect-privacy": { feel: 4, wish: 5, think: 3, guess: 5 },
@@ -493,7 +519,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     id: "rel-invited",
     templateId: "v1-template-basics",
     items: aspectCopy("v1-template-basics"),
-    mode: "advanced",
+    mode: "basic",
     setting: "soft",
     initiatorName: "Jordan",
     counterpartyName: null,
@@ -560,7 +586,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     templateId: "v1-template-basics",
     name: "Avery & Rowan",
     items: aspectCopy("v1-template-basics"),
-    mode: "advanced",
+    mode: "basic",
     setting: "soft",
     initiatorName: "Avery",
     counterpartyName: "Rowan",
@@ -604,7 +630,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     templateId: "v1-template-personal",
     name: "Ruth & Sam",
     items: aspectCopy("v1-template-personal"),
-    mode: "advanced",
+    mode: "basic",
     setting: "soft",
     initiatorName: "Ruth",
     counterpartyName: "Sam",
@@ -697,11 +723,77 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     lastSessionAt: "2026-10-30T15:00:00.000Z",
     createdAt: "2026-10-29T09:45:00.000Z",
   },
+  {
+    // The Setting control. Same template, same Mode, and **the same answers** as Ruth & Sam
+    // (`ruthAnswers` / `samAnswers` above, reused rather than re-authored so the two sheets
+    // cannot drift apart) — the only field that differs is `setting`. Its report therefore
+    // reads 16 measured Gaps and the identical flag counts as `rel-aligned`, and the verdict
+    // is the one thing that moves: Soft tolerates the six Gaps of 1, Full tolerates none.
+    // Without this pair a reviewer comparing the Soft report with `rel-advanced`'s Full one
+    // would be looking at two variables at once and could not tell which one moved.
+    id: "rel-same-sheet-full",
+    templateId: "v1-template-personal",
+    name: "Nadia & Owen",
+    items: aspectCopy("v1-template-personal"),
+    mode: "basic",
+    setting: "full",
+    initiatorName: "Nadia",
+    counterpartyName: "Owen",
+    initiatorAnswers: ruthAnswers,
+    counterpartyAnswers: samAnswers,
+    initiatorSubmitted: true,
+    counterpartySubmitted: true,
+    initiatorAccepted: true,
+    counterpartyAccepted: true,
+    initiatorAcceptedAt: "2026-10-30T08:50:00.000Z",
+    counterpartyAcceptedAt: "2026-10-30T09:00:00.000Z",
+    inviteToken: "inv-3a6c0d9e",
+    sharedWithCoach: false,
+    coachComments: [],
+    comments: [],
+    aspectComments: {},
+    openedSessions: 1,
+    completedSessions: 1,
+    subscription: {
+      plan: "monthly",
+      status: "active",
+      periodEnd: "2026-11-30T08:00:00.000Z",
+      startedAt: "2026-10-30T08:00:00.000Z",
+    },
+    history: [],
+    lastSessionAt: "2026-10-30T09:00:00.000Z",
+    createdAt: "2026-10-30T08:00:00.000Z",
+  },
 ];
 
 export const seedRelationships: readonly V1Relationship[] = z
   .array(zV1Relationship)
   .parse(seedRelationshipRows);
+
+/**
+ * A relationship's mode and its answers agree — the same rule `zAssessmentInstance` enforces
+ * for the live model, restated for the prototype's answer maps so a fixture cannot drift a
+ * Basic sheet into Advanced answers (or the reverse) without a red build. `zOpinions` already
+ * makes Think and Guess come together, so checking `think` decides it.
+ */
+for (const rel of seedRelationshipRows) {
+  for (const map of [rel.initiatorAnswers, rel.counterpartyAnswers]) {
+    for (const itemId of Object.keys(map)) {
+      const opinions = map[itemId];
+      const answeredAdvanced = opinions.think !== undefined;
+      if (rel.mode === "basic" && answeredAdvanced) {
+        throw new Error(
+          `fixtures: "${rel.id}" plays ${MODE_LABELS.basic} but "${itemId}" answers Think/Guess`,
+        );
+      }
+      if (rel.mode === "advanced" && !answeredAdvanced) {
+        throw new Error(
+          `fixtures: "${rel.id}" plays ${MODE_LABELS.advanced} but "${itemId}" answers only Feel/Wish`,
+        );
+      }
+    }
+  }
+}
 
 /* ------------------------------------------------------------------ *
  * Session history — the timeline's rows
@@ -804,6 +896,16 @@ const seedSessionRows: readonly V1Session[] = [
     id: "sess-ruth-sam-2",
     relationshipId: "rel-aligned",
     completedAt: "2026-10-29T10:00:00.000Z",
+    initiatorAnswers: ruthAnswers,
+    counterpartyAnswers: samAnswers,
+  },
+  // Nadia & Owen — the Setting control's single session: the same numbers as Ruth & Sam's,
+  // so its timeline row and `rel-aligned`'s newest row carry the identical mean Gap and only
+  // the verdict differs.
+  {
+    id: "sess-nadia-owen-1",
+    relationshipId: "rel-same-sheet-full",
+    completedAt: "2026-10-30T09:00:00.000Z",
     initiatorAnswers: ruthAnswers,
     counterpartyAnswers: samAnswers,
   },
@@ -927,7 +1029,7 @@ export interface V1SeedState {
 }
 
 /** Bump to invalidate a persisted store that predates a shape change. */
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 5;
 
 /**
  * The prototype's own version, rendered as the `[V1]` tag in the persona notice banner. The

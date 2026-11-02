@@ -1,13 +1,25 @@
 // template-ancestor: components/assessment/assessment-report.tsx   (variation: four opinions per aspect with prediction-derived gaps)
 "use client";
 
-import { GAP_KIND_LABELS, gapKindsIn, groupsIn } from "@/content/gaps";
+import {
+  FLAG_SEVERITIES,
+  FLAG_SEVERITY_LABELS,
+  GAP_KIND_LABELS,
+  gapKindsIn,
+  groupsIn,
+} from "@/content/gaps";
 import { OPINION_LABELS, SETTING_LABELS, opinionKindsFor } from "@/content/assessment";
 import type { Gap } from "@/content/record";
-import { aspectGapsOf, gapSummary, progressOf, relationshipNameOf } from "@/lib/v1/derive";
+import {
+  aspectGapsOf,
+  flagCountsOfRelationship,
+  gapSummary,
+  progressOf,
+  relationshipNameOf,
+} from "@/lib/v1/derive";
 import type { V1Relationship } from "@/data/v1/fixtures";
 import { Reveal } from "@/components/v1/reveal";
-import { GapPill, SectionIntro, StageBadge } from "@/components/v1/v1-ui";
+import { FLAG_SEVERITY_FILLS, GapPill, SectionIntro, StageBadge } from "@/components/v1/v1-ui";
 import Link from "next/link";
 
 /**
@@ -15,14 +27,24 @@ import Link from "next/link";
  *
  * It is pure presentation over one `V1Relationship`: it reads no store, so the live report
  * (`ReportView`) and the public demo (`/v1/templates/[type]/demo`) both pass it a relationship
- * and get the identical layout — the header with the stage, the Setting's verdict, and one card
- * per Aspect with its eight gap kinds grouped under the glossary's headings. The demo is the
- * proof of the value; this shared body is what keeps the demo from being a marketing mock.
+ * and get the identical layout — the header with the stage, the Setting's verdict, the flags by
+ * severity, and one card per Aspect with its eight gap kinds grouped under the glossary's
+ * headings. The demo is the proof of the value; this shared body is what keeps the demo from
+ * being a marketing mock.
+ *
+ * The flag counts are `flagCountsOfRelationship`, i.e. `content/gaps.ts::flagCountsOf` over the
+ * same Aspects the cards draw — never a stored total, and `null` (no row at all) while the
+ * session is incomplete, so a locked report cannot print "0 flags" about a sheet nobody
+ * finished. The Setting does not change them: it changes only which of them count as unmet.
  */
 export function ReportBody({ rel, templateTitle }: { rel: V1Relationship; templateTitle: string }) {
   const summary = gapSummary(rel);
   const progress = progressOf(rel);
   const opinionKinds = opinionKindsFor(rel.mode);
+  // The per-severity counts, derived from the same opinion rows the pills are drawn from —
+  // never a stored total. Null while the session is incomplete: the report is locked then, so
+  // the sheet prints no counts at all rather than four zeroes about a sheet nobody finished.
+  const flags = flagCountsOfRelationship(rel);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8">
@@ -70,6 +92,27 @@ export function ReportBody({ rel, templateTitle }: { rel: V1Relationship; templa
                 ? "every one meets the Setting"
                 : `${summary.unmetGaps} exceed the Setting (${summary.verdict.limit === 0 ? "no Gap tolerated" : "only a Gap of 1 tolerated"}).`}
             </p>
+            {flags !== null && (
+              <div
+                className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border/60 pt-3"
+                data-flag-counts={`${flags.yellow}/${flags.orange}/${flags.pink}/${flags.red}`}
+              >
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Flags by severity
+                </span>
+                {FLAG_SEVERITIES.map((severity) => (
+                  <span key={severity} className="inline-flex items-center gap-1.5">
+                    <span
+                      aria-hidden
+                      className={`inline-block h-2 w-2 rounded-full border ${FLAG_SEVERITY_FILLS[severity]}`}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {FLAG_SEVERITY_LABELS[severity]} {flags[severity]}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
           </section>
 
           <div className="space-y-2">

@@ -1,7 +1,13 @@
 // template-ancestor: components/assessment-flow/answer-form.tsx   (variation: four opinions per aspect in two passes, no correctness feedback)
 "use client";
 
-import type { OpinionKind, Opinions } from "@/content/assessment";
+import {
+  SETTING_DEFINITIONS,
+  SETTING_LABELS,
+  opinionKindsFor,
+  type OpinionKind,
+  type Opinions,
+} from "@/content/assessment";
 import { useV1Store } from "@/lib/v1/store";
 import { gapSummary, relationshipNameOf } from "@/lib/v1/derive";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -37,6 +43,14 @@ interface MissingField {
 
 /**
  * The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode).
+ *
+ * The kinds asked are `opinionKindsFor(rel.mode)`, the model's own list, so the sheet cannot ask
+ * a shape the Mode does not define. A **Setting changes no question**: it is a tolerance over the
+ * Gaps (`content/assessment.ts::SETTING_GAP_LIMITS`), so a Soft sheet and a Full sheet of the
+ * same Mode ask exactly the same thing. The Setting is printed — word and glossary definition —
+ * because it is the bar these answers will be judged against, and the report is where it moves
+ * the verdict. A field that changed the questions per Setting would be a schema change, not a
+ * sheet change.
  *
  * Validation is unchanged: a kind is unanswered when its score is outside 1..5 (the draft or the
  * prior answer resolves to `0`). What changed is how the failure is shown — instead of one banner
@@ -105,8 +119,7 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
   }
 
   const existing = role === "initiator" ? rel.initiatorAnswers : rel.counterpartyAnswers;
-  const kinds: OpinionKind[] =
-    rel.mode === "advanced" ? ["feel", "wish", "think", "guess"] : ["feel", "wish"];
+  const kinds: readonly OpinionKind[] = opinionKindsFor(rel.mode);
 
   const seed = (itemId: string, kind: OpinionKind): number => {
     const explicit = draft[itemId]?.[kind];
@@ -175,12 +188,17 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <SectionIntro
-          title={template?.title ?? "Answer the sheet"}
-          subtitle={`Answering as ${role} — ${rel.mode === "advanced" ? "Feel, Wish, Think and Guess" : "Feel and Wish"} on every Aspect.`}
-        />
-        <StageBadge stage={summary.stage} />
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <SectionIntro
+            title={template?.title ?? "Answer the sheet"}
+            subtitle={`Answering as ${role} — ${rel.mode === "advanced" ? "Feel, Wish, Think and Guess" : "Feel and Wish"} on every Aspect.`}
+          />
+          <StageBadge stage={summary.stage} />
+        </div>
+        <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          {SETTING_LABELS[rel.setting]} setting — {SETTING_DEFINITIONS[rel.setting]}
+        </p>
       </div>
 
       {showErrors && (
