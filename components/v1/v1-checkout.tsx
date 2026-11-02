@@ -2,7 +2,7 @@
 
 // template-ancestor: components/pricing/plan-checkout-button.tsx   (variation: a prototype checkout — plan, confirm, subscribed, three steps on one form; no processor, no charge, and every figure comes from the shared plans module)
 
-import { formatCurrency } from "@/content/core";
+import { formatCurrency, formatDate } from "@/content/core";
 import type { SubscriptionPlan } from "@/data/v1/fixtures";
 import { subscriptionPlan, subscriptionPlans } from "@/data/v1/plans";
 import { relationshipNameOf } from "@/lib/v1/derive";
@@ -37,6 +37,47 @@ export function V1Checkout() {
   const [step, setStep] = useState<Step>("plan");
   const [plan, setPlan] = useState<SubscriptionPlan>("monthly");
   const [relationshipId, setRelationshipId] = useState<string>("");
+  /**
+   * What the confirmation said, kept after the write so the third step can report it even though
+   * the relationship has just left the subscribable set — the panel must survive its own success.
+   */
+  const [done, setDone] = useState<{ relationshipId: string; plan: SubscriptionPlan } | null>(null);
+
+  if (step === "done" && done !== null) {
+    const doneRel = mine.find((rel) => rel.id === done.relationshipId);
+    const sub = doneRel?.subscription ?? null;
+    const donePlan = subscriptionPlan(done.plan);
+    const doneName =
+      doneRel === undefined
+        ? "This relationship"
+        : relationshipNameOf(
+            doneRel,
+            templates.find((t) => t.id === doneRel.templateId)?.title ?? "",
+          );
+    return (
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="text-sm font-semibold text-foreground">Subscribed</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {doneName} is now {donePlan.label.toLowerCase()}, active — {donePlan.cadence}, unlimited
+          sessions while it stays in good standing.
+          {sub === null ? "" : ` Renews ${formatDate(sub.periodEnd)}.`} No charge was made: this
+          prototype has no processor behind it.
+        </p>
+        {subscribable.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setDone(null);
+              setStep("plan");
+            }}
+            className="mt-3 inline-flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground hover:bg-muted"
+          >
+            Subscribe another relationship
+          </button>
+        )}
+      </div>
+    );
+  }
 
   if (subscribable.length === 0) {
     return (
@@ -62,28 +103,9 @@ export function V1Checkout() {
 
   const confirm = () => {
     subscribe(selectedId, plan);
+    setDone({ relationshipId: selectedId, plan });
     setStep("done");
   };
-
-  if (step === "done") {
-    return (
-      <div className="rounded-lg border border-border bg-card p-4">
-        <p className="text-sm font-semibold text-foreground">Subscribed</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {selectedName} is now {info.label.toLowerCase()}, active — {info.cadence}, unlimited
-          sessions while it stays in good standing. No charge was made: this prototype has no
-          processor behind it.
-        </p>
-        <button
-          type="button"
-          onClick={() => setStep("plan")}
-          className="mt-3 inline-flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground hover:bg-muted"
-        >
-          Subscribe another relationship
-        </button>
-      </div>
-    );
-  }
 
   if (step === "confirm") {
     return (
