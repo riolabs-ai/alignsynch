@@ -127,13 +127,14 @@ export const REVIEW_SCREENS: readonly ReviewScreen[] = [
   {
     route: "/v1/relationships/[id]/answer",
     href: "/v1/relationships/rel-invited/answer",
-    description: "The answer sheet — one party answers every Aspect, then submits.",
+    description:
+      "The answer sheet — Basic asks Feel and Wish on every Aspect (rel-invited), Advanced asks all four (rel-connected-blind); each sheet names its Setting, which changes the report's tolerance, never the questions.",
   },
   {
     route: "/v1/relationships/[id]/report",
     href: "/v1/relationships/rel-aligned/report",
     description:
-      "The report — eight gap kinds grouped, the verdict on top, unlocked when both submit.",
+      "The report — Basic (rel-aligned) shows the two Basic groups and no Prediction group; Advanced (rel-advanced) adds the four prediction Gaps naming one party's Think or Guess against the other's actual. Flags by severity are derived from the Gaps, never authored; the verdict names the Setting: Soft tolerates a Gap of 1, Full tolerates none — rel-aligned (Soft) and rel-same-sheet-full (Full) carry identical counts on identical answers, so the verdict is the only thing that differs between them.",
   },
   {
     route: "/v1/templates/[type]",

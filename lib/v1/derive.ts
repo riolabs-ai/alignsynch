@@ -14,8 +14,8 @@
  * the report unlock. Every "complete" derivation below reads that hinge, so a submission cannot
  * leak a value.
  */
-import type { AspectGaps, AlignmentVerdict, GapKinds } from "@/content/gaps";
-import { gapKindsIn, gapKindsOf, instanceAlignment } from "@/content/gaps";
+import type { AspectGaps, AlignmentVerdict, FlagCounts, GapKinds } from "@/content/gaps";
+import { flagCountsOf, gapKindsIn, gapKindsOf, instanceAlignment } from "@/content/gaps";
 import { stageOf, type RelationshipStage } from "@/content/stages";
 import type { V1Relationship, V1Session } from "@/data/v1/fixtures";
 
@@ -94,6 +94,18 @@ export function allAspectGaps(rel: V1Relationship): AspectGaps[] {
 export function verdictOf(rel: V1Relationship): AlignmentVerdict | null {
   if (!sessionCompleteOf(rel)) return null;
   return instanceAlignment(allAspectGaps(rel), rel.setting);
+}
+
+/**
+ * The flag counts per severity (yellow / orange / pink / red), derived from the Gaps — never
+ * stored, never authored. `null` until the session is complete (both submitted **and**
+ * accepted): an unscored relationship has no verdict, so it reports no counts, and never four
+ * zeroes. The arithmetic is `content/gaps.ts::flagCountsOf`; this is only the relationship
+ * gate that decides whether a sheet has been scored.
+ */
+export function flagCountsOfRelationship(rel: V1Relationship): FlagCounts | null {
+  if (!sessionCompleteOf(rel)) return null;
+  return flagCountsOf(allAspectGaps(rel));
 }
 
 /**

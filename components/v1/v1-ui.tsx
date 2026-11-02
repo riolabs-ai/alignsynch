@@ -1,5 +1,6 @@
 // template-ancestor: components/assessment-flow/instance-view.tsx   (variation: shared prototype atoms: status tones and empty-state copy)
 import { STAGE_LABELS, type RelationshipStage } from "@/content/stages";
+import { flagSeverityOf, type FlagSeverity } from "@/content/gaps";
 import type { Gap } from "@/content/record";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
@@ -31,14 +32,39 @@ export function StageBadge({ stage }: { stage: RelationshipStage }) {
   );
 }
 
-/** The gap number, coloured the way the report colours it: In Synch / Small / Big. */
+/**
+ * The four flag severities' tones, authored once so a Gap's pill and the report's flag
+ * summary cannot paint the same number two ways. The severity itself comes from
+ * `content/gaps.ts::flagSeverityOf` (1..4 → yellow..red); this table is only the paint, and
+ * In Synch (0) is the green check, never a flag. Status hues are deliberately outside the
+ * brand-class rule (#187).
+ */
+export const FLAG_SEVERITY_TONES: Record<FlagSeverity, string> = {
+  yellow: "bg-amber-50 text-amber-700 border-amber-200",
+  orange: "bg-orange-50 text-orange-700 border-orange-200",
+  pink: "bg-pink-50 text-pink-700 border-pink-200",
+  red: "bg-red-50 text-red-700 border-red-200",
+};
+
+/** The solid companion fill, for a legend dot: same severity, readable on the pale band. */
+export const FLAG_SEVERITY_FILLS: Record<FlagSeverity, string> = {
+  yellow: "bg-amber-400 border-amber-500",
+  orange: "bg-orange-500 border-orange-600",
+  pink: "bg-pink-500 border-pink-600",
+  red: "bg-red-600 border-red-700",
+};
+
+/** In Synch's tone — not a flag, so it has no severity of its own. */
+export const IN_SYNCH_TONE = "bg-green-50 text-green-700 border-green-200";
+
+/**
+ * The gap number, coloured the way the report colours it: In Synch, or the flag severity
+ * `flagSeverityOf` names for 1..4 (yellow / orange / pink / red). The number and the words
+ * carry the fact; the tone is a secondary channel.
+ */
 export function GapPill({ gap, label }: { gap: Gap; label?: string }) {
-  const tone =
-    gap === 0
-      ? "bg-green-50 text-green-700 border-green-200"
-      : gap === 1
-        ? "bg-amber-50 text-amber-700 border-amber-200"
-        : "bg-red-50 text-red-700 border-red-200";
+  const severity = flagSeverityOf(gap);
+  const tone = severity === null ? IN_SYNCH_TONE : FLAG_SEVERITY_TONES[severity];
   return (
     <span
       className={cn(
