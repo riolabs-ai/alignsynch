@@ -101,17 +101,15 @@ function QuizHubHome({ hiddenNav }: { hiddenNav: readonly string[] }) {
  */
 function AlignSynchHome() {
   return (
-    <div className="space-y-4 xl:space-y-8 pb-8">
-      <AlignmentHomeView
-        model={alignmentHome(
-          brand,
-          alignSynchHomeCopy,
-          assessments,
-          assessmentInstances,
-          ALIGN_SYNCH_FEATURED_SLUG,
-        )}
-      />
-    </div>
+    <AlignmentHomeView
+      model={alignmentHome(
+        brand,
+        alignSynchHomeCopy,
+        assessments,
+        assessmentInstances,
+        ALIGN_SYNCH_FEATURED_SLUG,
+      )}
+    />
   );
 }
 
