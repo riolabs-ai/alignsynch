@@ -560,51 +560,91 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/v1/admin",
+    surface: "/v1/[persona]",
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The Admin persona's landing: every relationship and template in the store, with the gap aggregates counted across the population.",
+      "The persona-scoped dashboard overview for initiator, counterparty, coach and admin: relationship counts, sessions awaiting, next session and stage — never a revenue figure for anyone but the initiator.",
   },
   {
     kind: "route",
-    surface: "/v1/coach",
+    surface: "/v1/[persona]/profile",
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The Coach persona's landing — read-only observation of relationships shared with the coach, with an advice thread and no scoring or answering.",
+      "The persona's profile — relationship history instead of quiz history, reachable by every dashboard persona.",
   },
   {
     kind: "route",
-    surface: "/v1/counterparty",
+    surface: "/v1/[persona]/settings",
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The Counterparty persona's landing: claimable invitations and the relationships they have joined, each pointing at the shared answer sheet.",
+      "The persona's settings — account, appearance, notifications, privacy and connected accounts.",
   },
   {
     kind: "route",
-    surface: "/v1/initiator",
+    surface: "/v1/[persona]/notifications",
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The Initiator persona's landing: their templates, their relationships, and the counts that link to each list.",
+      "The persona's notifications — invite accepted, session scored, new comment, payment failed.",
   },
   {
     kind: "route",
-    surface: "/v1/initiator/relationships",
+    surface: "/v1/[persona]/relationships",
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The Initiator's relationships and invitations, with the invite and re-invite action inline on each row.",
+      "The persona's relationships, status-led: relationship name, type, stage, next session and the session count — an initiator sees theirs, a counterparty the ones they belong to, a coach the ones they coach, an admin all.",
   },
   {
     kind: "route",
-    surface: "/v1/initiator/templates",
+    surface: "/v1/[persona]/relationships/[id]",
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The Initiator's template library, with an inline form that copies a template into a relationship.",
+      "One relationship the persona can see — a session timeline and its actions, persona-scoped.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/[persona]/templates",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The template library in the dashboard, with start, clone and edit actions visible only to an initiator or admin.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/[persona]/shop",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The per-relationship subscription and checkout — initiator only; a counterparty never sees a price.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/[persona]/chat",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "One thread per relationship, plus per-Aspect threads, with unread state — the BuddyBoss shape.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/[persona]/chat/[id]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "A single chat thread for one relationship or Aspect, persona-scoped and blind-safe before scoring.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/admin/console",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The admin console — records, relationships, templates and the two seats, read-only for answers.",
   },
   {
     kind: "route",
