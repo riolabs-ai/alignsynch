@@ -552,7 +552,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     completedSessions: 0,
     subscription: {
       plan: "monthly",
-      status: "active",
+      status: "past_due",
       periodEnd: "2026-11-30T09:00:00.000Z",
       startedAt: "2026-10-30T09:00:00.000Z",
     },
@@ -582,8 +582,38 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     inviteExpiresAt: null,
     sharedWithCoach: false,
     coachComments: [],
-    comments: [],
-    aspectComments: {},
+    comments: [
+      {
+        id: "cmt-cb-1",
+        author: "initiator",
+        body: "Hi Sam — glad you're in. Let's get the week lined up.",
+        at: "2026-10-29T09:00:00.000Z",
+      },
+      {
+        id: "cmt-cb-2",
+        author: "counterparty",
+        body: "Good to be here. I'll go through the aspects one by one.",
+        at: "2026-10-29T09:20:00.000Z",
+      },
+    ],
+    // A pre-scoring Aspect thread: the parties discuss *how* to agree priorities, never Sam's
+    // response — the counterparty has not answered, and this thread stays free of any value.
+    aspectComments: {
+      "aspect-priorities": [
+        {
+          id: "cmt-cb-p-1",
+          author: "initiator",
+          body: "Before we sit down — how do you want to set the week's priorities? A Monday list or a shared board?",
+          at: "2026-10-29T09:30:00.000Z",
+        },
+        {
+          id: "cmt-cb-p-2",
+          author: "counterparty",
+          body: "A shared board would help me see what's committed. Let's agree the three that can't slip.",
+          at: "2026-10-29T09:45:00.000Z",
+        },
+      ],
+    },
     openedSessions: 1,
     completedSessions: 0,
     subscription: {
@@ -1058,6 +1088,36 @@ export interface V1SeedState {
 
 /** Bump to invalidate a persisted store that predates a shape change. */
 export const SEED_VERSION = 6;
+
+/**
+ * The chat's seeded read watermark — `threadId -> lastReadAt` per persona. A thread with
+ * messages after this instant and authored by another party is unread. The seed leaves most
+ * threads unlisted, which `unreadCountOf` reads as "already read"; the listed rows are the ones
+ * the demo opens on. Every instant is at or before `DEMO_NOW_ISO`, the same as the messages.
+ *
+ * This is store seed, not fixture truth: the store copies it on first hydrate and persists the
+ * mutated copy (opening a thread writes a fresh watermark), so read state survives navigation.
+ */
+export type V1ThreadReadAt = Readonly<Record<Persona, Readonly<Record<string, string>>>>;
+
+export const seedThreadReadAt: V1ThreadReadAt = {
+  visitor: {},
+  service: {},
+  initiator: {
+    // Jordan read their own question; Sam's reply at 09:45 is the one unread message.
+    "rel-connected-blind--aspect-priorities": "2026-10-29T09:35:00.000Z",
+  },
+  counterparty: {
+    // Sam read through 10:25; Ruth's replies at 10:35 and 10:40 are unread.
+    "rel-aligned": "2026-10-29T10:25:00.000Z",
+    "rel-aligned--aspect-trust": "2026-10-29T10:20:00.000Z",
+  },
+  coach: {
+    // Riley read Sam's note at 10:20; Ruth's 10:35 reply is the one unread message.
+    "rel-aligned": "2026-10-29T10:30:00.000Z",
+  },
+  admin: {},
+};
 
 /**
  * The prototype's own version, rendered as the `[V1]` tag in the persona notice banner. The

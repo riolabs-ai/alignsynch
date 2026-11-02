@@ -41,15 +41,19 @@ import {
   v1Templates,
   seedAccounts,
   seedRelationships,
+  seedThreadReadAt,
   seedTickets,
   type Persona,
   type V1Account,
   type V1Relationship,
   type V1SessionRecord,
+  type V1ThreadReadAt,
   type V1Ticket,
 } from "@/data/v1/fixtures";
+import { seedNotifications, type V1Notification } from "@/data/v1/notifications";
 import type { ReviewStatus } from "@/lib/v1/review";
 import { unlockedAtOf } from "@/lib/v1/derive";
+import { resolveThreadId, authorRoleOf } from "@/lib/v1/chat";
 import {
   createContext,
   useCallback,
@@ -72,6 +76,9 @@ const PERSONA_KEY = "v1_persona";
 
 /** The key the review checklist persists under. */
 const REVIEW_STORAGE_KEY = "alignsynch.v1.review.v1";
+
+/** The key the social slice (notifications + chat read watermarks) persists under. */
+const SOCIAL_STORAGE_KEY = "alignsynch.v1.social.v1";
 
 /** One row's mutable state: its approval status and the reviewer's note. */
 export interface ReviewEntry {
@@ -199,6 +206,37 @@ function parsePersona(raw: string | null | undefined): Persona | null {
   return result.success ? result.data : null;
 }
 
+/** The social slice, persisted — notifications (with their read flags) and chat read watermarks. */
+interface PersistedSocial {
+  readonly version: number;
+  readonly notifications: readonly V1Notification[];
+  readonly threadReadAt: V1ThreadReadAt;
+}
+
+/** The persisted social slice, or the seeds when nothing has been written yet. */
+function loadSocial(): {
+  notifications: readonly V1Notification[];
+  threadReadAt: V1ThreadReadAt;
+} {
+  if (typeof window === "undefined") {
+    return { notifications: seedNotifications, threadReadAt: seedThreadReadAt };
+  }
+  try {
+    const raw = window.localStorage.getItem(SOCIAL_STORAGE_KEY);
+    if (raw === null) {
+      return { notifications: seedNotifications, threadReadAt: seedThreadReadAt };
+    }
+    const parsed = JSON.parse(raw) as PersistedSocial;
+    if (parsed.version !== SEED_VERSION) {
+      return { notifications: seedNotifications, threadReadAt: seedThreadReadAt };
+    }
+    return { notifications: parsed.notifications, threadReadAt: parsed.threadReadAt };
+  } catch (error) {
+    console.warn("v1 store: could not read persisted social slice, re-seeding", error);
+    return { notifications: seedNotifications, threadReadAt: seedThreadReadAt };
+  }
+}
+
 /* ------------------------------------------------------------------ *
  * Context
  * ------------------------------------------------------------------ */
@@ -225,6 +263,9 @@ export interface V1Store {
   readonly relationships: readonly V1Relationship[];
   readonly accounts: readonly V1Account[];
   readonly tickets: readonly V1Ticket[];
+  readonly notifications: readonly V1Notification[];
+  /** `threadId -> lastReadAt` per persona — the chat's read watermarks, persisted. */
+  readonly threadReadAt: V1ThreadReadAt;
 
   readonly setPersona: (persona: Persona) => void;
   readonly createRelationship: (input: RelationshipInput) => V1Relationship;
@@ -270,6 +311,16 @@ export interface V1Store {
   readonly addCoachComment: (relationshipId: string, body: string) => void;
   readonly toggleShareWithCoach: (relationshipId: string) => void;
   readonly resolveTicket: (ticketId: string) => void;
+  readonly markThreadRead: (threadId: string, persona: Persona) => void;
+  readonly markNotificationRead: (notificationId: string) => void;
+  readonly markAllNotificationsRead: (persona: Persona) => void;
+  /** Send a chat message as `persona`; returns a refusal sentence, or null on success. */
+  readonly sendChatMessage: (
+    relationshipId: string,
+    threadId: string,
+    body: string,
+    persona: Persona,
+  ) => string | null;
   readonly reviews: Readonly<Record<string, ReviewEntry>>;
   readonly setReview: (route: string, patch: Partial<ReviewEntry>) => void;
   readonly resetStore: () => void;
@@ -282,6 +333,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
   const [relationships, setRelationships] = useState<readonly V1Relationship[]>(seedRelationships);
   const [accounts, setAccounts] = useState<readonly V1Account[]>(seedAccounts);
   const [tickets, setTickets] = useState<readonly V1Ticket[]>(seedTickets);
+  const [notifications, setNotifications] = useState<readonly V1Notification[]>(seedNotifications);
+  const [threadReadAt, setThreadReadAt] = useState<V1ThreadReadAt>(seedThreadReadAt);
   const [reviews, setReviews] = useState<Readonly<Record<string, ReviewEntry>>>({});
   const [persona, setPersonaState] = useState<Persona>("visitor");
   const [hydrated, setHydrated] = useState(false);
@@ -293,10 +346,13 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     hydratedRef.current = true;
     const nextPersona = parsePersona(window.localStorage.getItem(PERSONA_KEY)) ?? "visitor";
     const flow = loadFlow();
+    const social = loadSocial();
     setTemplates(loadTemplates());
     setRelationships(flow.relationships);
     setAccounts(flow.accounts);
     setTickets(flow.tickets);
+    setNotifications(social.notifications);
+    setThreadReadAt(social.threadReadAt);
     setReviews(loadReviews());
     setPersonaState(nextPersona);
     setHydrated(true);
@@ -331,6 +387,18 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       console.warn("v1 store: could not persist reviews (private mode?)", error);
     }
   }, [reviews, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      window.localStorage.setItem(
+        SOCIAL_STORAGE_KEY,
+        JSON.stringify({ version: SEED_VERSION, notifications, threadReadAt }),
+      );
+    } catch (error) {
+      console.warn("v1 store: could not persist social slice (private mode?)", error);
+    }
+  }, [notifications, threadReadAt, hydrated]);
 
   const saveTemplate = useCallback((template: Assessment) => {
     setTemplates((previous) => {
@@ -779,6 +847,54 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const markThreadRead = useCallback((threadId: string, persona: Persona) => {
+    setThreadReadAt((previous) => ({
+      ...previous,
+      [persona]: { ...(previous[persona] ?? {}), [threadId]: new Date().toISOString() },
+    }));
+  }, []);
+
+  const markNotificationRead = useCallback((notificationId: string) => {
+    setNotifications((previous) =>
+      previous.map((notification) =>
+        notification.id === notificationId ? { ...notification, read: true } : notification,
+      ),
+    );
+  }, []);
+
+  const markAllNotificationsRead = useCallback((persona: Persona) => {
+    setNotifications((previous) =>
+      previous.map((notification) =>
+        notification.persona === persona ? { ...notification, read: true } : notification,
+      ),
+    );
+  }, []);
+
+  const sendChatMessage = useCallback(
+    (relationshipId: string, threadId: string, body: string, persona: Persona): string | null => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) return "This relationship does not exist.";
+      const resolved = resolveThreadId(rel, threadId);
+      if (resolved === null) return "This thread does not exist.";
+      const role = authorRoleOf(persona);
+      if (role === null) return "This persona can read threads but not send messages.";
+      if (role === "coach") {
+        if (resolved.kind !== "relationship") {
+          return "Coach notes go on the relationship thread, not on a single Aspect.";
+        }
+        addCoachComment(relationshipId, body);
+        return null;
+      }
+      if (resolved.kind === "aspect") {
+        addAspectComment(relationshipId, resolved.itemId, role, body);
+        return null;
+      }
+      addComment(relationshipId, role, body);
+      return null;
+    },
+    [relationships, addComment, addAspectComment, addCoachComment],
+  );
+
   const setReview = useCallback((route: string, patch: Partial<ReviewEntry>) => {
     setReviews((previous) => {
       const current: ReviewEntry = previous[route] ?? { status: "unreviewed", note: "" };
@@ -798,6 +914,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       window.localStorage.removeItem(FLOW_STORAGE_KEY);
       window.localStorage.removeItem(PERSONA_KEY);
       window.localStorage.removeItem(REVIEW_STORAGE_KEY);
+      window.localStorage.removeItem(SOCIAL_STORAGE_KEY);
     } catch (error) {
       console.warn("v1 store: could not clear the store (private mode?)", error);
     }
@@ -805,6 +922,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     setRelationships(seedRelationships);
     setAccounts(seedAccounts);
     setTickets(seedTickets);
+    setNotifications(seedNotifications);
+    setThreadReadAt(seedThreadReadAt);
     setReviews({});
     setPersonaState("visitor");
     setHydrated(true);
@@ -821,6 +940,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       relationships,
       accounts,
       tickets,
+      notifications,
+      threadReadAt,
       setPersona,
       createRelationship,
       sendInvite,
@@ -841,6 +962,10 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,
+      markThreadRead,
+      markNotificationRead,
+      markAllNotificationsRead,
+      sendChatMessage,
       reviews,
       setReview,
       resetStore,
@@ -855,6 +980,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       relationships,
       accounts,
       tickets,
+      notifications,
+      threadReadAt,
       setPersona,
       createRelationship,
       sendInvite,
@@ -875,6 +1002,10 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,
+      markThreadRead,
+      markNotificationRead,
+      markAllNotificationsRead,
+      sendChatMessage,
       reviews,
       setReview,
       resetStore,
