@@ -5,14 +5,14 @@ Six screenshots from the AlignSynch build (`BRAND=alignsynch pnpm build`, `next 
 a text assertion cannot prove a page: the markup can be right and the band can still be off the
 bottom, the wrong width or behind the footer.
 
-| file | what it is |
-| --- | --- |
-| `help-1440.png` | `/help`, top of the page, desktop |
-| `help-390.png` | `/help`, top of the page, phone |
-| `help-form-1440.png` | `/help` scrolled to `#contact` — the form and the footer's contact band, desktop |
-| `help-form-390.png` | the same band at phone width — every field and the submit are inside the card, no horizontal overflow |
-| `support-1440.png` | `/support`'s account page, desktop |
-| `support-390.png` | the same page at phone width — the narrow icon rail, no horizontal overflow |
+| file                 | what it is                                                                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `help-1440.png`      | `/help`, top of the page, desktop                                                                     |
+| `help-390.png`       | `/help`, top of the page, phone                                                                       |
+| `help-form-1440.png` | `/help` scrolled to `#contact` — the form and the footer's contact band, desktop                      |
+| `help-form-390.png`  | the same band at phone width — every field and the submit are inside the card, no horizontal overflow |
+| `support-1440.png`   | `/support`'s account page, desktop                                                                    |
+| `support-390.png`    | the same page at phone width — the narrow icon rail, no horizontal overflow                           |
 
 **`/support` needs a session, and these shots do not enter one.** The route answers `307` to
 `/help` for any request without a session (`app/(mainlayout)/support/page.tsx`), which is the

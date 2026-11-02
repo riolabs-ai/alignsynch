@@ -38,7 +38,9 @@ import { helpPageCopy } from "@/data/pages/help";
 import { homePageCopy } from "@/data/pages/home";
 import { legalCopy } from "@/data/pages/legal";
 import { marketingPageCopy } from "@/data/pages/marketing";
+import { resetRequestPageCopy } from "@/data/pages/password-reset";
 import { pricingPageCopy } from "@/data/pages/pricing";
+import { registerPageCopy } from "@/data/pages/register";
 import { shellPageCopy } from "@/data/pages/shell";
 import { supportPageCopy } from "@/data/pages/support";
 import { supportArticlePageCopy } from "@/data/pages/support-article";
@@ -83,6 +85,13 @@ const PUBLIC_COPY: ReadonlyArray<readonly [string, unknown]> = [
   ["/support/articles/[slug]", supportArticlePageCopy],
   ["/welcome", marketingPageCopy],
   ["/help", helpPageCopy],
+  /**
+   * The two signed-out auth screens are public too, and both used to print an example address in
+   * their own email field (`john@example.com`, `you@example.com`). They are here so a card that
+   * puts one back fails this sweep rather than a grep somebody remembers to run.
+   */
+  ["/register", registerPageCopy],
+  ["/forgot-password", resetRequestPageCopy],
   ["/privacy (alignsynch)", alignSynchLegal.privacy],
   ["/terms (alignsynch)", alignSynchLegal.terms],
   ["/privacy (quizhub)", quizHubLegal.privacy],
