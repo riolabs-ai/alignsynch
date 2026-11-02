@@ -109,6 +109,7 @@ links (72 unique, 89 total)
   /create/editor                                       2
   /dashboard/user                                      1
   /explore                                             1
+  /help                                                1
   /login                                               1
   /pricing                                             2
   /privacy                                             2
@@ -147,7 +148,6 @@ links (72 unique, 89 total)
   /quiz/quiz-world-history-through-time                1
   /quiz/quiz-world-literature-classics                 1
   /register                                            1
-  /support                                             1
   /terms                                               1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
 

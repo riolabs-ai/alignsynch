@@ -216,10 +216,28 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/news-article",
     budget: 0,
   },
+  /**
+   * `/support` — the account support page, in the app shell since the Help/Support split.
+   *
+   * The route moved from `app/(marketing)/` to `app/(mainlayout)/` and the panel components stayed
+   * in `components/support/`, which `/help` also renders: a shared band is counted once per
+   * surface it reaches, and both surfaces must keep measuring 0.
+   */
   "/support": {
-    page: "app/(marketing)/support/page.tsx",
+    page: "app/(mainlayout)/support/page.tsx",
     dirs: ["components/support"],
     fixture: "data/pages/support",
+    budget: 0,
+  },
+  /**
+   * `/help` — the public help centre (FAQ + knowledge base). Budget 0 from the first commit, like
+   * every surface this tree adds: the two tab labels, the taxonomy, the two bands' chrome and the
+   * "need a person" paragraph are all `data/pages/help.ts`.
+   */
+  "/help": {
+    page: "app/(marketing)/help/page.tsx",
+    dirs: ["components/support"],
+    fixture: "data/pages/help",
     budget: 0,
   },
   "/support/articles/[slug]": {
