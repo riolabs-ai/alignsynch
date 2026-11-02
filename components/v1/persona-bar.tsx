@@ -1,8 +1,11 @@
-// template-ancestor: components/layout/header.tsx   (variation: a notice strip — one-line env/version/persona context with compact controls, not the account header's search and menu)
+// template-ancestor: components/layout/header.tsx   (variation: a notice strip — one-line env/version/persona context, the drawer hamburger, the account menu and compact controls, not the account header's search)
 "use client";
 
 import { PERSONA_META, PERSONAS, V1_VERSION, type Persona } from "@/data/v1/fixtures";
+import { isDashboardPersona, personaFromPathname, sameSectionHref } from "@/lib/v1/persona";
 import { useV1Store } from "@/lib/v1/store";
+import { useV1Sidebar } from "@/components/v1/v1-sidebar";
+import { AccountMenu } from "@/components/v1/account-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,10 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 import Link from "next/link";
 import { ReviewChip } from "@/components/v1/review-chip";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 /**
  * The persona bar — the auth stand-in, rendered as a notice banner rather than a toolbar. No
@@ -24,26 +27,37 @@ import { useRouter } from "next/navigation";
  *
  *   `Prototype [LOCAL] [V1] | Counterparty [Sam Carter]`
  *
- *   - `[LOCAL]` — from the `V1_ENV` build flag (inlined by `next.config.mjs`), rendered only
- *     when the value is `local`. A deployed prototype has it unset and claims no environment.
- *   - `[V1]` — `V1_VERSION`, the prototype's own version, from the fixture.
- *   - the persona's label, name and surname — all from `PERSONA_META`, so a rename follows the
- *     fixture and not this component.
- *
- * The chosen persona is stored in the store and mirrored to the `v1_persona` localStorage key and
- * cookie by the store's `setPersona`. The strip is sticky and persistent across every `/v1` screen.
+ * The right side carries the controls: the hamburger that opens the sidebar drawer below `xl`
+ * (the sidebar card added), the persona switch, and — beside the review chip — the account menu
+ * (`components/v1/account-menu.tsx`), the profile chip that opens the persona's Profile, Settings
+ * and Notifications.
  */
 export function PersonaBar() {
-  const { persona, setPersona, resetStore } = useV1Store();
+  const { persona: storePersona, setPersona, resetStore } = useV1Store();
+  const { openMobile } = useV1Sidebar();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // The URL is the source of truth for which persona's dashboard this is; the store persona is
+  // only the remembered "last choice" for the picker. On a dashboard route the bar shows the URL
+  // persona, so a fresh visit to `/v1/initiator` reads "Initiator", not the default "Visitor".
+  const persona: Persona = personaFromPathname(pathname) ?? storePersona;
 
   const meta = PERSONA_META[persona];
   /** `Sam Carter` when a surname exists, `Visitor` when the persona is a role word. */
   const fullName = meta.surname ? `${meta.name} ${meta.surname}` : meta.name;
 
+  /**
+   * Switching personas keeps the current section when the new persona has it, else lands on that
+   * persona's overview (#384). A persona with no dashboard (visitor, service) keeps its own
+   * landing, which is not a section.
+   */
   const onSwitch = (next: Persona) => {
     setPersona(next);
-    router.push(PERSONA_META[next].landing);
+    const target = isDashboardPersona(next)
+      ? sameSectionHref(next, pathname)
+      : PERSONA_META[next].landing;
+    router.push(target);
   };
 
   /** `[LOCAL]` only for a local prototype run; a deployed build claims nothing. */
@@ -51,12 +65,19 @@ export function PersonaBar() {
 
   return (
     <div className="sticky top-0 z-30 border-b border-border bg-muted/60 backdrop-blur">
-      <div className="flex items-center gap-3 px-4">
-        {/*
-          The context string — one line, far-left, truncating the persona name with an ellipsis
-          on narrow screens rather than wrapping. 12px (text-xs), the smallest text in the shell;
-          the page's own copy is untouched.
-        */}
+      <div className="flex items-center gap-2 px-3 sm:px-4">
+        {/* The drawer hamburger — below `xl` the sidebar is off-canvas, and this is the one
+            control that opens it, so Relationships and Chat stay a tap away on a phone. */}
+        <button
+          type="button"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground xl:hidden"
+          onClick={openMobile}
+          aria-label="Open navigation"
+        >
+          <Menu className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        {/* The context string — one line, truncating on narrow screens rather than wrapping. */}
         <p className="min-w-0 flex-1 truncate py-1 text-xs leading-5 text-muted-foreground">
           Prototype{" "}
           {isLocal && (
@@ -75,12 +96,6 @@ export function PersonaBar() {
           <label htmlFor="v1-persona-switch" className="sr-only">
             Switch persona
           </label>
-          {/*
-            A native select cannot split its visual height from its hit area, so it stays a 32px
-            compact control and the full-size equivalent lives on the persona picker page (the
-            "Persona picker" link beside it) — the fallback the card allows when a 44px target
-            cannot be honoured at banner size.
-          */}
           <select
             id="v1-persona-switch"
             value={persona}
@@ -103,6 +118,7 @@ export function PersonaBar() {
               Reset demo
             </span>
           </button>
+          <AccountMenu persona={persona} />
           <ReviewChip className="hidden sm:inline-flex" />
         </div>
 
