@@ -91,6 +91,39 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * The catalogue's one card (#409). A card states the record's own facts — the title, the
+       * summary, the Aspects it asks, the Relationship Type and Realm the summary names — and
+       * carries one link out of it. Nothing here is a count the card invented: `{count}` is
+       * `count(item)` and the type is the template's own words.
+       */
+      id: "card",
+      items: [
+        { id: "view-details", label: "View details" },
+        { id: "aspects", label: "{count} Aspects" },
+        { id: "type", label: "Relationship Type" },
+        { id: "realm", label: "Realm" },
+        { id: "unnamed-type", label: "No relationship type" },
+        { id: "unnamed-realm", label: "Not stated" },
+        { id: "roles", label: "{initiator} / {counterparty}" },
+      ],
+    },
+    {
+      /**
+       * The groups the catalogue is drawn in — the v1 library's `Business · Personal`, plus the
+       * one group for templates whose own words name no type (the platform's starter set and
+       * anything this account wrote). The group is a projection of `realm` in
+       * `data/v1/relationship-types.ts`; it is never inferred from a title.
+       */
+      id: "groups",
+      heading: "By relationship type",
+      items: [
+        { id: "business", label: "Business" },
+        { id: "personal", label: "Personal" },
+        { id: "other", label: "Other templates" },
+      ],
+    },
+    {
       id: "create",
       heading: "Write one",
       body: "A template is a title and up to eight Aspects, each with a Left and a Right Value. Instances copy those Aspects when they are created, so editing later never reaches an answer somebody already gave.",
