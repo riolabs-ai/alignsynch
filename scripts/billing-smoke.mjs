@@ -158,7 +158,7 @@ async function main() {
     heading(`the paid account (${PAID_ACCOUNT}) — a mock checkout`);
     const session = await billing.startCheckout({
       userId: PAID_ACCOUNT,
-      planId: "pro",
+      planId: "principal",
       interval: "month",
       successUrl: "http://localhost:3000/pricing?billing=complete",
       cancelUrl: "http://localhost:3000/pricing?billing=cancelled",
@@ -215,7 +215,7 @@ async function main() {
       id: "evt_billing_smoke_1",
       type: "subscription.updated",
       user_id: PAID_ACCOUNT,
-      plan_id: "pro",
+      plan_id: "principal",
       interval: "month",
       status: "active",
       current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
