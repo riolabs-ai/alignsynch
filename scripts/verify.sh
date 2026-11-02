@@ -457,6 +457,18 @@ if [ "$LANE" != "docs" ]; then
     skip_step "data:check" "no data:check script in package.json"
   fi
 
+  # The demo dataset, end to end: seed it, drive the app, diff against
+  # `data/verify/demo-expectations.json`. It is **not** a CI step — CI has no database and no
+  # server — so the step runs in `--gate` mode: a full, hard check when the environment can
+  # support it (a `DATABASE_URL`, an auth base URL and something listening at `BASE_URL`), and a
+  # printed skip with the reason when it cannot. The skip is a `○` line, never a silent pass, so a
+  # green gate never claims to have verified something it did not run.
+  if has_script "demo:verify"; then
+    run_step "demo:verify (demo dataset, UI + rows)" pnpm demo:verify --gate || fail
+  else
+    skip_step "demo:verify" "no demo:verify script in package.json"
+  fi
+
   if has_script "test"; then
     run_step "test" pnpm test || fail
   else

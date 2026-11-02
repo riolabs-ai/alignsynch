@@ -1,0 +1,70 @@
+{
+  "dataset": "demo-dataset.alignsynch.json",
+  "brand": "alignsynch",
+  "rows": {
+    "record": 8,
+    "item": 40,
+    "response_option": 0,
+    "relationship": 4,
+    "session": 4,
+    "party": 8,
+    "opinion": 40,
+    "billing_plan": 6,
+    "demo_account": 3
+  },
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "mustContain": ["Turn one assessment into a practice"],
+      "mustNotContain": ["Internal Server Error", "Application error", "captcha"]
+    },
+    {
+      "path": "/pricing",
+      "status": 200,
+      "mustContain": ["Simple, transparent pricing", "$8.95", "$16.95"],
+      "mustNotContain": ["—/mo", "Internal Server Error", "Application error", "captcha"]
+    },
+    {
+      "path": "/help",
+      "status": 200,
+      "mustContain": ["Answers to what the app does"],
+      "mustNotContain": ["Internal Server Error", "Application error", "captcha"]
+    },
+    {
+      "path": "/terms",
+      "status": 200,
+      "mustContain": ["The rules for using AlignSynch"],
+      "mustNotContain": ["Internal Server Error", "Application error", "captcha"]
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "mustContain": ["What AlignSynch collects"],
+      "mustNotContain": ["Internal Server Error", "Application error", "captcha"]
+    },
+    {
+      "path": "/assessment/instances",
+      "status": 307,
+      "redirect": "/login"
+    },
+    {
+      "path": "/dashboard",
+      "status": 307,
+      "redirect": "/login"
+    },
+    {
+      "path": "/assessment/templates",
+      "status": 307,
+      "redirect": "/login"
+    },
+    {
+      "path": "/assessment/instances",
+      "session": "initiator",
+      "status": 200,
+      "mustContain": ["My Relationships", "Start a relationship"],
+      "mustNotContain": ["could not be read", "You are not in a relationship yet"],
+      "mustNameRelationship": true
+    }
+  ]
+}
