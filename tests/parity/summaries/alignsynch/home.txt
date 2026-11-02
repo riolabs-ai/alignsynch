@@ -1,17 +1,23 @@
 route  /
 brand  alignsynch
 
-headings (12)
-  h1  "How do you feel, against how they feel?"
+headings (18)
+  h1  "Turn one assessment into a practice you can charge for."
+  h2  "Create once. Run it with every client."
+  h3  "Create"
+  h3  "Invite both sides"
+  h3  "Run the session"
   h2  "The same question, answered twice"
   h2  "Four templates"
   h3  "Relationship Basics"
   h3  "Staff &amp; Manager"
   h3  "Parent &amp; Child"
   h3  "Untitled Relationship"
-  h2  "Two families"
+  h2  "Twenty-seven relationship types, across seven realms."
   h3  "Business"
   h3  "Personal"
+  h2  "You&#x27;re the coach on the relationship — a role, not a third answer."
+  h2  "What this page does not claim."
   h3  "Quick Links"
   h3  "Contact"
 
@@ -36,8 +42,8 @@ links (13 unique, 20 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
 
 counts
-  elements  170
+  elements  224
   images    3
   buttons   1
   inputs    0
-  classes   182 (sha 2a8595676e6c)
+  classes   193 (sha 011ef711f828)
