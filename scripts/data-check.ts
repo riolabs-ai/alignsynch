@@ -73,6 +73,7 @@ import { createdQuizzes } from "../data/created-quizzes";
 import { currentQuiz } from "../data/currentQuiz";
 import { mockQuizzes } from "../data/mock-quizzes";
 import { searchIndex } from "../data/searchdata";
+import { surfaceRegistry, surfaceRegistryProblems, zSurface } from "../data/surface-registry";
 import { users } from "../lib/data/users";
 import { isFileMedia, zMediaRegistry, type MediaEntry } from "../content/media";
 import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
@@ -990,6 +991,28 @@ if (ancestorFiles.length < TEMPLATE_ANCESTOR_MIN_WALKED) {
 
 const ancestorCoverage = ancestorCensus(ancestorFiles);
 
+/* ------------------------------------------------------------------ *
+ * E36 — the surface registry is honest about what is wired (#409)
+ *
+ * `data/surface-registry.ts` is the product's statement about itself: four relationship
+ * surfaces are live, the rest are declared pending with the capability each one is missing.
+ * The schema refuses a shape nobody can act on (`strict()`, three statuses) and the const is
+ * typed, so a status outside the three literals is already a compile error — this is the half
+ * a *valid* row can still get wrong: one route declared twice, a pending surface with no
+ * `needs` (a 404 with extra steps), a live surface carrying an excuse, or a live surface whose
+ * route the manifest does not carry. `E7` holds the manifest and `app/` to each other, so a
+ * live entry that passes here is a route that exists as a page.
+ * ------------------------------------------------------------------ */
+
+const surfaceRows = validateCollection("E36", "surface", zSurface, [...surfaceRegistry]);
+for (const problem of surfaceRegistryProblems(surfaceRows, (route) =>
+  ROUTE_PATTERNS.includes(route),
+)) {
+  err("E36", problem);
+}
+
+const surfaceCensus = `${surfaceRows.filter((row) => row.status === "live").length} live, ${surfaceRows.filter((row) => row.status !== "live").length} declared not wired`;
+
 const imageTags = nextImageTags(imageSources);
 const imageMeasured = imageCensus(imageTags);
 
@@ -1706,6 +1729,7 @@ console.log(
 console.log(
   `      ${ancestorCoverage.walked} components walked, ${ancestorCoverage.withAncestor} with an ancestor, ${ancestorCoverage.approved} approved exceptions (E35; components/ui/** is vendored and excluded from the walk)`,
 );
+console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
 console.log(
   `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
 );
