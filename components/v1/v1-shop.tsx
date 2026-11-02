@@ -2,39 +2,57 @@
 
 // template-ancestor: components/pricing/pricing-plans.tsx   (variation: the per-relationship subscription plans — monthly and quarterly — with the initiator's own subscriptions, a prototype checkout and a payment history behind a capability check; the public pricing surface renders the same two plans with no billing)
 
-import { SubscriptionStatus } from "@/components/v1/subscription-status";
+import {
+  SUBSCRIPTION_STATUS_LABEL,
+  SUBSCRIPTION_STATUS_TONE,
+} from "@/components/v1/subscription-status";
 import { V1Checkout } from "@/components/v1/v1-checkout";
 import { SectionIntro } from "@/components/v1/v1-ui";
 import { formatCurrency, formatDate } from "@/content/core";
+import type { V1Subscription } from "@/data/v1/fixtures";
 import { subscriptionPlan, subscriptionPlans, WHAT_EACH_BUYS } from "@/data/v1/plans";
 import { relationshipNameOf } from "@/lib/v1/derive";
 import { relationshipsVisibleTo } from "@/lib/v1/persona";
 import { useV1Store } from "@/lib/v1/store";
+import { cn } from "@/lib/utils";
+
+/**
+ * The renewal line, said three ways because the three states mean different things: a
+ * subscription in good standing renews on a date, a past-due one is waiting for that payment, and
+ * a lapsed one stopped at a date that has already passed. Say which — one "renews" over a lapsed
+ * row would be a small lie the state does not support.
+ */
+function renewalLine(sub: V1Subscription): string {
+  if (sub.status === "active") return `Renews ${formatDate(sub.periodEnd)}`;
+  if (sub.status === "past_due") return `Renewal due ${formatDate(sub.periodEnd)}`;
+  return `Lapsed since ${formatDate(sub.periodEnd)}`;
+}
 
 /**
  * The one pricing/shop surface (#384 §3). The public `/v1/pricing` and the initiator's in-app
  * `/v1/[persona]/shop` render this same component; the difference is the capability check:
  *
  *   - `canManageBilling` false (the public page) prints the two plans and the honest
- *     "nothing is charged" line, and nothing else — no checkout, no billing.
- *   - `canManageBilling` true (the in-app shop) adds the initiator's own subscriptions, the
- *     prototype checkout and the payment history, one purchase per period and never a total.
+ *     "nothing is charged" line, and nothing else — no subscriptions, no checkout, no billing.
+ *   - `canManageBilling` true (the in-app shop) adds the initiator's own subscriptions — plan,
+ *     status and renewal date, one row per relationship — the prototype checkout and the payment
+ *     history: one row per purchase, never a total.
  *
  * Both halves read their money from `data/v1/plans.ts`, so a price the marketing page shows is
- * the price the checkout applies.
+ * the price the checkout applies. Nothing here invents a discount, a tax line, a card brand or a
+ * currency total, and nothing charges anything: there is no processor behind this form.
  */
 export function V1Shop({ canManageBilling = false }: { canManageBilling?: boolean }) {
   const { relationships, templates } = useV1Store();
   const mine = relationshipsVisibleTo("initiator", relationships);
 
+  const nameOf = (rel: (typeof mine)[number]) =>
+    relationshipNameOf(rel, templates.find((t) => t.id === rel.templateId)?.title ?? "");
+
   const payments = mine
-    .flatMap((rel) => {
-      const name = relationshipNameOf(
-        rel,
-        templates.find((t) => t.id === rel.templateId)?.title ?? "",
-      );
-      return (rel.subscription?.payments ?? []).map((payment) => ({ ...payment, name }));
-    })
+    .flatMap((rel) =>
+      (rel.subscription?.payments ?? []).map((payment) => ({ ...payment, name: nameOf(rel) })),
+    )
     .sort((a, b) => b.paidAt.localeCompare(a.paidAt));
 
   return (
@@ -79,22 +97,42 @@ export function V1Shop({ canManageBilling = false }: { canManageBilling?: boolea
                 No relationships yet — start one from a template, then subscribe it here.
               </p>
             ) : (
-              <div className="space-y-2">
+              <ul className="divide-y divide-border rounded-lg border border-border bg-card">
                 {mine.map((rel) => {
-                  const name = relationshipNameOf(
-                    rel,
-                    templates.find((t) => t.id === rel.templateId)?.title ?? "",
-                  );
+                  const sub = rel.subscription;
                   return (
-                    <div key={rel.id} className="rounded-lg border border-border bg-card p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium text-foreground">{name}</p>
-                        <SubscriptionStatus rel={rel} />
+                    <li key={rel.id} className="px-4 py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground">{nameOf(rel)}</p>
+                        {sub === null ? (
+                          <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                            No subscription
+                          </span>
+                        ) : (
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                              SUBSCRIPTION_STATUS_TONE[sub.status],
+                            )}
+                          >
+                            {SUBSCRIPTION_STATUS_LABEL[sub.status]}
+                          </span>
+                        )}
                       </div>
-                    </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {rel.counterpartyName === null
+                          ? "No counterparty invited yet"
+                          : `With ${rel.counterpartyName}`}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {sub === null
+                          ? "Unsubscribed — choose a plan below."
+                          : `${subscriptionPlan(sub.plan).label} · ${subscriptionPlan(sub.plan).cadence} · ${renewalLine(sub)}`}
+                      </p>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
           </section>
 

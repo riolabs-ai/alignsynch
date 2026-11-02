@@ -99,7 +99,7 @@ export function AcceptSession({ relationshipId }: { relationshipId: string }) {
 
       {viewer === "counterparty" && (
         <section className="rounded-lg border border-border bg-card p-4">
-          <p className="text-sm font-semibold text-foreground">Your membership is free</p>
+          <p className="text-sm font-semibold text-foreground">Membership</p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             Your membership is free — the initiator holds the subscription. You join by link and pay
             nothing.

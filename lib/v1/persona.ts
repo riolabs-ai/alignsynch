@@ -52,11 +52,20 @@ export function isNavSection(value: string): value is NavSection {
   return NAV_SET.has(value);
 }
 
-/** Which personas may reach each section — the `✓` rows of the #384 matrix. */
+/**
+ * Which personas may reach each section — the `✓` rows of the #384 matrix.
+ *
+ * `templates` is the matrix's **browse** row: `✓` for visitor, initiator, counterparty and
+ * admin, `view` for the coach. Reaching the library and **acting** on it are two different
+ * permissions, so the route is open to all four dashboard personas and only the initiator and
+ * the admin see the action row (`canTakeLibraryActions`). Gating the route on the action was
+ * the spec deviation #384 §1 named: a counterparty could not look at the catalogue from inside
+ * their own dashboard at all.
+ */
 const SECTION_PERSONAS: Readonly<Record<NavSection, readonly DashboardPersona[]>> = {
   relationships: ["initiator", "counterparty", "coach", "admin"],
   chat: ["initiator", "counterparty", "coach", "admin"],
-  templates: ["initiator", "admin"],
+  templates: ["initiator", "counterparty", "coach", "admin"],
   shop: ["initiator"],
   profile: ["initiator", "counterparty", "coach", "admin"],
   settings: ["initiator", "counterparty", "coach", "admin"],
@@ -67,6 +76,26 @@ const SECTION_PERSONAS: Readonly<Record<NavSection, readonly DashboardPersona[]>
 /** May this persona reach this section? The one source for the sidebar and for `notFound()`. */
 export function sectionAllowedFor(persona: DashboardPersona, section: NavSection): boolean {
   return SECTION_PERSONAS[section].includes(persona);
+}
+
+/**
+ * May this persona take the template library's actions — *Start a relationship*, *Clone into
+ * mine*, *Edit aspects*? Only the initiator and the admin (#384 §1). Everyone else browses the
+ * same cards with the action row absent, which is the matrix's `view` mark made mechanical
+ * instead of a rule someone has to remember.
+ */
+export function canTakeLibraryActions(persona: DashboardPersona): boolean {
+  return persona === "initiator" || persona === "admin";
+}
+
+/**
+ * May this persona see and change billing — the plans, the subscriptions, the checkout and the
+ * payment history? Only the initiator, who holds the subscription. The counterparty's membership
+ * is free and the coach never sees a bill, so the shop's capability check is this function and
+ * not a second table (#384 §3, the blind rule).
+ */
+export function canManageBilling(persona: DashboardPersona): boolean {
+  return persona === "initiator";
 }
 
 /** `/v1/<persona>` — the persona's dashboard overview. */
@@ -119,7 +148,8 @@ export function relationshipsVisibleTo(
 export const SECTION_SUMMARIES: Readonly<Record<NavSection, string>> = {
   relationships: "Your relationships, status-led: stage, next session, and the session count.",
   chat: "One thread per relationship, plus per-Aspect threads, with unread state.",
-  templates: "The template library with start, clone and edit actions.",
+  templates:
+    "The template library — browse for every persona; start, clone and edit for an initiator or admin.",
   shop: "The per-relationship subscription and checkout — initiator only.",
   profile: "Your public profile and relationship history.",
   settings: "Account, appearance, notifications, privacy and connected accounts.",
