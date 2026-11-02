@@ -3,6 +3,7 @@
 // template-ancestor: components/ui/card.tsx   (variation: the sign-in card — email, password, one submit and the Google path under it)
 
 import { AppVersion } from "@/components/layout/app-version";
+import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
 import { MarkGlyph } from "@/components/auth/mark-icon";
@@ -172,6 +173,8 @@ export function LoginView({
   const legal = sectionOf(copy, "legal");
   /** The Google button's three strings (issue #281). */
   const google = sectionOf(copy, "google");
+  /** The way back to the site — every auth screen carries one (`auth-home-link.tsx`). */
+  const home = sectionOf(copy, "home");
 
   /**
    * The one number this page owns: the demo's active-player count, as `data/metrics.ts`
@@ -340,6 +343,11 @@ export function LoginView({
 
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-6 p-8 ">
+        {/* The way out, above the card: a sign-in screen that offers no door to the site is a
+            dead end for anyone who followed a link and did not mean to sign in. */}
+        <div className="w-full max-w-md">
+          <AuthHomeLink label={itemLabel(home, "back")} />
+        </div>
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-8">
             <div className="lg:hidden mx-auto mb-4 w-12 h-12 bg-action rounded-lg flex items-center justify-center">
@@ -413,18 +421,22 @@ export function LoginView({
                 />
               </div>
               {/*
-               * No "Forgot password?" link (issue #272). Its `href` was a bare hash, and nothing in
-               * this app could have been behind it: the Managed Auth client here unwraps
-               * `signUp.email`, `signIn.email`, `getSession` and `signOut` only, and no route or
-               * form starts a reset. A link that cannot lead anywhere is worse than its absence
-               * — this one also promised an account feature the product does not have. It comes
-               * back when the reset flow does, pointed at the reset route.
-               */}
-              <div className="flex items-center space-x-2">
-                <Checkbox id="remember" />
-                <Label htmlFor="remember" className="text-sm ">
-                  {itemLabel(form, "remember")}
-                </Label>
+                One row, two things: "Remember me" on the left and the way out of a forgotten
+                password on the right — where a sign-in form has always put it, because the two
+                are read together (this browser, or this account). The link is a route, not a
+                dialog: the reset is three pages with a token between them, and a modal cannot be
+                linked to from a mail or resumed after a reload.
+              */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="remember" />
+                  <Label htmlFor="remember" className="text-sm ">
+                    {itemLabel(form, "remember")}
+                  </Label>
+                </div>
+                <Link href="/forgot-password" className="text-sm text-action hover:underline">
+                  {itemLabel(form, "forgot")}
+                </Link>
               </div>
 
               {fieldProblem && (
@@ -444,17 +456,6 @@ export function LoginView({
                 {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {pending ? itemLabel(form, "pending") : itemLabel(form, "submit")}
               </Button>
-              {/*
-                The way out of a forgotten password (#password-reset). Inside the form, beside the
-                button, because it is the alternative to pressing it — and a route, not a dialog:
-                the reset is three pages with a token between them, and a modal cannot be linked to
-                from a mail or resumed after a reload.
-              */}
-              <div className="text-right text-sm">
-                <Link href="/forgot-password" className="text-action">
-                  {itemLabel(form, "forgot")}
-                </Link>
-              </div>
             </form>
             <div className="text-center text-sm ">
               {itemLabel(form, "signup-prompt")}{" "}

@@ -72,7 +72,6 @@ vi.mock("@/lib/db/user-profiles", () => ({
 vi.mock("@/lib/auth/sign-out", () => ({ endSession: vi.fn(async () => true) }));
 
 import { Header } from "@/components/layout/header";
-import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { ConnectedAccounts } from "@/components/settings/connected-accounts";
 import type { UserProfile } from "@/content/identity";
 import { notifications } from "@/data/notifications";
@@ -129,8 +128,8 @@ function hrefsOf(html: string): string[] {
  * Render the shell's header as the layout renders it: the account resolved server-side, one prop.
  *
  * `searchIndex` is the brand's own catalog — a header without one is a different component — and
- * `SidebarProvider` is the real provider, so the render is the tree the app mounts rather than a
- * component beside it.
+ * there is no provider around it: the shell has no open/closed state to hand down since the rail
+ * became a sticky column (`components/layout/sidebar.tsx`).
  */
 function renderHeader(options: {
   account: ReturnType<typeof shellAccountOf>;
@@ -140,16 +139,13 @@ function renderHeader(options: {
   const brandId = options.brandId;
   const viewer = options.viewer ?? PLATFORM_VIEWER;
   return renderToStaticMarkup(
-    createElement(SidebarProvider, null, [
-      createElement(Header, {
-        key: "header",
-        copy: shellPageCopy,
-        brandId,
-        viewer,
-        account: options.account,
-        searchIndex: searchIndexFor(brandId, viewer),
-      }),
-    ]),
+    createElement(Header, {
+      copy: shellPageCopy,
+      brandId,
+      viewer,
+      account: options.account,
+      searchIndex: searchIndexFor(brandId, viewer),
+    }),
   );
 }
 

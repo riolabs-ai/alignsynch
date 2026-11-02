@@ -136,6 +136,35 @@ export function registerCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "create-account", label: "Create Account" },
         ],
       },
+      /**
+       * The strength meter under the password field (`components/auth/password-strength.tsx`).
+       *
+       * Three words and two rules: `weak`/`fair`/`strong` are what the level reads, and
+       * `rule-length`/`rule-classes` are the two lines beside it, each carrying a `data-met` state
+       * so the guidance turns on as the value satisfies it. `{min}` is `PASSWORD_MIN_LENGTH`
+       * (`lib/auth/reset-token.ts`), filled by the view — the floor is the server's and is never
+       * typed here. The meter is advice: nothing in it can refuse a password the server accepts.
+       */
+      {
+        id: "strength",
+        items: [
+          { id: "label", label: "Password strength" },
+          { id: "weak", label: "Weak password" },
+          { id: "fair", label: "Fair password" },
+          { id: "strong", label: "Strong password" },
+          { id: "rule-length", label: "At least {min} characters" },
+          { id: "rule-classes", label: "Mix capitals, numbers or symbols" },
+        ],
+      },
+      /**
+       * The way back to the site — every auth screen carries it (`components/auth/
+       * auth-home-link.tsx`), because a sign-up form that offers no exit is a dead end for anyone
+       * who arrived by link and did not mean to create an account.
+       */
+      {
+        id: "home",
+        items: [{ id: "back", label: "Back to home" }],
+      },
     ],
   });
 }

@@ -84,6 +84,13 @@ function signInPage(
        * `next build` never renders `/login`, so a green build cannot see it.
        */
       sectionOf(copy, "google"),
+      /**
+       * The way back to the site. The same trap a fourth time: this projection rebuilds the
+       * section list, so the `home` band has to be named here or it is dropped and `LoginView`
+       * throws `PageCopy: no section "home"` at request time — with `next build` still green,
+       * because it never renders `/login`.
+       */
+      sectionOf(copy, "home"),
     ],
   };
 }

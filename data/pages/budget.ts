@@ -121,6 +121,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/explore",
     budget: 0,
   },
+  /**
+   * `/how-it-works` — the console's onboarding page. Budget 0 from the first commit, like the
+   * flow surfaces: the six moves, the two half-labels and the three honest limits are all
+   * `data/pages/how-it-works.ts`, so the next sentence typed into the view is a red build.
+   */
+  "/how-it-works": {
+    page: "app/(mainlayout)/how-it-works/page.tsx",
+    dirs: ["components/onboarding"],
+    fixture: "data/pages/how-it-works",
+    budget: 0,
+  },
   "/explore/featured": {
     page: "app/(mainlayout)/explore/featured/page.tsx",
     dirs: ["components/explore"],

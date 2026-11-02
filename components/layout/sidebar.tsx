@@ -1,9 +1,8 @@
 "use client";
-// template-ancestor: components/layout/nav-menus.tsx   (variation: the rail — wordmark, the AppNav rows, a sign-out row and a close control below the breakpoint)
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the rail — wordmark, the AppNav rows, a sign-out row, and a width that answers the viewport)
 
 import { AppNav, NavRow } from "@/components/layout/nav-menus";
 import { AppVersion } from "@/components/layout/app-version";
-import { useSidebar } from "@/components/layout/sidebar-context";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
 import { endSession } from "@/lib/auth/sign-out";
@@ -11,7 +10,7 @@ import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
-import { LogOut, X } from "lucide-react";
+import { LogOut } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,16 +22,27 @@ import { BrandGlyph } from "@/components/layout/brand-glyph";
  *
  * The menu lives in `components/layout/nav-menus.tsx`, because it is brand-selected and
  * capability-filtered since issue #156 and keeping it in a hook-free module is what lets a
- * node test render either brand's destinations. This file owns the *chrome*: the mark, the
- * wide rail and the mobile drawer. `brandId` and `viewer` arrive from the server
- * layout (`app/(mainlayout)/layout.tsx`) because both are facts the browser must not decide —
- * the brand is a build flag, and a viewer's capabilities will be read from a session.
+ * node test render either brand's destinations. This file owns the *chrome*: the mark and the
+ * rail. `brandId` and `viewer` arrive from the server layout (`app/(mainlayout)/layout.tsx`)
+ * because both are facts the browser must not decide — the brand is a build flag, and a
+ * viewer's capabilities will be read from a session.
  *
- * **The rail has no collapse control.** It used to carry a pin that narrowed the desktop
+ * **The rail is sticky, always present, and never a drawer.** The owner's review of the console
+ * asked for one column that answers the viewport instead of a phone overlay: `sticky top-0` with
+ * a full-height column, `w-14` at the narrowest phone, `w-16` from `sm`, and the full 250px from
+ * `xl`. Below `xl` the rows are **icons only** — the label is `hidden xl:inline`, and every row
+ * carries the same words in `title` and `aria-label` (`NavRow`), so the icon-only rail is usable
+ * with a pointer and announced correctly to a screen reader. There is **no close control, no
+ * scrim and no `-translate-x-full` state**: a shadowed panel that slides over the page reads as a
+ * drawer, and the request was explicitly the opposite of that. Nothing here reads a window width:
+ * the breakpoints are classes, which is why the widths below are measured from computed style
+ * rather than from state a component decided.
+ *
+ * **The rail has no collapse control either.** It used to carry a pin that narrowed the desktop
  * column to 70px and remembered that choice in localStorage; the owner's review asked for it
- * removed on the AlignSynch skin and everywhere else — the sidebar is always expanded, and
- * only a phone gets the drawer. There is no pin button, no icon, no label and nothing written
- * to storage; `sidebar-context.tsx` clears the preference the old control left behind.
+ * removed — the sidebar is never dismissed and the only thing that narrows it is the viewport.
+ * `components/layout/sidebar-context.tsx` cleared the preference the old control left behind and
+ * is gone with it: with no open/closed state there is nothing for a provider to hold.
  *
  * Every label resolves an id on `data/pages/shell.ts` (`itemLabel` against the `nav`,
  * `nav-alignsynch` and `logout` ids). The hrefs stay literal JSX attributes **on purpose** —
@@ -60,7 +70,13 @@ export function AppSidebar({
   const nav = sectionOf(copy, "nav");
   const pathname = usePathname();
 
-  const { collapsed, mobileOpen, closeMobile } = useSidebar();
+  /**
+   * A row's navigate hook, which no longer closes anything: the rail is never dismissed, so the
+   * menu takes the same prop it always took and this one does nothing. `NavRow` keeps the prop
+   * because the quiz brand's rows are rendered by the same component and a menu that only exists
+   * in a drawer is a shape this file no longer has.
+   */
+  const noNavigationToClose = () => undefined;
 
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
@@ -94,29 +110,26 @@ export function AppSidebar({
       setSignOutFailed(true);
       return;
     }
-    closeMobile();
     router.replace("/");
     router.refresh();
   };
 
   /**
-   * Closed is the CSS default below `xl` — off-canvas *and* `invisible` — so nothing
-   * bleeds through before hydration and the panel's links leave the tab order while it is
-   * dismissed; only `mobileOpen` slides it in. Desktop (`xl:`) is untouched by both
-   * classes: the rail is a permanent 250px column there, and `collapsed` is the context's
-   * constant `false` rather than a second width.
+   * The rail's own width, measured rather than decided: `w-14` (56px) on the narrowest phone,
+   * `w-16` (64px) from `sm`, the full 250px from `xl`. `sticky top-0` with `h-screen` keeps the
+   * column in place while the main slot scrolls, and `shrink-0` stops the flex parent from
+   * squeezing it below the width the rows are drawn for. Nothing slides, nothing overlays and
+   * nothing is hidden: at every width this is the same element in the same flow.
    */
   return (
     <aside
       id="app-sidebar"
       className={cn(
-        "fixed top-0 left-0 h-screen flex flex-col border-r bg-background transition-all duration-300 w-[250px]",
-        mobileOpen
-          ? "max-xl:visible max-xl:translate-x-0 max-xl:shadow-2xl"
-          : "max-xl:invisible max-xl:-translate-x-full",
+        "sticky top-0 flex h-screen shrink-0 flex-col border-r bg-background",
+        "w-14 sm:w-16 xl:w-[250px]",
       )}
     >
-      <div className="flex h-16 items-center justify-between gap-2 border-b px-4">
+      <div className="flex h-16 items-center justify-center gap-2 border-b px-2 xl:justify-start xl:px-4">
         <Link
           href="/"
           aria-label={mark ? copy.heading : undefined}
@@ -154,16 +167,8 @@ export function AppSidebar({
           ) : (
             <BrandGlyph className="h-6 w-6 text-primary" />
           )}
-          <span className="text-xl font-bold">{copy.heading}</span>
+          <span className="hidden text-xl font-bold xl:inline">{copy.heading}</span>
         </Link>
-        <button
-          type="button"
-          className="xl:hidden"
-          onClick={closeMobile}
-          aria-label="Close navigation"
-        >
-          <X className="size-5" />
-        </button>
       </div>
 
       <div className="flex-1 overflow-auto py-4">
@@ -172,9 +177,9 @@ export function AppSidebar({
             brandId={brandId}
             viewer={viewer}
             copy={copy}
-            collapsed={collapsed}
+            collapsed={false}
             pathname={pathname}
-            onNavigate={closeMobile}
+            onNavigate={noNavigationToClose}
             hidden={hiddenNav}
           />
         </nav>
@@ -186,8 +191,8 @@ export function AppSidebar({
             icon={<LogOut className="size-5" />}
             label={signingOut ? logoutPendingLabel : logoutLabel}
             active={false}
-            collapsed={collapsed}
-            onNavigate={closeMobile}
+            collapsed={false}
+            onNavigate={noNavigationToClose}
             onSelect={signOut}
           />
         </nav>
@@ -197,9 +202,16 @@ export function AppSidebar({
       {/* The version badge — the bottom of the rail (issue #269). Last in the document, so it is
           the last stop the keyboard makes inside the sidebar, and below the sign-out row on
           purpose: signing out is an action, the version is a fact about the build you signed in
-          to. The rail is always 250px now, so the long form always fits. */}
-      <div className="border-t px-2 py-3 text-center">
-        <AppVersion copy={copy} />
+          to. Two forms, one anchor each, from the same fixture (`AppVersion`'s `compact` item):
+          the long form needs the 250px column, and an icon rail has 56px. Only the form the
+          width shows is in the accessibility tree — the other is `display:none`. */}
+      <div className="border-t px-1 py-3 text-center xl:px-2">
+        <span className="xl:hidden">
+          <AppVersion copy={copy} compact />
+        </span>
+        <span className="hidden xl:inline">
+          <AppVersion copy={copy} />
+        </span>
       </div>
     </aside>
   );

@@ -89,6 +89,15 @@ export const resetRequestPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     /**
+     * The way back to the site — every auth screen carries one (`components/auth/
+     * auth-home-link.tsx`). Two ways off this screen, not one: "Back to sign in" is the reset flow,
+     * and this is the product, which is where somebody who changed their mind wants to be.
+     */
+    {
+      id: "home",
+      items: [{ id: "back", label: "Back to home" }],
+    },
+    /**
      * The message. Subject and body are the fixture's, the values are the sender's: one link, the
      * brand's name and the lifetime in minutes. Nothing here names a provider or an account id.
      */
@@ -151,6 +160,11 @@ export const resetFormPageCopy: PageCopy = zPageCopy.parse({
         { id: "back", label: "Back to sign in" },
       ],
     },
+    /** The way back to the site, beside "Back to sign in" (`auth-home-link.tsx`). */
+    {
+      id: "home",
+      items: [{ id: "back", label: "Back to home" }],
+    },
   ],
 });
 
@@ -166,6 +180,11 @@ export const resetCompletePageCopy: PageCopy = zPageCopy.parse({
         { id: "signed-out", label: "Every other device has been signed out." },
         { id: "sign-in", label: "Sign in" },
       ],
+    },
+    /** The way back to the site: this band is the end of the flow, not a place to be stuck. */
+    {
+      id: "home",
+      items: [{ id: "back", label: "Back to home" }],
     },
   ],
 });

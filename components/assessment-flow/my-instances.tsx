@@ -311,7 +311,7 @@ export function MyInstances({
       {shown.length === 0 ? (
         filter !== null && scoped.length === 0 ? (
           /**
-           * A filter that keeps no rows is not the same sentence as "you are not in an assessment
+           * A filter that keeps no rows is not the same sentence as "You are not in a relationship
            * yet": this reader has relationships, none of them in this state.
            */
           <section

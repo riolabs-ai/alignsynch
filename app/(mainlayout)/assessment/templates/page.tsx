@@ -49,7 +49,12 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Your templates",
+  /**
+   * Read from the fixture, never spelled here: the catalogue's title is one string
+   * (`data/pages/assessment-templates.ts::heading`) and the page's own `<h1>` renders the same
+   * field, so a rename cannot leave the tab saying one thing and the page another.
+   */
+  title: templateLibraryPageCopy.heading,
 };
 
 type LibraryParams = {

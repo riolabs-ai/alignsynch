@@ -3,6 +3,8 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: the same card with name, username and role fields and a confirm-password row)
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthHomeLink } from "@/components/auth/auth-home-link";
+import { PasswordStrengthMeter } from "@/components/auth/password-strength";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -86,6 +88,8 @@ export function RegisterView({
   const details = sectionOf(copy, "details");
   const account = sectionOf(copy, "account");
   const navigation = sectionOf(copy, "navigation");
+  /** The way back to the site — every auth screen carries one (`auth-home-link.tsx`). */
+  const home = sectionOf(copy, "home");
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -226,6 +230,10 @@ export function RegisterView({
       {/* Right Side - Registration Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 ">
         <div className="w-full max-w-lg">
+          {/* The way back to the site, above everything else on the screen. */}
+          <div className="mb-6">
+            <AuthHomeLink label={itemLabel(home, "back")} />
+          </div>
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="mx-auto mb-4 w-16 h-16 bg-action rounded-xl flex items-center justify-center">
@@ -324,6 +332,13 @@ export function RegisterView({
                     <p className="text-xs text-gray-500 mt-1">
                       {itemLabel(account, "password-hint")}
                     </p>
+                    {/*
+                      The strength meter, under the field it describes. It reads the value the
+                      person is typing, so it moves with every keystroke — and it is advice only:
+                      nothing here disables the Create Account button or refuses a password the
+                      server would accept.
+                    */}
+                    <PasswordStrengthMeter value={formData.password} copy={copy} />
                   </div>
 
                   <div>
