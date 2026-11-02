@@ -18,6 +18,7 @@ import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import { duplicateTemplate } from "@/lib/flow/templates";
+import { parseRealmFilter } from "@/components/assessment-flow/template-card";
 import { parseLibraryStatus, parseLibraryView } from "@/lib/flow/template-library";
 
 function libraryUrl(request: Request, form: FormData, extra?: Record<string, string>): URL {
@@ -28,9 +29,13 @@ function libraryUrl(request: Request, form: FormData, extra?: Record<string, str
   };
   const view = parseLibraryView(text("view"));
   const status = parseLibraryStatus(text("status-filter"));
+  const realm = parseRealmFilter(text("realm"));
   const query = text("q");
   if (view !== "all") target.searchParams.set("view", view);
   if (status !== "all") target.searchParams.set("status", status);
+  // The realm travels the same way the tab and the status do: rebuilt from a validated value,
+  // so a write performed on the `Home` shelf lands back on it.
+  if (realm !== null) target.searchParams.set("realm", realm);
   if (query !== "") target.searchParams.set("q", query);
   for (const [key, value] of Object.entries(extra ?? {})) target.searchParams.set(key, value);
   return target;
