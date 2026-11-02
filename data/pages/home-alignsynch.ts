@@ -67,8 +67,15 @@ export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
   eyebrow: "Relationship alignment · for practitioners",
   heading: "Turn one assessment into a practice you can charge for.",
+  /**
+   * The hero's three pieces of copy divide one job each, and the division is the fix for a
+   * footnote that said the money three times: the heading states the promise ("charge for"), the
+   * subtitle states the mechanism (pick a type, both answer blind, you get the Gap), and the
+   * fineprint — one sentence, never two — states what a reader is buying. "Paid to run" and
+   * "yours to run" used to repeat the heading's business fact in the two lines beneath it.
+   */
   subtitle:
-    "Pick a relationship type, write the Aspects you actually work on, and send it to a client and the person they're aligning with. Both answer blind. You get the Gap — and the agenda for the session you're paid to run.",
+    "Pick a relationship type, write the Aspects you actually work on, and send it to a client and the person they're aligning with. Both answer blind. You get the Gap — and the agenda for the session.",
   /**
    * Two CTAs, and the order is the argument: creating the first relationship is what the reader
    * came to do, and the worked example is how they check the product can do it. Both are
@@ -97,11 +104,21 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     {
       id: "worked-example",
       label: "Worked example · {title}",
-      body: "Two answers per Aspect. The distance between them is the Gap — the only thing the session has to work with.",
+      /**
+       * The card's closing line does two jobs: it says what the Gap is *for*, and it defines the
+       * one term on the card a reader cannot infer. `In Synch` is the glossary's spelling and the
+       * brand's (`AlignSynch`), so it stays — but a row that says it must say what it means, or
+       * the spelling reads as a typo. One line, not a tooltip and not a footnote.
+       */
+      body: "Two answers per Aspect; the distance between them is the Gap. When both answers match, the Gap is 0 and the row says In Synch — the brand's spelling of in sync.",
     },
-    /** The mode pill: the one thing about the featured instance a reader can check at a glance. */
-    { id: "worked-example-mode-basic", label: "Basic" },
-    { id: "worked-example-mode-advanced", label: "Advanced" },
+    /**
+     * The mode, as a caption rather than a pill: "Answered in Basic mode" says what it qualifies,
+     * where a bare "Basic" badge in a hero reads as a plan tier — or as a verdict on the product.
+     * It is the instance's own `mode` field, so the words are the record's and not a design's.
+     */
+    { id: "worked-example-mode-basic", label: "Answered in Basic mode" },
+    { id: "worked-example-mode-advanced", label: "Answered in Advanced mode" },
     /**
      * One row's note: the scale the two scores sit on, and the Gap their difference came to.
      * A Gap of 0 is the glossary's In Synch and gets its own sentence rather than "Gap 0".
@@ -131,12 +148,24 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
       value: "/assessment/instances",
       body: "Your relationships live behind your session, in the console — not on this page, which anyone can read. Sign in and the list is one click away.",
     },
-    /** Under the hero CTA: what is bought once, and which seat the reader holds. */
+    /**
+     * Under the hero CTA: the two facts that make the button safe to press — one relationship is
+     * bought once and every session after it is the reader's, and the reader's seat is the coach's
+     * rather than a third answer. **One sentence**, because the three-line version repeated the
+     * heading's word ("charge for") twice ("paid to run", "yours to run") and buried the fact it
+     * was trying to make.
+     */
     {
       id: "hero-fineprint",
       label:
-        "One relationship is bought once; every session after it is yours to run. You are named on the relationship as its coach — not as a third party answering.",
+        "One relationship is bought once, every session after it is yours, and you are named as its coach rather than answering as a party.",
     },
+    /**
+     * The risk-reducer directly under the CTA. It is a claim the product already makes elsewhere —
+     * `/pricing`'s FAQ says the Free plan needs "no card and no subscription" — so this is the
+     * same promise at the point of decision, not a second one.
+     */
+    { id: "hero-reassurance", label: "Free to start · no card" },
     /** The two sides of every Aspect. A reader's own answer, and the other party's. */
     { id: "side-you", label: "You" },
     { id: "side-them", label: "They" },

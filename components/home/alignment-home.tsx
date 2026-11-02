@@ -108,18 +108,48 @@ function ScoreBars({ max, score, accent }: { max: number; score: number; accent?
   );
 }
 
-/** One Aspect of the worked example: the question, both answers as bars, and the Gap. */
+/**
+ * One Aspect of the worked example: the question on its own line, then the scale-and-Gap note
+ * beside both answers' bars.
+ *
+ * **Two lines, every row**, which is the rhythm fix: the question used to share a line with the
+ * bars, so the three prompts that fit in ~340px drew one-line rows and the two longer ones drew
+ * two, and a card of 103 / 83 / 103 / 83 / 82-pixel rows reads as a mistake. The question now owns
+ * the full card width (every one of the fixture's five prompts fits on one line there) and the
+ * note owns the line under it, so the rows share a cadence without shortening a question the
+ * record authored — the prompts are the template's words and this card may not paraphrase them.
+ *
+ * The note is the most informative text on the card — the scale's two endpoints and the Gap they
+ * came to — so it is set at the page's body step (`text-[14px]`, the size of every other in-card
+ * paragraph) in `text-muted-foreground` (5.34:1 on the card's white; it was `13px` at 65% ink,
+ * measured 3.92:1, below AA). `data-row-note` / `data-row-question` exist so the contrast and the
+ * line count are measurable in a browser rather than argued about in a comment.
+ */
 function AspectRow({ row }: { row: AlignmentAspectScore }) {
   return (
-    <div className="border-b border-dashed border-border py-4 last:border-b-0">
-      <div className="flex items-center justify-between gap-4">
-        <p className="min-w-0 text-[15px] font-medium leading-snug text-foreground">{row.label}</p>
+    <div
+      className="border-b border-dashed border-border py-4 last:border-b-0"
+      data-aspect-row={row.id}
+    >
+      {/* Two lines' worth of height below `sm`, because the card is 342px wide there and the
+          prompts wrap: the one prompt that still fits on a single line would otherwise make a
+          22px-shorter row than its four neighbours. From `sm` up the card is wide enough for every
+          prompt to sit on one line, and the floor comes off. */}
+      <p
+        className="min-h-[2lh] text-[15px] font-medium leading-snug text-foreground sm:min-h-0"
+        data-row-question=""
+      >
+        {row.label}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="text-[14px] leading-snug text-muted-foreground" data-row-note="">
+          {row.note}
+        </p>
         <span aria-label={row.scores} className="flex shrink-0 items-center gap-4" role="img">
           <ScoreBars max={row.max} score={row.you} />
           <ScoreBars accent max={row.max} score={row.them} />
         </span>
       </div>
-      <p className="mt-2 text-[13px] font-medium leading-relaxed text-foreground/65">{row.note}</p>
     </div>
   );
 }
@@ -138,11 +168,11 @@ function WorkedExampleCard({ card }: { card: AlignmentWorkedExample }) {
       className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
       data-worked-example=""
     >
-      <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
-        <p className="text-[14px] font-semibold text-muted-foreground">{card.title}</p>
-        <span className="shrink-0 rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.04em] text-action">
-          {card.mode}
-        </span>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-border px-6 py-4">
+        <p className="text-[14px] font-semibold text-foreground">{card.title}</p>
+        {/* The mode as plain caption, not a badge: a pill in a hero invites "plan tier?" and the
+            answer has to be a sentence fragment that names what it qualifies. */}
+        <p className="text-[12px] font-medium text-muted-foreground">{card.mode}</p>
       </div>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-6 pt-4 text-[13px] font-semibold text-muted-foreground">
         <span className="flex items-center gap-1.5">
@@ -159,7 +189,7 @@ function WorkedExampleCard({ card }: { card: AlignmentWorkedExample }) {
           <AspectRow key={row.id} row={row} />
         ))}
       </div>
-      <p className="border-t border-border bg-muted/40 px-6 py-4 text-[13px] leading-relaxed text-muted-foreground">
+      <p className="border-t border-border bg-muted/40 px-6 py-4 text-[14px] leading-relaxed text-muted-foreground">
         {card.note}
       </p>
     </div>
@@ -212,10 +242,14 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
                   {model.hero.subtitle}
                 </p>
               )}
-              <div className="mt-7 flex flex-wrap gap-3">
+              {/* The primary is the hero's one confident element: the action token at the next
+                  step up in size, with a resting shadow and a visible focus ring. The risk-reducer
+                  sits under the pair rather than inside the button, so the action stays one word
+                  and the objection is answered in a sentence. */}
+              <div className="mt-7 flex flex-wrap items-center gap-3">
                 {model.hero.primary && (
                   <Link
-                    className="inline-flex items-center rounded-lg bg-action px-5 py-3 text-[15px] font-bold text-action-foreground transition-colors hover:bg-action/90"
+                    className="inline-flex w-full items-center justify-center rounded-lg bg-action px-6 py-3.5 text-[16px] font-bold text-action-foreground shadow-sm transition-colors hover:bg-action/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 sm:w-auto"
                     href={model.hero.primary.href}
                   >
                     {model.hero.primary.label}
@@ -223,15 +257,26 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
                 )}
                 {model.hero.secondary && (
                   <Link
-                    className="inline-flex items-center rounded-lg border border-border px-5 py-3 text-[15px] font-bold text-action transition-colors hover:bg-muted"
+                    className="inline-flex w-full items-center justify-center rounded-lg border border-border px-5 py-3 text-[15px] font-bold text-action transition-colors hover:bg-muted sm:w-auto"
                     href={model.hero.secondary.href}
                   >
                     {model.hero.secondary.label}
                   </Link>
                 )}
               </div>
+              {model.hero.reassurance && (
+                <p
+                  className="mt-3 text-[14px] font-medium text-foreground/80"
+                  data-measure="hero-reassurance"
+                >
+                  {model.hero.reassurance}
+                </p>
+              )}
               {model.hero.fineprint && (
-                <p className="mt-4 max-w-lg text-[13px] leading-relaxed text-muted-foreground">
+                <p
+                  className="mt-3 max-w-lg text-[13px] leading-relaxed text-muted-foreground"
+                  data-measure="hero-fineprint"
+                >
                   {model.hero.fineprint}
                 </p>
               )}
