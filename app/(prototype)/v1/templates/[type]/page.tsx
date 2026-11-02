@@ -1,9 +1,16 @@
-// template-ancestor: components/marketing/marketing-landing.tsx
+// template-ancestor: components/v1/template-landing.tsx   (variation: the route gate — a purchasable type, or NotFoundState)
 import { TemplatePage } from "@/components/v1/template-page";
-import { purchasableRelationshipType } from "@/data/v1/relationship-types";
 import { NotFoundState } from "@/components/v1/v1-ui";
+import { purchasableRelationshipType } from "@/data/v1/relationship-types";
 
-/** `/v1/templates/[type]` — the page a person decides on, before they pay. */
+/**
+ * `/v1/templates/[type]` — the page a person decides on, before they pay.
+ *
+ * The gate is the whole file: `purchasableRelationshipType` answers `undefined` for an unknown id
+ * and for a type that is not for sale (the dating rows), and both render `NotFoundState` rather
+ * than a landing a visitor cannot act on. Everything a visitor reads is drawn by `TemplatePage`,
+ * which arranges `template-landing.tsx` — the ancestor named above.
+ */
 export default async function V1TemplateTypePage({
   params,
 }: {
