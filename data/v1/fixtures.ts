@@ -977,14 +977,31 @@ const seedRelationshipRows: readonly SeedRelationshipRow[] = [
 ];
 
 /**
- * The Steps a seed row stores: its own derivation when its session is complete, and nothing when it
- * is not.
- *
- * A Step is derived at completion and then stored (`content/steps.ts`), so a fixture that is
- * already complete must hold exactly the rows its answers produce — not a hand-typed list. An
- * incomplete row holds none: submitting is not accepting, and nothing has been agreed yet.
+ * What the Steps derivation needs off a row, and nothing else — the shape a fixture row and a
+ * generated demo row both satisfy, so the "derived at completion, then stored" rule is written
+ * once for every constructor of a `V1Relationship`.
  */
-function seedStepsOf(row: SeedRelationshipRow): Step[] {
+export type StepsSourceRow = Pick<
+  V1Relationship,
+  | "id"
+  | "items"
+  | "initiatorAnswers"
+  | "counterpartyAnswers"
+  | "initiatorAccepted"
+  | "counterpartyAccepted"
+  | "lastSessionAt"
+  | "createdAt"
+>;
+
+/**
+ * The Steps a row stores: its own derivation when its session is complete, and nothing when it is
+ * not.
+ *
+ * A Step is derived at completion and then stored (`content/steps.ts`), so a row that is already
+ * complete must hold exactly the rows its answers produce — not a hand-typed list. An incomplete
+ * row holds none: submitting is not accepting, and nothing has been agreed yet.
+ */
+export function storedStepsOf(row: StepsSourceRow): Step[] {
   if (!row.initiatorAccepted || !row.counterpartyAccepted) return [];
   return deriveSteps({
     relationshipId: row.id,
@@ -1000,7 +1017,7 @@ export const seedRelationships: readonly V1Relationship[] = z.array(zV1Relations
     ...row,
     // No seed was created through the create entry, so no seed carries a typed invitee name.
     inviteeName: null,
-    steps: seedStepsOf(row),
+    steps: storedStepsOf(row),
   })),
 );
 

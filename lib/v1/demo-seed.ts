@@ -36,6 +36,7 @@ import {
 import {
   SEED_VERSION,
   seedAccounts,
+  storedStepsOf,
   type V1Account,
   type V1Relationship,
   type V1Ticket,
@@ -318,7 +319,7 @@ function demoRelationship(
   const counterpartyAcceptedAt = complete ? at(-(index % 9) - 1) : null;
   const claimed = stage !== "invited";
 
-  return {
+  const row: Omit<V1Relationship, "steps" | "inviteeName"> = {
     id: `rel-demo-${type.id}`,
     // The id the store's own `templateFromType` clones a catalogue type under, so a type the
     // initiator has actually cloned and this demo row agree on what they are.
@@ -354,6 +355,17 @@ function demoRelationship(
     lastSessionAt: complete ? counterpartyAcceptedAt : null,
     createdAt: at(-24 * (index + 12)),
     modifiedAt: at(-(index + 1)),
+  };
+
+  return {
+    ...row,
+    // No generated row came through the create entry, so no demo relationship carries a seat named
+    // at creation — the same statement `data/v1/fixtures.ts` makes about its own seed rows.
+    inviteeName: null,
+    // A Step is derived at completion and then stored, so a completed demo row holds exactly the
+    // rows its own answers produce; an invited or connected one holds none. The rule is
+    // `storedStepsOf`, which the fixtures use too — one derivation, not two.
+    steps: storedStepsOf(row),
   };
 }
 
