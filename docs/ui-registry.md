@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **76** — 45 static, 31 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 291 files under `components/`, 286 of them `.tsx`
+- routes: **79** — 47 static, 32 dynamic, from `app/**/page.tsx`
+- component domains: **36** — 295 files under `components/`, 290 of them `.tsx`
 - route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 27
-- templates: Both templates 22 · AlignSynch 46 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 52 · **db** 16 · **live** 7 · **prototype** 27
+- templates: Both templates 25 · AlignSynch 46 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -44,6 +44,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/identity`, `components/media`, `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
+- `/forgot-password` — **db**
+  - capability: Ask for a password reset link. Always answers the same sentence for a known and an unknown address; rate-limited per address and per requester; shows the link instead of claiming a send when the deployment has no RESEND_* configured.
+  - components: `components/auth`, `components/ui`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`
+  - notes: The one surface that writes `public.password_reset` and, through the auth server's own /reset-password, the `credential` row a Google-only account has never had. Its message is the fourth sender in `lib/flow/email.ts` (#password-reset).
+
 - `/login` — **live**
   - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials, Google-only and network states.
   - components: `components/auth`, `components/layout`, `components/ui`
@@ -64,10 +70,22 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/auth`, `components/ui`
   - reads: an `/api` path — `lib/auth/client.ts`
 
+- `/reset/[token]` — **db**
+  - capability: Spend a reset link: a single-use, hour-long token in the path, refused with its own sentence when it is expired, already used or not one this app issued. Setting the password revokes every session.
+  - components: `components/auth`, `components/ui`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts` · an `/api` path — `lib/auth/password-provider.ts`
+  - notes: `Referrer-Policy: no-referrer` and `Cache-Control: no-store` come from `next.config.mjs` for `/reset/:path*`, and the page repeats the referrer rule as a meta tag. The token is stored only as a SHA-256 hash.
+
+- `/reset/complete` — **fixture**
+  - capability: The success screen after a reset, at a token-free address: the password is set and every other device was signed out.
+  - components: `components/auth`
+  - reads: 1 fixture module of page copy, assets or decisions — no records
+  - notes: Separate route on purpose — a spent token should leave the address bar and the history. Static, with no session and no database read.
+
 - `/settings` — **live**
   - capability: The parts of your account you can change — display name, handle, bio and the country pair — saved through the guarded POST /api/profile.
   - components: `components/identity`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/support` — **fixture**
   - capability: The help centre: FAQ, help categories and a contact form.
@@ -93,8 +111,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/auth` — **live**
   - capability: The sign-in and sign-up forms, including pending, invalid-credentials and network states, plus the two demo surfaces `/login` draws only in demo mode: the anchor to the PIN gate and, under a valid unlock cookie, the three role buttons.
-  - files (5): `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `login-view.tsx`, `register-view.tsx`
-  - routes (3): `/demo`, `/login`, `/register`
+  - files (8): `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `forgot-password-view.tsx`, `login-view.tsx`, `register-view.tsx`, `reset-complete-view.tsx`, `reset-password-view.tsx`
+  - routes (6): `/demo`, `/forgot-password`, `/login`, `/register`, `/reset/[token]`, `/reset/complete`
   - notes: The demo surfaces are decided on the server (`lib/auth/demo-surface.ts`) and render nothing outside demo mode; the PIN gate itself is `/demo` (`components/auth/demo-gate.tsx`), not this route.
 
 - `components/content` — **mock**
@@ -110,7 +128,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/identity` — **live**
   - capability: The account surfaces: the signed-in home, the member profile, the settings form that POSTs /api/profile, sign-out and the demo-account notice.
-  - files (5): `account-home.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
+  - files (6): `account-home.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `password-card.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
   - routes (3): `/dashboard/user`, `/profile/[username]`, `/settings`
 
 - `components/layout` — **fixture**
@@ -147,7 +165,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (56): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/templates`, `/v1/admin/console`, `/v1/initiator/templates/new`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/templates/[type]/demo`, `/welcome` — and every other route through `app/layout.tsx`
+  - routes (58): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/templates`, `/v1/admin/console`, `/v1/initiator/templates/new`, `/v1/relationships/[id]`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/templates/[type]/demo`, `/welcome` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch

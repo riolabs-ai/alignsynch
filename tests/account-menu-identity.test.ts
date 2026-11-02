@@ -103,7 +103,9 @@ const DEMO = [
 
 /** The session as `currentUser()` hands it over. */
 function session(email: string, name: string): SessionUser {
-  return { userId: `user_${email}`, email, name };
+  // `sessionId` is only ever read by the set-password path; a fixture that never signs in as this
+  // person has no session to keep alive.
+  return { userId: `user_${email}`, email, name, sessionId: null };
 }
 
 /** A saved `user_profile` row — `handle` is what `db:seed` writes for each demo account. */
