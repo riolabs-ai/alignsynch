@@ -43,7 +43,7 @@ links (9 unique, 10 total)
 
 counts
   elements  1005
-  images    1
+  images    2
   buttons   8
   inputs    1
-  classes   238 (sha aefb6d695c38)
+  classes   238 (sha 89eded7e2ba8)

@@ -47,7 +47,7 @@ links (12 unique, 13 total)
 
 counts
   elements  356
-  images    3
+  images    4
   buttons   25
   inputs    3
-  classes   247 (sha 99f9f9096d17)
+  classes   248 (sha cd426d1f90ce)

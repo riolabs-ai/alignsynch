@@ -268,41 +268,73 @@ export function AppSidebar({
           >
             {mark ? (
               /**
-               * The brand's mark, cropped out of its lockup.
+               * The brand's mark, whole wherever the column can hold it.
                *
-               * `as2-logo_v2_cl.png` is one 818×127 file: the AS monogram in the first ~175
-               * columns, then the wordmark. Its wordmark is black "Align" beside gray
-               * "Synch", so on this near-black rail the black half is invisible and drawing
-               * the whole lockup would leave a ghost "Synch" floating right of the mark. The
-               * shell therefore draws the *mark* — the file at its natural height in a 40 px
-               * window (`h-7 w-10`), the rest clipped — and sets the full name in type beside
-               * it, which is what the brand asks for: the logo carries the motif, the record
-               * carries the name. `max-w-none` is load-bearing: Tailwind's preflight would
-               * otherwise cap the image at its 40 px container and scale it down instead of
-               * cropping it.
+               * Three rail forms, three answers (`railClassName` above):
                *
-               * `alt=""` because the wordmark beside it already says the name — a second
-               * description would make a screen reader read the brand twice — and the link
-               * carries `aria-label` so it still has a name.
+               *   - **the drawer, 250 px** — the whole lockup. It has the room; a panel that
+               *     shows the brand's own wordmark is the one place a phone sees the mark at all.
+               *   - **the 768–1023 px column, 64 px** — the monogram, as a 40 px window over the
+               *     same official file at its natural height. This is the only width at which
+               *     something has to give, and it is the one place in the tree that crops a fixed
+               *     asset; the reasons, and the asset that would end it, are in the note below.
+               *   - **the rail from `lg`, 250 px** — the whole lockup, again, at its own aspect
+               *     ratio. It used to be cut to the monogram here too, at a width where the
+               *     window was never needed, and the name was then set again in type beside it.
+               *
+               * `max-w-none` is load-bearing inside the 40 px window: Tailwind's preflight would
+               * otherwise cap the image at its container and scale it down instead of cropping
+               * it, which is a shrunken wordmark rather than the mark.
+               *
+               * **Why the 64 px column still crops.** The square asset a rail that narrow should
+               * draw is `brand.icon`, and on this build that file is the template's open-book
+               * glyph on the brand's blue: `lib/brand-icon.ts` carries one geometry for every
+               * brand, by the shape rule `docs/BRAND-RELEASE.md` states ("identical geometry,
+               * different token"), and `tests/brand-immutable.test.ts` holds its bytes. A book in
+               * an alignment rail is a worse answer than a cropped monogram, so the window stays
+               * until AlignSynch has a square icon of its own — the handoff names that asset as
+               * the follow-up rather than papering over it here.
+               *
+               * `alt=""` on both because the link carries `aria-label`; a description here would
+               * read the brand twice.
                */
-              <span className="block h-7 w-10 shrink-0 overflow-hidden">
+              <>
+                <span
+                  className={cn(
+                    "h-7 w-10 shrink-0 overflow-hidden",
+                    open ? "hidden" : "hidden md:block lg:hidden",
+                  )}
+                >
+                  <Image
+                    src={mark.src}
+                    alt=""
+                    width={mark.width}
+                    height={mark.height}
+                    className="h-7 w-auto max-w-none"
+                    priority
+                  />
+                </span>
                 <Image
                   src={mark.src}
                   alt=""
                   width={mark.width}
                   height={mark.height}
-                  className="h-7 w-auto max-w-none"
+                  className={cn("h-7 w-auto", open ? "block" : "hidden lg:block")}
                   priority
                 />
-              </span>
+              </>
             ) : (
               <BrandGlyph className="h-6 w-6 text-primary" />
             )}
-            {/* Open, the drawer is 250px wide — the expanded rail — so it shows the name. At the
-                64px icon width the wordmark would be clipped by its own column. */}
-            <span className={cn("text-xl font-bold", open ? "inline" : "hidden lg:inline")}>
-              {copy.heading}
-            </span>
+            {/* The name in type only where there is no lockup to say it. The drawer and the `lg`
+                rail both draw the brand's own wordmark now, so type beside it would set the name
+                twice; the template's placeholder logo has no lockup, and its rail is still the
+                glyph plus the word. */}
+            {!mark && (
+              <span className={cn("text-xl font-bold", open ? "inline" : "hidden lg:inline")}>
+                {copy.heading}
+              </span>
+            )}
           </Link>
 
           {/* The drawer's own close control. `md:hidden`: a column needs no dismiss. */}
