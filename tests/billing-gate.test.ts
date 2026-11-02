@@ -23,7 +23,7 @@ import { createInstanceFromTemplate, type CreateInstanceInput } from "@/lib/flow
  * must reach it (where the sentinel is thrown, so the test never fabricates a transaction).
  */
 const gate = vi.hoisted(() => ({
-  planId: "free" as "free" | "pro",
+  planId: "free" as "free" | "principal",
   activeInstances: 0,
   poolConnects: 0,
 }));
@@ -96,7 +96,7 @@ describe("a free account", () => {
 
 describe("a paid account", () => {
   beforeEach(() => {
-    gate.planId = "pro";
+    gate.planId = "principal";
   });
 
   it("is allowed a second, third, tenth instance", async () => {

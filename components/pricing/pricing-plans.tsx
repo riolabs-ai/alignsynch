@@ -15,29 +15,31 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCurrencyAmount, formatPercentValue } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";
-import { brand } from "@/data/brand";
 import type { BillingInterval } from "@/data/billing-plans";
 import { metric } from "@/data/metrics";
 import type { PricingPlanView } from "@/lib/billing/catalogue";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
-import { Check, HelpCircle } from "lucide-react";
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { type JSX, memo, useCallback, useState } from "react";
 
 /**
- * The plan grid — four cards, rendered from `billing_plan` (#289, card 3 of 3).
+ * The plan grid — three cards, rendered from `billing_plan` (#289).
  *
  * **This component owns no price, no bullet and no label for a tier.** Every card is a
  * `PricingPlanView` the server built from `data/billing-plans.ts` (the words) and `billing_plan`
  * (the money, and whether the row is live), which is what replaced the `PLANS_DATA` copy that
  * used to live here. `formatCurrencyAmount` is the only thing that turns cents into a figure, and
  * `tests/billing-plans.test.ts` fails the build if a price literal reappears under
- * `components/pricing/`. What a row may *say* is still decided by what the tree does, not by what
- * a pricing table usually promises (Jaden, 2026-10-31) — the bullets themselves are authored in
- * the fixture, with the reasoning for each removal recorded there.
+ * `components/pricing/`.
+ *
+ * **The ribbon is data.** `plan.popular` is the fixture's `popular: true`, and it is the only
+ * thing that decides which card carries the "Recommended" badge, which card is outlined in the
+ * action colour and which card's button is filled — no index, no id, no "the middle one". Exactly
+ * one plan may carry it (`billingPlanProblems()` rejects both two and none), and
+ * `tests/billing-plans.test.ts` pins that the badge reads the field rather than a literal.
  *
  * **Sellability is per interval.** `billing_plan` keys on (tier, interval), so `basic/month` can
  * be live while `basic/year` is retired: the card's button follows the toggle, and the interval
@@ -54,10 +56,10 @@ import { type JSX, memo, useCallback, useState } from "react";
  * band says so on one line — the release candidate runs test keys in production, and a page that
  * reads as "you are being billed" without saying this would be the one false claim left.
  *
- * The support address is built from `brand.supportEmail` at render time, so neither build pins
- * the other brand's mailbox; the fixture stores the word `"support"` rather than an address.
+ * There is no "contact us about a custom plan" control any more: it belonged to the Enterprise
+ * tier, which was removed from the catalogue (owner, 2026-11-02), and this component renders the
+ * three plans the fixture authors and nothing else.
  */
-const SUPPORT_MAILTO = `mailto:${brand.supportEmail}`;
 
 /** The copy id for the "/mo" and "/mo, billed yearly" suffixes, per interval. */
 const PRICE_SUFFIX_ITEM: Readonly<Record<BillingInterval, string>> = {
@@ -159,9 +161,7 @@ const PlanFooter = memo<{ plan: PricingPlanView; cycle: BillingInterval; copy: P
 
     return (
       <Button asChild className={buttonClassName} variant={variant}>
-        <Link href={plan.cta.href === "support" ? SUPPORT_MAILTO : plan.cta.href}>
-          {plan.cta.label}
-        </Link>
+        <Link href={plan.cta.href}>{plan.cta.label}</Link>
       </Button>
     );
   },
@@ -287,31 +287,13 @@ export function PricingPlans({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Three cards, cheapest first: the recommended one is the middle card, where the eye
+            lands, and it is never the last one. `lg:grid-cols-3` is the fixture's tier count —
+            the grid is the same one-card-per-plan projection, not a second layout. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {plans.map((plan) => (
             <PricingCard key={plan.id} plan={plan} cycle={cycle} copy={copy} />
           ))}
-        </div>
-
-        <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <HelpCircle className="h-5 w-5 text-slate-500" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">{itemLabel(copy, "custom-plan-tooltip")}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <span className="text-sm">
-              {itemLabel(copy, "custom-plan")}{" "}
-              <Link href={SUPPORT_MAILTO} className="text-action hover:text-action/80 font-medium">
-                {itemLabel(copy, "custom-plan-link")}
-              </Link>
-            </span>
-          </div>
         </div>
       </div>
     </section>
