@@ -52,6 +52,8 @@ import {
 import { inventedMessagesOf, threadsOf, totalUnreadOf, type ChatThread } from "@/lib/v1/chat";
 import {
   DEMO_FLOW_STORAGE_KEY,
+  DEMO_ROW_COUNT,
+  DEMO_ROWS_PER_TYPE,
   DEMO_SEED,
   DEMO_SOCIAL_STORAGE_KEY,
   demoAccounts,
@@ -159,7 +161,7 @@ describe("the payload is the store's shape", () => {
   it("installs into the storage it is handed and reports the count", () => {
     const written = new Map<string, string>();
     const count = installDemoSeed({ setItem: (key, value) => void written.set(key, value) });
-    expect(count).toBe(purchasableRelationshipTypes.length);
+    expect(count).toBe(DEMO_ROW_COUNT);
     const raw = written.get(DEMO_FLOW_STORAGE_KEY);
     expect(raw).toBeDefined();
     expect(JSON.parse(raw ?? "{}").relationships).toHaveLength(count);
@@ -169,18 +171,70 @@ describe("the payload is the store's shape", () => {
 describe("the set covers the catalogue and the ladder", () => {
   const relationships = demoRelationships();
 
-  it("has one relationship for every purchasable type", () => {
+  it("covers every purchasable type, DEMO_ROWS_PER_TYPE times over", () => {
     const templateIds = new Set(relationships.map((rel) => rel.templateId));
     for (const type of purchasableRelationshipTypes) {
       expect(templateIds.has(`assessment-${type.id}`)).toBe(true);
     }
-    expect(relationships).toHaveLength(purchasableRelationshipTypes.length);
+    // The set is no longer one row per type: every type carries the same number of rows, so the
+    // Stage mix is the plan played whole rather than the plan played once plus a fragment.
+    const perType = new Map<string, number>();
+    for (const rel of relationships) {
+      perType.set(rel.templateId, (perType.get(rel.templateId) ?? 0) + 1);
+    }
+    expect([...perType.values()]).toEqual(
+      purchasableRelationshipTypes.map(() => DEMO_ROWS_PER_TYPE),
+    );
+    expect(relationships).toHaveLength(DEMO_ROW_COUNT);
+    expect(DEMO_ROW_COUNT).toBe(purchasableRelationshipTypes.length * DEMO_ROWS_PER_TYPE);
     console.log(
       "types covered:",
       purchasableRelationshipTypes.length,
-      "—",
-      purchasableRelationshipTypes.map((type) => type.id).join(", "),
+      "×",
+      DEMO_ROWS_PER_TYPE,
+      "=",
+      relationships.length,
+      "rows",
     );
+  });
+
+  it("gives every row its own id and invite token", () => {
+    // Two rows of one type are two different relationships between different people: a shared id
+    // would collide as a store key, as a React key, and as the target of a notification link.
+    const ids = relationships.map((rel) => rel.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    const tokens = relationships.map((rel) => rel.inviteToken);
+    expect(new Set(tokens).size).toBe(tokens.length);
+
+    // The first copy of a type keeps the id the set has always used, so a link written against the
+    // old single-per-type seed still resolves.
+    const first = relationships.filter((rel) => !rel.id.endsWith("-2"));
+    expect(first).toHaveLength(purchasableRelationshipTypes.length);
+    for (const type of purchasableRelationshipTypes) {
+      expect(ids).toContain(`rel-demo-${type.id}`);
+      expect(ids).toContain(`rel-demo-${type.id}-2`);
+    }
+  });
+
+  it("makes the two rows of a type two different relationships, not one row printed twice", () => {
+    const second = new Map(
+      relationships
+        .filter((rel) => rel.id.endsWith("-2"))
+        .map((rel) => [rel.templateId, rel] as const),
+    );
+    for (const rel of relationships) {
+      if (rel.id.endsWith("-2")) continue;
+      const twin = second.get(rel.templateId);
+      expect(twin, `no second row for ${rel.templateId}`).toBeDefined();
+      if (twin === undefined) continue;
+      // The parties differ: a directory in which the same two people hold the same relationship
+      // twice reads as a data bug, which is the one thing seeding extra rows must not introduce.
+      expect(twin.id).not.toBe(rel.id);
+      expect([twin.initiatorName, twin.counterpartyName]).not.toEqual([
+        rel.initiatorName,
+        rel.counterpartyName,
+      ]);
+    }
   });
 
   it("reaches all four Stages", () => {
@@ -722,7 +776,7 @@ describe("the social slice is a bell with content", () => {
   it("installs both slices into the storage it is handed", () => {
     const written = new Map<string, string>();
     const count = installDemoSeed({ setItem: (key, value) => void written.set(key, value) });
-    expect(count).toBe(purchasableRelationshipTypes.length);
+    expect(count).toBe(DEMO_ROW_COUNT);
     expect(written.has(DEMO_FLOW_STORAGE_KEY)).toBe(true);
 
     const social = JSON.parse(written.get(DEMO_SOCIAL_STORAGE_KEY) ?? "{}");
@@ -806,7 +860,7 @@ describe("the seed measured", () => {
       [...states].map(([state, count]) => `${state} ${count}`).join(" · "),
     );
 
-    expect(relationships.length).toBe(purchasableRelationshipTypes.length);
+    expect(relationships.length).toBe(DEMO_ROW_COUNT);
     expect(counts.size).toBeGreaterThan(2);
     expect(messages.length).toBeGreaterThan(0);
     expect(social.notifications.length).toBeGreaterThan(0);
