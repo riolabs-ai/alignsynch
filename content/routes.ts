@@ -73,7 +73,13 @@ const STATIC_ROUTES = [
 const DYNAMIC_ROUTES = [
   "/assessment/[slug]",
   "/assessment/instances/[instanceId]",
+  // R1-E (#409): the two write screens live one segment below the instance and beside the
+  // `answers`/`invite` route handlers, which is why they are `answer` (singular) and `accept`:
+  // Next forbids a `page.tsx` in the same segment as a `route.ts`.
+  "/assessment/instances/[instanceId]/answer",
+  "/assessment/instances/[instanceId]/accept",
   "/assessment/templates/[templateId]",
+  "/assessment/templates/[templateId]/create",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/invite/[token]",

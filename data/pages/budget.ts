@@ -319,6 +319,29 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-instance",
     budget: 0,
   },
+  // R1-E (#409) — the three write surfaces, shipped as in-progress UI. Budget 0 from the first
+  // commit, like every flow surface above: the headings, the blind rule, the seat rows, the
+  // Mode/Setting explanations and both not-wired notices are `data/pages/assessment-*.ts`, so a
+  // sentence typed back into a component is a red build — including the ones that say a control
+  // does not work yet, which is the whole point of the card.
+  "/assessment/instances/[instanceId]/answer": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/answer/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-answer",
+    budget: 0,
+  },
+  "/assessment/instances/[instanceId]/accept": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/accept/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-accept",
+    budget: 0,
+  },
+  "/assessment/templates/[templateId]/create": {
+    page: "app/(mainlayout)/assessment/templates/[templateId]/create/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
   // #255 — the template authoring form. Budget 0 from the first commit, for the reason the
   // three flow surfaces above are: every word is in `data/pages/assessment-template-new.ts`,
   // including the six refusals, so the next literal written in the form is a red build.

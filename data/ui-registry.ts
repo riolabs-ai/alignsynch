@@ -205,6 +205,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/assessment/instances/[instanceId]/accept",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Review and accept a session: the decision first, both seats side by side with what each party has answered, then every Aspect beneath with both Opinion columns sealed.",
+    notes:
+      "In-progress UI (#409, R1-E): the screen is real and the read is `readInstanceBundle()`, but no acceptance is stored anywhere yet — `party` and `session` have no accepted column — so each seat says 'not recorded' rather than drawing a status nobody measured, and the accept control is disabled with its reason beside it. Nothing on this route writes.",
+  },
+  {
+    kind: "route",
+    surface: "/assessment/instances/[instanceId]/answer",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Answer the Aspect sheet: every Aspect's prompt, both named Values, and one row per seat asking the Opinion kinds the instance's Mode defines.",
+    notes:
+      "In-progress UI (#409, R1-E), and singular `answer` on purpose: `/answers` is the POST-only endpoint the live sheet on `/assessment/instances/[instanceId]` submits to, and Next refuses a `page.tsx` beside a `route.ts`. `readInstanceBundle()` supplies the Aspects, the Mode, the Setting and the two `party` rows; the blind rule is stated on the page and every control is disabled with the not-wired note, because this screen has no write path and no viewer session.",
+  },
+  {
+    kind: "route",
     surface: "/assessment/templates",
     status: "db",
     templates: ["alignsynch"],
@@ -222,6 +242,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "One template, read-only: its Aspects in authored order with their Left and Right Values, how many instances were made from it, who wrote it and whether it is archived. The place the editor will land later.",
     notes:
       "The 'open' action. Read-only on purpose — editing is a separate decision, and the spec puts the editor on this same route when it exists. The read applies the same author rule as the library, so another account's template is a 404 here and nothing distinguishes it from an id that does not exist.",
+  },
+  {
+    kind: "route",
+    surface: "/assessment/templates/[templateId]/create",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Create a relationship from one template: the template and its two seats at the top, the counterparty, then Mode (fixed at creation) and Setting (the one choice a party may change later).",
+    notes:
+      "In-progress UI (#409, R1-E). A child of the template's own address, so the template being copied is the route's fact and the form cannot name a different one; the read is `readLibraryTemplate()` with the session's id, which is the same author rule the library and the detail page apply. The form has no `action` and a disabled submit with the reason beside it: creation is not wired on this screen yet, and a control that cannot work says so rather than failing silently.",
   },
   {
     kind: "route",
