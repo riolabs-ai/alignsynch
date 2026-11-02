@@ -165,6 +165,13 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
+    owner: "the surface registry (data/surface-registry.ts — issue #409)",
+    files: ["data-check.ts"],
+    codes: {
+      E36: "the surface registry is honest: one route one status, a not-live surface names its reason and needs, a live surface carries neither and its route is one `content/routes.ts` carries",
+    },
+  },
+  {
     owner: "bundle import/export (scripts/bundles.ts, content/bundle.ts — issue #147)",
     // Two files, because the refusal is authored in the model and raised by the CLI: the
     // codes are *minted* where the rule lives (`content/bundle.ts` detects B1–B4/B6) and B5

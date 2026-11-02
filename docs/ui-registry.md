@@ -16,10 +16,10 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **87** — 50 static, 37 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 319 files under `components/`, 314 of them `.tsx`
+- component domains: **37** — 320 files under `components/`, 315 of them `.tsx`
 - route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 52 · **db** 17 · **live** 7 · **prototype** 34
-- templates: Both templates 25 · AlignSynch 54 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 53 · **db** 17 · **live** 7 · **prototype** 34
+- templates: Both templates 26 · AlignSynch 54 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -156,6 +156,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The public profile in ten parts: cover, header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.
   - files (11): `message-modal.tsx`, `profile-achievements.tsx`, `profile-activity.tsx`, `profile-cover.tsx`, `profile-created-quizzes.tsx`, `profile-followers.tsx`, `profile-following.tsx`, `profile-header.tsx`, `profile-quiz-history.tsx`, `profile-stats.tsx`, `user-profile.tsx`
   - routes (3): `/profile/[username]`, `/v1/[persona]/profile`, `/v1/profile/[handle]`
+
+- `components/shell` — **fixture**
+  - capability: The shell's own panels: the declared-not-wired surface a pending route renders — its label, the reason it is not live and the capability it needs, read from the surface registry rather than typed into the page.
+  - files (1): `pending-surface.tsx`
+  - routes: none — no route imports this domain today
+  - notes: `pending-surface.tsx` varies `components/ui/alert.tsx` — the alert's frame with `role="status"` instead of `role="alert"`, because a pending surface is a state a reader is told about, not a failure they must act on. It renders `data/surface-registry.ts` and nothing else: the labels, reasons and `needs` lines are that fixture's (issue #409), so the panel and the nav's greyed row cannot disagree about what a surface is. Server component, no client state.
 
 - `components/support` — **fixture**
   - capability: The support centre: header, help categories, knowledge base, FAQ, contact form and the article detail.
