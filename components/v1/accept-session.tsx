@@ -69,7 +69,7 @@ function StepMarker({ term, value, detail }: { term: string; value: string; deta
       <dd className="mt-0.5 text-lg font-semibold leading-tight text-foreground sm:text-xl">
         {value}
       </dd>
-      <dd className="mt-0.5 text-xs text-muted-foreground">{detail}</dd>
+      <dd className="mt-0.5 text-xs text-pretty text-muted-foreground">{detail}</dd>
     </div>
   );
 }
@@ -223,7 +223,7 @@ export function AcceptSession({ relationshipId }: { relationshipId: string }) {
         ? `Answer your side before you accept. ${otherName} ${otherSubmitted ? "has answered" : "has not answered yet"}.`
         : otherAccepted
           ? `${otherName} has already accepted — accepting now completes the session and unlocks the report.`
-          : `You accept first — ${otherName} has not accepted. Nothing of either side's answers is visible until you both do.`;
+          : `You accept first — ${otherName} has not accepted. Neither of you can see the other's answers until you both accept.`;
 
   const onAccept = () => {
     if (sessionCompleteOf(rel)) {
