@@ -65,11 +65,72 @@ export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
 }
 
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
+  eyebrow: "Relationship alignment · for practitioners",
   heading: "Turn one assessment into a practice you can charge for.",
   subtitle:
     "Pick a relationship type, write the Aspects you actually work on, and send it to a client and the person they're aligning with. Both answer blind. You get the Gap — and the agenda for the session you're paid to run.",
-  cta: { label: "See a worked example", href: "/assessment/avery-rowan" },
+  /**
+   * Two CTAs, and the order is the argument: creating the first relationship is what the reader
+   * came to do, and the worked example is how they check the product can do it. Both are
+   * destinations a reader without an account can reach — `/register` makes one, and the
+   * instance route is public — which is why neither points into the console.
+   */
+  cta: { label: "Create your first assessment", href: "/register" },
+  secondaryCta: { label: "See a worked example", href: "/assessment/avery-rowan" },
   items: [
+    /**
+     * The eyebrow over each band. They live on the page rather than inside their sections
+     * because `cardsOf()` reads every item of `practice` and `seats` as a titled card — an
+     * eyebrow in those arrays would be a card with no paragraph, and the projection refuses it.
+     */
+    { id: "eyebrow-practice", label: "How the practice works" },
+    { id: "eyebrow-questions", label: "The mechanism" },
+    { id: "eyebrow-templates", label: "The catalogue" },
+    { id: "eyebrow-families", label: "Scope" },
+    { id: "eyebrow-seats", label: "Your seat" },
+    /**
+     * The hero's worked-example card: the featured relationship, drawn from its own opinions.
+     * `{title}`, `{from}`, `{to}`, `{gap}` and the two party names are filled by
+     * `lib/alignment-home.ts` out of `data/assessments.ts` — this file owns the frame, never the
+     * numbers inside it.
+     */
+    {
+      id: "worked-example",
+      label: "Worked example · {title}",
+      body: "Two answers per Aspect. The distance between them is the Gap — the only thing the session has to work with.",
+    },
+    /** The mode pill: the one thing about the featured instance a reader can check at a glance. */
+    { id: "worked-example-mode-basic", label: "Basic" },
+    { id: "worked-example-mode-advanced", label: "Advanced" },
+    /**
+     * One row's note: the scale the two scores sit on, and the Gap their difference came to.
+     * A Gap of 0 is the glossary's In Synch and gets its own sentence rather than "Gap 0".
+     */
+    { id: "worked-example-row", label: "{from} → {to} · {kind} {gap}" },
+    { id: "worked-example-in-synch", label: "{from} → {to} · In Synch" },
+    /** The bars' accessible name: two numbers and who gave them. */
+    { id: "worked-example-scores", label: "{you} {yours}, {them} {theirs}" },
+    /**
+     * The templates band's three views. The values are markup (`catalogue`/`library`/`mine`);
+     * the words are here, because a tab is a label a reader reads.
+     */
+    { id: "templates-tab-catalogue", label: "Relationship templates" },
+    { id: "templates-tab-library", label: "Library templates" },
+    { id: "templates-tab-mine", label: "My relationships" },
+    /** The two card actions, and the frame the two roles are joined by. */
+    { id: "template-use", label: "Use this template" },
+    { id: "template-example", label: "Read the example" },
+    { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
+    /**
+     * The third view, as a door: `/` is public, so it names no relationship and renders none.
+     * `value` is the route the door opens — `/assessment/instances` decides who may walk in.
+     */
+    {
+      id: "templates-mine",
+      label: "Open my relationships",
+      value: "/assessment/instances",
+      body: "Your relationships live behind your session, in the console — not on this page, which anyone can read. Sign in and the list is one click away.",
+    },
     /** Under the hero CTA: what is bought once, and which seat the reader holds. */
     {
       id: "hero-fineprint",
@@ -139,8 +200,8 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "templates",
-      heading: "Four templates",
-      body: "A template does nothing until two people copy it and answer its five Aspects. {title}, answered by {left} and {right}, is the one with answers to read.",
+      heading: "Start from a type, a template, or your own list.",
+      body: "The catalogue is every relationship type this product sells; the library is what this deployment has already built. A type is only offered if a template backs it, so nothing here is for sale that the product can't run.",
     },
     {
       id: "families",
