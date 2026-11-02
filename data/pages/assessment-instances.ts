@@ -116,10 +116,14 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "invite",
       items: [
-        { id: "not-sent", label: "Not sent" },
-        { id: "pending", label: "Pending" },
+        // These ids are `INVITE_STATES` (lib/flow/invite-state.ts`), and they are the only
+        // source: the row renders `itemLabel(inviteCopy, instance.inviteState)`, so a state
+        // with no item here throws PageCopy at render time and takes the whole list down.
+        // The block previously carried not-sent / pending / expired / accepted — an older
+        // design, three of whose names the code can no longer produce.
+        { id: "unclaimed", label: "Not claimed yet" },
         { id: "expired", label: "Expired" },
-        { id: "accepted", label: "Accepted" },
+        { id: "claimed", label: "Accepted" },
       ],
     },
     {
