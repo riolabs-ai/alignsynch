@@ -41,7 +41,8 @@ export function PricingCta({ copy }: { copy: PageCopySection }) {
                   href="/register"
                   className={buttonVariants({
                     size: "lg",
-                    className: "bg-white text-action hover:bg-action/10 border-0",
+                    variant: "outline",
+                    className: "border-0 bg-white text-action hover:bg-white/90",
                   })}
                 >
                   {itemLabel(copy, "get-started")}
