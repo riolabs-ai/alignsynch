@@ -203,7 +203,7 @@ export interface MailMessage {
 }
 
 /** Which of this flow's messages is being sent — the log prefix, and the sentence's noun. */
-export type MailSender = "invite" | "unlock" | "reset";
+export type MailSender = "invite" | "unlock" | "reset" | "news";
 
 /**
  * The two senders' log sentences, in one table because they must stay parallel: the label
@@ -225,6 +225,16 @@ const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: str
    * reset" so the line reads as an email that did not go out, not as a flow that did not happen.
    */
   reset: { noun: "reset email", unsent: "the link is shown in the app instead" },
+  /**
+   * The footer's news confirmation. Its `unsent` tail is the one that leaves a person
+   * subscribed without a note: the `news_signup` row is written before the send, so a refused or
+   * unconfigured provider does not undo the subscription — the route says `stored-send-failed`
+   * and this line is what an operator greps to see why nothing arrived.
+   */
+  news: {
+    noun: "news confirmation",
+    unsent: "the address is stored and is subscribed; no confirmation was sent",
+  },
 };
 
 /**

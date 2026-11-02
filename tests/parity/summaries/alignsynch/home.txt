@@ -1,7 +1,7 @@
 route  /
 brand  alignsynch
 
-headings (18)
+headings (19)
   h1  "Turn one assessment into a practice you can charge for."
   h2  "Create once. Run it with every client."
   h3  "Create"
@@ -20,6 +20,7 @@ headings (18)
   h2  "What this page does not claim."
   h3  "Quick Links"
   h3  "Contact"
+  h3  "Product news"
 
 landmarks (3)
   banner         1
@@ -42,8 +43,8 @@ links (13 unique, 20 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
 
 counts
-  elements  224
+  elements  235
   images    3
-  buttons   1
-  inputs    0
-  classes   193 (sha 011ef711f828)
+  buttons   2
+  inputs    2
+  classes   210 (sha 2c04be150651)
