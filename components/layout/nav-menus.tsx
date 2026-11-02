@@ -161,20 +161,20 @@ export function NavRow(props: NavRowProps) {
     : cn(
         /**
          * **Below `xl` this row is an icon.** The rail narrows before the label can fit
-         * (`components/layout/sidebar.tsx`), so the text is `hidden xl:inline` and the row is a
+         * (`components/layout/sidebar.tsx`), so the text is `hidden lg:inline` and the row is a
          * 40px square centred in a 56/64px column; from `xl` it is the full-width row it always
          * was. The accessible name does not depend on the width: `title` and `aria-label` carry
          * the label at every breakpoint, so the icon-only rail is still readable by a pointer and
          * announced by a screen reader. That is a class, not state — no component measures a
          * window to decide whether a label exists.
          */
-        "flex h-10 items-center justify-center gap-3 rounded-md text-sm font-medium transition-colors xl:h-auto xl:justify-start xl:px-3 xl:py-2.5",
+        "flex h-10 items-center justify-center gap-3 rounded-md text-sm font-medium transition-colors lg:h-auto lg:justify-start lg:px-3 lg:py-2.5",
         tone,
       );
 
   /**
    * The words a screen reader hears and a pointer shows on hover. A pending row carries its
-   * status as well, because the second line that explains it is `hidden xl:flex` like every other
+   * status as well, because the second line that explains it is `hidden lg:flex` like every other
    * label — the announcement may not depend on a width either.
    */
   const accessibleLabel = pending ? `${label} — ${statusWord.toLowerCase()}` : label;
@@ -186,14 +186,14 @@ export function NavRow(props: NavRowProps) {
     <>
       <span>{icon}</span>
       {pending ? (
-        <span className="hidden min-w-0 flex-col xl:flex">
+        <span className="hidden min-w-0 flex-col lg:flex">
           <span className="truncate">{label}</span>
           <span className="truncate text-xs font-normal">
             {statusWord} — {surface?.reason}
           </span>
         </span>
       ) : (
-        <span className="hidden xl:inline">{label}</span>
+        <span className="hidden lg:inline">{label}</span>
       )}
     </>
   );

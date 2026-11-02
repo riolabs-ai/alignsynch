@@ -57,4 +57,4 @@ counts
   images    2
   buttons   24
   inputs    3
-  classes   256 (sha 7c1462e4019c)
+  classes   256 (sha 10f07c6312f1)
