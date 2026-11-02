@@ -46,8 +46,9 @@ import { NewsSignup } from "@/components/layout/news-signup";
  *     two stops the theme already names (`slate-100` and `--muted` are within a percent of
  *     each other on both brands).
  *   - the product mark: the open book (`BrandGlyph`) in a solid brand box, and a wordmark filled
- *     by the same action colour, become `brandMark(brand.logo)` beside `text-action`. The
- *     record's mark when it has one, the book glyph when `data/media.ts` calls it a fallback.
+ *     by the same action colour, become `brandMark(brand.logo)`. The record's mark when it has
+ *     one, the book glyph and the typed name when `data/media.ts` calls it a fallback. The mark
+ *     is drawn whole — no crop window (owner, brand marks; see the slot itself).
  *
  * The old class names are deliberately not quoted here: the acceptance test is a `git grep` for
  * the three palette prefixes over the card's paths, and a comment that repeats a banned literal
@@ -149,30 +150,38 @@ export function Footer({
             <div className="flex items-center space-x-2">
               {mark ? (
                 /**
-                 * The brand's mark, in the slot the product mark has always had.
+                 * The brand's mark, at the size the record exports it.
                  *
-                 * `alt=""` because the wordmark beside it already says the name — a second
-                 * description would have a screen reader read the brand twice. The 44 px window
-                 * crops the lockup to its monogram, exactly as the sidebar does: the AlignSynch
-                 * file's wordmark is black "Align" beside gray "Synch", so the whole file in the
-                 * footer's light ground reads as two different greys beside the type already set
-                 * next to it. `max-w-none` is load-bearing (preflight would scale, not crop).
+                 * `alt=""` because the mark *is* the name — the lockup sets "AlignSynch"
+                 * itself — so a description here would have a screen reader say the brand
+                 * twice, and the type beside it (below) is not drawn when a lockup is.
+                 *
+                 * **No window, no crop (owner, brand marks).** This slot used to render the
+                 * 818×127 file inside a 44×32 `overflow-hidden` span, which showed the AS
+                 * monogram and clipped the wordmark off at the right edge. That is a crop of a
+                 * fixed asset, which the owner's rule forbids beside redraw and re-tint
+                 * (`tests/brand-immutable.test.ts` records it), and it was never load-bearing:
+                 * the footer's brand column is 380 px at 1440 and the full column at 390, so
+                 * the 206 px lockup has always had room. `h-8 w-auto` is the whole file at its
+                 * natural aspect ratio; `max-w-none` is gone with the window that needed it.
                  */
-                <span className="block h-8 w-11 shrink-0 overflow-hidden">
-                  <Image
-                    src={mark.src}
-                    alt=""
-                    width={mark.width}
-                    height={mark.height}
-                    className="h-8 w-auto max-w-none"
-                  />
-                </span>
+                <Image
+                  src={mark.src}
+                  alt=""
+                  width={mark.width}
+                  height={mark.height}
+                  className="h-8 w-auto"
+                />
               ) : (
                 <div className="bg-action p-2 rounded-lg">
                   <BrandGlyph className="h-6 w-6 text-action-foreground" />
                 </div>
               )}
-              <span className="text-2xl font-bold text-action">{copy.heading}</span>
+              {/* The name in type only when there is no lockup to say it — the template's
+                  placeholder logo resolves to no mark, and its footer has always been the
+                  glyph plus the word. A fallback mark and a typed wordmark together would set
+                  the brand's name twice. */}
+              {!mark && <span className="text-2xl font-bold text-action">{copy.heading}</span>}
             </div>
             <p className="text-slate-600 dark:text-slate-400 max-w-xs leading-relaxed">
               {sectionBody(brandBlurb)}
