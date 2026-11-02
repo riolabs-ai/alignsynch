@@ -1,21 +1,15 @@
-// template-ancestor: components/ui/card.tsx
-import { SectionStub } from "@/components/v1/section-stub";
-import { SECTION_SUMMARIES, isDashboardPersona, sectionAllowedFor } from "@/lib/v1/persona";
+// template-ancestor: components/my-quizzes/my-quizzes.tsx
+import { RelationshipsList } from "@/components/v1/relationships-list";
+import { isDashboardPersona, sectionAllowedFor } from "@/lib/v1/persona";
 import { notFound } from "next/navigation";
 
-/** `/v1/[persona]/relationships` — the relationships list stub (every dashboard persona). */
-export default async function RelationshipsStubPage({
+/** `/v1/[persona]/relationships` — the persona's relationships, status-led. */
+export default async function RelationshipsPage({
   params,
 }: {
   params: Promise<{ persona: string }>;
 }) {
   const { persona } = await params;
   if (!isDashboardPersona(persona) || !sectionAllowedFor(persona, "relationships")) notFound();
-  return (
-    <SectionStub
-      section="Relationships"
-      persona={persona}
-      summary={SECTION_SUMMARIES.relationships}
-    />
-  );
+  return <RelationshipsList persona={persona} />;
 }

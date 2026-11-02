@@ -29,6 +29,7 @@
 import {
   zAssessment,
   type AlignmentSetting,
+  type Aspect,
   type Assessment,
   type AssessmentMode,
   type Opinions,
@@ -88,6 +89,19 @@ let idCounter = 0;
 function uid(prefix: string): string {
   idCounter += 1;
   return `${prefix}-${Date.now().toString(36)}-${idCounter}`;
+}
+
+/** A kebab-case slug from a title, the same fold the template editor uses for a saved set. */
+function slugFor(title: string): string {
+  const folded = title
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+    .replace(/-+$/g, "");
+  return folded === "" ? "saved-set" : folded;
 }
 
 /* ------------------------------------------------------------------ *
@@ -235,6 +249,23 @@ export interface V1Store {
     author: "initiator" | "counterparty",
     body: string,
   ) => void;
+  readonly addAspect: (
+    relationshipId: string,
+    input: { readonly prompt: string; readonly leftValue: string; readonly rightValue: string },
+  ) => void;
+  readonly renameAspect: (
+    relationshipId: string,
+    itemId: string,
+    patch: { readonly prompt?: string; readonly leftValue?: string; readonly rightValue?: string },
+  ) => void;
+  readonly moveAspect: (relationshipId: string, itemId: string, direction: "up" | "down") => void;
+  /** Soft-delete: the Aspect leaves `items` but stays restorable from `deletedAspects`. */
+  readonly deleteAspect: (relationshipId: string, itemId: string) => void;
+  readonly restoreAspect: (relationshipId: string, itemId: string) => void;
+  /** Copy the relationship into a fresh, unclaimed one with the same Aspects. */
+  readonly cloneRelationship: (relationshipId: string) => V1Relationship;
+  /** Turn the relationship's Aspects into a reusable library entry (a "my saved set"). */
+  readonly saveAspectSetToLibrary: (relationshipId: string) => Assessment;
   readonly restoreSubscription: (relationshipId: string) => void;
   readonly addCoachComment: (relationshipId: string, body: string) => void;
   readonly toggleShareWithCoach: (relationshipId: string) => void;
@@ -337,7 +368,14 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
   const patchRelationship = useCallback(
     (relationshipId: string, patch: (rel: V1Relationship) => V1Relationship) => {
       setRelationships((previous) =>
-        previous.map((rel) => (rel.id === relationshipId ? patch(rel) : rel)),
+        previous.map((rel) => {
+          if (rel.id !== relationshipId) return rel;
+          const next = patch(rel);
+          // Every mutation is a write: "Last modified" is honest without a per-call setter.
+          return next.modifiedAt === rel.modifiedAt
+            ? { ...next, modifiedAt: new Date().toISOString() }
+            : next;
+        }),
       );
     },
     [],
@@ -357,6 +395,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         templateId: input.templateId,
         name: input.name?.trim() || undefined,
         items,
+        deletedAspects: [],
         mode: input.mode,
         setting: input.setting,
         initiatorName: input.initiatorName.trim() || PERSONA_META.initiator.name,
@@ -370,6 +409,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         initiatorAcceptedAt: null,
         counterpartyAcceptedAt: null,
         inviteToken: null,
+        inviteExpiresAt: null,
         sharedWithCoach: false,
         coachComments: [],
         comments: [],
@@ -383,6 +423,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         history: [],
         lastSessionAt: null,
         createdAt: now,
+        modifiedAt: now,
       };
       setRelationships((previous) => [...previous, relationship]);
       return relationship;
@@ -395,6 +436,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       patchRelationship(relationshipId, (rel) => ({
         ...rel,
         inviteToken: uid("inv"),
+        inviteExpiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
       }));
     },
     [patchRelationship],
@@ -526,6 +568,174 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     [patchRelationship],
   );
 
+  const addAspect = useCallback(
+    (
+      relationshipId: string,
+      input: { readonly prompt: string; readonly leftValue: string; readonly rightValue: string },
+    ) => {
+      const aspect: Aspect = {
+        id: uid("aspect"),
+        prompt: input.prompt.trim(),
+        scale: { kind: "score", min: 1, max: 5 },
+        leftValue: input.leftValue.trim(),
+        rightValue: input.rightValue.trim(),
+      };
+      patchRelationship(relationshipId, (rel) => ({ ...rel, items: [...rel.items, aspect] }));
+    },
+    [patchRelationship],
+  );
+
+  const renameAspect = useCallback(
+    (
+      relationshipId: string,
+      itemId: string,
+      patch: {
+        readonly prompt?: string;
+        readonly leftValue?: string;
+        readonly rightValue?: string;
+      },
+    ) => {
+      patchRelationship(relationshipId, (rel) => ({
+        ...rel,
+        items: rel.items.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                prompt: patch.prompt !== undefined ? patch.prompt.trim() : item.prompt,
+                leftValue: patch.leftValue !== undefined ? patch.leftValue.trim() : item.leftValue,
+                rightValue:
+                  patch.rightValue !== undefined ? patch.rightValue.trim() : item.rightValue,
+              }
+            : item,
+        ),
+      }));
+    },
+    [patchRelationship],
+  );
+
+  const moveAspect = useCallback(
+    (relationshipId: string, itemId: string, direction: "up" | "down") => {
+      patchRelationship(relationshipId, (rel) => {
+        const index = rel.items.findIndex((item) => item.id === itemId);
+        if (index === -1) return rel;
+        const target = direction === "up" ? index - 1 : index + 1;
+        if (target < 0 || target >= rel.items.length) return rel;
+        const items = [...rel.items];
+        const temp = items[index];
+        items[index] = items[target];
+        items[target] = temp;
+        return { ...rel, items };
+      });
+    },
+    [patchRelationship],
+  );
+
+  const deleteAspect = useCallback(
+    (relationshipId: string, itemId: string) => {
+      patchRelationship(relationshipId, (rel) => {
+        // A blueprint with no Aspects says nothing to either party — never soft-delete the last.
+        if (rel.items.length <= 1) return rel;
+        const item = rel.items.find((candidate) => candidate.id === itemId);
+        if (item === undefined) return rel;
+        return {
+          ...rel,
+          items: rel.items.filter((candidate) => candidate.id !== itemId),
+          deletedAspects: [...rel.deletedAspects, item],
+        };
+      });
+    },
+    [patchRelationship],
+  );
+
+  const restoreAspect = useCallback(
+    (relationshipId: string, itemId: string) => {
+      patchRelationship(relationshipId, (rel) => {
+        const item = rel.deletedAspects.find((candidate) => candidate.id === itemId);
+        if (item === undefined) return rel;
+        return {
+          ...rel,
+          deletedAspects: rel.deletedAspects.filter((candidate) => candidate.id !== itemId),
+          items: [...rel.items, item],
+        };
+      });
+    },
+    [patchRelationship],
+  );
+
+  const cloneRelationship = useCallback(
+    (relationshipId: string): V1Relationship => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) {
+        throw new Error(`no relationship "${relationshipId}" to clone`);
+      }
+      const now = new Date().toISOString();
+      const periodEnd = new Date(Date.now() + 30 * 86_400_000).toISOString();
+      const clone: V1Relationship = {
+        id: uid("rel"),
+        templateId: rel.templateId,
+        name: rel.name !== undefined ? `${rel.name} (copy)` : undefined,
+        items: rel.items.map((item) => ({ ...item, scale: { ...item.scale } })),
+        deletedAspects: [],
+        mode: rel.mode,
+        setting: rel.setting,
+        initiatorName: rel.initiatorName,
+        counterpartyName: null,
+        initiatorAnswers: {},
+        counterpartyAnswers: {},
+        initiatorSubmitted: false,
+        counterpartySubmitted: false,
+        initiatorAccepted: false,
+        counterpartyAccepted: false,
+        initiatorAcceptedAt: null,
+        counterpartyAcceptedAt: null,
+        inviteToken: null,
+        inviteExpiresAt: null,
+        sharedWithCoach: false,
+        coachComments: [],
+        comments: [],
+        aspectComments: {},
+        openedSessions: 0,
+        completedSessions: 0,
+        subscription: { plan: "monthly", status: "active", periodEnd, startedAt: now },
+        history: [],
+        lastSessionAt: null,
+        createdAt: now,
+        modifiedAt: now,
+      };
+      setRelationships((previous) => [...previous, clone]);
+      return clone;
+    },
+    [relationships],
+  );
+
+  const saveAspectSetToLibrary = useCallback(
+    (relationshipId: string): Assessment => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) {
+        throw new Error(`no relationship "${relationshipId}" to save`);
+      }
+      // Name the source honestly: its own name when it has one, else the template it came from
+      // — never the internal template id.
+      const templateTitle =
+        templates.find((candidate) => candidate.id === rel.templateId)?.title ?? "Relationship";
+      const sourceName = rel.name ?? templateTitle;
+      const title = `${sourceName} (saved set)`;
+      const assessment: Assessment = {
+        id: uid("savedset"),
+        slug: slugFor(title),
+        type: "assessment",
+        status: "published",
+        date: new Date().toISOString(),
+        title,
+        summary: `Saved from ${rel.name !== undefined ? `the relationship “${rel.name}”` : `the “${templateTitle}” template`} — ${rel.items.length} Aspects you can start a new relationship from.`,
+        items: rel.items.map((item) => ({ ...item, scale: { ...item.scale } })),
+      };
+      saveTemplate(assessment);
+      return assessment;
+    },
+    [relationships, saveTemplate, templates],
+  );
+
   const restoreSubscription = useCallback(
     (relationshipId: string) => {
       patchRelationship(relationshipId, (rel) => {
@@ -620,6 +830,13 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       requestNewSession,
       addComment,
       addAspectComment,
+      addAspect,
+      renameAspect,
+      moveAspect,
+      deleteAspect,
+      restoreAspect,
+      cloneRelationship,
+      saveAspectSetToLibrary,
       restoreSubscription,
       addCoachComment,
       toggleShareWithCoach,
@@ -647,6 +864,13 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       requestNewSession,
       addComment,
       addAspectComment,
+      addAspect,
+      renameAspect,
+      moveAspect,
+      deleteAspect,
+      restoreAspect,
+      cloneRelationship,
+      saveAspectSetToLibrary,
       restoreSubscription,
       addCoachComment,
       toggleShareWithCoach,

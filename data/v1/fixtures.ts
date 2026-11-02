@@ -371,6 +371,12 @@ export const zV1Relationship = z
     /** The relationship's own name, when it has one; absent means "use the template title". */
     name: z.string().min(1).optional(),
     items: z.array(zAspect).min(1),
+    /**
+     * Aspects the Initiator soft-deleted from the blueprint. They leave `items` (so a session
+     * no longer asks them) but keep their shape here, so the same Aspect can be restored —
+     * the parties' answers keyed by its id survive untouched either way.
+     */
+    deletedAspects: z.array(zAspect),
     mode: zAssessmentMode,
     setting: zAlignmentSetting,
     initiatorName: z.string().min(1),
@@ -392,6 +398,8 @@ export const zV1Relationship = z
     counterpartyAcceptedAt: z.string().min(1).nullable(),
     /** The claimable invite. Null before the first send; re-invite rotates it and the old one dies. */
     inviteToken: z.string().min(1).nullable(),
+    /** When the current invite lapses, or null once the counterparty claims it or before a send. */
+    inviteExpiresAt: z.string().min(1).nullable(),
     /** Whether the Coach persona can see this relationship (read-only). */
     sharedWithCoach: z.boolean(),
     coachComments: z.array(zCoachComment),
@@ -410,6 +418,8 @@ export const zV1Relationship = z
     /** The instant of the last completed session, or null before the first. */
     lastSessionAt: z.string().min(1).nullable(),
     createdAt: z.string().min(1),
+    /** The instant of the last write — the "Last modified" column, bumped by every mutation. */
+    modifiedAt: z.string().min(1),
   })
   .strict();
 
@@ -519,6 +529,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     id: "rel-invited",
     templateId: "v1-template-basics",
     items: aspectCopy("v1-template-basics"),
+    deletedAspects: [],
     mode: "basic",
     setting: "soft",
     initiatorName: "Jordan",
@@ -532,6 +543,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     initiatorAcceptedAt: null,
     counterpartyAcceptedAt: null,
     inviteToken: "inv-7f3a91c2",
+    inviteExpiresAt: "2026-10-31T09:00:00.000Z",
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -547,11 +559,13 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     history: [],
     lastSessionAt: null,
     createdAt: "2026-10-30T09:00:00.000Z",
+    modifiedAt: "2026-10-30T09:00:00.000Z",
   },
   {
     id: "rel-connected-blind",
     templateId: "v1-template-business",
     items: aspectCopy("v1-template-business"),
+    deletedAspects: [],
     mode: "advanced",
     setting: "soft",
     initiatorName: "Jordan",
@@ -565,6 +579,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     initiatorAcceptedAt: null,
     counterpartyAcceptedAt: null,
     inviteToken: "inv-9c2b04e1",
+    inviteExpiresAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -580,12 +595,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     history: [],
     lastSessionAt: null,
     createdAt: "2026-10-30T11:30:00.000Z",
+    modifiedAt: "2026-10-30T11:30:00.000Z",
   },
   {
     id: "rel-sharing-unmet",
     templateId: "v1-template-basics",
     name: "Avery & Rowan",
     items: aspectCopy("v1-template-basics"),
+    deletedAspects: [],
     mode: "basic",
     setting: "soft",
     initiatorName: "Avery",
@@ -602,6 +619,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     initiatorAcceptedAt: null,
     counterpartyAcceptedAt: null,
     inviteToken: "inv-5d41a8f0",
+    inviteExpiresAt: null,
     sharedWithCoach: true,
     coachComments: [
       {
@@ -624,12 +642,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     history: [],
     lastSessionAt: null,
     createdAt: "2026-10-28T18:30:00.000Z",
+    modifiedAt: "2026-10-28T18:30:00.000Z",
   },
   {
     id: "rel-aligned",
     templateId: "v1-template-personal",
     name: "Ruth & Sam",
     items: aspectCopy("v1-template-personal"),
+    deletedAspects: [],
     mode: "basic",
     setting: "soft",
     initiatorName: "Ruth",
@@ -643,6 +663,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     initiatorAcceptedAt: "2026-10-29T09:55:00.000Z",
     counterpartyAcceptedAt: "2026-10-29T10:00:00.000Z",
     inviteToken: "inv-2b8c17d4",
+    inviteExpiresAt: null,
     sharedWithCoach: true,
     coachComments: [],
     comments: [
@@ -688,12 +709,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     history: [],
     lastSessionAt: "2026-10-29T10:00:00.000Z",
     createdAt: "2026-10-28T19:00:00.000Z",
+    modifiedAt: "2026-10-29T10:00:00.000Z",
   },
   {
     id: "rel-advanced",
     templateId: "v1-template-personal",
     name: "Noor & Iris",
     items: aspectCopy("v1-template-personal"),
+    deletedAspects: [],
     mode: "advanced",
     setting: "full",
     initiatorName: "Noor",
@@ -707,6 +730,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     initiatorAcceptedAt: "2026-10-25T15:00:00.000Z",
     counterpartyAcceptedAt: "2026-10-25T15:10:00.000Z",
     inviteToken: "inv-8e0f22b5",
+    inviteExpiresAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -722,6 +746,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     history: [],
     lastSessionAt: "2026-10-30T15:00:00.000Z",
     createdAt: "2026-10-29T09:45:00.000Z",
+    modifiedAt: "2026-10-30T15:00:00.000Z",
   },
   {
     // The Setting control. Same template, same Mode, and **the same answers** as Ruth & Sam
@@ -748,6 +773,8 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     initiatorAcceptedAt: "2026-10-30T08:50:00.000Z",
     counterpartyAcceptedAt: "2026-10-30T09:00:00.000Z",
     inviteToken: "inv-3a6c0d9e",
+    inviteExpiresAt: null,
+    deletedAspects: [],
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -763,6 +790,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     history: [],
     lastSessionAt: "2026-10-30T09:00:00.000Z",
     createdAt: "2026-10-30T08:00:00.000Z",
+    modifiedAt: "2026-10-30T09:00:00.000Z",
   },
 ];
 
@@ -1029,7 +1057,7 @@ export interface V1SeedState {
 }
 
 /** Bump to invalidate a persisted store that predates a shape change. */
-export const SEED_VERSION = 5;
+export const SEED_VERSION = 6;
 
 /**
  * The prototype's own version, rendered as the `[V1]` tag in the persona notice banner. The

@@ -27,6 +27,7 @@ function demoRelationship(type: RelationshipType): V1Relationship {
     templateId: `type-${type.id}`,
     name: undefined,
     items: type.aspects.map((item) => ({ ...item, scale: { ...item.scale } })),
+    deletedAspects: [],
     mode: "advanced",
     setting: "soft",
     initiatorName: "You",
@@ -40,6 +41,7 @@ function demoRelationship(type: RelationshipType): V1Relationship {
     initiatorAcceptedAt: "2026-10-30T11:58:00.000Z",
     counterpartyAcceptedAt: "2026-10-30T12:00:00.000Z",
     inviteToken: null,
+    inviteExpiresAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -55,6 +57,7 @@ function demoRelationship(type: RelationshipType): V1Relationship {
     history: [],
     lastSessionAt: "2026-10-30T12:00:00.000Z",
     createdAt: "2026-10-28T18:30:00.000Z",
+    modifiedAt: "2026-10-30T12:00:00.000Z",
   };
 }
 
