@@ -10,11 +10,11 @@ import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
-import { LogOut } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrandGlyph } from "@/components/layout/brand-glyph";
 
 /**
@@ -27,34 +27,68 @@ import { BrandGlyph } from "@/components/layout/brand-glyph";
  * because both are facts the browser must not decide — the brand is a build flag, and a
  * viewer's capabilities will be read from a session.
  *
- * **The rail is sticky, always present, and never a drawer.** The owner's review of the console
- * asked for one column that answers the viewport instead of a phone overlay: `sticky top-0` with
- * a full-height column, `w-14` at the narrowest phone, `w-16` from `sm`, and the full 250px from
- * `lg`. Below `lg` the rows are **icons only** — the label is `hidden lg:inline`, and every row
- * carries the same words in `title` and `aria-label` (`NavRow`), so the icon-only rail is usable
- * with a pointer and announced correctly to a screen reader. There is **no close control, no
- * scrim and no `-translate-x-full` state**: a shadowed panel that slides over the page reads as a
- * drawer, and the request was explicitly the opposite of that. Nothing here reads a window width:
- * the breakpoints are classes, which is why the widths below are measured from computed style
- * rather than from state a component decided.
+ * **The rail is expanded unless the viewport forces otherwise** — the owner's rule, in order:
+ * labels while they fit, icons only when they stop fitting, and a drawer only when a column has
+ * stopped being a column. That is three forms of one element, decided by three breakpoints and no
+ * state:
  *
- * **The rail has no collapse control either.** It used to carry a pin that narrowed the desktop
- * column to 70px and remembered that choice in localStorage; the owner's review asked for it
- * removed — the sidebar is never dismissed and the only thing that narrows it is the viewport.
- * `components/layout/sidebar-context.tsx` cleared the preference the old control left behind and
- * is gone with it: with no open/closed state there is nothing for a provider to hold.
+ *   - `< 768px` (`md` and below): **an overlay drawer**. Off-canvas and `invisible` while closed,
+ *     so its rows are not in the tab order and not announced; a fixed column that slides over the
+ *     page when the header's trigger opens it, never a column that pushes the content aside. The
+ *     sheet is 250px — the expanded width — because a phone has the horizontal room for a panel
+ *     and the labels are the point of opening it.
+ *   - `768–1023px`: **an icon rail, 64px**, sticky, in the flow. This is the only width at which
+ *     the label column genuinely does not fit; every row keeps `title` *and* `aria-label`
+ *     (`NavRow`), so the icons stay usable with a pointer and readable by a screen reader.
+ *   - `≥ 1024px` (`lg`): **expanded, 250px, labels visible** — the default. A 1024px laptop is a
+ *     normal width for an admin dashboard, and labels are the context the dashboard is for.
+ *
+ * **The drawer is deliberate, and the width control is not.** Two earlier changes went in
+ * opposite directions here: the desktop width toggle that narrowed the column to 70px and
+ * remembered the choice in browser storage was removed (it is never coming back — nothing on the
+ * desktop narrows the rail, only the viewport does), and then the mobile drawer was removed with
+ * it, which left a phone with a 56px strip of icons and no way in. This file reinstates the
+ * drawer and only the drawer. Do not delete it again as dead chrome: `open`/`onClose` here, the
+ * trigger in `components/layout/header.tsx` and the state in `components/layout/main-layout.tsx`
+ * are one feature, and `tests/rail-responsive.test.ts` holds all three halves of it.
  *
  * Every label resolves an id on `data/pages/shell.ts` (`itemLabel` against the `nav`,
- * `nav-alignsynch` and `logout` ids). The hrefs stay literal JSX attributes **on purpose** —
- * `data:check` E10 extracts literal `href`s from the tree, so moving them into a const array
- * would take the route references out of the link gate without failing anything.
+ * `nav-alignsynch`, `rail` and `logout` ids). The hrefs stay literal JSX attributes **on
+ * purpose** — `data:check` E10 extracts literal `href`s from the tree, so moving them into a
+ * const array would take the route references out of the link gate without failing anything.
  */
+
+/** Every element the drawer is allowed to cycle focus through, in document order. */
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * The rail's width and position at one open state — the whole of the three-form rule above, in
+ * one place, so `tests/rail-responsive.test.ts` can pin the breakpoints without a browser.
+ *
+ * `open` only describes the drawer; at `md` and up the overrides below make it a sticky column
+ * again whatever it says, which is why a drawer left open by a resize cannot survive as one.
+ */
+export function railClassName(open: boolean): string {
+  return cn(
+    // Below `md`: an overlay. Out of the flow, off-canvas, and absent from the a11y tree while
+    // closed — `transform` alone moves paint, not focus.
+    "fixed inset-y-0 left-0 z-50 flex w-[250px] max-w-[85vw] flex-col border-r bg-background transition-transform duration-200 ease-out",
+    open ? "visible translate-x-0 shadow-2xl" : "invisible -translate-x-full",
+    // From `md`: a column again — sticky, 64px, always visible — and from `lg` the expanded rail.
+    "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none",
+    "lg:w-[250px]",
+  );
+}
+
 export function AppSidebar({
   copy,
   mark,
   brandId,
   viewer,
   hiddenNav,
+  open,
+  onClose,
 }: {
   copy: PageCopy;
   mark?: BrandMark;
@@ -66,21 +100,95 @@ export function AppSidebar({
    * to the menu, which draws none of them. Absent means every gated surface is on.
    */
   hiddenNav?: readonly string[];
+  /**
+   * The mobile drawer is open. Owned by `MainLayout` (`components/layout/main-layout.tsx`)
+   * because the trigger lives in the header and the panel lives here; it has no meaning at `md`
+   * and up, where the rail is a column.
+   */
+  open: boolean;
+  /** Close the drawer. Stable identity — the focus effect below re-runs if it changes. */
+  onClose: () => void;
 }) {
   const nav = sectionOf(copy, "nav");
+  const rail = sectionOf(copy, "rail");
   const pathname = usePathname();
 
-  /**
-   * A row's navigate hook, which no longer closes anything: the rail is never dismissed, so the
-   * menu takes the same prop it always took and this one does nothing. `NavRow` keeps the prop
-   * because the quiz brand's rows are rendered by the same component and a menu that only exists
-   * in a drawer is a shape this file no longer has.
-   */
-  const noNavigationToClose = () => undefined;
+  const panelRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
+
+  /**
+   * The drawer, while it is open: focus goes in, the page behind cannot scroll, Escape and the
+   * backdrop close it, Tab cycles inside it, and focus comes back to whatever opened it — the
+   * header's trigger — when it closes, however it was closed. Without the last part a keyboard
+   * user is dropped at the top of the document the moment the panel disappears.
+   *
+   * The list of stops is read at keydown time rather than cached: the menu's rows are the same
+   * markup at every width, and a resize can leave a row's label display:none while the panel is
+   * still open. `getClientRects()` is the test for "a person can reach this", where `offsetParent`
+   * would report `null` for everything inside a `position: fixed` ancestor.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (panel === null) return;
+
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const stops = () =>
+      Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+        (element) => element.getClientRects().length > 0,
+      );
+
+    (closeButtonRef.current ?? stops()[0] ?? panel).focus({ preventScroll: true });
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const reachable = stops();
+      if (reachable.length === 0) {
+        event.preventDefault();
+        panel.focus({ preventScroll: true });
+        return;
+      }
+      const first = reachable[0];
+      const last = reachable[reachable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || active === panel)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+
+    // A drawer opened at a phone width and then stretched into a desktop one would otherwise sit
+    // over a page that stays scroll-locked — the panel is a column again but `open` is still true.
+    const wide = window.matchMedia("(min-width: 768px)");
+    const onWide = (event: MediaQueryListEvent) => {
+      if (event.matches) onClose();
+    };
+    wide.addEventListener("change", onWide);
+    if (wide.matches) onClose();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+      wide.removeEventListener("change", onWide);
+      opener?.focus({ preventScroll: true });
+    };
+  }, [open, onClose]);
 
   /**
    * The rail's sign-out row, and the words it can carry.
@@ -92,6 +200,10 @@ export function AppSidebar({
   const logoutPendingLabel = itemLabel(nav, "logout-pending");
   const logoutErrorLabel = itemLabel(nav, "logout-error");
 
+  /** The drawer's three words: what the trigger does, and what the panel is. */
+  const closeLabel = itemLabel(rail, "close");
+  const railLabel = itemLabel(rail, "label");
+
   /**
    * Sign out — for real (issue #272).
    *
@@ -99,7 +211,9 @@ export function AppSidebar({
    * so the cookie stayed valid and the next request was still signed in. It runs the same step
    * the account page's button runs (`lib/auth/sign-out.ts`) and only navigates once the SDK says
    * the session is gone. A failure is said out loud under the row instead of being swallowed:
-   * a rail that ignored the click would look like it had signed the person out.
+   * a rail that ignored the click would look like it had signed the person out — which is also
+   * why the drawer is closed only on success, where the row's error line would otherwise be
+   * hidden behind a panel nobody reopened.
    */
   const signOut = async () => {
     if (signingOut) return;
@@ -110,109 +224,147 @@ export function AppSidebar({
       setSignOutFailed(true);
       return;
     }
+    onClose();
     router.replace("/");
     router.refresh();
   };
 
-  /**
-   * The rail's own width, measured rather than decided: `w-14` (56px) on the narrowest phone,
-   * `w-16` (64px) from `sm`, the full 250px from `xl`. `sticky top-0` with `h-screen` keeps the
-   * column in place while the main slot scrolls, and `shrink-0` stops the flex parent from
-   * squeezing it below the width the rows are drawn for. Nothing slides, nothing overlays and
-   * nothing is hidden: at every width this is the same element in the same flow.
-   */
   return (
-    <aside
-      id="app-sidebar"
-      className={cn(
-        "sticky top-0 flex h-screen shrink-0 flex-col border-r bg-background",
-        "w-14 sm:w-16 lg:w-[250px]",
+    <>
+      {/**
+       * The scrim. It is a button so a click anywhere outside the panel closes it, `tabIndex={-1}`
+       * so it is not a stop of its own — the escape hatch is Escape and the panel's own X — and
+       * `md:hidden` because above `md` there is no overlay to dismiss.
+       */}
+      {open && (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label={closeLabel}
+          onClick={onClose}
+          className="fixed inset-0 z-40 cursor-default bg-black/50 md:hidden"
+        />
       )}
-    >
-      <div className="flex h-16 items-center justify-center gap-2 border-b px-2 lg:justify-start lg:px-4">
-        <Link
-          href="/"
-          aria-label={mark ? copy.heading : undefined}
-          className="flex justify-center items-center gap-2"
-        >
-          {mark ? (
-            /**
-             * The brand's mark, cropped out of its lockup.
-             *
-             * `as2-logo_v2_cl.png` is one 818×127 file: the AS monogram in the first ~175
-             * columns, then the wordmark. Its wordmark is black "Align" beside gray
-             * "Synch", so on this near-black rail the black half is invisible and drawing
-             * the whole lockup would leave a ghost "Synch" floating right of the mark. The
-             * shell therefore draws the *mark* — the file at its natural height in a 40 px
-             * window (`h-7 w-10`), the rest clipped — and sets the full name in type beside
-             * it, which is what the brand asks for: the logo carries the motif, the record
-             * carries the name. `max-w-none` is load-bearing: Tailwind's preflight would
-             * otherwise cap the image at its 40 px container and scale it down instead of
-             * cropping it.
-             *
-             * `alt=""` because the wordmark beside it already says the name — a second
-             * description would make a screen reader read the brand twice — and the link
-             * carries `aria-label` so it still has a name.
-             */
-            <span className="block h-7 w-10 shrink-0 overflow-hidden">
-              <Image
-                src={mark.src}
-                alt=""
-                width={mark.width}
-                height={mark.height}
-                className="h-7 w-auto max-w-none"
-                priority
-              />
+
+      <aside
+        id="app-sidebar"
+        ref={panelRef}
+        /**
+         * `tabIndex={-1}` is the drawer's focus fallback (an empty menu still needs a landing
+         * spot). The dialog role, its modality and its name are true only while it is an
+         * overlay — at `md` and up this element is a column beside the page, not a dialog over
+         * it — so they are spread rather than set to undefined: an `<aside>` carries the
+         * `complementary` role, and `aria-modal` is not an attribute that role supports.
+         */
+        tabIndex={-1}
+        {...(open ? { role: "dialog", "aria-modal": true, "aria-label": railLabel } : {})}
+        className={railClassName(open)}
+      >
+        <div className="flex h-16 items-center justify-between gap-2 border-b px-3 md:justify-center md:px-2 lg:justify-start lg:px-4">
+          <Link
+            href="/"
+            aria-label={mark ? copy.heading : undefined}
+            className="flex justify-center items-center gap-2"
+          >
+            {mark ? (
+              /**
+               * The brand's mark, cropped out of its lockup.
+               *
+               * `as2-logo_v2_cl.png` is one 818×127 file: the AS monogram in the first ~175
+               * columns, then the wordmark. Its wordmark is black "Align" beside gray
+               * "Synch", so on this near-black rail the black half is invisible and drawing
+               * the whole lockup would leave a ghost "Synch" floating right of the mark. The
+               * shell therefore draws the *mark* — the file at its natural height in a 40 px
+               * window (`h-7 w-10`), the rest clipped — and sets the full name in type beside
+               * it, which is what the brand asks for: the logo carries the motif, the record
+               * carries the name. `max-w-none` is load-bearing: Tailwind's preflight would
+               * otherwise cap the image at its 40 px container and scale it down instead of
+               * cropping it.
+               *
+               * `alt=""` because the wordmark beside it already says the name — a second
+               * description would make a screen reader read the brand twice — and the link
+               * carries `aria-label` so it still has a name.
+               */
+              <span className="block h-7 w-10 shrink-0 overflow-hidden">
+                <Image
+                  src={mark.src}
+                  alt=""
+                  width={mark.width}
+                  height={mark.height}
+                  className="h-7 w-auto max-w-none"
+                  priority
+                />
+              </span>
+            ) : (
+              <BrandGlyph className="h-6 w-6 text-primary" />
+            )}
+            {/* Open, the drawer is 250px wide — the expanded rail — so it shows the name. At the
+                64px icon width the wordmark would be clipped by its own column. */}
+            <span className={cn("text-xl font-bold", open ? "inline" : "hidden lg:inline")}>
+              {copy.heading}
             </span>
-          ) : (
-            <BrandGlyph className="h-6 w-6 text-primary" />
-          )}
-          <span className="hidden text-xl font-bold lg:inline">{copy.heading}</span>
-        </Link>
-      </div>
+          </Link>
 
-      <div className="flex-1 overflow-auto py-4">
-        <nav className="grid gap-1 px-2">
-          <AppNav
-            brandId={brandId}
-            viewer={viewer}
-            copy={copy}
-            collapsed={false}
-            pathname={pathname}
-            onNavigate={noNavigationToClose}
-            hidden={hiddenNav}
-          />
-        </nav>
-      </div>
+          {/* The drawer's own close control. `md:hidden`: a column needs no dismiss. */}
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={onClose}
+            aria-label={closeLabel}
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+          >
+            <X className="size-5" aria-hidden="true" />
+          </button>
+        </div>
 
-      <div className="border-t py-4">
-        <nav className="grid gap-1 px-2">
-          <NavRow
-            icon={<LogOut className="size-5" />}
-            label={signingOut ? logoutPendingLabel : logoutLabel}
-            active={false}
-            collapsed={false}
-            onNavigate={noNavigationToClose}
-            onSelect={signOut}
-          />
-        </nav>
-        {signOutFailed && <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>}
-      </div>
+        <div className="flex-1 overflow-auto py-4">
+          <nav className="grid gap-1 px-2">
+            {/**
+             * `labelled` is the drawer, not a width: the same rows render their text at a 390px
+             * viewport because the panel they are in is 250px wide. Following a row closes the
+             * drawer — the one `onNavigate` the shell has ever needed.
+             */}
+            <AppNav
+              brandId={brandId}
+              viewer={viewer}
+              copy={copy}
+              labelled={open}
+              pathname={pathname}
+              onNavigate={onClose}
+              hidden={hiddenNav}
+            />
+          </nav>
+        </div>
 
-      {/* The version badge — the bottom of the rail (issue #269). Last in the document, so it is
-          the last stop the keyboard makes inside the sidebar, and below the sign-out row on
-          purpose: signing out is an action, the version is a fact about the build you signed in
-          to. Two forms, one anchor each, from the same fixture (`AppVersion`'s `compact` item):
-          the long form needs the 250px column, and an icon rail has 56px. Only the form the
-          width shows is in the accessibility tree — the other is `display:none`. */}
-      <div className="border-t px-1 py-3 text-center lg:px-2">
-        <span className="lg:hidden">
-          <AppVersion copy={copy} compact />
-        </span>
-        <span className="hidden lg:inline">
-          <AppVersion copy={copy} />
-        </span>
-      </div>
-    </aside>
+        <div className="border-t py-4">
+          <nav className="grid gap-1 px-2">
+            <NavRow
+              icon={<LogOut className="size-5" />}
+              label={signingOut ? logoutPendingLabel : logoutLabel}
+              active={false}
+              labelled={open}
+              onNavigate={onClose}
+              onSelect={signOut}
+            />
+          </nav>
+          {signOutFailed && <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>}
+        </div>
+
+        {/* The version badge — the bottom of the rail (issue #269). Last in the document, so it is
+            the last stop the keyboard makes inside the sidebar, and below the sign-out row on
+            purpose: signing out is an action, the version is a fact about the build you signed in
+            to. Two forms, one anchor each, from the same fixture (`AppVersion`'s `compact` item):
+            the long form needs the 250px column, and an icon rail has 64px. Only the form the
+            width shows is in the accessibility tree — the other is `display:none`. */}
+        <div className="border-t px-1 py-3 text-center lg:px-2">
+          <span className={open ? "hidden" : "lg:hidden"}>
+            <AppVersion copy={copy} compact />
+          </span>
+          <span className={open ? "inline" : "hidden lg:inline"}>
+            <AppVersion copy={copy} />
+          </span>
+        </div>
+      </aside>
+    </>
   );
 }

@@ -65,17 +65,22 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
         { id: "unnamed-type", label: "No relationship type" },
         { id: "unnamed-realm", label: "Not stated" },
         { id: "roles", label: "{initiator} / {counterparty}" },
+        /**
+         * The same four words `/assessment/templates` draws, in this surface's own voice: the
+         * price is the plan's (`CATALOGUE_PRICE_CENTS`), the primary action is the create screen
+         * this page links to, and the exemplar link appears only where a finished sheet exists.
+         */
+        { id: "price-label", label: "Included in" },
+        { id: "price", label: "{plan} · {price}/mo" },
+        { id: "use", label: "Use this template" },
+        { id: "see-example", label: "See a finished example" },
       ],
     },
     {
-      /** The v1 library's two groups, plus the one for templates that name no type (#409). */
+      /** The seven realm groups, and the one for templates that name no type (#409). */
       id: "groups",
-      heading: "By relationship type",
-      items: [
-        { id: "business", label: "Business" },
-        { id: "personal", label: "Personal" },
-        { id: "other", label: "Other templates" },
-      ],
+      heading: "By realm",
+      items: [{ id: "other", label: "No realm" }],
     },
     {
       id: "empty",

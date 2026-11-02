@@ -113,15 +113,18 @@ describe("a canonical bundle is a fixed point of serialize(parse(…))", () => {
 });
 
 describe("export → import → export is byte-identical", () => {
-  it("round-trips the four templates and four instances through a store", () => {
+  it("round-trips every template and instance through a store", () => {
     const directory = workspace();
     const store = join(directory, "assessments.json");
 
     const first = exportDataset({ store, out: join(directory, "one.json"), appVersion: APP });
     const imported = importBundleFile(first.file, { store, appVersion: APP });
     assert.equal(imported.kind, "dataset");
-    assert.equal(imported.templates, 4);
-    assert.equal(imported.instances, 4);
+    // The counts are the fixture's, not a number written here: the catalogue grows when the type
+    // taxonomy does (`data/assessments.ts` derives one template per purchasable type), and a
+    // literal would make adding a type look like a bundle defect.
+    assert.equal(imported.templates, assessments.length);
+    assert.equal(imported.instances, assessmentInstances.length);
     assert.equal(imported.materialized, false, "a dataset install has nothing to materialize");
 
     const second = exportDataset({ store, out: join(directory, "two.json"), appVersion: APP });
@@ -134,7 +137,7 @@ describe("export → import → export is byte-identical", () => {
     // The store is the active set, and it is the payload — not an envelope.
     const read = readStore(store);
     assert.equal(read.kind, "valid");
-    assert.equal(read.kind === "valid" ? read.records.templates.length : -1, 4);
+    assert.equal(read.kind === "valid" ? read.records.templates.length : -1, assessments.length);
   });
 
   it("is idempotent: re-importing the same dataset installs the same bytes", () => {
@@ -184,11 +187,7 @@ describe("export → import → export is byte-identical", () => {
       installed.kind === "valid"
         ? installed.records.templates.map((template) => template.id)
         : ["the store did not parse"],
-      [
-        "assessment-relationship-basics",
-        "assessment-business-staff-manager",
-        "assessment-personal-parent-child",
-      ],
+      assessments.filter((template) => template.id !== blank).map((template) => template.id),
       "the store must not hold the template before the import",
     );
 
@@ -223,11 +222,15 @@ describe("export → import → export is byte-identical", () => {
       appVersion: APP,
     });
     assert.equal(imported.materialized, true, "the fixtures become the store on the first import");
-    assert.equal(imported.templates, 5, "four fixtures plus the imported template");
+    assert.equal(
+      imported.templates,
+      assessments.length + 1,
+      "every fixture template plus the imported one",
+    );
 
     const exported = exportDataset({ store, out: join(directory, "all.json"), appVersion: APP });
-    assert.equal(exported.bundle.payload.templates.length, 5);
-    assert.equal(exported.bundle.payload.instances.length, 4);
+    assert.equal(exported.bundle.payload.templates.length, assessments.length + 1);
+    assert.equal(exported.bundle.payload.instances.length, assessmentInstances.length);
   });
 });
 
