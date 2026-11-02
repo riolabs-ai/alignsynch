@@ -79,9 +79,20 @@ export function MarketingHeader({
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-6">
         <span className="flex items-center gap-2">
           {mark ? (
+            /**
+             * The official lockup, whole — and never squeezed.
+             *
+             * `max-h-8 w-auto` rather than `h-8 w-auto`: a fixed height with a shrinkable width
+             * lets the flex row *compress* the mark instead of scaling it, which is exactly what
+             * happened at 390 — the logo rendered 190×32 where its own 818×127 ratio asks for
+             * 206×32, an 8 % squash in the one place the brand is most looked at. With both
+             * dimensions auto and only max constraints, the browser scales the file down when the
+             * row is narrow and keeps its aspect ratio (owner's rule: place the asset, correct
+             * aspect ratio, clear space).
+             */
             <Image
               alt={brand.name}
-              className="h-8 w-auto"
+              className="max-h-8 w-auto"
               height={mark.height}
               priority
               src={mark.src}
