@@ -35,6 +35,7 @@ import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { shellPageCopy } from "@/data/pages/shell";
 import type { ShellAccount } from "@/lib/auth/shell-account";
+import { publicChromeCopy } from "@/lib/shell-copy";
 
 /** One anchor in a rendered tree: where it goes, and the words (and monogram) inside it. */
 type Anchor = { href: string; text: string };
@@ -81,7 +82,9 @@ const PUBLIC_MENU: Anchor[] = [
   { href: "/#templates", text: "Templates" },
   { href: "/#questions", text: "How it works" },
   { href: "/pricing", text: "Pricing" },
-  { href: "/support", text: "Support" },
+  // Help, not Support: the public menu opens the FAQ and knowledge base (`/help`), while the
+  // rail's own Support row opens the account page inside the app.
+  { href: "/help", text: "Help" },
 ];
 
 describe("signed out", () => {
@@ -102,6 +105,48 @@ describe("signed out", () => {
   it("still renders the public menu — the element #317's header had none of", () => {
     expect(html.match(/<nav\b/g) ?? []).toHaveLength(1);
     expect(navAnchorsOf(html)).toEqual(PUBLIC_MENU);
+  });
+});
+
+describe("the payload the public chrome hands the browser", () => {
+  /**
+   * `PublicNav` is a client component, so its props are serialised into the RSC payload on every
+   * public route — invisible in the DOM, readable in the JavaScript. Before this slice existed the
+   * header was handed the whole shell fixture, which meant `/pricing` shipped the console's
+   * vocabulary ("My Relationships", "Gap Analysis", "Affiliate Page") to anyone who looked.
+   */
+  it("carries the menu's own rows and none of the shell's other destinations", () => {
+    const slice = publicChromeCopy(shellPageCopy, "alignsynch");
+    const ids = (slice.sections ?? []).flatMap((section) =>
+      (section.items ?? []).map((item) => item.id),
+    );
+    expect(ids).toEqual([
+      "home",
+      "templates",
+      "how-it-works",
+      "pricing",
+      "help",
+      "signed-out",
+      "sign-up",
+    ]);
+
+    const payload = JSON.stringify(slice);
+    for (const word of ["My Relationships", "Gap Analysis", "Leaderboard", "Explore Quizzes"]) {
+      expect(payload, `the public payload still ships "${word}"`).not.toContain(word);
+    }
+  });
+
+  it("draws the same menu from the slice as from the whole fixture", () => {
+    const sliced = renderToStaticMarkup(
+      createElement(MarketingHeader, {
+        account: null,
+        brand: alignSynchBrand,
+        brandId: "alignsynch",
+        copy: publicChromeCopy(shellPageCopy, "alignsynch"),
+        mark: undefined,
+      }),
+    );
+    expect(navAnchorsOf(sliced)).toEqual(PUBLIC_MENU);
   });
 });
 

@@ -402,6 +402,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/help",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The public help centre: the help categories, the FAQ and the knowledge base, in the marketing chrome and with no contact form anywhere on the page.",
+    notes:
+      "The public half of the Help/Support split (owner's review). A variation of the old `/support` hub with its Contact tab removed rather than left empty: the answers are public, and the band at the foot of the page says where a person is. It renders the same panels the account page links back to (`components/support/**`), so the two surfaces cannot tell a reader different things about one product.",
+  },
+  {
+    kind: "route",
     surface: "/how-it-works",
     status: "fixture",
     templates: ["alignsynch"],
@@ -589,7 +599,10 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     surface: "/support",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
-    capability: "The help centre: FAQ, help categories and a contact form.",
+    capability:
+      "Account support inside the app: the contact form, what the form does today, what to include in a message, and the links to the help centre and account settings.",
+    notes:
+      "The in-app half of the Help/Support split (owner's review) and the only place a contact form is drawn. The route resolves the session first: a member gets this page and a visitor with none is redirected to `/help` — not to `/login` and not to a 404 — because the same URL has two correct answers. The form has no sender (`RESEND_*` unset), so the submit is disabled and the line above it, which the button names through `aria-describedby`, says so; that is #290's rule kept in the place the reader is actually looking. The `lib/db` reach above is the admin-allowlist grant's (`lib/auth/session.ts` → `admin-allowlist.ts`), which returns before any query when `ADMIN_EMAILS` is unset: this page renders no row.",
   },
   {
     kind: "route",
@@ -1193,7 +1206,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The support centre: header, help categories, knowledge base, FAQ, contact form and the article detail.",
+      "The help panels shared by the two halves of the split — the two-tab help header, help categories, FAQ and knowledge base — plus the account page's contact form and its article reader.",
   },
   {
     kind: "domain",
