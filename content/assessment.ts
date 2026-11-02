@@ -266,6 +266,16 @@ export const zParty = z
      * a surface that draws it must treat absent as "not recorded", not as "not answered".
      */
     submittedAt: zIsoDateTime.optional(),
+    /**
+     * When this seat **accepted** the session — the completion hinge (#R2), or absent for "not
+     * accepted yet".
+     *
+     * The same rule `submittedAt` follows, one column over: an instant, never a status. Whether a
+     * seat has accepted is read from this column by `instanceStatusOf()`, and whether the sheet is
+     * frozen is read from it per party — `complete` is derived from it and the opinion rows
+     * together, and there is no `accepted` boolean anywhere to disagree with them.
+     */
+    acceptedAt: zIsoDateTime.optional(),
     /** One entry per Aspect of the instance, in the instance's own order. */
     opinions: z.array(zAspectOpinions).min(1),
   })

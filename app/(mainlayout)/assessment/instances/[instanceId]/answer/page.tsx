@@ -101,6 +101,7 @@ export default async function AnswerSheetPage({
     instanceRecordId: screen.instanceRecordId,
     viewerRole: screen.viewer.role,
     status: screen.status,
+    viewerAccepted: screen.viewerAccepted,
     aspects: screen.aspects,
   });
 

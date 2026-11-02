@@ -100,7 +100,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "body",
           label:
-            "Hi {counterparty},\n\n{initiator} has started an assessment called {template} and asked you to answer it.\n\nEvery Aspect asks two things: how it feels now, and how you wish it to be. Neither of you can see the other's answers until you have both submitted them, and after that the answers are frozen.\n\nOpen your invitation here: {link}\n\nThe link works once.",
+            "Hi {counterparty},\n\n{initiator} has started an assessment called {template} and asked you to answer it.\n\nEvery Aspect asks two things: how it feels now, and how you wish it to be. Neither of you can see the other's answers until you have both answered and accepted them, and after that the answers are frozen.\n\nOpen your invitation here: {link}\n\nThe link works once.",
         },
       ],
     },

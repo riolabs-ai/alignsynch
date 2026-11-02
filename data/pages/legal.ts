@@ -169,7 +169,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "removal",
             label: "6.3 Content removal and the freeze",
-            body: `Once both people in an assessment have submitted their answers, the answers are frozen by design and can no longer be changed. Before that point, each person may resubmit their own answers.\n\nTo ask us to remove content, write to ${record.supportEmail}. There is no automated content or account deletion in the current build; requests are handled manually.`,
+            body: `Once both people in an assessment have answered and accepted their answers, the answers are frozen by design and can no longer be changed. Before a person accepts, they may resubmit their own answers.\n\nTo ask us to remove content, write to ${record.supportEmail}. There is no automated content or account deletion in the current build; requests are handled manually.`,
           },
         ],
       },
@@ -437,7 +437,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "answers",
             label: "Assessments and answers",
-            body: "Assessments and their answers are kept for as long as the Service operates. Once both people have submitted, the answers are frozen by design and cannot be edited; a person may resubmit their own answers only before the assessment is complete.",
+            body: "Assessments and their answers are kept for as long as the Service operates. Once both people have answered and accepted, the answers are frozen by design and cannot be edited; a person may resubmit their own answers only before they accept.",
           },
           {
             id: "deletion",

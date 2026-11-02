@@ -199,9 +199,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered.",
+      "The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered **and both have accepted**.",
     notes:
-      "The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own before both have submitted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).",
+      "The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own until both seats have accepted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).",
   },
   {
     kind: "route",
@@ -222,7 +222,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "Review and accept a session: the decision first, both seats side by side with what each party has answered, then every Aspect beneath with both Opinion columns sealed.",
     notes:
-      "In-progress UI (#409, R1-E): the screen is real and the read is `readInstanceBundle()`, but no acceptance is stored anywhere yet — `party` and `session` have no accepted column — so each seat says 'not recorded' rather than drawing a status nobody measured, and the accept control is disabled with its reason beside it. Nothing on this route writes.",
+      "Live since R2 (#427): `POST /assessment/instances/[instanceId]/accepts` records one seat's acceptance in `party.accepted_at` (0016) and the **second** acceptance is what completes the session, so the page draws a real decision rather than a disabled control. The endpoint answers 303 and never renders: a first acceptance returns to this page with that seat marked accepted, the completing acceptance redirects to `/report`, and a refusal comes back as `?accept=<code>` — `already-accepted`, `incomplete` (the seat's own sheet must answer every Aspect), `not-a-party` (a coach holds a membership row and no `party` row, so the same resolver refuses them as a stranger), `no-such-instance`. The blind rule holds through the review window: both sheets stay sealed, and only the second acceptance opens the Gap. The transition derives the relationship's Steps from the same `opinion` rows the report reads, closes the ones whose Gap fell to 0, and commits them in the acceptance's own transaction — 'accepted but no Steps' is unrepresentable — and the unlock notice (#258) fires from the completing acceptance, once.",
   },
   {
     kind: "route",

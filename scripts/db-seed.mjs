@@ -161,11 +161,16 @@ async function seedInstance(client, instance) {
   );
   await client.query("DELETE FROM party WHERE session_record_id = $1", [instance.id]);
   for (const party of instance.parties) {
-    await client.query("INSERT INTO party (session_record_id, role, name) VALUES ($1, $2, $3)", [
-      instance.id,
-      party.role,
-      party.name,
-    ]);
+    // A seeded instance is a **finished** demo session: its parties have answered every Aspect,
+    // and since #427/R2 a session is complete only when both parties have **accepted**, so the
+    // seed records the acceptance at the fixture's own instant. Without it the demo would read as
+    // `answering` forever and its unlock marker (`party.unlock_seen_at`, V11) would be one that
+    // can never show. The fixture carries no acceptance field — an instant the product derives,
+    // not something an author writes — which is why it is stamped here rather than in `data/`.
+    await client.query(
+      "INSERT INTO party (session_record_id, role, name, accepted_at) VALUES ($1, $2, $3, $4)",
+      [instance.id, party.role, party.name, instance.date],
+    );
     for (const answer of party.opinions) {
       await client.query(
         `INSERT INTO opinion (session_record_id, role, item_id, feel, wish, think, guess)

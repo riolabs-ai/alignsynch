@@ -481,18 +481,27 @@ async function main() {
       }
 
       const { rows: answerCounts } = await client.query(
-        `SELECT p.role, (SELECT count(*) FROM opinion o
-                          WHERE o.session_record_id = p.session_record_id
-                            AND o.role = p.role)::int AS answered
+        `SELECT p.role,
+                (SELECT count(*) FROM opinion o
+                  WHERE o.session_record_id = p.session_record_id
+                    AND o.role = p.role)::int AS answered,
+                (p.accepted_at IS NOT NULL) AS accepted
            FROM party p WHERE p.session_record_id = $1`,
         [listed.recordId],
       );
       const answeredBy = (role) => answerCounts.find((row) => row.role === role)?.answered ?? 0;
+      // #R2 — acceptance is the completion hinge, so the status this check reads is the same
+      // derivation the screen reads, acceptances included. Omitting them here would call every
+      // seeded instance `answering` and fail V11 on a marker that is perfectly legitimate.
+      const acceptedBy = (role) =>
+        answerCounts.find((row) => row.role === role)?.accepted === true ? 1 : 0;
       const status = instanceStatusOf({
         aspectCount: rows.items.length,
         hasCounterparty: counterparties === 1,
         initiatorAnswered: answeredBy("initiator"),
         counterpartyAnswered: answeredBy("counterparty"),
+        initiatorAccepted: acceptedBy("initiator"),
+        counterpartyAccepted: acceptedBy("counterparty"),
       });
 
       // V11 — the mark (#252). `party.unlock_seen_at` is written when a party opens a COMPLETE

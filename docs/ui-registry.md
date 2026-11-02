@@ -17,7 +17,7 @@ How a template picks from this page — the order a new surface is decided in �
 
 - routes: **91** — 51 static, 40 dynamic, from `app/**/page.tsx`
 - component domains: **38** — 324 files under `components/`, 319 of them `.tsx`
-- route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
+- route handlers: **14** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 14 · **fixture** 54 · **db** 20 · **live** 7 · **prototype** 34
 - templates: Both templates 26 · AlignSynch 59 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -193,41 +193,41 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/assessment` — **db**
   - capability: The published assessment templates, each with its create form: pick a template and open a two-party instance from the templates that read from Postgres.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
 
 - `/assessment/[slug]` — **db**
   - capability: One assessment instance from Postgres: both parties' answers per Aspect, the Opinions and Values behind them, and the Gap between the two.
   - components: `components/assessment`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`
 
 - `/assessment/instances` — **db**
   - capability: Every relationship the signed-in account is a member of, as the My Quizzes card grid — the template, the stage, both parties, the session counts and the alignment once a session is complete.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
   - notes: Scoped by relationship_member.user_id (or party.user_id for rows seeded before #340) against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. The stage, the counts and the search are derived per render; `alignment` is the mean Gap of the latest session and is drawn `—`, never 0, until that session is complete, and the money block is the plan and its purchase instant on the Initiator's card alone — never a total.
 
 - `/assessment/instances/[instanceId]` — **db**
-  - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered.
+  - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered **and both have accepted**.
   - components: `components/assessment`, `components/assessment-flow`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
-  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own before both have submitted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own until both seats have accepted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
 
 - `/assessment/instances/[instanceId]/accept` — **db**
   - capability: Review and accept a session: the decision first, both seats side by side with what each party has answered, then every Aspect beneath with both Opinion columns sealed.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`
-  - notes: In-progress UI (#409, R1-E): the screen is real and the read is `readInstanceBundle()`, but no acceptance is stored anywhere yet — `party` and `session` have no accepted column — so each seat says 'not recorded' rather than drawing a status nobody measured, and the accept control is disabled with its reason beside it. Nothing on this route writes.
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - notes: Live since R2 (#427): `POST /assessment/instances/[instanceId]/accepts` records one seat's acceptance in `party.accepted_at` (0016) and the **second** acceptance is what completes the session, so the page draws a real decision rather than a disabled control. The endpoint answers 303 and never renders: a first acceptance returns to this page with that seat marked accepted, the completing acceptance redirects to `/report`, and a refusal comes back as `?accept=<code>` — `already-accepted`, `incomplete` (the seat's own sheet must answer every Aspect), `not-a-party` (a coach holds a membership row and no `party` row, so the same resolver refuses them as a stranger), `no-such-instance`. The blind rule holds through the review window: both sheets stay sealed, and only the second acceptance opens the Gap. The transition derives the relationship's Steps from the same `opinion` rows the report reads, closes the ones whose Gap fell to 0, and commits them in the acceptance's own transaction — 'accepted but no Steps' is unrepresentable — and the unlock notice (#258) fires from the completing acceptance, once.
 
 - `/assessment/instances/[instanceId]/answer` — **db**
   - capability: Answer the Aspect sheet: every Aspect's prompt, both named Values, and one row per seat asking the Opinion kinds the instance's Mode defines.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
   - notes: The gated sheet (#427, R2-2), and singular `answer` on purpose: `/answers` in the same segment is the POST-only endpoint the form submits to, and Next refuses a `page.tsx` beside a `route.ts`. The viewer is resolved by `readFlowScreen()` from the party cookie's token hash, then the signed-in account, then a relationship membership, and a request that is none of those gets a 404 — the sheet does not exist for it. `lib/flow/answer-gate.ts` picks one of three shapes: the live form for a seat that may answer (prefilled from that seat's own `opinion` rows), the viewer's own sheet drawn disabled once the answers are sealed, and a coach band with no form at all. The form posts no identity field; the submit is written by `submitAnswers()` under the role the cookie resolves inside its transaction. Pre-completion the other party's rows never leave Postgres — the only opinion query the read runs is filtered by `visibleRoles()` — so the blindness is the shape of the projection, not a conditional in this page.
 
 - `/assessment/instances/[instanceId]/report` — **db**
   - capability: The report both parties read once the sheet is scored: per Aspect the prompt, both named ends of the scale, the verdict under the instance's Setting, both parties' Opinions, and every Gap with the two Opinions it subtracts printed beside it.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
   - notes: The read surface the app did not have until #409, ported from the `/v1` prototype's `report-body.tsx` as a server component over `lib/assessment-report.ts` — never a rewiring of the client store (#228, E34). The blind rule is the `screen.report === null` branch, not a redaction: before both parties have submitted, `readFlowScreen` has not read the other party's opinion rows at all and the route draws the locked page, which carries no score, no Gap and no count of the other party's progress. Every number is `gapKindsOf()` over stored rows; an unanswered Opinion prints a dash, never a 0. The viewer is the party cookie's seat (or a coach's membership), so a browser with no role on the relationship gets a 404.
 
 - `/assessment/templates` — **db**
@@ -257,7 +257,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/dashboard` — **db**
   - capability: The signed-in console's Overview: four counts of the viewer's own relationships — awaiting the other party, needing the viewer's answers, complete and unread — plus the templates available, each figure linking to the list it counts.
   - components: `components/console`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/my-instances.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/my-instances.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
   - notes: Every figure is arithmetic over `listMyInstances(user.userId)` plus the length of the published-template read, and each card links to `/assessment/instances?filter=<id>` (or `/assessment` for the templates) where the same predicate filters the same array (`lib/flow/overview.ts`), so a count cannot disagree with its list. No percentage, no total, and no authored metric: the numbers `data/pages/dashboard.ts` rejected for `/dashboard/user` (#164) have no equivalent here and were not re-created. The blind rule holds by construction — the three relationship counts are the three `MyInstanceState` values, derived from the viewer's own answered count and their own `unlock_seen_at`.
 
 - `/demo` — **mock**
@@ -281,7 +281,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/invite/[token]` — **db**
   - capability: What an invitation says, and the button that claims it — a single-use token spent by a POST once the invited party accepts.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
 
 - `/v1` — **prototype**
   - capability: The prototype's persona picker — a stand-in for /login that offers the six personas instead of an email/password form, and lands the chosen persona on their own screen.
@@ -749,6 +749,7 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/api/billing/webhook` — `app/api/billing/webhook/route.ts`
 - `/api/profile` — `app/api/profile/route.ts`
 - `/api/version` — `app/api/version/route.ts`
+- `/assessment/instances/[instanceId]/accepts` — `app/(mainlayout)/assessment/instances/[instanceId]/accepts/route.ts`
 - `/assessment/instances/[instanceId]/answers` — `app/(mainlayout)/assessment/instances/[instanceId]/answers/route.ts`
 - `/assessment/instances/[instanceId]/invite` — `app/(mainlayout)/assessment/instances/[instanceId]/invite/route.ts`
 - `/assessment/new` — `app/(mainlayout)/assessment/new/route.ts`

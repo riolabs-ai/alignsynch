@@ -366,6 +366,10 @@ describe("a row's state is derived, never stored", () => {
       hasCounterparty: true,
       initiatorAnswered: 5,
       counterpartyAnswered: 5,
+      // Accepted by both (#R2): `complete` is the session both seats agreed to, not the one both
+      // happened to finish filling in.
+      initiatorAccepted: 1,
+      counterpartyAccepted: 1,
       viewerRole: "initiator",
       ...overrides,
     };
@@ -685,9 +689,18 @@ describe("the row → card mapping (#409)", () => {
       initiator_answered: 5,
       counterparty_answered: 5,
       has_counterparty: true,
+      initiator_accepted: true,
+      counterparty_accepted: true,
       sessions_opened: 1,
       sessions: [
-        { aspectCount: 5, initiatorAnswered: 5, counterpartyAnswered: 5, hasCounterparty: true },
+        {
+          aspectCount: 5,
+          initiatorAnswered: 5,
+          counterpartyAnswered: 5,
+          hasCounterparty: true,
+          initiatorAccepted: true,
+          counterpartyAccepted: true,
+        },
       ],
       opinions: [
         { role: "initiator", itemId: "aspect-money", feel: 4, wish: 4, think: null, guess: null },
@@ -730,7 +743,14 @@ describe("the row → card mapping (#409)", () => {
       rowOf({
         counterparty_answered: 4,
         sessions: [
-          { aspectCount: 5, initiatorAnswered: 5, counterpartyAnswered: 4, hasCounterparty: true },
+          {
+            aspectCount: 5,
+            initiatorAnswered: 5,
+            counterpartyAnswered: 4,
+            hasCounterparty: true,
+            initiatorAccepted: true,
+            counterpartyAccepted: true,
+          },
         ],
       }),
     );
