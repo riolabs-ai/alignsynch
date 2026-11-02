@@ -1,7 +1,7 @@
 # AlignSynch
 
 <p align="center">
-  <img src="docs/assets/hero.svg" alt="AlignSynch — two people answer the same questions; the distance between their answers is the Gap." width="960" />
+  <img src="docs/screenshots/pricing-1440.png" alt="The AlignSynch pricing page at 1440 wide: the headline Simple, transparent pricing for relationship alignment, three plans — Free, Basic at $8.95 marked Recommended and Principal at $16.95 — above a monthly and yearly toggle, a test-mode line under the prices, the FAQ, a closing call to action and the footer." width="720" />
 </p>
 
 <p align="center">
@@ -29,54 +29,22 @@ built on the QuizHub starting UI template, the shared core every expression of t
 
 ## What it looks like
 
-Every image below is this commit running locally: `BRAND=alignsynch`, served by `next start` on
-`http://localhost:3100` (not `127.0.0.1`, which is a different origin for the auth server — see
+Every image on this page is this commit running locally: `BRAND=alignsynch`, served by `next start`
+on `http://localhost:3100` (not `127.0.0.1`, which is a different origin for the auth server — see
 [Environment variables](#environment-variables)), signed in through the demo panel as its Initiator
-where a route needs a session, at 1440 and 390 CSS pixels wide and device scale 1. Nothing is
-cropped, upscaled or retouched.
+where a route needs a session, at 1440 CSS pixels wide and device scale 1. Each capture is the full
+page, so what you see is the whole route — nothing is cropped, upscaled or retouched.
 
-Two things in these images are honestly temporary and are left visible rather than cropped out:
-`/pricing` carries the billing driver's **test-mode** line, because the checkout runs on test keys,
-and `/login` is captured with the demo panel off — which is how a production build serves it.
+Three things in these images are honestly temporary and are left visible rather than cropped out:
+`/pricing` carries the billing driver's **test-mode** line, because the checkout runs on test keys;
+`/login` is captured with the demo panel off, which is how a production build serves it; and the two
+assessment screens show the demo branch's dataset — one relationship and three templates — because
+that is what the demo branch carries.
 
-### Pricing — `/pricing`
-
-<p align="center">
-  <img src="docs/screenshots/pricing-1440.png" alt="The pricing page at 1440 wide: three plans — Free, Basic at $8.95 marked Recommended, and Principal at $16.95 — a monthly and yearly toggle, a test-mode line under the prices, the FAQ, the closing call to action and the footer." width="720" />
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/pricing-390.png" alt="The pricing page at 390 wide: the same three plans stacked in one column above the FAQ and the footer." width="300" />
-</p>
-
-Three plans, the middle one recommended, a yearly toggle at 20% off, and a card checkout behind the
-paid ones. The test-mode line is the billing driver saying out loud that no card is charged.
-
-### Help — `/help`
-
-<p align="center">
-  <img src="docs/screenshots/help-1440.png" alt="The help centre at 1440 wide: the FAQ list with a category sidebar and a search field, a Need a person callout, the contact form with name, email and message fields, and the footer." width="720" />
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/help-390.png" alt="The help centre at 390 wide: the same FAQ list, categories, contact form and footer stacked in one column." width="300" />
-</p>
-
-The public FAQ, the knowledge base, and the one contact form in the product: it takes a name, a reply
-address and a message, stores the message first and mails it second.
-
-### Support — `/support`
-
-<p align="center">
-  <img src="docs/screenshots/support-1440.png" alt="Account support at 1440 wide, signed in: a Contact support card pointing at the help form, and cards explaining what happens to a message, what to include and where the faster answers are." width="720" />
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/support-390.png" alt="Account support at 390 wide: the same four cards stacked in one column beside the icon rail." width="300" />
-</p>
-
-`/support` answers two ways on purpose: the account page for a signed-in member, and `/help` for
-everyone else.
+The hero is `/pricing`: three plans, the middle one recommended, a yearly toggle at 20% off, the FAQ,
+and a card checkout behind the paid ones. What follows is the rest of what runs, one route at a time.
+The same six routes are also captured at 390 wide under `docs/screenshots/` for the mobile layout;
+they are not embedded here, because six full pages already fill this section.
 
 ### Sign in — `/login`
 
@@ -84,12 +52,26 @@ everyone else.
   <img src="docs/screenshots/login-1440.png" alt="The sign-in page at 1440 wide: a left panel reading AlignSynch, the same questions for both of you, and where your answers part is the Gap, beside a form with Google sign-in, email and password, and a sign-up link." width="720" />
 </p>
 
+Google, email and password on the right; the two-answers, one-Gap panel on the left, with the demo
+accounts panel off as a production build serves it.
+
+### Help — `/help`
+
 <p align="center">
-  <img src="docs/screenshots/login-390.png" alt="The sign-in page at 390 wide: the same form in a single column under the wordmark." width="300" />
+  <img src="docs/screenshots/help-1440.png" alt="The help centre at 1440 wide: the FAQ list with a category sidebar and a search field, a Need a person callout, the contact form with name, email and message fields, and the footer." width="720" />
 </p>
 
-Sessions are Neon Managed Auth's, proxied at `app/api/auth/[...path]`; the app owns no users or
-sessions table.
+The public FAQ with its category sidebar and search field, a callout pointing at in-app support, and
+the contact form behind it.
+
+### Support — `/support`
+
+<p align="center">
+  <img src="docs/screenshots/support-1440.png" alt="Account support at 1440 wide, signed in: a Contact support card pointing at the help form, and cards explaining what happens to a message, what to include and where the faster answers are." width="720" />
+</p>
+
+Signed in: where to send a message, what happens to it — stored first, mailed second, read by a
+person — and what to include. Signed out, the same route answers with `/help`.
 
 ### My Relationships — `/assessment/instances`
 
@@ -97,12 +79,8 @@ sessions table.
   <img src="docs/screenshots/assessment-instances-1440.png" alt="The My Relationships list at 1440 wide: filters, a result count, and one relationship card reading Relationship Basics with Rowan, one of one session completed, 100 percent completion, an average alignment of 1.1 mean Gap and five Aspects." width="720" />
 </p>
 
-<p align="center">
-  <img src="docs/screenshots/assessment-instances-390.png" alt="The same My Relationships list at 390 wide, the card stacked under the filters." width="300" />
-</p>
-
-Every relationship the account is a party to, and where each one stands: invited, connected, or
-sharing. The numbers on the card are read from Postgres for the demo dataset.
+Every relationship the account is a party to — invited, connected or sharing — with the numbers on
+the card read from Postgres: one session of one completed, a 1.1 mean Gap across five Aspects.
 
 ### Relationship Templates — `/assessment/templates`
 
@@ -110,13 +88,9 @@ sharing. The numbers on the card are read from Postgres for the demo dataset.
   <img src="docs/screenshots/assessment-templates-1440.png" alt="The template catalogue at 1440 wide: filters for which templates and which status, and three cards — Staff and Manager, Parent and Child and Relationship Basics — each counting its Aspects and the instances made from it." width="720" />
 </p>
 
-<p align="center">
-  <img src="docs/screenshots/assessment-templates-390.png" alt="The same template catalogue at 390 wide, the three cards stacked in one column." width="300" />
-</p>
-
-A template is a title and up to eight Aspects; an instance is a template copied and given two
-parties. Archiving hides a template from the catalogue and leaves the instances already made from it
-working.
+Three templates — Staff & Manager, Parent & Child and Relationship Basics — each counting its five
+Aspects and the instances made from it; archiving one hides it from the catalogue and leaves its
+instances working.
 
 ## What actually runs
 
