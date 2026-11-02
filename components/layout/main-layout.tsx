@@ -11,6 +11,7 @@ import type { ShellAccount } from "@/lib/auth/shell-account";
 import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import type React from "react";
+import { useCallback, useState } from "react";
 
 /**
  * The shell. `copy` is `data/pages/shell.ts`, parsed by `app/(mainlayout)/layout.tsx` and
@@ -23,11 +24,20 @@ import type React from "react";
  * the person looking at it may see (`lib/nav.ts`). `account` crosses it too (issue #212): the
  * signed-in person, or `null` when nobody is signed in.
  *
- * **Two columns, no drawer and no scrim.** The rail is a sticky first column and the content is
- * the second; there is no overlay to dismiss, no z-index stack between them and no state that
- * decides whether the rail exists. `min-w-0` on the content column is load-bearing: a flex child
- * that holds a wide table would otherwise refuse to shrink below its content and push the page
- * sideways at phone widths.
+ * **One column at `md` and up, a drawer below it.** The rail is the sticky first column at 768px
+ * and up — 64px of icons until `lg`, the 250px labelled rail from 1024px — and the content is the
+ * second column, so the offset is the rail's own in-flow width and needs no calculation here. Below
+ * `md` the rail is `position: fixed` and out of the flow (see `AppSidebar`), so the content takes
+ * the full width and nothing reflows when the drawer opens over it. `min-w-0` on the content
+ * column is load-bearing: a flex child that holds a wide table would otherwise refuse to shrink
+ * below its content and push the page sideways at phone widths.
+ *
+ * **The drawer's one boolean lives here**, because its two halves do not: the trigger is in the
+ * header and the panel is the rail. They are brothers in this component, which is the nearest
+ * place both can see one value — and one value is the point (one drawer, one trigger, one
+ * `aria-controls="app-sidebar"`). The callbacks are `useCallback`'d because the drawer's focus
+ * effect keys on `onClose`: a new identity each render would reset focus on every keystroke in
+ * the header's search field.
  */
 export function MainLayout({
   children,
@@ -58,9 +68,21 @@ export function MainLayout({
    */
   hiddenNav?: readonly string[];
 }) {
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const openNavigation = useCallback(() => setNavigationOpen(true), []);
+  const closeNavigation = useCallback(() => setNavigationOpen(false), []);
+
   return (
     <div className="flex min-h-screen">
-      <AppSidebar copy={copy} mark={mark} brandId={brandId} viewer={viewer} hiddenNav={hiddenNav} />
+      <AppSidebar
+        copy={copy}
+        mark={mark}
+        brandId={brandId}
+        viewer={viewer}
+        hiddenNav={hiddenNav}
+        open={navigationOpen}
+        onClose={closeNavigation}
+      />
       <div className="min-w-0 flex-1">
         <Header
           copy={copy}
@@ -69,6 +91,8 @@ export function MainLayout({
           account={account}
           searchIndex={searchIndex}
           hiddenNav={hiddenNav}
+          navigationOpen={navigationOpen}
+          onOpenNavigation={openNavigation}
         />
         <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">{children}</main>
       </div>

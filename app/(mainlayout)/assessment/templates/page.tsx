@@ -30,6 +30,11 @@
  * list is a database read, so `pnpm build` must pass with `DATABASE_URL` unset.
  */
 import { TemplateLibrary, type LibraryNotice } from "@/components/assessment-flow/template-library";
+import {
+  groupCountsOf,
+  parseRealmFilter,
+  templatesInRealm,
+} from "@/components/assessment-flow/template-card";
 import { templateLibraryPageCopy } from "@/data/pages/assessment-templates";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
@@ -61,6 +66,7 @@ type LibraryParams = {
   readonly view?: string | string[];
   readonly status?: string | string[];
   readonly q?: string | string[];
+  readonly realm?: string | string[];
   readonly archived?: string | string[];
   readonly unarchived?: string | string[];
   readonly duplicated?: string | string[];
@@ -118,6 +124,7 @@ export default async function TemplateLibraryPage({
     view: parseLibraryView(first(params.view)),
     status: parseLibraryStatus(first(params.status)),
     query: (first(params.q) ?? "").slice(0, 120),
+    realm: parseRealmFilter(first(params.realm)),
   };
 
   let visible: readonly LibraryTemplate[] = [];
@@ -132,7 +139,15 @@ export default async function TemplateLibraryPage({
     unreadable = error.reason;
   }
 
-  const shown = filterLibrary(visible, filter);
+  /**
+   * The tab, the status and the search narrow the rows; the realm narrows what is left.
+   *
+   * `filterLibrary` is `lib/flow`'s pure function and stays as it is — a realm is not an
+   * authorship fact, it is the type taxonomy's field (`REALMS`), so the second narrowing is a
+   * projection of the rows the first one returned and needs no database column.
+   */
+  const narrowed = filterLibrary(visible, filter);
+  const shown = templatesInRealm(narrowed, filter.realm);
 
   return (
     <TemplateLibrary
@@ -140,6 +155,7 @@ export default async function TemplateLibraryPage({
       shown={shown}
       state={libraryStateOf(visible, shown)}
       filter={filter}
+      counts={groupCountsOf(narrowed)}
       notice={unreadable === null ? noticeOf(visible, params) : null}
       unreadable={unreadable}
     />
