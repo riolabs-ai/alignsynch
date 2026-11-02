@@ -16,7 +16,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **92** — 52 static, 40 dynamic, from `app/**/page.tsx`
-- component domains: **39** — 331 files under `components/`, 325 of them `.tsx`
+- component domains: **39** — 332 files under `components/`, 326 of them `.tsx`
 - route handlers: **16** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 15 · **fixture** 55 · **db** 20 · **live** 7 · **prototype** 34
 - templates: Both templates 28 · AlignSynch 59 · QuizHub 42 · No template yet 2
@@ -135,8 +135,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: Holds no words of its own — the blocks arrive from `content/blocks.ts` through props.
 
 - `components/home` — **fixture**
-  - capability: Both front pages: the QuizHub shelves (hero, category slider, latest, featured, top players, winners, testimonials) and the AlignSynch two-question block.
-  - files (11): `alignment-home.tsx`, `categories-slider.tsx`, `featured-quizzes.tsx`, `hero-section.tsx`, `latest-quizzes.tsx`, `live-winners.tsx`, `newsletter-section.tsx`, `player-testimonials.tsx`, `quizzes-by-difficulty.tsx`, `resources-and-referral.tsx`, `top-players-carousel.tsx`
+  - capability: Both front pages: the QuizHub shelves (hero, category slider, latest, featured, top players, winners, testimonials) and the AlignSynch practice page — a two-column hero over the worked-example card, then the cycle, the mechanism, the catalogue, the scope ledger and the seats.
+  - files (12): `alignment-home.tsx`, `alignment-templates.tsx`, `categories-slider.tsx`, `featured-quizzes.tsx`, `hero-section.tsx`, `latest-quizzes.tsx`, `live-winners.tsx`, `newsletter-section.tsx`, `player-testimonials.tsx`, `quizzes-by-difficulty.tsx`, `resources-and-referral.tsx`, `top-players-carousel.tsx`
   - routes (1): `/`
 
 - `components/identity` — **live**
