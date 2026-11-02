@@ -88,20 +88,27 @@ describe("the two routes exist and the manifest knows both", () => {
 });
 
 describe("the public help centre", () => {
-  it("renders the FAQ and the knowledge base, and no contact form", async () => {
-    const html = await htmlOf(() => HelpPage());
+  it("renders the FAQ, the knowledge base and the one contact form", async () => {
+    const html = await htmlOf(() => HelpPage({ searchParams: Promise.resolve({}) }));
 
     // Both panels' chrome is present — the FAQ band by default, and the knowledge-base tab.
     expect(html).toContain(sectionOf(helpPageCopy, "faqs").heading ?? "");
     expect(html).toContain(sectionOf(helpPageCopy, "knowledge-base").heading ?? "");
     expect(html).toContain(sectionOf(helpPageCopy, "human").cta?.label ?? "");
 
-    // The absence is the claim: no form element, and none of the contact form's field names.
-    expect(html).not.toContain("<form");
-    for (const field of ["name", "email", "subject", "message"]) {
-      expect(html).not.toContain(`id="${field}"`);
-    }
-    expect(html).not.toContain(sectionOf(supportPageCopy, "contact").heading ?? "");
+    // The one contact path (owner, 2026-11-02): the route mounts the form under the answers.
+    // Its three fields are the card's, and the honeypot and render instant are hidden plumbing.
+    expect(html).toContain('action="/api/contact"');
+    const names = [...html.matchAll(/name="([^"]+)"/g)].map((match) => match[1]);
+    expect(names.filter((name) => name !== "website" && name !== "startedAt")).toEqual([
+      "name",
+      "email",
+      "message",
+    ]);
+    // No captcha, and no address on the page the form lives on.
+    expect(html).not.toMatch(/captcha|recaptcha|hcaptcha|turnstile/i);
+    expect(html).not.toMatch(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}/);
+    expect(html).not.toContain("mailto:");
   });
 
   it("points a reader at the account page instead, and says why that page needs a sign-in", () => {
@@ -138,27 +145,27 @@ describe("the account support page", () => {
     await expect(SupportPage()).rejects.toThrow("NEXT_REDIRECT:/help");
   });
 
-  it("renders the form for a member, with the honest state line beside the submit control", async () => {
+  it("renders the contact band for a member, pointing at the one form", async () => {
     session.user = { userId: "user_e2e" };
     const html = await htmlOf(() => SupportPage());
 
-    // The five fields the page has always rendered, by the ids the labels point at.
+    // The band's own words, and its link to the only contact path (owner, 2026-11-02).
+    const contact = sectionOf(supportPageCopy, "contact");
+    expect(html).toContain(contact.heading ?? "");
+    expect(html).toContain(contact.body ?? "");
+    expect(contact.cta?.href).toBe("/help");
+    expect(html).toContain('href="/help"');
+
+    // No second form and no printed address: the form on `/help` is the one path, and a
+    // `mailto:` here would be the defect this card removed.
+    expect(html).not.toContain("<form");
     for (const field of ["name", "email", "subject", "message"]) {
-      expect(html).toContain(`id="${field}"`);
+      expect(html).not.toContain(`id="${field}"`);
     }
-    expect(html).toContain(itemLabel(sectionOf(supportPageCopy, "contact"), "submit"));
+    expect(html).not.toContain("mailto:");
+    expect(html).not.toMatch(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}/);
 
-    // The honest line, printed next to the control it describes, and named by that control so the
-    // reason is announced rather than merely painted.
-    const note = itemLabel(sectionOf(supportPageCopy, "contact"), "submit-note");
-    expect(html).toContain(note);
-    expect(html).toMatch(/<button[^>]*disabled[^>]*aria-describedby="support-submit-note"/);
-    expect(html).toContain('id="support-submit-note"');
-
-    // And the banner that says where to write instead, with the brand's own address in it.
-    expect(html).toContain("mailto:");
-
-    // The auxiliary bands the card asked for.
+    // The auxiliary bands the split kept.
     for (const id of ["what-this-form-does", "what-to-include", "where-else"]) {
       expect(html).toContain(sectionOf(supportPageCopy, id).heading ?? "");
     }

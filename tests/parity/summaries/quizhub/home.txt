@@ -78,7 +78,7 @@ landmarks (3)
   contentinfo    1
   navigation     1
 
-links (72 unique, 89 total)
+links (72 unique, 90 total)
   /                                                    1
   /battle                                              1
   /categories                                          1
@@ -110,7 +110,7 @@ links (72 unique, 89 total)
   /create/editor                                       2
   /dashboard/user                                      1
   /explore                                             1
-  /help                                                1
+  /help                                                2
   /login                                               1
   /pricing                                             2
   /privacy                                             2
@@ -153,8 +153,8 @@ links (72 unique, 89 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
 
 counts
-  elements  2249
+  elements  2247
   images    16
-  buttons   33
+  buttons   32
   inputs    3
-  classes   486 (sha e4fb469a60eb)
+  classes   491 (sha 2356fdde50dc)

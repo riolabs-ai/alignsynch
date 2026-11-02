@@ -232,7 +232,7 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "home", label: "Home" },
           { id: "dashboard", label: "Dashboard" },
-          { id: "how-it-works", label: "How it works" },
+          { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
           { id: "template-library", label: "Library" },
           { id: "templates", label: "Templates" },
@@ -470,8 +470,8 @@ export function shellCopy(brand: Brand): PageCopy {
            * is not a second `signed-out` — the two links are different destinations, and a slot
            * that derived one from the other would have to spell an href in a component.
            */
-          { id: "signed-out", label: "Sign in" },
-          { id: "sign-up", label: "Sign up" },
+          { id: "signed-out", label: "Sign In" },
+          { id: "sign-up", label: "Sign Up" },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
@@ -562,7 +562,7 @@ export function shellCopy(brand: Brand): PageCopy {
         heading: "Quick Links",
         items: [
           { id: "templates", label: "Templates" },
-          { id: "how-it-works", label: "How it works" },
+          { id: "how-it-works", label: "How It Works" },
           /**
            * The footer's help row (Help/Support split). The footer is mounted by the public pages
            * *and* by four product pages, so this column carries the public destination — `help` —
@@ -583,35 +583,33 @@ export function shellCopy(brand: Brand): PageCopy {
         id: "footer-contact",
         heading: "Contact",
         /**
-         * Two rows, not four (issue #272). The block used to print a street line and a telephone
-         * number. Neither is a fact about this company: the street was invented, and the number
-         * came from the range reserved for fiction, so it cannot reach anyone. A mailbox someone
-         * can write to and a button that opens the support surface are the two rows that
-         * survive; a real address or number comes back only from the brand record, when someone
-         * supplies one.
+         * **A form, not a mailbox** (owner, 2026-11-02). This block printed the brand record's
+         * address as a dead row — a string on every page of both builds, and on the AlignSynch
+         * side one a visitor could not write to without a mail client. The contact path is one
+         * link to the contact form, and the fixture names no address at all: an address no
+         * fixture carries cannot be printed by accident.
+         *
+         * The street line and the telephone number left in #272 for the same reason: neither was
+         * a fact. `cta.href` is checked against the route manifest by E23, so the row cannot
+         * outlive the page it points at.
          */
-        items: [
-          { id: "email", label: brand.supportEmail },
-          { id: "cta", label: "Contact Support" },
-        ],
+        body: "Send us a message from the contact form and we will reply to the address you leave.",
+        cta: { label: "Contact us", href: "/help" },
       },
       /**
-       * The alignment brand's contact block — the same ids, because the footer resolves one set
-       * of ids whichever section the brand picked.
+       * The alignment brand's contact block — the same shape, because the footer resolves one
+       * section either way.
        *
-       * It differs in nothing but the words the brands do not share; the two fabricated rows
-       * (street line, 555 number) are gone from both sections because the ids have to match and
-       * neither value is a fact about either product. The mailbox is the record's, read twice on
-       * purpose: the two brands route to different inboxes and the address is a field, not a
-       * literal.
+       * It differs in nothing but the words the brands do not share. Neither section names a
+       * mailbox: `supportEmail` is the contact form's *recipient*, read on the server by
+       * `app/api/contact/route.ts`, and a rendering rule that kept it out of one brand's footer
+       * and not the other's would be the same defect with a brand check in front of it.
        */
       {
         id: "footer-contact-alignsynch",
         heading: "Contact",
-        items: [
-          { id: "email", label: brand.supportEmail },
-          { id: "cta", label: "Contact Support" },
-        ],
+        body: "Send us a message from the contact form and we will reply to the address you leave.",
+        cta: { label: "Contact us", href: "/help" },
       },
       /**
        * The footer's news band — the second life of the box #272 removed.
@@ -640,8 +638,14 @@ export function shellCopy(brand: Brand): PageCopy {
         body: "A note when we ship something that changes how the product works. No schedule, and every message says how to stop.",
         items: [
           { id: "field-label", label: "Email address" },
-          { id: "placeholder", label: "you@example.com" },
-          { id: "submit", label: "Sign up" },
+          /**
+           * No address-shaped placeholder (owner, 2026-11-02): the sweep in
+           * `tests/public-contact.test.tsx` reads every string in this fixture for an
+           * address, and `you@example.com` is one — a placeholder a visitor can copy is the
+           * same harvestable string as a real one, and it is not an address this product owns.
+           */
+          { id: "placeholder", label: "Where should we send it?" },
+          { id: "submit", label: "Sign Up" },
           { id: "pending", label: "Signing up…" },
           { id: "back", label: "Back to the page" },
           {

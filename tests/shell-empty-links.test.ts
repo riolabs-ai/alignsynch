@@ -86,19 +86,20 @@ describe("the footer claims no social presence it cannot back", () => {
     it(`${brandId}: prints no invented street line or telephone number, and the signup it prints is wired`, () => {
       const html = footer(brandId);
       expect(html).not.toMatch(/Alignment Way|Quiz Street|\b555\b/);
-      // The rows that survive the contact block, so this is not a claim about an empty block.
-      expect(html).toContain("Contact Support");
       /**
-       * This case used to assert the *absence* of an email field, because the subscribe box had
-       * no handler and no sender behind it (#272, "a page asserting a fact nobody can check out").
-       * this card built the sender: the form posts to `/api/news/subscribe`, which writes the address
-       * to `news_signup` and sends a confirmation. So the same defect is now checked from the
-       * other side — the field exists *and* it has somewhere to go, which is the whole difference
-       * the issue was about. A field added back with no action fails here.
+       * The signup's *absence* used to be the claim (#272: a box with no handler and no sender).
+       * The owner's card built the sender, so the same defect is checked from the other side —
+       * the field exists *and* it has somewhere to go. A field added back with no action fails
+       * here.
        */
       expect(html).toContain('type="email"');
       expect(html).toContain('action="/api/news/subscribe"');
       expect(html).toContain(sectionOf(shellPageCopy, "footer-news").heading ?? "");
+      // And the contact band's one link survives, so this is not a claim about an empty block:
+      // it points at the contact form now instead of printing a mailbox (owner, 2026-11-02).
+      expect(html).toContain("Send us a message from the contact form");
+      expect(html).toContain('href="/help"');
+      expect(html).not.toContain("mailto:");
     });
 
     it(`${brandId}: still renders its columns, so the row was the only thing removed`, () => {
