@@ -1,20 +1,25 @@
 /**
- * `/assessment/instances/[instanceId]/answer` — the answer sheet, shipped as **in-progress UI**
- * (#409, R1-E).
+ * `/assessment/instances/[instanceId]/answer` — the answer sheet (#427, R2-2).
  *
- * The screen is real; the write is not. Every word here describes the sheet the app will ask,
- * and one of them says plainly that nothing on it is saved yet — the honest-action rule this
- * card is built on: a control that cannot work says so at the point of action, and no screen
- * ever reports a submission that did not happen.
+ * The sheet is a **write surface** now. R1-E shipped this route as in-progress UI whose copy said
+ * plainly that nothing was saved; that sentence is gone, because it would now be false. What
+ * replaces it is what a person about to submit needs: whose sheet this is, that a submit is a
+ * whole sheet, and that the other party's answers are not on this page to be found.
  *
- * `sheet` owns the band the component renders: the heading, the Mode-independent body, the
- * blind-rule sentence (the one rule this product never relaxes), the not-wired notice, the
- * two seat names, and the submit's own note. `rules` owns the two facts a reader needs about
- * what the sheet keeps — the Mode is fixed at creation, and the Setting is the bar the report
- * is judged against later.
+ * The bands:
  *
- * `{left}`/`{right}` are the Aspect's two Values, `{name}` a party's own name and `{seat}` its
- * role, filled by `fillLabel()` from the rows the page read — the fixture authors no person.
+ *   `sheet`    the live form — who the viewer answers as, the blind-rule sentence, the Aspect
+ *              band, and the note beside the submit that says a submit is a whole sheet.
+ *   `rules`    the two facts that do not change from visit to visit: the Mode is fixed at
+ *              creation, and no party picks the Setting here.
+ *   `frozen`   the read-only state: both parties have answered every Aspect, so this page shows
+ *              the viewer their own sheet and offers no control that could only be refused.
+ *   `coach`    a coach membership reads the relationship and has no answers to give, so the page
+ *              draws the badge and the reason instead of a sheet.
+ *
+ * `{name}`/`{seat}`/`{left}`/`{right}` are filled by `fillLabel()` from the rows the page read —
+ * the fixture authors no person and no Aspect. `back` is a page-level item because every band
+ * ends with the same link.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
@@ -22,38 +27,29 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
   heading: "Answer your side",
   subtitle:
     "Every Aspect of this relationship, asked in the shape its Mode defines. Your answers stay sealed until both parties accept.",
+  items: [{ id: "back", label: "Back to the relationship" }],
   sections: [
     {
       id: "sheet",
-      heading: "The Aspect sheet",
-      body: "Each Aspect is one line of the relationship. You score it from the left Value to the right Value, once for every Opinion kind your Mode asks.",
+      heading: "Your sheet",
+      body: "Each Aspect is one line of the relationship. You score it from the left Value to the right Value, once for every Opinion kind your Mode asks, and you submit the sheet as a whole.",
       items: [
-        {
-          id: "blind-rule",
-          label:
-            "Until both parties accept, neither of you sees the other's answers — not filtered, absent.",
-        },
-        {
-          id: "not-wired",
-          label:
-            "Not wired yet — this sheet does not save. Anything you mark here is not recorded, and the submit button stays disabled until the write path ships.",
-        },
-        { id: "scale", label: "{left} — {right}" },
-        { id: "seat-row", label: "{name} · {seat}" },
+        { id: "answering-as", label: "You are answering as {name} · {seat}" },
         { id: "seat-initiator", label: "Initiator" },
         { id: "seat-counterparty", label: "Counterparty" },
         {
-          id: "row-help",
+          id: "blind-rule",
           label:
-            "Both seats are drawn so the sheet's full shape is on screen. A party answers only their own row.",
+            "Until both parties accept, neither of you sees the other's answers — they are not hidden here, they are absent.",
         },
+        { id: "scale", label: "{left} — {right}" },
         { id: "submit", label: "Submit answers" },
+        { id: "resubmit", label: "Replace my answers" },
         {
           id: "submit-note",
           label:
-            "Not wired yet — the answer write path is not connected, so this button records nothing.",
+            "A submit posts your whole sheet: every Aspect, every kind the Mode asks. Submitting again replaces your previous answers rather than adding to them.",
         },
-        { id: "back", label: "Back to the relationship" },
       ],
     },
     {
@@ -68,7 +64,32 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "setting",
           label:
-            "The Setting ({setting}) is the bar these answers are judged against later. It changes the verdict, never a question.",
+            "The Setting is the bar these answers are judged against later. It changes the verdict, never a question, and no party picks it here.",
+        },
+      ],
+    },
+    {
+      id: "frozen",
+      heading: "This sheet is the record",
+      body: "Both parties have answered every Aspect, so the answers are sealed. What you marked is below, exactly as it was stored.",
+      items: [
+        {
+          id: "frozen-note",
+          label:
+            "There is nothing to submit on this page: a control that could only be refused is not a control.",
+        },
+      ],
+    },
+    {
+      id: "coach",
+      heading: "You are reading as a coach",
+      body: "A coach reads the relationship and its report. Answering is the two parties' own act, so there is no sheet for a coach to fill in.",
+      items: [
+        { id: "coach-badge", label: "Coach" },
+        {
+          id: "coach-note",
+          label:
+            "Nothing here is yours to answer or to change, and neither party's sealed answers are on this page.",
         },
       ],
     },
