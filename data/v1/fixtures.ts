@@ -1280,8 +1280,15 @@ export interface V1SeedState {
  * relationship created before this batch could not be given Steps by derivation, because the store
  * has no record of the session that would have produced them. Re-seeding is the honest repair
  * again: a 9 store is built from the fixtures, whose complete rows derive their own Steps.
+ *
+ * 10 — the Step shape itself (#404, the owner's decision on the Steps primitive). A Step is now
+ * **one per Aspect**, sourced from its widest Gap, and carries `suggestedText` beside the editable
+ * `text` plus the third `closed` status. A 9 store holds up to eight rows per Aspect under ids that
+ * name a kind, and no suggestion at all, so its plan is a list of a different shape: re-seeding
+ * replaces it from the fixtures rather than presenting old rows as if they were agreed under the
+ * new rule.
  */
-export const SEED_VERSION = 9;
+export const SEED_VERSION = 10;
 
 /**
  * The chat's seeded read watermark — `threadId -> lastReadAt` per persona. A thread with

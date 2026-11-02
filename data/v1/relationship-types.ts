@@ -1538,43 +1538,12 @@ export interface TypeDemoAnswers {
 }
 
 /**
- * One completed Advanced-Mode sheet per type.
- *
- * `co-founders` and `staff-manager` each carry a genuine sheet — both parties' Feel, Wish, Think and
- * Guess on every Aspect the type asks (#404 §10 question 2: the owner asked for the staff–manager
- * demo, the exemplar page, rather than shipping it hidden). The numbers are authored, not generated:
- * they were written the way two people answering honestly would, with the Gaps spanning the range a
- * real pair produces (0–3 here) so the demo report is a report and not a perfect score.
- *
- * Every other type has no sheet, and that absence is rendered as absence: the demo route answers its
- * "no example yet" state and the catalogue draws no `Try Demo` link. A sheet is never generated from
- * a template at render time — a fabricated report would be the one thing this page exists to rule out.
+ * One completed Advanced-Mode sheet per type. Only `co-founders` keeps a demo today: its
+ * Aspects are unchanged from before this taxonomy, so its answers still match. Every other
+ * type's Aspects are new (#385), and the issue does not author demo answers — a type with no
+ * sheet renders the demo page's "no example yet" state rather than a fabricated report.
  */
 export const demoAnswersByType: Readonly<Record<string, TypeDemoAnswers>> = {
-  "staff-manager": {
-    // The staff member's side: low Feel on the things that are set for them, high Wish on being
-    // part of the decision, and a Think that reads the manager as more satisfied than the manager's
-    // own answers say — the prediction Gap the Advanced pair exists to show.
-    you: {
-      "say-in-decisions": { feel: 2, wish: 5, think: 2, guess: 3 },
-      "feedback-flow": { feel: 2, wish: 5, think: 3, guess: 2 },
-      "clarity-of-expectations": { feel: 3, wish: 5, think: 4, guess: 3 },
-      "workload-reality": { feel: 2, wish: 3, think: 2, guess: 3 },
-      credit: { feel: 2, wish: 5, think: 3, guess: 2 },
-      escalation: { feel: 3, wish: 5, think: 4, guess: 3 },
-    },
-    // The manager's side: reads the working relationship as more open than the staff member does,
-    // and guesses the staff member wants more decision-making than they do — the two-sided
-    // surprise a manager is usually the last to hear.
-    them: {
-      "say-in-decisions": { feel: 4, wish: 4, think: 3, guess: 4 },
-      "feedback-flow": { feel: 4, wish: 5, think: 2, guess: 4 },
-      "clarity-of-expectations": { feel: 3, wish: 4, think: 3, guess: 4 },
-      "workload-reality": { feel: 4, wish: 3, think: 3, guess: 4 },
-      credit: { feel: 4, wish: 4, think: 3, guess: 5 },
-      escalation: { feel: 4, wish: 5, think: 4, guess: 4 },
-    },
-  },
   "co-founders": {
     you: {
       "cofounder-ownership": { feel: 3, wish: 5, think: 3, guess: 4 },

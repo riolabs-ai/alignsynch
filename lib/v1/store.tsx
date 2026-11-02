@@ -57,7 +57,15 @@ import {
 import { seedNotifications, type V1Notification } from "@/data/v1/notifications";
 import { subscriptionPlan } from "@/data/v1/plans";
 import type { RelationshipType } from "@/data/v1/relationship-types";
-import { deriveSteps, stepsToAdd, withStepStatus, type StepStatus } from "@/content/steps";
+import {
+  authoredStepOf,
+  closeSteps,
+  deriveSteps,
+  stepsToAdd,
+  withStepStatus,
+  withStepText,
+  type StepStatus,
+} from "@/content/steps";
 import type { ReviewStatus } from "@/lib/v1/review";
 import { unlockedAtOf } from "@/lib/v1/derive";
 import { resolveThreadId, authorRoleOf } from "@/lib/v1/chat";
@@ -456,6 +464,17 @@ export interface V1Store {
    * relationship; the coach reads. The row it writes is the one the completion derived.
    */
   readonly markStepDone: (relationshipId: string, stepId: string, status: StepStatus) => void;
+  /**
+   * Reword a Step — a party's own words in `text`, with the sentence the product proposed kept in
+   * `suggestedText` (#404, decision 2 on PR #406). Empty text is refused: a Step with no words is
+   * not a Step. Returns a refusal sentence, or null on success.
+   */
+  readonly setStepText: (relationshipId: string, stepId: string, text: string) => string | null;
+  /**
+   * Add a Step a party wrote from nothing, on one Aspect. It came from no Gap, so it names no kind
+   * and carries no suggestion; it is `open`. Returns a refusal sentence, or null on success.
+   */
+  readonly addStep: (relationshipId: string, aspectId: string, text: string) => string | null;
   /** Start a relationship from a catalogue type — clone its Aspects into the library and create
    * the relationship unsubscribed (the shop's checkout is the subscribe path). */
   readonly startFromType: (type: RelationshipType) => V1Relationship;
@@ -849,12 +868,72 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     (relationshipId: string, stepId: string, status: StepStatus) => {
       patchRelationship(relationshipId, (rel) => {
         const steps = withStepStatus(rel.steps, stepId, status);
-        // No such Step, or it is already in that state: not a write, so "Last modified" stays put.
+        // No such Step, it is already in that state, or it has closed: not a write, so "Last
+        // modified" stays put. A closed Step is history and no tick reopens it.
         if (steps === rel.steps) return rel;
         return { ...rel, steps: [...steps] };
       });
     },
     [patchRelationship],
+  );
+
+  /**
+   * Reword a Step — the party's own words beside the suggestion that explains it.
+   *
+   * `suggestedText` is never touched: what the product proposed is part of the Step's history, so an
+   * edit changes `text` and leaves the suggestion readable. An empty value is refused here rather
+   * than silently ignored, because the panel has a Save button a party can press and the honest
+   * answer is a sentence, not a no-op.
+   */
+  const setStepText = useCallback(
+    (relationshipId: string, stepId: string, text: string): string | null => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) return "This relationship does not exist.";
+      const step = rel.steps.find((candidate) => candidate.id === stepId);
+      if (step === undefined) return "That Step is not on this relationship.";
+      if (step.status === "closed") return "That Step has closed — it is kept as history.";
+      if (text.trim().length === 0) return "A Step needs words of its own.";
+      patchRelationship(relationshipId, (current) => {
+        const steps = withStepText(current.steps, stepId, text);
+        if (steps === current.steps) return current;
+        return { ...current, steps: [...steps] };
+      });
+      return null;
+    },
+    [relationships, patchRelationship],
+  );
+
+  /**
+   * Add a Step a party wrote themselves, on one of the relationship's Aspects.
+   *
+   * The row came from no Gap: `derivedFrom` is empty and there is no `suggestedText`, which is the
+   * one place `zStep` allows that. It is `open` — an authored Step is a thing to do, not a tick
+   * already earned. The id is numbered past the Aspect's existing Steps, so a second one is a second
+   * row rather than an overwrite.
+   */
+  const addStep = useCallback(
+    (relationshipId: string, aspectId: string, text: string): string | null => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) return "This relationship does not exist.";
+      if (!rel.items.some((item) => item.id === aspectId)) {
+        return "That Aspect is not on this relationship.";
+      }
+      const trimmed = text.trim();
+      if (trimmed.length === 0) return "A Step needs words of its own.";
+      const step = authoredStepOf({
+        relationshipId,
+        aspectId,
+        text: trimmed,
+        existing: rel.steps,
+        createdAt: new Date().toISOString(),
+      });
+      patchRelationship(relationshipId, (current) => ({
+        ...current,
+        steps: [...current.steps, step],
+      }));
+      return null;
+    },
+    [relationships, patchRelationship],
   );
 
   const submitAnswers = useCallback(
@@ -896,18 +975,21 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         // Gaps of the session just agreed, and then stored, so a party can mark progress and the
         // panel keeps showing what was agreed (`content/steps.ts`).
         if (!wasComplete && isComplete) {
-          const derived = deriveSteps({
+          const input = {
             relationshipId: rel.id,
             items: [...next.items],
             initiatorAnswers: next.initiatorAnswers,
             counterpartyAnswers: next.counterpartyAnswers,
             createdAt: now,
-          });
+          };
+          const derived = deriveSteps(input);
+          // Two writes, in this order: **close** what this session's Gaps have closed, then **add**
+          // the Steps it newly earns. Neither rewrites a stored row — the dedupe is by the stable
+          // per-Aspect id, so a ticked Step keeps its tick and a closed one stays closed.
+          const closed = closeSteps(next.steps, input);
           return {
             ...next,
-            // A later session only adds the Steps it newly earns: the rows already stored keep
-            // their words and their tick, because what was agreed does not stop having been agreed.
-            steps: [...next.steps, ...stepsToAdd(next.steps, derived)],
+            steps: [...closed, ...stepsToAdd(closed, derived)],
             completedSessions: next.completedSessions + 1,
             lastSessionAt: now,
           };
@@ -1399,6 +1481,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       renameRelationship,
       setRelationshipSetting,
       markStepDone,
+      setStepText,
+      addStep,
       startFromType,
       cloneType,
       sendInvite,
@@ -1451,6 +1535,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       renameRelationship,
       setRelationshipSetting,
       markStepDone,
+      setStepText,
+      addStep,
       startFromType,
       cloneType,
       sendInvite,

@@ -10,22 +10,25 @@
  * answers and accepts as both parties, and then reads what the store kept.
  *
  * The answers are chosen so the arithmetic is checkable by eye: the first staff–manager Aspect is
- * answered from opposite ends (a Gap of 4 on all eight kinds), and every other Aspect is answered
+ * answered from opposite ends (all eight kinds 4-wide), and every other Aspect is answered
  * identically by both parties (In Synch on all eight). A correct derivation therefore produces
- * **eight Steps, all on the first Aspect** — one per non-zero kind — and nothing for the rest.
+ * **one Step, on the first Aspect** — its widest kind, which the tie rule resolves to `feel` — and
+ * nothing for the rest.
  *
  * The cases, in order:
  *
  *   1. create → the relationship exists with the Mode, Setting, name, and invitee the form chose,
  *      under the persona's own name, so the Initiator's dashboard can resolve the row it just made;
  *   2. a Setting change is refused while a session is open, and accepted once it is complete;
- *   3. accepting as the second party derives the Steps — eight of them, on the one Aspect that has a
- *      Gap, each naming the kind that produced it, and no Step for a zero Gap;
+ *   3. accepting as the second party derives the Steps — one on the one Aspect that has a Gap, naming
+ *      the widest kind, with the suggestion kept beside an editable text, and no Step for a zero Gap;
  *   4. deriving changed no Gap value and no verdict: the Gaps are re-read after the write and are
  *      the same numbers the two answer maps produce;
  *   5. marking a Step done survives an unmount and a fresh mount, which is the reload — the store
  *      persists the row, so the tick is read back from `localStorage`, not from memory;
- *   6. the Mode is never writable, and the name is capped at the model's own limit.
+ *   6. a reworded Step keeps the suggestion beside it, an added Step carries no kind, and both
+ *      survive the same reload;
+ *   7. the Mode is never writable, and the name is capped at the model's own limit.
  */
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -256,7 +259,7 @@ describe("the metadata writes", () => {
 });
 
 describe("Steps at completion", () => {
-  it("derives one Step per non-zero Gap kind at acceptance, and none for a zero Gap", () => {
+  it("derives one Step per Aspect with a Gap at acceptance, and none for a zero Gap", () => {
     const type = staffManager();
     const made: { rel?: V1Relationship } = {};
     act(() => {
@@ -282,19 +285,14 @@ describe("Steps at completion", () => {
 
     const rel = relationship(id);
     const divided = type.aspects[0].id;
-    expect(rel.steps).toHaveLength(8);
-    expect(rel.steps.every((step) => step.aspectId === divided)).toBe(true);
-    expect(rel.steps.map((step) => step.derivedFrom[0])).toEqual([
-      "feel",
-      "wish",
-      "initiator",
-      "counterparty",
-      "initiator-think",
-      "initiator-guess",
-      "counterparty-think",
-      "counterparty-guess",
-    ]);
-    expect(stepProgressOf(rel.steps)).toEqual({ total: 8, done: 0 });
+    expect(rel.steps).toHaveLength(1);
+    expect(rel.steps[0].aspectId).toBe(divided);
+    // Every kind on this Aspect is 4-wide, so the tie rule picks the first in `GAP_KINDS` order.
+    expect(rel.steps.map((step) => step.derivedFrom)).toEqual([["feel"]]);
+    expect(stepProgressOf(rel.steps)).toEqual({ total: 1, done: 0, closed: 0, active: 1 });
+    // The suggestion is stored beside the editable text, so a reword cannot erase what was proposed.
+    expect(rel.steps[0].suggestedText).toBe(rel.steps[0].text);
+    expect(rel.steps[0].status).toBe("open");
 
     // The other Aspects were answered identically, so they produce nothing — a zero Gap is not a
     // task, and a Step for it would be the `abs(score, nothing)` defect one level up.
@@ -350,10 +348,18 @@ describe("Steps at completion", () => {
     act(() => live().acceptSession(id, "counterparty"));
 
     const before = relationship(id);
-    expect(before.steps.length).toBe(4); // Basic Mode: four kinds, all 4-wide on the first Aspect
+    // Basic Mode, the first Aspect answered from opposite ends: all four kinds are 4-wide, and the
+    // tie rule picks `feel` — one Step for the Aspect, not four.
+    expect(before.steps.length).toBe(1);
+    expect(before.steps[0].derivedFrom).toEqual(["feel"]);
     const firstStep = before.steps[0];
     act(() => live().markStepDone(id, firstStep.id, "done"));
-    expect(stepProgressOf(relationship(id).steps)).toEqual({ total: 4, done: 1 });
+    expect(stepProgressOf(relationship(id).steps)).toEqual({
+      total: 1,
+      done: 1,
+      closed: 0,
+      active: 1,
+    });
 
     // The reload: unmount, drop the in-memory store, and mount a fresh provider over the same
     // `localStorage`. The tick has to come back from the persisted row, not from React state.
@@ -366,7 +372,80 @@ describe("Steps at completion", () => {
     const step = reloaded.steps.find((candidate) => candidate.id === firstStep.id);
     expect(step?.status).toBe("done");
     expect(step?.text).toBe(firstStep.text);
-    expect(stepProgressOf(reloaded.steps)).toEqual({ total: 4, done: 1 });
+    expect(stepProgressOf(reloaded.steps)).toEqual({
+      total: 1,
+      done: 1,
+      closed: 0,
+      active: 1,
+    });
     console.log(`[5 reload] ${step?.id} reads ${step?.status} after a fresh mount`);
+  });
+
+  it("keeps a reworded Step and a party's own Step across a reload", () => {
+    const type = staffManager();
+    const made: { rel?: V1Relationship } = {};
+    act(() => {
+      made.rel = live().createRelationshipFromType(type, {
+        mode: "advanced",
+        setting: "full",
+      });
+    });
+    const id = (made.rel as V1Relationship).id;
+    act(() => live().claimInvite(id));
+    act(() => live().submitAnswers(id, "initiator", answersFor(type, "initiator")));
+    act(() => live().submitAnswers(id, "counterparty", answersFor(type, "counterparty")));
+    act(() => live().acceptSession(id, "initiator"));
+    act(() => live().acceptSession(id, "counterparty"));
+
+    const derived = relationship(id).steps[0];
+    const suggestion = derived.suggestedText;
+    // The party rewrites the sentence; the suggestion stays behind it.
+    let refusal: string | null = "unset";
+    act(() => {
+      refusal = live().setStepText(id, derived.id, "  Agree the three priorities on Monday.  ");
+    });
+    expect(refusal).toBeNull();
+    const reworded = relationship(id).steps.find((step) => step.id === derived.id);
+    expect(reworded?.text).toBe("Agree the three priorities on Monday.");
+    expect(reworded?.suggestedText).toBe(suggestion);
+    expect(reworded?.suggestedText).not.toBe(reworded?.text);
+
+    // A Step the party wrote from nothing: no Gap kind, no suggestion, open.
+    act(() => {
+      refusal = live().addStep(id, type.aspects[1].id, "Ask for the brief a day earlier.");
+    });
+    expect(refusal).toBeNull();
+    const own = relationship(id).steps.filter((step) => step.derivedFrom.length === 0);
+    expect(own).toHaveLength(1);
+    expect(own[0].aspectId).toBe(type.aspects[1].id);
+    expect(own[0].suggestedText).toBeUndefined();
+    expect(own[0].status).toBe("open");
+
+    // An empty Step is refused by the same store call the panel's disabled button guards.
+    act(() => {
+      refusal = live().addStep(id, type.aspects[1].id, "   ");
+    });
+    expect(refusal).toBe("A Step needs words of its own.");
+
+    // The reload: both writes come back from `localStorage`.
+    act(() => root.unmount());
+    store = null;
+    root = createRoot(container);
+    mount();
+
+    const reloaded = relationship(id);
+    const keptText = reloaded.steps.find((step) => step.id === derived.id);
+    expect(keptText?.text).toBe("Agree the three priorities on Monday.");
+    expect(keptText?.suggestedText).toBe(suggestion);
+    expect(reloaded.steps.filter((step) => step.derivedFrom.length === 0)).toHaveLength(1);
+    expect(stepProgressOf(reloaded.steps)).toEqual({
+      total: 2,
+      done: 0,
+      closed: 0,
+      active: 2,
+    });
+    console.log(
+      `[6 edits] ${keptText?.id} reworded with its suggestion kept; ${own[0].id} is the party's own`,
+    );
   });
 });

@@ -1,26 +1,29 @@
 /**
- * The Steps for Improving the Relationship (issue #404, §7) — the derivation and the merge.
+ * The Steps for Improving the Relationship (issue #404, §7) — the derivation, the schema and the
+ * merge.
  *
- * The card's claim is narrow and has to be pinned exactly, so the cases below assert it in this
- * order:
+ * The owner bounded the primitive on PR #406, so the claims this suite pins are:
  *
- *   1. **one Step per Aspect per non-zero Gap kind** — four Gaps of 3 on an answered Aspect, four
- *      Steps; the ids name the relationship, the Aspect and the kind;
- *   2. **a zero Gap produces no Step** — an Aspect both parties answered identically yields
- *      nothing at all, because In Synch is not a thing to go and do;
- *   3. **an absent kind produces no Step** — a Basic sheet has no Think/Guess, so no prediction
- *      Step may appear for a question nobody was asked;
- *   4. **Steps are additive** — deriving does not move a Gap or the verdict, asserted by
- *      computing both over the same answers before and after;
- *   5. **the merge never rewrites a recorded Step** — a later session adds what is new and leaves
- *      the words and the `done` tick of the row it already holds;
- *   6. **the fixtures agree with the rule** — `rel-aligned` (Basic, the six Gaps of 1), a
- *      relationship with no completed session, and the Advanced pair, checked against their own
- *      stored rows.
+ *   1. **one Step per Aspect**, sourced from that Aspect's **widest** Gap kind — six Aspects yield
+ *      at most six Steps, not one per measured direction;
+ *   2. **the tie rule is deterministic** — two equally wide kinds resolve to the earlier one in
+ *      `GAP_KINDS` order, which `widestGapOf` states once and this suite pins both directly and
+ *      through a derivation;
+ *   3. **a zero Gap produces no Step**, and an absent kind (Basic, or an unanswered Aspect) can
+ *      never be the widest;
+ *   4. **the sentence is a default** — `suggestedText` holds what the product proposed, `text`
+ *      starts equal to it and is editable, and an authored Step is the one row with no kind and no
+ *      suggestion (which `zStep` says out loud, in both directions);
+ *   5. **`closed` is history** — a stored Step whose Gap has since fallen to 0 closes, is kept, is
+ *      never counted as outstanding, and is never resurrected as open by a later derivation;
+ *   6. **Steps are additive** — deriving does not move a Gap or the verdict, asserted by computing
+ *      both over the same answers before and after;
+ *   7. **the fixtures agree with the rule** — `rel-aligned`, `rel-advanced`, an incomplete session,
+ *      and every stored row checked against its own answers.
  *
- * This file runs under `pnpm data:check` (`node --test` over the compiled `.datacheck/` tree),
- * with `DATABASE_URL` unset and no React, no Next and no database import — `content/steps.ts` is
- * pure for exactly that reason, and this suite is the proof of it.
+ * This file runs under `pnpm data:check` (`node --test` over the compiled `.datacheck/` tree), with
+ * `DATABASE_URL` unset and no React, no Next and no database import — `content/steps.ts` is pure for
+ * exactly that reason, and this suite is the proof of it.
  */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
@@ -36,12 +39,19 @@ import {
   type GapKind,
 } from "../../content/gaps";
 import {
+  AUTHORED_STEP_LABEL,
+  STEP_STATUS_LABELS,
+  authoredStepOf,
+  closeSteps,
   deriveSteps,
   stepIdOf,
   stepProgressOf,
   stepsForAspect,
   stepsToAdd,
+  widestGapOf,
   withStepStatus,
+  withStepText,
+  zStep,
   type Step,
 } from "../../content/steps";
 import { seedRelationships } from "../../data/v1/fixtures";
@@ -76,41 +86,120 @@ const counterpartyAnswers: Record<string, Opinions> = {
   [SHARED.id]: { feel: 4, wish: 4 },
 };
 
-function derive(items: readonly Aspect[] = [DIVIDED, SHARED]): Step[] {
+/** The same two answers on DIVIDED, but agreeing everywhere this time. */
+const agreedAnswers: Record<string, Opinions> = {
+  [DIVIDED.id]: { feel: 4, wish: 4 },
+  [SHARED.id]: { feel: 4, wish: 4 },
+};
+
+function derive(
+  items: readonly Aspect[] = [DIVIDED, SHARED],
+  answers: {
+    initiator?: Record<string, Opinions>;
+    counterparty?: Record<string, Opinions>;
+    createdAt?: string;
+  } = {},
+): Step[] {
   return deriveSteps({
     relationshipId: "rel-test",
     items,
-    initiatorAnswers,
-    counterpartyAnswers,
-    createdAt: "2026-11-01T12:00:00.000Z",
+    initiatorAnswers: answers.initiator ?? initiatorAnswers,
+    counterpartyAnswers: answers.counterparty ?? counterpartyAnswers,
+    createdAt: answers.createdAt ?? "2026-11-01T12:00:00.000Z",
   });
 }
 
 /* ------------------------------------------------------------------ *
- * 1 + 2 — one Step per Aspect per non-zero Gap kind, and none for a zero
+ * 1 + 2 + 3 — one per Aspect, the widest kind, the tie rule, and none for a zero
  * ------------------------------------------------------------------ */
 
 describe("the derivation", () => {
-  it("emits one Step per Aspect per non-zero Gap kind", () => {
+  it("emits exactly one Step per Aspect, from that Aspect's widest Gap kind", () => {
     const steps = derive();
     // DIVIDED: feel |2−5| = 3, wish |5−2| = 3, initiator |2−5| = 3, counterparty |5−2| = 3.
-    const divided = stepsForAspect(steps, DIVIDED.id);
-    assert.equal(divided.length, 4, "four non-zero Basic Gaps → four Steps");
+    // Four equally wide kinds, so the tie rule picks `feel` — first in GAP_KINDS order.
+    assert.equal(steps.length, 1, "one Step for the one Aspect that has a Gap");
+    const step = steps[0];
+    assert.equal(step.aspectId, DIVIDED.id);
+    assert.deepEqual(step.derivedFrom, ["feel"], "a tie resolves to the earliest kind");
+    assert.equal(step.relationshipId, "rel-test");
+    assert.equal(step.status, "open", "a freshly derived Step is open");
+    assert.equal(step.createdAt, "2026-11-01T12:00:00.000Z");
+    assert.equal(step.id, stepIdOf("rel-test", DIVIDED.id));
+    assert.match(step.text, /^How are the week's priorities agreed\? — /);
+    assert.match(step.text, /Gap of 3/, "the Step states the distance it came from");
+    assert.match(step.text, new RegExp(GAP_KIND_LABELS.feel));
+    // The suggestion is kept beside the editable text, and the text starts as it.
+    assert.equal(step.suggestedText, step.text, "text initialises to the suggestion");
+  });
+
+  it("picks the widest kind, not the first non-zero one", () => {
+    // feel 1 · wish 3 · initiator 2 · counterparty 0 — the widest is wish even though feel comes
+    // first in GAP_KINDS order.
+    assert.deepEqual(widestGapOf({ feel: 1, wish: 3, initiator: 2, counterparty: 0 }), {
+      kind: "wish",
+      gap: 3,
+    });
+    // …and through a real pair of answers: |1−4| = 3 feel, |5−2| = 3 wish, |1−5| = 4 initiator.
+    const steps = deriveSteps({
+      relationshipId: "rel-test",
+      items: [DIVIDED],
+      initiatorAnswers: { [DIVIDED.id]: { feel: 1, wish: 5 } },
+      counterpartyAnswers: { [DIVIDED.id]: { feel: 4, wish: 2 } },
+      createdAt: "2026-11-01T12:00:00.000Z",
+    });
+    assert.deepEqual(steps[0].derivedFrom, ["initiator"]);
+    assert.match(steps[0].text, /Initiator Gap of 4/);
+  });
+
+  it("resolves a tie by GAP_KINDS order, in both directions", () => {
+    // Feel and Wish both 2: feel is earlier.
+    assert.deepEqual(widestGapOf({ feel: 2, wish: 2, initiator: 2, counterparty: 2 }), {
+      kind: "feel",
+      gap: 2,
+    });
+    // Feel is 0, so the tie is between wish and initiator: wish is earlier.
+    assert.deepEqual(widestGapOf({ feel: 0, wish: 3, initiator: 3 }), {
+      kind: "wish",
+      gap: 3,
+    });
+    // Prediction kinds sit after the four Basic ones, so they lose a tie against them…
     assert.deepEqual(
-      divided.map((step) => step.derivedFrom),
-      [["feel"], ["wish"], ["initiator"], ["counterparty"]],
-      "each Step names exactly the kind that produced it, in GAP_KINDS order",
+      widestGapOf({
+        feel: 2,
+        wish: 2,
+        initiator: 0,
+        counterparty: 0,
+        "initiator-think": 2,
+        "counterparty-guess": 2,
+      }),
+      { kind: "feel", gap: 2 },
     );
-    for (const step of divided) {
-      assert.equal(step.relationshipId, "rel-test");
-      assert.equal(step.aspectId, DIVIDED.id);
-      assert.equal(step.status, "open", "a freshly derived Step is open");
-      assert.equal(step.createdAt, "2026-11-01T12:00:00.000Z");
-      assert.equal(step.id, stepIdOf("rel-test", DIVIDED.id, step.derivedFrom[0]));
-      assert.match(step.text, /^How are the week's priorities agreed\? — /);
-      assert.match(step.text, /Gap of 3/, "the Step states the distance it came from");
-    }
-    assert.match(divided[0].text, new RegExp(GAP_KIND_LABELS.feel));
+    // …and among themselves the glossary's order decides.
+    assert.deepEqual(widestGapOf({ "initiator-think": 4, "counterparty-guess": 4 }), {
+      kind: "initiator-think",
+      gap: 4,
+    });
+    // Nothing to name: every kind is 0 or absent.
+    assert.equal(widestGapOf({ feel: 0, wish: 0 }), null);
+    assert.equal(widestGapOf({}), null);
+  });
+
+  it("never emits more Steps than the relationship has Aspects", () => {
+    const six = Array.from({ length: 6 }, (_, index) =>
+      aspect(`aspect-${index + 1}`, `Question ${index + 1}?`),
+    );
+    // Every Aspect answered from opposite ends in Advanced Mode: all eight kinds are 4-wide.
+    const ends = (feel: number, wish: number, think: number, guess: number) =>
+      Object.fromEntries(six.map((item) => [item.id, { feel, wish, think, guess }]));
+    const steps = derive(six, {
+      initiator: ends(1, 5, 1, 5),
+      counterparty: ends(5, 1, 5, 1),
+    });
+    assert.equal(steps.length, 6, "six Aspects, six Steps — not forty-eight");
+    assert.equal(new Set(steps.map((step) => step.aspectId)).size, 6);
+    assert.ok(steps.every((step) => step.derivedFrom.length === 1));
+    assert.ok(steps.every((step) => step.derivedFrom[0] === "feel"));
   });
 
   it("produces no Step for a zero Gap", () => {
@@ -120,8 +209,6 @@ describe("the derivation", () => {
       0,
       "a fully In Synch Aspect is not a to-do list, it is nothing to do",
     );
-    // …and nothing about the absent ones leaks into the other Aspect's rows.
-    assert.equal(steps.length, 4);
     assert.ok(
       steps.every((step) => step.aspectId !== SHARED.id),
       "no Step may name the aligned Aspect",
@@ -138,25 +225,18 @@ describe("the derivation", () => {
     );
 
     // The same two parties, answered again in Advanced Mode: the prediction kinds are present and
-    // now produce Steps of their own — the derivation follows the answers, not a hard-coded four.
-    const advancedInitiator: Record<string, Opinions> = {
-      [DIVIDED.id]: { feel: 2, wish: 5, think: 1, guess: 5 },
-    };
-    const advancedCounterparty: Record<string, Opinions> = {
-      [DIVIDED.id]: { feel: 5, wish: 2, think: 5, guess: 1 },
-    };
+    // can now be the widest — |I.think − C.feel| = |1 − 5| = 4 and |C.guess − I.wish| = |1 − 5| = 4
+    // tie, and `initiator-think` comes first.
     const advanced = deriveSteps({
       relationshipId: "rel-test",
       items: [DIVIDED],
-      initiatorAnswers: advancedInitiator,
-      counterpartyAnswers: advancedCounterparty,
+      initiatorAnswers: { [DIVIDED.id]: { feel: 2, wish: 5, think: 1, guess: 5 } },
+      counterpartyAnswers: { [DIVIDED.id]: { feel: 5, wish: 2, think: 5, guess: 1 } },
       createdAt: "2026-11-01T12:00:00.000Z",
     });
-    const kinds = advanced.map((step) => step.derivedFrom[0]);
-    assert.equal(advanced.length, 8, "eight present non-zero kinds → eight Steps");
-    for (const kind of ADVANCED_GAP_KINDS) {
-      assert.ok(kinds.includes(kind), `the Advanced pair adds a Step for "${kind}"`);
-    }
+    assert.equal(advanced.length, 1);
+    assert.deepEqual(advanced[0].derivedFrom, ["initiator-think"]);
+    assert.match(advanced[0].text, /Initiator Think Gap of 4/);
   });
 
   it("produces no Step for an Aspect either party left unanswered", () => {
@@ -173,7 +253,53 @@ describe("the derivation", () => {
 });
 
 /* ------------------------------------------------------------------ *
- * 3 — additive: no Gap and no verdict moves
+ * 4 — the schema: a suggestion iff a Gap kind
+ * ------------------------------------------------------------------ */
+
+describe("the Step schema", () => {
+  it("accepts a derived Step and an authored Step, and states the difference both ways", () => {
+    const derived = derive()[0];
+    assert.equal(zStep.safeParse(derived).success, true);
+
+    const authored = authoredStepOf({
+      relationshipId: "rel-test",
+      aspectId: DIVIDED.id,
+      text: "  Book a standing ten minutes before the week starts.  ",
+      existing: derive(),
+      createdAt: "2026-11-02T09:00:00.000Z",
+    });
+    assert.equal(authored.text, "Book a standing ten minutes before the week starts.");
+    assert.deepEqual(authored.derivedFrom, [], "an authored Step names no kind");
+    assert.equal(authored.suggestedText, undefined, "and carries no suggestion");
+    assert.equal(authored.status, "open");
+    assert.equal(authored.id, `${stepIdOf("rel-test", DIVIDED.id)}-own-1`);
+    assert.equal(zStep.safeParse(authored).success, true);
+
+    // A second authored Step on the same Aspect is a second row, not an overwrite.
+    const second = authoredStepOf({
+      relationshipId: "rel-test",
+      aspectId: DIVIDED.id,
+      text: "Agree who chairs it.",
+      existing: [...derive(), authored],
+      createdAt: "2026-11-02T09:05:00.000Z",
+    });
+    assert.equal(second.id, `${stepIdOf("rel-test", DIVIDED.id)}-own-2`);
+
+    // The three rows the schema must refuse: a derived Step with no suggestion, an authored Step
+    // that keeps one, and an authored Step that names a kind.
+    assert.equal(zStep.safeParse({ ...derived, suggestedText: undefined }).success, false);
+    assert.equal(zStep.safeParse({ ...authored, suggestedText: "something" }).success, false);
+    assert.equal(zStep.safeParse({ ...authored, derivedFrom: ["feel"] }).success, false);
+  });
+
+  it("labels the three states and the authored provenance", () => {
+    assert.deepEqual(STEP_STATUS_LABELS, { open: "Open", done: "Done", closed: "Closed" });
+    assert.equal(AUTHORED_STEP_LABEL, "Your own Step");
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 5 — additive: no Gap and no verdict moves
  * ------------------------------------------------------------------ */
 
 describe("Steps are additive", () => {
@@ -228,7 +354,7 @@ describe("Steps are additive", () => {
 });
 
 /* ------------------------------------------------------------------ *
- * 4 — the merge and the tick
+ * 6 — the merge, the tick, the rewrite and the closed row
  * ------------------------------------------------------------------ */
 
 describe("storing progress", () => {
@@ -238,26 +364,20 @@ describe("storing progress", () => {
     assert.equal(ticked[0].status, "done");
     assert.equal(ticked.length, first.length);
 
-    // A later session derives the same four Steps for DIVIDED plus two new ones for SHARED (the
-    // counterparty's wish moved). Only the new Steps may be added.
+    // A later session: the counterparty's wish moved on SHARED, so that Aspect now has a Gap and
+    // earns its one Step. DIVIDED is answered the same way, so its Step already exists.
     const laterCounterparty: Record<string, Opinions> = {
       [DIVIDED.id]: { feel: 5, wish: 2 },
       [SHARED.id]: { feel: 4, wish: 5 },
     };
-    const derivedLater = deriveSteps({
-      relationshipId: "rel-test",
-      items: [DIVIDED, SHARED],
-      initiatorAnswers,
-      counterpartyAnswers: laterCounterparty,
-      createdAt: "2026-12-01T12:00:00.000Z",
-    });
+    const derivedLater = derive([DIVIDED, SHARED], { counterparty: laterCounterparty });
     const added = stepsToAdd(ticked, derivedLater);
     assert.deepEqual(
-      added.map((step) => `${step.aspectId}:${step.derivedFrom[0]}`),
-      [`${SHARED.id}:wish`, `${SHARED.id}:counterparty`],
-      "the Wish Gap and the counterparty's own Feel-against-Wish Gap are the two that opened",
+      added.map((step) => step.aspectId),
+      [SHARED.id],
+      "the only new Step is the one on the Aspect that just opened",
     );
-    assert.equal(added[0].createdAt, "2026-12-01T12:00:00.000Z");
+    assert.equal(derivedLater.length, 2, "one Step per Aspect, so DIVIDED did not duplicate");
 
     // The stored row keeps the words and the tick it was given, not the later session's.
     const stored = ticked[0];
@@ -265,20 +385,148 @@ describe("storing progress", () => {
     assert.equal(stored.text, first[0].text);
   });
 
-  it("counts progress and moves a Step both ways", () => {
+  it("closes a stored Step whose Gap has fallen to 0, and never resurrects it", () => {
+    const first = derive();
+    const later = derive([DIVIDED, SHARED], {
+      initiator: agreedAnswers,
+      counterparty: agreedAnswers,
+      createdAt: "2026-12-01T12:00:00.000Z",
+    });
+    assert.deepEqual(later, [], "both parties now agree on every Aspect");
+
+    const closed = closeSteps(first, {
+      relationshipId: "rel-test",
+      items: [DIVIDED, SHARED],
+      initiatorAnswers: agreedAnswers,
+      counterpartyAnswers: agreedAnswers,
+      createdAt: "2026-12-01T12:00:00.000Z",
+    });
+    assert.notEqual(closed, first, "closing is a write");
+    assert.equal(closed[0].status, "closed");
+    // History keeps everything else: the words agreed, the suggestion, the instant.
+    assert.equal(closed[0].text, first[0].text);
+    assert.equal(closed[0].suggestedText, first[0].suggestedText);
+    assert.equal(closed[0].createdAt, first[0].createdAt);
+
+    // A later re-derivation finds the Step by its per-Aspect id and adds nothing: the closed row
+    // stays closed even though the Gap is wide again.
+    const reopenedGap = derive();
+    assert.deepEqual(stepsToAdd(closed, reopenedGap), [], "a closed Step is not resurrected");
+    assert.equal(closed[0].status, "closed");
+    // …and a party's tick cannot reopen it either.
+    assert.equal(withStepStatus(closed, closed[0].id, "done"), closed);
+    // Nor can a reword pretend it is still live.
+    assert.equal(withStepText(closed, closed[0].id, "Something else"), closed);
+  });
+
+  it("closes only open, derived Steps on Aspects that were actually measured", () => {
+    const first = derive();
+    const authored = authoredStepOf({
+      relationshipId: "rel-test",
+      aspectId: DIVIDED.id,
+      text: "Ask once a month whether this is still working.",
+      existing: first,
+      createdAt: "2026-11-02T09:00:00.000Z",
+    });
+    const doneFirst = withStepStatus(first, first[0].id, "done");
+    const input = {
+      relationshipId: "rel-test",
+      items: [DIVIDED, SHARED],
+      initiatorAnswers: agreedAnswers,
+      counterpartyAnswers: agreedAnswers,
+      createdAt: "2026-12-01T12:00:00.000Z",
+    };
+
+    // A done Step keeps its tick: the work happened, and closing it would read as a regression.
+    assert.equal(closeSteps(doneFirst, input), doneFirst);
+    // An authored Step came from no Gap, so no Gap falling to 0 closes it.
+    const withAuthored = closeSteps([...first, authored], input);
+    assert.equal(withAuthored.find((step) => step.id === authored.id)?.status, "open");
+    // A Step on an Aspect that is no longer on the sheet is absent, not 0: it stays as it was.
+    assert.equal(closeSteps(first, { ...input, items: [SHARED] }), first);
+    // A Step on an Aspect nobody answered this session is unknown, not 0: it stays as it was.
+    assert.equal(
+      closeSteps(first, { ...input, counterpartyAnswers: agreedAnswers, items: [] }),
+      first,
+    );
+    // Nothing to close: the same array comes back, so a completion that closes nothing is not a write.
+    assert.equal(closeSteps(first, { ...input, initiatorAnswers, counterpartyAnswers }), first);
+  });
+
+  it("closes the met Gap and adds the newly opened one in the same completion", () => {
+    const first = derive();
+    const laterInitiator: Record<string, Opinions> = {
+      [DIVIDED.id]: { feel: 4, wish: 4 },
+      [SHARED.id]: { feel: 1, wish: 3 },
+    };
+    const laterCounterparty: Record<string, Opinions> = {
+      [DIVIDED.id]: { feel: 4, wish: 4 },
+      [SHARED.id]: { feel: 5, wish: 3 },
+    };
+    const input = {
+      relationshipId: "rel-test",
+      items: [DIVIDED, SHARED],
+      initiatorAnswers: laterInitiator,
+      counterpartyAnswers: laterCounterparty,
+      createdAt: "2026-12-01T12:00:00.000Z",
+    };
+    const closed = closeSteps(first, input);
+    const steps = [...closed, ...stepsToAdd(closed, deriveSteps(input))];
+    assert.equal(steps.length, 2, "one closed, one new");
+    assert.equal(steps[0].status, "closed");
+    assert.equal(steps[0].aspectId, DIVIDED.id);
+    assert.equal(steps[1].status, "open");
+    assert.equal(steps[1].aspectId, SHARED.id);
+    // |1−5| = 4 feel, |3−3| = 0 wish, and 2 on each party's own Feel-against-Wish: feel is widest.
+    assert.deepEqual(steps[1].derivedFrom, ["feel"]);
+  });
+
+  it("rewords the text and leaves the suggestion alone", () => {
     const steps = derive();
-    assert.deepEqual(stepProgressOf(steps), { total: 4, done: 0 });
+    const reworded = withStepText(
+      steps,
+      steps[0].id,
+      "  Agree the week's three priorities on Monday.  ",
+    );
+    assert.equal(reworded[0].text, "Agree the week's three priorities on Monday.");
+    assert.equal(
+      reworded[0].suggestedText,
+      steps[0].suggestedText,
+      "the sentence the product proposed is kept",
+    );
+    // No-ops come back by identity: nothing to save, nothing to bump.
+    assert.equal(withStepText(reworded, steps[0].id, "   "), reworded);
+    assert.equal(withStepText(reworded, steps[0].id, reworded[0].text), reworded);
+    assert.equal(withStepText(reworded, "step-not-here", "Anything"), reworded);
+  });
+
+  it("counts progress, keeps closed rows out of the denominator, and moves a Step both ways", () => {
+    const steps = derive();
+    assert.deepEqual(stepProgressOf(steps), { total: 1, done: 0, closed: 0, active: 1 });
     const done = withStepStatus(steps, steps[0].id, "done");
-    assert.deepEqual(stepProgressOf(done), { total: 4, done: 1 });
+    assert.deepEqual(stepProgressOf(done), { total: 1, done: 1, closed: 0, active: 1 });
     const undone = withStepStatus(done, steps[0].id, "open");
-    assert.deepEqual(stepProgressOf(undone), { total: 4, done: 0 });
+    assert.deepEqual(stepProgressOf(undone), { total: 1, done: 0, closed: 0, active: 1 });
     // An unknown id is not a write: the array comes back by identity.
     assert.equal(withStepStatus(steps, "step-not-here", "done"), steps);
+
+    const closed = closeSteps(steps, {
+      relationshipId: "rel-test",
+      items: [DIVIDED],
+      initiatorAnswers: agreedAnswers,
+      counterpartyAnswers: agreedAnswers,
+      createdAt: "2026-12-01T12:00:00.000Z",
+    });
+    assert.deepEqual(
+      stepProgressOf(closed),
+      { total: 1, done: 0, closed: 1, active: 0 },
+      "a closed Step is history, not outstanding work",
+    );
   });
 });
 
 /* ------------------------------------------------------------------ *
- * 5 — the fixtures agree with the rule
+ * 7 — the fixtures agree with the rule
  * ------------------------------------------------------------------ */
 
 describe("the seeded relationships", () => {
@@ -303,25 +551,38 @@ describe("the seeded relationships", () => {
         (complete ? derived : []).map((step) => step.id),
         `"${rel.id}": stored Steps ${complete ? "equal" : "are empty on an incomplete session from"} the derivation`,
       );
+      assert.ok(
+        rel.steps.length <= rel.items.length,
+        `"${rel.id}" holds more Steps than Aspects — the bound is one per Aspect`,
+      );
       for (const step of rel.steps) {
         const kind = step.derivedFrom[0] as GapKind;
+        assert.equal(step.derivedFrom.length, 1, `"${rel.id}" stores a Step with no source kind`);
         const gaps = gapKindsOf(
           rel.initiatorAnswers[step.aspectId],
           rel.counterpartyAnswers[step.aspectId],
         );
         const gap = gaps[kind];
-        assert.ok(
-          gap !== undefined && gap > 0,
-          `"${rel.id}" stores a Step for a zero or absent Gap`,
+        assert.ok(gap !== undefined && gap > 0, `"${rel.id}" stores a Step for a zero Gap`);
+        assert.equal(
+          gap,
+          Math.max(...gapKindsIn(gaps).map((other) => gaps[other] ?? 0)),
+          `"${rel.id}" stores a Step for a kind that is not the widest on its Aspect`,
         );
         assert.match(step.text, new RegExp(`${GAP_KIND_LABELS[kind]} of ${gap}`));
+        // No fixture has been reworded: the text is still the model's suggestion.
+        assert.equal(step.suggestedText, step.text, `"${rel.id}" stores a Step with no suggestion`);
       }
     }
   });
 
-  it("gives the aligned pair six open Steps — the six Gaps of 1, and nothing on the aligned Aspect", () => {
+  it("gives the aligned pair three Steps — the ties resolve to the glossary's order", () => {
     const aligned = byId("rel-aligned");
-    assert.equal(aligned.steps.length, 6);
+    assert.deepEqual(
+      aligned.steps.map((step) => `${step.aspectId}:${step.derivedFrom[0]}`),
+      ["aspect-trust:wish", "aspect-one-to-one:initiator", "aspect-privacy:initiator"],
+      "every Gap here is 1, so each Aspect's earliest widest kind wins",
+    );
     assert.equal(stepProgressOf(aligned.steps).done, 0);
     assert.equal(
       stepsForAspect(aligned.steps, "aspect-house-rules").length,
@@ -338,11 +599,15 @@ describe("the seeded relationships", () => {
     );
   });
 
-  it("gives an Advanced relationship the prediction Steps it earned", () => {
+  it("gives an Advanced relationship one Step per Aspect, widest kind each", () => {
     const advanced = byId("rel-advanced");
+    assert.deepEqual(
+      advanced.steps.map((step) => step.derivedFrom[0]),
+      ["feel", "feel", "wish", "wish"],
+      "the widest kind per Aspect, with the 4-wide ties on trust resolving to feel",
+    );
     const kinds = new Set(advanced.steps.map((step) => step.derivedFrom[0]));
-    assert.ok(advanced.steps.length > 0);
-    assert.ok(kinds.has("initiator-think") || kinds.has("counterparty-guess"));
+    assert.ok(kinds.has("feel") && kinds.has("wish"));
   });
 
   it("leaves a session that is not complete with no Steps", () => {

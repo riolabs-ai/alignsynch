@@ -363,12 +363,14 @@ export function PersonaRelationshipDetail({
           <SessionTimeline rel={rel} viewer={viewer} primaryAction={primaryAction} />
 
           {/* Steps for Improving the Relationship — derived at completion, then stored, so a party
-              can tick progress and the list keeps what was agreed (content/steps.ts). A coach reads;
-              the two parties mark. */}
+              can tick progress, reword the sentence, or add one of their own, and the list keeps
+              what was agreed (content/steps.ts). A coach reads; the two parties write. */}
           <StepsPanel
             rel={rel}
             canMark={viewer !== null}
             onToggle={(stepId, status) => store.markStepDone(rel.id, stepId, status)}
+            onEditText={(stepId, text) => store.setStepText(rel.id, stepId, text)}
+            onAddStep={(aspectId, text) => store.addStep(rel.id, aspectId, text)}
           />
 
           {/* Comments — the relationship thread and one per Aspect, open only after scoring. */}
