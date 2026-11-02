@@ -104,7 +104,15 @@ export function V1ChatPage({ threadId }: { threadId?: string }) {
         />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div
+        className={cn(
+          "min-w-0 flex-1 flex-col",
+          // At `md` and below the two panes are one screen at a time: the list when nothing is
+          // open, the thread when one is. The empty-state pane is therefore hidden rather than
+          // squeezed beside a full-width list, which is what put it under the list's edge.
+          activeThread !== null ? "flex" : "hidden md:flex",
+        )}
+      >
         {activeThread !== null ? (
           <>
             <Link

@@ -73,9 +73,16 @@ export function V1Notifications({ persona }: { persona: Persona }) {
                 </span>
                 <span className="block text-sm text-muted-foreground">{notification.body}</span>
               </span>
-              {!notification.read && (
-                <span aria-hidden="true" className="mt-1 h-2 w-2 shrink-0 rounded-full bg-action" />
-              )}
+              {/* The dot's slot is always reserved, so every row's timestamp pill lines up whether
+                  or not the row is unread; the state is also spoken, not only coloured. */}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "mt-1 h-2 w-2 shrink-0 rounded-full",
+                  notification.read ? "bg-transparent" : "bg-action",
+                )}
+              />
+              <span className="sr-only">{notification.read ? "Read" : "Unread"}</span>
             </Link>
           ))}
         </div>
