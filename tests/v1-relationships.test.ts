@@ -19,11 +19,12 @@ import { seedRelationships, type V1Relationship } from "@/data/v1/fixtures";
 import { answerGateFor, answerGateMessage } from "@/lib/v1/blind";
 import {
   GAP_FLAG_COLUMNS,
+  cardMetricsOf,
   gapFlagCountsOf,
   inviteStateOf,
   sessionCompleteOf,
 } from "@/lib/v1/derive";
-import { relationshipsVisibleTo } from "@/lib/v1/persona";
+import { moneyVisibleTo, relationshipsVisibleTo } from "@/lib/v1/persona";
 
 /** One fixed instant for the invite-window cases, so nothing here reads the wall clock. */
 const NOW = Date.parse("2026-11-01T12:00:00.000Z");
@@ -132,5 +133,62 @@ describe("the answer gate — the blind rule, in one function", () => {
     expect(answerGateFor(aligned, "initiator")).toBe("already-submitted");
     expect(answerGateFor(aligned, "counterparty")).toBe("already-submitted");
     expect(answerGateMessage("already-submitted", aligned)).toContain("Both of you");
+  });
+});
+
+describe("the card's metric row — the My Quizzes translation, honestly", () => {
+  it("reports no completion rate and no alignment for a relationship with no session", () => {
+    // Jordan's invited relationship: nothing has opened, so there is no rate to print. `null`
+    // becomes `—` on the card; a `0` here would be a rate nobody measured.
+    const metrics = cardMetricsOf(rel("rel-invited"));
+    expect(metrics.openedSessions).toBe(0);
+    expect(metrics.completionPercent).toBeNull();
+    expect(metrics.averageAlignment).toBeNull();
+    expect(metrics.aspectCount).toBe(rel("rel-invited").items.length);
+  });
+
+  it("prints a real 0% completion and still no alignment while a session is open", () => {
+    // One session opened, none completed, and only the initiator has answered: 0% is measured,
+    // the mean Gap is not (the blind rule still holds).
+    const metrics = cardMetricsOf(rel("rel-connected-blind"));
+    expect(metrics.openedSessions).toBe(1);
+    expect(metrics.completedSessions).toBe(0);
+    expect(metrics.completionPercent).toBe(0);
+    expect(metrics.averageAlignment).toBeNull();
+  });
+
+  it("derives completion and the mean Gap once both parties accept", () => {
+    const aligned = cardMetricsOf(rel("rel-aligned"));
+    expect(aligned.openedSessions).toBe(2);
+    expect(aligned.completedSessions).toBe(2);
+    expect(aligned.completionPercent).toBe(100);
+    // Ruth and Sam are Basic Mode — 16 measured kinds over four Aspects — and answered every
+    // Aspect identically, so every cross-party and prediction Gap is 0 and only each party's own
+    // Feel-vs-Wish pair sits at 1: six of 16, never a stored number.
+    expect(rel("rel-aligned").mode).toBe("basic");
+    expect(aligned.averageAlignment).toBeCloseTo(6 / 16, 5);
+    expect(aligned.averageAlignment).not.toBeNull();
+    expect(aligned.aspectCount).toBe(4);
+
+    const advanced = cardMetricsOf(rel("rel-advanced"));
+    expect(advanced.openedSessions).toBe(4);
+    expect(advanced.completionPercent).toBe(100);
+    // Advanced Mode measures 32 kinds per four Aspects; Noor and Iris sit 70 apart in total.
+    expect(advanced.averageAlignment).toBeCloseTo(70 / 32, 5);
+    expect(advanced.aspectCount).toBe(4);
+  });
+
+  it("rounds a completion rate to a whole percent and never divides by zero", () => {
+    const partial = { ...rel("rel-invited"), openedSessions: 3, completedSessions: 2 };
+    expect(cardMetricsOf(partial).completionPercent).toBe(67);
+  });
+});
+
+describe("what was paid is the Initiator's line alone", () => {
+  it("has a money field for the initiator and for no other persona", () => {
+    expect(moneyVisibleTo("initiator")).toBe(true);
+    expect(moneyVisibleTo("counterparty")).toBe(false);
+    expect(moneyVisibleTo("coach")).toBe(false);
+    expect(moneyVisibleTo("admin")).toBe(false);
   });
 });
