@@ -16,7 +16,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **91** — 51 static, 40 dynamic, from `app/**/page.tsx`
-- component domains: **38** — 324 files under `components/`, 319 of them `.tsx`
+- component domains: **38** — 326 files under `components/`, 321 of them `.tsx`
 - route handlers: **14** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 14 · **fixture** 54 · **db** 20 · **live** 7 · **prototype** 34
 - templates: Both templates 26 · AlignSynch 59 · QuizHub 42 · No template yet 2
@@ -79,7 +79,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/reset/complete` — **fixture**
   - capability: The success screen after a reset, at a token-free address: the password is set and every other device was signed out.
   - components: `components/auth`
-  - reads: 1 fixture module of page copy, assets or decisions — no records
+  - reads: 3 fixture modules of page copy, assets or decisions — no records
   - notes: Separate route on purpose — a spent token should leave the address bar and the history. Static, with no session and no database read.
 
 - `/settings` — **live**
@@ -111,7 +111,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/auth` — **live**
   - capability: The sign-in and sign-up forms, including pending, invalid-credentials and network states, plus the two demo surfaces `/login` draws only in demo mode: the anchor to the PIN gate and, under a valid unlock cookie, the three role buttons.
-  - files (9): `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `forgot-password-view.tsx`, `login-view.tsx`, `mark-icon.tsx`, `register-view.tsx`, `reset-complete-view.tsx`, `reset-password-view.tsx`
+  - files (11): `auth-home-link.tsx`, `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `forgot-password-view.tsx`, `login-view.tsx`, `mark-icon.tsx`, `password-strength.tsx`, `register-view.tsx`, `reset-complete-view.tsx`, `reset-password-view.tsx`
   - routes (6): `/demo`, `/forgot-password`, `/login`, `/register`, `/reset/[token]`, `/reset/complete`
   - notes: The demo surfaces are decided on the server (`lib/auth/demo-surface.ts`) and render nothing outside demo mode; the PIN gate itself is `/demo` (`components/auth/demo-gate.tsx`), not this route.
 
