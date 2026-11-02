@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **87** — 50 static, 37 dynamic, from `app/**/page.tsx`
-- component domains: **37** — 321 files under `components/`, 316 of them `.tsx`
+- routes: **90** — 50 static, 40 dynamic, from `app/**/page.tsx`
+- component domains: **37** — 324 files under `components/`, 319 of them `.tsx`
 - route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 53 · **db** 17 · **live** 7 · **prototype** 34
-- templates: Both templates 26 · AlignSynch 54 · QuizHub 42 · No template yet 2
+- status: **mock** 13 · **fixture** 53 · **db** 20 · **live** 7 · **prototype** 34
+- templates: Both templates 26 · AlignSynch 57 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -212,6 +212,18 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
   - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own before both have submitted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
 
+- `/assessment/instances/[instanceId]/accept` — **db**
+  - capability: Review and accept a session: the decision first, both seats side by side with what each party has answered, then every Aspect beneath with both Opinion columns sealed.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`
+  - notes: In-progress UI (#409, R1-E): the screen is real and the read is `readInstanceBundle()`, but no acceptance is stored anywhere yet — `party` and `session` have no accepted column — so each seat says 'not recorded' rather than drawing a status nobody measured, and the accept control is disabled with its reason beside it. Nothing on this route writes.
+
+- `/assessment/instances/[instanceId]/answer` — **db**
+  - capability: Answer the Aspect sheet: every Aspect's prompt, both named Values, and one row per seat asking the Opinion kinds the instance's Mode defines.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`
+  - notes: In-progress UI (#409, R1-E), and singular `answer` on purpose: `/answers` is the POST-only endpoint the live sheet submits to, and Next refuses a `page.tsx` beside a `route.ts`. `readInstanceBundle()` supplies the Aspects, the Mode, the Setting and the two `party` rows; the blind rule is stated on the page and every control is disabled with the not-wired note, because this screen has no write path and no viewer session.
+
 - `/assessment/instances/[instanceId]/report` — **db**
   - capability: The report both parties read once the sheet is scored: per Aspect the prompt, both named ends of the scale, the verdict under the instance's Setting, both parties' Opinions, and every Gap with the two Opinions it subtracts printed beside it.
   - components: `components/assessment-flow`
@@ -229,6 +241,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/assessment-flow`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/server.ts`
   - notes: The 'open' action. Read-only on purpose — editing is a separate decision, and the spec puts the editor on this same route when it exists. The read applies the same author rule as the library, so another account's template is a 404 here and nothing distinguishes it from an id that does not exist.
+
+- `/assessment/templates/[templateId]/create` — **db**
+  - capability: Create a relationship from one template: the template and its two seats at the top, the counterparty, then Mode (fixed at creation) and Setting (the one choice a party may change later).
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: In-progress UI (#409, R1-E). A child of the template's own address, so the template being copied is the route's fact and the form cannot name a different one; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply. The form has no `action` and a disabled submit with the reason beside it: creation is not wired on this screen yet, and a control that cannot work says so rather than failing silently.
 
 - `/assessment/templates/new` — **fixture**
   - capability: Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.
@@ -445,8 +463,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (12): `answer-form.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`
-  - routes (8): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/new`, `/invite/[token]`
+  - files (15): `accept-session.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`
+  - routes (11): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/new`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/console` — **mock**

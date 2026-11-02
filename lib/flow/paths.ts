@@ -88,6 +88,32 @@ export function instancePath(instanceRecordId: string): string {
   return `/assessment/instances/${instanceRecordId}`;
 }
 
+/**
+ * `/assessment/instances/[instanceId]/answer` — the answer sheet **page** (#409, R1-E).
+ *
+ * Singular, and deliberately not `answersPath()` above: `/answers` is the POST-only endpoint the
+ * live form submits to, and Next refuses a `page.tsx` in the same segment as a `route.ts`. The
+ * two names sit beside each other so the difference is read, not remembered.
+ */
+export function answerSheetPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/answer`;
+}
+
+/** `/assessment/instances/[instanceId]/accept` — the acceptance step (#409, R1-E). A page. */
+export function acceptPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/accept`;
+}
+
+/**
+ * `/assessment/templates/[templateId]/create` — the create step (#409, R1-E).
+ *
+ * A child of the template's own address rather than a sibling, so the template being copied is
+ * the route's own fact and the form's payload cannot name a different one.
+ */
+export function createRelationshipPath(templateRecordId: string): string {
+  return `${templateDetailPath(templateRecordId)}/create`;
+}
+
 /** The submit endpoint: a form post, so a frozen answer is a status code and not a banner. */
 export function answersPath(instanceRecordId: string): string {
   return `${instancePath(instanceRecordId)}/answers`;

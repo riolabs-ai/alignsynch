@@ -24,6 +24,9 @@ import { assessmentTemplatePageCopy } from "./assessment-template-new";
 import { templateDetailPageCopy } from "./assessment-template-detail";
 import { templateLibraryPageCopy } from "./assessment-templates";
 import { relationshipReportPageCopy } from "./assessment-relationship-report";
+import { assessmentAcceptPageCopy } from "./assessment-accept";
+import { assessmentAnswerPageCopy } from "./assessment-answer";
+import { assessmentCreatePageCopy } from "./assessment-create";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
@@ -62,8 +65,12 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/assessment/instances": myInstancesPageCopy,
   "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
   "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
+  // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
+  "/assessment/instances/[instanceId]/answer": assessmentAnswerPageCopy,
+  "/assessment/instances/[instanceId]/accept": assessmentAcceptPageCopy,
   "/assessment/templates": templateLibraryPageCopy,
   "/assessment/templates/[templateId]": templateDetailPageCopy,
+  "/assessment/templates/[templateId]/create": assessmentCreatePageCopy,
   "/assessment/templates/new": assessmentTemplatePageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
