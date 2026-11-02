@@ -420,6 +420,14 @@ export const zV1Relationship = z
     inviteToken: z.string().min(1).nullable(),
     /** When the current invite lapses, or null once the counterparty claims it or before a send. */
     inviteExpiresAt: z.string().min(1).nullable(),
+    /**
+     * When an operator archived the relationship, or `null` while it is live. An archive is a
+     * **reversible state, not a delete**: the row, its parties, its Aspects and its sessions stay
+     * exactly as they were, and `restoreRelationship` clears this field. The admin console is the
+     * only writer (`lib/v1/store.tsx`), and no read path here removes data — an archive only
+     * changes which list a row is grouped in.
+     */
+    archivedAt: z.string().min(1).nullable(),
     /** Whether the Coach persona can see this relationship (read-only). */
     sharedWithCoach: z.boolean(),
     coachComments: z.array(zCoachComment),
@@ -445,7 +453,13 @@ export const zV1Relationship = z
 
 export type V1Relationship = z.infer<typeof zV1Relationship>;
 
-/** A support/ops account — the Service persona's "accounts" queue. */
+/**
+ * A support/ops account — the Service persona's "accounts" queue, and the admin console's users
+ * list. `email` is a demo identity (`@example.com`), never a real address: the console renders
+ * `name` and `persona`, and the address exists only because the account shape carries one.
+ * `lastSignInAt` is a seeded instant, the same convention as every other date here — the console
+ * prints it as a date, and no screen reads a clock to derive an age from it.
+ */
 export const zV1Account = z
   .object({
     id: z.string().min(1),
@@ -453,6 +467,7 @@ export const zV1Account = z
     name: z.string().min(1),
     email: z.string().min(1),
     state: z.enum(["active", "trial", "stuck"]),
+    lastSignInAt: z.string().min(1),
   })
   .strict();
 
@@ -564,6 +579,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAcceptedAt: null,
     inviteToken: "inv-7f3a91c2",
     inviteExpiresAt: "2026-10-31T09:00:00.000Z",
+    archivedAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -608,6 +624,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAcceptedAt: null,
     inviteToken: "inv-9c2b04e1",
     inviteExpiresAt: null,
+    archivedAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [
@@ -686,6 +703,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAcceptedAt: null,
     inviteToken: "inv-5d41a8f0",
     inviteExpiresAt: null,
+    archivedAt: null,
     sharedWithCoach: true,
     coachComments: [
       {
@@ -738,6 +756,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAcceptedAt: "2026-10-29T10:00:00.000Z",
     inviteToken: "inv-2b8c17d4",
     inviteExpiresAt: null,
+    archivedAt: null,
     sharedWithCoach: true,
     coachComments: [],
     comments: [
@@ -813,6 +832,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAcceptedAt: "2026-10-25T15:10:00.000Z",
     inviteToken: "inv-8e0f22b5",
     inviteExpiresAt: null,
+    archivedAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -864,6 +884,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAcceptedAt: "2026-10-30T09:00:00.000Z",
     inviteToken: "inv-3a6c0d9e",
     inviteExpiresAt: null,
+    archivedAt: null,
     deletedAspects: [],
     sharedWithCoach: false,
     coachComments: [],
@@ -911,6 +932,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     counterpartyAcceptedAt: null,
     inviteToken: "inv-4c0e7a19",
     inviteExpiresAt: null,
+    archivedAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -1112,6 +1134,7 @@ const seedAccountRows: readonly V1Account[] = [
     name: "Jordan",
     email: "jordan@example.com",
     state: "active",
+    lastSignInAt: "2026-10-31T08:40:00.000Z",
   },
   {
     id: "account-counterparty",
@@ -1119,6 +1142,7 @@ const seedAccountRows: readonly V1Account[] = [
     name: "Sam",
     email: "sam@example.com",
     state: "active",
+    lastSignInAt: "2026-10-30T19:15:00.000Z",
   },
   {
     id: "account-coach",
@@ -1126,6 +1150,7 @@ const seedAccountRows: readonly V1Account[] = [
     name: "Riley",
     email: "riley@example.com",
     state: "trial",
+    lastSignInAt: "2026-10-29T10:25:00.000Z",
   },
   {
     id: "account-admin",
@@ -1133,6 +1158,7 @@ const seedAccountRows: readonly V1Account[] = [
     name: "Admin",
     email: "admin@example.com",
     state: "active",
+    lastSignInAt: "2026-10-31T07:05:00.000Z",
   },
   {
     id: "account-service",
@@ -1140,6 +1166,7 @@ const seedAccountRows: readonly V1Account[] = [
     name: "Service",
     email: "service@example.com",
     state: "active",
+    lastSignInAt: "2026-10-30T16:30:00.000Z",
   },
 ];
 
@@ -1187,8 +1214,15 @@ export interface V1SeedState {
   readonly tickets: readonly V1Ticket[];
 }
 
-/** Bump to invalidate a persisted store that predates a shape change. */
-export const SEED_VERSION = 7;
+/**
+ * Bump to invalidate a persisted store that predates a shape change.
+ *
+ * 8 — `archivedAt` on `V1Relationship` (the admin console's reversible archive) and
+ * `lastSignInAt` on `V1Account` (the console's users list). A store written at 7 has no
+ * `archivedAt`, so a console row would read `undefined` and every archive would look like a
+ * corrupt one; re-seeding is the honest repair.
+ */
+export const SEED_VERSION = 8;
 
 /**
  * The chat's seeded read watermark — `threadId -> lastReadAt` per persona. A thread with

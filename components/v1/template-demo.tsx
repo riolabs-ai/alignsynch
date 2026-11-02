@@ -42,6 +42,8 @@ function demoRelationship(type: RelationshipType): V1Relationship {
     counterpartyAcceptedAt: "2026-10-30T12:00:00.000Z",
     inviteToken: null,
     inviteExpiresAt: null,
+    // A demo report is a live example, never an archived one.
+    archivedAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],

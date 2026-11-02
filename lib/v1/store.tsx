@@ -84,6 +84,18 @@ const REVIEW_STORAGE_KEY = "alignsynch.v1.review.v1";
 /** The key the social slice (notifications + chat read watermarks) persists under. */
 const SOCIAL_STORAGE_KEY = "alignsynch.v1.social.v1";
 
+/**
+ * The key the admin console's slice persists under — the templates an operator has **disabled**.
+ *
+ * It is its own key rather than a field on the template record for a structural reason: a
+ * template in this store is an `Assessment` from `content/assessment.ts`, the *content* model,
+ * and `.strict()` means a console-only field added to it would be a schema change to the thing
+ * the gate validates. Disablement is an operator decision about a record, not a property of the
+ * record — the same split `lib/admin/instance-registry.ts` keeps between a stage (derived) and
+ * an account a seat may or may not hold.
+ */
+const ADMIN_STORAGE_KEY = "alignsynch.v1.admin.v1";
+
 /** One row's mutable state: its approval status and the reviewer's note. */
 export interface ReviewEntry {
   readonly status: ReviewStatus;
@@ -210,6 +222,37 @@ function parsePersona(raw: string | null | undefined): Persona | null {
   return result.success ? result.data : null;
 }
 
+/** The admin slice, persisted: the template ids an operator has disabled. */
+interface PersistedAdmin {
+  readonly version: number;
+  readonly disabledTemplateIds: readonly string[];
+}
+
+/**
+ * The persisted admin slice, or an empty set when nothing has been disabled yet. A store written
+ * before this slice existed (or at an older `SEED_VERSION`) reads as "nothing disabled", which is
+ * the seed state — an operator decision is never invented from a missing key.
+ */
+function loadAdmin(): { disabledTemplateIds: readonly string[] } {
+  if (typeof window === "undefined") return { disabledTemplateIds: [] };
+  try {
+    const raw = window.localStorage.getItem(ADMIN_STORAGE_KEY);
+    if (raw === null) return { disabledTemplateIds: [] };
+    const parsed = JSON.parse(raw) as PersistedAdmin;
+    if (parsed.version !== SEED_VERSION || !Array.isArray(parsed.disabledTemplateIds)) {
+      return { disabledTemplateIds: [] };
+    }
+    return {
+      disabledTemplateIds: parsed.disabledTemplateIds.filter(
+        (entry): entry is string => typeof entry === "string" && entry.length > 0,
+      ),
+    };
+  } catch (error) {
+    console.warn("v1 store: could not read persisted admin slice, re-seeding", error);
+    return { disabledTemplateIds: [] };
+  }
+}
+
 /** The social slice, persisted — notifications (with their read flags) and chat read watermarks. */
 interface PersistedSocial {
   readonly version: number;
@@ -333,6 +376,17 @@ export interface V1Store {
   readonly restoreAspect: (relationshipId: string, itemId: string) => void;
   /** Copy the relationship into a fresh, unclaimed one with the same Aspects. */
   readonly cloneRelationship: (relationshipId: string) => V1Relationship;
+  /**
+   * The admin console's reversible archive. `archiveRelationship` stamps `archivedAt`, and
+   * `restoreRelationship` clears it; neither touches a party, an Aspect, an answer or a session.
+   * On an already-archived row both are no-ops, so a double click cannot re-stamp the instant.
+   */
+  readonly archiveRelationship: (relationshipId: string) => void;
+  readonly restoreRelationship: (relationshipId: string) => void;
+  /** The template ids an operator has disabled — the admin console's second reversible state. */
+  readonly disabledTemplateIds: readonly string[];
+  readonly disableTemplate: (templateId: string) => void;
+  readonly enableTemplate: (templateId: string) => void;
   /** Turn the relationship's Aspects into a reusable library entry (a "my saved set"). */
   readonly saveAspectSetToLibrary: (relationshipId: string) => Assessment;
   readonly restoreSubscription: (relationshipId: string) => void;
@@ -366,6 +420,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
   const [tickets, setTickets] = useState<readonly V1Ticket[]>(seedTickets);
   const [notifications, setNotifications] = useState<readonly V1Notification[]>(seedNotifications);
   const [threadReadAt, setThreadReadAt] = useState<V1ThreadReadAt>(seedThreadReadAt);
+  const [disabledTemplateIds, setDisabledTemplateIds] = useState<readonly string[]>([]);
   const [reviews, setReviews] = useState<Readonly<Record<string, ReviewEntry>>>({});
   const [persona, setPersonaState] = useState<Persona>("visitor");
   const [hydrated, setHydrated] = useState(false);
@@ -378,12 +433,14 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     const nextPersona = parsePersona(window.localStorage.getItem(PERSONA_KEY)) ?? "visitor";
     const flow = loadFlow();
     const social = loadSocial();
+    const admin = loadAdmin();
     setTemplates(loadTemplates());
     setRelationships(flow.relationships);
     setAccounts(flow.accounts);
     setTickets(flow.tickets);
     setNotifications(social.notifications);
     setThreadReadAt(social.threadReadAt);
+    setDisabledTemplateIds(admin.disabledTemplateIds);
     setReviews(loadReviews());
     setPersonaState(nextPersona);
     setHydrated(true);
@@ -431,6 +488,18 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [notifications, threadReadAt, hydrated]);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      window.localStorage.setItem(
+        ADMIN_STORAGE_KEY,
+        JSON.stringify({ version: SEED_VERSION, disabledTemplateIds }),
+      );
+    } catch (error) {
+      console.warn("v1 store: could not persist admin slice (private mode?)", error);
+    }
+  }, [disabledTemplateIds, hydrated]);
+
   const saveTemplate = useCallback((template: Assessment) => {
     setTemplates((previous) => {
       const at = previous.findIndex((entry) => entry.id === template.id);
@@ -470,6 +539,9 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         previous.map((rel) => {
           if (rel.id !== relationshipId) return rel;
           const next = patch(rel);
+          // A mutation that changed nothing is not a write: the no-op branches return the row
+          // itself, and bumping "Last modified" would date an edit that never happened.
+          if (next === rel) return rel;
           // Every mutation is a write: "Last modified" is honest without a per-call setter.
           return next.modifiedAt === rel.modifiedAt
             ? { ...next, modifiedAt: new Date().toISOString() }
@@ -508,6 +580,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         counterpartyAcceptedAt: null,
         inviteToken: null,
         inviteExpiresAt: null,
+        // A new relationship is live: only the admin console's archive writes this field.
+        archivedAt: null,
         sharedWithCoach: false,
         coachComments: [],
         comments: [],
@@ -558,6 +632,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       counterpartyAcceptedAt: null,
       inviteToken: null,
       inviteExpiresAt: null,
+      archivedAt: null,
       sharedWithCoach: false,
       coachComments: [],
       comments: [],
@@ -845,6 +920,9 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         counterpartyAcceptedAt: null,
         inviteToken: null,
         inviteExpiresAt: null,
+        // A clone is a fresh, live relationship — an archived original does not clone its
+        // archive state, because the archive is a fact about that row, not the blueprint.
+        archivedAt: null,
         sharedWithCoach: false,
         coachComments: [],
         comments: [],
@@ -870,6 +948,45 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     },
     [relationships],
   );
+
+  /**
+   * Archive a relationship — the admin console's one destructive-looking action, and the reason
+   * it is drawn behind an `AlertDialog`: the row keeps every field, its parties, its Aspects, its
+   * sessions and its answers, and only `archivedAt` moves. `restoreRelationship` is the same
+   * write with `null`, so the archive is reversible in the store and not just in principle.
+   *
+   * Both are no-ops on the state they would produce (an already-archived row stays stamped at
+   * the instant it was archived, a live row stays `null`), so a double click cannot re-date it.
+   */
+  const archiveRelationship = useCallback(
+    (relationshipId: string) => {
+      const now = new Date().toISOString();
+      patchRelationship(relationshipId, (rel) =>
+        rel.archivedAt === null ? { ...rel, archivedAt: now } : rel,
+      );
+    },
+    [patchRelationship],
+  );
+
+  const restoreRelationship = useCallback(
+    (relationshipId: string) => {
+      patchRelationship(relationshipId, (rel) =>
+        rel.archivedAt === null ? rel : { ...rel, archivedAt: null },
+      );
+    },
+    [patchRelationship],
+  );
+
+  /** Disable a template — an operator decision beside the record, never a field on it. */
+  const disableTemplate = useCallback((templateId: string) => {
+    setDisabledTemplateIds((previous) =>
+      previous.includes(templateId) ? previous : [...previous, templateId],
+    );
+  }, []);
+
+  const enableTemplate = useCallback((templateId: string) => {
+    setDisabledTemplateIds((previous) => previous.filter((entry) => entry !== templateId));
+  }, []);
 
   const saveAspectSetToLibrary = useCallback(
     (relationshipId: string): Assessment => {
@@ -1052,6 +1169,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       window.localStorage.removeItem(PERSONA_KEY);
       window.localStorage.removeItem(REVIEW_STORAGE_KEY);
       window.localStorage.removeItem(SOCIAL_STORAGE_KEY);
+      window.localStorage.removeItem(ADMIN_STORAGE_KEY);
     } catch (error) {
       console.warn("v1 store: could not clear the store (private mode?)", error);
     }
@@ -1061,6 +1179,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     setTickets(seedTickets);
     setNotifications(seedNotifications);
     setThreadReadAt(seedThreadReadAt);
+    setDisabledTemplateIds([]);
     setReviews({});
     setPersonaState("visitor");
     setHydrated(true);
@@ -1096,6 +1215,11 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       deleteAspect,
       restoreAspect,
       cloneRelationship,
+      archiveRelationship,
+      restoreRelationship,
+      disabledTemplateIds,
+      disableTemplate,
+      enableTemplate,
       saveAspectSetToLibrary,
       restoreSubscription,
       subscribe,
@@ -1139,6 +1263,11 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       deleteAspect,
       restoreAspect,
       cloneRelationship,
+      archiveRelationship,
+      restoreRelationship,
+      disabledTemplateIds,
+      disableTemplate,
+      enableTemplate,
       saveAspectSetToLibrary,
       restoreSubscription,
       subscribe,
