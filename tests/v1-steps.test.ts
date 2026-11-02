@@ -16,7 +16,8 @@
  *
  * The cases, in order:
  *
- *   1. create → the relationship exists with the Mode, Setting, name, and invitee the form chose;
+ *   1. create → the relationship exists with the Mode, Setting, name, and invitee the form chose,
+ *      under the persona's own name, so the Initiator's dashboard can resolve the row it just made;
  *   2. a Setting change is refused while a session is open, and accepted once it is complete;
  *   3. accepting as the second party derives the Steps — eight of them, on the one Aspect that has a
  *      Gap, each naming the kind that produced it, and no Step for a zero Gap;
@@ -35,7 +36,9 @@ import { INSTANCE_NAME_MAX } from "@/content/assessment";
 import { deriveSteps, stepProgressOf } from "@/content/steps";
 import type { Opinions } from "@/content/assessment";
 import type { V1Relationship } from "@/data/v1/fixtures";
+import { PERSONA_META } from "@/data/v1/fixtures";
 import { purchasableRelationshipType, type RelationshipType } from "@/data/v1/relationship-types";
+import { relationshipsVisibleTo } from "@/lib/v1/persona";
 import { V1StoreProvider, useV1Store, type V1Store } from "@/lib/v1/store";
 
 declare global {
@@ -130,7 +133,6 @@ describe("the create entry", () => {
     act(() => {
       created.rel = live().createRelationshipFromType(type, {
         name: "Sam and Jordan",
-        initiatorName: "Jordan",
         inviteeName: "Sam",
         mode: "advanced",
         setting: "full",
@@ -142,7 +144,9 @@ describe("the create entry", () => {
     expect(rel.mode).toBe("advanced");
     expect(rel.setting).toBe("full");
     expect(rel.name).toBe("Sam and Jordan");
-    expect(rel.initiatorName).toBe("Jordan");
+    // The Initiator is the persona, not a typed value: this entry has no name field, and the row it
+    // writes has to be one the Initiator's own dashboard can resolve.
+    expect(rel.initiatorName).toBe(PERSONA_META.initiator.name);
     // The seat is named, never claimed: the blind rule still waits for Sam's own submission.
     expect(rel.inviteeName).toBe("Sam");
     expect(rel.counterpartyName).toBeNull();
@@ -154,6 +158,26 @@ describe("the create entry", () => {
       `[1 create] ${rel.id} · ${rel.mode} · ${rel.setting} · ${rel.items.length} Aspects · invitee ${rel.inviteeName}`,
     );
   });
+
+  it("lands on the Initiator's own dashboard, because the gate is the persona's name", () => {
+    const type = staffManager();
+    const created: { rel?: V1Relationship } = {};
+    act(() => {
+      created.rel = live().createRelationshipFromType(type, { mode: "basic", setting: "soft" });
+    });
+    const rel = created.rel;
+    if (rel === undefined) throw new Error("createRelationshipFromType returned nothing");
+
+    // What the form's redirect (`/v1/initiator/relationships/<id>`) depends on: the row the entry
+    // just made is in the list that gate filters.
+    expect(relationshipsVisibleTo("initiator", live().relationships)).toContainEqual(rel);
+
+    // And the reason the entry has no name field: the filter compares names, so a row under any
+    // other one would exist in the store and be invisible to the persona that just created it.
+    const renamed = { ...rel, initiatorName: "Jordan Lee-Smith" };
+    expect(relationshipsVisibleTo("initiator", [renamed])).toEqual([]);
+    console.log(`[1b gate] ${rel.id} resolves for the initiator; a renamed row does not`);
+  });
 });
 
 describe("the metadata writes", () => {
@@ -162,7 +186,6 @@ describe("the metadata writes", () => {
     const made: { rel?: V1Relationship } = {};
     act(() => {
       made.rel = live().createRelationshipFromType(type, {
-        initiatorName: "Jordan",
         mode: "advanced",
         setting: "full",
       });
@@ -203,7 +226,6 @@ describe("the metadata writes", () => {
     const made: { rel?: V1Relationship } = {};
     act(() => {
       made.rel = live().createRelationshipFromType(type, {
-        initiatorName: "Jordan",
         mode: "basic",
         setting: "soft",
       });
@@ -239,7 +261,6 @@ describe("Steps at completion", () => {
     const made: { rel?: V1Relationship } = {};
     act(() => {
       made.rel = live().createRelationshipFromType(type, {
-        initiatorName: "Jordan",
         inviteeName: "Sam",
         mode: "advanced",
         setting: "full",
@@ -317,7 +338,6 @@ describe("Steps at completion", () => {
     const made: { rel?: V1Relationship } = {};
     act(() => {
       made.rel = live().createRelationshipFromType(type, {
-        initiatorName: "Jordan",
         mode: "basic",
         setting: "soft",
       });

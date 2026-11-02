@@ -178,28 +178,52 @@ describe("the derivation", () => {
 
 describe("Steps are additive", () => {
   it("leaves every Gap value and the verdict exactly as the report computes them", () => {
-    const before: AspectGaps[] = [DIVIDED, SHARED].map((item) => ({
-      itemId: item.id,
-      gaps: gapKindsOf(initiatorAnswers[item.id], counterpartyAnswers[item.id]),
-    }));
-    const verdictBefore = instanceAlignment(before, "soft");
+    const gapsOf = (): AspectGaps[] =>
+      [DIVIDED, SHARED].map((item) => ({
+        itemId: item.id,
+        gaps: gapKindsOf(initiatorAnswers[item.id], counterpartyAnswers[item.id]),
+      }));
+
+    // Snapshots taken *before* the derivation: the answers themselves, not just the Gaps.
+    const snapshot = (answers: Record<string, Opinions>): Record<string, Opinions> =>
+      Object.fromEntries(Object.entries(answers).map(([id, opinions]) => [id, { ...opinions }]));
+    const initiatorBefore = snapshot(initiatorAnswers);
+    const counterpartyBefore = snapshot(counterpartyAnswers);
+    const gapsBefore = gapsOf();
+    // Both Settings before and after, compared like for like. Comparing Soft-before against
+    // Full-after would still pass if a Step had shifted a Gap, because the two Settings tolerate
+    // different distances — so the same Setting is used on both sides.
+    const softBefore = instanceAlignment(gapsBefore, "soft");
+    const fullBefore = instanceAlignment(gapsBefore, "full");
 
     const steps = derive();
     assert.ok(steps.length > 0, "the derivation actually ran");
 
-    const after: AspectGaps[] = [DIVIDED, SHARED].map((item) => ({
-      itemId: item.id,
-      gaps: gapKindsOf(initiatorAnswers[item.id], counterpartyAnswers[item.id]),
-    }));
-    const verdictAfter = instanceAlignment(after, "full");
+    const gapsAfter = gapsOf();
+    const softAfter = instanceAlignment(gapsAfter, "soft");
+    const fullAfter = instanceAlignment(gapsAfter, "full");
 
-    assert.deepEqual(after, before, "the Gaps are the same numbers after deriving");
+    // The derivation read the answers and wrote nothing: the maps are untouched, so the Gaps are
+    // recomputed from exactly the same inputs.
+    assert.deepEqual(initiatorAnswers, initiatorBefore, "deriving mutated no initiator opinion");
     assert.deepEqual(
-      { unmet: verdictAfter.unmet, aligned: verdictAfter.aligned },
-      { unmet: verdictBefore.unmet, aligned: verdictBefore.aligned },
-      "the verdict re-derives identically — Soft tolerates what Full does not, and neither moved",
+      counterpartyAnswers,
+      counterpartyBefore,
+      "deriving mutated no counterparty opinion",
     );
-    assert.equal(verdictBefore.aligned, false, "three-wide Gaps are unmet under Soft too");
+    assert.deepEqual(gapsAfter, gapsBefore, "the Gaps are the same numbers after deriving");
+
+    for (const [label, before, after] of [
+      ["Soft", softBefore, softAfter],
+      ["Full", fullBefore, fullAfter],
+    ] as const) {
+      assert.deepEqual(
+        { unmet: after.unmet, aligned: after.aligned },
+        { unmet: before.unmet, aligned: before.aligned },
+        `the verdict re-derives identically under ${label}`,
+      );
+    }
+    assert.equal(softBefore.aligned, false, "three-wide Gaps are unmet under Soft too");
   });
 });
 

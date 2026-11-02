@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminLimitsPanel } from "@/components/v1/admin-limits";
 import { RelationshipMetadata } from "@/components/v1/relationship-metadata";
-import { StepsPanel } from "@/components/v1/steps-panel";
 import {
   EmptyState,
   LoadingState,
@@ -274,9 +273,12 @@ export function AdminRelationshipDetail({ relationshipId }: { relationshipId: st
         )}
       </section>
 
-      {/* Read-only on this screen: the matrix grants an operator Steps to read, and a party alone
-          ticks them. Rendering the tick here would be a write the matrix does not grant. */}
-      <StepsPanel rel={rel} canMark={false} />
+      {/* The Steps are **not** rendered here, deliberately. Their words embed the Aspect prompt and
+          the measured Gap ("… of 3") — a figure derived from two answer values, which is exactly
+          what this page's limit sentence promises an operator does not see. The count above
+          ("Steps recorded: 2 of 9 done") is the whole fact the console carries: that a plan exists
+          and how much of it the parties have ticked, never a word of it. `lib/v1/admin-console.ts`
+          states the same boundary on `stepsRecorded`/`stepsDone`. */}
 
       <Card>
         <CardHeader>

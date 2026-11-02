@@ -420,12 +420,16 @@ export interface V1Store {
    * The two steps are one call on purpose: `createRelationship` reads the library from the render it
    * was created in, so cloning and creating in two calls within one event would look for a template
    * that state had not published yet.
+   *
+   * **The Initiator is the persona, and no argument can say otherwise.** Every `/v1/<persona>` page
+   * is gated by `relationshipsVisibleTo()` on the persona's own name, so a row created under another
+   * name would exist in the store with no page its creator could open. The name is therefore not an
+   * input here: this entry point *is* "I am the Initiator", and it writes the persona's name.
    */
   readonly createRelationshipFromType: (
     type: RelationshipType,
     input: {
       readonly name?: string;
-      readonly initiatorName: string;
       readonly inviteeName?: string;
       readonly mode: AssessmentMode;
       readonly setting: AlignmentSetting;
@@ -695,13 +699,15 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
    * The create entry (#404 §6). The type is folded into the library template the editor opens and
    * the relationship is copied from it **in one write**, so a caller cannot half-create: either the
    * template and the relationship both exist afterwards, or neither does.
+   *
+   * The initiator is the persona, never an argument — see the interface note. A created row that the
+   * Initiator's own dashboard could not resolve would be a card the form hands back as a 404.
    */
   const createRelationshipFromType = useCallback(
     (
       type: RelationshipType,
       input: {
         readonly name?: string;
-        readonly initiatorName: string;
         readonly inviteeName?: string;
         readonly mode: AssessmentMode;
         readonly setting: AlignmentSetting;
@@ -721,7 +727,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         items: template.items,
         mode: input.mode,
         setting: input.setting,
-        initiatorName: input.initiatorName,
+        initiatorName: PERSONA_META.initiator.name,
         inviteeName: input.inviteeName?.trim() || null,
         now: new Date().toISOString(),
       });

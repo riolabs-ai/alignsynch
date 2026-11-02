@@ -37,7 +37,7 @@ import { useState } from "react";
  *
  *   1. **Template** — fixed by the route segment, and printed rather than picked.
  *   2. **Name** — optional, ≤ `INSTANCE_NAME_MAX`; absent means the template's title is the name.
- *   3. **Your name** — the Initiator's display name, pre-filled from the persona, editable.
+ *   3. **You** — printed, not edited: the Initiator is the persona you are signed in as.
  *   4. **Who you are asking** — an optional name for the counterparty's **seat**. It is display only:
  *      the seat is filled when they claim the invitation, because the blind rule waits for their own
  *      submission and a name typed by someone else is not a party.
@@ -51,14 +51,20 @@ import { useState } from "react";
  * and never sends a link.
  *
  * Validation mirrors the model, never looser: the name is trimmed and capped at the schema's own
- * limit, the display names fall back to the persona's (`createRelationshipFromType` applies that),
- * and Mode/Setting are the two zod enums' values.
+ * limit, and Mode/Setting are the two zod enums' values.
+ *
+ * **Why "your name" is not a field.** In this prototype the persona *is* the session: every
+ * `/v1/<persona>/relationships/<id>` page is gated by `relationshipsVisibleTo()` on that persona's
+ * own name (`lib/v1/persona.ts`), and the Initiator's gate matches
+ * `PERSONA_META.initiator.name`. A name typed here that differs from the persona would therefore
+ * create a relationship with no page its creator could open. So the row's initiator is always the
+ * persona — `createRelationshipFromType` takes no name at all — and this screen shows it rather
+ * than offering a rename it could not honour.
  */
 export function CreateRelationshipForm({ type }: { type: RelationshipType }) {
   const { createRelationshipFromType, setPersona } = useV1Store();
   const router = useRouter();
   const [name, setName] = useState("");
-  const [initiatorName, setInitiatorName] = useState(PERSONA_META.initiator.name);
   const [inviteeName, setInviteeName] = useState("");
   const [mode, setMode] = useState<AssessmentMode | null>(null);
   const [setting, setSetting] = useState<AlignmentSetting | null>(null);
@@ -74,7 +80,6 @@ export function CreateRelationshipForm({ type }: { type: RelationshipType }) {
     setPersona("initiator");
     const rel = createRelationshipFromType(type, {
       name: name.trim() === "" ? undefined : name.trim(),
-      initiatorName,
       inviteeName: inviteeName.trim() === "" ? undefined : inviteeName.trim(),
       mode,
       setting,
@@ -125,15 +130,13 @@ export function CreateRelationshipForm({ type }: { type: RelationshipType }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="rel-initiator">Your name ({type.roles.initiator})</Label>
-              <Input
-                id="rel-initiator"
-                value={initiatorName}
-                onChange={(event) => setInitiatorName(event.target.value)}
-                data-create-field="initiatorName"
-              />
+              <p className="text-sm font-medium text-foreground">You ({type.roles.initiator})</p>
+              <p className="text-sm text-foreground" data-create-field="initiatorName">
+                {PERSONA_META.initiator.name}
+              </p>
               <p className="text-xs text-muted-foreground">
-                Pre-filled from your persona; edit it if this relationship uses another name.
+                The persona you are signed in as is the Initiator of this relationship — your
+                dashboard is where it will appear.
               </p>
             </div>
             <div className="space-y-1">
