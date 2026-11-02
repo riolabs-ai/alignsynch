@@ -38,10 +38,7 @@ function catalogueCardCopyOf(copy: PageCopy): CatalogueCardCopy {
   const card = sectionOf(copy, "card");
   return {
     viewDetails: itemLabel(card, "view-details"),
-    typeLabel: itemLabel(card, "type"),
-    realmLabel: itemLabel(card, "realm"),
     unnamedType: itemLabel(card, "unnamed-type"),
-    unnamedRealm: itemLabel(card, "unnamed-realm"),
     rolesOf: (type) =>
       fillLabel(itemLabel(card, "roles"), {
         initiator: type.roles.initiator,

@@ -38,6 +38,18 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       id: "list",
       heading: "Every template you can use",
       body: "A card counts the Aspects the template asks, and the plan that includes every type here is Basic. Archiving a template hides it from the catalogue and stops new relationships; the relationships already made from it keep working.",
+      items: [
+        /**
+         * The count the filter has to move (#catalogue). `{shown}` is the cards on this screen,
+         * `{total}` the cards the tab and status left, both counted from the rows the page read.
+         */
+        { id: "count", label: "Showing {shown} of {total} templates" },
+        /**
+         * The same sentence once a realm is chosen — the filter names itself, so the count and
+         * the shelf it was counted on are read in one line rather than two places apart.
+         */
+        { id: "count-realm", label: "Showing {shown} of {total} templates in {realm}" },
+      ],
     },
     {
       id: "tabs",
@@ -107,10 +119,12 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "view-details", label: "View details" },
         { id: "aspects", label: "{count} Aspects" },
-        { id: "type", label: "Relationship Type" },
-        { id: "realm", label: "Realm" },
+        /**
+         * The two chips a realm heading does not already say (#catalogue). The realm chip and the
+         * type chip this card used to draw repeated the heading above it and the title above
+         * them; what a card adds is who the parties are, what it asks and what it costs.
+         */
         { id: "unnamed-type", label: "No relationship type" },
-        { id: "unnamed-realm", label: "Not stated" },
         { id: "roles", label: "{initiator} / {counterparty}" },
         /**
          * The price (#catalogue). One figure on every card, and it is the plan's, not a

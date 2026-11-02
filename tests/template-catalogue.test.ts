@@ -102,6 +102,8 @@ function cardOf(html: string, slug: string): string {
 function wordsOf(card: string): string {
   return card
     .replace(/<[^>]*>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&#x27;/g, "'")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -187,8 +189,26 @@ describe("the rendered catalogue", () => {
       expect(words).toContain("Included in Basic");
       expect(words).toContain(`${type.roles.initiator} / ${type.roles.counterparty}`);
       expect(words).toContain("Aspects");
-      expect(words).toContain(type.shortName);
-      expect(words).toContain(type.realm);
+      // The title is the record's own name, and the `shortName` chip that repeated it is gone.
+      const record = assessments.find((template) => template.slug === type.id);
+      if (record === undefined) throw new Error(`no record for "${type.id}"`);
+      expect(words).toContain(record.title);
+      // The realm is the heading the card is drawn under, held on the card as an attribute so
+      // the grouping stays readable from the card alone (#catalogue: no chip repeating it).
+      expect(card).toContain(`data-template-card-realm="${type.realm}"`);
+      expect(card).toContain(`data-template-card-type="${type.id}"`);
+    }
+  });
+
+  it("draws the realm as a heading with its count, and no chip repeating it", async () => {
+    const html = await renderCatalogue();
+
+    expect(html).toContain('data-template-group-count="10"');
+    for (const type of purchasableRelationshipTypes) {
+      const words = wordsOf(cardOf(html, type.id));
+      // The one-line summary may name the realm in prose; the chip did not, and neither does
+      // anything else on the card — the heading above it is where the realm is stated.
+      expect(words.startsWith(type.realm)).toBe(false);
     }
   });
 
@@ -264,5 +284,38 @@ describe("the realm filter", () => {
     expect(html).toContain('data-template-realm-filter="Home"');
     expect(html).toContain('data-template-realm-count="10"');
     expect(html).toContain('data-template-realm-count="5"');
+  });
+
+  it("changes the count on screen when a realm narrows the list", async () => {
+    const total = catalogueRows.length;
+    const all = await renderCatalogue();
+    const home = await renderCatalogue({ realm: "Home" });
+
+    // The fixture: 27 types and the platform's starter, which names no type.
+    expect(total).toBe(28);
+
+    expect(all).toContain(`data-template-count="${total}"`);
+    expect(wordsOf(all)).toContain(`Showing ${total} of ${total} templates`);
+
+    expect(home).toContain('data-template-count="10"');
+    expect(wordsOf(home)).toContain(`Showing 10 of ${total} templates in Home`);
+  });
+});
+
+describe("the card's own controls", () => {
+  it("leaves the admin stanza off a card with nothing to administrate", async () => {
+    const html = await renderCatalogue();
+
+    for (const type of purchasableRelationshipTypes) {
+      const card = cardOf(html, type.id);
+      // Every catalogue row is a published platform template with no instances, so the three
+      // facts that used to repeat on all 27 cards say nothing and are not drawn.
+      expect(card).not.toContain("data-template-instances");
+      expect(card).not.toContain('data-template-status="published"');
+      expect(wordsOf(card)).not.toContain("Created");
+      // Duplicating a built-in is always allowed; archiving one is not.
+      expect(wordsOf(card)).toContain("Duplicate");
+      expect(wordsOf(card)).not.toContain("Archive");
+    }
   });
 });

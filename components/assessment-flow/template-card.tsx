@@ -49,7 +49,11 @@ import {
 import { createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
 import type { ReactNode } from "react";
 
-const SHELL = "rounded-lg border border-border bg-card p-5";
+/**
+ * The card's shell — a column that fills the grid cell, so one long summary cannot leave its
+ * neighbours' action rows floating halfway up the row. The actions sit on `mt-auto` below.
+ */
+const SHELL = "flex h-full flex-col rounded-lg border border-border bg-card p-5";
 const CHIP = "rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground";
 const MUTED = "text-sm text-muted-foreground";
 const PRIMARY =
@@ -121,10 +125,7 @@ export interface TemplateGroup<T extends CatalogueTemplate> {
  */
 export interface CatalogueCardCopy {
   readonly viewDetails: string;
-  readonly typeLabel: string;
-  readonly realmLabel: string;
   readonly unnamedType: string;
-  readonly unnamedRealm: string;
   readonly rolesOf: (type: RelationshipType) => string;
   readonly aspectsOf: (count: number) => string;
   /** What the price chip means, for a screen reader: `Included in`. */
@@ -223,25 +224,28 @@ export function TemplateCard<T extends CatalogueTemplate>({
     <article
       data-template-card={template.id}
       data-template-group={templateGroupOf(template.slug)}
+      data-template-card-type={type?.id ?? "none"}
+      data-template-card-realm={type?.realm ?? "none"}
       className={SHELL}
     >
       <h3 className="text-base font-semibold text-foreground">{template.title}</h3>
       <p className={`mt-1 ${MUTED}`}>{template.summary}</p>
 
+      {/*
+       * The chips a realm heading has not already said.
+       *
+       * A card sits under its realm's heading, so a `Office` chip on every card in the Office
+       * group is the same fact twice (and the `shortName` chip is the title again on every
+       * derived record). What is left is the three things the heading cannot say: who the two
+       * parties are, how many Aspects it asks, and what it costs. The realm and the type stay on
+       * the article as `data-` attributes, so the grouping is still machine-readable from a card.
+       */}
       <dl className="mt-3 flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <dt className="sr-only">{copy.typeLabel}</dt>
-          <dd className={CHIP} data-template-card-type={type?.id ?? "none"}>
-            {type === undefined ? copy.unnamedType : type.shortName}
+        {type === undefined ? (
+          <dd className={CHIP} data-template-card-unnamed="true">
+            {copy.unnamedType}
           </dd>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <dt className="sr-only">{copy.realmLabel}</dt>
-          <dd className={CHIP} data-template-card-realm={type?.realm ?? "none"}>
-            {type === undefined ? copy.unnamedRealm : type.realm}
-          </dd>
-        </div>
-        {type === undefined ? null : (
+        ) : (
           <dd className={CHIP} data-template-card-roles="true">
             {copy.rolesOf(type)}
           </dd>
@@ -262,7 +266,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
         </div>
       </dl>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-auto flex flex-wrap items-center gap-3 pt-4">
         {createable(template) ? (
           <a className={PRIMARY} href={createRelationshipPath(template.id)}>
             {copy.useTemplate}
@@ -303,8 +307,19 @@ export function TemplateCatalogueGrid<T extends CatalogueTemplate>({
     <div className="space-y-8">
       {groups.map((group) => (
         <section key={group.id} data-template-group-section={group.id} className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          {/*
+           * The heading is the realm's own word, at heading weight, with its count beside it —
+           * `Home 10` tells a person what the shelf holds before they read a single card, and it
+           * is the same number the filter row offers above.
+           */}
+          <h2 className="flex items-baseline gap-2 border-b border-border pb-2 text-lg font-semibold text-foreground">
             {groupLabelOf(group.id)}
+            <span
+              className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+              data-template-group-count={group.templates.length}
+            >
+              {group.templates.length}
+            </span>
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {group.templates.map((template) => (

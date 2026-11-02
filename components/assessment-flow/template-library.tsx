@@ -61,10 +61,7 @@ function cardCopyOf(copy: PageCopy): CatalogueCardCopy {
   const card = sectionOf(copy, "card");
   return {
     viewDetails: itemLabel(card, "view-details"),
-    typeLabel: itemLabel(card, "type"),
-    realmLabel: itemLabel(card, "realm"),
     unnamedType: itemLabel(card, "unnamed-type"),
-    unnamedRealm: itemLabel(card, "unnamed-realm"),
     rolesOf: (type) =>
       fillLabel(itemLabel(card, "roles"), {
         initiator: type.roles.initiator,
@@ -185,6 +182,12 @@ export function TemplateLibrary({
   const empty = sectionOf(copy, "empty");
   const noMatch = sectionOf(copy, "no-match");
   const notices = sectionOf(copy, "notice");
+  /**
+   * The cards the tab and the status left, before the realm narrows them — the `of` in
+   * "showing 10 of 28". A sum of the realm counts the same rows, so it cannot disagree with the
+   * filter row above it.
+   */
+  const total = counts.reduce((sum, entry) => sum + entry.count, 0);
 
   const tabRow: ReadonlyArray<{ id: LibraryView }> = [
     { id: "all" },
@@ -217,6 +220,23 @@ export function TemplateLibrary({
       <section className="mb-6">
         <h2 className="text-xl font-semibold text-foreground">{list.heading}</h2>
         <p className={`mt-2 ${MUTED}`}>{sectionBody(list)}</p>
+        {/*
+         * How many cards this screen is showing, out of how many the tab and status left. It is
+         * the count a filter has to move: choosing `Home` changes the number in this sentence,
+         * which is what a person checks before believing the filter did anything.
+         */}
+        <p className="mt-2 text-sm font-medium text-foreground" data-template-count={shown.length}>
+          {filter.realm === null
+            ? fillLabel(itemLabel(list, "count"), { shown: shown.length, total })
+            : fillLabel(itemLabel(list, "count-realm"), {
+                shown: shown.length,
+                total,
+                realm:
+                  filter.realm === "other"
+                    ? itemLabel(sectionOf(copy, "groups"), "other")
+                    : filter.realm,
+              })}
+        </p>
       </section>
 
       <div className="mb-6 grid gap-3">
@@ -280,6 +300,7 @@ export function TemplateLibrary({
             <a
               href={filterHref(filter, { realm: null })}
               data-template-realm-filter="all"
+              data-template-realm-count={total}
               aria-current={filter.realm === null ? "page" : undefined}
               className={
                 filter.realm === null
@@ -288,6 +309,7 @@ export function TemplateLibrary({
               }
             >
               {itemLabel(realms, "all")}
+              <span className="ml-1.5 text-xs opacity-70">{total}</span>
             </a>
             {counts.map((entry) => (
               <a
@@ -369,48 +391,59 @@ export function TemplateLibrary({
           groups={templateGroupsOf(shown)}
           groupLabelOf={groupLabelOf(copy)}
           actionsOf={(template) => (
-            <div className="grid gap-2">
-              <p className={`${MUTED} text-xs`}>
-                <span data-template-instances={template.instanceCount}>
-                  {fillLabel(itemLabel(row, "instances"), { count: template.instanceCount })}
-                </span>
-                <span aria-hidden className="mx-1">
-                  ·
-                </span>
-                <span>
-                  {fillLabel(itemLabel(row, "created"), { date: formatDate(template.createdAt) })}
-                </span>
-              </p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              {/*
+               * The card's own controls, in the card's action row rather than in a second block
+               * under it: 27 cards each carrying a stacked admin stanza is what made this page a
+               * wall. `Duplicate` is always offered (a built-in can be copied, never archived);
+               * the status and the instance count appear only when they say something — an
+               * archived row, or a template somebody has actually used — and a creation date is
+               * shown only for the account's own record, because "published on the platform's
+               * day" repeated 27 times is not a fact about the template.
+               */}
+              <form action={templateDuplicatePath(template.id)} method="post">
+                <FilterFields filter={filter} />
+                <button type="submit" className="underline">
+                  {itemLabel(row, "duplicate")}
+                </button>
+              </form>
 
-              <div className="flex flex-wrap items-center gap-3 text-sm">
-                <form action={templateDuplicatePath(template.id)} method="post">
+              {template.authorship !== "mine" ? null : (
+                <form action={templateStatusPath(template.id)} method="post">
                   <FilterFields filter={filter} />
+                  <input
+                    type="hidden"
+                    name="status"
+                    value={template.status === "archived" ? "published" : "archived"}
+                  />
                   <button type="submit" className="underline">
-                    {itemLabel(row, "duplicate")}
+                    {itemLabel(row, template.status === "archived" ? "unarchive" : "archive")}
                   </button>
                 </form>
+              )}
 
-                {template.authorship !== "mine" ? null : (
-                  <form action={templateStatusPath(template.id)} method="post">
-                    <FilterFields filter={filter} />
-                    <input
-                      type="hidden"
-                      name="status"
-                      value={template.status === "archived" ? "published" : "archived"}
-                    />
-                    <button type="submit" className="underline">
-                      {itemLabel(row, template.status === "archived" ? "unarchive" : "archive")}
-                    </button>
-                  </form>
-                )}
-              </div>
+              {template.status === "archived" ? (
+                <span className={`${STRONG} text-xs`} data-template-status={template.status}>
+                  {itemLabel(row, "status-archived")}
+                </span>
+              ) : null}
 
-              <p className={`${STRONG} text-xs`} data-template-status={template.status}>
-                {itemLabel(
-                  row,
-                  template.status === "archived" ? "status-archived" : "status-published",
-                )}
-              </p>
+              {template.instanceCount > 0 ? (
+                <span
+                  className={`${MUTED} text-xs`}
+                  data-template-instances={template.instanceCount}
+                >
+                  {fillLabel(itemLabel(row, "instances"), { count: template.instanceCount })}
+                </span>
+              ) : null}
+
+              {template.authorship === "mine" ? (
+                <span className={`${MUTED} text-xs`}>
+                  {fillLabel(itemLabel(row, "created"), {
+                    date: formatDate(template.createdAt),
+                  })}
+                </span>
+              ) : null}
             </div>
           )}
         />
@@ -448,7 +481,12 @@ export function TemplateLibrary({
 function FilterFields({
   filter,
 }: {
-  filter: { view: LibraryView; status: LibraryStatus; query: string };
+  filter: {
+    view: LibraryView;
+    status: LibraryStatus;
+    query: string;
+    realm: TemplateGroupId | null;
+  };
 }) {
   return (
     <>
@@ -456,6 +494,8 @@ function FilterFields({
       {filter.status === "all" ? null : (
         <input type="hidden" name="status-filter" value={filter.status} />
       )}
+      {/* The realm the person was looking at, so an action lands back on the same shelf. */}
+      {filter.realm === null ? null : <input type="hidden" name="realm" value={filter.realm} />}
       {filter.query === "" ? null : <input type="hidden" name="q" value={filter.query} />}
     </>
   );
