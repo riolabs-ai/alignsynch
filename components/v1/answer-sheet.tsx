@@ -10,6 +10,7 @@ import {
 } from "@/content/assessment";
 import { useV1Store } from "@/lib/v1/store";
 import { gapSummary, relationshipNameOf } from "@/lib/v1/derive";
+import { answerGateFor, answerGateMessage } from "@/lib/v1/blind";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -114,6 +115,24 @@ export function AnswerSheet({ relationshipId }: { relationshipId: string }) {
           Switch to the Initiator or Counterparty persona to answer{" "}
           {template?.title ?? "this relationship"}.
         </p>
+      </div>
+    );
+  }
+
+  // The same gate the server page applies from the cookie, re-read from the live store: a party
+  // who already submitted has no form to open until the next session.
+  const gate = answerGateFor(rel, persona);
+  if (gate !== null) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4 p-4 sm:p-8">
+        <SectionIntro title="Answer the sheet" subtitle="Already submitted." />
+        <p className="text-sm text-muted-foreground">{answerGateMessage(gate, rel)}</p>
+        <Link
+          href={`/v1/relationships/${rel.id}`}
+          className="inline-flex h-11 items-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
+        >
+          Back to the relationship
+        </Link>
       </div>
     );
   }

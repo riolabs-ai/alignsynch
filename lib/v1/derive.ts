@@ -282,3 +282,58 @@ export function trendOf(summaries: readonly SessionSummary[]): GapTrend {
     points,
   };
 }
+
+/* ------------------------------------------------------------------ *
+ * The relationships table's columns — flag counts and invite state
+ * ------------------------------------------------------------------ */
+
+/** The four flag columns, in the reference mockup's left-to-right order (Yellow first). */
+export const GAP_FLAG_COLUMNS = ["yellow", "orange", "pink", "red"] as const;
+
+export type GapFlagColumn = (typeof GAP_FLAG_COLUMNS)[number];
+
+/** The glossary's own colour word per column — `Yellow/Orange/Pink/Red` for Gaps 1/2/3/4. */
+export const GAP_FLAG_LABELS: Record<GapFlagColumn, string> = {
+  yellow: "Yellow",
+  orange: "Orange",
+  pink: "Pink",
+  red: "Red",
+};
+
+/** The four flag counts: how many Gaps sit at each magnitude, across every Aspect. */
+export interface GapFlagCounts {
+  readonly yellow: number | null;
+  readonly orange: number | null;
+  readonly pink: number | null;
+  readonly red: number | null;
+}
+
+/**
+ * The relationships table's four flag counts, derived from the Gaps — never stored, never
+ * authored (the same rule the Gap-as-column ban enforces). Each column counts the Gaps at its
+ * magnitude: 1 → Yellow, 2 → Orange, 3 → Pink, 4 → Red (`docs/specs/ux-report.md`: "Yellow/
+ * Orange/Pink/Red for gaps 1/2/3/4"). A Gap of 0 is In Synch, not a flag, and is never counted.
+ *
+ * A relationship with no scored session returns `null` for every column: absent is not zero,
+ * and a count here would be a path to the other party's answers before acceptance.
+ */
+export function gapFlagCountsOf(rel: V1Relationship): GapFlagCounts {
+  const counts = flagCountsOfRelationship(rel);
+  return counts ?? { yellow: null, orange: null, pink: null, red: null };
+}
+
+/** The four invite states a surface shows — stable labels, never a ticking countdown. */
+export type InviteState = "not-sent" | "pending" | "expired" | "accepted";
+
+/**
+ * The invite state, derived honestly: a claimed relationship is `accepted`; a relationship
+ * with no token is `not-sent`; a live token past its `inviteExpiresAt` is `expired`; anything
+ * else is `pending`. `now` is passed in so this stays pure and testable — a caller passes
+ * `Date.now()` from a post-hydration render, never a server render.
+ */
+export function inviteStateOf(rel: V1Relationship, now: number): InviteState {
+  if (rel.counterpartyName !== null) return "accepted";
+  if (rel.inviteToken === null) return "not-sent";
+  if (rel.inviteExpiresAt === null) return "pending";
+  return new Date(rel.inviteExpiresAt).getTime() < now ? "expired" : "pending";
+}
