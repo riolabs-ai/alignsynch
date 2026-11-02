@@ -37,7 +37,13 @@ export function TemplateToggle({ views }: { views: readonly TemplateView[] }) {
 
   return (
     <Tabs className="mt-8" onValueChange={setValue} value={value}>
-      <TabsList className="w-full sm:w-auto">
+      {/*
+        `h-auto flex-wrap` on narrow screens: the three labels are longer than 390px of viewport,
+        and the rail's fixed height plus its inline-flex row pushed the last trigger past the
+        right edge — the page then scrolled sideways under a thumb, which is the one layout bug a
+        string assertion cannot see.
+      */}
+      <TabsList className="h-auto w-full flex-wrap justify-start sm:w-auto">
         {views.map((view) => (
           <TabsTrigger data-template-tab={view.value} key={view.value} value={view.value}>
             {view.label}

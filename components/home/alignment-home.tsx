@@ -198,7 +198,10 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
       */}
       <section className="home-hero-ground border-b border-border">
         <div className="mx-auto w-full max-w-6xl px-6 py-14 md:py-16 lg:py-20">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)] lg:items-start lg:gap-12">
+          {/* Vertically centred against the card, not top-aligned: the proof is the taller
+              column, and a text stack pinned to its top leaves a dead band of ground under the
+              fineprint that reads as a page still being filled in. */}
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)] lg:items-center lg:gap-12">
             <div className="max-w-xl">
               {model.hero.eyebrow && <Eyebrow>{model.hero.eyebrow}</Eyebrow>}
               <h1 className="mt-5 text-[2.75rem] font-extrabold leading-[1.06] tracking-[-0.02em] text-foreground md:text-5xl">
@@ -301,7 +304,11 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
                     </p>
                   </div>
                 </div>
-                <p className="mt-5 max-w-3xl border-t border-border pt-4 text-[13px] leading-relaxed text-foreground/65">
+                {/* The row's caption is a full-bleed strip inside the card, not a paragraph in a
+                    column: the note explains the two answers *together* (subtract one from the
+                    other), so a note sized to the left column made the THEY side look empty and
+                    a note merely widened still read as the left column's footnote. */}
+                <p className="-mx-7 -mb-6 mt-5 border-t border-border bg-muted/40 px-7 py-4 text-[13px] leading-relaxed text-foreground/65">
                   {question.body}
                 </p>
               </article>
@@ -338,7 +345,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
             left and the two families it is made of on the right. The counts are the fixture's own
             (`relationshipScope()`), so the ledger cannot disagree with the heading above it.
           */}
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-14">
             <div>
               {model.families.eyebrow && <Eyebrow>{model.families.eyebrow}</Eyebrow>}
               {model.families.heading && <BandHeading>{model.families.heading}</BandHeading>}
@@ -357,35 +364,43 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
                 ))}
               </dl>
             </div>
-            <div className="grid gap-5 sm:grid-cols-2">
+            {/*
+              One panel of family rows, not two small cards side by side: the fixture backs each
+              family with a single Relationship Type, and two half-width cards wrapped every line
+              ("Staff /" then "Manager") while leaving the rest of the card empty. A row per family
+              is the honest shape of what the data holds, and it is the same shared-panel pattern
+              the practice band uses.
+            */}
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
               {model.families.items.map((family) => (
                 <article
-                  className="rounded-xl border border-border bg-card p-5"
+                  className="border-b border-border p-6 last:border-b-0 md:p-7"
                   data-family={family.name}
                   key={family.name}
                 >
                   <h3 className="text-[17px] font-bold text-foreground">{family.name}</h3>
-                  <ul className="mt-3 divide-y divide-border">
+                  <ul className="mt-4 divide-y divide-border border-t border-border">
                     {family.types.map((type: AlignmentTemplate) => (
-                      <li key={type.id}>
-                        <div className="flex items-start justify-between gap-4 py-3">
-                          <div className="min-w-0">
-                            <p className="text-[14px] font-semibold leading-snug text-foreground">
-                              {type.type}
-                            </p>
-                            <p className="mt-0.5 text-[12px] text-muted-foreground">
-                              {type.title} · {type.aspects}
-                            </p>
-                          </div>
-                          {type.link && (
-                            <Link
-                              className="shrink-0 text-[13px] font-semibold text-action hover:underline"
-                              href={type.link.href}
-                            >
-                              {type.link.label}
-                            </Link>
-                          )}
+                      <li
+                        className="flex flex-col gap-1 py-3.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-x-4"
+                        key={type.id}
+                      >
+                        <div className="min-w-0">
+                          <p className="text-[14px] font-semibold leading-snug text-foreground">
+                            {type.type}
+                          </p>
+                          <p className="mt-0.5 text-[12px] text-muted-foreground">
+                            {type.title} · {type.aspects}
+                          </p>
                         </div>
+                        {type.link && (
+                          <Link
+                            className="shrink-0 text-[13px] font-semibold text-action hover:underline"
+                            href={type.link.href}
+                          >
+                            {type.link.label}
+                          </Link>
+                        )}
                       </li>
                     ))}
                   </ul>
