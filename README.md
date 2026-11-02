@@ -1,7 +1,7 @@
 # AlignSynch
 
 <p align="center">
-  <img src="docs/screenshots/pricing-1440.png" alt="The AlignSynch pricing page at 1440 wide: the headline Simple, transparent pricing for relationship alignment, three plans — Free, Basic at $8.95 marked Recommended and Principal at $16.95 — above a monthly and yearly toggle, a test-mode line under the prices, the FAQ, a closing call to action and the footer." width="720" />
+  <img src="docs/assets/og_image.png" alt="The AlignSynch share card: AlignSynch Relationship Alignment, with the relationships dashboard showing two demo relationships and their Gap",parent pricing for relationship alignment, three plans — Free, Basic at $8.95 marked Recommended and Principal at $16.95 — above a monthly and yearly toggle, a test-mode line under the prices, the FAQ, a closing call to action and the footer." width="720" />
 </p>
 
 <p align="center">
