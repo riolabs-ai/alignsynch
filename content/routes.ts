@@ -73,6 +73,7 @@ const STATIC_ROUTES = [
 const DYNAMIC_ROUTES = [
   "/assessment/[slug]",
   "/assessment/instances/[instanceId]",
+  "/assessment/instances/[instanceId]/report",
   "/assessment/templates/[templateId]",
   "/categories/[slug]",
   "/creator-tips/[slug]",

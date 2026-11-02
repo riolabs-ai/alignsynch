@@ -116,9 +116,9 @@ async function renderDetail(templateId: string): Promise<string> {
   );
 }
 
-/** The rows the render drew, by the ids it stamped on them. */
+/** The cards the render drew, by the ids the shared card stamped on them (#409). */
 function renderedRowIds(html: string): string[] {
-  return [...html.matchAll(/data-template-row="([^"]+)"/g)].map((match) => match[1]);
+  return [...html.matchAll(/data-template-card="([^"]+)"/g)].map((match) => match[1]);
 }
 
 beforeEach(() => {
@@ -233,8 +233,8 @@ describe("the page", () => {
     const html = await renderLibrary();
 
     expect(renderedRowIds(html)).toEqual([builtIn.id]);
-    expect(html).toContain('data-template-authorship="built-in"');
-    expect(html).not.toContain('data-template-authorship="mine"');
+    expect(html).toContain("Built-in");
+    expect(html).not.toContain("Yours");
     expect(html).not.toContain("data-template-library-empty");
   });
 
@@ -258,9 +258,9 @@ describe("the page", () => {
     const html = await renderLibrary();
 
     const rowOf = (id: string) => {
-      const rows = html.match(/<tr[^>]*data-template-row="[^"]+"[\s\S]*?<\/tr>/g) ?? [];
-      const found = rows.find((row) => row.includes(`data-template-row="${id}"`));
-      if (found === undefined) throw new Error(`no rendered row ${id}`);
+      const cards = html.match(/<article[^>]*data-template-card="[^"]+"[\s\S]*?<\/article>/g) ?? [];
+      const found = cards.find((card) => card.includes(`data-template-card="${id}"`));
+      if (found === undefined) throw new Error(`no rendered card ${id}`);
       return found.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
     };
 
@@ -341,8 +341,10 @@ describe("the detail page", () => {
 
     expect(html).toContain('data-template-aspect="aspect-1"');
     expect(html).toContain("How much of the load do I carry at home?");
-    expect(html).toContain("Left Value: All of it");
-    expect(html).toContain("Right Value: None of it");
+    expect(html).toContain('data-template-aspect-left="All of it"');
+    expect(html).toContain('data-template-aspect-right="None of it"');
+    expect(html).toContain("Left Value");
+    expect(html).toContain("Right Value");
     expect(html).not.toContain("data-template-detail-archived");
   });
 
