@@ -3,7 +3,13 @@
 // template-ancestor: components/auth/login-view.tsx
 
 import { PersonaPicker } from "@/components/v1/persona-picker";
-import { DEMO_SEED, demoRelationships, installDemoSeed } from "@/lib/v1/demo-seed";
+import {
+  DEMO_ROW_COUNT,
+  DEMO_ROWS_PER_TYPE,
+  DEMO_SEED,
+  DEMO_TYPE_COUNT,
+  installDemoSeed,
+} from "@/lib/v1/demo-seed";
 import { useState } from "react";
 
 /**
@@ -20,13 +26,16 @@ import { useState } from "react";
  */
 const DEV_TOOLS = process.env.NODE_ENV !== "production";
 
-/** What the seeder writes, counted once per render rather than re-derived in the copy. */
-const DEMO_ROW_COUNT = demoRelationships().length;
-
 /**
  * The dev-only seed panel: one button, one true sentence about what it does. It writes the flow
  * payload `lib/v1/store.tsx` reads and reloads, because the store loads that key on hydration and
  * a live context would otherwise keep the rows it already has.
+ *
+ * The counts are the generator's own exported constants rather than a number typed here: the panel
+ * used to say "one per catalogue type" against `demoRelationships().length`, which was only true
+ * while the set was one row per type. It is now `DEMO_ROWS_PER_TYPE` rows per type, so the
+ * sentence states the row count, the type count and the per-type count, and cannot drift from the
+ * seeder by being edited in one place and not the other.
  */
 function DemoSeedPanel() {
   const [notice, setNotice] = useState<string | null>(null);
@@ -49,9 +58,10 @@ function DemoSeedPanel() {
             Dev only — demo seed
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {DEMO_ROW_COUNT} relationships, one per catalogue type, across all four stages, both
-            modes and both settings — deterministic from seed {DEMO_SEED}. Writes this
-            browser&apos;s store and reloads. Never rendered in a production build.
+            {DEMO_ROW_COUNT} relationships — {DEMO_ROWS_PER_TYPE} for each of the catalogue&apos;s{" "}
+            {DEMO_TYPE_COUNT} types — across all four stages, both modes and both settings,
+            deterministic from seed {DEMO_SEED}. Writes this browser&apos;s store and reloads. Never
+            rendered in a production build.
           </p>
         </div>
         <button
