@@ -1,11 +1,24 @@
 /**
  * The surface registry — one honest status per relationship-product surface (issue #409).
  *
- * R1 ships four **read** surfaces into the app and greys everything else. A missing page and a
- * page that was never built look identical to a reader — a 404 reads as a bug — so the product
- * states the difference instead: every surface is declared here with one of three statuses, the
- * nav disables the ones that are not wired (`components/layout/nav-menus.tsx`), and the one
- * shared panel explains them (`components/shell/pending-surface.tsx`).
+ * R1 ships four **read** surfaces into the app and says plainly what is not wired in the rest. A
+ * missing page and a page that was never built look identical to a reader — a 404 reads as a bug
+ * — so a surface that is not finished is still *shown*: it renders with its real heading, its
+ * real body, and one inline notice naming what it cannot do yet
+ * (`components/shell/in-progress-surface.tsx`). That is the owner's decision, and it is a
+ * decision about honesty rather than access: greying a surface and re-enabling it later is the
+ * UI churn, while "in progress" states the truth once.
+ *
+ * **This file labels; nothing gates on it.** No route is disabled, no nav row is hidden, no link
+ * is refused because of a status here. The registry exists so the notice on a page and any future
+ * surface listing read the *same* sentence, and so a status is a claim the build can check
+ * instead of a comment somebody wrote. `components/layout/nav-menus.tsx` does not import it.
+ *
+ * **The honest-action rule.** A control that cannot work yet must say so *at the point of
+ * action* — a disabled button with "Not wired yet" beside it, or the notice inside the form — and
+ * must never be a silent no-op. Rendering the in-progress UI is wanted; faking the behaviour is
+ * the defect this registry exists to prevent. `needs` is written for that sentence: the missing
+ * capability, in plain words, in the form a page can print.
  *
  * **`live` is a claim the tree has to keep.** A surface is live only when its route exists,
  * renders real rows, and needs nothing from this file to explain itself. That is why
@@ -15,11 +28,9 @@
  * are the only rows this card may call live (`card R1-A`).
  *
  * **`pending` is not a 404 and not a redaction.** It means the surface is declared, its route is
- * the address it will own, and `needs` names the capability that is missing in plain words. The
- * page a pending route renders says exactly that; nothing here decides what a page renders, it
- * only says what is true. A pending route does **not** have to exist yet — cards R1-B and R1-C
- * create the pages these entries point at — which is why only `live` rows are checked against
- * the route manifest.
+ * the address it will own, and `needs` names the capability that is missing in plain words. A
+ * pending route does **not** have to exist yet — cards R1-B and R1-C create the pages these
+ * entries point at — which is why only `live` rows are checked against the route manifest.
  *
  * **No fabricated status.** `/admin/instances` and `/admin/gaps` do read Postgres, and they are
  * deliberately *not* live entries here: the shell cannot offer them (`lib/nav.ts::navViewer`
@@ -42,7 +53,7 @@ export const zSurfaceArea = z.enum(["relationships", "comms", "admin"]);
 /**
  * `live`    shipped and reading real rows — nothing missing
  * `preview` reachable but not the shipped surface — a stated partial, never a promise
- * `pending` declared, not wired — the page says so and the nav disables it
+ * `pending` declared, not wired — the surface renders with its own in-progress notice
  */
 export const zSurfaceStatus = z.enum(["live", "preview", "pending"]);
 
@@ -54,7 +65,7 @@ export const zSurface = z
   .object({
     /** The route pattern the surface owns, exactly as `content/routes.ts` spells it. */
     route: z.string().startsWith("/"),
-    /** The surface's name, in the product's words. Rendered by the panel and the nav. */
+    /** The surface's name, in the product's words. The heading the in-progress panel renders. */
     label: z.string().min(1),
     area: zSurfaceArea,
     status: zSurfaceStatus,
@@ -230,11 +241,6 @@ export function requireSurface(route: string): Surface {
   return surface;
 }
 
-/** Whether the nav should draw a row for this href as a destination or as a stated pending one. */
-export function takesClick(route: string): boolean {
-  return (surfaceFor(route)?.status ?? "live") === "live";
-}
-
 /**
  * The invariants a single row cannot see. Pure: the route manifest arrives as a predicate, so
  * the negative cases drive every branch without a filesystem (`scripts/__tests__/
@@ -242,12 +248,12 @@ export function takesClick(route: string): boolean {
  *
  * The rules, each one a claim this file would otherwise make without evidence:
  *
- *   - **one route, one row** — two statuses for one address is the drift the registry exists to
- *     end (a nav that disables what the page says is live).
+ *   - **one route, one row** — two statuses for one address means one place says "in progress"
+ *     while another says "shipped", and nothing in the build can tell which page is right.
  *   - **not live ⇒ `reason` and `needs`.** A pending surface that does not say what is missing is
  *     a 404 with extra steps.
- *   - **live ⇒ neither.** A live surface with an excuse is a pending one wearing the wrong
- *     status, and the nav would not disable it.
+ *   - **live ⇒ neither.** A live surface with an excuse is a pending one wearing the wrong status,
+ *     and its page would carry a notice it should not.
  *   - **live ⇒ the route manifest carries it.** `E7` already holds the manifest and `app/` to each
  *     other, so this is the whole of "renders real rows": a live route exists as a page.
  */
@@ -258,7 +264,7 @@ export function surfaceRegistryProblems(
   const problems: string[] = [];
   if (rows.length === 0) {
     problems.push(
-      "the surface registry is empty — a registry that declares nothing cannot grey anything",
+      "the surface registry is empty — a registry that declares nothing has nothing to be honest about",
     );
     return problems;
   }

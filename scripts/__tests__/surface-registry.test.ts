@@ -71,7 +71,7 @@ describe("the real surface registry", () => {
 
   it("gives every surface that is not live a reason and at least one need", () => {
     const notLive = surfaceRegistry.filter((row) => row.status !== "live");
-    assert.ok(notLive.length > 0, "a registry with nothing pending proves nothing about greying");
+    assert.ok(notLive.length > 0, "a registry with nothing pending proves nothing about labelling");
     for (const row of notLive) {
       assert.ok(row.reason !== undefined && row.reason.length > 0, `${row.route} has no reason`);
       assert.ok(

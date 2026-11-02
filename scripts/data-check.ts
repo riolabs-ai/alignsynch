@@ -999,9 +999,9 @@ const ancestorCoverage = ancestorCensus(ancestorFiles);
  * The schema refuses a shape nobody can act on (`strict()`, three statuses) and the const is
  * typed, so a status outside the three literals is already a compile error — this is the half
  * a *valid* row can still get wrong: one route declared twice, a pending surface with no
- * `needs` (a 404 with extra steps), a live surface carrying an excuse, or a live surface whose
- * route the manifest does not carry. `E7` holds the manifest and `app/` to each other, so a
- * live entry that passes here is a route that exists as a page.
+ * `needs` (a page that states a gap it cannot name), a live surface carrying an excuse, or a live
+ * surface whose route the manifest does not carry. `E7` holds the manifest and `app/` to each
+ * other, so a live entry that passes here is a route that exists as a page.
  * ------------------------------------------------------------------ */
 
 const surfaceRows = validateCollection("E36", "surface", zSurface, [...surfaceRegistry]);

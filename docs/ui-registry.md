@@ -158,10 +158,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - routes (3): `/profile/[username]`, `/v1/[persona]/profile`, `/v1/profile/[handle]`
 
 - `components/shell` — **fixture**
-  - capability: The shell's own panels: the declared-not-wired surface a pending route renders — its label, the reason it is not live and the capability it needs, read from the surface registry rather than typed into the page.
-  - files (1): `pending-surface.tsx`
+  - capability: The shell's own panels: the in-progress surface — a surface's real heading and body with one inline notice naming what is not wired yet, read from the surface registry rather than typed into the page.
+  - files (1): `in-progress-surface.tsx`
   - routes: none — no route imports this domain today
-  - notes: `pending-surface.tsx` varies `components/ui/alert.tsx` — the alert's frame with `role="status"` instead of `role="alert"`, because a pending surface is a state a reader is told about, not a failure they must act on. It renders `data/surface-registry.ts` and nothing else: the labels, reasons and `needs` lines are that fixture's (issue #409), so the panel and the nav's greyed row cannot disagree about what a surface is. Server component, no client state.
+  - notes: `in-progress-surface.tsx` varies `components/ui/alert.tsx` — the alert's neutral frame as a notice under the surface's own heading, with `role="status"` instead of `role="alert"` because nothing failed. It renders `data/surface-registry.ts` and nothing else: the label, reason and `needs` lines are that fixture's (issue #409), so two pages cannot describe the same gap differently. The registry labels and never gates — no nav row is disabled or hidden, and the shell does not import it; a control that cannot work yet must say so at the point of action instead. Server component, no client state.
 
 - `components/support` — **fixture**
   - capability: The support centre: header, help categories, knowledge base, FAQ, contact form and the article detail.
