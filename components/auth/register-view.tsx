@@ -18,20 +18,10 @@ import {
 import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
-import type { AuthMarkId, AuthMarkSet } from "@/lib/auth/marks";
+import type { AuthMarkSet } from "@/lib/auth/marks";
+import { MARK_ICONS } from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  Eye,
-  EyeOff,
-  Handshake,
-  Loader2,
-  Trophy,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
@@ -40,28 +30,12 @@ import { useState } from "react";
 const STEPS = ["step-1", "step-2"] as const;
 
 /**
- * The glyph for each mark id the server can hand this view (`lib/auth/marks.ts`).
- *
- * A table of *shapes*, not of brands: the view is a client module, so it is told which mark to
- * draw and never which brand it is drawing it for — the brand is resolved in
- * `app/(auth)/register/page.tsx`, exactly like the copy and the post-sign-in `destination`.
- *
- * Why `users` means alignment and not just "an account": this product's unit is **two** people
- * answering the same questions and comparing the answers, so the mark is the pair — one figure
- * in front, one behind — where a single `User` would say "a person signed up" and nothing about
- * a second party. The book and the trophy are kept because QuizHub is those things: a body of
- * questions and a score.
- *
- * Exported for `tests/register-view.test.tsx`, which renders every id a brand can name and fails
- * on one this table has no glyph for — the way "a mark left behind" would otherwise render as
- * nothing at all instead of failing a test.
+ * Re-exported for `tests/register-view.test.tsx`, which proves every id a brand can name has a
+ * glyph. The table itself is `components/auth/mark-icon.tsx`: it moved out of this file when the
+ * 404 — a server module — needed the same table, and a server component cannot read a value from
+ * a `"use client"` module. One table, two boundaries.
  */
-export const MARK_ICONS: Record<AuthMarkId, LucideIcon> = {
-  "book-open": BookOpen,
-  trophy: Trophy,
-  users: Users,
-  handshake: Handshake,
-};
+export { MARK_ICONS };
 
 /**
  * `/register`, the client half. The words come from `data/pages/register.ts`, parsed by
@@ -82,8 +56,8 @@ export const MARK_ICONS: Record<AuthMarkId, LucideIcon> = {
  * `marks` is the same arrangement for the page's glyphs: this screen drew `BookOpen` and `Trophy`
  * unconditionally, so the alignment build's sign-up page showed a quiz book and a quiz trophy.
  * The server hands over an `AuthMarkSet` (`lib/auth/marks.ts`) — ids, resolved to glyphs by
- * `MARK_ICONS` above — and QuizHub's two ids are the two components that used to be written here,
- * so that brand renders what it always rendered.
+ * `MARK_ICONS` (`components/auth/mark-icon.tsx`, re-exported above) — and QuizHub's two ids are
+ * the two components that used to be written here, so that brand renders what it always rendered.
  */
 export function RegisterView({
   copy,

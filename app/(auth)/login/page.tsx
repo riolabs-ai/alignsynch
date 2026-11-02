@@ -7,6 +7,7 @@ import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
 import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
 import { signInDestination } from "@/lib/auth/next-path";
 import { AFTER_SIGN_IN_BY_BRAND, GOOGLE_FAILURE_VALUE } from "@/lib/auth/paths";
+import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { loginCopyFor } from "@/lib/auth-copy";
 import type { Metadata } from "next";
 import { signInAsDemoRole } from "./demo-actions";
@@ -65,9 +66,12 @@ export const metadata: Metadata = {
  * is resolved here (issue #225): `loginCopyFor` picks which of the fixture's hero sentences and
  * stat tiles this build renders, so the view keeps asking for the same two ids (`sign-in`,
  * `stats`) and never sees a brand; the choice lives in `lib/auth-copy.ts` because both auth routes
- * need it. The demo state then adds its own section (`demoCopyFor`): the view is handed one
- * `PageCopy` and Next serialises it into the response, so a section left in the prop is text in
- * the HTML even when nothing draws it — with demo mode off those words are absent entirely.
+ * need it. The brand's **marks** come down the same way (`AUTH_MARKS_BY_BRAND[brandId]`), for the
+ * same reason: this is the module that may read `data/brand`, and the view never learns which
+ * build it is drawing. The demo state then adds its own section (`demoCopyFor`): the view is
+ * handed one `PageCopy` and Next serialises it into the response, so a section left in the prop is
+ * text in the HTML even when nothing draws it — with demo mode off those words are absent
+ * entirely.
  *
  * **The Google-only hint is wired here** (#281, part 2). `isGoogleOnlySignIn` is a server action
  * (`./provider-hint-actions.ts`) that the form calls after a refused password, and it arrives the
@@ -92,6 +96,14 @@ export default async function AuthPage({
   const brandId = brandIdOf(brand);
   const destination = AFTER_SIGN_IN_BY_BRAND[brandId];
 
+  /**
+   * The panel's mark and the mobile header's (#225's pattern, extended here): ids, resolved from
+   * the brand record, so the client view draws this build's glyph and never learns which brand
+   * it is. `components/auth/login-view.tsx` used to write `BookOpen` inline, which is how the
+   * alignment build's sign-in page opened on a quiz book.
+   */
+  const marks = AUTH_MARKS_BY_BRAND[brandId];
+
   const mode = demoMode();
   const surface = demoSurfaceFor(mode, mode.kind === "demo" ? await readDemoUnlock() : null);
   const demo: DemoViewProps =
@@ -104,6 +116,7 @@ export default async function AuthPage({
   return (
     <LoginView
       copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandId), loginPageCopy)}
+      marks={marks}
       next={signInDestination(target, destination)}
       googleFailure={googleFailure}
       demo={demo}

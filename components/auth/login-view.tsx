@@ -5,6 +5,7 @@
 import { AppVersion } from "@/components/layout/app-version";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
+import { MarkGlyph } from "@/components/auth/mark-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
 import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
+import type { AuthMarkSet } from "@/lib/auth/marks";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -77,13 +79,22 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
  * be talked into answering it wrongly. The general sign-in form above is untouched by the demo:
  * two surfaces, two contracts, one of which is a development door.
  *
- * Two things here are brand-selected rather than shared (issue #225), and both arrive as
- * props: `copy` is already resolved by `lib/auth-copy.ts::loginCopyFor`, so `subtitle` and the
- * `sign-in` card carry the build's brand, and the two tiles under the panel are `copy`'s own
- * items. The quiz build's tiles are two numbers; the alignment build's are two sentences, and
- * the slot is the same. The one number this file owns is `platform.activePlayers` (a snapshot
- * in `data/metrics.ts`, formatted here): it is filled into the fixture's `{count}` placeholder,
- * so a brand whose tile carries no placeholder renders no count at all.
+ * Three things here are brand-selected rather than shared (issue #225 and its follow-up), and all
+ * three arrive as props: `copy` is already resolved by `lib/auth-copy.ts::loginCopyFor`, so
+ * `subtitle` and the `sign-in` card carry the build's brand, and the two tiles under the panel are
+ * `copy`'s own items. The quiz build's tiles are two numbers; the alignment build's are two
+ * sentences, and the slot is the same. The one number this file owns is
+ * `platform.activePlayers` (a snapshot in `data/metrics.ts`, formatted here): it is filled into
+ * the fixture's `{count}` placeholder, so a brand whose tile carries no placeholder renders no
+ * count at all.
+ *
+ * The third is `marks` — the panel's large glyph and the same one small on the mobile header,
+ * which were `BookOpen` here unconditionally, so the alignment build's sign-in page opened on a
+ * quiz book. They are ids from `lib/auth/marks.ts`, resolved to glyphs through
+ * `components/auth/mark-icon.tsx` exactly as `/register` does it. The *tiles'* marks are a
+ * separate mechanism and stay below: a tile's glyph is keyed by the fixture's stat id, not by the
+ * brand, and `stats-alignsynch` names ids this map does not know, which is why they get the
+ * neutral mark rather than a quiz one.
  *
  * **The Google button (issue #281)** sits above the form, because it is the shorter path and
  * the form is the fallback — one button, no provider picker. It is drawn by this component for
@@ -115,6 +126,7 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
  */
 export function LoginView({
   copy,
+  marks,
   next,
   googleFailure: googleFailureProp,
   demo,
@@ -122,6 +134,13 @@ export function LoginView({
   startGoogle: startGoogleFlow,
 }: {
   copy: PageCopy;
+  /**
+   * The two marks this build draws (issue #225's pattern, extended to `/login`): the large one on
+   * the illustration panel and the same glyph small on the mobile header. Ids from
+   * `lib/auth/marks.ts`, resolved here and nowhere else — this is a client module, so the brand
+   * was resolved on the server and the glyph table is a plain table of shapes.
+   */
+  marks: AuthMarkSet;
   next: string;
   /**
    * Whether this visit came back from a Google finish that failed. Read by the page from the
@@ -290,7 +309,7 @@ export function LoginView({
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="mb-8 max-w-md mx-auto">
             <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
-              <BookOpen className="w-10 h-10 text-white" />
+              <MarkGlyph id={marks.hero} className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-4xl font-bold mb-4">{copy.heading}</h2>
             <p className="text-xl text-white/90 leading-relaxed">{copy.subtitle}</p>
@@ -324,7 +343,7 @@ export function LoginView({
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-8">
             <div className="lg:hidden mx-auto mb-4 w-12 h-12 bg-action rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-white" />
+              <MarkGlyph id={marks.hero} className="w-6 h-6 text-white" />
             </div>
             <CardTitle className="text-3xl font-bold ">{form.heading}</CardTitle>
             <CardDescription>{form.body}</CardDescription>
