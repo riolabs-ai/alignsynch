@@ -263,9 +263,9 @@ export function Header({
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
         <div className="flex items-center gap-4">
-          {/* Below `xl` the sidebar is an overlay drawer, so this opens it. At `xl` and up
-              there is no header toggle: the rail is expanded by default and its one collapse
-              control is the pin at the top right of the sidebar (issue #383). */}
+          {/* Below `xl` the sidebar is an overlay drawer, so this opens it. At `xl` and up the
+              rail is always expanded and the header draws no toggle: the sidebar has no
+              collapse control at all (the pin/unpin was removed on the owner's review). */}
           <Button
             variant="ghost"
             size="icon"
