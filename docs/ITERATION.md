@@ -10,8 +10,8 @@ boundary     ~3 min                    bash scripts/verify.sh   + one push + one
 ```
 
 Measured on this tree: `tsc` is 7 s warm and **63 s cold**, `data:check` 15–22 s, the matched tests
-5–10 s. So the honest figure is *30 s once the compiler has run in this checkout, around 90 s on the
-first run after a fresh worktree* — against 176 s for the full gate, and without the 108 s build.
+5–10 s. So the honest figure is _30 s once the compiler has run in this checkout, around 90 s on the
+first run after a fresh worktree_ — against 176 s for the full gate, and without the 108 s build.
 
 ## A cohort
 
@@ -19,7 +19,7 @@ A cohort is a **branch that carries one kind of risk** and merges once.
 
 - **UI/React cohorts are the default**: up to about ten changes — copy, layout, components, small
   client behaviour — on one branch, one gate, one PR, one merge.
-- **Do not mix risk kinds in one cohort.** A branch that changes a component *and* a migration *and*
+- **Do not mix risk kinds in one cohort.** A branch that changes a component _and_ a migration _and_
   an API route makes a red gate ambiguous, and the boundary is where ambiguity costs the most. If a
   change needs a migration or an API contract, it is its own cohort.
 - **Keep a cohort to about a day.** The failure this replaces is real and measured: three of six
@@ -39,13 +39,13 @@ pnpm check:fast        # typecheck · data:check · the tests that import what y
 
 It runs three things and skips the rest on purpose:
 
-| step | why it stays | cost |
-| --- | --- | --- |
-| `typecheck` | hot reload lies about types; a broken import is a blank screen, not an error | ~7 s warm |
-| `data:check` | E10 dead hrefs/assets · E21 pasted fixtures · **E34 a client module reaching `lib/db`** · E36 surface registry | ~15 s |
-| `vitest`, matched by **import path** | the tests that actually exercise your change — filename conventions are loose here | ~5 s |
+| step                                 | why it stays                                                                                                   | cost      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------- | --------- |
+| `typecheck`                          | hot reload lies about types; a broken import is a blank screen, not an error                                   | ~7 s warm |
+| `data:check`                         | E10 dead hrefs/assets · E21 pasted fixtures · **E34 a client module reaching `lib/db`** · E36 surface registry | ~15 s     |
+| `vitest`, matched by **import path** | the tests that actually exercise your change — filename conventions are loose here                             | ~5 s      |
 
-E34 is the one that earns the whole script: a `"use client"` module importing a *value* from server
+E34 is the one that earns the whole script: a `"use client"` module importing a _value_ from server
 code compiles, builds, passes every other check, and 500s every route behind the shell at request
 time. `next build` will not tell you. That check will.
 

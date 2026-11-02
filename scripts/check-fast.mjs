@@ -58,12 +58,22 @@ function changedFiles() {
     }
   };
   try {
-    add(execFileSync("git", ["diff", "--name-only", `${BASE}...HEAD`], { cwd: ROOT, encoding: "utf8" }));
+    add(
+      execFileSync("git", ["diff", "--name-only", `${BASE}...HEAD`], {
+        cwd: ROOT,
+        encoding: "utf8",
+      }),
+    );
   } catch {
     console.log(`  ! could not diff against ${BASE} — is the remote fetched?`);
   }
   try {
-    add(execFileSync("git", ["status", "--porcelain"], { cwd: ROOT, encoding: "utf8" }).replace(/^.../gm, ""));
+    add(
+      execFileSync("git", ["status", "--porcelain"], { cwd: ROOT, encoding: "utf8" }).replace(
+        /^.../gm,
+        "",
+      ),
+    );
   } catch {
     /* a status failure is not worth failing the check over */
   }
