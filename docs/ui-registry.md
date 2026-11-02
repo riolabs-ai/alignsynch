@@ -16,8 +16,8 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **91** — 51 static, 40 dynamic, from `app/**/page.tsx`
-- component domains: **38** — 326 files under `components/`, 321 of them `.tsx`
-- route handlers: **14** — `app/**/route.ts`, listed below and not a UI surface
+- component domains: **38** — 327 files under `components/`, 322 of them `.tsx`
+- route handlers: **15** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 14 · **fixture** 54 · **db** 20 · **live** 7 · **prototype** 34
 - templates: Both templates 26 · AlignSynch 59 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -133,7 +133,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/layout` — **fixture**
   - capability: The shell: header, the sticky sidebar, the layout that composes them, and the footer.
-  - files (7): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar.tsx`
+  - files (8): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `news-signup.tsx`, `sidebar.tsx`
   - routes (6): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/tournaments`
 
 - `components/legal` — **mock**
@@ -503,7 +503,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/affiliate` — **fixture**
   - capability: The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA. Not freely available: `commerce.affiliate` ships it off on every template, and the route answers 404 while it is off (#291).
   - components: `components/affiliate`, `components/layout`, `components/media`, `components/ui`
-  - reads: 1 record fixture — `data/metrics.ts`
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/pages/shell.ts`
 
 - `/battle` — **fixture**
   - capability: A head-to-head quiz battle: choose a mode, join a lobby, play the same question set live and land on a results screen.
@@ -513,7 +513,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/categories` — **fixture**
   - capability: Every quiz category as a tile generated from its slug, with a how-it-works block and a closing CTA.
   - components: `components/categories`, `components/layout`, `components/media`, `components/ui`
-  - reads: 9 record fixtures — `data/authored-quizzes.ts`, `data/browse-quizzes.ts`, `data/categories.ts` (+6 more)
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/pages/shell.ts`
 
 - `/categories/[slug]` — **fixture**
   - capability: One category's quizzes, under the tile generated for that category.
@@ -534,12 +534,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/creator-tips` — **fixture**
   - capability: Editorial tips for quiz creators, browsable by category with featured and latest grids.
   - components: `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/pages/shell.ts`
 
 - `/creator-tips/[slug]` — **fixture**
   - capability: One creator-tip article, with its related tips.
   - components: `components/content`, `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/pages/shell.ts`
 
 - `/daily-challenge` — **fixture**
   - capability: One quiz a day: today's quiz, your challenge stats, a daily leaderboard, badge progress and your history.
@@ -616,12 +616,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/search` — **fixture**
   - capability: Search the built index over quizzes and categories, rendering hits as quiz cards.
   - components: `components/search`, `components/ui`
-  - reads: 11 record fixtures — `data/assessments.ts`, `data/authored-quizzes.ts`, `data/browse-quizzes.ts` (+8 more)
+  - reads: an `/api` path — `data/pages/shell.ts`
 
 - `/tournaments` — **fixture**
   - capability: Quiz tournaments: the featured championship, the full list, categories, how it works and a CTA.
   - components: `components/layout`, `components/media`, `components/tournaments`, `components/ui`
-  - reads: 1 record fixture — `data/metrics.ts`
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/pages/shell.ts`
 
 - `/tournaments/[id]` — **fixture**
   - capability: One tournament: overview, key dates, stats, categories, rules, prizes and its leaderboard.
@@ -747,6 +747,7 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/api/auth/google/finish` — `app/api/auth/google/finish/route.ts`
 - `/api/billing/checkout` — `app/api/billing/checkout/route.ts`
 - `/api/billing/webhook` — `app/api/billing/webhook/route.ts`
+- `/api/news/subscribe` — `app/api/news/subscribe/route.ts`
 - `/api/profile` — `app/api/profile/route.ts`
 - `/api/version` — `app/api/version/route.ts`
 - `/assessment/instances/[instanceId]/accepts` — `app/(mainlayout)/assessment/instances/[instanceId]/accepts/route.ts`

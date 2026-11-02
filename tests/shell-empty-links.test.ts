@@ -16,9 +16,14 @@
  * route rather than that it is absent.
  *
  * These cases pin the *markup* that replaced them, which is the half `rg` cannot see: the footer
- * draws no social row on either brand, prints no fabricated contact row, has no subscribe band,
- * and a row that acts is a `<button type="button">` rather than a link with an empty `href`. The
- * other half — that the anchors which remain point at real routes — is `data:check` E10.
+ * draws no social row on either brand, prints no fabricated contact row, and a row that acts is a
+ * `<button type="button">` rather than a link with an empty `href`. The other half — that the
+ * anchors which remain point at real routes — is `data:check` E10.
+ *
+ * The subscribe box is the one of the three that came *back*: it was removed for having no
+ * handler, and this card gave it one (`/api/news/subscribe` writes `news_signup` and sends through
+ * `lib/flow/email.ts`). The case below therefore asserts the field exists and names its route,
+ * because "a field with nowhere to post" is the defect and "a field" is not.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -78,13 +83,22 @@ describe("the footer claims no social presence it cannot back", () => {
       ]);
     });
 
-    it(`${brandId}: prints no invented street line, telephone number or subscribe box`, () => {
+    it(`${brandId}: prints no invented street line or telephone number, and the signup it prints is wired`, () => {
       const html = footer(brandId);
       expect(html).not.toMatch(/Alignment Way|Quiz Street|\b555\b/);
-      expect(html).not.toContain("Subscribe");
-      expect(html).not.toMatch(/type="email"/);
       // The rows that survive the contact block, so this is not a claim about an empty block.
       expect(html).toContain("Contact Support");
+      /**
+       * This case used to assert the *absence* of an email field, because the subscribe box had
+       * no handler and no sender behind it (#272, "a page asserting a fact nobody can check out").
+       * this card built the sender: the form posts to `/api/news/subscribe`, which writes the address
+       * to `news_signup` and sends a confirmation. So the same defect is now checked from the
+       * other side — the field exists *and* it has somewhere to go, which is the whole difference
+       * the issue was about. A field added back with no action fails here.
+       */
+      expect(html).toContain('type="email"');
+      expect(html).toContain('action="/api/news/subscribe"');
+      expect(html).toContain(sectionOf(shellPageCopy, "footer-news").heading ?? "");
     });
 
     it(`${brandId}: still renders its columns, so the row was the only thing removed`, () => {
