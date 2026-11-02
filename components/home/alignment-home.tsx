@@ -111,15 +111,15 @@ function ScoreBars({ max, score, accent }: { max: number; score: number; accent?
 /** One Aspect of the worked example: the question, both answers as bars, and the Gap. */
 function AspectRow({ row }: { row: AlignmentAspectScore }) {
   return (
-    <div className="border-b border-dashed border-border py-3.5 last:border-b-0">
+    <div className="border-b border-dashed border-border py-4 last:border-b-0">
       <div className="flex items-center justify-between gap-4">
-        <p className="min-w-0 text-[14px] font-medium leading-snug text-foreground">{row.label}</p>
+        <p className="min-w-0 text-[15px] font-medium leading-snug text-foreground">{row.label}</p>
         <span aria-label={row.scores} className="flex shrink-0 items-center gap-4" role="img">
           <ScoreBars max={row.max} score={row.you} />
           <ScoreBars accent max={row.max} score={row.them} />
         </span>
       </div>
-      <p className="mt-2 text-[13px] text-muted-foreground">{row.note}</p>
+      <p className="mt-2 text-[13px] font-medium leading-relaxed text-foreground/65">{row.note}</p>
     </div>
   );
 }
@@ -166,14 +166,24 @@ function WorkedExampleCard({ card }: { card: AlignmentWorkedExample }) {
   );
 }
 
-/** The three cards of the practice cycle: a numbered circle, a heading, two lines of body. */
-function PracticeCard({ card, index }: { card: AlignmentCard; index: number }) {
+/**
+ * One step of the practice cycle.
+ *
+ * A cell of one shared panel, not a card of its own: the band is a single numbered run — 01, 02,
+ * 03 divided by hairlines — because three independently bordered boxes read as three unrelated
+ * features, which is exactly what the first cut of this page was rejected for. The numeral is
+ * computed from the item's index, so it cannot drift from the order the fixture lists.
+ */
+function PracticeStep({ card, index }: { card: AlignmentCard; index: number }) {
   return (
-    <article className="rounded-xl border border-border bg-card p-6" data-practice-step={card.id}>
-      <span className="grid h-7 w-7 place-items-center rounded-full bg-action/10 text-[13px] font-extrabold text-action">
-        {index + 1}
+    <article className="flex flex-col p-6 md:p-8" data-practice-step={card.id}>
+      <span
+        aria-hidden
+        className="text-[13px] font-extrabold tabular-nums tracking-[0.16em] text-action"
+      >
+        {String(index + 1).padStart(2, "0")}
       </span>
-      <h3 className="mt-4 text-[17px] font-bold text-foreground">{card.label}</h3>
+      <h3 className="mt-4 text-[18px] font-bold text-foreground">{card.label}</h3>
       <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{card.body}</p>
     </article>
   );
@@ -188,7 +198,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
       */}
       <section className="home-hero-ground border-b border-border">
         <div className="mx-auto w-full max-w-6xl px-6 py-14 md:py-16 lg:py-20">
-          <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-14">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)] lg:items-start lg:gap-12">
             <div className="max-w-xl">
               {model.hero.eyebrow && <Eyebrow>{model.hero.eyebrow}</Eyebrow>}
               <h1 className="mt-5 text-[2.75rem] font-extrabold leading-[1.06] tracking-[-0.02em] text-foreground md:text-5xl">
@@ -199,7 +209,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
                   {model.hero.subtitle}
                 </p>
               )}
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-7 flex flex-wrap gap-3">
                 {model.hero.primary && (
                   <Link
                     className="inline-flex items-center rounded-lg bg-action px-5 py-3 text-[15px] font-bold text-action-foreground transition-colors hover:bg-action/90"
@@ -237,9 +247,9 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
           {model.practice.eyebrow && <Eyebrow>{model.practice.eyebrow}</Eyebrow>}
           {model.practice.heading && <BandHeading>{model.practice.heading}</BandHeading>}
           {model.practice.body && <BandBody>{model.practice.body}</BandBody>}
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mt-10 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card md:grid md:grid-cols-3 md:divide-x md:divide-y-0">
             {model.practice.items.map((step, index) => (
-              <PracticeCard card={step} index={index} key={step.id} />
+              <PracticeStep card={step} index={index} key={step.id} />
             ))}
           </div>
         </div>
@@ -254,28 +264,44 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
           {model.questions.eyebrow && <Eyebrow>{model.questions.eyebrow}</Eyebrow>}
           {model.questions.heading && <BandHeading>{model.questions.heading}</BandHeading>}
           {model.questions.body && <BandBody>{model.questions.body}</BandBody>}
-          <div className="mt-10 grid gap-5 md:grid-cols-2">
+          {/*
+            One panel, two rows: the pairing is the argument ("the same question, answered
+            twice"), so YOU and THEY are column heads once and each question pair sits on the
+            same grid underneath. Two separately bordered cards said "two features" instead.
+          */}
+          <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="hidden border-b border-border bg-muted/60 px-7 py-3 sm:grid sm:grid-cols-2 sm:gap-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                {model.sides.you}
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                {model.sides.them}
+              </p>
+            </div>
             {model.questions.items.map((question) => (
-              <article className="rounded-xl border border-border bg-card p-6" key={question.you}>
-                <div className="grid gap-6 sm:grid-cols-2">
+              <article
+                className="border-b border-border px-7 py-6 last:border-b-0"
+                key={question.you}
+              >
+                <div className="grid gap-5 sm:grid-cols-2 sm:gap-8">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground sm:hidden">
                       {model.sides.you}
                     </p>
-                    <p className="mt-1.5 text-[15px] font-semibold text-foreground">
+                    <p className="mt-1 text-[17px] font-semibold leading-snug text-foreground sm:mt-0">
                       {question.you}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground sm:hidden">
                       {model.sides.them}
                     </p>
-                    <p className="mt-1.5 text-[15px] font-semibold text-foreground">
+                    <p className="mt-1 text-[17px] font-semibold leading-snug text-foreground sm:mt-0">
                       {question.them}
                     </p>
                   </div>
                 </div>
-                <p className="mt-5 border-t border-border pt-4 text-[13px] leading-relaxed text-muted-foreground">
+                <p className="mt-5 max-w-3xl border-t border-border pt-4 text-[13px] leading-relaxed text-foreground/65">
                   {question.body}
                 </p>
               </article>
@@ -307,54 +333,65 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         id="families"
       >
         <div className="mx-auto w-full max-w-6xl px-6">
-          {model.families.eyebrow && <Eyebrow>{model.families.eyebrow}</Eyebrow>}
-          {model.families.heading && <BandHeading>{model.families.heading}</BandHeading>}
-          {model.families.body && <BandBody>{model.families.body}</BandBody>}
-          <ul className="mt-8 flex flex-wrap gap-2">
-            {model.families.scope.byRealm.map((realm) => (
-              <li
-                className="rounded-full border border-border bg-card px-3.5 py-1.5 text-[13px]"
-                key={realm.realm}
-              >
-                <span className="font-semibold text-foreground">{realm.realm}</span>
-                <span className="ml-2 font-semibold tabular-nums text-muted-foreground">
-                  {realm.count}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {model.families.items.map((family) => (
-              <article
-                className="rounded-xl border border-border bg-card p-5"
-                data-family={family.name}
-                key={family.name}
-              >
-                <h3 className="text-[17px] font-bold text-foreground">{family.name}</h3>
-                <ul className="mt-3 divide-y divide-border">
-                  {family.types.map((type: AlignmentTemplate) => (
-                    <li key={type.id}>
-                      <div className="flex items-start justify-between gap-4 py-3">
-                        <div className="min-w-0">
-                          <p className="text-[14px] font-semibold text-foreground">{type.type}</p>
-                          <p className="mt-0.5 text-[12px] text-muted-foreground">
-                            {type.title} · {type.aspects}
-                          </p>
+          {/*
+            Two columns, not a three-across grid with an empty third slot: the realm ledger on the
+            left and the two families it is made of on the right. The counts are the fixture's own
+            (`relationshipScope()`), so the ledger cannot disagree with the heading above it.
+          */}
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
+            <div>
+              {model.families.eyebrow && <Eyebrow>{model.families.eyebrow}</Eyebrow>}
+              {model.families.heading && <BandHeading>{model.families.heading}</BandHeading>}
+              {model.families.body && <BandBody>{model.families.body}</BandBody>}
+              <dl className="mt-8 grid grid-cols-2 gap-x-8 border-t border-border">
+                {model.families.scope.byRealm.map((realm) => (
+                  <div
+                    className="flex items-baseline justify-between gap-3 border-b border-border py-2.5"
+                    key={realm.realm}
+                  >
+                    <dt className="text-[13px] font-semibold text-foreground">{realm.realm}</dt>
+                    <dd className="text-[13px] font-semibold tabular-nums text-muted-foreground">
+                      {realm.count}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              {model.families.items.map((family) => (
+                <article
+                  className="rounded-xl border border-border bg-card p-5"
+                  data-family={family.name}
+                  key={family.name}
+                >
+                  <h3 className="text-[17px] font-bold text-foreground">{family.name}</h3>
+                  <ul className="mt-3 divide-y divide-border">
+                    {family.types.map((type: AlignmentTemplate) => (
+                      <li key={type.id}>
+                        <div className="flex items-start justify-between gap-4 py-3">
+                          <div className="min-w-0">
+                            <p className="text-[14px] font-semibold leading-snug text-foreground">
+                              {type.type}
+                            </p>
+                            <p className="mt-0.5 text-[12px] text-muted-foreground">
+                              {type.title} · {type.aspects}
+                            </p>
+                          </div>
+                          {type.link && (
+                            <Link
+                              className="shrink-0 text-[13px] font-semibold text-action hover:underline"
+                              href={type.link.href}
+                            >
+                              {type.link.label}
+                            </Link>
+                          )}
                         </div>
-                        {type.link && (
-                          <Link
-                            className="shrink-0 text-[13px] font-semibold text-action hover:underline"
-                            href={type.link.href}
-                          >
-                            {type.link.label}
-                          </Link>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -373,7 +410,9 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
               <article
                 className={cn(
                   "rounded-lg border border-border border-l-4 bg-card p-5",
-                  seat.emphasis ? "border-l-accent" : "border-l-action",
+                  seat.emphasis
+                    ? "border-l-accent bg-accent/[0.06] ring-1 ring-inset ring-accent/20"
+                    : "border-l-action",
                 )}
                 data-seat={seat.id}
                 key={seat.id}
@@ -381,23 +420,29 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
                 <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
                   {seat.label}
                 </p>
-                <p className="mt-2 text-[14px] leading-relaxed text-foreground">{seat.body}</p>
+                <p className="mt-2 max-w-[34ch] text-[14px] leading-relaxed text-foreground">
+                  {seat.body}
+                </p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      {/* What the page refuses to claim — the honesty the rest of the copy is held to. */}
-      <section className="scroll-mt-24 bg-muted py-14" id="boundary">
-        <div className="mx-auto w-full max-w-6xl px-6">
+      {/*
+        What the page refuses to claim. Two columns inside the same grid the bands use — the claim
+        on the left, the limit on the right — so the honesty is a stated pair rather than a
+        full-bleed strip with an empty half.
+      */}
+      <section className="scroll-mt-24 bg-muted py-12 md:py-14" id="boundary">
+        <div className="mx-auto grid w-full max-w-6xl gap-4 px-6 lg:grid-cols-[minmax(0,0.36fr)_minmax(0,0.64fr)] lg:items-baseline lg:gap-12">
           {model.boundary.heading && (
             <h2 className="text-[17px] font-bold tracking-tight text-foreground">
               {model.boundary.heading}
             </h2>
           )}
           {model.boundary.body && (
-            <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted-foreground">
+            <p className="max-w-2xl text-[14px] leading-relaxed text-foreground/70">
               {model.boundary.body}
             </p>
           )}
