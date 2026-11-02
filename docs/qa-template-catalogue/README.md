@@ -1,9 +1,10 @@
 # Template catalogue — the pages, looked at
 
-Four screenshots from the AlignSynch build (`BRAND=alignsynch pnpm build`, `next start` on
-`:3137`), captured at 1440×900 and 390×844 through Chrome's device emulation. They exist because
-a string assertion cannot tell you what a 27-type catalogue looks like: the markup can be right
-and the page can still read as a wall of repeated chips.
+Four screenshots from the AlignSynch build (`BRAND=alignsynch pnpm build`, `next start` on a free
+port), captured at 1440×900 and 390×844 through Chrome's device emulation, with `innerWidth`
+checked against the target after every override. They exist because a string assertion cannot tell
+you what a 27-type catalogue looks like: the markup can be right and the page can still read as a
+wall of repeated chips.
 
 | file                          | what it is                                                                     |
 | ----------------------------- | ------------------------------------------------------------------------------ |
@@ -11,6 +12,20 @@ and the page can still read as a wall of repeated chips.
 | `templates-1440-filtered.png` | the same page with `?realm=Home` applied — 10 cards, count line moved, desktop |
 | `templates-390.png`           | the whole catalogue at phone width                                             |
 | `templates-390-filtered.png`  | `?realm=Home` at phone width — no horizontal overflow at either width          |
+
+## Re-captured on the rail v4 shell
+
+The first pair was taken while the app shell still pinned an icon rail at phone width. #465 replaced
+that with a drawer below 768 px, which gives the catalogue the full viewport: the phone shots are
+now **10,006 px** (whole catalogue) and **4,259 px** (`?realm=Home`) instead of 11,292 and 4,757 —
+same 28 cards, same 8 groups, same count line, and still no horizontal overflow
+(`scrollWidth === innerWidth`, checked at both widths). The desktop shots keep their heights
+(5,804 px and 2,305 px); the chrome above them changed with the rail, and the lockup in the corner
+with #470.
+
+Two things these shots do not show, because the preview route below is not the real path: the rail
+does not highlight **Templates** (its active state is derived from the pathname), and the account
+chrome is the signed-out one.
 
 ## `/assessment/templates` needs a session, and these shots do not enter one
 
