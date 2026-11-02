@@ -20,7 +20,10 @@ interface V1ChatThreadListProps {
 /** Same tiers as the quiz sidebar's: clock time, "Yesterday", weekday, "Mon D". */
 function formatTime(timestamp: string): string {
   const days = dayDelta(timestamp);
-  if (days === 0) return formatClockTime(timestamp);
+  // `<= 0` rather than `=== 0`: a message a person just sent is stamped from the wall clock, which
+  // is later than the fixture clock (DEMO_NOW_ISO), and "Mon" for something visible right now is a
+  // worse label than its time.
+  if (days <= 0) return formatClockTime(timestamp);
   if (days === 1) return "Yesterday";
   if (days < 7) return formatWeekdayShort(timestamp);
   return formatMonthDay(timestamp);
