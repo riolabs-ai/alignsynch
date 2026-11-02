@@ -660,7 +660,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The four plan tiers re-painted from the live fixture, with every paid CTA disabled so nothing is charged in the prototype.",
+      "The two per-relationship subscription plans, the same component as the in-app shop — a price the marketing page shows is the price the checkout applies, and nothing is charged in the prototype.",
   },
   {
     kind: "route",

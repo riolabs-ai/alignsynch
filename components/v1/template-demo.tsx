@@ -53,6 +53,7 @@ function demoRelationship(type: RelationshipType): V1Relationship {
       status: "active",
       periodEnd: "2026-11-30T09:00:00.000Z",
       startedAt: "2026-10-30T09:00:00.000Z",
+      payments: [],
     },
     history: [],
     lastSessionAt: "2026-10-30T12:00:00.000Z",

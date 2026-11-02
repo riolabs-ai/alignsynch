@@ -41,6 +41,9 @@ describe("who sees which relationship", () => {
     expect(ids(relationshipsVisibleTo("initiator", seedRelationships))).toEqual([
       "rel-invited",
       "rel-connected-blind",
+      // The shop's "before" seed: an unsubscribed relationship with no counterparty yet.
+      // It is still one the initiator started, so it belongs in their list.
+      "rel-unsubscribed",
     ]);
     expect(ids(relationshipsVisibleTo("counterparty", seedRelationships))).toEqual([
       "rel-connected-blind",

@@ -1469,6 +1469,63 @@ export function purchasableTypesByRealm(): readonly RealmGroup[] {
 }
 
 /* ------------------------------------------------------------------ *
+ * The two top-level groups — the product's own vocabulary
+ * ------------------------------------------------------------------ */
+
+/**
+ * The product names two groups at the top of the catalogue — **Business** and **Personal** —
+ * with `realm` the field underneath (#384's owner read). `Custom` is the third path and it is
+ * not a realm: it is the initiator's own template library (the blank template and anything
+ * cloned into it), which is why no relationship type carries it.
+ *
+ * The realm split is the seven realms read against the two groups, written out rather than
+ * inferred: a relationship that lives at work (Office, Business, Property) is Business; one that
+ * lives at home, at school, in care or in a social circle (Home, School, Medical, Social) is
+ * Personal. It is a **field**, like `realm`, so a reviewer can move one realm without touching a
+ * component, and the shop, the catalogue and the dashboard library all read the same table.
+ */
+export type TypeGroup = "Business" | "Personal";
+
+/** The two catalogue groups, in render order. `Custom` is the library's third path, not a type. */
+export const TYPE_GROUPS: readonly TypeGroup[] = ["Business", "Personal"];
+
+/** Which top-level group a realm belongs to. */
+export const REALM_GROUP: Readonly<Record<Realm, TypeGroup>> = {
+  Office: "Business",
+  Business: "Business",
+  Property: "Business",
+  School: "Personal",
+  Medical: "Personal",
+  Home: "Personal",
+  Social: "Personal",
+};
+
+/** One top-level group's purchasable types, with the realms underneath it that carry any. */
+export interface TypeGroupGroup {
+  readonly group: TypeGroup;
+  readonly realms: readonly RealmGroup[];
+  readonly types: readonly RelationshipType[];
+}
+
+/**
+ * The purchasable types grouped Business · Personal, realms underneath, in `REALMS` order. The
+ * dashboard library renders this; the public catalogue renders `purchasableTypesByRealm()`, and
+ * both draw the same card, so "the same cards" is a shared component rather than a copy.
+ */
+export function purchasableTypesByGroup(): readonly TypeGroupGroup[] {
+  return TYPE_GROUPS.map((group) => {
+    const realms = purchasableTypesByRealm().filter(
+      (realmGroup) => REALM_GROUP[realmGroup.realm] === group,
+    );
+    return {
+      group,
+      realms,
+      types: realms.flatMap((realmGroup) => realmGroup.types),
+    };
+  }).filter((entry) => entry.types.length > 0);
+}
+
+/* ------------------------------------------------------------------ *
  * Demo answers — one completed sheet per type, rendered by /demo
  * ------------------------------------------------------------------ */
 

@@ -44,13 +44,17 @@ import {
   seedThreadReadAt,
   seedTickets,
   type Persona,
+  type SubscriptionPlan,
   type V1Account,
+  type V1Payment,
   type V1Relationship,
   type V1SessionRecord,
   type V1ThreadReadAt,
   type V1Ticket,
 } from "@/data/v1/fixtures";
 import { seedNotifications, type V1Notification } from "@/data/v1/notifications";
+import { subscriptionPlan } from "@/data/v1/plans";
+import type { RelationshipType } from "@/data/v1/relationship-types";
 import type { ReviewStatus } from "@/lib/v1/review";
 import { unlockedAtOf } from "@/lib/v1/derive";
 import { resolveThreadId, authorRoleOf } from "@/lib/v1/chat";
@@ -251,6 +255,25 @@ export interface RelationshipInput {
   readonly setting: AlignmentSetting;
 }
 
+/**
+ * A catalogue type, folded into a library template — a clone the editor can open and a
+ * relationship can copy from. The id is deterministic per type, so starting or cloning the same
+ * type twice reuses one template rather than stacking copies. The summary names only the type's
+ * `name`, which every type shape carries, so a clone keeps its own identity in the editor.
+ */
+function templateFromType(type: RelationshipType): Assessment {
+  return {
+    id: `assessment-${type.id}`,
+    slug: type.id,
+    type: "assessment",
+    status: "published",
+    date: new Date().toISOString(),
+    title: type.name,
+    summary: `Relationship Type: ${type.name} — cloned from the relationship catalogue.`,
+    items: type.aspects.map((item) => ({ ...item, scale: { ...item.scale } })),
+  };
+}
+
 /** A store a surface may read from, and write every slice through. */
 export interface V1Store {
   readonly templates: readonly Assessment[];
@@ -269,6 +292,11 @@ export interface V1Store {
 
   readonly setPersona: (persona: Persona) => void;
   readonly createRelationship: (input: RelationshipInput) => V1Relationship;
+  /** Start a relationship from a catalogue type — clone its Aspects into the library and create
+   * the relationship unsubscribed (the shop's checkout is the subscribe path). */
+  readonly startFromType: (type: RelationshipType) => V1Relationship;
+  /** Clone a catalogue type into the initiator's own template library (idempotent per type). */
+  readonly cloneType: (type: RelationshipType) => Assessment;
   readonly sendInvite: (relationshipId: string) => void;
   readonly claimInvite: (relationshipId: string) => void;
   readonly submitAnswers: (
@@ -308,6 +336,9 @@ export interface V1Store {
   /** Turn the relationship's Aspects into a reusable library entry (a "my saved set"). */
   readonly saveAspectSetToLibrary: (relationshipId: string) => Assessment;
   readonly restoreSubscription: (relationshipId: string) => void;
+  /** The shop's checkout: subscribe (or re-subscribe) one relationship to a plan — a mock, no
+   * charge — and record the purchase in that relationship's payment history. */
+  readonly subscribe: (relationshipId: string, plan: SubscriptionPlan) => void;
   readonly addCoachComment: (relationshipId: string, body: string) => void;
   readonly toggleShareWithCoach: (relationshipId: string) => void;
   readonly resolveTicket: (ticketId: string) => void;
@@ -457,7 +488,6 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       }
       const items = template.items.map((item) => ({ ...item, scale: { ...item.scale } }));
       const now = new Date().toISOString();
-      const periodEnd = new Date(Date.now() + 30 * 86_400_000).toISOString();
       const relationship: V1Relationship = {
         id: uid("rel"),
         templateId: input.templateId,
@@ -484,10 +514,9 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         aspectComments: {},
         openedSessions: 0,
         completedSessions: 0,
-        // The Initiator subscribes when the relationship is created. Mocked in the prototype —
-        // no charge, monthly by default; the subscribe flow (t_a202c680) is the path that lets a
-        // person pick quarterly.
-        subscription: { plan: "monthly", status: "active", periodEnd, startedAt: now },
+        // A new relationship starts unsubscribed — the shop's checkout (subscribe) is the path
+        // that gives it a plan. The counterparty pays nothing, ever.
+        subscription: null,
         history: [],
         lastSessionAt: null,
         createdAt: now,
@@ -498,6 +527,64 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     },
     [templates],
   );
+
+  const startFromType = useCallback((type: RelationshipType): V1Relationship => {
+    const template = templateFromType(type);
+    setTemplates((previous) => {
+      const at = previous.findIndex((entry) => entry.id === template.id);
+      if (at === -1) return [...previous, template];
+      const next = [...previous];
+      next[at] = template;
+      return next;
+    });
+    const items = template.items.map((item) => ({ ...item, scale: { ...item.scale } }));
+    const now = new Date().toISOString();
+    const relationship: V1Relationship = {
+      id: uid("rel"),
+      templateId: template.id,
+      items,
+      deletedAspects: [],
+      mode: "basic",
+      setting: "soft",
+      initiatorName: PERSONA_META.initiator.name,
+      counterpartyName: null,
+      initiatorAnswers: {},
+      counterpartyAnswers: {},
+      initiatorSubmitted: false,
+      counterpartySubmitted: false,
+      initiatorAccepted: false,
+      counterpartyAccepted: false,
+      initiatorAcceptedAt: null,
+      counterpartyAcceptedAt: null,
+      inviteToken: null,
+      inviteExpiresAt: null,
+      sharedWithCoach: false,
+      coachComments: [],
+      comments: [],
+      aspectComments: {},
+      openedSessions: 0,
+      completedSessions: 0,
+      subscription: null,
+      history: [],
+      lastSessionAt: null,
+      createdAt: now,
+      modifiedAt: now,
+    };
+    setRelationships((previous) => [...previous, relationship]);
+    return relationship;
+  }, []);
+
+  const cloneType = useCallback((type: RelationshipType): Assessment => {
+    const template = templateFromType(type);
+    setTemplates((previous) => {
+      const at = previous.findIndex((entry) => entry.id === template.id);
+      if (at === -1) return [...previous, template];
+      const next = [...previous];
+      next[at] = template;
+      return next;
+    });
+    return template;
+  }, []);
 
   const sendInvite = useCallback(
     (relationshipId: string) => {
@@ -764,7 +851,15 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         aspectComments: {},
         openedSessions: 0,
         completedSessions: 0,
-        subscription: { plan: "monthly", status: "active", periodEnd, startedAt: now },
+        subscription: {
+          plan: "monthly",
+          status: "active",
+          periodEnd,
+          startedAt: now,
+          // The prototype charges nothing, so the ledger starts empty and only a checkout
+          // appends to it. A subscription with no payments is the honest new-subscriber state.
+          payments: [],
+        },
         history: [],
         lastSessionAt: null,
         createdAt: now,
@@ -808,9 +903,51 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     (relationshipId: string) => {
       patchRelationship(relationshipId, (rel) => {
         if (rel.subscription === null) return rel;
-        const days = rel.subscription.plan === "quarterly" ? 90 : 30;
-        const periodEnd = new Date(Date.now() + days * 86_400_000).toISOString();
-        return { ...rel, subscription: { ...rel.subscription, status: "active", periodEnd } };
+        const info = subscriptionPlan(rel.subscription.plan);
+        const now = new Date().toISOString();
+        const periodEnd = new Date(Date.now() + info.periodDays * 86_400_000).toISOString();
+        const payment: V1Payment = {
+          id: uid("pay"),
+          plan: rel.subscription.plan,
+          amountCents: info.priceCents,
+          paidAt: now,
+        };
+        return {
+          ...rel,
+          subscription: {
+            ...rel.subscription,
+            status: "active",
+            periodEnd,
+            payments: [...rel.subscription.payments, payment],
+          },
+        };
+      });
+    },
+    [patchRelationship],
+  );
+
+  const subscribe = useCallback(
+    (relationshipId: string, plan: SubscriptionPlan) => {
+      const info = subscriptionPlan(plan);
+      const now = new Date().toISOString();
+      const periodEnd = new Date(Date.now() + info.periodDays * 86_400_000).toISOString();
+      patchRelationship(relationshipId, (rel) => {
+        const payment: V1Payment = {
+          id: uid("pay"),
+          plan,
+          amountCents: info.priceCents,
+          paidAt: now,
+        };
+        return {
+          ...rel,
+          subscription: {
+            plan,
+            status: "active",
+            periodEnd,
+            startedAt: now,
+            payments: [...(rel.subscription?.payments ?? []), payment],
+          },
+        };
       });
     },
     [patchRelationship],
@@ -944,6 +1081,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       threadReadAt,
       setPersona,
       createRelationship,
+      startFromType,
+      cloneType,
       sendInvite,
       claimInvite,
       submitAnswers,
@@ -959,6 +1098,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       cloneRelationship,
       saveAspectSetToLibrary,
       restoreSubscription,
+      subscribe,
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,
@@ -984,6 +1124,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       threadReadAt,
       setPersona,
       createRelationship,
+      startFromType,
+      cloneType,
       sendInvite,
       claimInvite,
       submitAnswers,
@@ -999,6 +1141,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       cloneRelationship,
       saveAspectSetToLibrary,
       restoreSubscription,
+      subscribe,
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,

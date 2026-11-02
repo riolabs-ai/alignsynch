@@ -22,6 +22,10 @@ const STATUS_LABEL: Record<V1Subscription["status"], string> = {
   lapsed: "Lapsed",
 };
 
+/** The status pill's tone and word, exported so the shop's rows paint a state the same way. */
+export const SUBSCRIPTION_STATUS_TONE = STATUS_TONE;
+export const SUBSCRIPTION_STATUS_LABEL = STATUS_LABEL;
+
 /**
  * The subscription state a relationship header renders — plan, status, period end and the mock
  * badge. `lapsed` is a real screen state: it carries the one clear action to restore, and the
