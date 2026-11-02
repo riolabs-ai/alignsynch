@@ -28,6 +28,8 @@ import {
 import { CommentThread } from "@/components/v1/comment-thread";
 import { ManageTab } from "@/components/v1/manage-tab";
 import { RelationshipAspectsEditor } from "@/components/v1/relationship-aspects-editor";
+import { RelationshipMetadata } from "@/components/v1/relationship-metadata";
+import { StepsPanel } from "@/components/v1/steps-panel";
 import { SubscriptionStatus } from "@/components/v1/subscription-status";
 import {
   PrimaryActionButton,
@@ -194,7 +196,9 @@ export function PersonaRelationshipDetail({
             {rel.initiatorName}
             {rel.counterpartyName !== null
               ? ` and ${rel.counterpartyName}`
-              : " · counterparty not claimed"}{" "}
+              : rel.inviteeName !== null
+                ? ` · inviting ${rel.inviteeName} — not claimed yet`
+                : " · counterparty not claimed"}{" "}
             · {MODE_LABELS[rel.mode]} · {SETTING_LABELS[rel.setting]} setting
           </p>
           <p className="mt-1 text-sm text-muted-foreground" data-last-session>
@@ -238,6 +242,10 @@ export function PersonaRelationshipDetail({
       )}
 
       {isInitiator && <SubscriptionStatus rel={rel} />}
+
+      {/* The relationship's own metadata — name, Mode (never editable) and Setting (movable between
+          sessions by the Initiator, read-only for everyone else). The matrix in one panel. */}
+      <RelationshipMetadata rel={rel} viewer={persona} />
 
       {sessionNotice !== null && (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
@@ -353,6 +361,17 @@ export function PersonaRelationshipDetail({
       ) : (
         <>
           <SessionTimeline rel={rel} viewer={viewer} primaryAction={primaryAction} />
+
+          {/* Steps for Improving the Relationship — derived at completion, then stored, so a party
+              can tick progress, reword the sentence, or add one of their own, and the list keeps
+              what was agreed (content/steps.ts). A coach reads; the two parties write. */}
+          <StepsPanel
+            rel={rel}
+            canMark={viewer !== null}
+            onToggle={(stepId, status) => store.markStepDone(rel.id, stepId, status)}
+            onEditText={(stepId, text) => store.setStepText(rel.id, stepId, text)}
+            onAddStep={(aspectId, text) => store.addStep(rel.id, aspectId, text)}
+          />
 
           {/* Comments — the relationship thread and one per Aspect, open only after scoring. */}
           {complete && (

@@ -28,6 +28,8 @@
  */
 import {
   zAssessment,
+  zInstanceName,
+  INSTANCE_NAME_MAX,
   type AlignmentSetting,
   type Aspect,
   type Assessment,
@@ -55,6 +57,15 @@ import {
 import { seedNotifications, type V1Notification } from "@/data/v1/notifications";
 import { subscriptionPlan } from "@/data/v1/plans";
 import type { RelationshipType } from "@/data/v1/relationship-types";
+import {
+  authoredStepOf,
+  closeSteps,
+  deriveSteps,
+  stepsToAdd,
+  withStepStatus,
+  withStepText,
+  type StepStatus,
+} from "@/content/steps";
 import type { ReviewStatus } from "@/lib/v1/review";
 import { unlockedAtOf } from "@/lib/v1/derive";
 import { resolveThreadId, authorRoleOf } from "@/lib/v1/chat";
@@ -288,14 +299,34 @@ function loadSocial(): {
  * Context
  * ------------------------------------------------------------------ */
 
-/** The inputs the relationship form collects. */
+/** The inputs the relationship form collects (#404 §6). */
 export interface RelationshipInput {
   readonly templateId: string;
+  /** The relationship's own name — optional, ≤ `INSTANCE_NAME_MAX`; absent means the template's. */
   readonly name?: string;
   readonly initiatorName: string;
-  readonly counterpartyName: string;
+  /**
+   * The name the initiator typed for the counterparty's seat. It is **display-only**: the
+   * counterparty is `invited` until they claim the link (`claimInvite`), because the blind rule
+   * waits for their own submission and a name typed by someone else is not a party.
+   */
+  readonly inviteeName?: string;
+  /** Fixed for the relationship's life — a post-hoc change would invalidate the answer shape. */
+  readonly mode: AssessmentMode;
+  /** The tolerance the report's verdict is judged against; the Initiator or an admin may move it. */
+  readonly setting: AlignmentSetting;
+}
+
+/** Everything a new relationship row carries, from whichever entry created it. */
+interface RelationshipDraft {
+  readonly templateId: string;
+  readonly name?: string;
+  readonly items: readonly Aspect[];
   readonly mode: AssessmentMode;
   readonly setting: AlignmentSetting;
+  readonly initiatorName: string;
+  readonly inviteeName: string | null;
+  readonly now: string;
 }
 
 /**
@@ -317,6 +348,60 @@ function templateFromType(type: RelationshipType): Assessment {
   };
 }
 
+/**
+ * A new relationship's row, from one draft — the single statement of what a relationship looks
+ * like when it is created.
+ *
+ * Four entry points create one (the catalogue's `startFromType`, the store's `createRelationship`,
+ * the create entry's `createRelationshipFromType`, and `cloneRelationship`, which starts from
+ * another row instead), and every one of them has to agree about the sixteen fields that describe
+ * "nothing has happened yet": no claims, no answers, no invite, no subscription, no sessions and no
+ * Steps. Written once so a field added to the model cannot be forgotten by three of the four.
+ */
+function newRelationship(draft: RelationshipDraft): V1Relationship {
+  return {
+    id: uid("rel"),
+    templateId: draft.templateId,
+    name: draft.name?.trim() || undefined,
+    items: draft.items.map((item) => ({ ...item, scale: { ...item.scale } })),
+    deletedAspects: [],
+    mode: draft.mode,
+    setting: draft.setting,
+    initiatorName: draft.initiatorName.trim() || PERSONA_META.initiator.name,
+    // The seat is named, not claimed: `counterpartyName` stays null until the invite is claimed.
+    counterpartyName: null,
+    inviteeName: draft.inviteeName,
+    initiatorAnswers: {},
+    counterpartyAnswers: {},
+    initiatorSubmitted: false,
+    counterpartySubmitted: false,
+    initiatorAccepted: false,
+    counterpartyAccepted: false,
+    initiatorAcceptedAt: null,
+    counterpartyAcceptedAt: null,
+    inviteToken: null,
+    inviteExpiresAt: null,
+    // A new relationship is live: only the admin console's archive writes this field.
+    archivedAt: null,
+    sharedWithCoach: false,
+    coachComments: [],
+    comments: [],
+    aspectComments: {},
+    // Nothing has been measured yet, so there is nothing to agree on: Steps are derived from the
+    // Gaps at completion (`content/steps.ts`), never guessed at creation.
+    steps: [],
+    openedSessions: 0,
+    completedSessions: 0,
+    // A new relationship starts unsubscribed — the shop's checkout (subscribe) is the path
+    // that gives it a plan. The counterparty pays nothing, ever.
+    subscription: null,
+    history: [],
+    lastSessionAt: null,
+    createdAt: draft.now,
+    modifiedAt: draft.now,
+  };
+}
+
 /** A store a surface may read from, and write every slice through. */
 export interface V1Store {
   readonly templates: readonly Assessment[];
@@ -335,6 +420,61 @@ export interface V1Store {
 
   readonly setPersona: (persona: Persona) => void;
   readonly createRelationship: (input: RelationshipInput) => V1Relationship;
+  /**
+   * The create entry's one action (#404 §6): fold a catalogue type into the library template the
+   * editor can open (`assessment-<typeId>`, deterministic) and create the relationship from it in
+   * the same write, with the Mode and Setting the initiator chose.
+   *
+   * The two steps are one call on purpose: `createRelationship` reads the library from the render it
+   * was created in, so cloning and creating in two calls within one event would look for a template
+   * that state had not published yet.
+   *
+   * **The Initiator is the persona, and no argument can say otherwise.** Every `/v1/<persona>` page
+   * is gated by `relationshipsVisibleTo()` on the persona's own name, so a row created under another
+   * name would exist in the store with no page its creator could open. The name is therefore not an
+   * input here: this entry point *is* "I am the Initiator", and it writes the persona's name.
+   */
+  readonly createRelationshipFromType: (
+    type: RelationshipType,
+    input: {
+      readonly name?: string;
+      readonly inviteeName?: string;
+      readonly mode: AssessmentMode;
+      readonly setting: AlignmentSetting;
+    },
+  ) => V1Relationship;
+  /**
+   * Rename a relationship (#404 §7). The Initiator and an admin may; the Counterparty and the
+   * Coach may not, and no surface offers it to them. Returns a refusal sentence, or null on success.
+   * An empty name clears it, so the template's title is the display name again.
+   */
+  readonly renameRelationship: (relationshipId: string, name: string) => string | null;
+  /**
+   * Move a relationship's Setting (#404 §7: "change in maintenance"). The Initiator and an admin
+   * may; it re-derives the stage and the verdict on read and changes no answer, no Aspect and no
+   * question. Refused while a session is open — the bar a party is being measured against may not
+   * move underneath them. Returns a refusal sentence, or null on success.
+   */
+  readonly setRelationshipSetting: (
+    relationshipId: string,
+    setting: AlignmentSetting,
+  ) => string | null;
+  /**
+   * Tick a Step off, or put it back (#404 §7, Decision 3). A party does this for their own
+   * relationship; the coach reads. The row it writes is the one the completion derived.
+   */
+  readonly markStepDone: (relationshipId: string, stepId: string, status: StepStatus) => void;
+  /**
+   * Reword a Step — a party's own words in `text`, with the sentence the product proposed kept in
+   * `suggestedText` (#404, decision 2 on PR #406). Empty text is refused: a Step with no words is
+   * not a Step. Returns a refusal sentence, or null on success.
+   */
+  readonly setStepText: (relationshipId: string, stepId: string, text: string) => string | null;
+  /**
+   * Add a Step a party wrote from nothing, on one Aspect. It came from no Gap, so it names no kind
+   * and carries no suggestion; it is `open`. Returns a refusal sentence, or null on success.
+   */
+  readonly addStep: (relationshipId: string, aspectId: string, text: string) => string | null;
   /** Start a relationship from a catalogue type — clone its Aspects into the library and create
    * the relationship unsubscribed (the shop's checkout is the subscribe path). */
   readonly startFromType: (type: RelationshipType) => V1Relationship;
@@ -558,48 +698,62 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       if (template === undefined) {
         throw new Error(`no template "${input.templateId}" in the library`);
       }
-      const items = template.items.map((item) => ({ ...item, scale: { ...item.scale } }));
-      const now = new Date().toISOString();
-      const relationship: V1Relationship = {
-        id: uid("rel"),
+      const relationship = newRelationship({
         templateId: input.templateId,
-        name: input.name?.trim() || undefined,
-        items,
-        deletedAspects: [],
+        name: input.name,
+        items: template.items,
         mode: input.mode,
         setting: input.setting,
-        initiatorName: input.initiatorName.trim() || PERSONA_META.initiator.name,
-        counterpartyName: null,
-        initiatorAnswers: {},
-        counterpartyAnswers: {},
-        initiatorSubmitted: false,
-        counterpartySubmitted: false,
-        initiatorAccepted: false,
-        counterpartyAccepted: false,
-        initiatorAcceptedAt: null,
-        counterpartyAcceptedAt: null,
-        inviteToken: null,
-        inviteExpiresAt: null,
-        // A new relationship is live: only the admin console's archive writes this field.
-        archivedAt: null,
-        sharedWithCoach: false,
-        coachComments: [],
-        comments: [],
-        aspectComments: {},
-        openedSessions: 0,
-        completedSessions: 0,
-        // A new relationship starts unsubscribed — the shop's checkout (subscribe) is the path
-        // that gives it a plan. The counterparty pays nothing, ever.
-        subscription: null,
-        history: [],
-        lastSessionAt: null,
-        createdAt: now,
-        modifiedAt: now,
-      };
+        initiatorName: input.initiatorName,
+        inviteeName: input.inviteeName?.trim() || null,
+        now: new Date().toISOString(),
+      });
       setRelationships((previous) => [...previous, relationship]);
       return relationship;
     },
     [templates],
+  );
+
+  /**
+   * The create entry (#404 §6). The type is folded into the library template the editor opens and
+   * the relationship is copied from it **in one write**, so a caller cannot half-create: either the
+   * template and the relationship both exist afterwards, or neither does.
+   *
+   * The initiator is the persona, never an argument — see the interface note. A created row that the
+   * Initiator's own dashboard could not resolve would be a card the form hands back as a 404.
+   */
+  const createRelationshipFromType = useCallback(
+    (
+      type: RelationshipType,
+      input: {
+        readonly name?: string;
+        readonly inviteeName?: string;
+        readonly mode: AssessmentMode;
+        readonly setting: AlignmentSetting;
+      },
+    ): V1Relationship => {
+      const template = templateFromType(type);
+      setTemplates((previous) => {
+        const at = previous.findIndex((entry) => entry.id === template.id);
+        if (at === -1) return [...previous, template];
+        const next = [...previous];
+        next[at] = template;
+        return next;
+      });
+      const relationship = newRelationship({
+        templateId: template.id,
+        name: input.name,
+        items: template.items,
+        mode: input.mode,
+        setting: input.setting,
+        initiatorName: PERSONA_META.initiator.name,
+        inviteeName: input.inviteeName?.trim() || null,
+        now: new Date().toISOString(),
+      });
+      setRelationships((previous) => [...previous, relationship]);
+      return relationship;
+    },
+    [],
   );
 
   const startFromType = useCallback((type: RelationshipType): V1Relationship => {
@@ -611,40 +765,15 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       next[at] = template;
       return next;
     });
-    const items = template.items.map((item) => ({ ...item, scale: { ...item.scale } }));
-    const now = new Date().toISOString();
-    const relationship: V1Relationship = {
-      id: uid("rel"),
+    const relationship = newRelationship({
       templateId: template.id,
-      items,
-      deletedAspects: [],
+      items: template.items,
       mode: "basic",
       setting: "soft",
       initiatorName: PERSONA_META.initiator.name,
-      counterpartyName: null,
-      initiatorAnswers: {},
-      counterpartyAnswers: {},
-      initiatorSubmitted: false,
-      counterpartySubmitted: false,
-      initiatorAccepted: false,
-      counterpartyAccepted: false,
-      initiatorAcceptedAt: null,
-      counterpartyAcceptedAt: null,
-      inviteToken: null,
-      inviteExpiresAt: null,
-      archivedAt: null,
-      sharedWithCoach: false,
-      coachComments: [],
-      comments: [],
-      aspectComments: {},
-      openedSessions: 0,
-      completedSessions: 0,
-      subscription: null,
-      history: [],
-      lastSessionAt: null,
-      createdAt: now,
-      modifiedAt: now,
-    };
+      inviteeName: null,
+      now: new Date().toISOString(),
+    });
     setRelationships((previous) => [...previous, relationship]);
     return relationship;
   }, []);
@@ -682,6 +811,131 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     [patchRelationship],
   );
 
+  /**
+   * Rename a relationship (#404 §7). One of the two metadata writes the matrix grants the Initiator
+   * and an admin, and the only one with a length rule: `INSTANCE_NAME_MAX` characters, the same
+   * limit `content/assessment.ts::zInstanceName` puts on the model's own instance name. An empty
+   * name is a clear, not an error — the template's title becomes the display name again.
+   */
+  const renameRelationship = useCallback(
+    (relationshipId: string, name: string): string | null => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) return "This relationship does not exist.";
+      const trimmed = name.trim();
+      if (trimmed === "") {
+        if (rel.name === undefined) return null;
+        patchRelationship(relationshipId, (current) => ({ ...current, name: undefined }));
+        return null;
+      }
+      const parsed = zInstanceName.safeParse(trimmed);
+      if (!parsed.success) {
+        return `A relationship's name is at most ${INSTANCE_NAME_MAX} characters.`;
+      }
+      if (rel.name === parsed.data) return null;
+      patchRelationship(relationshipId, (current) => ({ ...current, name: parsed.data }));
+      return null;
+    },
+    [relationships, patchRelationship],
+  );
+
+  /**
+   * Move a relationship's Setting (#404 §7, the matrix's strictest cell that still moves).
+   *
+   * The Setting is a tolerance over the Gaps, so this **changes no number and no question**: the
+   * sheet still asks exactly what the Mode asks, and every Opinion is untouched. What moves is the
+   * verdict the report prints, because the bar it is judged against moved. It is therefore allowed
+   * between sessions and refused while one is open — a bar that moves under a party who has already
+   * answered would re-judge a submission they were not shown the terms of.
+   */
+  const setRelationshipSetting = useCallback(
+    (relationshipId: string, setting: AlignmentSetting): string | null => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) return "This relationship does not exist.";
+      if (rel.setting === setting) return null;
+      const sessionComplete = rel.initiatorAccepted && rel.counterpartyAccepted;
+      const openSession = (rel.initiatorSubmitted || rel.counterpartySubmitted) && !sessionComplete;
+      if (openSession) {
+        return "A session is open. The Setting can move between sessions, not while one is being answered or accepted.";
+      }
+      patchRelationship(relationshipId, (current) => ({ ...current, setting }));
+      return null;
+    },
+    [relationships, patchRelationship],
+  );
+
+  /** Tick a Step off, or put it back — the one write a party makes on the Steps panel. */
+  const markStepDone = useCallback(
+    (relationshipId: string, stepId: string, status: StepStatus) => {
+      patchRelationship(relationshipId, (rel) => {
+        const steps = withStepStatus(rel.steps, stepId, status);
+        // No such Step, it is already in that state, or it has closed: not a write, so "Last
+        // modified" stays put. A closed Step is history and no tick reopens it.
+        if (steps === rel.steps) return rel;
+        return { ...rel, steps: [...steps] };
+      });
+    },
+    [patchRelationship],
+  );
+
+  /**
+   * Reword a Step — the party's own words beside the suggestion that explains it.
+   *
+   * `suggestedText` is never touched: what the product proposed is part of the Step's history, so an
+   * edit changes `text` and leaves the suggestion readable. An empty value is refused here rather
+   * than silently ignored, because the panel has a Save button a party can press and the honest
+   * answer is a sentence, not a no-op.
+   */
+  const setStepText = useCallback(
+    (relationshipId: string, stepId: string, text: string): string | null => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) return "This relationship does not exist.";
+      const step = rel.steps.find((candidate) => candidate.id === stepId);
+      if (step === undefined) return "That Step is not on this relationship.";
+      if (step.status === "closed") return "That Step has closed — it is kept as history.";
+      if (text.trim().length === 0) return "A Step needs words of its own.";
+      patchRelationship(relationshipId, (current) => {
+        const steps = withStepText(current.steps, stepId, text);
+        if (steps === current.steps) return current;
+        return { ...current, steps: [...steps] };
+      });
+      return null;
+    },
+    [relationships, patchRelationship],
+  );
+
+  /**
+   * Add a Step a party wrote themselves, on one of the relationship's Aspects.
+   *
+   * The row came from no Gap: `derivedFrom` is empty and there is no `suggestedText`, which is the
+   * one place `zStep` allows that. It is `open` — an authored Step is a thing to do, not a tick
+   * already earned. The id is numbered past the Aspect's existing Steps, so a second one is a second
+   * row rather than an overwrite.
+   */
+  const addStep = useCallback(
+    (relationshipId: string, aspectId: string, text: string): string | null => {
+      const rel = relationships.find((candidate) => candidate.id === relationshipId);
+      if (rel === undefined) return "This relationship does not exist.";
+      if (!rel.items.some((item) => item.id === aspectId)) {
+        return "That Aspect is not on this relationship.";
+      }
+      const trimmed = text.trim();
+      if (trimmed.length === 0) return "A Step needs words of its own.";
+      const step = authoredStepOf({
+        relationshipId,
+        aspectId,
+        text: trimmed,
+        existing: rel.steps,
+        createdAt: new Date().toISOString(),
+      });
+      patchRelationship(relationshipId, (current) => ({
+        ...current,
+        steps: [...current.steps, step],
+      }));
+      return null;
+    },
+    [relationships, patchRelationship],
+  );
+
   const submitAnswers = useCallback(
     (
       relationshipId: string,
@@ -717,9 +971,28 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         const wasComplete = rel.initiatorAccepted && rel.counterpartyAccepted;
         const isComplete = next.initiatorAccepted && next.counterpartyAccepted;
         // The closing event: when the second party accepts, the session flips complete and the
-        // report unlocks at that instant.
+        // report unlocks at that instant. It is also the one moment Steps are derived — from the
+        // Gaps of the session just agreed, and then stored, so a party can mark progress and the
+        // panel keeps showing what was agreed (`content/steps.ts`).
         if (!wasComplete && isComplete) {
-          return { ...next, completedSessions: next.completedSessions + 1, lastSessionAt: now };
+          const input = {
+            relationshipId: rel.id,
+            items: [...next.items],
+            initiatorAnswers: next.initiatorAnswers,
+            counterpartyAnswers: next.counterpartyAnswers,
+            createdAt: now,
+          };
+          const derived = deriveSteps(input);
+          // Two writes, in this order: **close** what this session's Gaps have closed, then **add**
+          // the Steps it newly earns. Neither rewrites a stored row — the dedupe is by the stable
+          // per-Aspect id, so a ticked Step keeps its tick and a closed one stays closed.
+          const closed = closeSteps(next.steps, input);
+          return {
+            ...next,
+            steps: [...closed, ...stepsToAdd(closed, derived)],
+            completedSessions: next.completedSessions + 1,
+            lastSessionAt: now,
+          };
         }
         return next;
       });
@@ -910,6 +1183,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         setting: rel.setting,
         initiatorName: rel.initiatorName,
         counterpartyName: null,
+        // A clone names no invitee either: the seat is empty until the initiator fills it in.
+        inviteeName: null,
         initiatorAnswers: {},
         counterpartyAnswers: {},
         initiatorSubmitted: false,
@@ -927,6 +1202,8 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         coachComments: [],
         comments: [],
         aspectComments: {},
+        // A clone has no history, so it has no agreed Steps: they derive from its own sessions.
+        steps: [],
         openedSessions: 0,
         completedSessions: 0,
         subscription: {
@@ -1200,6 +1477,12 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       threadReadAt,
       setPersona,
       createRelationship,
+      createRelationshipFromType,
+      renameRelationship,
+      setRelationshipSetting,
+      markStepDone,
+      setStepText,
+      addStep,
       startFromType,
       cloneType,
       sendInvite,
@@ -1248,6 +1531,12 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       threadReadAt,
       setPersona,
       createRelationship,
+      createRelationshipFromType,
+      renameRelationship,
+      setRelationshipSetting,
+      markStepDone,
+      setStepText,
+      addStep,
       startFromType,
       cloneType,
       sendInvite,
