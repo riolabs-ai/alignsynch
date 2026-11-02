@@ -451,6 +451,9 @@ interface SessionCountRow {
   readonly initiatorAnswered: number;
   readonly counterpartyAnswered: number;
   readonly hasCounterparty: boolean;
+  /** `party.accepted_at IS NOT NULL` per seat (#R2) — the hinge `instanceStatusOf()` now needs. */
+  readonly initiatorAccepted: boolean;
+  readonly counterpartyAccepted: boolean;
 }
 
 interface OpinionJsonRow {
@@ -480,6 +483,9 @@ export interface RelationshipCardRow {
   readonly initiator_answered: number;
   readonly counterparty_answered: number;
   readonly has_counterparty: boolean;
+  /** The latest session's two acceptances (#R2) — what `complete` additionally requires. */
+  readonly initiator_accepted: boolean;
+  readonly counterparty_accepted: boolean;
   readonly sessions_opened: number;
   readonly sessions: readonly SessionCountRow[];
   readonly opinions: readonly OpinionJsonRow[] | null;
@@ -543,6 +549,12 @@ const RELATIONSHIP_CARDS_SQL = `
     EXISTS (SELECT 1 FROM party cpx
              WHERE cpx.session_record_id = l.record_id AND cpx.role = 'counterparty')
                                 AS has_counterparty,
+    COALESCE((SELECT p4.accepted_at IS NOT NULL FROM party p4
+               WHERE p4.session_record_id = l.record_id AND p4.role = 'initiator'), false)
+                                AS initiator_accepted,
+    COALESCE((SELECT p5.accepted_at IS NOT NULL FROM party p5
+               WHERE p5.session_record_id = l.record_id AND p5.role = 'counterparty'), false)
+                                AS counterparty_accepted,
     (SELECT count(*) FROM session s2 WHERE s2.relationship_id = rel.id)::int AS sessions_opened,
     COALESCE((
       SELECT json_agg(json_build_object(
@@ -553,7 +565,15 @@ const RELATIONSHIP_CARDS_SQL = `
                                   WHERE o2.session_record_id = s2.record_id AND o2.role = 'counterparty'),
         'hasCounterparty', EXISTS (SELECT 1 FROM party p2
                                     WHERE p2.session_record_id = s2.record_id
-                                      AND p2.role = 'counterparty')
+                                      AND p2.role = 'counterparty'),
+        -- #R2: a session counts as complete only when both seats accepted it, so the count is
+        -- carried per session rather than read off the latest row.
+        'initiatorAccepted', COALESCE((SELECT p6.accepted_at IS NOT NULL FROM party p6
+                                        WHERE p6.session_record_id = s2.record_id
+                                          AND p6.role = 'initiator'), false),
+        'counterpartyAccepted', COALESCE((SELECT p7.accepted_at IS NOT NULL FROM party p7
+                                           WHERE p7.session_record_id = s2.record_id
+                                             AND p7.role = 'counterparty'), false)
       ))
       FROM session s2 WHERE s2.relationship_id = rel.id
     ), '[]'::json)              AS sessions,
@@ -639,8 +659,18 @@ function progressOf(
   hasCounterparty: boolean,
   initiatorAnswered: number,
   counterpartyAnswered: number,
+  initiatorAccepted: boolean,
+  counterpartyAccepted: boolean,
 ): InstanceProgress {
-  return { aspectCount, hasCounterparty, initiatorAnswered, counterpartyAnswered };
+  return {
+    aspectCount,
+    hasCounterparty,
+    initiatorAnswered,
+    counterpartyAnswered,
+    // The hinge (#R2): the count shape, from the row's two booleans.
+    initiatorAccepted: initiatorAccepted ? 1 : 0,
+    counterpartyAccepted: counterpartyAccepted ? 1 : 0,
+  };
 }
 
 /**
@@ -668,30 +698,25 @@ export async function listRelationshipCards(viewerUserId: string): Promise<Relat
  */
 export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipCard {
   const viewerRole = viewerRoleOf(row.viewer_role);
-  const complete =
-    instanceStatusOf(
-      progressOf(
-        row.aspect_count,
-        row.has_counterparty,
-        row.initiator_answered,
-        row.counterparty_answered,
-      ),
-    ) === "complete";
+  // One derivation per row: the status is asked once and reused by the state, the stage and the
+  // Gap's own gate, so a card cannot say "complete" in one field and "answering" in another.
+  const progress = progressOf(
+    row.aspect_count,
+    row.has_counterparty,
+    row.initiator_answered,
+    row.counterparty_answered,
+    row.initiator_accepted,
+    row.counterparty_accepted,
+  );
+  const status = instanceStatusOf(progress);
+  const complete = status === "complete";
 
   const state: MyInstanceState =
     viewerRole === "coach"
       ? complete
         ? "complete"
         : "awaiting-other"
-      : myInstanceStateOf({
-          ...progressOf(
-            row.aspect_count,
-            row.has_counterparty,
-            row.initiator_answered,
-            row.counterparty_answered,
-          ),
-          viewerRole,
-        });
+      : myInstanceStateOf({ ...progress, viewerRole });
 
   // Scored means complete, and only then are the session's opinions turned into a figure. A
   // session that is not complete never reaches `meanGapOf()`: the blind rule is enforced by
@@ -709,6 +734,10 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
           session.hasCounterparty,
           session.initiatorAnswered,
           session.counterpartyAnswered,
+          // A past session completed only if both seats accepted it (#R2): the count follows the
+          // same rule as the latest session, not a weaker one.
+          session.initiatorAccepted,
+          session.counterpartyAccepted,
         ),
       ) === "complete",
   ).length;
@@ -723,16 +752,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     viewerRole,
     initiatorName: row.initiator_name,
     counterpartyName: row.counterparty_name,
-    stage: relationshipStage(
-      instanceStatusOf(
-        progressOf(
-          row.aspect_count,
-          row.has_counterparty,
-          row.initiator_answered,
-          row.counterparty_answered,
-        ),
-      ),
-    ),
+    stage: relationshipStage(status),
     state,
     unlock: viewerRole === "coach" ? "seen" : unlockMarkOf(state, row.viewer_unlock_seen_at),
     inviteState:

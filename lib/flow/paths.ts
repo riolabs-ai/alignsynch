@@ -105,6 +105,24 @@ export function acceptPath(instanceRecordId: string): string {
 }
 
 /**
+ * The accept endpoint — a form post, so a refused acceptance is a status code and not a banner.
+ *
+ * **Plural, and for the same mechanical reason `/answers` is.** Next refuses a `page.tsx` and a
+ * `route.ts` in one segment (it loads both as parallel pages for one URL and throws), so the
+ * POST cannot live at `acceptPath()`. The pair reads as the flow's other pair — `/answer` renders
+ * the sheet, `/answers` writes it — and the two function names sit side by side so the difference
+ * is read rather than remembered (#R2).
+ */
+export function acceptsPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/accepts`;
+}
+
+/** `/assessment/instances/[instanceId]/report` — the report the second acceptance opens. */
+export function reportPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/report`;
+}
+
+/**
  * `/assessment/templates/[templateId]/create` — the create step (#409, R1-E).
  *
  * A child of the template's own address rather than a sibling, so the template being copied is

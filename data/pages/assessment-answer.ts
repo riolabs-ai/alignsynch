@@ -12,8 +12,9 @@
  *              band, and the note beside the submit that says a submit is a whole sheet.
  *   `rules`    the two facts that do not change from visit to visit: the Mode is fixed at
  *              creation, and no party picks the Setting here.
- *   `frozen`   the read-only state: both parties have answered every Aspect, so this page shows
- *              the viewer their own sheet and offers no control that could only be refused.
+ *   `frozen`   the read-only state: the viewer has accepted this session (or both have), so this
+ *              page shows the viewer their own sheet and offers no control that could only be
+ *              refused.
  *   `coach`    a coach membership reads the relationship and has no answers to give, so the page
  *              draws the badge and the reason instead of a sheet.
  *
@@ -71,7 +72,7 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "frozen",
       heading: "This sheet is the record",
-      body: "Both parties have answered every Aspect, so the answers are sealed. What you marked is below, exactly as it was stored.",
+      body: "You have accepted this session, so your answers are sealed. What you marked is below, exactly as it was stored.",
       items: [
         {
           id: "frozen-note",

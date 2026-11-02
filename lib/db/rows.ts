@@ -100,6 +100,12 @@ export interface PartyRow {
    * `0011_console_columns.sql`, including the seeded ones that did answer.
    */
   readonly submitted_at?: Date | string | null;
+  /**
+   * When this seat **accepted** the session, or `NULL`/absent for "not yet" (#R2,
+   * `0016_party_acceptance.sql`). Acceptance is the completion hinge: `instanceStatusOf()` reads
+   * this column and the opinion rows together, so `complete` is never a stored status.
+   */
+  readonly accepted_at?: Date | string | null;
 }
 
 /**
@@ -353,6 +359,11 @@ export function assessmentInstanceFromRows(
       ...(party.submitted_at === null || party.submitted_at === undefined
         ? {}
         : { submittedAt: isoInstantOf(party.submitted_at) }),
+      // The hinge, mapped the same way (#R2): absent and `NULL` both mean "has not accepted", and
+      // both are left out so a parsed party is deep-equal to a fixture that never mentions it.
+      ...(party.accepted_at === null || party.accepted_at === undefined
+        ? {}
+        : { acceptedAt: isoInstantOf(party.accepted_at) }),
       opinions: orderedItems(rows.items).map((item) => ({
         itemId: item.item_id,
         opinions: opinionsCandidateOf(

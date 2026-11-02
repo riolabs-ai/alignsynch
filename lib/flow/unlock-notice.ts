@@ -1,16 +1,19 @@
 /**
- * The unlock notice (#258) — the one email the other party gets when a submit completes an instance.
+ * The unlock notice (#258) — the one email the other party gets when the second acceptance completes
+ * an instance.
  *
  * #252 made a complete instance *visible* on `/assessment/instances` ("complete since you last
- * looked"). Visible only reaches a person who opens the list, and the party who answered first may
- * not come back for days. This module is the other half: when the second sheet lands, the person
- * who is not looking is told once, and the in-app marker stays the record of whether they read it.
+ * looked"). Visible only reaches a person who opens the list, and the party who accepted first may
+ * not come back for days. This module is the other half: when the second sheet **is accepted**, the
+ * person who is not looking is told once, and the in-app marker stays the record of whether they
+ * read it.
  *
- * **The transition is the trigger, and `submitAnswers` is what proves it.** A submit returns
- * `ok` with `status: "complete"` only on the write that filled the last missing answer: the
- * submit before it returns `answering`, and the submit after it is refused `frozen` by the row
- * lock. So the caller sends on `ok && complete`, and "never twice for one completion" is the
- * freeze's own consequence rather than a second flag this module would have to keep.
+ * **The transition is the trigger, and `acceptSession` is what proves it.** An acceptance returns
+ * `ok` with `completed: true` only on the write that made both seats accepted: the acceptance before
+ * it returns `false`, and the acceptance after it is refused `already-accepted` by the same row lock.
+ * So the caller sends on `ok && completed`, and "never twice for one completion" is the lock's own
+ * consequence rather than a second flag this module would have to keep. (Submission is not the
+ * hinge: both parties submitting leaves the report locked, so a submit cannot be the notice's event.)
  *
  * **The recipient is the other seat, never the submitter.** `otherRoleOf()` is the only place
  * that decides it and it is total over the two roles, so there is no branch where a party could
@@ -102,11 +105,11 @@ export function unlockNoticeMessage(fields: UnlockNoticeFields): UnlockNoticeMes
 export type UnlockNoticeOutcome = MailOutcome | "no-such-instance" | "no-address";
 
 /**
- * Tell the other party that a submit completed the instance, or say why no message went out.
+ * Tell the other party that an acceptance completed the instance, or say why no message went out.
  *
- * Called by the answers route **after** `submitAnswers` has committed and only when its result is
- * `{ ok: true, status: "complete" }`. The row is already stored by then, so nothing here can cost
- * a person their answer; the only thing at stake is whether a mailbox hears about it.
+ * Called by the accepts route **after** `acceptSession` has committed and only when its result is
+ * `{ ok: true, completed: true }`. The row is already stored by then, so nothing here can cost
+ * a person their acceptance; the only thing at stake is whether a mailbox hears about it.
  */
 export async function sendUnlockNotice(input: {
   readonly instanceRecordId: string;

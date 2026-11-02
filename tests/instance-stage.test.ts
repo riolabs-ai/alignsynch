@@ -67,6 +67,18 @@ const bothParties: PartyRow[] = [
   { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
 ];
 
+/**
+ * The same two rows with both seats' acceptance recorded (#R2).
+ *
+ * `complete` is the session both parties **accepted**, so the fixture that is meant to read as
+ * finished carries the two instants. The other fixtures derive their stage from the answer counts
+ * alone and never reach `complete`, so they keep the unaccepted rows.
+ */
+const acceptedParties: PartyRow[] = bothParties.map((party) => ({
+  ...party,
+  accepted_at: new Date("2026-10-30T12:00:00.000Z"),
+}));
+
 interface Case {
   readonly parties: PartyRow[];
   readonly opinions: OpinionRow[];
@@ -113,7 +125,7 @@ const halfAnswered = rowsWith({
 });
 
 const complete = rowsWith({
-  parties: bothParties,
+  parties: acceptedParties,
   opinions: [...answeredBy("initiator"), ...answeredBy("counterparty", 2, 5)],
   counts: { initiator: items.length, counterparty: items.length },
 });
@@ -199,7 +211,7 @@ describe("the rendered stage sentence", () => {
     expect(html).toContain("Connected — Rowan still to answer.");
   });
 
-  it("says Sharing once both have submitted, and leaves Aligned to the verdict", () => {
+  it("says Sharing once both have accepted, and leaves Aligned to the verdict", () => {
     const html = render({ rows: complete });
     expect(html).toContain('data-stage="sharing"');
     expect(html).toContain("Sharing — the report is open to both of you.");

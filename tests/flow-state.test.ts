@@ -1,13 +1,14 @@
 /**
- * The flow's rules, without a database (#146).
+ * The flow's rules, without a database (#146, #R2).
  *
  * Four claims, each one a sentence from the issue:
  *
  *   * the status is derived from counts — `awaiting_counterparty`, `answering`, `complete`,
- *     and a copy with no Aspects is never `complete`;
- *   * before both parties submit, a viewer may read only their own role (`visibleRoles`);
- *   * a submit is refused after the freeze, and a sheet that skips an Aspect or carries a
- *     score outside 1..5 is refused with the schema's own message;
+ *     where `complete` needs every Aspect answered **by both** and **both seats accepted**
+ *     (#R2 made acceptance the hinge); a copy with no Aspects is never `complete`;
+ *   * before both parties accept, a viewer may read only their own role (`visibleRoles`);
+ *   * a submit is refused once the submitting party has accepted, and a sheet that skips an
+ *     Aspect or carries a score outside 1..5 is refused with the schema's own message;
  *   * a token is 43 base64url characters, is stored only as a SHA-256 hash, and an invite
  *     expires seven days after it is minted.
  *
@@ -26,6 +27,8 @@ import {
   tokenIsWellFormed,
 } from "@/lib/flow/tokens";
 import {
+  acceptedBy,
+  acceptedCount,
   answersRemaining,
   instanceStatusOf,
   maySubmit,
@@ -40,12 +43,18 @@ import { invitationMessage, invitationLink, sendInvitation } from "@/lib/flow/em
 
 const aspects = ["aspect-time-together", "aspect-money"];
 
+/**
+ * A finished session by default: every Aspect answered **and both seats accepted**, which is
+ * what `complete` means since #R2. Each case overrides only the count it is about.
+ */
 function progress(overrides: Partial<InstanceProgress> = {}): InstanceProgress {
   return {
     aspectCount: 2,
     hasCounterparty: true,
     initiatorAnswered: 2,
     counterpartyAnswered: 2,
+    initiatorAccepted: 1,
+    counterpartyAccepted: 1,
     ...overrides,
   };
 }
@@ -62,7 +71,7 @@ describe("the instance's status is derived, never stored", () => {
     expect(instanceStatusOf(progress({ initiatorAnswered: 1 }))).toBe("answering");
   });
 
-  it("is complete only when both parties answered every Aspect", () => {
+  it("is complete only when both parties answered every Aspect and both accepted", () => {
     expect(instanceStatusOf(progress())).toBe("complete");
     expect(answersRemaining(progress())).toEqual({ initiator: 0, counterparty: 0 });
   });
@@ -74,6 +83,8 @@ describe("the instance's status is derived, never stored", () => {
         hasCounterparty: true,
         initiatorAnswered: 0,
         counterpartyAnswered: 0,
+        initiatorAccepted: 1,
+        counterpartyAccepted: 1,
       }),
     ).toBe("answering");
   });
@@ -87,7 +98,47 @@ describe("the instance's status is derived, never stored", () => {
   });
 });
 
-describe("blind until both submit", () => {
+/**
+ * The hinge (#R2): **acceptance**, not submission, is what completes a session.
+ *
+ * Both directions are asserted, because they are two different mistakes. A session whose sheets
+ * are complete but whose acceptances are not is the ordinary review window — it must stay
+ * `answering`, so the report stays locked. A session both parties accepted but did not finish
+ * answering is impossible by the store's own rules (`acceptSession` refuses an incomplete sheet)
+ * and is refused here anyway: the status is derived from counts, so a count set that contradicts
+ * itself must not be able to unlock a report.
+ */
+describe("acceptance is the completion hinge", () => {
+  it("keeps a fully answered session in `answering` until both accept", () => {
+    expect(instanceStatusOf(progress({ initiatorAccepted: 0, counterpartyAccepted: 0 }))).toBe(
+      "answering",
+    );
+    expect(instanceStatusOf(progress({ initiatorAccepted: 1, counterpartyAccepted: 0 }))).toBe(
+      "answering",
+    );
+    expect(instanceStatusOf(progress({ initiatorAccepted: 0, counterpartyAccepted: 1 }))).toBe(
+      "answering",
+    );
+  });
+
+  it("never completes on acceptance alone", () => {
+    expect(instanceStatusOf(progress({ counterpartyAnswered: 1 }))).toBe("answering");
+  });
+
+  it("names which seat has accepted, and counts them", () => {
+    const half = progress({ initiatorAccepted: 1, counterpartyAccepted: 0 });
+    expect(acceptedBy(half, "initiator")).toBe(true);
+    expect(acceptedBy(half, "counterparty")).toBe(false);
+    expect(acceptedCount(half)).toBe(1);
+    expect(acceptedCount(progress())).toBe(2);
+    expect(acceptedCount(progress({ initiatorAccepted: 0, counterpartyAccepted: 0 }))).toBe(0);
+  });
+});
+
+// The shape of `visibleRoles()` did not change with the hinge — only what `status` means did — so
+// these assertions stand exactly as they were, and they are the proof that the report's lock still
+// follows one function.
+describe("blind until both accept", () => {
   it("lets a viewer read only their own role before the status is complete", () => {
     expect(visibleRoles("initiator", "answering")).toEqual(["initiator"]);
     expect(visibleRoles("counterparty", "answering")).toEqual(["counterparty"]);
@@ -109,14 +160,18 @@ describe("blind until both submit", () => {
   });
 });
 
-describe("answers freeze when both parties have submitted", () => {
-  it("accepts a submit while the status is not complete", () => {
-    expect(maySubmit("answering")).toBe(true);
-    expect(maySubmit("awaiting_counterparty")).toBe(true);
+describe("answers freeze when the submitting party has accepted", () => {
+  it("accepts a submit while the status is not complete and this party has not accepted", () => {
+    expect(maySubmit("answering", false)).toBe(true);
+    expect(maySubmit("awaiting_counterparty", false)).toBe(true);
+  });
+
+  it("refuses a submit once this party has accepted — the edit-before-accept window closed", () => {
+    expect(maySubmit("answering", true)).toBe(false);
   });
 
   it("refuses a submit at complete", () => {
-    expect(maySubmit("complete")).toBe(false);
+    expect(maySubmit("complete", true)).toBe(false);
   });
 });
 
