@@ -28,6 +28,13 @@
  *   3. **Nothing here says how many relationships have responses.** The page names the worked
  *      example ({title}, answered by {left} and {right}) and stops; a count of "responses" would
  *      be a product claim this fixture set is not making.
+ *   4. **The scope band's numbers are counted, never typed.** `relationshipScope()` reads the
+ *      purchasable rows of `data/v1/relationship-types.ts` and returns the type count, the realm
+ *      count and each realm's share; the fixture's heading is `"{types} relationship types,
+ *      across {realms} realms."` and the projection *refuses* a heading without both
+ *      placeholders, so a spelled-out count cannot survive a fixture change. That refusal is
+ *      the point: a typed "twenty-seven" is a number nobody re-measures, and this page is sold
+ *      on the claim that every type it lists is one the product can run.
  *
  * Free of React and Next so the model can be rendered in a node test, and so the component that
  * draws it holds no words and no ids — `components/home/alignment-home.tsx` receives this
@@ -35,9 +42,18 @@
  */
 import type { Assessment, AssessmentInstance } from "@/content/assessment";
 import type { Brand } from "@/content/brand";
-import type { PageCopy } from "@/content/pages";
+import type { PageCopy, PageCopySection } from "@/content/pages";
+import {
+  REALMS,
+  isPurchasable,
+  purchasableRelationshipTypes,
+  type RelationshipType,
+} from "@/data/v1/relationship-types";
 import { brandMark, type BrandMark } from "@/lib/brand-mark";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+
+/** The item id of the coach seat. The one seat this page is sold on, painted with the accent. */
+const COACH_SEAT = "seat-coach";
 
 /** One of the two questions the product is built on, as both parties are asked it. */
 export interface AlignmentQuestion {
@@ -71,6 +87,32 @@ export interface AlignmentFamily {
   readonly types: readonly AlignmentTemplate[];
 }
 
+/**
+ * One titled card on the page — a step of the practice cycle, or a seat on the relationship.
+ * The body is required, unlike a `PageCopyItem`'s: a card with a title and no paragraph is a
+ * hole in the argument, so `cardsOf()` refuses one instead of drawing it.
+ */
+export interface AlignmentCard {
+  readonly id: string;
+  readonly label: string;
+  readonly body: string;
+  /** Painted with the accent: the coach seat, the one this page is sold on. */
+  readonly emphasis?: boolean;
+}
+
+/** One realm, and how many purchasable types it holds. */
+export interface AlignmentRealmCount {
+  readonly realm: string;
+  readonly count: number;
+}
+
+/** The scope band's numbers — every one of them counted, none of them typed. */
+export interface AlignmentScope {
+  readonly types: number;
+  readonly realms: number;
+  readonly byRealm: readonly AlignmentRealmCount[];
+}
+
 /** Everything `components/home/alignment-home.tsx` prints, already joined. */
 export interface AlignmentHomeModel {
   readonly brand: {
@@ -85,8 +127,15 @@ export interface AlignmentHomeModel {
     readonly heading: string;
     readonly subtitle?: string;
     readonly cta?: { readonly label: string; readonly href: string };
+    /** Under the CTA: bought once, and which seat the reader is named to. */
+    readonly fineprint?: string;
   };
   readonly sides: { readonly you: string; readonly them: string };
+  readonly practice: {
+    readonly heading?: string;
+    readonly body?: string;
+    readonly items: readonly AlignmentCard[];
+  };
   readonly questions: {
     readonly heading?: string;
     readonly body?: string;
@@ -98,9 +147,20 @@ export interface AlignmentHomeModel {
     readonly items: readonly AlignmentTemplate[];
   };
   readonly families: {
+    /** The filled heading: `"Twenty-seven relationship types, across seven realms."` */
     readonly heading?: string;
     readonly body?: string;
     readonly items: readonly AlignmentFamily[];
+    readonly scope: AlignmentScope;
+  };
+  readonly seats: {
+    readonly heading?: string;
+    readonly body?: string;
+    readonly items: readonly AlignmentCard[];
+  };
+  readonly boundary: {
+    readonly heading?: string;
+    readonly body?: string;
   };
 }
 
@@ -142,12 +202,127 @@ function assessmentHref(instance: AssessmentInstance): string {
 }
 
 /**
+ * The scope band's numbers, counted from the relationship taxonomy.
+ *
+ * "Purchasable" is `isPurchasable()` — the flag **and** the exclusion list — not the raw
+ * `purchasable` boolean, because the shop and the catalogue read the same gate and a page that
+ * counted differently would promise a type the product will not sell. Realms keep the order
+ * `REALMS` declares (the order the catalogue groups them in) and a realm with no purchasable
+ * type is dropped rather than drawn as a zero.
+ */
+export function relationshipScope(types: readonly RelationshipType[]): AlignmentScope {
+  const offered = types.filter(isPurchasable);
+  const byRealm = REALMS.map((realm) => ({
+    realm,
+    count: offered.filter((type) => type.realm === realm).length,
+  })).filter((group) => group.count > 0);
+  return { types: offered.length, realms: byRealm.length, byRealm };
+}
+
+const COUNT_UNITS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+] as const;
+
+const COUNT_TENS = [
+  "",
+  "",
+  "twenty",
+  "thirty",
+  "forty",
+  "fifty",
+  "sixty",
+  "seventy",
+  "eighty",
+  "ninety",
+] as const;
+
+/**
+ * A count as a word — `27` is `"twenty-seven"`.
+ *
+ * Lowercase, because the word lands mid-sentence anywhere but the start; the scope band's
+ * heading begins with it, so `alignmentHome()` capitalises the first letter of the *filled*
+ * sentence rather than of the number (a `countWord()` that always led with a capital would print
+ * "across Seven realms", which is what the first cut of this page did).
+ *
+ * Spelling is necessary because the band's sentence is prose ("Twenty-seven … seven realms"),
+ * and spelling it in the fixture would be typing the very count the band exists to derive. Past
+ * ninety-nine the digits are used: they are still the fixture's number, and the alternative is a
+ * build that dies when the catalogue grows.
+ */
+export function countWord(count: number): string {
+  if (!Number.isInteger(count) || count < 0) {
+    throw new Error(`countWord: ${count} is not a count — the scope band counts rows`);
+  }
+  if (count < 20) {
+    return COUNT_UNITS[count] ?? String(count);
+  }
+  if (count < 100) {
+    const tens = COUNT_TENS[Math.floor(count / 10)] ?? "";
+    const unit = count % 10;
+    return unit === 0 ? tens : `${tens}-${COUNT_UNITS[unit] ?? String(unit)}`;
+  }
+  return String(count);
+}
+
+/**
+ * Capitalise a sentence's first letter — the scope band's heading, whose first word is a filled
+ * count. It is applied to the *filled* string, never to the count, so the second count in the
+ * same sentence stays lowercase.
+ */
+function sentenceCase(sentence: string): string {
+  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}`;
+}
+
+/**
+ * The cards a band renders — every item of it, with the body it must carry.
+ *
+ * A `PageCopyItem`'s `body` is optional because a label on its own is a legitimate row (a tab, a
+ * stat caption). A card in the cycle or the seat band is a title and a paragraph, and the
+ * paragraph is the argument; an item without one fails here rather than rendering a heading over
+ * nothing.
+ */
+function cardsOf(section: PageCopySection): AlignmentCard[] {
+  return (section.items ?? []).map((item) => {
+    if (item.body === undefined) {
+      throw new Error(
+        `alignmentHome: item "${item.id}" in section "${section.id}" has no body — that band renders titled cards, and a card without its paragraph renders blank`,
+      );
+    }
+    return { id: item.id, label: item.label, body: item.body };
+  });
+}
+
+/**
  * The page, joined.
  *
  * `featuredSlug` is the relationship the hero leads with, and it is required to resolve: a
  * front page whose CTA points at an instance the fixture does not hold is the exact failure
  * `notFound()` hides (`/assessment/[slug]` renders nothing and the build stays green), so this
  * throws while `/` is prerendered and stops `next build` instead.
+ *
+ * `relationshipTypes` is the taxonomy the scope band counts. It defaults to the purchasable
+ * gate in `data/v1/relationship-types.ts` — the page cannot be handed a list by accident — and
+ * is a parameter so a test can prove the heading follows the fixture instead of agreeing with a
+ * constant.
  */
 export function alignmentHome(
   brand: Brand,
@@ -155,6 +330,7 @@ export function alignmentHome(
   templates: readonly Assessment[],
   instances: readonly AssessmentInstance[],
   featuredSlug: string,
+  relationshipTypes: readonly RelationshipType[] = purchasableRelationshipTypes,
 ): AlignmentHomeModel {
   const featured = instances.find((instance) => instance.slug === featuredSlug);
   if (featured === undefined) {
@@ -170,9 +346,30 @@ export function alignmentHome(
     );
   }
 
+  const practiceSection = sectionOf(copy, "practice");
   const questionsSection = sectionOf(copy, "questions");
   const templatesSection = sectionOf(copy, "templates");
   const familiesSection = sectionOf(copy, "families");
+  const seatsSection = sectionOf(copy, "seats");
+  const boundarySection = sectionOf(copy, "boundary");
+
+  /**
+   * The scope band's heading must be a count, and this is where "must" is enforced. A heading
+   * that spells its number ("Twenty-seven relationship types …") passes every other check in the
+   * tree and then lies the first time a type is added; refusing it here is what makes the
+   * derivation the only way to write that sentence.
+   */
+  const familiesHeading = familiesSection.heading;
+  if (
+    familiesHeading === undefined ||
+    !familiesHeading.includes("{types}") ||
+    !familiesHeading.includes("{realms}")
+  ) {
+    throw new Error(
+      `alignmentHome: section "families" in data/pages/home-alignsynch.ts must spell its heading with {types} and {realms} — the counts come from data/v1/relationship-types.ts, and a typed number is a number nobody re-measures (have: ${familiesHeading ?? "no heading"})`,
+    );
+  }
+  const scope = relationshipScope(relationshipTypes);
 
   const questions: AlignmentQuestion[] = (questionsSection.items ?? []).map((item) => ({
     you: item.label,
@@ -256,10 +453,16 @@ export function alignmentHome(
       heading: copy.heading,
       ...(copy.subtitle === undefined ? {} : { subtitle: copy.subtitle }),
       ...(copy.cta === undefined ? {} : { cta: { label: copy.cta.label, href: copy.cta.href } }),
+      fineprint: pageItemOf(copy, "hero-fineprint").label,
     },
     sides: {
       you: pageItemOf(copy, "side-you").label,
       them: pageItemOf(copy, "side-them").label,
+    },
+    practice: {
+      ...(practiceSection.heading === undefined ? {} : { heading: practiceSection.heading }),
+      ...(practiceSection.body === undefined ? {} : { body: practiceSection.body }),
+      items: cardsOf(practiceSection),
     },
     questions: {
       ...(questionsSection.heading === undefined ? {} : { heading: questionsSection.heading }),
@@ -272,9 +475,32 @@ export function alignmentHome(
       items: rows,
     },
     families: {
-      ...(familiesSection.heading === undefined ? {} : { heading: familiesSection.heading }),
+      /**
+       * The filled heading, capitalised at the sentence's first letter: the fixture begins it
+       * with the count (`"{types} relationship types, …"`), and the count arrives lowercase so
+       * the *second* placeholder does not render as "across Seven realms".
+       */
+      heading: sentenceCase(
+        fillLabel(familiesHeading, {
+          types: countWord(scope.types),
+          realms: countWord(scope.realms),
+        }),
+      ),
       ...(familiesSection.body === undefined ? {} : { body: familiesSection.body }),
       items: families,
+      scope,
+    },
+    seats: {
+      ...(seatsSection.heading === undefined ? {} : { heading: seatsSection.heading }),
+      ...(seatsSection.body === undefined ? {} : { body: seatsSection.body }),
+      items: cardsOf(seatsSection).map((seat) => ({
+        ...seat,
+        ...(seat.id === COACH_SEAT ? { emphasis: true } : {}),
+      })),
+    },
+    boundary: {
+      ...(boundarySection.heading === undefined ? {} : { heading: boundarySection.heading }),
+      ...(boundarySection.body === undefined ? {} : { body: boundarySection.body }),
     },
   };
 }

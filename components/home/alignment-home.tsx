@@ -1,6 +1,6 @@
-// template-ancestor: components/ui/card.tsx   (variation: four hand-rolled bands — heading, copy and image — over the alignment brand's own record, no cards and no quiz shelves)
+// template-ancestor: components/ui/card.tsx   (variation: hand-rolled bands — heading, copy and a grid of cards — over the alignment brand's own record, no quiz shelves and no shadcn Card, because every band's words arrive pre-joined from one model)
 
-import type { AlignmentHomeModel, AlignmentTemplate } from "@/lib/alignment-home";
+import type { AlignmentCard, AlignmentHomeModel, AlignmentTemplate } from "@/lib/alignment-home";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,19 +9,25 @@ import Link from "next/link";
  *
  * This file holds no words. Every string it prints arrives in the model
  * (`lib/alignment-home.ts`), which joins `data/pages/home-alignsynch.ts` with
- * `data/assessments.ts`, and every colour and the mark arrive on the same object, read from
- * `data/brand.ts` — so a skin is a record, and this component cannot pick a palette or spell a
- * product name. `data:check` E23 counts the leaf literals in `components/home/**` and holds
- * them at 0; a sentence or a label typed here is a red build, not a review comment.
+ * `data/assessments.ts` and counts `data/v1/relationship-types.ts`, and every colour and the
+ * mark arrive on the same object, read from `data/brand.ts` — so a skin is a record, and this
+ * component cannot pick a palette or spell a product name. `data:check` E23 counts the leaf
+ * literals in `components/home/**` and holds them at 0; a sentence or a label typed here is a
+ * red build, not a review comment.
  *
- * The three anchor ids on the bands below (`questions`, `templates`, `families`) are the one
- * thing it does name, because an anchor target is markup rather than copy (E23's
- * `TECHNICAL_ATTRIBUTES`): the shell's AlignSynch menu links to `/#templates` and
- * `/#questions` (issue #156), and `tests/nav-brand.test.ts` holds every `/#…` href to an `id`
- * this page emits, so a band cannot be renamed out from under a link.
+ * The six anchor ids on the bands below (`practice`, `questions`, `templates`, `families`,
+ * `seats`, `boundary`) are the one thing it does name, because an anchor target is markup
+ * rather than copy (E23's `TECHNICAL_ATTRIBUTES`): the shell's AlignSynch menu links to
+ * `/#templates` and `/#questions` (issue #156), and `tests/nav-brand.test.ts` holds every
+ * `/#…` href to an `id` this page emits, so a band cannot be renamed out from under a link.
  *
- * The page is the product's argument in three bands, in this order: the two questions both
- * parties answer, the four templates that ask them, and the two families those templates cover.
+ * The order is the argument. The page leads with the practice — the cycle of Create, Invite,
+ * Run — because that is what a practitioner buys; the two questions, the templates and the
+ * scope are the proof underneath it (the Gap is real, and the catalogue is finite); the seats
+ * band says who the reader is on the relationship; and the last band states what the page
+ * refuses to claim. Nothing here counts clients, money or praise, and the component has no
+ * shape to render one: the model carries no such field.
+ *
  * A template links to its relationship only when one answered it — the row that nobody answered
  * carries a note instead, because `/assessment/[slug]` renders an instance and a link to a
  * template with no instance is a 404 dressed as a door.
@@ -78,6 +84,11 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
                 {model.hero.cta.label}
               </Link>
             )}
+            {model.hero.fineprint && (
+              <p className="max-w-xl text-sm text-gray-500 dark:text-gray-400">
+                {model.hero.fineprint}
+              </p>
+            )}
           </div>
           <div className="grid shrink-0 grid-cols-2 gap-3">
             <div
@@ -100,6 +111,43 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* The cycle a practice runs: create once, invite both sides, run the session. */}
+      <section
+        id="practice"
+        className="scroll-mt-24 space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800"
+      >
+        {model.practice.heading && (
+          <h2 className="text-2xl font-bold tracking-tight">{model.practice.heading}</h2>
+        )}
+        {model.practice.body && (
+          <p className="max-w-3xl text-sm text-gray-600 dark:text-gray-300">
+            {model.practice.body}
+          </p>
+        )}
+        <ol className="grid gap-4 md:grid-cols-3">
+          {model.practice.items.map((step, index) => (
+            <li
+              className="rounded-lg border border-gray-200 p-4 dark:border-gray-800"
+              key={step.id}
+            >
+              <span
+                className="grid h-6 w-6 place-items-center rounded-full text-xs font-bold"
+                style={{
+                  backgroundColor: model.brand.accent,
+                  color: model.brand.accentForeground,
+                }}
+              >
+                {index + 1}
+              </span>
+              <h3 className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {step.label}
+              </h3>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{step.body}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* The `#questions` band: "How it works" in the shell's nav points here. */}
@@ -213,6 +261,11 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         </ul>
       </section>
 
+      {/*
+        The scope band. The heading and the realm counts are the fixture's numbers, counted by
+        `lib/alignment-home.ts` — nothing here could round one or add a "+": the component has no
+        string to add and no arithmetic of its own.
+      */}
       <section
         id="families"
         className="scroll-mt-24 space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800"
@@ -225,6 +278,19 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
             {model.families.body}
           </p>
         )}
+        <ul className="flex flex-wrap gap-2">
+          {model.families.scope.byRealm.map((realm) => (
+            <li
+              className="rounded-full border border-gray-200 px-3 py-1 text-sm dark:border-gray-800"
+              key={realm.realm}
+            >
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{realm.realm}</span>
+              <span className="ml-2 font-semibold text-gray-500 dark:text-gray-400">
+                {realm.count}
+              </span>
+            </li>
+          ))}
+        </ul>
         <div className="grid gap-4 md:grid-cols-2">
           {model.families.items.map((family) => (
             <article
@@ -257,6 +323,51 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
             </article>
           ))}
         </div>
+      </section>
+
+      {/* The three seats on a relationship. The coach is the reader's, so it carries the accent. */}
+      <section
+        id="seats"
+        className="scroll-mt-24 space-y-4 rounded-xl border border-gray-200 p-6 dark:border-gray-800"
+      >
+        {model.seats.heading && (
+          <h2 className="text-2xl font-bold tracking-tight">{model.seats.heading}</h2>
+        )}
+        {model.seats.body && (
+          <p className="max-w-3xl text-sm text-gray-600 dark:text-gray-300">{model.seats.body}</p>
+        )}
+        <div className="grid gap-4 md:grid-cols-3">
+          {model.seats.items.map((seat: AlignmentCard) => (
+            <article
+              className="rounded-lg border border-gray-200 border-l-4 p-4 dark:border-gray-800"
+              data-seat={seat.id}
+              key={seat.id}
+              style={{
+                borderLeftColor: seat.emphasis ? model.brand.accent : model.brand.primary,
+              }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                {seat.label}
+              </p>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{seat.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* What the page refuses to claim — the honesty the rest of the copy is held to. */}
+      <section
+        className="scroll-mt-24 rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-gray-900"
+        id="boundary"
+      >
+        {model.boundary.heading && (
+          <h2 className="text-lg font-semibold tracking-tight">{model.boundary.heading}</h2>
+        )}
+        {model.boundary.body && (
+          <p className="mt-2 max-w-3xl text-sm text-gray-600 dark:text-gray-300">
+            {model.boundary.body}
+          </p>
+        )}
       </section>
     </div>
   );
