@@ -614,13 +614,64 @@ export function shellCopy(brand: Brand): PageCopy {
         ],
       },
       /**
-       * No mailing-list band (issue #272). The footer carried a box that took an address and a
-       * button that did nothing with it: no handler, and no marketing mail exists in this app
-       * (an invitation and an unlock notice are the only messages it sends). A box that promises
-       * a subscription on every page of both builds is a claim about a feature nobody can reach,
-       * so the band, its two sections and the projection that chose between them are gone. It
-       * comes back with the sender behind it.
+       * The footer's news band — the second life of the box #272 removed.
+       *
+       * #272 deleted it because it took an address and the button had no handler: a promise of
+       * delivery with no sender behind it. The band is back because the sender is real now —
+       * `app/api/news/subscribe/route.ts` writes the row and `lib/news/message.ts` sends through
+       * the one transport in `lib/flow/email.ts` — and it lives in the *footer* rather than on a
+       * band of `/`, so it appears on every marketing page and on the three product pages that
+       * mount the same footer.
+       *
+       * Six of these items are the six states the route can answer with, and the mapping is
+       * one-to-one (`components/layout/news-signup.tsx`): a person is never told their address
+       * was kept when it was not, and never told it was lost when it was kept. `duplicate` is a
+       * sentence about nothing having changed, because a second submit sending a second
+       * confirmation would be a spam loop with a friendly face.
+       *
+       * **The body claims no cadence.** "No schedule" is the phrase, because nobody has
+       * committed to one and a fixture is not the place to invent one. The two `confirm-*` items
+       * are the email itself: what the person asked for, that this note confirms it, and how to
+       * stop — the only two facts a subscription note owes a reader.
        */
+      {
+        id: "footer-news",
+        heading: "Product news",
+        body: "A note when we ship something that changes how the product works. No schedule, and every message says how to stop.",
+        items: [
+          { id: "field-label", label: "Email address" },
+          { id: "placeholder", label: "you@example.com" },
+          { id: "submit", label: "Sign up" },
+          { id: "pending", label: "Signing up…" },
+          { id: "back", label: "Back to the page" },
+          {
+            id: "subscribed",
+            label: "You're on the list. A confirmation is on its way to that address.",
+          },
+          {
+            id: "duplicate",
+            label:
+              "That address was already on the list — nothing changed, and nothing was sent again.",
+          },
+          {
+            id: "send-failed",
+            label:
+              "You're on the list. We couldn't send the confirmation, so there may be nothing in your inbox.",
+          },
+          { id: "invalid", label: "That doesn't look like an email address. Nothing was saved." },
+          {
+            id: "storage-failed",
+            label: "We couldn't save that just now. Nothing was stored — try again in a moment.",
+          },
+          { id: "confirm-subject", label: "You're on the {brand} product news list" },
+          {
+            id: "confirm-body",
+            label:
+              "You asked for product news from {brand}, so the address {email} is on the list.\n\nWe send a note when something in the product changes, and nothing on a schedule. To stop receiving them, reply to this message or write to {support} and the address is removed.\n\nThis is the only message you will get until we ship something.",
+          },
+        ],
+      },
+
       {
         id: "footer-legal",
         items: [

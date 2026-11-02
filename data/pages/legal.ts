@@ -34,7 +34,9 @@
  *     breach notification / SCCs and DPAs / a numeric retention table — none of it is
  *     implemented or evidenced in this tree; the copy states what is true instead.
  *   Privacy "How we use" marketing-consent rows, payment-processor and OAuth-provider rows —
- *     no marketing email, no payments and no OAuth provider exist in this build.
+ *     no payments and no OAuth provider exist in this build, and the one email list there is
+ *     (the footer's product-news signup, §2.7) is described as the thing it is: an address, the
+ *     page it came from and the time, added only by the form itself.
  *
  * Shape — the same as `data/pages/assessment.ts`: one `zPageCopy.parse({ … })` per route, sections
  * with `id` / `heading` / `body`, and `items` (`{ id, label, body }`) for sub-clauses. Paragraphs
@@ -322,6 +324,11 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
             label: "2.6 What we do not collect",
             body: "The Service does not process payments, so we never collect payment card numbers, billing details or anything a payment provider would hold.",
           },
+          {
+            id: "news",
+            label: "2.7 Product news signup",
+            body: `The footer of the public pages carries a signup for product news. If you use it, we store the email address you typed, the path of the page you signed up from, and the time you did it — three fields, in our own database, and nothing else. There is no account behind it and it is not linked to one. The form is the only way onto that list; we do not add addresses to it from anywhere else.`,
+          },
         ],
       },
       {
@@ -345,8 +352,8 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           },
           {
             id: "no-marketing",
-            label: "We do not send marketing email",
-            body: "The only messages the Service sends are the two transactional ones above, and only when a deployment has a mail provider configured. There is no newsletter, no product announcements list, and no advertising.",
+            label: "Product news, only if you asked for it",
+            body: `The Service sends no advertising, no third-party marketing and no campaign email, and it never sells or shares an address. The one list it keeps is the product-news list described in Section 2.7, and an address reaches it only by being typed into the footer form. What we send is a note when something in the product changes — no fixed schedule, and no claim of one — and every message says how to stop. To leave the list, reply to any message from it or write to ${record.supportEmail}; the address is removed and no further announcement is sent to it.`,
           },
         ],
       },
@@ -393,8 +400,8 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           },
           {
             id: "resend",
-            label: "Resend (transactional email, when configured)",
-            body: "Sends the invitation email and the completion notice on deployments where a mail provider is configured. Receives the recipient's address and the message text.",
+            label: "Resend (email, when configured)",
+            body: "Sends the invitation email, the completion notice and the product-news confirmation on deployments where a mail provider is configured. Receives the recipient's address and the message text.",
           },
         ],
       },
