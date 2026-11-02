@@ -39,7 +39,7 @@ import { shellAccount, shellAccountOf } from "@/lib/auth/shell-account";
 
 /** The session as `currentUser()` hands it over: an id, an address and whatever name exists. */
 function session(email: string, name: string, userId = "user_01"): SessionUser {
-  return { userId, email, name };
+  return { userId, email, name, sessionId: null };
 }
 
 /** A saved `user_profile` row, all fields the model requires and nothing else. */

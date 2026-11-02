@@ -41,6 +41,7 @@ import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
 import { overviewPageCopy } from "./overview";
+import { resetCompletePageCopy, resetFormPageCopy, resetRequestPageCopy } from "./password-reset";
 import { pricingPageCopy } from "./pricing";
 import { profilePageCopy } from "./profile";
 import { registerPageCopy } from "./register";
@@ -72,6 +73,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
+  "/forgot-password": resetRequestPageCopy,
   "/invite/[token]": invitePageCopy,
   "/login": loginPageCopy,
   "/news": newsPageCopy,
@@ -80,6 +82,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/privacy": legalPages.privacy,
   "/profile/[username]": profilePageCopy,
   "/register": registerPageCopy,
+  "/reset/[token]": resetFormPageCopy,
+  "/reset/complete": resetCompletePageCopy,
   /**
    * `/search` is the one route that points at the shell's fixture (issue #156 follow-up).
    *

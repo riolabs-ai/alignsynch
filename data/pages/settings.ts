@@ -70,7 +70,7 @@ export const settingsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "account",
       heading: "Account",
-      body: "Your email and password belong to Neon's managed sign-in, so they cannot be changed from this page.",
+      body: "Your email belongs to Neon's managed sign-in, so it cannot be changed from this page.",
       items: [
         { id: "email", label: "Email" },
         { id: "email-readonly", label: "Read-only here" },
@@ -78,6 +78,46 @@ export const settingsPageCopy: PageCopy = zPageCopy.parse({
         { id: "signed-in-as", label: "Signed in as {name}" },
         { id: "sign-out", label: "Sign out" },
         { id: "signing-out", label: "Signing out…" },
+      ],
+    },
+    /**
+     * The password card (#password-reset).
+     *
+     * Two states, one mechanism: an account with no password is told what having none means and is
+     * offered *setting* one; an account with one is offered *changing* it. The sentences differ and
+     * the form does not, because both go through the same grant
+     * (`lib/auth/reset-set.ts::setPasswordFromSession`) — the session is the proof either way.
+     *
+     * `body-none` is the one sentence on this page that is the card's whole reason to exist: a
+     * Google-only account has no password and, without this, no way to get one.
+     *
+     * The `outcome-*` items are the closed set `ResetSetOutcome` can produce
+     * (`lib/auth/reset-token.ts`), whose ids the card resolves through `resetSetItemId`.
+     */
+    {
+      id: "password",
+      heading: "Password",
+      items: [
+        {
+          id: "body-none",
+          label:
+            "You sign in with Google, and this account has no password. Set one so you can still get in if Google is unavailable.",
+        },
+        { id: "body-set", label: "Change the password you sign in with." },
+        { id: "password", label: "New password" },
+        { id: "password-placeholder", label: "At least {min} characters" },
+        { id: "confirm", label: "Confirm new password" },
+        { id: "confirm-placeholder", label: "Type it again" },
+        { id: "hint", label: "At least {min} characters. Other devices are signed out." },
+        { id: "submit-none", label: "Set a password" },
+        { id: "submit-set", label: "Change password" },
+        { id: "pending", label: "Saving…" },
+        { id: "outcome-set", label: "Password saved. Other devices were signed out." },
+        { id: "outcome-short", label: "Use at least {min} characters." },
+        { id: "outcome-long", label: "Use at most {max} characters." },
+        { id: "outcome-mismatch", label: "The two passwords do not match." },
+        { id: "outcome-unavailable", label: "We couldn't reach the server. Try again." },
+        { id: "outcome-unauthorized", label: "Your session ended. Sign in again." },
       ],
     },
     {

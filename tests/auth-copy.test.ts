@@ -163,8 +163,12 @@ describe("the alignment build speaks its own product", () => {
   it("resolves the same section ids the view asks for", () => {
     // The view asks for `sign-in` and `stats` on both brands; the projection is what makes
     // that one component, so the ids are the contract rather than an implementation detail.
+    //
+    // 17 since #password-reset: the credential refusals were 16 and the forgotten-password link is
+    // the seventeenth. The count is a tripwire, not the rule — the ids themselves are resolved by
+    // `sectionOf`/`itemLabel` in the view, and E23 fails when one is missing.
     const copy = loginCopyFor(loginCopy(alignSynch), "alignsynch");
-    expect(sectionOf(copy, "sign-in").items).toHaveLength(16);
+    expect(sectionOf(copy, "sign-in").items).toHaveLength(17);
     expect(sectionOf(copy, "stats").items).toHaveLength(2);
   });
 });

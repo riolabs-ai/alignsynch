@@ -379,6 +379,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/forgot-password",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "Ask for a password reset link. Always answers the same sentence for a known and an unknown address; rate-limited per address and per requester; shows the link instead of claiming a send when the deployment has no RESEND_* configured.",
+    notes:
+      "The one surface that writes `public.password_reset` and, through the auth server's own /reset-password, the `credential` row a Google-only account has never had. Its message is the fourth sender in `lib/flow/email.ts` (#password-reset).",
+  },
+  {
+    kind: "route",
     surface: "/login",
     status: "live",
     templates: ["quizhub", "alignsynch"],
@@ -487,6 +497,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["quizhub", "alignsynch"],
     capability:
       "Create a real Neon Managed Auth account: personal details, then email, password and the terms agreement.",
+  },
+  {
+    kind: "route",
+    surface: "/reset/[token]",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "Spend a reset link: a single-use, hour-long token in the path, refused with its own sentence when it is expired, already used or not one this app issued. Setting the password revokes every session.",
+    notes:
+      "`Referrer-Policy: no-referrer` and `Cache-Control: no-store` come from `next.config.mjs` for `/reset/:path*`, and the page repeats the referrer rule as a meta tag. The token is stored only as a SHA-256 hash.",
+  },
+  {
+    kind: "route",
+    surface: "/reset/complete",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The success screen after a reset, at a token-free address: the password is set and every other device was signed out.",
+    notes:
+      "Separate route on purpose — a spent token should leave the address bar and the history. Static, with no session and no database read.",
   },
   {
     kind: "route",

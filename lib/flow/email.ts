@@ -36,7 +36,10 @@
  * at the browser. Both messages go through `sendMail()`, so there is one transport, one set of
  * outcomes (`sent` / `unset` / `failed`) and one place that decides what may reach a log line.
  */
+import { brand } from "@/data/brand";
 import { assessmentPageCopy } from "@/data/pages/assessment";
+import { resetRequestPageCopy } from "@/data/pages/password-reset";
+import { RESET_TTL_MINUTES } from "@/lib/auth/reset-token";
 import { instancePath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -124,6 +127,66 @@ export function invitationMessage(fields: InvitationFields): InvitationMessage {
 /** The three things a send can be: accepted, never attempted, or attempted and refused. */
 export type MailOutcome = "sent" | "unset" | "failed";
 
+/**
+ * The forgot-password link (#password-reset) — one token, one path, and the origin the app knows
+ * itself by.
+ *
+ * The token is in the **path**, not a query string, for the reason it is in the invitation's path:
+ * a path is what a mail client and a paste both keep intact, and a query string is where tracking
+ * parameters and rewriters live. The page that answers `/reset/<token>` sends
+ * `Referrer-Policy: no-referrer` (`next.config.mjs`), so the address cannot travel to a third party
+ * in a referer header, and the success screen is a *different* path (`/reset/complete`) so the token
+ * is gone from the address bar and from history the moment it has been spent.
+ */
+export function resetLink(token: string, base = baseUrl()): string {
+  return `${base.replace(/\/+$/, "")}/reset/${token}`;
+}
+
+export interface ResetFields {
+  readonly to: string;
+  readonly token: string;
+  readonly base?: string;
+}
+
+/**
+ * The reset message: subject, body and one link, from `data/pages/password-reset.ts`'s `email` band.
+ *
+ * The values are the brand's name, the link, and the token's lifetime in minutes — the last one read
+ * from `RESET_TTL_MINUTES` so the sentence and the expiry cannot disagree. The message carries no
+ * name, no account id and no word about how the account signs in otherwise: it may be read in a
+ * mailbox that is not the person's, and "your Google account" would be a fact about them.
+ */
+export function resetMessage(fields: ResetFields): InvitationMessage {
+  const band = sectionOf(resetRequestPageCopy, "email");
+  const link = resetLink(fields.token, fields.base);
+  const values = {
+    brand: brand.name,
+    link,
+    minutes: String(RESET_TTL_MINUTES),
+  };
+  return {
+    to: fields.to,
+    subject: fillLabel(itemLabel(band, "subject"), values),
+    text: fillLabel(itemLabel(band, "body"), values),
+    link,
+  };
+}
+
+/**
+ * Send the reset link, or say what kind of not-sent this was.
+ *
+ * The same three outcomes and the same rule as `sendInvitation`: a deployment with no
+ * `RESEND_API_KEY` returns `unset` and the page shows the link; a refused or unreachable provider
+ * returns `failed` and the page says the mail could not be sent. Neither is a throw, and neither is
+ * ever described to the reader as "sent".
+ */
+export async function sendPasswordReset(
+  message: InvitationMessage,
+  fetchImpl: typeof fetch = fetch,
+): Promise<MailOutcome> {
+  return sendMail(message, { sender: "reset", fetchImpl });
+}
+
 /** The invitation's own name for the same three values, kept for its callers and its docs. */
 export type InviteOutcome = MailOutcome;
 
@@ -139,8 +202,8 @@ export interface MailMessage {
   readonly text: string;
 }
 
-/** Which of this flow's two messages is being sent — the log prefix, and the sentence's noun. */
-export type MailSender = "invite" | "unlock";
+/** Which of this flow's messages is being sent — the log prefix, and the sentence's noun. */
+export type MailSender = "invite" | "unlock" | "reset";
 
 /**
  * The two senders' log sentences, in one table because they must stay parallel: the label
@@ -156,6 +219,12 @@ const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: str
     noun: "unlock notice",
     unsent: "the instance stays marked as complete in the app instead",
   },
+  /**
+   * The password reset. Its `unsent` tail is the same sentence the invitation uses, because the
+   * page does the same thing: it prints the link. The noun is "reset email" rather than "password
+   * reset" so the line reads as an email that did not go out, not as a flow that did not happen.
+   */
+  reset: { noun: "reset email", unsent: "the link is shown in the app instead" },
 };
 
 /**

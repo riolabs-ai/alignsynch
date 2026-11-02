@@ -425,6 +425,17 @@ export function LoginView({
                 {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {pending ? itemLabel(form, "pending") : itemLabel(form, "submit")}
               </Button>
+              {/*
+                The way out of a forgotten password (#password-reset). Inside the form, beside the
+                button, because it is the alternative to pressing it — and a route, not a dialog:
+                the reset is three pages with a token between them, and a modal cannot be linked to
+                from a mail or resumed after a reload.
+              */}
+              <div className="text-right text-sm">
+                <Link href="/forgot-password" className="text-action">
+                  {itemLabel(form, "forgot")}
+                </Link>
+              </div>
             </form>
             <div className="text-center text-sm ">
               {itemLabel(form, "signup-prompt")}{" "}
