@@ -32,12 +32,12 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship Templates",
   subtitle:
-    "The templates this account can use: the platform's own, and the ones you wrote. Open one to see its Aspects, copy it, or archive it when you no longer want it in the list.",
+    "Every relationship type the platform sells, grouped by the realm the relationship lives in, plus the templates you wrote. Open one for its Aspects, use it to start a relationship, copy it, or archive it when you no longer want it in the list.",
   sections: [
     {
       id: "list",
       heading: "Every template you can use",
-      body: "A row counts the Aspects it asks and the instances made from it. Archiving a template hides it from the catalogue and stops new instances; the instances already made from it keep working.",
+      body: "A card counts the Aspects the template asks, and the plan that includes every type here is Basic. Archiving a template hides it from the catalogue and stops new relationships; the relationships already made from it keep working.",
     },
     {
       id: "tabs",
@@ -112,6 +112,15 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
         { id: "unnamed-type", label: "No relationship type" },
         { id: "unnamed-realm", label: "Not stated" },
         { id: "roles", label: "{initiator} / {counterparty}" },
+        /**
+         * The price (#catalogue). One figure on every card, and it is the plan's, not a
+         * per-relationship charge: `CATALOGUE_PRICE_CENTS` is Basic's monthly price, so no type
+         * can be sold at a figure the pricing page does not carry. `{price}` is `formatCurrency`.
+         */
+        { id: "price-label", label: "Included in" },
+        { id: "price", label: "{plan} · {price}/mo" },
+        { id: "use", label: "Use this template" },
+        { id: "see-example", label: "See a finished example" },
       ],
     },
     {
@@ -122,12 +131,24 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
        * `data/v1/relationship-types.ts`; it is never inferred from a title.
        */
       id: "groups",
-      heading: "By relationship type",
+      heading: "By realm",
       items: [
-        { id: "business", label: "Business" },
-        { id: "personal", label: "Personal" },
-        { id: "other", label: "Other templates" },
+        /**
+         * Only the group with no realm has a word of its own. The seven realm headings are the
+         * taxonomy's own values (`REALMS` in `data/v1/relationship-types.ts`), rendered as the
+         * field they are — a second authored spelling of "Office" here would be drift.
+         */
+        { id: "other", label: "No realm" },
       ],
+    },
+    {
+      /**
+       * The realm filter (#catalogue). The seven realm labels are the taxonomy's values; this
+       * section owns the one label that is not a realm — the link back to every card.
+       */
+      id: "realms",
+      heading: "Realm",
+      items: [{ id: "all", label: "All realms" }],
     },
     {
       id: "create",

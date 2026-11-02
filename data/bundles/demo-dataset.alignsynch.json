@@ -2,7 +2,7 @@
   "format": "alignsynch-bundle",
   "bundleVersion": 1,
   "kind": "dataset",
-  "appVersion": "1.0.0",
+  "appVersion": "1.2.0",
   "payload": {
     "templates": [
       {
@@ -266,6 +266,1733 @@
             },
             "leftValue": "Not at all",
             "rightValue": "Completely"
+          }
+        ]
+      },
+      {
+        "id": "assessment-colleagues",
+        "slug": "colleagues",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Coworker–Colleague",
+        "summary": "Two coworkers who share work and want the handovers and the credit to feel fair.",
+        "items": [
+          {
+            "id": "handoffs",
+            "prompt": "How well do work handovers between you actually work?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Things get dropped",
+            "rightValue": "Nothing dropped"
+          },
+          {
+            "id": "shared-context",
+            "prompt": "How much do you each know about what the other is working on?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing",
+            "rightValue": "Current picture on both sides"
+          },
+          {
+            "id": "credit",
+            "prompt": "When a shared result lands, how is credit handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One name on it",
+            "rightValue": "Both named"
+          },
+          {
+            "id": "conflict",
+            "prompt": "When you disagree about how to do something, how does it get resolved?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or escalated",
+            "rightValue": "Talked through directly"
+          },
+          {
+            "id": "reliability",
+            "prompt": "How reliably do the commitments you make to each other hold?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Frequently slip",
+            "rightValue": "Held as agreed"
+          }
+        ]
+      },
+      {
+        "id": "assessment-business-partners",
+        "slug": "business-partners",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Business Partner A–Business Partner B",
+        "summary": "Two business partners who want the split of decisions and money out in the open.",
+        "items": [
+          {
+            "id": "decision-rights",
+            "prompt": "How clearly are decision rights split between you?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unclear, re-litigated",
+            "rightValue": "Written and respected"
+          },
+          {
+            "id": "money-picture",
+            "prompt": "How much does each of you know about the business's actual money position?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One holds it all",
+            "rightValue": "Both see the same numbers"
+          },
+          {
+            "id": "contribution",
+            "prompt": "How fairly does the effort each of you puts in compare to what each expected?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Very uneven",
+            "rightValue": "As expected on both sides"
+          },
+          {
+            "id": "disagreement",
+            "prompt": "When you disagree about the business, what happens?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Stalls or simmers",
+            "rightValue": "Resolved with a rule"
+          },
+          {
+            "id": "exit",
+            "prompt": "How clear is what happens if one of you wants out?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never discussed",
+            "rightValue": "Documented and understood"
+          },
+          {
+            "id": "risk-appetite",
+            "prompt": "How aligned are your appetites for risk right now?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Opposite",
+            "rightValue": "Aligned"
+          }
+        ]
+      },
+      {
+        "id": "assessment-project-manager-member",
+        "slug": "project-manager-member",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Project Manager–Team Member",
+        "summary": "A project manager and a team member on the same project.",
+        "items": [
+          {
+            "id": "plan-vs-reality",
+            "prompt": "How close is the plan to what can actually be delivered?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Fantasy",
+            "rightValue": "Realistic"
+          },
+          {
+            "id": "priorities",
+            "prompt": "How clear is which work comes first?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Everything is urgent",
+            "rightValue": "Ordered and agreed"
+          },
+          {
+            "id": "blockers",
+            "prompt": "When something blocks the work, how fast does it get raised and cleared?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Weeks, or never",
+            "rightValue": "Same day"
+          },
+          {
+            "id": "autonomy",
+            "prompt": "How much latitude does each of you have over how the work is done?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "Full, within the goal"
+          },
+          {
+            "id": "status-honesty",
+            "prompt": "How honest is the status each of you reports?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Green until it fails",
+            "rightValue": "Accurate even when bad"
+          }
+        ]
+      },
+      {
+        "id": "assessment-team",
+        "slug": "team",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Project Teammate A–Project Teammate B",
+        "summary": "Two teammates on the same project whose work meets in the middle.",
+        "items": [
+          {
+            "id": "interfaces",
+            "prompt": "How well-defined is the boundary where your work meets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Vague",
+            "rightValue": "Explicit"
+          },
+          {
+            "id": "interruptions",
+            "prompt": "How much are your own priorities disrupted by each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Constantly",
+            "rightValue": "Rarely"
+          },
+          {
+            "id": "quality-bar",
+            "prompt": "How close is the standard each of you holds to the other's?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Same bar"
+          },
+          {
+            "id": "credit",
+            "prompt": "When the project lands, how is credit shared?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unequal",
+            "rightValue": "As contributed"
+          },
+          {
+            "id": "repair",
+            "prompt": "When one of you drops something, how is it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Blamed",
+            "rightValue": "Fixed and learned from"
+          }
+        ]
+      },
+      {
+        "id": "assessment-customer-vendor-product",
+        "slug": "customer-vendor-product",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Customer–Vendor Product",
+        "summary": "A customer and a product vendor checking whether the product delivers what was bought.",
+        "items": [
+          {
+            "id": "expectation-fit",
+            "prompt": "How close is what the product does to what the customer expected?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far off",
+            "rightValue": "As expected"
+          },
+          {
+            "id": "support-access",
+            "prompt": "When something goes wrong, how reachable is real help?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "No path",
+            "rightValue": "Direct and answered"
+          },
+          {
+            "id": "price-value",
+            "prompt": "How does the price compare to the value each side thinks it delivers?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Mismatched",
+            "rightValue": "Fair on both sides"
+          },
+          {
+            "id": "roadmap-influence",
+            "prompt": "How much can the customer influence what gets built next?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "No channel",
+            "rightValue": "Directly and visibly"
+          },
+          {
+            "id": "renewal-intent",
+            "prompt": "How likely is each of you to continue the arrangement?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Looking for an exit",
+            "rightValue": "Renewing without debate"
+          }
+        ]
+      },
+      {
+        "id": "assessment-customer-vendor-services",
+        "slug": "customer-vendor-services",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Customer–Vendor Services",
+        "summary": "A customer and a services vendor checking whether the engagement is working on both sides.",
+        "items": [
+          {
+            "id": "scope-clarity",
+            "prompt": "How clearly is the scope of the work written down?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing in writing",
+            "rightValue": "Explicit and current"
+          },
+          {
+            "id": "delivery-reliability",
+            "prompt": "How reliably are the committed dates met?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Routinely missed",
+            "rightValue": "Met"
+          },
+          {
+            "id": "change-handling",
+            "prompt": "When the customer wants something added, how does that get handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Ad hoc, resentfully",
+            "rightValue": "A stated process"
+          },
+          {
+            "id": "communication-cadence",
+            "prompt": "How predictable are the updates each side gets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Silence until asked",
+            "rightValue": "Regular and expected"
+          },
+          {
+            "id": "payment-terms",
+            "prompt": "How well do the payment terms match what each side expected?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Contested",
+            "rightValue": "Clear and met"
+          }
+        ]
+      },
+      {
+        "id": "assessment-investor-entrepreneur",
+        "slug": "investor-entrepreneur",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Investor–SponsorEntrepreneur",
+        "summary": "An investor and a founder who want the reporting and the decision rights to feel honest.",
+        "items": [
+          {
+            "id": "reporting",
+            "prompt": "How predictable and honest is the reporting the investor gets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rare or polished",
+            "rightValue": "Regular and candid"
+          },
+          {
+            "id": "involvement",
+            "prompt": "How well does the investor's involvement match what the founder wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Too much or none",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "bad-news",
+            "prompt": "How quickly does bad news travel between you?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Late or hidden",
+            "rightValue": "Immediately"
+          },
+          {
+            "id": "horizon",
+            "prompt": "How aligned are your time horizons?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Opposite",
+            "rightValue": "Same"
+          },
+          {
+            "id": "decision-authority",
+            "prompt": "How clear is who decides what?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Overlapping",
+            "rightValue": "Split and respected"
+          },
+          {
+            "id": "terms-fit",
+            "prompt": "How well do the agreed terms match what both understood at the time?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Contested",
+            "rightValue": "Understood the same"
+          }
+        ]
+      },
+      {
+        "id": "assessment-co-founders",
+        "slug": "co-founders",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Co-founders",
+        "summary": "Two people building something together.",
+        "items": [
+          {
+            "id": "cofounder-ownership",
+            "prompt": "How is ownership of the company divided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unspoken",
+            "rightValue": "Agreed and written down"
+          },
+          {
+            "id": "cofounder-direction",
+            "prompt": "How are the big decisions about the product made?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One decides",
+            "rightValue": "Made together"
+          },
+          {
+            "id": "cofounder-workload",
+            "prompt": "How is the work split between the two of you?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All on one",
+            "rightValue": "Evenly shared"
+          },
+          {
+            "id": "cofounder-disagreement",
+            "prompt": "When you disagree about direction, how is it resolved?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Left unspoken",
+            "rightValue": "Worked through"
+          },
+          {
+            "id": "cofounder-money",
+            "prompt": "How are money drawn and reinvested decided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One calls it",
+            "rightValue": "Agreed together"
+          },
+          {
+            "id": "cofounder-visibility",
+            "prompt": "How much do you each know about the other's work?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Little",
+            "rightValue": "Most of it"
+          },
+          {
+            "id": "cofounder-exit",
+            "prompt": "What happens to the company if one of you leaves?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never discussed",
+            "rightValue": "Planned in advance"
+          }
+        ]
+      },
+      {
+        "id": "assessment-hoa-board-owner",
+        "slug": "hoa-board-owner",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "HOA Board Member–Owner",
+        "summary": "An HOA board member and an owner checking whether the property is being run fairly.",
+        "items": [
+          {
+            "id": "fee-transparency",
+            "prompt": "How clear is what the fees are spent on?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Opaque",
+            "rightValue": "Itemised and explained"
+          },
+          {
+            "id": "rule-clarity",
+            "prompt": "How clear are the rules that apply to owners?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Word of mouth",
+            "rightValue": "Written and accessible"
+          },
+          {
+            "id": "voice",
+            "prompt": "How much can an owner influence a board decision?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "A real channel"
+          },
+          {
+            "id": "responsiveness",
+            "prompt": "How quickly does the board respond to an owner's issue?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Promptly"
+          },
+          {
+            "id": "enforcement-fairness",
+            "prompt": "How consistently are rules applied across owners?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Selectively",
+            "rightValue": "The same for all"
+          },
+          {
+            "id": "maintenance-reality",
+            "prompt": "How does the state of shared property compare to what owners were told?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Much worse",
+            "rightValue": "As described"
+          }
+        ]
+      },
+      {
+        "id": "assessment-parent-teacher",
+        "slug": "parent-teacher",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Parent–Teacher",
+        "summary": "A parent and a teacher who want the picture of the child to match on both sides.",
+        "items": [
+          {
+            "id": "progress-visibility",
+            "prompt": "How clear a picture does the parent have of how the child is doing?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing until reports",
+            "rightValue": "Current and specific"
+          },
+          {
+            "id": "contact",
+            "prompt": "How easy is it for either of you to raise something?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Only at set events",
+            "rightValue": "When it matters"
+          },
+          {
+            "id": "support-at-home",
+            "prompt": "How well does what happens at home match what the classroom needs?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unconnected",
+            "rightValue": "Consistent"
+          },
+          {
+            "id": "expectations",
+            "prompt": "How aligned are your expectations of the child?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Shared"
+          },
+          {
+            "id": "concern-handling",
+            "prompt": "When there is a concern, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Late or through others",
+            "rightValue": "Early and direct"
+          }
+        ]
+      },
+      {
+        "id": "assessment-teacher-student",
+        "slug": "teacher-student",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Teacher–Student",
+        "summary": "A teacher and a student checking whether the teaching is landing.",
+        "items": [
+          {
+            "id": "expectation-clarity",
+            "prompt": "How clear is what is expected of the student, week to week?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Guessed",
+            "rightValue": "Explicit"
+          },
+          {
+            "id": "feedback-usefulness",
+            "prompt": "How useful is the feedback each of you gets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Generic",
+            "rightValue": "Specific and actionable"
+          },
+          {
+            "id": "ask-safety",
+            "prompt": "How safe is it for the student to say they do not understand?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Risky",
+            "rightValue": "Normal"
+          },
+          {
+            "id": "pace-fit",
+            "prompt": "How well does the pace match what the student can actually absorb?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far off",
+            "rightValue": "Matches"
+          },
+          {
+            "id": "effort-recognition",
+            "prompt": "How much is genuine effort noticed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Invisible",
+            "rightValue": "Recognised"
+          }
+        ]
+      },
+      {
+        "id": "assessment-patient-caregiver",
+        "slug": "patient-caregiver",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Patient–Caregiver",
+        "summary": "A patient and a caregiver who want the care and the load to feel shared and respected.",
+        "items": [
+          {
+            "id": "say-in-care",
+            "prompt": "How much say does the patient have in decisions about their own care?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "Fully"
+          },
+          {
+            "id": "information",
+            "prompt": "How well informed does each of you feel about what is happening?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "In the dark",
+            "rightValue": "Told and explained"
+          },
+          {
+            "id": "load",
+            "prompt": "How fairly is the day-to-day load distributed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All on one",
+            "rightValue": "Balanced"
+          },
+          {
+            "id": "privacy",
+            "prompt": "How well does the current arrangement respect what the patient wants kept private?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Overstepped",
+            "rightValue": "Respected"
+          },
+          {
+            "id": "rest",
+            "prompt": "How much real relief does each of you get?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "Enough"
+          },
+          {
+            "id": "outside-help",
+            "prompt": "How able are you to bring in help when it is needed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not at all",
+            "rightValue": "Easily"
+          }
+        ]
+      },
+      {
+        "id": "assessment-spouses",
+        "slug": "spouses",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Spouse A–Spouse B",
+        "summary": "Two spouses who want to see where they stand on the everyday stuff.",
+        "items": [
+          {
+            "id": "household-load",
+            "prompt": "How fairly is the everyday work of the household split?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All on one",
+            "rightValue": "Balanced"
+          },
+          {
+            "id": "money-decisions",
+            "prompt": "How much say does each of you have over money decisions?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One holds it",
+            "rightValue": "Shared"
+          },
+          {
+            "id": "time-together",
+            "prompt": "How does the time you actually spend together compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "conflict-repair",
+            "prompt": "When you argue, how well do you get back to normal?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Simmers for days",
+            "rightValue": "Repaired quickly"
+          },
+          {
+            "id": "outside-relationships",
+            "prompt": "How comfortable is each of you with the other's friendships and family time?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Resented",
+            "rightValue": "Supported"
+          },
+          {
+            "id": "future-picture",
+            "prompt": "How aligned are your pictures of the next few years?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Opposite",
+            "rightValue": "Same"
+          }
+        ]
+      },
+      {
+        "id": "assessment-father-son",
+        "slug": "father-son",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Father–Son",
+        "summary": "A father and his son, at an age where both are adults.",
+        "items": [
+          {
+            "id": "being-heard",
+            "prompt": "How much does the son's view change what the father does?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not at all",
+            "rightValue": "Genuinely"
+          },
+          {
+            "id": "expectations",
+            "prompt": "How well do the father's expectations match what the son wants for himself?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Imposed",
+            "rightValue": "Shared"
+          },
+          {
+            "id": "time",
+            "prompt": "How does the time you spend compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "Enough"
+          },
+          {
+            "id": "advice",
+            "prompt": "How is advice received when it is offered?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "As criticism",
+            "rightValue": "As help"
+          },
+          {
+            "id": "pride",
+            "prompt": "How clearly does each of you know the other is proud of them?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Assumed",
+            "rightValue": "Said"
+          }
+        ]
+      },
+      {
+        "id": "assessment-father-daughter",
+        "slug": "father-daughter",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Father–Daughter",
+        "summary": "A father and his daughter, at an age where both are adults.",
+        "items": [
+          {
+            "id": "being-heard",
+            "prompt": "How much does the daughter's view change what the father does?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not at all",
+            "rightValue": "Genuinely"
+          },
+          {
+            "id": "protection-space",
+            "prompt": "How well does the care taken match the independence wanted?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Over-protective",
+            "rightValue": "About right"
+          },
+          {
+            "id": "time",
+            "prompt": "How does the time you spend compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "Enough"
+          },
+          {
+            "id": "trust",
+            "prompt": "How much does each trust the other's judgement?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not much",
+            "rightValue": "Fully"
+          },
+          {
+            "id": "pride",
+            "prompt": "How clearly does each of you know the other is proud of them?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Assumed",
+            "rightValue": "Said"
+          }
+        ]
+      },
+      {
+        "id": "assessment-mother-son",
+        "slug": "mother-son",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Mother–Son",
+        "summary": "A mother and her son, at an age where both are adults.",
+        "items": [
+          {
+            "id": "being-heard",
+            "prompt": "How much does the son's view change what the mother does?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not at all",
+            "rightValue": "Genuinely"
+          },
+          {
+            "id": "independence",
+            "prompt": "How well does the room given match what is needed now?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Too much or too little",
+            "rightValue": "About right"
+          },
+          {
+            "id": "time",
+            "prompt": "How does the time you spend compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "Enough"
+          },
+          {
+            "id": "worry",
+            "prompt": "How does the mother's worry land with the son?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "As control",
+            "rightValue": "As care"
+          },
+          {
+            "id": "pride",
+            "prompt": "How clearly does each of you know the other is proud of them?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Assumed",
+            "rightValue": "Said"
+          }
+        ]
+      },
+      {
+        "id": "assessment-mother-daughter",
+        "slug": "mother-daughter",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Mother–Daughter",
+        "summary": "A mother and her daughter, at an age where both are adults.",
+        "items": [
+          {
+            "id": "being-heard",
+            "prompt": "How much does the daughter's view change what the mother does?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not at all",
+            "rightValue": "Genuinely"
+          },
+          {
+            "id": "advice",
+            "prompt": "How is advice received when it is offered?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "As criticism",
+            "rightValue": "As help"
+          },
+          {
+            "id": "time",
+            "prompt": "How does the time you spend compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "Enough"
+          },
+          {
+            "id": "boundaries",
+            "prompt": "How well are the boundaries between your lives respected?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Overstepped",
+            "rightValue": "Respected"
+          },
+          {
+            "id": "pride",
+            "prompt": "How clearly does each of you know the other is proud of them?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Assumed",
+            "rightValue": "Said"
+          }
+        ]
+      },
+      {
+        "id": "assessment-siblings",
+        "slug": "siblings",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Sibling A–Sibling B",
+        "summary": "Two adult siblings who want the old questions to feel settled.",
+        "items": [
+          {
+            "id": "contact",
+            "prompt": "How does how often you are in touch compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "fairness-history",
+            "prompt": "How settled do old questions of fairness feel now?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Still raw",
+            "rightValue": "Settled"
+          },
+          {
+            "id": "support",
+            "prompt": "When one of you needs something, how reliably does the other show up?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Always"
+          },
+          {
+            "id": "parents",
+            "prompt": "How well do you handle decisions about your parents together?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or fought",
+            "rightValue": "Shared and agreed"
+          },
+          {
+            "id": "comparison",
+            "prompt": "How much does comparison between you affect how you treat each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Constantly",
+            "rightValue": "Not at all"
+          }
+        ]
+      },
+      {
+        "id": "assessment-brother-sister",
+        "slug": "brother-sister",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Brother–Sister",
+        "summary": "A brother and a sister who want to treat each other as adults, not as their old roles.",
+        "items": [
+          {
+            "id": "contact",
+            "prompt": "How does how often you are in touch compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "assumptions",
+            "prompt": "How much do old roles still decide how you treat each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Entirely",
+            "rightValue": "Not at all"
+          },
+          {
+            "id": "support",
+            "prompt": "When one of you needs something, how reliably does the other show up?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Always"
+          },
+          {
+            "id": "parents",
+            "prompt": "How well do you handle decisions about your parents together?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or fought",
+            "rightValue": "Shared and agreed"
+          },
+          {
+            "id": "respect",
+            "prompt": "How much does each of you feel respected by the other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not much",
+            "rightValue": "Fully"
+          }
+        ]
+      },
+      {
+        "id": "assessment-sisters",
+        "slug": "sisters",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Sister A–Sister B",
+        "summary": "Two sisters who want the closeness without the comparison.",
+        "items": [
+          {
+            "id": "contact",
+            "prompt": "How does how often you are in touch compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "comparison",
+            "prompt": "How much does comparison between you affect how you treat each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Constantly",
+            "rightValue": "Not at all"
+          },
+          {
+            "id": "support",
+            "prompt": "When one of you needs something, how reliably does the other show up?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Always"
+          },
+          {
+            "id": "secrets",
+            "prompt": "How much does each of you keep to yourselves that the other would want to know?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "A lot",
+            "rightValue": "Openly shared"
+          },
+          {
+            "id": "parents",
+            "prompt": "How well do you handle decisions about your parents together?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or fought",
+            "rightValue": "Shared and agreed"
+          }
+        ]
+      },
+      {
+        "id": "assessment-brothers",
+        "slug": "brothers",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Brother A–Brother B",
+        "summary": "Two brothers who want to talk plainly without the competition.",
+        "items": [
+          {
+            "id": "contact",
+            "prompt": "How does how often you are in touch compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "competition",
+            "prompt": "How much does competition between you colour how you treat each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Constantly",
+            "rightValue": "Not at all"
+          },
+          {
+            "id": "support",
+            "prompt": "When one of you needs something, how reliably does the other show up?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Always"
+          },
+          {
+            "id": "straight-talk",
+            "prompt": "How directly can you say a hard thing to each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Plainly"
+          },
+          {
+            "id": "parents",
+            "prompt": "How well do you handle decisions about your parents together?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or fought",
+            "rightValue": "Shared and agreed"
+          }
+        ]
+      },
+      {
+        "id": "assessment-friends",
+        "slug": "friends",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Friend A–Friend B",
+        "summary": "A long-standing friendship, checking whether the effort still flows both ways.",
+        "items": [
+          {
+            "id": "contact",
+            "prompt": "How does how often you are in touch compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "reciprocity",
+            "prompt": "How evenly does effort flow between you?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All one way",
+            "rightValue": "Even"
+          },
+          {
+            "id": "honesty",
+            "prompt": "How honestly can you tell each other a hard thing?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Plainly"
+          },
+          {
+            "id": "support",
+            "prompt": "When one of you is in trouble, how reliably does the other show up?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Always"
+          },
+          {
+            "id": "respect-boundaries",
+            "prompt": "How well does each of you respect what the other does not want to talk about?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Overstepped",
+            "rightValue": "Respected"
+          }
+        ]
+      },
+      {
+        "id": "assessment-guy-friends",
+        "slug": "guy-friends",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Guy Friend A–Guy Friend B",
+        "summary": "Two male friends who want the support and the straight talk to feel even.",
+        "items": [
+          {
+            "id": "contact",
+            "prompt": "How does how often you are in touch compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "openness",
+            "prompt": "How much of what is actually going on does each of you share?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing real",
+            "rightValue": "Openly"
+          },
+          {
+            "id": "support",
+            "prompt": "When one of you is in trouble, how reliably does the other show up?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Always"
+          },
+          {
+            "id": "initiative",
+            "prompt": "How evenly is the effort to organise things split?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All one way",
+            "rightValue": "Even"
+          },
+          {
+            "id": "straight-talk",
+            "prompt": "How directly can you say a hard thing to each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Plainly"
+          }
+        ]
+      },
+      {
+        "id": "assessment-gal-friends",
+        "slug": "gal-friends",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Gal Friend A–Gal Friend B",
+        "summary": "Two female friends who want the trust and the honesty to feel even.",
+        "items": [
+          {
+            "id": "contact",
+            "prompt": "How does how often you are in touch compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "trust",
+            "prompt": "How much does each of you trust the other with what matters?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not much",
+            "rightValue": "Fully"
+          },
+          {
+            "id": "support",
+            "prompt": "When one of you is in trouble, how reliably does the other show up?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Always"
+          },
+          {
+            "id": "honesty",
+            "prompt": "How honestly can you tell each other a hard thing?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Plainly"
+          },
+          {
+            "id": "jealousy",
+            "prompt": "How much does comparison between you affect how you treat each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "A lot",
+            "rightValue": "Not at all"
+          }
+        ]
+      },
+      {
+        "id": "assessment-guy-friend-gal-friend",
+        "slug": "guy-friend-gal-friend",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-29T12:00:00.000Z",
+        "title": "Guy Friend–Gal Friend",
+        "summary": "A male and a female friend who want the assumptions out in the open.",
+        "items": [
+          {
+            "id": "contact",
+            "prompt": "How does how often you are in touch compare to what each wants?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far short",
+            "rightValue": "As wanted"
+          },
+          {
+            "id": "assumptions",
+            "prompt": "How much do assumptions about the friendship shape how you treat each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "A lot",
+            "rightValue": "Not at all"
+          },
+          {
+            "id": "respect-boundaries",
+            "prompt": "How well does each of you respect what the other does not want to talk about?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Overstepped",
+            "rightValue": "Respected"
+          },
+          {
+            "id": "support",
+            "prompt": "When one of you is in trouble, how reliably does the other show up?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Always"
+          },
+          {
+            "id": "honesty",
+            "prompt": "How honestly can you tell each other a hard thing?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Plainly"
           }
         ]
       }

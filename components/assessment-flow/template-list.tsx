@@ -17,6 +17,7 @@
  */
 import type { PageCopy } from "@/content/pages";
 import { ASSESSMENT_MODES } from "@/content/assessment";
+import { formatCurrency } from "@/content/core";
 import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
 import type { TemplateSummary } from "@/lib/flow/store";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
@@ -47,13 +48,24 @@ function catalogueCardCopyOf(copy: PageCopy): CatalogueCardCopy {
         counterparty: type.roles.counterparty,
       }),
     aspectsOf: (count) => fillLabel(itemLabel(card, "aspects"), { count }),
+    priceLabel: itemLabel(card, "price-label"),
+    priceOf: (plan, cents) =>
+      fillLabel(itemLabel(card, "price"), { plan, price: formatCurrency(cents) }),
+    useTemplate: itemLabel(card, "use"),
+    seeExample: itemLabel(card, "see-example"),
   };
 }
 
-/** The group headings, out of this surface's fixture. */
+/**
+ * The group headings, out of this surface's fixture — with one exception.
+ *
+ * A realm's heading is the realm itself: `realm` is a field of the taxonomy (`REALMS`), and a
+ * second authored spelling of "Office" in a copy fixture is the drift this tree keeps deleting.
+ * Only `other` — templates whose own words name no type — has words of its own.
+ */
 function templateGroupLabelOf(copy: PageCopy): (id: TemplateGroupId) => string {
   const groups = sectionOf(copy, "groups");
-  return (id) => itemLabel(groups, id);
+  return (id) => (id === "other" ? itemLabel(groups, "other") : id);
 }
 
 export function TemplateList({

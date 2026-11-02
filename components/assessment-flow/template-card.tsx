@@ -1,38 +1,52 @@
 /**
- * template-ancestor: components/v1/relationship-type-card.tsx   (variation: one Postgres template record per card, the type resolved from the catalogue by slug, and the action row supplied by the surface)
+ * template-ancestor: components/v1/relationship-type-card.tsx   (variation: one Postgres template record per card, the type — realm, roles, price, demo — resolved from the catalogue by slug, and the action row supplied by the surface)
  *
- * The assessment catalogue's one card, and the grid that draws it (#409).
+ * The assessment catalogue's one card, and the grid that draws it (#409, catalogue essentials).
  *
  * `components/v1/relationship-type-card.tsx` is the v1 prototype's shared card: the public
  * catalogue (`/v1/templates`) and the dashboard library (`/v1/[persona]/templates`) both draw it,
  * and the only difference between the two is the action row the surface owns. This module is the
  * same decision for the app's two catalogue surfaces — `/assessment` (pick a template, then create
- * an instance from it) and `/assessment/templates` (open, duplicate, archive) — so a card looks the
- * same wherever a person meets a template, and neither surface re-implements one.
+ * an instance from it) and `/assessment/templates` (the catalogue: open, use, duplicate, archive) —
+ * so a card looks the same wherever a person meets a template, and neither surface re-implements
+ * one.
  *
  * **Why this file reads no page copy.** E23 attributes every component a route renders to that
  * route's fixture, so a module shared by three routes may not look a section up by id: the id it
  * asked for would have to exist in all three fixtures, and a shared card that declares the union
  * of three vocabularies is a card arguing with itself. Every string arrives as a
  * `CatalogueCardCopy` the surface resolved from **its own** fixture, which is also what lets the
- * picker say "Create and invite" where the library says "Duplicate" without the card knowing
+ * picker say "Create and invite" where the catalogue says "Duplicate" without the card knowing
  * either word.
  *
  * **The group is a field, never a guess.** `data/v1/relationship-types.ts` authors the catalogue
- * with a `realm` on every record and the v1 library's own `Business · Personal` projection
- * (`REALM_GROUP`). A template record carries no realm — its `slug` is the type it is a template
- * of, and `relationshipType(slug)` resolves it. The platform's starter template
+ * with a `realm` on every record. A template record carries no realm — its `slug` is the type it
+ * is a template of, and `relationshipType(slug)` resolves it — so the card is drawn under its
+ * realm, in the taxonomy's own order (`REALMS`). The platform's starter template
  * (`relationship-basics`), the blank draft and everything an account wrote resolve to no type, and
- * those are drawn in the third group with the card saying, in words, that no type is named:
- * inferring `Business` from a title would be the card inventing a fact about somebody's template.
+ * those are drawn in the last group with the card saying, in words, that no type is named:
+ * inferring `Office` from a title would be the card inventing a fact about somebody's template.
  *
- * **A card states the record's own facts.** The title, the summary, `count(item)` for the Aspect
- * count, and the type/realm/roles the catalogue authors. No price, because this read holds no
- * price and nothing has been paid; no people, because a template is a template and names are
- * instance facts; no rating and no "N people use this", because nothing here measures one.
+ * **A card states the record's own facts, and one price that is the plan's.** The title, the
+ * summary, `count(item)` for the Aspect count, and the type/realm/roles/price the catalogue
+ * authors. The price is not per relationship: `RELATIONSHIP_PRICE_CENTS` ($9.99) predates the
+ * pricing rewrite, which sells Basic at $8.95/month with unlimited relationships, so a card
+ * charging $9.99 beside a plan page selling $8.95 would be two price models in one product. The
+ * card therefore prints **one month of Basic** — `CATALOGUE_PRICE_CENTS`, read from the pricing
+ * fixture — which is what using any type here actually costs. No people, no rating and no "N
+ * people use this": nothing here measures one.
  */
-import { REALM_GROUP, relationshipType, type RelationshipType } from "@/data/v1/relationship-types";
-import { templateDetailPath } from "@/lib/flow/paths";
+import type { PublishStatus } from "@/content/core";
+import { billingPlan } from "@/data/billing-plans";
+import type { BillingPlan } from "@/data/billing-plans";
+import {
+  REALMS,
+  demoAnswersFor,
+  relationshipType,
+  type Realm,
+  type RelationshipType,
+} from "@/data/v1/relationship-types";
+import { createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
 import type { ReactNode } from "react";
 
 const SHELL = "rounded-lg border border-border bg-card p-5";
@@ -40,11 +54,43 @@ const CHIP = "rounded-md border border-border px-2 py-0.5 text-xs text-muted-for
 const MUTED = "text-sm text-muted-foreground";
 const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90";
+const SECONDARY =
+  "inline-flex h-10 items-center justify-center rounded-md border border-border px-3 text-sm font-medium text-foreground hover:bg-muted";
+
+/**
+ * The plan that includes every catalogue type, and so the one price a card prints.
+ *
+ * `basic` cannot be missing — `billingPlanProblems()` in `data/billing-plans.ts` fails on a
+ * fixture that loses a tier — and a lookup that resolved to nothing here would be a card printing
+ * an invented `$0.00`, so this throws rather than guessing.
+ */
+const CATALOGUE_PLAN: BillingPlan = (() => {
+  const plan = billingPlan("basic");
+  if (plan === undefined) {
+    throw new Error('data/billing-plans.ts has no "basic" plan to price the catalogue from');
+  }
+  return plan;
+})();
+
+/**
+ * What one catalogue card costs per month, in integer cents: Basic's monthly price.
+ *
+ * One constant with one home (`data/billing-plans.ts`), so the catalogue and `/pricing` cannot
+ * disagree. `billingPlans` is read above rather than a literal here, and a price literal in this
+ * file is the defect `tests/billing-plans.test.ts` already refuses under `components/pricing/`.
+ */
+export const CATALOGUE_PRICE_CENTS: number = CATALOGUE_PLAN.monthlyCents;
 
 /**
  * The narrow shape both reads satisfy: `TemplateSummary` (`lib/flow/store.ts`) and
  * `LibraryTemplate` (`lib/flow/template-library.ts`). A card draws only these four facts, so it
- * cannot start reading an authorship or a status that one of the two reads does not carry.
+ * cannot start reading an authorship or an instance count that one of the two reads does not
+ * carry.
+ *
+ * `status` is optional for the same reason `TemplateSummary` does not have one: the picker only
+ * ever lists published templates, while the library also draws archived rows — and a card cannot
+ * offer "Use this template" on a record the store will refuse to copy. Absent means "the surface
+ * has already promised this can be created".
  */
 export interface CatalogueTemplate {
   readonly id: string;
@@ -52,12 +98,13 @@ export interface CatalogueTemplate {
   readonly title: string;
   readonly summary: string;
   readonly aspectCount: number;
+  readonly status?: PublishStatus;
 }
 
-/** The three groups, in the order they are drawn — the v1 library's two, then the rest. */
-export const TEMPLATE_GROUPS = ["business", "personal", "other"] as const;
+/** The seven realms, in the taxonomy's order, then the one group for templates naming no type. */
+export const TEMPLATE_GROUPS = [...REALMS, "other"] as const;
 
-export type TemplateGroupId = (typeof TEMPLATE_GROUPS)[number];
+export type TemplateGroupId = Realm | "other";
 
 /** One group and the templates in it, in the order the read returned them. */
 export interface TemplateGroup<T extends CatalogueTemplate> {
@@ -68,9 +115,9 @@ export interface TemplateGroup<T extends CatalogueTemplate> {
 /**
  * Every word this module draws, resolved by the surface from its own fixture.
  *
- * `rolesOf` and `aspectsOf` are functions rather than strings because both are per template —
- * `{initiator} / {counterparty}` and `{count} Aspects` are filled with the record's own values,
- * and `fillLabel` belongs on the surface that owns the id.
+ * `rolesOf`, `aspectsOf` and `priceOf` are functions rather than strings because all three are per
+ * template — `{initiator} / {counterparty}`, `{count} Aspects` and `{price}/mo` are filled with
+ * the record's own values, and `fillLabel` belongs on the surface that owns the id.
  */
 export interface CatalogueCardCopy {
   readonly viewDetails: string;
@@ -80,6 +127,17 @@ export interface CatalogueCardCopy {
   readonly unnamedRealm: string;
   readonly rolesOf: (type: RelationshipType) => string;
   readonly aspectsOf: (count: number) => string;
+  /** What the price chip means, for a screen reader: `Included in`. */
+  readonly priceLabel: string;
+  /**
+   * `{plan} · {price}/mo` — the plan's own name and Basic's monthly price, so the visible chip
+   * says which plan the catalogue is included in rather than a bare figure beside nine cards.
+   */
+  readonly priceOf: (plan: string, cents: number) => string;
+  /** The card's primary action: start an instance from this template. */
+  readonly useTemplate: string;
+  /** The exemplar link, drawn only where a finished sheet exists. */
+  readonly seeExample: string;
 }
 
 /** The catalogue record a slug names, or `undefined` — the one lookup the grouping does. */
@@ -91,15 +149,15 @@ export function relationshipTypeOf(slug: string): RelationshipType | undefined {
 export function templateGroupOf(slug: string): TemplateGroupId {
   const type = relationshipTypeOf(slug);
   if (type === undefined) return "other";
-  return REALM_GROUP[type.realm] === "Business" ? "business" : "personal";
+  return type.realm;
 }
 
 /**
- * The templates grouped, empty groups dropped.
+ * The templates grouped by realm, empty groups dropped.
  *
  * Dropping matters: a heading over no card is the "Gap of 0 about a question nobody asked" defect
- * one level up — an account with only its own template must not be shown two empty `Business` and
- * `Personal` shelves.
+ * one level up — an account with only its own template must not be shown seven empty realm
+ * shelves.
  */
 export function templateGroupsOf<T extends CatalogueTemplate>(
   templates: readonly T[],
@@ -110,7 +168,45 @@ export function templateGroupsOf<T extends CatalogueTemplate>(
   })).filter((group) => group.templates.length > 0);
 }
 
-/** One template, as a card: the title, the summary, its type, its Aspects, and its own actions. */
+/**
+ * The catalogue with one realm's cards, or every card when no realm is named.
+ *
+ * A pure function over the list the page already read: the filter is a URL (`?realm=Home`), so
+ * every state of the catalogue is a page a `curl` can ask for and there is no client bundle
+ * holding 27 cards in memory.
+ */
+export function templatesInRealm<T extends CatalogueTemplate>(
+  templates: readonly T[],
+  realm: TemplateGroupId | null,
+): readonly T[] {
+  if (realm === null) return templates;
+  return templates.filter((template) => templateGroupOf(template.slug) === realm);
+}
+
+/** The realm a query parameter names, or `null` for every realm. */
+export function parseRealmFilter(value: string | undefined): TemplateGroupId | null {
+  return TEMPLATE_GROUPS.find((id) => id === value) ?? null;
+}
+
+/** How many of the list's cards sit in each group — the filter row's counts, from the list. */
+export function groupCountsOf<T extends CatalogueTemplate>(
+  templates: readonly T[],
+): readonly { readonly id: TemplateGroupId; readonly count: number }[] {
+  return TEMPLATE_GROUPS.map((id) => ({
+    id,
+    count: templates.filter((template) => templateGroupOf(template.slug) === id).length,
+  })).filter((entry) => entry.count > 0);
+}
+
+/** Whether a card may offer "Use this template": a published record, or a surface that promised it. */
+function createable(template: CatalogueTemplate): boolean {
+  return template.status === undefined || template.status === "published";
+}
+
+/**
+ * One template, as a card: the title, the summary, its type, its realm, its roles, its Aspects,
+ * the plan's price, and its own actions.
+ */
 export function TemplateCard<T extends CatalogueTemplate>({
   copy,
   template,
@@ -150,13 +246,36 @@ export function TemplateCard<T extends CatalogueTemplate>({
             {copy.rolesOf(type)}
           </dd>
         )}
-        <dd className={CHIP}>{copy.aspectsOf(template.aspectCount)}</dd>
+        <dd className={CHIP} data-template-card-aspects={template.aspectCount}>
+          {copy.aspectsOf(template.aspectCount)}
+        </dd>
+        <div className="flex items-center gap-1.5">
+          <dt className="sr-only">{copy.priceLabel}</dt>
+          {/*
+           * One price per card, and it is the plan's: no type is sold on its own. The plan's name
+           * is in the visible chip, because "$8.95/mo" alone beside nine cards reads as nine
+           * subscriptions.
+           */}
+          <dd className={CHIP} data-template-card-price={CATALOGUE_PRICE_CENTS}>
+            {copy.priceOf(CATALOGUE_PLAN.name, CATALOGUE_PRICE_CENTS)}
+          </dd>
+        </div>
       </dl>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <a className={PRIMARY} href={templateDetailPath(template.id)}>
+        {createable(template) ? (
+          <a className={PRIMARY} href={createRelationshipPath(template.id)}>
+            {copy.useTemplate}
+          </a>
+        ) : null}
+        <a className={SECONDARY} href={templateDetailPath(template.id)}>
           {copy.viewDetails}
         </a>
+        {type !== undefined && demoAnswersFor(type.id) !== undefined ? (
+          <a className={SECONDARY} href={`/v1/templates/${type.id}/demo`}>
+            {copy.seeExample}
+          </a>
+        ) : null}
         {actions}
       </div>
     </article>
@@ -164,7 +283,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
 }
 
 /**
- * A catalogue: one section per group, with its heading and a grid of cards.
+ * A catalogue: one section per realm, with its heading and a grid of cards.
  *
  * `groupLabelOf` rather than a copy section, for the reason the module comment gives: the heading's
  * words are the surface's, and the group id is this module's.
@@ -187,7 +306,7 @@ export function TemplateCatalogueGrid<T extends CatalogueTemplate>({
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             {groupLabelOf(group.id)}
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {group.templates.map((template) => (
               <TemplateCard
                 key={template.id}

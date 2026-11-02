@@ -11,7 +11,7 @@ import { QuizzesByDifficulty } from "@/components/home/quizzes-by-difficulty";
 import { ResourcesAndReferral } from "@/components/home/resources-and-referral";
 import { TopPlayersCarousel } from "@/components/home/top-players-carousel";
 import type { Brand } from "@/content/brand";
-import { assessmentInstances, assessments } from "@/data/assessments";
+import { assessmentInstances, starterTemplates } from "@/data/assessments";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
 import { homePageCopy, homeTitle } from "@/data/pages/home";
 import {
@@ -106,7 +106,7 @@ function AlignSynchHome() {
         model={alignmentHome(
           brand,
           alignSynchHomeCopy,
-          assessments,
+          starterTemplates,
           assessmentInstances,
           ALIGN_SYNCH_FEATURED_SLUG,
         )}
