@@ -18,14 +18,50 @@ import {
 import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
+import type { AuthMarkId, AuthMarkSet } from "@/lib/auth/marks";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
-import { ArrowLeft, ArrowRight, BookOpen, Eye, EyeOff, Loader2, Trophy } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Eye,
+  EyeOff,
+  Handshake,
+  Loader2,
+  Trophy,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 
 /** The step ids, in order. The rail, the header counter and the lookups all read this. */
 const STEPS = ["step-1", "step-2"] as const;
+
+/**
+ * The glyph for each mark id the server can hand this view (`lib/auth/marks.ts`).
+ *
+ * A table of *shapes*, not of brands: the view is a client module, so it is told which mark to
+ * draw and never which brand it is drawing it for — the brand is resolved in
+ * `app/(auth)/register/page.tsx`, exactly like the copy and the post-sign-in `destination`.
+ *
+ * Why `users` means alignment and not just "an account": this product's unit is **two** people
+ * answering the same questions and comparing the answers, so the mark is the pair — one figure
+ * in front, one behind — where a single `User` would say "a person signed up" and nothing about
+ * a second party. The book and the trophy are kept because QuizHub is those things: a body of
+ * questions and a score.
+ *
+ * Exported for `tests/register-view.test.tsx`, which renders every id a brand can name and fails
+ * on one this table has no glyph for — the way "a mark left behind" would otherwise render as
+ * nothing at all instead of failing a test.
+ */
+export const MARK_ICONS: Record<AuthMarkId, LucideIcon> = {
+  "book-open": BookOpen,
+  trophy: Trophy,
+  users: Users,
+  handshake: Handshake,
+};
 
 /**
  * `/register`, the client half. The words come from `data/pages/register.ts`, parsed by
@@ -42,8 +78,26 @@ const STEPS = ["step-1", "step-2"] as const;
  * quiz product's account home — a 404 on the alignment build, so a successful sign-up there landed
  * on a not-found page. The value is `AFTER_SIGN_IN_BY_BRAND[brandId]` (`lib/auth/paths.ts`), and
  * this component never learns which brand it is.
+ *
+ * `marks` is the same arrangement for the page's glyphs: this screen drew `BookOpen` and `Trophy`
+ * unconditionally, so the alignment build's sign-up page showed a quiz book and a quiz trophy.
+ * The server hands over an `AuthMarkSet` (`lib/auth/marks.ts`) — ids, resolved to glyphs by
+ * `MARK_ICONS` above — and QuizHub's two ids are the two components that used to be written here,
+ * so that brand renders what it always rendered.
  */
-export function RegisterView({ copy, destination }: { copy: PageCopy; destination: string }) {
+export function RegisterView({
+  copy,
+  destination,
+  marks,
+}: {
+  copy: PageCopy;
+  destination: string;
+  marks: AuthMarkSet;
+}) {
+  /** The panel/header mark and the button mark for this build. */
+  const HeroMark = MARK_ICONS[marks.hero];
+  const ActionMark = MARK_ICONS[marks.action];
+
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -159,7 +213,7 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
         <div className="relative mx-auto z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto">
-              <BookOpen className="w-12 h-12 text-white" />
+              <HeroMark className="w-12 h-12 text-white" />
             </div>
             <h1 className="text-4xl font-bold mb-4">{copy.heading}</h1>
             <p className="text-xl text-white/90 leading-relaxed mb-8">{copy.subtitle}</p>
@@ -203,7 +257,7 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="mx-auto mb-4 w-16 h-16 bg-action rounded-xl flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-white" />
+              <HeroMark className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold  mb-2">{mobile.heading}</h1>
             <p>{mobile.body}</p>
@@ -445,7 +499,7 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
                         ? itemLabel(status, "pending")
                         : itemLabel(navigation, "create-account")}
                     </span>
-                    <Trophy className="w-4 h-4" />
+                    <ActionMark className="w-4 h-4" />
                   </Button>
                 )}
               </div>

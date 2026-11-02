@@ -198,19 +198,19 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/assessment/[slug]` — **db**
   - capability: One assessment instance from Postgres: both parties' answers per Aspect, the Opinions and Values behind them, and the Gap between the two.
   - components: `components/assessment`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/client.ts`, `lib/db/rows.ts`
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`
 
 - `/assessment/instances` — **db**
-  - capability: Every instance the signed-in account is a party to, with both parties and where each one stands: yours to answer, awaiting the other party, or complete with the Gap open.
+  - capability: Every relationship the signed-in account is a member of, as the My Quizzes card grid — the template, the stage, both parties, the session counts and the alignment once a session is complete.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/my-instances.ts` · an `/api` path — `lib/auth/server.ts`
-  - notes: Filtered by party.user_id against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. A row says only where the instance stands: the blind rule holds in the list too, and nothing here draws a score, a count or a Gap.
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - notes: Scoped by relationship_member.user_id (or party.user_id for rows seeded before #340) against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. The stage, the counts and the search are derived per render; `alignment` is the mean Gap of the latest session and is drawn `—`, never 0, until that session is complete, and the money block is the plan and its purchase instant on the Initiator's card alone — never a total.
 
 - `/assessment/instances/[instanceId]` — **db**
   - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered.
   - components: `components/assessment`, `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
-  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own before both have submitted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
 
 - `/assessment/instances/[instanceId]/accept` — **db**
   - capability: Review and accept a session: the decision first, both seats side by side with what each party has answered, then every Aspect beneath with both Opinion columns sealed.

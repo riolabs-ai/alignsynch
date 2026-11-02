@@ -1,26 +1,21 @@
 /**
- * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: tabs, status and search in the URL over one list page, rows instead of a card grid)
+ * template-ancestor: components/v1/v1-template-library.tsx   (variation: Postgres template records grouped by the type each names, every action a plain POST form)
  *
- * `/assessment/templates` — the template library (#console 5/5).
+ * `/assessment/templates` — the template library (#console 5/5, reshaped by #409).
  *
  * A server component with no state and no handler: the page above it resolved the session, read
- * the rows and applied the tab/status/search, and this file decides only how a row reads and what
- * a row may do. The words are `data/pages/assessment-templates.ts` (E23, budget 0); this file
- * holds none of them.
+ * the rows and applied the tab/status/search, and this file decides only how a card reads and
+ * what a card may do. The words are `data/pages/assessment-templates.ts` (E23, budget 0); this
+ * file holds none.
  *
- * **What this screen is a variation of.** The console spec points at
- * `components/my-quizzes/my-quizzes.tsx` — tabs, search, grid-or-list, a per-row dropdown — and
- * that component is where the *pattern* comes from: the tab row is `Tabs`, the search box is a
- * plain `<input>`, and the row actions sit at the end of the row. The **base** is
- * `components/assessment-flow/template-list.tsx`, for three reasons: it is the same entity
- * (`TemplateSummary`, a template record read from Postgres), it is a server component over rows
- * the page already read, and it writes down the house rule this screen has to keep — a plain HTML
- * form with a `name`d field per control, so every action is drivable with `curl` and there is no
- * client bundle for a person to download in order to archive their own template.
- * `my-quizzes.tsx` is a `"use client"` mock over `shelfAuthoringCards()`: mounting it would drag a
- * client graph and a fixture projection in to render six rows, and its per-row actions are
- * dropdown items with nowhere to post to. So: the quiz list's shape, the assessment list's
- * plumbing, and the difference named here rather than discovered later.
+ * **What this screen is a variation of.** Two ancestors, one citation each:
+ *
+ *   the catalogue grid, grouped `Business · Personal`, one shared card   components/v1/v1-template-library.tsx
+ *   the tab row, the search field, the status filter, the per-row forms  components/my-quizzes/my-quizzes.tsx
+ *
+ * The **card** is not this file's: it is `TemplateCard` in `template-list.tsx`, shared with
+ * `/assessment`'s picker. Two surfaces, one record shape, one card — the v1 library made the same
+ * call when it gave the public catalogue and the dashboard the same `RelationshipTypeCard`.
  *
  * **What a row may offer is decided before it gets here.** `LibraryTemplate.authorship` is
  * `built-in` or `mine` (never `other`: the read excludes those), and only `mine` carries an
@@ -40,17 +35,50 @@ import type {
 } from "@/lib/flow/template-library";
 import type { PageCopy } from "@/content/pages";
 import { formatDate } from "@/content/core";
-import {
-  TEMPLATE_LIBRARY_PATH,
-  templateDetailPath,
-  templateDuplicatePath,
-  templateStatusPath,
-} from "@/lib/flow/paths";
+import { TEMPLATE_LIBRARY_PATH, templateDuplicatePath, templateStatusPath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import {
+  TemplateCatalogueGrid,
+  templateGroupsOf,
+  type CatalogueCardCopy,
+  type TemplateGroupId,
+} from "./template-card";
 
-const CARD = "rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900";
-const MUTED = "text-sm text-gray-600 dark:text-gray-300";
-const STRONG = "font-semibold text-gray-900 dark:text-gray-100";
+const CARD = "rounded-lg border border-border bg-card";
+const MUTED = "text-sm text-muted-foreground";
+const STRONG = "font-semibold text-foreground";
+
+/**
+ * The card's words, out of **this** route's fixture.
+ *
+ * Written here rather than shared with `/assessment`'s picker because E23 resolves every
+ * `itemLabel` id against the fixture of the route whose page renders the file: a shared builder
+ * would demand one vocabulary in both `data/pages/assessment.ts` and
+ * `data/pages/assessment-templates.ts`, which are two surfaces' own words. The card itself —
+ * `template-card.tsx` — takes the resolved strings and knows neither fixture.
+ */
+function cardCopyOf(copy: PageCopy): CatalogueCardCopy {
+  const card = sectionOf(copy, "card");
+  return {
+    viewDetails: itemLabel(card, "view-details"),
+    typeLabel: itemLabel(card, "type"),
+    realmLabel: itemLabel(card, "realm"),
+    unnamedType: itemLabel(card, "unnamed-type"),
+    unnamedRealm: itemLabel(card, "unnamed-realm"),
+    rolesOf: (type) =>
+      fillLabel(itemLabel(card, "roles"), {
+        initiator: type.roles.initiator,
+        counterparty: type.roles.counterparty,
+      }),
+    aspectsOf: (count) => fillLabel(itemLabel(card, "aspects"), { count }),
+  };
+}
+
+/** The group headings, out of this route's fixture. */
+function groupLabelOf(copy: PageCopy): (id: TemplateGroupId) => string {
+  const groups = sectionOf(copy, "groups");
+  return (id) => itemLabel(groups, id);
+}
 
 /** The notice a write leaves behind, resolved by the page against the list it just read. */
 export interface LibraryNotice {
@@ -102,9 +130,9 @@ export function TemplateLibrary({
           role="alert"
           className="rounded-lg border border-amber-300 bg-amber-50 p-6 dark:border-amber-700 dark:bg-amber-950"
         >
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{failure.heading}</h1>
-          <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{sectionBody(failure)}</p>
-          <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{unreadable}</p>
+          <h1 className="text-2xl font-bold text-foreground">{failure.heading}</h1>
+          <p className="mt-2 text-sm text-foreground">{sectionBody(failure)}</p>
+          <p className="mt-2 text-sm text-foreground">{unreadable}</p>
           <p className="mt-3 text-sm">
             <a className="underline" href={TEMPLATE_LIBRARY_PATH}>
               {itemLabel(failure, "reload")}
@@ -119,7 +147,6 @@ export function TemplateLibrary({
   const tabs = sectionOf(copy, "tabs");
   const statuses = sectionOf(copy, "status");
   const search = sectionOf(copy, "search");
-  const columns = sectionOf(copy, "columns");
   const row = sectionOf(copy, "row");
   const legacy = sectionOf(copy, "legacy");
   const create = sectionOf(copy, "create");
@@ -139,9 +166,9 @@ export function TemplateLibrary({
   ];
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-10">
+    <div className="container mx-auto max-w-5xl px-4 py-10">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{copy.heading}</h1>
+        <h1 className="text-3xl font-bold text-foreground">{copy.heading}</h1>
         {copy.subtitle === undefined ? null : <p className={`mt-3 ${MUTED}`}>{copy.subtitle}</p>}
       </header>
 
@@ -149,20 +176,20 @@ export function TemplateLibrary({
         <div
           data-template-library-notice={notice.id}
           role="status"
-          className={`mb-6 p-4 text-sm text-gray-700 ${CARD} dark:text-gray-200`}
+          className={`mb-6 p-4 text-sm text-foreground ${CARD}`}
         >
           {fillLabel(itemLabel(notices, notice.id), { title: notice.title ?? "" })}
         </div>
       )}
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{list.heading}</h2>
+        <h2 className="text-xl font-semibold text-foreground">{list.heading}</h2>
         <p className={`mt-2 ${MUTED}`}>{sectionBody(list)}</p>
       </section>
 
       <div className="mb-6 grid gap-3">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {tabs.heading}
           </p>
           <nav className="flex flex-wrap gap-2" aria-label={tabs.heading}>
@@ -175,7 +202,7 @@ export function TemplateLibrary({
                 className={
                   filter.view === tab.id
                     ? "rounded-md bg-action px-3 py-1.5 text-sm font-semibold text-action-foreground"
-                    : `rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 ${CARD}`
+                    : "rounded-md border border-border px-3 py-1.5 text-sm"
                 }
               >
                 {itemLabel(tabs, tab.id)}
@@ -185,7 +212,7 @@ export function TemplateLibrary({
         </div>
 
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {statuses.heading}
           </p>
           <nav className="flex flex-wrap gap-2" aria-label={statuses.heading}>
@@ -198,7 +225,7 @@ export function TemplateLibrary({
                 className={
                   filter.status === entry.id
                     ? "rounded-md bg-action px-3 py-1.5 text-sm font-semibold text-action-foreground"
-                    : `rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-600 ${CARD}`
+                    : "rounded-md border border-border px-3 py-1.5 text-sm"
                 }
               >
                 {itemLabel(statuses, entry.id)}
@@ -217,15 +244,13 @@ export function TemplateLibrary({
             <input type="hidden" name="status" value={filter.status} />
           )}
           <label className="grid gap-1 text-sm" htmlFor="template-search">
-            <span className="font-medium text-gray-700 dark:text-gray-200">
-              {itemLabel(search, "label")}
-            </span>
+            <span className="font-medium text-foreground">{itemLabel(search, "label")}</span>
             <input
               id="template-search"
               name="q"
               defaultValue={filter.query}
               placeholder={itemLabel(search, "placeholder")}
-              className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950"
+              className="rounded-md border border-border bg-background px-3 py-2"
             />
           </label>
           <button
@@ -236,7 +261,7 @@ export function TemplateLibrary({
           </button>
           {filter.query === "" ? null : (
             <a
-              className="text-sm underline text-gray-700 dark:text-gray-200"
+              className="text-sm text-foreground underline"
               href={filterHref({ ...filter, query: "" }, {})}
             >
               {itemLabel(search, "clear")}
@@ -247,9 +272,7 @@ export function TemplateLibrary({
 
       {state === "empty" ? (
         <section data-template-library-empty="true" className={`p-6 ${CARD}`}>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {empty.heading}
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">{empty.heading}</h2>
           <p className={`mt-2 ${MUTED}`}>{sectionBody(empty)}</p>
           {empty.cta === undefined ? null : (
             <p className="mt-4 text-sm">
@@ -261,104 +284,69 @@ export function TemplateLibrary({
         </section>
       ) : state === "no-match" ? (
         <section data-template-library-no-match="true" className={`p-6 ${CARD}`}>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {noMatch.heading}
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">{noMatch.heading}</h2>
           <p className={`mt-2 ${MUTED}`}>{sectionBody(noMatch)}</p>
         </section>
       ) : (
-        <table className="w-full table-fixed border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:text-gray-400">
-              <th className="py-2 pr-2 font-semibold">{itemLabel(columns, "title")}</th>
-              <th className="py-2 pr-2 font-semibold">{itemLabel(columns, "aspects")}</th>
-              <th className="py-2 pr-2 font-semibold">{itemLabel(columns, "instances")}</th>
-              <th className="py-2 pr-2 font-semibold">{itemLabel(columns, "authorship")}</th>
-              <th className="py-2 pr-2 font-semibold">{itemLabel(columns, "status")}</th>
-              <th className="py-2 pr-2 font-semibold">{itemLabel(columns, "created")}</th>
-              <th className="py-2 font-semibold">{itemLabel(columns, "actions")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shown.map((template) => (
-              <tr
-                key={template.id}
-                data-template-row={template.id}
-                data-template-authorship={template.authorship}
-                className="border-b border-gray-100 align-top dark:border-gray-800"
-              >
-                <td className="py-3 pr-2">
-                  <a className={`${STRONG} underline`} href={templateDetailPath(template.id)}>
-                    {template.title}
-                  </a>
-                  <p className={MUTED}>{template.summary}</p>
-                </td>
-                <td className="py-3 pr-2">
-                  {fillLabel(itemLabel(row, "aspects"), { count: template.aspectCount })}
-                </td>
-                <td className="py-3 pr-2">
+        <TemplateCatalogueGrid
+          copy={cardCopyOf(copy)}
+          groups={templateGroupsOf(shown)}
+          groupLabelOf={groupLabelOf(copy)}
+          actionsOf={(template) => (
+            <div className="grid gap-2">
+              <p className={`${MUTED} text-xs`}>
+                <span data-template-instances={template.instanceCount}>
                   {fillLabel(itemLabel(row, "instances"), { count: template.instanceCount })}
-                </td>
-                <td className="py-3 pr-2">
-                  {itemLabel(
-                    row,
-                    template.authorship === "mine" ? "authorship-mine" : "authorship-built-in",
-                  )}
-                </td>
-                <td className="py-3 pr-2">
-                  {itemLabel(
-                    row,
-                    template.status === "archived" ? "status-archived" : "status-published",
-                  )}
-                </td>
-                <td className={`py-3 pr-2 ${MUTED}`}>
+                </span>
+                <span aria-hidden className="mx-1">
+                  ·
+                </span>
+                <span>
                   {fillLabel(itemLabel(row, "created"), { date: formatDate(template.createdAt) })}
-                </td>
-                <td className="py-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <a className="underline" href={templateDetailPath(template.id)}>
-                      {itemLabel(row, "open")}
-                    </a>
+                </span>
+              </p>
 
-                    <form action={templateDuplicatePath(template.id)} method="post">
-                      <FilterFields filter={filter} />
-                      <button type="submit" className="underline">
-                        {itemLabel(row, "duplicate")}
-                      </button>
-                    </form>
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <form action={templateDuplicatePath(template.id)} method="post">
+                  <FilterFields filter={filter} />
+                  <button type="submit" className="underline">
+                    {itemLabel(row, "duplicate")}
+                  </button>
+                </form>
 
-                    {template.authorship !== "mine" ? null : (
-                      <form action={templateStatusPath(template.id)} method="post">
-                        <FilterFields filter={filter} />
-                        <input
-                          type="hidden"
-                          name="status"
-                          value={template.status === "archived" ? "published" : "archived"}
-                        />
-                        <button type="submit" className="underline">
-                          {itemLabel(row, template.status === "archived" ? "unarchive" : "archive")}
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                {template.authorship !== "mine" ? null : (
+                  <form action={templateStatusPath(template.id)} method="post">
+                    <FilterFields filter={filter} />
+                    <input
+                      type="hidden"
+                      name="status"
+                      value={template.status === "archived" ? "published" : "archived"}
+                    />
+                    <button type="submit" className="underline">
+                      {itemLabel(row, template.status === "archived" ? "unarchive" : "archive")}
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              <p className={`${STRONG} text-xs`} data-template-status={template.status}>
+                {itemLabel(
+                  row,
+                  template.status === "archived" ? "status-archived" : "status-published",
+                )}
+              </p>
+            </div>
+          )}
+        />
       )}
 
       <section className={`mt-8 p-5 ${CARD}`} data-template-library-legacy="true">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-          {legacy.heading}
-        </h2>
+        <h2 className="text-base font-semibold text-foreground">{legacy.heading}</h2>
         <p className={`mt-2 ${MUTED}`}>{sectionBody(legacy)}</p>
       </section>
 
       <section className={`mt-6 p-5 ${CARD}`} data-template-library-create="true">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-          {create.heading}
-        </h2>
+        <h2 className="text-base font-semibold text-foreground">{create.heading}</h2>
         <p className={`mt-2 ${MUTED}`}>{sectionBody(create)}</p>
         {create.cta === undefined ? null : (
           <p className="mt-3 text-sm">

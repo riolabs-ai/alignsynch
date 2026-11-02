@@ -45,6 +45,15 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /** The v1 library's two groups, named on the header band when the type resolves (#409). */
+      id: "groups",
+      items: [
+        { id: "business", label: "Business" },
+        { id: "personal", label: "Personal" },
+        { id: "other", label: "Other templates" },
+      ],
+    },
+    {
       id: "actions",
       heading: "What you can do with it",
       items: [
@@ -52,6 +61,63 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "duplicate", label: "Duplicate into your templates" },
         { id: "archive", label: "Archive" },
         { id: "unarchive", label: "Unarchive" },
+      ],
+    },
+    {
+      /**
+       * The landing's identity band (#409). The v1 template page opens with a band naming the
+       * realm, the group, the Relationship Type and the two **roles** — never a person: a
+       * template holds Aspects, and names are instance facts. `who-its-for` / `who-its-not-for`
+       * label the descriptor the catalogue already authored for the type
+       * (`data/v1/relationship-types.ts::descriptor`); a template whose slug names no catalogue
+       * type has no descriptor, and says so instead of having one written for it.
+       */
+      id: "identity",
+      items: [
+        { id: "type", label: "Relationship Type" },
+        { id: "realm", label: "Realm" },
+        { id: "group", label: "Group" },
+        { id: "seats", label: "Seats" },
+        { id: "initiator", label: "Initiator" },
+        { id: "counterparty", label: "Counterparty" },
+        { id: "roles", label: "{initiator} / {counterparty}" },
+        { id: "who-its-for", label: "Who it is for" },
+        { id: "who-its-not-for", label: "Who it is not for" },
+        {
+          id: "no-type",
+          label:
+            "This template names no relationship type, so no realm, seat or descriptor is claimed for it here.",
+        },
+      ],
+    },
+    {
+      /**
+       * Mode and Setting, explained where a person decides (#409). Both are the model's own
+       * vocabulary (`content/assessment.ts`), so the words beside them are the only copy: a Mode
+       * is what each party answers, a Setting is what counts as Aligned, and neither is a number
+       * this page prints.
+       */
+      id: "shape",
+      heading: "Mode and Setting",
+      body: "Every relationship run on this template records two things before either party answers. They are fixed at creation, and the report is read under them.",
+      items: [
+        { id: "mode", label: "Mode" },
+        { id: "mode-basic", label: "Basic Mode asks Feel and Wish on every Aspect." },
+        {
+          id: "mode-advanced",
+          label:
+            "Advanced Mode asks all four — Feel, Wish, Think and Guess — so the report can also measure what each party predicted the other would answer.",
+        },
+        { id: "setting", label: "Setting" },
+        {
+          id: "setting-note",
+          label:
+            "The Setting is a lens over the Gaps, never a Gap: it changes no answer, and decides only what counts as aligned.",
+        },
+        {
+          id: "no-money",
+          label: "No price is shown here: this page has not read what anyone paid.",
+        },
       ],
     },
     {

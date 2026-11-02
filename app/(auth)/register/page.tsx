@@ -1,6 +1,7 @@
 import { RegisterView } from "@/components/auth/register-view";
 import { brand, brandIdOf } from "@/data/brand";
 import { registerPageCopy } from "@/data/pages/register";
+import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import { registerCopyFor } from "@/lib/auth-copy";
 import type { Metadata } from "next";
@@ -26,6 +27,12 @@ export const metadata: Metadata = {
  * page per brand, and it is read here because the view is a client module: the brand table is
  * `lib/auth/paths.ts` (pure strings), but the choice belongs to the server half, exactly like
  * `copy`. The client never imports a brand.
+ *
+ * **The marks are props for the same reason** — the panel glyph and the button glyph. The view
+ * used to import `BookOpen` and `Trophy` directly, so the alignment build's sign-up page carried a
+ * quiz book and a quiz trophy. `AUTH_MARKS_BY_BRAND` names the mark ids per brand, and it is read
+ * here because the view is a client module: the table is `lib/auth/marks.ts` (ids, no zod, no
+ * components), but the choice belongs to the server half.
  */
 export default function AuthPage() {
   const brandId = brandIdOf(brand);
@@ -33,6 +40,7 @@ export default function AuthPage() {
     <RegisterView
       copy={registerCopyFor(registerPageCopy, brandId)}
       destination={AFTER_SIGN_IN_BY_BRAND[brandId]}
+      marks={AUTH_MARKS_BY_BRAND[brandId]}
     />
   );
 }
