@@ -113,6 +113,13 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           },
           { id: "error-unknown", label: "Something went wrong. Sign in again." },
           { id: "error-required", label: "Enter your email and password." },
+          /**
+           * The forgotten-password link (#password-reset) — the only way back in for an account
+           * whose password nobody remembers, and the link a Google-only account needs when Google
+           * is the thing that is unavailable. It sits beside the submit button rather than under
+           * the form: it is the alternative to pressing it.
+           */
+          { id: "forgot", label: "Forgot your password?" },
           { id: "signup-prompt", label: "Don't have an account?" },
           { id: "signup-action", label: "Sign up here" },
         ],

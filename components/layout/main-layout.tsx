@@ -11,7 +11,6 @@ import type { BrandId } from "@/data/brand";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
-import { cn } from "@/lib/utils";
 import type React from "react";
 
 /**
@@ -54,7 +53,7 @@ export function MainLayout({
    */
   hiddenNav?: readonly string[];
 }) {
-  const { collapsed, mobileOpen, closeMobile } = useSidebar();
+  const { mobileOpen, closeMobile } = useSidebar();
   return (
     <>
       {/* Below `xl` the sidebar is an overlay drawer; this is the part of the page that
@@ -79,14 +78,9 @@ export function MainLayout({
             hiddenNav={hiddenNav}
           />
         </div>
-        <div
-          className={cn(
-            collapsed
-              ? "xl:w-[calc(100%-70px)] xl:ml-[70px]"
-              : "xl:w-[calc(100%-250px)] xl:ml-[250px]",
-            "w-full",
-          )}
-        >
+        {/* The content sits past the rail, which is always 250px at `xl` and up — the offset is
+            unconditional because there is no collapsed variant to offset differently for. */}
+        <div className="w-full xl:w-[calc(100%-250px)] xl:ml-[250px]">
           <Header
             copy={copy}
             brandId={brandId}

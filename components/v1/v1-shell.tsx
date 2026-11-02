@@ -5,7 +5,6 @@ import { V1StoreProvider } from "@/lib/v1/store";
 import { PersonaBar } from "@/components/v1/persona-bar";
 import { ReviewChip } from "@/components/v1/review-chip";
 import { V1Sidebar, V1SidebarProvider, useV1Sidebar } from "@/components/v1/v1-sidebar";
-import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 /**
@@ -29,7 +28,7 @@ export function V1Shell({ children }: { children: ReactNode }) {
 }
 
 function V1ShellLayout({ children }: { children: ReactNode }) {
-  const { collapsed, mobileOpen, closeMobile } = useV1Sidebar();
+  const { mobileOpen, closeMobile } = useV1Sidebar();
 
   return (
     <>
@@ -43,7 +42,9 @@ function V1ShellLayout({ children }: { children: ReactNode }) {
         />
       )}
       <V1Sidebar />
-      <div className={cn("min-h-screen", collapsed ? "xl:ml-[70px]" : "xl:ml-[250px]")}>
+      {/* The content sits past the rail, which is always 250px at `xl` and up — the offset is
+          unconditional because there is no collapsed variant to offset differently for. */}
+      <div className="min-h-screen xl:ml-[250px]">
         <PersonaBar />
         {children}
       </div>

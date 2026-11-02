@@ -3,6 +3,7 @@
 // template-ancestor: components/settings/account-settings.tsx   (variation: the settings page over the identity record — four cards, one form each)
 
 import { SignOutButton } from "@/components/identity/sign-out-button";
+import { PasswordCard } from "@/components/identity/password-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import type { PublicProfile } from "@/content/identity";
 import type { PageCopy } from "@/content/pages";
+import type { ResetSetOutcome } from "@/lib/auth/reset-token";
 import { loginPathFor } from "@/lib/auth/paths";
 import { fillLabel, itemLabel, itemOf, sectionOf } from "@/lib/page-copy";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
@@ -57,9 +59,24 @@ interface SettingsViewProps {
   signedInName: string;
   /** Their saved profile, or `null` when they have never saved one. */
   profile: PublicProfile | null;
+  /**
+   * Whether the account already has a password, read on the server from `neon_auth.account`
+   * (`lib/db/password-reset.ts::accountHasPassword`). A Google-only account answers `false`, and
+   * the password card then offers to set one (#password-reset).
+   */
+  hasPassword: boolean;
+  /** The signed-in set-password action, wired by the page. Never an auth client call. */
+  savePassword: (input: { password: string; confirmation: string }) => Promise<ResetSetOutcome>;
 }
 
-export function SettingsView({ copy, email, signedInName, profile }: SettingsViewProps) {
+export function SettingsView({
+  copy,
+  email,
+  signedInName,
+  profile,
+  hasPassword,
+  savePassword,
+}: SettingsViewProps) {
   const router = useRouter();
   const identity = sectionOf(copy, "identity");
   const countries = sectionOf(copy, "countries");
@@ -248,6 +265,8 @@ export function SettingsView({ copy, email, signedInName, profile }: SettingsVie
           </form>
         </CardContent>
       </Card>
+
+      <PasswordCard copy={copy} hasPassword={hasPassword} save={savePassword} />
 
       <Card>
         <CardHeader>

@@ -117,15 +117,6 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "logout-pending", label: "Signing out…" },
           { id: "logout-error", label: "Couldn't sign out. Try again." },
-          /**
-           * The rail's pin control. The rail is expanded by default, and the pin collapses it to
-           * its icon-only 70px state (and back). The two ids are the control's accessible names in
-           * its two states: `pin` is the action a collapsed rail offers (re-expand), `unpin` the
-           * action an expanded rail offers (collapse) — the same state-worded pair as
-           * `logout-pending` above, so a screen reader hears the action, not an icon.
-           */
-          { id: "pin", label: "Pin sidebar" },
-          { id: "unpin", label: "Unpin sidebar" },
         ],
       },
       /**
