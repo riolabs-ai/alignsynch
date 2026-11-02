@@ -232,7 +232,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "Answer the Aspect sheet: every Aspect's prompt, both named Values, and one row per seat asking the Opinion kinds the instance's Mode defines.",
     notes:
-      "In-progress UI (#409, R1-E), and singular `answer` on purpose: `/answers` is the POST-only endpoint the live sheet submits to, and Next refuses a `page.tsx` beside a `route.ts`. `readInstanceBundle()` supplies the Aspects, the Mode, the Setting and the two `party` rows; the blind rule is stated on the page and every control is disabled with the not-wired note, because this screen has no write path and no viewer session.",
+      "The gated sheet (#427, R2-2), and singular `answer` on purpose: `/answers` in the same segment is the POST-only endpoint the form submits to, and Next refuses a `page.tsx` beside a `route.ts`. The viewer is resolved by `readFlowScreen()` from the party cookie's token hash, then the signed-in account, then a relationship membership, and a request that is none of those gets a 404 — the sheet does not exist for it. `lib/flow/answer-gate.ts` picks one of three shapes: the live form for a seat that may answer (prefilled from that seat's own `opinion` rows), the viewer's own sheet drawn disabled once the answers are sealed, and a coach band with no form at all. The form posts no identity field; the submit is written by `submitAnswers()` under the role the cookie resolves inside its transaction. Pre-completion the other party's rows never leave Postgres — the only opinion query the read runs is filtered by `visibleRoles()` — so the blindness is the shape of the projection, not a conditional in this page.",
   },
   {
     kind: "route",
