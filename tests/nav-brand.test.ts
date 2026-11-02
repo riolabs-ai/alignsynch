@@ -127,12 +127,12 @@ describe("the alignment brand's menu is alignment destinations", () => {
 
   it("links only to what exists on this brand today", () => {
     expect(hrefs).toEqual([
-      "/",
-      "/#templates",
-      "/#questions",
-      "/support",
       "/dashboard",
+      "/#questions",
+      "/assessment/instances",
       "/assessment/templates",
+      "/#templates",
+      "/support",
     ]);
   });
 
@@ -164,12 +164,12 @@ describe("the quiz product is filtered, not deleted", () => {
   it("gives a viewer with the quiz capability both menus", () => {
     const hrefs = navHrefs("alignsynch", viewerWith("quiz-surfaces"));
     expect(hrefs.slice(0, 6)).toEqual([
-      "/",
-      "/#templates",
-      "/#questions",
-      "/support",
       "/dashboard",
+      "/#questions",
+      "/assessment/instances",
       "/assessment/templates",
+      "/#templates",
+      "/support",
     ]);
     expect(hrefs.slice(6)).toEqual(QUIZ_MENU);
   });
@@ -203,8 +203,9 @@ describe("the console's own rows are a member's, the operator's rows are not", (
   const memberHrefs = navHrefs("alignsynch");
   const adminHrefs = navHrefs("alignsynch", viewerWith("admin-console"));
 
-  it("draws the console's two destinations for a member", () => {
+  it("draws every console destination for a member", () => {
     expect(memberHrefs).toContain("/dashboard");
+    expect(memberHrefs).toContain("/assessment/instances");
     expect(memberHrefs).toContain("/assessment/templates");
   });
 
@@ -214,17 +215,20 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     // The labels too: a row rendered `hidden` would still be in the markup, and the refusal is
     // that the member does not learn the surface exists — not that it is invisible.
     expect(member).not.toContain(itemLabelOf("console-gaps"));
-    expect(member).not.toContain(itemLabelOf("admin-instances"));
+    // Delimited, because this row's label ("Relationships") is a substring of the member's own
+    // "My Relationships" row: the refusal is about the operator's row, not about the words.
+    expect(member).not.toContain(`>${itemLabelOf("admin-instances")}<`);
+    expect(member).toContain(`>${itemLabelOf("my-relationships")}<`);
   });
 
   it("draws both operator rows for an admin, appended after the console's", () => {
     expect(adminHrefs).toEqual([
-      "/",
-      "/#templates",
-      "/#questions",
-      "/support",
       "/dashboard",
+      "/#questions",
+      "/assessment/instances",
       "/assessment/templates",
+      "/#templates",
+      "/support",
       "/admin/gaps",
       "/admin/instances",
     ]);
@@ -235,6 +239,43 @@ describe("the console's own rows are a member's, the operator's rows are not", (
 
   it("keeps the member's sidebar a prefix of the admin's — same rows, same order", () => {
     expect(adminHrefs.slice(0, memberHrefs.length)).toEqual(memberHrefs);
+  });
+});
+
+/**
+ * The owner's four sidebar notes on `:3002/settings`, as assertions.
+ *
+ * The order *is* the request — a rail that gains the right rows in the wrong sequence is not the
+ * change that was asked for — and the duplicate is what it removes: one row for `/dashboard`, and
+ * no AlignSynch console destination on the quiz brand, whose boundary answers those routes with a
+ * 404. The rows are brand-conditional by construction (`AppNav` renders one menu or the other),
+ * which is why the last case asserts absence rather than a hidden row.
+ */
+describe("the console rail reads Dashboard, My Relationships, Library, Templates, Support", () => {
+  const memberHrefs = navHrefs("alignsynch");
+
+  it("opens on /dashboard and draws that destination exactly once", () => {
+    expect(memberHrefs[0]).toBe("/dashboard");
+    expect(memberHrefs.filter((href) => href === "/dashboard")).toEqual(["/dashboard"]);
+  });
+
+  it("puts Library directly below My Relationships", () => {
+    expect(memberHrefs.indexOf("/assessment/templates")).toBe(
+      memberHrefs.indexOf("/assessment/instances") + 1,
+    );
+  });
+
+  it("puts Templates directly above Support", () => {
+    expect(memberHrefs.indexOf("/support")).toBe(memberHrefs.indexOf("/#templates") + 1);
+  });
+
+  it("keeps the console's rows and their routes off the quiz brand", () => {
+    const quiz = navHrefs("quizhub");
+    expect(quiz.filter((href) => href.startsWith("/assessment"))).toEqual([]);
+    expect(quiz).not.toContain("/dashboard");
+    // The guard's guard: the quiz rail is still its own fifteen rows, not an empty list.
+    expect(quiz[0]).toBe("/");
+    expect(quiz).toHaveLength(QUIZ_MENU.length);
   });
 });
 

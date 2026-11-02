@@ -8,13 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
@@ -76,15 +69,12 @@ export function RegisterView({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    // Step 1: Personal Details
+    // Step 1: the email address, and nothing else.
+    email: "",
+
+    // Step 2: the name, then the credentials.
     firstName: "",
     lastName: "",
-    email: "",
-    phone: "",
-    dateOfBirth: "",
-    country: "",
-
-    // Step 2: Account Setup
     password: "",
     confirmPassword: "",
     terms: false,
@@ -105,14 +95,21 @@ export function RegisterView({
     if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
   };
 
+  /**
+   * Whether the current step's required fields are filled. Step 1 asks one question, so it needs
+   * one answer; the two name fields are required on step 2 (their labels carry the `*`) and are
+   * checked here — a field the server-side check below refuses must not be reachable through Next.
+   */
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.firstName && formData.lastName && formData.email && formData.phone;
+        return formData.email.trim() !== "";
       case 2:
         return (
-          formData.password &&
-          formData.confirmPassword &&
+          formData.firstName.trim() !== "" &&
+          formData.lastName.trim() !== "" &&
+          formData.password !== "" &&
+          formData.confirmPassword !== "" &&
           formData.terms &&
           formData.password === formData.confirmPassword
         );
@@ -127,11 +124,12 @@ export function RegisterView({
    * The sign-up itself (issue #164). Until that card the last step's button did nothing at all.
    *
    * `name` is the auth user's display name — `zUserProfile.displayName` starts from it on
-   * `/settings`, so a person who never saves a profile still has a name on their page. The phone
-   * number and date of birth are not part of the auth user or the profile schema, so they are not
-   * sent anywhere: a form field that silently goes nowhere is worse than one the product does not
-   * ask for yet. (The quiz-interests and skill-level fields had the same problem and were removed
-   * outright in #291 rather than being left in the form.)
+   * `/settings`, so a person who never saves a profile still has a name on their page. Sign-up
+   * collects the identity the account needs and nothing else: the phone number, date of birth and
+   * country used to sit on step 1 and went nowhere (they are not part of the auth user or the
+   * profile schema), so they were removed rather than kept as fields with no reader — `/settings`
+   * is where the profile asks for country, and it owns that question. (The quiz-interests and
+   * skill-level fields had the same problem and were removed outright in #291.)
    */
   const status = sectionOf(copy, "status");
   const [pending, setPending] = useState(false);
@@ -249,36 +247,9 @@ export function RegisterView({
               <CardDescription>{itemValue(stepsCopy, STEPS[currentStep - 1])}</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Step 1: Personal Details */}
+              {/* Step 1: the email address only */}
               {currentStep === 1 && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName" className="text-sm font-medium ">
-                        {itemLabel(details, "first-name")}
-                      </Label>
-                      <Input
-                        id="firstName"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange("firstName", e.target.value)}
-                        placeholder={itemLabel(details, "first-name-placeholder")}
-                        className="h-12 mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName" className="text-sm font-medium ">
-                        {itemLabel(details, "last-name")}
-                      </Label>
-                      <Input
-                        id="lastName"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange("lastName", e.target.value)}
-                        placeholder={itemLabel(details, "last-name-placeholder")}
-                        className="h-12 mt-1"
-                      />
-                    </div>
-                  </div>
-
                   <div>
                     <Label htmlFor="email" className="text-sm font-medium ">
                       {itemLabel(details, "email")}
@@ -292,65 +263,39 @@ export function RegisterView({
                       className="h-12 mt-1"
                     />
                   </div>
+                </div>
+              )}
 
-                  <div>
-                    <Label htmlFor="phone" className="text-sm font-medium ">
-                      {itemLabel(details, "phone")}
-                    </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      placeholder={itemLabel(details, "phone-placeholder")}
-                      className="h-12 mt-1"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+              {/* Step 2: the name, then the account */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="dateOfBirth" className="text-sm font-medium ">
-                        {itemLabel(details, "date-of-birth")}
+                      <Label htmlFor="firstName" className="text-sm font-medium ">
+                        {itemLabel(account, "first-name")}
                       </Label>
                       <Input
-                        id="dateOfBirth"
-                        type="date"
-                        value={formData.dateOfBirth}
-                        onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange("firstName", e.target.value)}
+                        placeholder={itemLabel(account, "first-name-placeholder")}
                         className="h-12 mt-1"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="country" className="text-sm font-medium ">
-                        {itemLabel(details, "country")}
+                      <Label htmlFor="lastName" className="text-sm font-medium ">
+                        {itemLabel(account, "last-name")}
                       </Label>
-                      <Select
-                        value={formData.country}
-                        onValueChange={(value) => handleInputChange("country", value)}
-                      >
-                        <SelectTrigger className="h-12 mt-1">
-                          <SelectValue placeholder={itemLabel(details, "country-placeholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="us">{itemLabel(details, "country-us")}</SelectItem>
-                          <SelectItem value="uk">{itemLabel(details, "country-uk")}</SelectItem>
-                          <SelectItem value="ca">{itemLabel(details, "country-ca")}</SelectItem>
-                          <SelectItem value="au">{itemLabel(details, "country-au")}</SelectItem>
-                          <SelectItem value="de">{itemLabel(details, "country-de")}</SelectItem>
-                          <SelectItem value="fr">{itemLabel(details, "country-fr")}</SelectItem>
-                          <SelectItem value="other">
-                            {itemLabel(details, "country-other")}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange("lastName", e.target.value)}
+                        placeholder={itemLabel(account, "last-name-placeholder")}
+                        className="h-12 mt-1"
+                      />
                     </div>
                   </div>
-                </div>
-              )}
 
-              {/* Step 2: Account Setup */}
-              {currentStep === 2 && (
-                <div className="space-y-4">
                   <div>
                     <Label htmlFor="password" className="text-sm font-medium ">
                       {itemLabel(account, "password")}

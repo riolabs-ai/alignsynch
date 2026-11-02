@@ -54,13 +54,23 @@ const viewProps = (id: (typeof BRANDS)[number][0], record: Brand) => ({
 });
 
 describe("the sign-up form on both brands", () => {
-  it("opens on personal details, step 1 of 2", () => {
+  it("opens on step 1 with the email address and nothing else", () => {
     for (const [id, record] of BRANDS) {
       const html = renderToStaticMarkup(createElement(RegisterView, viewProps(id, record)));
       expect(html, id).toContain("Step 1 of 2");
       expect(html, id).toContain("Personal Details");
-      expect(html, id).toContain("First Name *");
-      expect(html, id).toContain("Email *");
+      expect(html, id).toContain('id="email"');
+
+      // Step 1 collects the email and nothing else (owner review, 2026-11-02): the names moved
+      // to step 2 and the profile fields left sign-up. This is a real render, so a control still
+      // sitting on step 1 would appear here.
+      for (const gone of ["firstName", "lastName", "phone", "dateOfBirth", "country"]) {
+        expect(html, `${id} still renders ${gone} on step 1`).not.toContain(`id="${gone}"`);
+      }
+      expect(html, id).not.toContain("First Name *");
+      expect(html, id).not.toContain("Phone Number *");
+      expect(html, id).not.toContain("Date of Birth");
+      expect(html, id).not.toContain("Select country");
     }
   });
 
