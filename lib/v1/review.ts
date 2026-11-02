@@ -161,3 +161,36 @@ function matchesPattern(pathname: string, pattern: string): boolean {
 export function matchReviewScreen(pathname: string): ReviewScreen | undefined {
   return REVIEW_SCREENS.find((screen) => matchesPattern(pathname, screen.route));
 }
+
+/**
+ * The DOM id of a screen's row on `/v1/review` — the route pattern as a slug.
+ *
+ * `/v1/relationships/[id]/accept` → `screen-v1-relationships-id-accept`. The route is what keys
+ * a row (`reviews[screen.route]` is the persisted status), so it is also what keys its address:
+ * the review control deep-links with this id and the list scrolls to the element carrying it.
+ * That is the difference between "open the list" and "open *this* row".
+ */
+export function reviewScreenId(route: string): string {
+  const slug = route
+    .replace(/^\//, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+  return `screen-${slug}`;
+}
+
+/** The URL that opens `/v1/review` **at this screen's row**, not the top of the list. */
+export function reviewScreenHref(route: string): string {
+  return `/v1/review#${reviewScreenId(route)}`;
+}
+
+/** The screen a row id names, or `undefined` for an id no row carries. */
+export function reviewScreenFromId(id: string | null | undefined): ReviewScreen | undefined {
+  if (id === null || id === undefined || id === "") return undefined;
+  return REVIEW_SCREENS.find((screen) => reviewScreenId(screen.route) === id);
+}
+
+/** The screen a `location.hash` names, with or without its `#`. */
+export function reviewScreenFromHash(hash: string | null | undefined): ReviewScreen | undefined {
+  return reviewScreenFromId(hash?.replace(/^#/, ""));
+}

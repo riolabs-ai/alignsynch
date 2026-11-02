@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Menu } from "lucide-react";
 import Link from "next/link";
-import { ReviewChip } from "@/components/v1/review-chip";
 import { usePathname, useRouter } from "next/navigation";
 
 /**
@@ -29,9 +28,12 @@ import { usePathname, useRouter } from "next/navigation";
  *   `Prototype [LOCAL] [V1] | Counterparty [Sam Carter]`
  *
  * The right side carries the controls: the hamburger that opens the sidebar drawer below `xl`
- * (the sidebar card added), the persona switch, and — beside the review chip — the account menu
- * (`components/v1/account-menu.tsx`), the profile chip that opens the persona's Profile, Settings
- * and Notifications.
+ * (the sidebar card added), the persona switch, the account menu (`components/v1/account-menu.tsx`)
+ * — the profile chip that opens the persona's Profile, Settings and Notifications — and the
+ * notification bell.
+ *
+ * The review chip is **not** here: one control, in the shell's footer (`ReviewFooter`). It used to
+ * render both here and at the foot of the page, which showed one fact twice.
  */
 export function PersonaBar() {
   const { persona: storePersona, setPersona, resetStore } = useV1Store();
@@ -121,7 +123,6 @@ export function PersonaBar() {
           </button>
           <NotificationBell persona={persona} />
           <AccountMenu persona={persona} />
-          <ReviewChip className="hidden sm:inline-flex" />
         </div>
 
         {/* Mobile controls — the bell plus one menu button at `sm` and below, so the line never wraps. */}
