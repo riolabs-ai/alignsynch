@@ -1,6 +1,12 @@
 /**
  * `/assessment/templates` — the template library (#console 5/5).
  *
+ * **The heading is "Relationship Templates", and it is the page's title too.** "Your templates"
+ * described a page it did not point at: the rail row is Templates (the catalogue a member starts
+ * from) and Library is the row beside it, and the page itself is the catalogue — the platform's
+ * templates plus the ones this account wrote. The `<h1>` and the `<title>` both read `heading`,
+ * so the title cannot drift from the screen.
+ *
  * The screen answers one question: **which templates may this account use, and which of them did
  * it write?** The data side is `record.author_user_id` — `NULL` for a built-in, the author's id
  * for a template a person wrote — and the three tabs are that one column read three ways.
@@ -24,7 +30,7 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
-  heading: "Your templates",
+  heading: "Relationship Templates",
   subtitle:
     "The templates this account can use: the platform's own, and the ones you wrote. Open one to see its Aspects, copy it, or archive it when you no longer want it in the list.",
   sections: [

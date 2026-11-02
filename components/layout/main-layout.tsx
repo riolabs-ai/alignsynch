@@ -1,10 +1,9 @@
 "use client";
 
-// template-ancestor: components/layout/sidebar.tsx   (variation: the shell — the fixed rail plus the top bar and one scrolling main slot)
+// template-ancestor: components/layout/sidebar.tsx   (variation: the shell — the sticky rail plus the top bar and one scrolling main slot)
 
 import { Header } from "@/components/layout/header";
 import { AppSidebar } from "@/components/layout/sidebar";
-import { useSidebar } from "@/components/layout/sidebar-context";
 import type { SearchIndex } from "@/content/search";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
@@ -23,6 +22,12 @@ import type React from "react";
  * facts the navigation is a function of (issue #156): which product's menu this is, and what
  * the person looking at it may see (`lib/nav.ts`). `account` crosses it too (issue #212): the
  * signed-in person, or `null` when nobody is signed in.
+ *
+ * **Two columns, no drawer and no scrim.** The rail is a sticky first column and the content is
+ * the second; there is no overlay to dismiss, no z-index stack between them and no state that
+ * decides whether the rail exists. `min-w-0` on the content column is load-bearing: a flex child
+ * that holds a wide table would otherwise refuse to shrink below its content and push the page
+ * sideways at phone widths.
  */
 export function MainLayout({
   children,
@@ -53,45 +58,20 @@ export function MainLayout({
    */
   hiddenNav?: readonly string[];
 }) {
-  const { mobileOpen, closeMobile } = useSidebar();
   return (
-    <>
-      {/* Below `xl` the sidebar is an overlay drawer; this is the part of the page that
-          dismisses it. It sits under the `z-50` sidebar wrapper and above the content, and
-          only exists while the drawer is open (so it never swallows clicks at `xl`). */}
-      {mobileOpen ? (
-        <button
-          type="button"
-          aria-label="Close navigation"
-          tabIndex={-1}
-          className="fixed inset-0 z-40 bg-black/60 xl:hidden"
-          onClick={closeMobile}
+    <div className="flex min-h-screen">
+      <AppSidebar copy={copy} mark={mark} brandId={brandId} viewer={viewer} hiddenNav={hiddenNav} />
+      <div className="min-w-0 flex-1">
+        <Header
+          copy={copy}
+          brandId={brandId}
+          viewer={viewer}
+          account={account}
+          searchIndex={searchIndex}
+          hiddenNav={hiddenNav}
         />
-      ) : null}
-      <div className="flex min-h-screen">
-        <div className="z-50 relative">
-          <AppSidebar
-            copy={copy}
-            mark={mark}
-            brandId={brandId}
-            viewer={viewer}
-            hiddenNav={hiddenNav}
-          />
-        </div>
-        {/* The content sits past the rail, which is always 250px at `xl` and up — the offset is
-            unconditional because there is no collapsed variant to offset differently for. */}
-        <div className="w-full xl:w-[calc(100%-250px)] xl:ml-[250px]">
-          <Header
-            copy={copy}
-            brandId={brandId}
-            viewer={viewer}
-            account={account}
-            searchIndex={searchIndex}
-            hiddenNav={hiddenNav}
-          />
-          <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">{children}</main>
-        </div>
+        <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">{children}</main>
       </div>
-    </>
+    </div>
   );
 }

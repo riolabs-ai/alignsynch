@@ -39,6 +39,7 @@ const STATIC_ROUTES = [
   "/explore",
   "/explore/featured",
   "/forgot-password",
+  "/how-it-works",
   "/leaderboard",
   "/login",
   "/my-quizzes",

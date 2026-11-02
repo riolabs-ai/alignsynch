@@ -1,8 +1,7 @@
 "use client";
-// template-ancestor: components/layout/nav-menus.tsx   (variation: the top bar — wordmark, search, the drawer triggers and the account menu, over the same nav data as the rail)
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the top bar — search, the message and notification drawers' triggers and the account menu, over the same nav data as the rail)
 
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
-import { useSidebar } from "@/components/layout/sidebar-context";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,7 +31,6 @@ import {
   FileText,
   LogOut,
   Mail,
-  Menu,
   MessageCircleQuestion,
   MessageSquare,
   Search,
@@ -160,7 +158,6 @@ export function Header({
 
   const pathname = usePathname();
   const router = useRouter();
-  const { toggleMobile, mobileOpen } = useSidebar();
   const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
   const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -263,20 +260,12 @@ export function Header({
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
         <div className="flex items-center gap-4">
-          {/* Below `xl` the sidebar is an overlay drawer, so this opens it. At `xl` and up the
-              rail is always expanded and the header draws no toggle: the sidebar has no
-              collapse control at all (the pin/unpin was removed on the owner's review). */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="xl:hidden"
-            onClick={toggleMobile}
-            aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
-            aria-expanded={mobileOpen}
-            aria-controls="app-sidebar"
-          >
-            <Menu className="!text-3xl" />
-          </Button>
+          {/*
+            No drawer trigger. The rail is a sticky column at every width
+            (`components/layout/sidebar.tsx`), so there is nothing for a hamburger to open: a
+            button that toggles a panel which is always present would be the "control that does
+            nothing" this shell has already removed twice (the pin, the empty sign-out href).
+          */}
 
           <div className="relative w-full md:w-64 lg:w-80 xl:w-96 max-md:hidden">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

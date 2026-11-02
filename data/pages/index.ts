@@ -37,6 +37,7 @@ import { dashboardPageCopy } from "./dashboard";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
+import { howItWorksPageCopy } from "./how-it-works";
 import { invitePageCopy } from "./invite";
 import { legalPages } from "./legal";
 import { loginPageCopy } from "./login";
@@ -83,6 +84,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
   "/forgot-password": resetRequestPageCopy,
+  "/how-it-works": howItWorksPageCopy,
   "/invite/[token]": invitePageCopy,
   "/login": loginPageCopy,
   "/news": newsPageCopy,

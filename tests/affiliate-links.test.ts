@@ -65,7 +65,6 @@ import { AffiliateDashboard } from "@/components/dashboard/affiliate-dashboard";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { AppNav } from "@/components/layout/nav-menus";
-import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndexFor } from "@/data/searchdata";
 import { hiddenNavHrefs } from "@/lib/flags";
@@ -130,17 +129,14 @@ const SITES: readonly { site: string; html: (hiddenNav: readonly string[]) => st
     site: "the notification drawer",
     html: (hiddenNav) =>
       renderToStaticMarkup(
-        createElement(SidebarProvider, null, [
-          createElement(Header, {
-            key: "header",
-            copy: shellPageCopy,
-            brandId: "quizhub",
-            viewer: PLATFORM_VIEWER,
-            account: null,
-            searchIndex: searchIndexFor("quizhub", PLATFORM_VIEWER),
-            hiddenNav,
-          }),
-        ]),
+        createElement(Header, {
+          copy: shellPageCopy,
+          brandId: "quizhub",
+          viewer: PLATFORM_VIEWER,
+          account: null,
+          searchIndex: searchIndexFor("quizhub", PLATFORM_VIEWER),
+          hiddenNav,
+        }),
       ),
   },
   {

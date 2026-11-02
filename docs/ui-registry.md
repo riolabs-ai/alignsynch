@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **90** — 50 static, 40 dynamic, from `app/**/page.tsx`
-- component domains: **37** — 324 files under `components/`, 319 of them `.tsx`
+- routes: **91** — 51 static, 40 dynamic, from `app/**/page.tsx`
+- component domains: **38** — 324 files under `components/`, 319 of them `.tsx`
 - route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 53 · **db** 20 · **live** 7 · **prototype** 34
-- templates: Both templates 26 · AlignSynch 57 · QuizHub 42 · No template yet 2
+- status: **mock** 14 · **fixture** 54 · **db** 20 · **live** 7 · **prototype** 34
+- templates: Both templates 26 · AlignSynch 59 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -132,9 +132,9 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - routes (3): `/dashboard/user`, `/profile/[username]`, `/settings`
 
 - `components/layout` — **fixture**
-  - capability: The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.
-  - files (8): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
-  - routes (6): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/tournaments` — and every other route through `app/layout.tsx`
+  - capability: The shell: header, the sticky sidebar, the layout that composes them, and the footer.
+  - files (7): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar.tsx`
+  - routes (6): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/tournaments`
 
 - `components/legal` — **mock**
   - capability: The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.
@@ -271,6 +271,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
   - notes: The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route. A proof, not a destination: nothing in the flow links here.
+
+- `/how-it-works` — **fixture**
+  - capability: The console's onboarding page: the six moves of one relationship in order — pick a type and a template, invite the Member, both answer blind, both accept, read the report and its Steps, start the next session — with what the member does beside what the product does, and the honest limits of this build.
+  - components: `components/onboarding`
+  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: The rail's How it works row used to leave the console for `/#questions` on the public front page; this route is its real destination (owner's review of the console). A variation of the alignment front page's `#questions` composition, not a new pattern — the heading/body band, numbered, with the member's half against the product's half (`components/onboarding/how-it-works.tsx`, ancestor in its `template-ancestor:` header). It resolves the session first and answers a signed-out request with `redirect(/login?next=/how-it-works)`, and it refuses to render on a build that ships the quiz product instead (`quizProductShipped()`, the same flag resolver the quiz routes read) — the copy is the relationship product's, and #300 is the record of what happens when one product's words are served under the other's name. `fixture` and not `db`: it reads page copy and a session, and no row.
 
 - `/invite/[token]` — **db**
   - capability: What an invitation says, and the button that claims it — a single-use token spent by a POST once the invited party accepts.
@@ -477,6 +483,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The public pages' own chrome: the marketing header (the brand mark, the shell's public menu and a server-resolved account slot) and the landing page's bands. The footer is the shell's (`components/layout/footer.tsx`), mounted by the group's layout; there is no sidebar.
   - files (2): `marketing-header.tsx`, `marketing-landing.tsx`
   - routes (1): `/welcome`
+
+- `components/onboarding` — **mock**
+  - capability: The console's onboarding page: the ordered moves of one relationship, each with what the member does beside what the product does, and the honest limits of this build.
+  - files (1): `how-it-works.tsx`
+  - routes (1): `/how-it-works`
+  - notes: One file (`how-it-works.tsx`), and it is a variation rather than a new pattern: the ancestor is the alignment front page's `#questions` band (`components/home/alignment-home.tsx`), stated in its `template-ancestor:` header. The variation is the sequence — numbered bands instead of a two-up explainer, in the app shell instead of the marketing page. `mock` on the domain and `fixture` on its route for the reason `components/console` is: it renders no data of its own, it takes the route's parsed `PageCopy` as a prop, and the fixture is reached by the page module, not by this domain.
 
 - `components/v1` — **prototype**
   - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.

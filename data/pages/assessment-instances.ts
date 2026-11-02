@@ -1,6 +1,12 @@
 /**
  * `/assessment/instances` — the instances the signed-in account is a party to (#213).
  *
+ * **The heading is "My Relationships", and it is the page's title too.** The rail has called this
+ * destination My Relationships since the console rail was rewritten (`data/pages/shell.ts`), and
+ * the page said "Your assessments" in two places — an `<h1>` from this fixture and a `<title>`
+ * spelled in the page module. Both now read this one field: the product's noun is *relationship*,
+ * and an instance is the row that holds one, not the word a member is asked to recognise.
+ *
  * The third band is the whole point of the route: `yours-to-answer`, `awaiting-other` and
  * `complete` are the three things a row may say, and `awaiting-other` is the only one that
  * mentions the other party — as *awaiting*, with no score, no count of what they have answered
@@ -26,7 +32,7 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
-  heading: "Your assessments",
+  heading: "My Relationships",
   subtitle:
     "Every instance you are a party to, whichever link brought you in. Open one to answer, or to read the Gap once you have both submitted.",
   cta: { label: "Start an assessment", href: "/assessment" },
@@ -167,7 +173,7 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "unreadable",
-      heading: "Your assessments could not be read",
+      heading: "Your relationships could not be read",
       body: "This list is read from the database on every visit, and this visit did not get an answer. Nothing here came from a cache, and no answers were shown, guessed or reused.",
       items: [{ id: "reload", label: "Try the list again" }],
     },

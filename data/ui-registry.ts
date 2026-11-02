@@ -402,6 +402,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/how-it-works",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The console's onboarding page: the six moves of one relationship in order — pick a type and a template, invite the Member, both answer blind, both accept, read the report and its Steps, start the next session — with what the member does beside what the product does, and the honest limits of this build.",
+    notes:
+      "The rail's How it works row used to leave the console for `/#questions` on the public front page; this route is its real destination (owner's review of the console). A variation of the alignment front page's `#questions` composition, not a new pattern — the heading/body band, numbered, with the member's half against the product's half (`components/onboarding/how-it-works.tsx`, ancestor in its `template-ancestor:` header). It resolves the session first and answers a signed-out request with `redirect(/login?next=/how-it-works)`, and it refuses to render on a build that ships the quiz product instead (`quizProductShipped()`, the same flag resolver the quiz routes read) — the copy is the relationship product's, and #300 is the record of what happens when one product's words are served under the other's name. `fixture` and not `db`: it reads page copy and a session, and no row.",
+  },
+  {
+    kind: "route",
     surface: "/invite/[token]",
     status: "db",
     templates: ["alignsynch"],
@@ -1069,7 +1079,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.",
+      "The shell: header, the sticky sidebar, the layout that composes them, and the footer.",
   },
   {
     kind: "domain",
@@ -1100,6 +1110,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub"],
     capability: "Your quizzes, one quiz in detail, and the per-quiz statistics screen.",
+  },
+  {
+    kind: "domain",
+    surface: "components/onboarding",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The console's onboarding page: the ordered moves of one relationship, each with what the member does beside what the product does, and the honest limits of this build.",
+    notes:
+      "One file (`how-it-works.tsx`), and it is a variation rather than a new pattern: the ancestor is the alignment front page's `#questions` band (`components/home/alignment-home.tsx`), stated in its `template-ancestor:` header. The variation is the sequence — numbered bands instead of a two-up explainer, in the app shell instead of the marketing page. `mock` on the domain and `fixture` on its route for the reason `components/console` is: it renders no data of its own, it takes the route's parsed `PageCopy` as a prop, and the fixture is reached by the page module, not by this domain.",
   },
   {
     kind: "domain",

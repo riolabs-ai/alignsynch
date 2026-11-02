@@ -128,7 +128,7 @@ describe("the alignment brand's menu is alignment destinations", () => {
   it("links only to what exists on this brand today", () => {
     expect(hrefs).toEqual([
       "/dashboard",
-      "/#questions",
+      "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
       "/#templates",
@@ -165,7 +165,7 @@ describe("the quiz product is filtered, not deleted", () => {
     const hrefs = navHrefs("alignsynch", viewerWith("quiz-surfaces"));
     expect(hrefs.slice(0, 6)).toEqual([
       "/dashboard",
-      "/#questions",
+      "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
       "/#templates",
@@ -224,7 +224,7 @@ describe("the console's own rows are a member's, the operator's rows are not", (
   it("draws both operator rows for an admin, appended after the console's", () => {
     expect(adminHrefs).toEqual([
       "/dashboard",
-      "/#questions",
+      "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
       "/#templates",

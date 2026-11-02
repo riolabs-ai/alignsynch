@@ -1,4 +1,3 @@
-import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { brand, brandIdOf } from "@/data/brand";
@@ -132,10 +131,8 @@ export default function RootLayout({
         */}
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <TooltipProvider delayDuration={0}>
-            <SidebarProvider>
-              <Toaster richColors />
-              {children}
-            </SidebarProvider>
+            <Toaster richColors />
+            {children}
           </TooltipProvider>
         </ThemeProvider>
       </body>
