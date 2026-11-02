@@ -108,6 +108,7 @@ export function makeRelationship(overrides: Partial<V1Relationship> = {}): V1Rel
     setting: "soft",
     initiatorName: "Jordan",
     counterpartyName: "Sam",
+    inviteeName: null,
     initiatorAnswers: {},
     counterpartyAnswers: {},
     initiatorSubmitted: false,
@@ -123,6 +124,9 @@ export function makeRelationship(overrides: Partial<V1Relationship> = {}): V1Rel
     coachComments: [],
     comments: [],
     aspectComments: {},
+    // A Step is derived when a session completes, never authored into a fixture: the default
+    // factory row has not completed one, so it holds none. A test that needs Steps passes them in.
+    steps: [],
     openedSessions: 0,
     completedSessions: 0,
     subscription: null,
