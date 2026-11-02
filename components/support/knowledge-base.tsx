@@ -13,7 +13,7 @@ import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, FileText, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import type { SupportCategory } from "./support-page";
+import type { SupportCategory } from "./category";
 
 interface KnowledgeBaseProps {
   selectedCategory: SupportCategory;

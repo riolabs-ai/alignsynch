@@ -11,9 +11,10 @@
  * one component).
  *
  * The link destinations stay in JSX: `content/routes.ts` resolves every fixture `href` at
- * build time, and these point at `/support` (twice) and `/support?tab=contact`, a query
- * the route manifest does not carry. Leaving them where they are keeps E10 reading their
- * literal `href`s, which is where that check looks.
+ * build time, and these point at `/help` (the public help centre that lists the articles),
+ * `/help` again for the breadcrumb, and `/support` for "Contact support" — the account page
+ * inside the app, which redirects a signed-out reader to `/help`. Leaving them where they are
+ * keeps E10 reading their literal `href`s, which is where that check looks.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
@@ -25,8 +26,8 @@ export const supportArticlePageCopy: PageCopy = zPageCopy.parse({
       id: "article-detail",
       heading: "Was this article helpful?",
       items: [
-        { id: "back-to-support", label: "Return to Support Center" },
-        { id: "breadcrumb-support", label: "Support Center" },
+        { id: "back-to-support", label: "Return to the Help centre" },
+        { id: "breadcrumb-support", label: "Help" },
         { id: "breadcrumb-knowledge-base", label: "Knowledge Base" },
         { id: "min-read", label: "min read" },
         { id: "helpful-yes", label: "Yes, it helped" },
