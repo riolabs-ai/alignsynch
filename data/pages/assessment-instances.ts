@@ -29,6 +29,7 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
   heading: "Your assessments",
   subtitle:
     "Every instance you are a party to, whichever link brought you in. Open one to answer, or to read the Gap once you have both submitted.",
+  cta: { label: "Start an assessment", href: "/assessment" },
   sections: [
     {
       id: "list",
@@ -43,6 +44,82 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
         { id: "you", label: "you" },
         { id: "unnamed-party", label: "the other party" },
         { id: "open", label: "Open this instance" },
+      ],
+    },
+    {
+      /**
+       * The card's own words — the ancestor is `components/my-quizzes/my-quizzes.tsx`, and this is
+       * the translation of its header, filter row and grid. Every label here is a word a reader
+       * sees; none of them is a figure, because a figure is derived and this fixture holds no
+       * numbers (the card's rule: a count comes from the rows, never from a fixture).
+       *
+       * The stage tab labels are **not** here: they are the glossary's own four names, authored
+       * once in `content/stages.ts` (`STAGE_LABELS`) and read by both this surface and the
+       * instance screen's stage sentence, the same way a mode name is. `all` is the one tab that
+       * is not a stage, so it is a word this surface owns.
+       */
+      id: "stage",
+      items: [
+        { id: "all", label: "All relationships" },
+        { id: "empty", label: "No relationship is at this stage right now." },
+      ],
+    },
+    {
+      id: "search",
+      items: [
+        { id: "label", label: "Search your relationships" },
+        { id: "placeholder", label: "Search by name, template or person" },
+        { id: "count", label: "Showing {shown} of {total}" },
+        { id: "submit", label: "Search" },
+        { id: "clear", label: "Clear the search" },
+        { id: "no-match", label: "No relationship matches this search." },
+      ],
+    },
+    {
+      id: "metric",
+      items: [
+        { id: "sessions", label: "Sessions" },
+        { id: "none-opened", label: "none opened" },
+        { id: "completed-of-opened", label: "completed of opened" },
+        { id: "completion", label: "Completion" },
+        { id: "alignment", label: "Avg alignment" },
+        { id: "mean-gap", label: "mean Gap" },
+        { id: "aspects", label: "Aspects" },
+        { id: "unscored", label: "No scored session yet" },
+      ],
+    },
+    {
+      id: "card",
+      items: [
+        { id: "with", label: "With" },
+        { id: "not-claimed", label: "Not claimed yet" },
+        { id: "no-session", label: "No session yet" },
+        { id: "last-session", label: "Last session {when}" },
+        { id: "view", label: "View" },
+      ],
+    },
+    {
+      /**
+       * What was paid — the Initiator's card only, and never a total.
+       *
+       * `nothing` is a sentence, not a figure: a relationship with no plan has been charged
+       * nothing, and saying so is more honest than an amount of zero. There is no `total` item
+       * and there cannot be one: one relationship, one purchase, no second payment to add.
+       */
+      id: "paid",
+      items: [
+        { id: "label", label: "Paid" },
+        { id: "nothing", label: "No plan yet" },
+        { id: "statement", label: "{plan} · bought {date}" },
+      ],
+    },
+    {
+      id: "invite",
+      items: [
+        { id: "not-sent", label: "Not sent" },
+        { id: "pending", label: "Pending" },
+        { id: "expired", label: "Expired" },
+        { id: "accepted", label: "Accepted" },
       ],
     },
     {

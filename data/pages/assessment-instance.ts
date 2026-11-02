@@ -99,6 +99,44 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
     },
     {
+      /**
+       * The two seats, named — the header block `components/my-quizzes/quiz-details.tsx` draws for
+       * a quiz's players, translated to a relationship's two parties (#409).
+       *
+       * `you` marks the seat this request answers as; it is drawn from the role the read resolved,
+       * never from a name compared in the view. `unclaimed` is the Counterparty seat before the
+       * invitation is claimed — the one state in which a party row does not exist at all, and the
+       * honest word for it rather than an empty name.
+       *
+       * Nothing in this band is a count. A seat's *name* is not a fact about its answers, which is
+       * the whole line the blind rule draws: the parties are always legible, and what either of
+       * them wrote is not.
+       */
+      id: "parties",
+      heading: "The two seats",
+      items: [
+        { id: "initiator", label: "Initiator" },
+        { id: "counterparty", label: "Counterparty" },
+        { id: "you", label: "you" },
+        { id: "unclaimed", label: "Not claimed yet" },
+        { id: "coach", label: "Coach — read-only" },
+      ],
+    },
+    {
+      /**
+       * What was paid, for the Initiator alone (#409). Two facts and no arithmetic: the plan and
+       * the instant it was bought. A total would be a number nobody was charged — one
+       * relationship, one purchase — so there is no item for one here.
+       */
+      id: "paid",
+      heading: "What was paid",
+      items: [
+        { id: "plan", label: "Plan" },
+        { id: "bought", label: "Bought {date}" },
+        { id: "nothing", label: "Nothing has been paid on this relationship." },
+      ],
+    },
+    {
       id: "unlock-email",
       items: [
         { id: "subject", label: "{other} has answered {template}" },
