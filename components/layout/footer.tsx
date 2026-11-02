@@ -394,7 +394,7 @@ function AlignSynchLinkColumn({ links }: { links: PageCopySection }) {
       <ul className="space-y-3">
         <FooterLinkRow href="/#templates" label={itemLabel(links, "templates")} />
         <FooterLinkRow href="/#questions" label={itemLabel(links, "how-it-works")} />
-        <FooterLinkRow href="/support" label={itemLabel(links, "support")} />
+        <FooterLinkRow href="/help" label={itemLabel(links, "help")} />
       </ul>
     </div>
   );

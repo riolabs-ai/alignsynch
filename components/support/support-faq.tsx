@@ -21,7 +21,7 @@ import {
 import { itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
 import { useState } from "react";
-import type { SupportCategory } from "./support-page";
+import type { SupportCategory } from "./category";
 
 interface SupportFAQProps {
   selectedCategory: SupportCategory;

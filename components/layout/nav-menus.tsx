@@ -604,11 +604,17 @@ const PUBLIC_ROW_CLASS =
 
 /**
  * The alignment brand's public menu: the four front-page destinations the sidebar's own
- * `nav-alignsynch` section names, plus `/pricing`.
+ * `nav-alignsynch` section names, plus `/pricing` and the public help centre.
  *
  * Templates and How it works are the front page's own bands (`/#templates`, `/#questions`), the
  * same anchors the sidebar and the footer already point at — a public route for either does not
  * exist yet, and a link to a route that does not exist is the defect this menu removes.
+ *
+ * **The last row is `/help`, not `/support`.** The Help/Support split put the answers in public
+ * (`/help`) and the contact form behind the app's session (`/support`), so a menu drawn on
+ * marketing routes must not send a signed-out reader to the account page — it would only redirect
+ * them back here. `help` is its own fixture id, because the rail's `support` row still says
+ * "Support" and still opens the account page.
  */
 function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
   const nav = sectionOf(copy, "nav-alignsynch");
@@ -626,8 +632,8 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/pricing">
         {itemLabel(nav, "pricing")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/support">
-        {itemLabel(nav, "support")}
+      <Link className={PUBLIC_ROW_CLASS} href="/help">
+        {itemLabel(nav, "help")}
       </Link>
     </nav>
   );
@@ -638,9 +644,14 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
  * product's own destinations and `/` is both front pages at once.
  *
  * It reads the `nav` section — the same one its sidebar reads — so "Pricing Plan" there and here
- * is one string, and the two surfaces cannot drift. `/categories` and `/support` are quiz routes
- * the brand publishes; `/welcome` is the landing page and is reached from the page's own bands, not
- * from this menu (a menu row pointing at the marketing copy beside it is furniture).
+ * is one string, and the two surfaces cannot drift. `/categories` is a quiz route the brand
+ * publishes; `/welcome` is the landing page and is reached from the page's own bands, not from
+ * this menu (a menu row pointing at the marketing copy beside it is furniture).
+ *
+ * The last row is **Help** (`/help`) and not the rail's **Support** (`/support`): the split put the
+ * FAQ and knowledge base in public and the contact form behind a session, so a signed-out reader
+ * on a marketing route gets the page that answers them. The two words are two fixture ids
+ * (`help` / `support`), which is why the rail keeps its own.
  */
 function QuizHubPublicNav({ copy }: { copy: PageCopy }) {
   const nav = sectionOf(copy, "nav");
@@ -655,8 +666,8 @@ function QuizHubPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/pricing">
         {itemLabel(nav, "pricing")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/support">
-        {itemLabel(nav, "support")}
+      <Link className={PUBLIC_ROW_CLASS} href="/help">
+        {itemLabel(nav, "help")}
       </Link>
     </nav>
   );

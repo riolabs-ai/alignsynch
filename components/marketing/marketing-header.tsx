@@ -30,10 +30,13 @@ import Image from "next/image";
  *   - the account slot is `PublicAccountSlot`, the signed-out pair of links or the signed-in
  *     person, resolved **on the server** by the layout and handed down as `account`.
  *
- * **`copy` is the shell fixture, not the marketing one.** These are chrome words — "Pricing",
- * "Sign in", "Sign up" — and they are the words the sidebar's own rows use, so the ids resolve
- * against `data/pages/shell.ts` exactly as `AppNav`'s do. The landing page's bands keep their own
- * fixture (`data/pages/marketing.ts`) and their own component (`marketing-landing.tsx`).
+ * **`copy` is the shell fixture's public slice, not the marketing one.** These are chrome words —
+ * "Pricing", "Sign in", "Sign up" — and they are the words the sidebar's own rows use, so the ids
+ * resolve against `data/pages/shell.ts` exactly as `AppNav`'s do… but only the ids this header
+ * draws: `app/(marketing)/layout.tsx` hands over `publicChromeCopy()`
+ * (`lib/shell-copy.ts`), because `PublicNav` is a client component and everything it is given is
+ * serialised into the browser's payload. The landing page's bands keep their own fixture
+ * (`data/pages/marketing.ts`) and their own component (`marketing-landing.tsx`).
  *
  * **The old single CTA is gone.** The header used to print `copy.cta` — one action, repeated from
  * the page's closing band — and on a marketing page that action was "start the assessment", which a
@@ -60,7 +63,7 @@ export function MarketingHeader({
   brand: Brand;
   /** The build's brand, so the public menu picks its rows the way the sidebar does. */
   brandId: BrandId;
-  /** The **shell** fixture (`data/pages/shell.ts`) — the chrome's words, not a route's. */
+  /** The **shell fixture's public slice** (`publicChromeCopy`, `lib/shell-copy.ts`) — the chrome's words, not a route's. */
   copy: PageCopy;
   mark?: BrandMark;
   /**

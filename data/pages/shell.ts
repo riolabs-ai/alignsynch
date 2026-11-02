@@ -108,6 +108,14 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "affiliate", label: "Affiliate Page" },
           { id: "pricing", label: "Pricing Plan" },
           { id: "support", label: "Support" },
+          /**
+           * The public menu's help row (Help/Support split). One id per surface, because the two
+           * rows now lead to two different pages: `support` is the in-app account page the rail
+           * opens, and `help` is the public FAQ and knowledge base the marketing header opens. A
+           * shared id would force one word onto both, which is exactly the confusion the split
+           * removes.
+           */
+          { id: "help", label: "Help" },
           { id: "logout", label: "Logout" },
           /**
            * The sign-out row's two other states (issue #272). The row is a control now, not a
@@ -215,6 +223,13 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "pricing", label: "Pricing" },
           { id: "support", label: "Support" },
+          /**
+           * The marketing header's help row (Help/Support split), and the same division the quiz
+           * section above spells: `support` is the account page the rail opens, `help` is the
+           * public FAQ and knowledge base. The rail never asks for this id, so a member's menu is
+           * unchanged.
+           */
+          { id: "help", label: "Help" },
           { id: "console-gaps", label: "Gap Analysis" },
           { id: "admin-instances", label: "Relationships" },
           { id: "quiz-tools", label: "Quiz tools" },
@@ -526,7 +541,16 @@ export function shellCopy(brand: Brand): PageCopy {
         items: [
           { id: "templates", label: "Templates" },
           { id: "how-it-works", label: "How it works" },
-          { id: "support", label: "Support" },
+          /**
+           * The footer's help row (Help/Support split). The footer is mounted by the public pages
+           * *and* by four product pages, so this column carries the public destination — `help` —
+           * and the rail's `support` row stays the account page. A marketing footer pointing at
+           * the account page is the same mistake as a console row pointing at the marketing site.
+           *
+           * One row, not two: "Support" and "Help" beside each other in a four-row column is the
+           * same question asked twice, and the split exists so that one URL is not two pages.
+           */
+          { id: "help", label: "Help" },
         ],
       },
       {
