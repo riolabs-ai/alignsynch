@@ -65,6 +65,12 @@ export interface AnswerGateInput {
   /** The seat the read resolved, from Postgres — never from the URL or a form field. */
   readonly viewerRole: PartyRole | "coach";
   readonly status: InstanceStatus;
+  /**
+   * Whether the **viewer's own** seat has accepted (#R2). The freeze is per party now, so the
+   * status alone cannot answer "may this viewer still edit": a session in `answering` where the
+   * viewer has already accepted is locked for them and open for the other seat.
+   */
+  readonly viewerAccepted: boolean;
   /** The projected Aspects. Only `own` is read, and it is the viewer's own. */
   readonly aspects: readonly Pick<FlowAspect, "own">[];
 }
@@ -72,9 +78,9 @@ export interface AnswerGateInput {
 /**
  * The gate for one viewer.
  *
- * The freeze is `maySubmit(status)` — imported, never re-typed here, so the day the hinge moves
- * (Card 3: the sheet locks on the party's own acceptance) this page follows the one derivation
- * instead of carrying a second copy of the rule.
+ * The freeze is `maySubmit(status, viewerAccepted)` — imported, never re-typed here, so the day the
+ * hinge moves (Card 3: the sheet locks on the party's own acceptance) this page follows the one
+ * derivation instead of carrying a second copy of the rule.
  */
 export function answerGateOf(input: AnswerGateInput): AnswerGate {
   const answered = input.aspects.filter((aspect) => aspect.own !== null).length;
@@ -83,7 +89,7 @@ export function answerGateOf(input: AnswerGateInput): AnswerGate {
   if (input.viewerRole === "coach") {
     return { ...counts, state: "coach", role: null, action: null };
   }
-  if (!maySubmit(input.status)) {
+  if (!maySubmit(input.status, input.viewerAccepted)) {
     return { ...counts, state: "readonly", role: input.viewerRole, action: null };
   }
   return {

@@ -141,13 +141,10 @@ export const surfaceRegistry: readonly Surface[] = [
     route: "/assessment/instances/[instanceId]/accept",
     label: "Acceptance",
     area: "relationships",
-    status: "preview",
-    reason:
-      "Not wired yet — acceptance cannot be recorded, so this button is disabled. Nothing was saved.",
-    needs: [
-      "needs authenticated writes",
-      "needs both parties bound to the instance before the write lands",
-    ],
+    // Live since R2 (#427): `POST …/accepts` records one seat's acceptance in `party.accepted_at`,
+    // and the second acceptance completes the session, opens the report and derives the Steps.
+    // Nothing on the page is a disabled control any more, so the row carries no `reason`/`needs`.
+    status: "live",
   },
 
   /* ---- pending: comms ---------------------------------------------------------- */

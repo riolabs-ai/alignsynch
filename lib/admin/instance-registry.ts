@@ -127,6 +127,9 @@ export interface RegistryFacts {
   readonly aspectCount: number;
   readonly initiatorAnswered: number;
   readonly counterpartyAnswered: number;
+  /** The two acceptances (#R2): `complete` needs both, not just both sheets. */
+  readonly initiatorAccepted: boolean;
+  readonly counterpartyAccepted: boolean;
   readonly initiator: SeatFacts | null;
   readonly counterparty: SeatFacts | null;
   readonly invite: InviteFacts | null;
@@ -151,6 +154,10 @@ export function registryRowOf(
     hasCounterparty: facts.counterparty !== null,
     initiatorAnswered: facts.initiatorAnswered,
     counterpartyAnswered: facts.counterpartyAnswered,
+    // The hinge (#R2): the same derived status the party screens read, acceptance included, so
+    // the operator's registry and a party's report cannot disagree about what is complete.
+    initiatorAccepted: facts.initiatorAccepted ? 1 : 0,
+    counterpartyAccepted: facts.counterpartyAccepted ? 1 : 0,
   });
 
   const stage =

@@ -55,6 +55,17 @@ const parties: PartyRow[] = [
   { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
 ];
 
+/** The same two seats, with an instant on the ones a test says have accepted. */
+function partiesWith(accepted: readonly PartyRole[]): PartyRow[] {
+  return parties.map((party) => ({
+    ...party,
+    accepted_at: accepted.includes(party.role as PartyRole) ? ACCEPTED_AT : null,
+  }));
+}
+
+/** A fixed acceptance instant, so a test never reads a clock. */
+const ACCEPTED_AT = "2026-11-01T12:00:00.000Z";
+
 /** One Aspect's answers, as a row: `own` is whoever the projection was asked for. */
 function opinion(role: PartyRole, itemId: string, feel: number, wish: number): OpinionRow {
   return {
@@ -68,7 +79,10 @@ function opinion(role: PartyRole, itemId: string, feel: number, wish: number): O
   };
 }
 
-function rowsWith(opinions: readonly OpinionRow[]): FlowInstanceRows {
+function rowsWith(
+  opinions: readonly OpinionRow[],
+  accepted: readonly PartyRole[] = [],
+): FlowInstanceRows {
   const count = (role: PartyRole) => opinions.filter((entry) => entry.role === role).length;
   return {
     record: {
@@ -89,16 +103,20 @@ function rowsWith(opinions: readonly OpinionRow[]): FlowInstanceRows {
       mode: "basic",
       setting: "soft",
     },
-    parties,
+    parties: partiesWith(accepted),
     opinions: [...opinions],
     answerCounts: { initiator: count("initiator"), counterparty: count("counterparty") },
   };
 }
 
 /** A projected screen for one viewer, over the rows a read path would have handed it. */
-function screenFor(role: PartyRole | "coach", opinions: readonly OpinionRow[] = []) {
+function screenFor(
+  role: PartyRole | "coach",
+  opinions: readonly OpinionRow[] = [],
+  accepted: readonly PartyRole[] = [],
+) {
   return projectScreen({
-    rows: rowsWith(opinions),
+    rows: rowsWith(opinions, accepted),
     template,
     viewerRole: role,
     invite: null,
@@ -106,12 +124,17 @@ function screenFor(role: PartyRole | "coach", opinions: readonly OpinionRow[] = 
 }
 
 /** The gate for a screen, the way the page derives it. */
-function gateFor(role: PartyRole | "coach", opinions: readonly OpinionRow[] = []): AnswerGate {
-  const screen = screenFor(role, opinions);
+function gateFor(
+  role: PartyRole | "coach",
+  opinions: readonly OpinionRow[] = [],
+  accepted: readonly PartyRole[] = [],
+): AnswerGate {
+  const screen = screenFor(role, opinions, accepted);
   return answerGateOf({
     instanceRecordId: screen.instanceRecordId,
     viewerRole: screen.viewer.role,
     status: screen.status,
+    viewerAccepted: screen.viewerAccepted,
     aspects: screen.aspects,
   });
 }
@@ -205,11 +228,28 @@ describe("answerGateOf: which surface the page draws", () => {
       opinion("initiator", item.item_id, 1, 1),
       opinion("counterparty", item.item_id, 5, 5),
     ]);
-    const gate = gateFor("initiator", every);
+    const gate = gateFor("initiator", every, ["initiator", "counterparty"]);
     expect(gate.state).toBe("readonly");
     expect(gate.role).toBe("initiator");
     expect(gate.action).toBeNull();
     expect(gate.answered).toBe(items.length);
+  });
+
+  /**
+   * The freeze is per party (#R2), and this is the half of it a status cannot say. Both parties
+   * are still answering; the initiator has accepted, so their sheet is the record they agreed to
+   * and the counterparty's is still theirs to edit — the same session, two different answers to
+   * "may this viewer write".
+   */
+  it("locks the seat that accepted while the other seat may still answer", () => {
+    const partial = items.map((item) => opinion("initiator", item.item_id, 3, 3));
+    const sealed = gateFor("initiator", partial, ["initiator"]);
+    expect(sealed.state).toBe("readonly");
+    expect(sealed.action).toBeNull();
+
+    const other = gateFor("counterparty", partial, ["initiator"]);
+    expect(other.state).toBe("sheet");
+    expect(other.action).toBe(`/assessment/instances/${INSTANCE_ID}/answers`);
   });
 });
 
@@ -281,6 +321,7 @@ describe("the sheet's markup", () => {
           opinion("initiator", item.item_id, 2, 4),
           opinion("counterparty", item.item_id, 5, 5),
         ]),
+        ["initiator", "counterparty"],
       ),
       initiatorAnswers,
     );

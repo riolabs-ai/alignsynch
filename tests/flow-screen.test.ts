@@ -56,10 +56,27 @@ const items: ItemRow[] = template.items.map((item, position) => ({
   right_value: item.rightValue,
 }));
 
+const ACCEPTED_AT = new Date("2026-10-30T12:00:00.000Z");
+
 const parties: PartyRow[] = [
   { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
   { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
 ];
+
+/**
+ * The two party rows with the acceptance the test is about (#R2).
+ *
+ * `complete` now means both seats accepted as well as both sheets answered, so a projection test
+ * has to say which acceptance it is projecting. The default is the ordinary case for this file —
+ * a session that is finished and agreed — and the blind-state cases pass counts that keep it
+ * `answering` anyway.
+ */
+function partiesWith(acceptance: { initiator: boolean; counterparty: boolean }): PartyRow[] {
+  return parties.map((party) => {
+    const accepted = party.role === "initiator" ? acceptance.initiator : acceptance.counterparty;
+    return accepted ? { ...party, accepted_at: ACCEPTED_AT } : party;
+  });
+}
 
 /** feel/wish for one party; every Aspect not named here is 3/3. */
 function opinionsFor(
@@ -103,6 +120,10 @@ function rowsWith(
   opinions: OpinionRow[],
   answered: Record<PartyRole, number>,
   mode = "basic",
+  acceptance: { initiator: boolean; counterparty: boolean } = {
+    initiator: true,
+    counterparty: true,
+  },
 ): FlowInstanceRows {
   return {
     record: {
@@ -123,7 +144,7 @@ function rowsWith(
       mode,
       setting: "soft",
     },
-    parties,
+    parties: partiesWith(acceptance),
     opinions,
     answerCounts: answered,
   };
@@ -245,7 +266,7 @@ describe("the coach's read-only view", () => {
   });
 });
 
-describe("the report, once both have submitted", () => {
+describe("the report, once both have accepted", () => {
   const both = [
     ...opinionsFor("initiator", { [TIME]: { feel: 2, wish: 5 }, [MONEY]: { feel: 4, wish: 4 } }),
     ...opinionsFor("counterparty", { [TIME]: { feel: 5, wish: 3 }, [MONEY]: { feel: 4, wish: 4 } }),
@@ -296,6 +317,61 @@ describe("the report, once both have submitted", () => {
       invite,
     });
     expect(counterpartyView.report?.rows.find((row) => row.itemId === TIME)?.gaps.feel).toBe(3);
+  });
+});
+
+/**
+ * The review window (#R2): the second **submission** no longer opens the report.
+ *
+ * This is the case the acceptance handoff is really about. Both sheets are complete — these are
+ * the same opinions the report above is drawn from — and only one seat has accepted, so the
+ * projection must still be the locked one. The viewer's own sheet is theirs to review (that is
+ * what the accept page reads), and there is no field in the projection that could carry the other
+ * seat's scores until that seat's acceptance exists.
+ */
+describe("the review window", () => {
+  const both = [
+    ...opinionsFor("initiator", { [TIME]: { feel: 2, wish: 5 }, [MONEY]: { feel: 4, wish: 4 } }),
+    ...opinionsFor("counterparty", { [TIME]: { feel: 5, wish: 3 }, [MONEY]: { feel: 4, wish: 4 } }),
+  ];
+
+  it("keeps the report locked after both sheets are in, until both accept", () => {
+    const screen = projectScreen({
+      rows: rowsWith(both, { initiator: items.length, counterparty: items.length }, "basic", {
+        initiator: true,
+        counterparty: false,
+      }),
+      template,
+      viewerRole: "initiator",
+      invite,
+    });
+
+    expect(screen.status).toBe("answering");
+    expect(screen.report).toBeNull();
+    // The viewing seat has accepted; the other has not — both facts are on the projection, as
+    // instants, and neither is a score.
+    expect(screen.viewerAccepted).toBe(true);
+    expect(screen.seats.find((seat) => seat.role === "initiator")?.acceptedAt).not.toBeNull();
+    expect(screen.seats.find((seat) => seat.role === "counterparty")?.acceptedAt).toBeNull();
+    // The viewer's own sheet is reviewable — the accept page draws it — and nothing more.
+    expect(screen.aspects.find((aspect) => aspect.itemId === TIME)?.own).toEqual({
+      feel: 2,
+      wish: 5,
+    });
+    expect(JSON.stringify(screen)).not.toContain('"feel":5');
+  });
+
+  it("opens on the second acceptance, with the same rows", () => {
+    const screen = projectScreen({
+      rows: rowsWith(both, { initiator: items.length, counterparty: items.length }),
+      template,
+      viewerRole: "counterparty",
+      invite,
+    });
+
+    expect(screen.status).toBe("complete");
+    expect(screen.report).not.toBeNull();
+    expect(screen.seats.every((seat) => seat.acceptedAt !== null)).toBe(true);
   });
 });
 
@@ -391,8 +467,13 @@ describe("an Advanced instance", () => {
     });
     const serialized = JSON.stringify(screen);
     expect(serialized).not.toContain('"guess":2');
-    // The only party in the projection is the viewer; nobody else's role is carried.
-    expect(serialized).not.toContain('"role":"counterparty"');
+    // The seats carry a name, an answered **count** and an acceptance instant — never a score.
+    // (`seats[].answered` is the same count the R1 accept page has always drawn for both seats; it
+    // says how far along somebody is, never what they said.)
+    for (const seat of screen.seats) {
+      expect(Object.keys(seat).sort()).toEqual(["acceptedAt", "answered", "name", "role"]);
+    }
+    expect(serialized).not.toContain('"feel":5');
   });
 });
 

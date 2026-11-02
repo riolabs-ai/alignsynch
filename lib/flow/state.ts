@@ -5,18 +5,28 @@
  * that already exist:
  *
  *   awaiting_counterparty   the Initiator exists, the Counterparty has not claimed yet
- *   answering               both parties exist, and at least one Aspect is unanswered
- *   complete                both parties exist and both answered every Aspect
+ *   answering               both parties exist, and at least one Aspect is unanswered or
+ *                           at least one acceptance is still missing
+ *   complete                both parties exist, both answered every Aspect, and **both
+ *                           accepted** the session (#R2)
  *
  * There is no `status` column anywhere (#145's `session` has two columns, and
  * `0002_two_party_flow.sql` adds none). A stored status would be a second authored copy of
  * a fact the opinion rows already carry, and nothing in SQL could compare the two — the
  * same reason the Gap is `gapOf()` and not a column.
  *
+ * **Acceptance is the completion hinge, not submission (#R2).** The owner's ruling, taken from
+ * the prototype (`lib/v1/derive.ts`, `lib/v1/blind.ts`): a session completes when both parties
+ * **accept** it. Submission is still derived from the opinion rows; acceptance is the one new
+ * stored fact (`party.accepted_at`, `0016_party_acceptance.sql`) — an instant, like
+ * `submitted_at` and `unlock_seen_at` before it. The consequences live in this module: the
+ * report stays locked through the review window (it is built only at `complete`), and the freeze
+ * on a submit is now per party (`maySubmit`) rather than per session.
+ *
  * **The blind rule lives here too**, because it is the same question as the status: a
  * party may read the other party's Opinions only once the status is `complete`. Every
  * screen asks `visibleRoles()` before it reads a score, so "neither sees the other's
- * answers before both submit" is decided in one place, by the rows, and not by which
+ * answers before both accept" is decided in one place, by the rows, and not by which
  * props a component happened to be handed.
  *
  * Pure: no `pg`, no `process.env`, no clock. `tests/flow-state.test.ts` drives every
@@ -45,14 +55,28 @@ export interface InstanceProgress {
   readonly hasCounterparty: boolean;
   readonly initiatorAnswered: number;
   readonly counterpartyAnswered: number;
+  /**
+   * `1` when the seat's `party.accepted_at` is set, `0` when it is not (#R2).
+   *
+   * A **count**, like the answered pairs above, and for the same reason: this shape is fed by
+   * SQL that counts rows, so `count(*) FILTER (WHERE accepted_at IS NOT NULL)` answers it with
+   * the same statement as the answered counts. `>= 1` is the test, never `=== 1`, so a shape
+   * that counted something else cannot turn "two rows" into "not accepted".
+   */
+  readonly initiatorAccepted: number;
+  readonly counterpartyAccepted: number;
 }
 
 /**
  * The status, from the counts.
  *
- * `complete` requires **both** sides to have answered **every** Aspect — the join the
- * screen depends on. A copy with 0 Aspects is never complete: there is nothing to answer,
- * so "both submitted" would unlock a report with no rows.
+ * `complete` requires **both** sides to have answered **every** Aspect **and both** to have
+ * accepted the session — the two joins the screen depends on. Answers alone are not completion
+ * any more (#R2): the review window after the second submit is where each party reads their own
+ * sheet on the accept page, and a session that unlocked its report there would skip it.
+ *
+ * A copy with 0 Aspects is never complete: there is nothing to answer, so "both accepted" would
+ * unlock a report with no rows.
  */
 export function instanceStatusOf(progress: InstanceProgress): InstanceStatus {
   if (!progress.hasCounterparty) return "awaiting_counterparty";
@@ -60,7 +84,18 @@ export function instanceStatusOf(progress: InstanceProgress): InstanceStatus {
   const everyoneAnswered =
     progress.initiatorAnswered >= progress.aspectCount &&
     progress.counterpartyAnswered >= progress.aspectCount;
-  return everyoneAnswered ? "complete" : "answering";
+  const everyoneAccepted = progress.initiatorAccepted >= 1 && progress.counterpartyAccepted >= 1;
+  return everyoneAnswered && everyoneAccepted ? "complete" : "answering";
+}
+
+/** Whether one seat has accepted the session — the hinge, per party. */
+export function acceptedBy(progress: InstanceProgress, role: PartyRole): boolean {
+  return (role === "initiator" ? progress.initiatorAccepted : progress.counterpartyAccepted) >= 1;
+}
+
+/** How many of the two seats have accepted. `2` is `complete`; a count, never a verdict. */
+export function acceptedCount(progress: InstanceProgress): number {
+  return (progress.initiatorAccepted >= 1 ? 1 : 0) + (progress.counterpartyAccepted >= 1 ? 1 : 0);
 }
 
 /** How many Aspects each party still owes. `complete` owes none. */
@@ -75,11 +110,15 @@ export function answersRemaining(progress: InstanceProgress): Record<PartyRole, 
 /**
  * The parties whose Opinions a viewer may read.
  *
- * `complete` unlocks both; before that a party reads their own and nothing else. A **coach**
- * (a `coach` role, not a party) reads nothing before `complete` — the blind rule outranks the
- * coach, so a session's contents stay behind the same wall a party's do — and both once it is
- * scored. A component cannot widen this by asking for it: the roles are the return value, and the
- * read path (`lib/flow/store.ts`) only queries the opinions these roles name.
+ * `complete` unlocks both; before that a party reads their own and nothing else. **The shape of
+ * this function did not change with the acceptance hinge (#R2)** — only what `status` means did:
+ * the report stays sealed through the review window, so the second *acceptance* is what opens
+ * both columns, not the second submission.
+ *
+ * A **coach** (a `coach` role, not a party) reads nothing before `complete` — the blind rule
+ * outranks the coach, so a session's contents stay behind the same wall a party's do — and both
+ * once it is scored. A component cannot widen this by asking for it: the roles are the return
+ * value, and the read path (`lib/flow/store.ts`) only queries the opinions these roles name.
  */
 export function visibleRoles(viewer: PartyRole | "coach", status: InstanceStatus): PartyRole[] {
   if (viewer === "coach") return status === "complete" ? ["initiator", "counterparty"] : [];
@@ -88,14 +127,22 @@ export function visibleRoles(viewer: PartyRole | "coach", status: InstanceStatus
 }
 
 /**
- * Whether a submit may be written at all.
+ * Whether a submit may be written at all — **per party**, since #R2.
  *
- * Answers freeze at the instant both parties have submitted: after that the rows are the
- * record of what was said, and an edit would rewrite it for the other party without their
- * knowing. `false` is a rejection the caller must surface — never a silent no-op.
+ * The freeze moved with the hinge. Answers used to freeze the instant both parties had
+ * submitted; they now freeze when the **submitting party has accepted**, which is the
+ * prototype's edit-before-accept window: between a party's submit and their own acceptance
+ * they are still reviewing their own sheet, and a re-submit is how they correct it. Once they
+ * accept, their rows are the record they agreed to and an edit would rewrite it for the other
+ * party without their knowing.
+ *
+ * The session being `complete` is the same condition reached from the other side — both
+ * accepted implies this one did — and it is stated anyway so a caller holding only the status
+ * (and no seat) still gets `false` rather than a write the accept path would then refuse.
+ * `false` is a rejection the caller must surface as a 409, never a silent no-op.
  */
-export function maySubmit(status: InstanceStatus): boolean {
-  return status !== "complete";
+export function maySubmit(status: InstanceStatus, viewerAccepted: boolean): boolean {
+  return status !== "complete" && !viewerAccepted;
 }
 
 /* ------------------------------------------------------------------ *\
@@ -221,8 +268,9 @@ export function waitingOn(progress: InstanceProgress, hasInitiator: boolean): Pa
  *
  *   yours-to-answer   the viewer still owes an Aspect. Their own sheet, their own arithmetic.
  *   awaiting-other    the viewer has answered everything and the instance is not complete, so
- *                     the other party has not. The row says *awaiting* and nothing else.
- *   complete          both answered every Aspect: the Gap is open to both of them.
+ *                     either the other party has not answered or one of the two has not accepted
+ *                     yet. The row says *awaiting* and nothing else.
+ *   complete          both answered every Aspect **and both accepted**: the Gap is open to both.
  *
  * **The blind rule holds in the list too.** `awaiting-other` is derived from a count the viewer
  * cannot see the substance of, and it is deliberately the *whole* sentence: no score, no
@@ -280,9 +328,10 @@ export function myInstanceStateOf(progress: MyInstanceProgress): MyInstanceState
  * The two values are the decision, so the view cannot invent a third and the pure suite can
  * drive both without a database.
  *
- * **Why a NULL timestamp is the whole fact.** `complete` is terminal — `maySubmit()` freezes the
- * answers the moment both parties have answered — so there is no "complete, but from before"
- * case for a timestamp comparison to distinguish. `party.unlock_seen_at` is therefore a mark,
+ * **Why a NULL timestamp is the whole fact.** `complete` is terminal — `maySubmit()` refuses a
+ * write from a party once they have accepted, and the session cannot complete until both have — so
+ * there is no "complete, but from before" case for a timestamp comparison to distinguish.
+ * `party.unlock_seen_at` is therefore a mark,
  * not a clock: `NULL` is "this party has never opened a complete instance", and the moment they
  * do, the page writes one and the marker is gone for them (`markUnlockSeen()` in
  * `lib/flow/store.ts` writes it, and only for the party who opened it).
