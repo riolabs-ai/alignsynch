@@ -47,7 +47,7 @@ export const resetRequestPageCopy: PageCopy = zPageCopy.parse({
       heading: "Send a reset link",
       items: [
         { id: "email", label: "Email" },
-        { id: "email-placeholder", label: "you@example.com" },
+        { id: "email-placeholder", label: "The address you signed up with" },
         { id: "submit", label: "Send reset link" },
         { id: "pending", label: "Sending…" },
         /**

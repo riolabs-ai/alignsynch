@@ -77,7 +77,15 @@ export const alignSynchBrand: Brand = zBrand.parse({
     actionForeground: "#ffffff",
     navActive: "#156898",
   },
-  supportEmail: "alignsynch@riolabs.ai",
-  affiliateEmail: "alignsynch@riolabs.ai",
+  /**
+   * **Internal addresses, never rendered** (owner, 2026-11-02). Both live on `alignsynch.com`,
+   * whose MX is Microsoft 365 (`alignsynch-com.mail.protection.outlook.com`), so each alias
+   * forwards; the private Gmail mailbox behind them is not written in this tree at all.
+   * `supportEmail` is what the contact form mails (`app/api/contact/route.ts` reads it on the
+   * server); `affiliateEmail` is the affiliate surface's. No public page prints either one — a
+   * visitor writes through the form on `/help`.
+   */
+  supportEmail: "support@alignsynch.com",
+  affiliateEmail: "hello@alignsynch.com",
   referralBase: "https://alignsynch.com",
 });

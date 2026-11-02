@@ -356,9 +356,10 @@ export const affiliatePageCopy: PageCopy = zPageCopy.parse({
         { id: "learn-more", label: "Learn More" },
         {
           id: "contact-prompt",
-          label: "Have questions? Contact our affiliate team at ",
+          label: "Have questions? Send us a message from ",
         },
-        { id: "contact-email", label: brand.affiliateEmail },
+        /* The one contact path, and it is a page rather than a mailbox (owner, 2026-11-02). */
+        { id: "contact-email", label: "the Help page" },
       ],
     },
   ],

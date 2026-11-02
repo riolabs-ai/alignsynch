@@ -36,12 +36,16 @@
  * copy, and an invitation to agree terms that no plan in the catalogue offers is a promise the
  * checkout cannot keep.
  *
+ * **No address, and therefore no brand import** (owner, 2026-11-02). This fixture used to hold
+ * `{ id: "contact-email", label: brand.supportEmail }`, which is why it read the ambient record;
+ * the FAQ's contact row links `/help`'s form now, so the words are a label and a link and this
+ * file cannot print a mailbox even by accident.
+ *
  * `heading` is the route's page heading and the plan band renders it as its `h1`:
  * on this route the first band *is* the hero, so the page line and the section
  * heading spell the same words — the band reads its own section, the top-level
  * pair documents what the page is.
  */
-import { brand } from "../brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const pricingPageCopy: PageCopy = zPageCopy.parse({
@@ -86,8 +90,8 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
         { id: "no-results", label: 'No results found for "{query}"' },
         { id: "no-results-hint", label: "Try a different search term or" },
         { id: "clear-search", label: "clear your search" },
-        { id: "contact-prompt", label: "Still have questions? Contact our support team at" },
-        { id: "contact-email", label: brand.supportEmail },
+        { id: "contact-prompt", label: "Still have questions?" },
+        { id: "contact-link", label: "Send us a message from the contact form" },
       ],
     },
     {

@@ -154,7 +154,13 @@ describe("the support FAQ is per product", () => {
 
     for (const brandId of brandIds) {
       for (const route of routesNamed(brandId)) {
-        const page = [`app/(mainlayout)${route}/page.tsx`, `app/(auth)${route}/page.tsx`];
+        // `/help` lives in the marketing group: it is the one public route the FAQ names, and it
+        // answers on both brands (the split's public half), so the list carries all three groups.
+        const page = [
+          `app/(marketing)${route}/page.tsx`,
+          `app/(mainlayout)${route}/page.tsx`,
+          `app/(auth)${route}/page.tsx`,
+        ];
         expect(
           page.some((file) => existsSync(fileURLToPath(new URL(`../${file}`, import.meta.url)))),
           `${brandId}'s FAQ names ${route}, which is no page in this tree`,

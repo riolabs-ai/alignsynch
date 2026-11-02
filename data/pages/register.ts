@@ -105,7 +105,7 @@ export function registerCopy(record: Pick<Brand, "name">): PageCopy {
         id: "details",
         items: [
           { id: "email", label: "Email *" },
-          { id: "email-placeholder", label: "john@example.com" },
+          { id: "email-placeholder", label: "The address you sign in with" },
         ],
       },
       {
