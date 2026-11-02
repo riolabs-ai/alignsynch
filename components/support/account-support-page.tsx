@@ -5,30 +5,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { itemBody, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
-import { ContactForm } from "./contact-form";
+import { ContactPointer } from "./contact-pointer";
 
 interface AccountSupportPageProps {
   /** The route's whole fixture (`data/pages/support.ts`), one section per band. */
   copy: PageCopy;
-  /** The brand's mailbox, from the brand record — the form's honest fallback address. */
-  supportEmail: string;
 }
 
 /**
- * The account support page: the contact form, and the three bands that tell the truth about it.
+ * The account support page: the contact band, and the three bands that tell the truth about it.
  *
- * **Server component.** Every word arrives from the fixture, the form is the one client island
- * (`contact-form.tsx`), and nothing here reads a session — the route module resolved it before
- * mounting this page (`app/(mainlayout)/support/page.tsx`), which is what keeps the redirect and
- * the render in one decision instead of two.
+ * **Server component.** Every word arrives from the fixture, and nothing here reads a session —
+ * the route module resolved it before mounting this page (`app/(mainlayout)/support/page.tsx`),
+ * which is what keeps the redirect and the render in one decision instead of two.
  *
- * **The auxiliary content is the card's judgement, made concrete.** `what-this-form-does` states
- * the form's real state (no sender, nothing stored, write to the mailbox instead);
- * `what-to-include` names the three things a support message needs (the relationship, the page and
- * browser, what was expected); `where-else` links the public help centre and the account's own
- * settings, which answer most of what reaches support without a reply.
+ * **The contact band is a link, not a form** (owner, 2026-11-02). `ContactPointer` sends the
+ * reader to `/help`, where the one form stores the message before mailing it; this page used to
+ * mount a second form whose submit was permanently disabled. The auxiliary content still earns
+ * its place: `what-this-form-does` states what happens to a message (stored first, mailed
+ * second), `what-to-include` names the three things a support message needs (the relationship,
+ * the page and browser, what was expected), and `where-else` links the public help centre and the
+ * account's own settings, which answer most of what reaches support without a reply.
  */
-export function AccountSupportPage({ copy, supportEmail }: AccountSupportPageProps) {
+export function AccountSupportPage({ copy }: AccountSupportPageProps) {
   const contact = sectionOf(copy, "contact");
   const formState = sectionOf(copy, "what-this-form-does");
   const include = sectionOf(copy, "what-to-include");
@@ -45,16 +44,12 @@ export function AccountSupportPage({ copy, supportEmail }: AccountSupportPagePro
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <ContactForm
-            copy={contact}
-            categoryCopy={sectionOf(copy, "help-categories")}
-            supportEmail={supportEmail}
-          />
+          <ContactPointer copy={contact} />
         </div>
 
         <div className="space-y-6">
           <InfoCard section={formState} body={sectionBody(formState)}>
-            <BandRows section={formState} ids={["not-sent", "not-stored", "write-instead"]} />
+            <BandRows section={formState} ids={["stored", "mailed", "reply"]} />
           </InfoCard>
 
           <InfoCard section={include} body={sectionBody(include)}>

@@ -179,6 +179,11 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * and a copy fixture holding `post` would be a fixture an editor has to keep in sync with
  * the protocol.
  *
+ * `action` joins it for the same reason (the contact form): `action="/api/contact"` is the
+ * form's *destination*, the sibling of `href` — a path the route manifest or the route file
+ * owns, never a sentence a reader sees. It was counted for exactly one commit, which is why
+ * the contact form's page measured 1 literal against a budget of 0.
+ *
  * `autoComplete` joins them for the same reason (issue #164): `"email"` / `"current-password"`
  * are W3C enumerated tokens a password manager reads, exactly like `type="password"` — not copy.
  * Counting them also made every login form's budget wrong by the two hints it must carry.
@@ -191,6 +196,7 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  */
 const TECHNICAL_ATTRIBUTES = new Set([
   "accept",
+  "action",
   "align",
   "alt",
   "asChild",

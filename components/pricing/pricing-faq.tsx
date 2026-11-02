@@ -14,6 +14,7 @@ import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 /** One group of FAQ rows, as the accordion renders it. */
@@ -28,8 +29,7 @@ export type PricingFaqCategory = {
  * The rows themselves are record-shaped blocks with no schema in P2 (see
  * `data/pages/pricing.ts`, "not here, on purpose"), so they stay in this feature. What
  * they must not own is the product's name: a sentence that spells it is a sentence a
- * second brand cannot render, so every row below reads `brand.name` (and the contact
- * line reads `brand.supportEmail`) and the projection is what `tests/brand-shell.test.ts`
+ * second brand cannot render, so every row below reads `brand.name` and the projection is what `tests/brand-shell.test.ts`
  * renders with a different record.
  *
  * **These are the questions this product can answer (owner, 2026-11-02).** The page carried the
@@ -40,9 +40,7 @@ export type PricingFaqCategory = {
  * Gap and its Steps, the coach seat, and the data the app holds. Nothing here claims a customer,
  * a rating, an earnings figure or a feature behind no code.
  */
-export function pricingFaqCategories(
-  brand: Pick<Brand, "name" | "supportEmail">,
-): PricingFaqCategory[] {
+export function pricingFaqCategories(brand: Pick<Brand, "name">): PricingFaqCategory[] {
   return [
     {
       name: "The assessment",
@@ -88,7 +86,7 @@ export function pricingFaqCategories(
         },
         {
           question: "Can I cancel or change plans?",
-          answer: `Not from inside the app yet: the subscription panel in settings is a mock — it changes what it displays, not what you are charged. Write to ${brand.supportEmail} and a plan change is made by hand.`,
+          answer: `Not from inside the app yet: the subscription panel in settings is a mock — it changes what it displays, not what you are charged. Send us a message from the contact form on the Help page and a plan change is made by hand.`,
         },
       ],
     },
@@ -102,7 +100,7 @@ export function pricingFaqCategories(
         },
         {
           question: "Can I delete my account and data?",
-          answer: `Not from inside the app yet: the settings screen draws the delete control, but the action is not wired up, and there is no self-serve way to remove an account. Ask at ${brand.supportEmail} and the account and its data are removed by hand.`,
+          answer: `Not from inside the app yet: the settings screen draws the delete control, but the action is not wired up, and there is no self-serve way to remove an account. Send us a message from the contact form on the Help page and the account and its data are removed by hand.`,
         },
       ],
     },
@@ -195,13 +193,15 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
 
         <div className="mt-12 text-center">
           <p className="text-slate-600 dark:text-slate-400">
-            {itemLabel(copy, "contact-prompt")}{" "}
-            <a
-              href={`mailto:${brand.supportEmail}`}
-              className="text-action hover:text-action/80 font-medium"
-            >
-              {itemLabel(copy, "contact-email")}
-            </a>
+            {itemLabel(copy, "contact-prompt")} {/*
+             * The contact link is the form, not a mailbox (owner, 2026-11-02). This anchor used to
+             * print `brand.supportEmail` behind a mail link; `/help` is the one contact path on the
+             * public site now, and it stores the message before mailing it, so a visitor without a
+             * mail client is not left with a link that does nothing.
+             */}
+            <Link href="/help" className="text-action hover:text-action/80 font-medium">
+              {itemLabel(copy, "contact-link")}
+            </Link>
           </p>
         </div>
       </div>

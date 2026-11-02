@@ -79,7 +79,7 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
       },
       {
         type: "note",
-        text: `Account Settings edits the profile and nothing else — there is no password change, no notification preference and no billing control on it. If you need something it does not offer, write to ${brand.supportEmail}.`,
+        text: `Account Settings edits the profile and nothing else — there is no password change, no notification preference and no billing control on it. If you need something it does not offer, send us a message from the contact form on the Help page.`,
       },
     ],
   },
