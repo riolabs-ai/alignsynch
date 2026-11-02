@@ -201,6 +201,15 @@ process bug.
   while `next build` stays green. `import type` is erased and stays legal; a value import from the
   same module is not. The census (`N "use client" entries walked, 0 reaching a server-only module`)
   prints every run.
+  E37 holds the **brand boundary in the copy**: `scripts/brand-word.ts` walks the fixtures the
+  AlignSynch build renders and fails on any reader-visible string naming the template (case
+  insensitive). The render set is derived, never listed — a surface is in it when its
+  `data/pages/budget.ts` row's page does **not** call `requireQuizProduct()`, so a new quiz surface
+  exempts its fixture by gating its page. Comments are provenance and are not read; `id` and `href`
+  are a handle and a route; a template literal is read by its fragments, so `across${brand.name}.`
+  passes on both brands. `BRAND_WORD_ALLOWANCES` holds **exact strings in exact files**, never a
+  whole file, and a row no walked string uses is itself a finding — the check cannot be widened in
+  place. QuizHub stays first-class: nothing here constrains what the quiz brand's own copy says.
 - `content/bundle.ts` + `scripts/bundles.ts` — the bundle (#147): a template or a demo dataset as
   one versioned JSON document, and the CLI that exports and imports it. The canonical demo
   bundle is committed at `data/bundles/demo-dataset.alignsynch.json`; an import writes the tenant
