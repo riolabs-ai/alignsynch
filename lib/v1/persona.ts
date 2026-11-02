@@ -125,6 +125,15 @@ export function sameSectionHref(persona: DashboardPersona, pathname: string): st
   return overviewHref(persona);
 }
 
+/**
+ * The one persona whose card carries what was paid: the Initiator, who holds the subscription.
+ * A counterparty, a coach and an admin render no money element at all — the list asks this once
+ * rather than repeating the comparison, and the test pins it for all four.
+ */
+export function moneyVisibleTo(persona: DashboardPersona): boolean {
+  return persona === "initiator";
+}
+
 /** The relationships this persona can see — their own, the ones they are party to, the ones they coach, or all. */
 export function relationshipsVisibleTo(
   persona: Persona,

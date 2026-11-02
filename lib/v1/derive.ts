@@ -178,6 +178,41 @@ export function meanGapOf(rel: V1Relationship): number | null {
   return count === 0 ? null : sum / count;
 }
 
+/**
+ * The four numbers the relationships list's card prints, translated from the My Quizzes card
+ * (`components/my-quizzes/my-quizzes.tsx`): Players → sessions completed of opened, Completion →
+ * session completion percent, Average Score → average alignment (the mean Gap), Questions →
+ * Aspects. Every value is derived from the store's own counters and the parties' answers; the one
+ * absence is `null`, never `0`, so a card with no session opened and a card with a 0% completion
+ * stay distinguishable — the UI renders `—` for the first and `0%` for the second.
+ *
+ * `averageAlignment` is the mean Gap (`meanGapOf`), which is `null` until the session is complete:
+ * lower is tighter, and a relationship nobody has scored has no alignment figure to print.
+ */
+export interface RelationshipCardMetrics {
+  readonly completedSessions: number;
+  readonly openedSessions: number;
+  /** `null` when no session has opened — absent is not 0%. */
+  readonly completionPercent: number | null;
+  /** The mean Gap, or `null` until both parties accept the session. */
+  readonly averageAlignment: number | null;
+  readonly aspectCount: number;
+}
+
+export function cardMetricsOf(rel: V1Relationship): RelationshipCardMetrics {
+  const completionPercent =
+    rel.openedSessions === 0
+      ? null
+      : Math.round((rel.completedSessions / rel.openedSessions) * 100);
+  return {
+    completedSessions: rel.completedSessions,
+    openedSessions: rel.openedSessions,
+    completionPercent,
+    averageAlignment: meanGapOf(rel),
+    aspectCount: rel.items.length,
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * The session timeline's derivations
  * ------------------------------------------------------------------ */
