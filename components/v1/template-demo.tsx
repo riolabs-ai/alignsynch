@@ -5,6 +5,7 @@ import {
   type RelationshipType,
 } from "@/data/v1/relationship-types";
 import { formatCurrency } from "@/content/core";
+import { deriveSteps } from "@/content/steps";
 import type { V1Relationship } from "@/data/v1/fixtures";
 import { ReportBody } from "@/components/v1/report-body";
 import { StartRelationshipButton } from "@/components/v1/start-relationship-button";
@@ -32,6 +33,8 @@ function demoRelationship(type: RelationshipType): V1Relationship {
     setting: "soft",
     initiatorName: "You",
     counterpartyName: "Them",
+    // The demo names its two seats by role, not by a typed invitee — nobody was invited to it.
+    inviteeName: null,
     initiatorAnswers: { ...demo.you },
     counterpartyAnswers: { ...demo.them },
     initiatorSubmitted: true,
@@ -48,6 +51,15 @@ function demoRelationship(type: RelationshipType): V1Relationship {
     coachComments: [],
     comments: [],
     aspectComments: {},
+    // The demo relationship is complete, so it stores the Steps its own answers derive — the same
+    // rule every completion follows (`content/steps.ts`), not an empty field behind a finished report.
+    steps: deriveSteps({
+      relationshipId: `demo-${type.id}`,
+      items: type.aspects,
+      initiatorAnswers: demo.you,
+      counterpartyAnswers: demo.them,
+      createdAt: "2026-10-30T12:00:00.000Z",
+    }),
     openedSessions: 1,
     completedSessions: 1,
     subscription: {
@@ -123,7 +135,7 @@ export function TemplateDemo({ type }: { type: RelationshipType }) {
             person joins by link and pays nothing.
           </p>
           <div className="mt-3">
-            <StartRelationshipButton />
+            <StartRelationshipButton typeId={type.id} />
           </div>
         </div>
       </div>

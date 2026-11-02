@@ -105,6 +105,7 @@ const DYNAMIC_ROUTES = [
   "/v1/relationships/[id]/answer",
   "/v1/relationships/[id]/report",
   "/v1/templates/[type]",
+  "/v1/templates/[type]/create",
   "/v1/templates/[type]/demo",
 ] as const;
 
