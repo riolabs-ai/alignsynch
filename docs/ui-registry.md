@@ -302,7 +302,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/v1/review` — **prototype**
   - capability: The prototype's own review checklist — every /v1 screen with an approval state (unreviewed, changes requested, approved) and a note, persisted in the store so a review survives a reload.
   - components: `components/ui`, `components/v1`
-  - reads: 1 record fixture — `data/v1/fixtures.ts`
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/persona-surfaces.ts`
 
 - `/v1/service` — **prototype**
   - capability: The Service user's landing: the support queue of invitations, accounts and stuck relationships, with a resolve action per ticket.
