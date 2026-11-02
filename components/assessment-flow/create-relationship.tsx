@@ -1,19 +1,13 @@
 /**
- * template-ancestor: components/v1/create-relationship-form.tsx   (variation: a server component on the app's own route, with the write not wired — the form's layout and both decisions are real, the submit is disabled and says why)
+ * template-ancestor: components/v1/create-relationship-form.tsx   (variation: a server component on the app's own route, posting to the route handler — the layout survives, the disabled submit and its "not wired" note do not)
  *
- * `CreateRelationship` — the create step shipped as **in-progress UI** (#409, R1-E).
+ * `CreateRelationship` — the create step, wired (#427).
  *
  * The v1 create form's shape, in the order a person decides: the template and its two seats at
- * the top, the counterparty, then the two choices that shape everything after creation. What it
- * is **not** is a working create: the card this file belongs to ships the screen without the
- * write, so the submit is disabled and the sentence beside it says so. That is the difference
- * between in-progress UI and a convincing lie — a form that looked ready and did nothing would
- * be the defect, not the design.
- *
- * The form carries **no `action`** for the same reason: there is no destination this screen is
- * allowed to reach yet, and a real endpoint behind a disabled button is one HTML edit away from
- * a write nobody decided on. When the write path ships, the action and the removal of `disabled`
- * are the whole change.
+ * the top, the counterparty, then the two choices that shape everything after creation. It is a
+ * plain POST form — no `"use client"`, no state, no handler — so the browser, a `curl` and the
+ * acceptance all drive the same endpoint (`POST /assessment/new`), and a refusal comes back as a
+ * GET of this page with `?problem=<code>` rather than a JSON body in the window.
  *
  * **Two decisions, stated differently, because they behave differently.**
  *
@@ -23,7 +17,17 @@
  *            against (`SETTING_DEFINITIONS`) and changes no question.
  *
  * Neither is pre-selected: a default would be this form choosing a bar for two people who never
- * saw the question, and the Mode is too consequential to inherit from a designer's taste.
+ * saw the question, and the Mode is too consequential to inherit from a designer's taste. Both
+ * groups are `required`, so a browser cannot send the form without a choice; the store still
+ * refuses a crafted post that omits the Mode, and a Setting it is not given falls to the schema's
+ * documented default (see `CreateInstanceInput`).
+ *
+ * **A refused create is this same screen with a sentence above the form.** The URL carries the
+ * code and nothing else; `data/pages/assessment-create.ts` owns every word here, so the band says
+ * what the store refused without a second copy of the reason. When the refusal is one that means
+ * the template cannot be read at all — somebody else's, an instance, an id that names nothing —
+ * the screen still renders, with the sentence and a way back to the library, instead of a bare
+ * 404 that would swallow the refusal the post just gave.
  *
  * Literal-free: every word is `data/pages/assessment-create.ts` (E23), except the two vocabulary
  * sets the model authors once — `MODE_LABELS` and `SETTING_LABELS`/`SETTING_DEFINITIONS`.
@@ -37,27 +41,81 @@ import {
   SETTING_LABELS,
 } from "@/content/assessment";
 import type { PageCopy } from "@/content/pages";
+import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
 /** The template being copied, as much of it as this screen prints. */
 export interface CreateTemplate {
+  /** The record's own id — what the hidden field posts back. */
+  readonly recordId: string;
   readonly title: string;
   readonly summary: string;
   readonly aspectCount: number;
+}
+
+/** The band a refusal is drawn in, shared by the form's own screen and the read-nothing one. */
+function ProblemBand({
+  heading,
+  sentence,
+}: {
+  heading: string | undefined;
+  sentence: string | null;
+}) {
+  if (sentence === null) return null;
+  return (
+    <div
+      data-create-problem="true"
+      role="alert"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-gray-800 dark:border-amber-700 dark:bg-amber-950 dark:text-gray-200"
+    >
+      {heading === undefined ? null : <p className="font-semibold">{heading}</p>}
+      <p id="create-problem" className="mt-1">
+        {sentence}
+      </p>
+    </div>
+  );
 }
 
 export function CreateRelationship({
   copy,
   template,
   backHref,
+  problem,
 }: {
   copy: PageCopy;
-  template: CreateTemplate;
+  /** The template to copy, or `null` when the refusal means there is none to read. */
+  template: CreateTemplate | null;
+  /** Where the back link goes: the template, or the library when there is no template. */
   backHref: string;
+  /** The fixture's sentence for the refusal that brought the person back; `null` on a clean visit. */
+  problem: string | null;
 }) {
   const band = sectionOf(copy, "template");
   const form = sectionOf(copy, "form");
-  const noteId = "create-not-wired";
+  const problems = sectionOf(copy, "problems");
+
+  // The refusal that leaves nothing to copy: still a page, never a 404 that loses the sentence.
+  if (template === null) {
+    const empty = sectionOf(copy, "refused");
+    return (
+      <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-8">
+        <p>
+          <Link href={backHref} className="text-sm font-medium text-action hover:underline">
+            {itemLabel(empty, "back")}
+          </Link>
+        </p>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+            {empty.heading}
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+            {sectionBody(empty)}
+          </p>
+        </div>
+        <ProblemBand heading={problems.heading} sentence={problem} />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-8">
@@ -73,6 +131,8 @@ export function CreateRelationship({
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">{copy.subtitle}</p>
       </div>
+
+      <ProblemBand heading={problems.heading} sentence={problem} />
 
       {/* What is being copied — its name, its words and its size, all from the record. */}
       <section
@@ -99,6 +159,8 @@ export function CreateRelationship({
       </section>
 
       <form
+        action={CREATE_INSTANCE_PATH}
+        method="post"
         aria-labelledby="create-form-heading"
         className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
       >
@@ -108,6 +170,9 @@ export function CreateRelationship({
         >
           {form.heading}
         </h2>
+
+        {/* The template is the route's own fact; the form carries it so the POST names it. */}
+        <input type="hidden" name="templateRecordId" value={template.recordId} />
 
         <label className="grid gap-1 text-sm" htmlFor="create-initiator-name">
           <span className="font-medium text-gray-700 dark:text-gray-200">
@@ -166,7 +231,7 @@ export function CreateRelationship({
               key={mode}
               className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
             >
-              <input type="radio" name="mode" value={mode} className="mt-1" />
+              <input type="radio" name="mode" value={mode} required className="mt-1" />
               <span>
                 <span className="font-medium text-gray-800 dark:text-gray-100">
                   {MODE_LABELS[mode]}
@@ -194,7 +259,13 @@ export function CreateRelationship({
               key={setting}
               className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
             >
-              <input type="radio" name="alignmentSetting" value={setting} className="mt-1" />
+              <input
+                type="radio"
+                name="alignmentSetting"
+                value={setting}
+                required
+                className="mt-1"
+              />
               <span>
                 <span className="font-medium text-gray-800 dark:text-gray-100">
                   {SETTING_LABELS[setting]}
@@ -210,18 +281,16 @@ export function CreateRelationship({
           </p>
         </fieldset>
 
-        {/* The point of action: the control, disabled, with its reason beside it. */}
+        {/* The point of action: the control, enabled, with what it will do beside it. */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <button
             type="submit"
-            disabled
-            aria-describedby={noteId}
-            className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground"
           >
             {itemLabel(form, "submit")}
           </button>
-          <p id={noteId} className="text-xs text-gray-600 dark:text-gray-300">
-            {itemLabel(form, "not-wired")}
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            {itemLabel(form, "submit-note")}
           </p>
         </div>
       </form>

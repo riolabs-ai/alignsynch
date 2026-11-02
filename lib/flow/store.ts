@@ -52,8 +52,12 @@
  * No `gap` is written anywhere: the report is `gapOf()` over two opinion rows, computed by
  * `lib/assessment-report.ts` on every render.
  */
-import type { Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
-import { DEFAULT_ALIGNMENT_SETTING, zAssessmentMode } from "@/content/assessment";
+import type { AlignmentSetting, Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
+import {
+  DEFAULT_ALIGNMENT_SETTING,
+  zAlignmentSetting,
+  zAssessmentMode,
+} from "@/content/assessment";
 import { entitlementForAccount } from "@/lib/billing";
 import { instanceGateRefusal } from "@/lib/billing/entitlements";
 import { activeInstanceCount } from "@/lib/db/billing";
@@ -145,6 +149,18 @@ export interface CreateInstanceInput {
    */
   readonly mode: string;
   /**
+   * The Setting the create form's radios asked for — `soft` or `full` (#427).
+   *
+   * Typed `string` for the reason `mode` is: it arrives as form text, and the **store** decides.
+   * `zAlignmentSetting.safeParse` refuses a value the model does not name, before the transaction
+   * opens, so a crafted post cannot write a setting no screen offered. Unlike `mode`, a blank
+   * value is the documented default rather than a refusal: the column is `NOT NULL DEFAULT 'soft'`
+   * (0008) and a caller that predates the radios — `scripts/flow-e2e.mjs`, `scripts/billing-smoke.mjs`,
+   * a `curl` carrying the five fields the form always had — must keep creating the relationship it
+   * always created. The form itself marks the group `required`, so a browser never posts blank.
+   */
+  readonly alignmentSetting?: string;
+  /**
    * The signed-in account creating the instance, when the request has one (#213 follow-up).
    *
    * Resolved by the route from the request's **session cookies** (`currentUser()`), never from
@@ -191,6 +207,24 @@ function required(value: string, field: string): string {
   const text = value.trim();
   if (text === "") throw new FlowError("invalid-input", `${field} is required`);
   return text;
+}
+
+/**
+ * The Setting the row stores: the form's choice, or the schema's documented default (#427).
+ *
+ * Blank is `DEFAULT_ALIGNMENT_SETTING` — never a silently accepted third value, and never a
+ * refusal, because a post that predates the radios still has to create what it always created.
+ * Anything else is parsed by the model: `full` writes `full`, and a word the model does not name
+ * (`bogus`) is `invalid-input` before the transaction opens, so the refusal writes zero rows.
+ */
+function alignmentSettingOf(value: string | undefined): AlignmentSetting {
+  const text = value?.trim() ?? "";
+  if (text === "") return DEFAULT_ALIGNMENT_SETTING;
+  const parsed = zAlignmentSetting.safeParse(text);
+  if (!parsed.success) {
+    throw new FlowError("invalid-input", "setting must be soft or full");
+  }
+  return parsed.data;
 }
 
 /**
@@ -246,6 +280,9 @@ export async function createInstanceFromTemplate(
   if (!mode.success) {
     throw new FlowError("invalid-input", "mode must be basic or advanced");
   }
+  // #427 — the Setting the create form chose. Parsed here, beside the mode, so both refusals
+  // happen before the transaction opens and neither can leave a row behind.
+  const alignmentSetting = alignmentSettingOf(input.alignmentSetting);
 
   const now = input.now ?? new Date();
   const initiatorUserId = normalizedUserId(input.viewerUserId);
@@ -383,7 +420,7 @@ export async function createInstanceFromTemplate(
     await client.query(
       `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
        VALUES ($1, $2, $3, $4, $5)`,
-      [instanceRecordId, found.id, mode.data, DEFAULT_ALIGNMENT_SETTING, relationshipId],
+      [instanceRecordId, found.id, mode.data, alignmentSetting, relationshipId],
     );
 
     // The Initiator's seat. `user_id` is the session's account when there is one, and NULL when
