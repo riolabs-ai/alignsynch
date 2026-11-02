@@ -27,10 +27,11 @@ landmarks (6)
   main           1
   navigation     3
 
-links (17 unique, 33 total)
-  /                                                    2
+links (18 unique, 33 total)
+  /                                                    1
   /#questions                                          1
   /#templates                                          1
+  /assessment/instances                                1
   /assessment/templates                                1
   /dashboard                                           1
   /news/10-strategies-for-creating-engaging-quizzes    2
@@ -51,4 +52,4 @@ counts
   images    1
   buttons   17
   inputs    2
-  classes   220 (sha 6bdd4a0daef9)
+  classes   220 (sha 7bd54f84ad5b)

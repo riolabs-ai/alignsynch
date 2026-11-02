@@ -30,10 +30,11 @@ landmarks (6)
   main           1
   navigation     2
 
-links (8 unique, 9 total)
-  /                                                    2
+links (9 unique, 9 total)
+  /                                                    1
   /#questions                                          1
   /#templates                                          1
+  /assessment/instances                                1
   /assessment/templates                                1
   /dashboard                                           1
   /settings                                            1
@@ -45,4 +46,4 @@ counts
   images    1
   buttons   8
   inputs    1
-  classes   216 (sha c3df0556b0af)
+  classes   216 (sha b064c67b0986)

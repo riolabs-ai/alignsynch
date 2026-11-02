@@ -8,8 +8,8 @@
  * changed is **who is shown it**:
  *
  *   a platform user  sees the menu of the product they signed up for. On
- *                    `BRAND=alignsynch` that is Home, Templates, How it works, Support, then the
- *                    console's Overview and Your templates — the alignment destinations, not
+ *                    `BRAND=alignsynch` that is Dashboard, How it works, My Relationships,
+ *                    Library, Templates and Support — the alignment destinations, not
  *                    `/leaderboard`. The operator's rows (`/admin/*`) are above this function's
  *                    grant: they need `admin-console`, which only an administrator carries.
  *   everyone else    sees their brand's menu and nothing more. The quiz destinations are
