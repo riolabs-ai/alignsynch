@@ -39,10 +39,6 @@ CREATE TABLE IF NOT EXISTS contact_message (
 CREATE INDEX IF NOT EXISTS contact_message_created_idx
   ON contact_message (created_at DESC);
 
--- The rate limit's two reads: "how many from this client in the last window" and "how many from
--- this address". The second is `lower(email)` because one mailbox spelled two ways is one budget.
+-- The rate limit's read: "how many from this client in the last window".
 CREATE INDEX IF NOT EXISTS contact_message_ip_created_idx
   ON contact_message (ip_hash, created_at DESC);
-
-CREATE INDEX IF NOT EXISTS contact_message_email_created_idx
-  ON contact_message (lower(email), created_at DESC);
