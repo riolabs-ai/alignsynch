@@ -6,6 +6,17 @@
  * an unauthenticated request never reaches a database read. The redirect is what a browser sees;
  * the denial happened a line earlier, which is the card's "independently of any redirect".
  *
+ * **No auth environment is not "signed out" here — it is the configuration error, deliberately.**
+ * `currentUser()` builds the auth server outside its `try` and throws
+ * `NEON_AUTH_BASE_URL is not set` when `NEON_AUTH_*` is absent: a page behind an auth wall must not
+ * turn a deployment mistake into an endless signed-out session (`lib/auth/session.ts`). So a
+ * deployment with no auth env — a fresh clone, a preview without secrets, the gate tree — answers
+ * 500 with that error on a request, by design (kanban t_c6398125 kept the 500 and documented it
+ * rather than redirecting). `/support` and `/how-it-works` answer the login redirect instead
+ * because they call `currentUserIfConfigured()`; this page does not, and
+ * `tests/auth-session-render-write.test.ts` pins the throw so the choice cannot be flipped by
+ * accident.
+ *
  * What this route is no longer: a tab shell over eight fixture panels. Four of them simulated a
  * save with `setTimeout`, the security panel offered a password change Managed Auth cannot
  * perform from the app, and the profile panel rendered "Alex Johnson". They are unimported now;

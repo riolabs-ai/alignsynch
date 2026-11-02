@@ -17,6 +17,16 @@
  * Signed out, the answer is the other gated routes' own: `redirect(/login?next=…)` with this path
  * preserved, so the sign-in round trip returns the reader here.
  *
+ * **No auth environment is not "signed out" here — it is the configuration error, deliberately.**
+ * `currentUser()` builds the auth server outside its `try` and throws
+ * `NEON_AUTH_BASE_URL is not set` when `NEON_AUTH_*` is absent, because a console page must not
+ * turn a deployment mistake into an endless signed-out session (`lib/auth/session.ts`). So on a
+ * tree with no auth env — a fresh clone, a preview without secrets, the gate build — a *request*
+ * to this route answers 500 with that error, and that is the documented answer, not a defect
+ * (kanban t_c6398125 chose to keep it and say so here). `/support` and `/how-it-works` answer the
+ * login redirect instead because they call `currentUserIfConfigured()`; this page does not.
+ * `pnpm build` passes without `NEON_AUTH_*` by design, so only a request can surface it.
+ *
  * **Three query values, and each one can only narrow.** `?filter=` is the console's list
  * (Console 2/5), `?stage=` one rung of the relationship ladder, `?q=` the search box. All three
  * are resolved here through the module that owns the vocabulary — an unknown value means no
