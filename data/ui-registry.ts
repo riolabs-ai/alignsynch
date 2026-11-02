@@ -708,7 +708,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The report — the eight gap kinds grouped under the glossary's headings, with the Setting's verdict on top, unlocked only when both parties accept (never at the second submit).",
+      "The report — every Gap printed with the two Opinions it compares, named by party, one row per kind under the glossary's headings, with the Setting's verdict on top and unlocked only when both parties accept (never at the second submit).",
   },
   {
     kind: "route",
