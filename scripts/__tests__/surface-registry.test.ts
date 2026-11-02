@@ -59,13 +59,25 @@ describe("the real surface registry", () => {
     assert.deepEqual(surfaceRegistryProblems(surfaceRegistry, inManifest), []);
   });
 
-  it("declares the four #409 reads live, and only those", () => {
+  it("declares the five read surfaces live, and only those", () => {
     const live = surfaceRegistry.filter((row) => row.status === "live").map((row) => row.route);
     assert.deepEqual(live.sort(), [
       "/assessment/instances",
       "/assessment/instances/[instanceId]",
+      "/assessment/instances/[instanceId]/report",
       "/assessment/templates",
       "/assessment/templates/[templateId]",
+    ]);
+  });
+
+  it("declares the three shipped-but-unwired screens as preview, never live", () => {
+    const preview = surfaceRegistry
+      .filter((row) => row.status === "preview")
+      .map((row) => row.route);
+    assert.deepEqual(preview.sort(), [
+      "/assessment/instances/[instanceId]/accept",
+      "/assessment/instances/[instanceId]/answer",
+      "/assessment/templates/[templateId]/create",
     ]);
   });
 

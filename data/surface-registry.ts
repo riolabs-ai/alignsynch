@@ -11,8 +11,14 @@
  * renders real rows, and needs nothing from this file to explain itself. That is why
  * `surfaceRegistryProblems()` refuses `live` for a route `content/routes.ts` does not carry, and
  * why a live row may not carry a `reason` or `needs` — a live surface with an excuse is a
- * pending one with a better story. The four live entries below are `#409`'s four reads, and they
- * are the only rows this card may call live (`card R1-A`).
+ * pending one with a better story. The five live entries below are `#409`'s reads plus the
+ * report R1-C shipped, and they are the only rows that may be called live.
+ *
+ * **`preview` is a shipped screen whose actions are not wired.** R1 ships create, answer and
+ * accept as real layouts with every write control disabled and labelled "Not wired yet"; the
+ * route exists and the page renders, so they are neither live (nothing they offer is recorded)
+ * nor pending (there is a page, and it is the address they own). `takesClick` treats them like
+ * pending on purpose: a preview surface never gains a nav destination it cannot honour.
  *
  * **`pending` is not a 404 and not a redaction.** It means the surface is declared, its route is
  * the address it will own, and `needs` names the capability that is missing in plain words. The
@@ -77,7 +83,7 @@ export type SurfaceStatus = z.infer<typeof zSurfaceStatus>;
  * relationships, the template catalogue), then the surfaces that write, then the operator's.
  */
 export const surfaceRegistry: readonly Surface[] = [
-  /* ---- live: the four reads R1 ships (#409) ---------------------------------- */
+  /* ---- live: the read surfaces R1 ships (#409) ------------------------------- */
   {
     route: "/assessment/instances",
     label: "Your relationships",
@@ -102,24 +108,30 @@ export const surfaceRegistry: readonly Surface[] = [
     area: "relationships",
     status: "live",
   },
-
-  /* ---- pending: the write surfaces R2 takes ---------------------------------- */
   {
-    route: "/assessment/instances/new",
-    label: "Start a relationship",
+    route: "/assessment/instances/[instanceId]/report",
+    label: "Report",
     area: "relationships",
-    status: "pending",
+    status: "live",
+  },
+
+  /* ---- preview: the write surfaces R2 takes — real screens, no write path ----- */
+  {
+    route: "/assessment/templates/[templateId]/create",
+    label: "Create a relationship",
+    area: "relationships",
+    status: "preview",
     reason:
-      "An instance is written by a POST route and read on the detail screen; there is no create surface in the app to start one from.",
+      "Not wired yet — this screen is not connected to the create path, so submitting it cannot create a relationship. Nothing was saved.",
     needs: ["needs authenticated writes", "needs the store's create rules enforced on the server"],
   },
   {
     route: "/assessment/instances/[instanceId]/answer",
     label: "Answer sheet",
     area: "relationships",
-    status: "pending",
+    status: "preview",
     reason:
-      "A party's answers are a POST endpoint with no screen of their own, so a reader can open the relationship but cannot fill one in.",
+      "Not wired yet — this sheet does not save. Anything you mark here is not recorded, and the submit button stays disabled until the write path ships.",
     needs: [
       "needs a write path for a party's opinions",
       "needs the blind rule enforced server-side, never in a reducer",
@@ -129,24 +141,12 @@ export const surfaceRegistry: readonly Surface[] = [
     route: "/assessment/instances/[instanceId]/accept",
     label: "Acceptance",
     area: "relationships",
-    status: "pending",
+    status: "preview",
     reason:
-      "Accepting is a write, and no screen asks for it; nothing on the detail page can stand in for consent.",
+      "Not wired yet — acceptance cannot be recorded, so this button is disabled. Nothing was saved.",
     needs: [
       "needs authenticated writes",
       "needs both parties bound to the instance before the write lands",
-    ],
-  },
-  {
-    route: "/assessment/instances/[instanceId]/report",
-    label: "Report",
-    area: "relationships",
-    status: "pending",
-    reason:
-      "The comparison is not a page yet, and the values it shows must be read from stored opinions rather than computed at render time.",
-    needs: [
-      "needs the per-Aspect comparison read over stored opinions",
-      "needs the blind rule to withhold the report until both parties accept",
     ],
   },
 

@@ -149,7 +149,7 @@ links (72 unique, 89 total)
   /register                                            1
   /support                                             1
   /terms                                               1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.1.0-rc1 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
 
 counts
   elements  2238
