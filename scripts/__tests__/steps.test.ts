@@ -15,7 +15,9 @@
  *      starts equal to it and is editable, and an authored Step is the one row with no kind and no
  *      suggestion (which `zStep` says out loud, in both directions);
  *   5. **`closed` is history** — a stored Step whose Gap has since fallen to 0 closes, is kept, is
- *      never counted as outstanding, and is never resurrected as open by a later derivation;
+ *      never counted as outstanding, and is never resurrected as open by a later derivation. A Gap
+ *      that was never **measured** (no answers, one side's answers, or a kind the Mode does not ask)
+ *      is unknown rather than 0, so it closes nothing;
  *   6. **Steps are additive** — deriving does not move a Gap or the verdict, asserted by computing
  *      both over the same answers before and after;
  *   7. **the fixtures agree with the rule** — `rel-aligned`, `rel-advanced`, an incomplete session,
@@ -442,15 +444,57 @@ describe("storing progress", () => {
     // An authored Step came from no Gap, so no Gap falling to 0 closes it.
     const withAuthored = closeSteps([...first, authored], input);
     assert.equal(withAuthored.find((step) => step.id === authored.id)?.status, "open");
-    // A Step on an Aspect that is no longer on the sheet is absent, not 0: it stays as it was.
+    // A Step on an Aspect the instance no longer holds is absent, not 0: it stays as it was.
     assert.equal(closeSteps(first, { ...input, items: [SHARED] }), first);
-    // A Step on an Aspect nobody answered this session is unknown, not 0: it stays as it was.
+    // The same branch, from the other end: an instance holding no Aspects at all closes nothing.
     assert.equal(
       closeSteps(first, { ...input, counterpartyAnswers: agreedAnswers, items: [] }),
       first,
     );
     // Nothing to close: the same array comes back, so a completion that closes nothing is not a write.
     assert.equal(closeSteps(first, { ...input, initiatorAnswers, counterpartyAnswers }), first);
+  });
+
+  it("does not close a Step on an Aspect this session did not measure — unknown is not 0", () => {
+    const first = derive();
+    const step = first[0];
+    assert.equal(step.aspectId, DIVIDED.id);
+    const input = {
+      relationshipId: "rel-test",
+      items: [DIVIDED, SHARED],
+      createdAt: "2026-12-01T12:00:00.000Z",
+    };
+
+    // Nobody answered: the Aspect is on the sheet, but no Gap exists for it.
+    assert.equal(
+      closeSteps(first, { ...input, initiatorAnswers: {}, counterpartyAnswers: {} }),
+      first,
+      "no answers is unknown: the Step is untouched, not closed",
+    );
+    // One side answered — a half-scored session is still not a measurement.
+    assert.equal(
+      closeSteps(first, { ...input, initiatorAnswers, counterpartyAnswers: {} }),
+      first,
+      "one answer only is unknown: the Step is untouched, not closed",
+    );
+    assert.equal(
+      closeSteps(first, { ...input, initiatorAnswers: {}, counterpartyAnswers }),
+      first,
+      "the other side alone is unknown too",
+    );
+    // The Step itself is untouched in every one of those cases: still open, same words, same tick
+    // position — unknown neither closes it nor reopens it.
+    assert.equal(first[0].status, "open");
+
+    // The positive control: both answers present and agreeing → the Gap is a measured 0, so it closes.
+    // Without this the three assertions above would pass on a function that closed nothing ever.
+    const known = closeSteps(first, {
+      ...input,
+      initiatorAnswers: agreedAnswers,
+      counterpartyAnswers: agreedAnswers,
+    });
+    assert.notEqual(known, first, "a measured 0 closes");
+    assert.equal(known[0].status, "closed");
   });
 
   it("closes the met Gap and adds the newly opened one in the same completion", () => {

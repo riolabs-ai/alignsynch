@@ -43,6 +43,13 @@
  * agreement. `stepsToAdd` dedupes by the stable id, so a closed row stays closed by construction;
  * `closeSteps` is the one write that moves a row into `closed`.
  *
+ *   - **Unknown is not 0.** A Gap is a measured distance, so a Step closes only when both answers
+ *     are there and the comparison says they are in sync. An Aspect nobody answered, a session
+ *     holding one side's answers only, and a kind this Mode does not ask all leave the Gap
+ *     *unmeasured* — and an unmeasured Gap leaves the Step exactly as it is. Closing on unknown would
+ *     claim a distance disappeared without the two answers that would show it, which is the same
+ *     error the report avoids when it prints an em-dash instead of a 0.
+ *
  * Deriving is **additive and pure**. It reads the same `gapKindsOf` call the report reads and it
  * writes nothing: no verdict, no Gap value, no per-Aspect row is produced, changed or cached by this
  * module. A caller that derives Steps and then renders the report sees the identical numbers it saw
@@ -358,15 +365,18 @@ export function stepsToAdd(existing: readonly Step[], derived: readonly Step[]):
  * The stored Steps whose source Gap has since fallen to 0, moved to `closed` — history, kept, never
  * deleted and never blocking.
  *
- * Three things are deliberately *not* closed here:
+ * Three things are deliberately *not* closed here, and one of them is the reason this function reads
+ * the answers itself instead of trusting a Gap map:
  *
  *   - a Step that is not `open` — a `done` Step keeps its tick, because it records work that was
  *     finished, and closing it would turn "1 of 2 done" into "0 of 1 done" for a party who did the
  *     work; an already `closed` Step has nothing left to do;
  *   - an **authored** Step (it never had a source Gap, so no Gap falling to 0 can close it);
- *   - a Step on an Aspect that is no longer part of the instance (soft-deleted), or that nobody
- *     answered this session: its Gap is absent rather than 0, and a removed question must not read
- *     as "done with it".
+ *   - a Step whose Gap is **unknown** — an Aspect no longer part of the instance (soft-deleted), one
+ *     nobody answered this session, one only one party answered, or a kind this Mode does not ask.
+ *     Unknown is not 0: an absent Gap cannot be read as "done with it", because a `closed` Step is a
+ *     claim that the distance disappeared, and that claim needs both answers behind it. This is the
+ *     same rule the report already applies when it prints an em-dash instead of a 0.
  *
  * Returns the **same array** when nothing closed, so a completion that closes nothing is not a write.
  */
@@ -378,14 +388,15 @@ export function closeSteps(existing: readonly Step[], input: StepDerivationInput
     if (!held.has(step.aspectId)) return step;
     const initiator = input.initiatorAnswers[step.aspectId];
     const counterparty = input.counterpartyAnswers[step.aspectId];
-    const gaps =
-      initiator === undefined || counterparty === undefined
-        ? undefined
-        : gapKindsOf(initiator, counterparty);
-    const live = step.derivedFrom.some((kind) => {
-      const gap = gaps?.[kind];
-      return gap !== undefined && gap > 0;
-    });
+    // An answer missing on either side → the Gap is unknown, not zero. Return the Step untouched:
+    // it is neither live (nothing says the distance is still there) nor closed (nothing says it is
+    // gone), and inventing closure would assert a fact this session does not have.
+    if (initiator === undefined || counterparty === undefined) return step;
+    const gaps = gapKindsOf(initiator, counterparty);
+    // The same rule one level down: a kind this Mode does not ask (or a Gap the pair cannot produce)
+    // is absent, and an absent number is not a measured 0.
+    if (!step.derivedFrom.every((kind) => gaps[kind] !== undefined)) return step;
+    const live = step.derivedFrom.some((kind) => (gaps[kind] ?? 0) > 0);
     if (live) return step;
     changed = true;
     return { ...step, status: "closed" as const };
