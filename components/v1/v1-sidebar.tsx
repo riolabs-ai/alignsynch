@@ -5,6 +5,7 @@ import { V1AppNav, type V1NavBadges } from "@/components/v1/v1-nav-menus";
 import { BrandGlyph } from "@/components/layout/brand-glyph";
 import { PERSONA_META } from "@/data/v1/fixtures";
 import { stageOfRelationship } from "@/lib/v1/derive";
+import { threadsOf, totalUnreadOf } from "@/lib/v1/chat";
 import { personaFromPathname, relationshipsVisibleTo } from "@/lib/v1/persona";
 import { useV1Store } from "@/lib/v1/store";
 import { cn } from "@/lib/utils";
@@ -95,7 +96,7 @@ export function useV1Sidebar(): V1SidebarContextType {
 
 /** The rail itself — the mark, the persona-scoped menu, and the badge counts for the first two rows. */
 export function V1Sidebar() {
-  const { relationships } = useV1Store();
+  const { relationships, templates, threadReadAt } = useV1Store();
   const { collapsed, mobileOpen, toggleCollapsed, closeMobile } = useV1Sidebar();
   const pathname = usePathname();
 
@@ -109,11 +110,17 @@ export function V1Sidebar() {
     return stage === "invited" || stage === "connected";
   }).length;
 
+  // The Chat badge is the total unread across the persona's threads — one relationship thread
+  // plus one per Aspect — computed from the store's read watermarks, never a hard-coded number.
+  const titlesById = new Map(templates.map((template) => [template.id, template.title]));
+  const threads = visible.flatMap((rel) =>
+    threadsOf(rel, titlesById.get(rel.templateId) ?? rel.templateId),
+  );
+  const chatUnread = totalUnreadOf(threads, persona, threadReadAt[persona] ?? {});
+
   const badges: V1NavBadges = {
     relationships: awaiting,
-    // No chat fixtures exist yet; the chat card seeds real threads and their unread counts, and
-    // the badge simply shows nothing while the count is zero — no invented number.
-    chat: 0,
+    chat: chatUnread,
   };
 
   return (

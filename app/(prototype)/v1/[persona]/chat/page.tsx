@@ -1,11 +1,11 @@
-// template-ancestor: components/ui/card.tsx
-import { SectionStub } from "@/components/v1/section-stub";
-import { SECTION_SUMMARIES, isDashboardPersona, sectionAllowedFor } from "@/lib/v1/persona";
+// template-ancestor: components/chat/chat-page.tsx   (variation: the /v1 chat list — the persona's threads, rendered by V1ChatPage)
+import { V1ChatPage } from "@/components/v1/v1-chat-page";
+import { isDashboardPersona, sectionAllowedFor } from "@/lib/v1/persona";
 import { notFound } from "next/navigation";
 
-/** `/v1/[persona]/chat` — the chat list stub (every dashboard persona). */
-export default async function ChatStubPage({ params }: { params: Promise<{ persona: string }> }) {
+/** `/v1/[persona]/chat` — the conversation list (every dashboard persona). */
+export default async function ChatPage({ params }: { params: Promise<{ persona: string }> }) {
   const { persona } = await params;
   if (!isDashboardPersona(persona) || !sectionAllowedFor(persona, "chat")) notFound();
-  return <SectionStub section="Chat" persona={persona} summary={SECTION_SUMMARIES.chat} />;
+  return <V1ChatPage />;
 }

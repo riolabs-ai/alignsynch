@@ -6,6 +6,7 @@ import { isDashboardPersona, personaFromPathname, sameSectionHref } from "@/lib/
 import { useV1Store } from "@/lib/v1/store";
 import { useV1Sidebar } from "@/components/v1/v1-sidebar";
 import { AccountMenu } from "@/components/v1/account-menu";
+import { NotificationBell } from "@/components/v1/notification-bell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,12 +119,14 @@ export function PersonaBar() {
               Reset demo
             </span>
           </button>
+          <NotificationBell persona={persona} />
           <AccountMenu persona={persona} />
           <ReviewChip className="hidden sm:inline-flex" />
         </div>
 
-        {/* Mobile controls — one menu button at `sm` and below, so the line never wraps. */}
-        <div className="flex shrink-0 items-center sm:hidden">
+        {/* Mobile controls — the bell plus one menu button at `sm` and below, so the line never wraps. */}
+        <div className="flex shrink-0 items-center gap-1 sm:hidden">
+          <NotificationBell persona={persona} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
