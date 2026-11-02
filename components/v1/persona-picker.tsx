@@ -3,8 +3,10 @@
 
 import { PERSONA_META, PERSONAS, type Persona } from "@/data/v1/fixtures";
 import { marketingPageCopy } from "@/data/pages/marketing";
+import { personaHandle } from "@/lib/v1/persona";
 import { useV1Store } from "@/lib/v1/store";
 import { OnboardingPanel } from "@/components/v1/onboarding-panel";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
@@ -65,7 +67,14 @@ export function PersonaPicker() {
             );
           })}
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
+        <Link
+          href={`/v1/profile/${personaHandle("initiator")}`}
+          className="group mt-1 inline-flex items-center gap-1 text-xs font-medium text-action hover:underline"
+        >
+          See a public profile — the read-only view a stranger gets
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+        <p className="mt-1 text-xs text-muted-foreground">
           {marketingPageCopy.items?.find((item) => item.id === "footer-note")?.label}
         </p>
       </div>
