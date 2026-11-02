@@ -5,6 +5,7 @@ import {
   purchasableTypesByRealm,
 } from "@/data/v1/relationship-types";
 import { formatCurrency } from "@/content/core";
+import { RelationshipTypeCard } from "@/components/v1/relationship-type-card";
 import { SectionIntro } from "@/components/v1/v1-ui";
 import Link from "next/link";
 
@@ -20,6 +21,10 @@ import Link from "next/link";
  * price — and offers `View` (the template page) and, when a demo exists, `See an example`.
  * No social proof, no star scores, no claim of who uses it: the catalogue is the product,
  * shown plainly. A dating type never appears here — the gate excludes it before grouping.
+ *
+ * The card itself is `RelationshipTypeCard`, shared with the dashboard's template library
+ * (`/v1/[persona]/templates`): a visitor here and a counterparty there see the same card, and
+ * the only difference is the action row the surface owns.
  */
 export function TemplateCatalogue() {
   const groups = purchasableTypesByRealm();
@@ -38,46 +43,28 @@ export function TemplateCatalogue() {
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-1 min-[900px]:grid-cols-2 xxl:grid-cols-3">
             {group.types.map((type) => (
-              <article
+              <RelationshipTypeCard
                 key={type.id}
-                className="flex flex-col rounded-lg border border-border bg-card p-4 transition-colors hover:border-action"
-              >
-                <p className="text-sm font-semibold text-foreground">{type.name}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {type.roles.initiator} · {type.roles.counterparty}
-                </p>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  {type.descriptor.whoItsFor}
-                </p>
-
-                <dl className="mt-3 space-y-1 text-xs text-muted-foreground">
-                  <div className="flex justify-between">
-                    <dt>Aspects</dt>
-                    <dd className="text-foreground">{type.aspects.length}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Price</dt>
-                    <dd className="text-foreground">{formatCurrency(type.price)}</dd>
-                  </div>
-                </dl>
-
-                <div className="mt-4 flex gap-2">
-                  <Link
-                    href={`/v1/templates/${type.id}`}
-                    className="inline-flex h-11 flex-1 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
-                  >
-                    View
-                  </Link>
-                  {demoAnswersFor(type.id) === undefined ? null : (
+                type={type}
+                actions={
+                  <div className="flex gap-2">
                     <Link
-                      href={`/v1/templates/${type.id}/demo`}
-                      className="inline-flex h-11 flex-1 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
+                      href={`/v1/templates/${type.id}`}
+                      className="inline-flex h-11 flex-1 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90"
                     >
-                      See an example
+                      View
                     </Link>
-                  )}
-                </div>
-              </article>
+                    {demoAnswersFor(type.id) === undefined ? null : (
+                      <Link
+                        href={`/v1/templates/${type.id}/demo`}
+                        className="inline-flex h-11 flex-1 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted"
+                      >
+                        See an example
+                      </Link>
+                    )}
+                  </div>
+                }
+              />
             ))}
           </div>
         </section>

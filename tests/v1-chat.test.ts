@@ -40,6 +40,13 @@ describe("v1 chat — the conversation list per persona", () => {
       "rel-connected-blind--aspect-feedback",
       "rel-connected-blind--aspect-workload",
       "rel-connected-blind--aspect-decisions",
+      // The shop's "before" seed — an unsubscribed relationship the initiator started, so it
+      // carries a thread and one per Aspect like any other. It was added to the fixtures after
+      // this test was written.
+      "rel-unsubscribed",
+      "rel-unsubscribed--aspect-time",
+      "rel-unsubscribed--aspect-money",
+      "rel-unsubscribed--aspect-conflict",
     ]);
   });
 

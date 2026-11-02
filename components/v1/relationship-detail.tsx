@@ -156,7 +156,18 @@ export function RelationshipDetail({ relationshipId }: { relationshipId: string 
         </div>
       </div>
 
-      <SubscriptionStatus rel={rel} />
+      {/* Billing belongs to the payer. The initiator sees the plan, the status and the renewal
+          date; the counterparty sees the one sentence that matters to them and no plan at all;
+          the coach and the admin see neither (#384's blind rule, and the card's "no billing to
+          the counterparty or coach"). The payer's block is the only one that names a plan. */}
+      {persona === "initiator" ? (
+        <SubscriptionStatus rel={rel} />
+      ) : persona === "counterparty" ? (
+        <p className="rounded-lg border border-border bg-card px-4 py-2.5 text-xs leading-relaxed text-muted-foreground">
+          Your membership is free — the initiator holds the subscription. You join by link and pay
+          nothing.
+        </p>
+      ) : null}
 
       {sessionNotice !== null && (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">

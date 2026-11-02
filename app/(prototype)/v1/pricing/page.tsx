@@ -1,7 +1,7 @@
-// template-ancestor: components/marketing/marketing-landing.tsx
-import { V1Pricing } from "@/components/v1/marketing-views";
+// template-ancestor: components/pricing/pricing-plans.tsx
+import { V1Shop } from "@/components/v1/v1-shop";
 
-/** `/v1/pricing` — the four tiers, re-painted from the live fixture. */
+/** `/v1/pricing` — the two per-relationship plans; the same component as the in-app shop (#384 §3). */
 export default function V1PricingPage() {
-  return <V1Pricing />;
+  return <V1Shop />;
 }
