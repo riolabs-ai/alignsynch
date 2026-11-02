@@ -286,6 +286,17 @@ noun in a component's name is the sign that question 3 was skipped. Full text:
   the refresh where a write is legal. Never turn that refusal into "signed out" — that is what
   bounced signed-in people to `/login` while `typecheck`, `lint`, `data:check`, `vitest`, `parity`
   and `next build` all stayed green (`tests/auth-session-render-write.test.ts`).
+- **A gated console route with no auth env answers 500 `NEON_AUTH_BASE_URL is not set`, on purpose.**
+  `currentUser()` builds the auth server _outside_ its `try` (`lib/auth/session.ts`), so a request on
+  a tree with no `NEON_AUTH_*` — a fresh clone, a preview without secrets, the gate build — raises
+  the configuration error instead of rendering an endless signed-out session. That is the
+  documented answer for `/assessment/instances`, `/dashboard`, `/settings`, `/profile/<handle>` and
+  `/assessment/templates` (kanban t_c6398125, decision A: keep the 500, say so in the docstring),
+  not a defect to card. `pnpm build` passes with no auth env by design, so only a _request_
+  surfaces it and the gate never issues one. `/support` and `/how-it-works` answer `307 → /login`
+  instead because they call `currentUserIfConfigured()`; `tests/auth-session-render-write.test.ts`
+  pins the throw, so moving a route between those two answers is a deliberate change with its
+  docstring, never a quiet one.
 - **`/usr/bin/node` is 18.19.1** and shadows newer runtimes, so every Next command dies with
   `You are using Node.js 18.19.1. For Next.js, Node.js version ">=20.9.0" is required.` Fix the
   PATH (above) before touching code.

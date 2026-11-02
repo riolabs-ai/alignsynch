@@ -20,6 +20,15 @@
  * **Signed out is a redirect, not an empty console.** `loginPathFor(OVERVIEW_PATH)` remembers the
  * destination, so the round trip returns the reader here.
  *
+ * **No auth environment is not "signed out" here — it is the configuration error, deliberately.**
+ * `currentUser()` builds the auth server outside its `try` and throws
+ * `NEON_AUTH_BASE_URL is not set` when `NEON_AUTH_*` is absent: a console page must not turn a
+ * deployment mistake into an endless signed-out session (`lib/auth/session.ts`). A deployment with
+ * no auth env — a fresh clone, a preview without secrets, the gate tree — therefore answers 500
+ * with that error on a request, by design, and that is what this docstring is here to say (kanban
+ * t_c6398125 kept the 500 and documented it). `/support` and `/how-it-works` answer the login
+ * redirect instead because they call `currentUserIfConfigured()`; the console pages do not.
+ *
  * `force-dynamic` for the reason `/assessment/instances` and `/dashboard/user` carry it: the
  * session is per-request and every figure is a database read, so `pnpm build` must never try to
  * prerender this route — the build passes with no `DATABASE_URL` and no `NEON_AUTH_*` set, and

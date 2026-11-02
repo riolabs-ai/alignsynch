@@ -10,6 +10,15 @@
  * author_user_id = $1` — the platform's templates plus this account's, and nobody else's. Signed
  * out is the other gated routes' answer: `redirect(/login?next=…)` with this path preserved.
  *
+ * **No auth environment is not "signed out" here — it is the configuration error, deliberately.**
+ * `currentUser()` builds the auth server outside its `try` and throws
+ * `NEON_AUTH_BASE_URL is not set` when `NEON_AUTH_*` is absent: a console page must not turn a
+ * deployment mistake into an endless signed-out session (`lib/auth/session.ts`). So on a tree with
+ * no auth env — a fresh clone, a preview without secrets, the gate build — a *request* here
+ * answers 500 with that error, and that is the documented answer, not a defect (kanban t_c6398125
+ * kept the 500 and documented it). `/support` and `/how-it-works` answer the login redirect
+ * instead because they call `currentUserIfConfigured()`; this page does not.
+ *
  * **A template written before the author column existed reads as a built-in.** It has
  * `author_user_id IS NULL`, exactly like a seeded one, and there is no backfill that could say
  * otherwise. The page says so in its own band (`legacy` in the fixture) rather than leaving a

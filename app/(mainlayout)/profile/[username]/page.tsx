@@ -13,6 +13,16 @@
  *      seeded demo — demo people are labelled as demo accounts"* is a requirement here, not a
  *      documentation note.
  *
+ * **No auth environment is not "signed out" here — it is the configuration error, deliberately.**
+ * `currentUser()` builds the auth server outside its `try` and throws
+ * `NEON_AUTH_BASE_URL is not set` when `NEON_AUTH_*` is absent, because a console page must not
+ * turn a deployment mistake into an endless signed-out session (`lib/auth/session.ts`). This route
+ * asks for the session on every request — the member branch needs it — so a deployment with no
+ * auth env (a fresh clone, a preview without secrets, the gate tree) answers 500 with that error,
+ * by design (kanban t_c6398125 kept the 500 and documented it). `/support` and `/how-it-works`
+ * answer the login redirect instead because they call `currentUserIfConfigured()`; this page does
+ * not.
+ *
  * `force-dynamic` because the member branch reads a row and the owner branch reads a cookie. The
  * demo branch is still one function call over a fixture, but a route cannot be half-static: the
  * build must not prerender it either, or a profile saved after deploy would 404 until the next
