@@ -994,6 +994,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "domain",
+    surface: "components/contact",
+    status: "mock",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The public contact surface: the three-field form, its hidden honeypot and render instant, the plain HTML POST to `/api/contact`, and the outcome band the query selects.",
+    notes:
+      "Reads no data module: every word arrives as a `PageCopy` prop from `data/pages/help` (the `/help` route above claims it), and the write is the route handler's. `mock` for the same reason `components/legal` is: the closure reaches page copy and prop types, never a record fixture and never `lib/db/`.",
+  },
+  {
+    kind: "domain",
     surface: "components/content",
     status: "mock",
     templates: ["quizhub", "alignsynch"],

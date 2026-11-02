@@ -1,5 +1,4 @@
 import { AccountSupportPage } from "@/components/support/account-support-page";
-import { brand } from "@/data/brand";
 import { supportPageCopy } from "@/data/pages/support";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import type { Metadata } from "next";
@@ -19,13 +18,17 @@ export const metadata: Metadata = {
 const HELP_PATH = "/help";
 
 /**
- * `/support` — the account support page: the contact form, inside the app shell.
+ * `/support` — the account support page, inside the app shell.
  *
  * **The redirect is the split.** `/support` used to be the public hub; it is the in-app account
  * page now, and the same URL therefore has two answers — the account page for a member, `/help`
  * for everybody else. Resolving that in the page (session first, then `redirect`) is deliberate:
  * a blanket `next.config.mjs` redirect would send the member away from the page they can use, and
  * a 404 would make a real surface read as a bug.
+ *
+ * **The one contact form is on `/help`** (owner, 2026-11-02). This page points at it rather than
+ * mounting a second, disabled copy, and it passes no address: the brand record's `supportEmail` is
+ * the form's recipient, read on the server by `app/api/contact/route.ts`, never rendered.
  *
  * **`currentUserIfConfigured`, not `currentUser`.** `currentUser()` throws when `NEON_AUTH_*` is
  * absent, on purpose — a page behind an auth wall must not turn a deployment mistake into an
@@ -42,5 +45,5 @@ export default async function SupportPage() {
   const user = await currentUserIfConfigured();
   if (user === null) redirect(HELP_PATH);
 
-  return <AccountSupportPage copy={supportPageCopy} supportEmail={brand.supportEmail} />;
+  return <AccountSupportPage copy={supportPageCopy} />;
 }

@@ -104,12 +104,20 @@ decision for a lawyer, and each is flagged rather than hidden.
 
 ## Brand keying
 
-The copy is one document, resolved per build from the `Brand` record: the product's name, its domain
-and its support address come from `data/brand.ts`, so the AlignSynch build says `alignsynch.com` and
-`alignsynch@riolabs.ai` and the QuizHub build says `quizhub.com` and `quizhub@riolabs.ai`. The
-**operator is not keyed by brand** — it is RioLabs for both, because it is one company shipping two
-products, and inventing a second entity for the second brand is exactly the error this document
-exists to prevent. Everything else in the two documents is identical between builds.
+The copy is one document, resolved per build from the `Brand` record: the product's name and its
+domain come from `data/brand.ts`, so the AlignSynch build says `alignsynch.com` and the QuizHub
+build says `quizhub.com`. The **operator is not keyed by brand** — it is RioLabs for both, because
+it is one company shipping two products, and inventing a second entity for the second brand is
+exactly the error this document exists to prevent. Everything else in the two documents is
+identical between builds.
+
+**Neither document prints a mailbox** (owner, 2026-11-02). Both say "the contact form on the Help
+page" and nothing address-shaped: a published address is what a scraper harvests, and a visitor
+without a mail client cannot use one. The brand record still carries the addresses — they are the
+form's recipients, read on the server by `app/api/contact/route.ts` and never rendered
+(`tests/public-contact.test.tsx` sweeps every public surface for the rule). The one thing this
+trades away is stated in `data/pages/legal.ts`: a jurisdiction that requires a served address on
+the policy itself would need one added back deliberately, and the form reaches the same inbox.
 
 ## What these pages are not
 

@@ -220,16 +220,31 @@ describe("the removed template sections stayed removed", () => {
 });
 
 describe("the copy is keyed by brand, and the operator is not", () => {
-  it("reads the product name, domain and support address from the brand record", () => {
-    const align = strings(legalCopy(alignSynch));
-    expect(align).toContain("alignsynch.com");
-    expect(align).toContain("alignsynch@riolabs.ai");
-    expect(align).not.toContain("quizhub.com");
+  it("reads the product name and domain from the brand record — and prints no address", () => {
+    /**
+     * Both policies name **no mailbox** (owner, 2026-11-02): they point at "the contact form on
+     * the Help page" instead. A published address is what a scraper harvests, and the licence
+     * to print one was the licence to print it on five other public pages too.
+     *
+     * The one thing this trades away is stated in `data/pages/legal.ts` rather than hidden: a
+     * jurisdiction that requires a served address on the policy itself would need one added
+     * back deliberately. The form reaches the same inbox. `tests/public-contact.test.tsx`
+     * sweeps the same rule over every public surface.
+     */
+    const ADDRESS = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}/;
+    for (const [record, domain] of [
+      [alignSynch, "alignsynch.com"],
+      [quizHub, "quizhub.com"],
+    ] as const) {
+      const words = strings(legalCopy(record));
+      expect(words).toContain(domain);
+      expect(words).not.toMatch(ADDRESS);
+      expect(words).not.toContain("mailto:");
+      expect(words).toContain("the contact form on the Help page");
+    }
 
-    const quiz = strings(legalCopy(quizHub));
-    expect(quiz).toContain("quizhub.com");
-    expect(quiz).toContain("quizhub@riolabs.ai");
-    expect(quiz).not.toMatch(/alignsynch\.(com|ai)/i);
+    expect(strings(legalCopy(alignSynch))).not.toContain("quizhub.com");
+    expect(strings(legalCopy(quizHub))).not.toMatch(/alignsynch\.(com|ai)/i);
   });
 
   it("says RioLabs is the operator on both builds, because it is one company", () => {

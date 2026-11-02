@@ -83,8 +83,11 @@ describe("the footer claims no social presence it cannot back", () => {
       expect(html).not.toMatch(/Alignment Way|Quiz Street|\b555\b/);
       expect(html).not.toContain("Subscribe");
       expect(html).not.toMatch(/type="email"/);
-      // The rows that survive the contact block, so this is not a claim about an empty block.
-      expect(html).toContain("Contact Support");
+      // The contact band's one link survives, so this is not a claim about an empty block: it
+      // points at the contact form now instead of printing a mailbox (owner, 2026-11-02).
+      expect(html).toContain("Contact us");
+      expect(html).toContain('href="/help"');
+      expect(html).not.toContain("mailto:");
     });
 
     it(`${brandId}: still renders its columns, so the row was the only thing removed`, () => {

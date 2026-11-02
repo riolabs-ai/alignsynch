@@ -2,21 +2,17 @@
  * `/support` — the account support page's copy, inside the app shell.
  *
  * **This fixture is the in-app half of the split.** `/help` (public, `data/pages/help.ts`) is the
- * FAQ and the knowledge base; this route is the account page a signed-in member reaches, and the
- * only place a contact form is drawn. The route module (`app/(mainlayout)/support/page.tsx`)
- * resolves the session first and redirects a visitor with none to `/help` — not to `/login`, and
- * not to a 404 — because the same URL has two correct answers and this page is only one of them.
+ * FAQ, the knowledge base and the one contact form; this route is the account page a signed-in
+ * member reaches. The route module (`app/(mainlayout)/support/page.tsx`) resolves the session
+ * first and redirects a visitor with none to `/help` — not to `/login`, and not to a 404 —
+ * because the same URL has two correct answers and this page is only one of them.
  *
- * **The form is still not connected, and the page says so where the reader is looking.** #290
- * deleted the fake success screen (a 1.5 s timeout, a green tick and a random reference number)
- * and left a disclaiming banner, because the honest shape is the form's markup plus a visible
- * line. `submit-note` sits directly above the submit control and the control is disabled with
- * `aria-describedby` pointing at it, so the reason is announced and not merely printed;
- * `not-connected` is the same sentence with the mailbox in it, at the top of the card, because
- * the useful thing to do next is write to a person.
- *
- * Every claim here is about this tree: no queue, no ticket table, no sender. The page promises no
- * response time, because there is nothing that could keep that promise yet.
+ * **No form and no address here** (owner, 2026-11-02). This page used to mount a second contact
+ * form whose submit was permanently disabled and whose banner apologised that nothing typed
+ * there would leave the page (#290) — plus an address-shaped example placeholder in a public
+ * field. There is exactly one contact path now, the form on `/help`, which stores the message in
+ * Postgres before mailing it; this page prints a sentence and a link to it, and its banner names
+ * no mailbox because the fixture carries none.
  *
  * `what-to-include` is the card's own suggestion made concrete — a relationship (by name, or the
  * id in its page address), the page and browser, and what was expected against what happened.
@@ -31,35 +27,19 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const supportPageCopy: PageCopy = zPageCopy.parse({
   heading: "Support",
   subtitle:
-    "Account support, inside the app: what to send, what this form does today, and where the answers are.",
+    "Account support, inside the app: where to send a message, what happens to it, and where the answers are.",
   sections: [
     {
       id: "contact",
       heading: "Contact support",
-      body: "One message about your account, or about a relationship you are working on. Nothing here is delivered yet, so the mailbox in the banner is still the fastest route to a person.",
-      items: [
-        {
-          id: "not-connected",
-          label:
-            "This form has no sender yet — nothing you type is sent or stored. Write to {email} instead, and it reaches a person today.",
-        },
-        { id: "name", label: "Name" },
-        { id: "name-placeholder", label: "Your name" },
-        { id: "email", label: "Email" },
-        { id: "email-placeholder", label: "your.email@example.com" },
-        { id: "subject", label: "Subject" },
-        { id: "subject-placeholder", label: "Brief description of your issue" },
-        { id: "category", label: "Category" },
-        { id: "category-placeholder", label: "Select a category" },
-        { id: "message", label: "Message" },
-        { id: "message-placeholder", label: "Please describe your issue in detail" },
-        { id: "submit", label: "Submit Request" },
-        {
-          id: "submit-note",
-          label:
-            "Send is disabled until this form is connected to a sender: nothing you type would leave this page today.",
-        },
-      ],
+      /**
+       * A pointer, not a form (owner, 2026-11-02). The form lives on `/help`, in the marketing
+       * chrome, where a signed-out visitor can reach it too; this page links there rather than
+       * growing a second, weaker copy that cannot send. `cta.href` is checked against
+       * `content/routes.ts` by E23, so the link cannot outlive the page it names.
+       */
+      body: "Send us a message from the contact form on the Help page. It is the one place a message to us is stored, and it takes a name, a reply address and the message itself.",
+      cta: { label: "Open the contact form", href: "/help" },
     },
     {
       id: "help-categories",
@@ -82,23 +62,23 @@ export const supportPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "what-this-form-does",
-      heading: "What this form does today",
-      body: "It is the markup for contact support with nothing behind it — a stated state, not a silent no-op. The sender this deployment would need is not configured, so there is no address a message could be delivered to.",
+      heading: "What happens to your message",
+      body: "The form on the Help page is connected: it stores the message first and mails it second, so a mail failure is a delayed notification rather than a lost message.",
       items: [
         {
-          id: "not-sent",
-          label: "Nothing is sent",
-          body: "The submit control is disabled and the line above it says why, so no message is lost without the reader being told.",
+          id: "stored",
+          label: "Stored first",
+          body: "The message is written to our database before anything is sent, so it exists even if the mailer is down.",
         },
         {
-          id: "not-stored",
-          label: "Nothing is stored",
-          body: "There is no table, queue or ticket behind these fields: they live in this page and go no further.",
+          id: "mailed",
+          label: "Mailed second",
+          body: "We are notified of the message, and replying in a mail client answers you at the address you left.",
         },
         {
-          id: "write-instead",
-          label: "Write instead",
-          body: "The mailbox in the banner reaches a person today, and it is the same address in the footer of every page.",
+          id: "reply",
+          label: "Read by a person",
+          body: "There is no ticket bot behind it: a person reads the message and replies by email.",
         },
       ],
     },

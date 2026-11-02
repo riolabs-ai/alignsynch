@@ -67,6 +67,74 @@ export const helpPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     /**
+     * The contact form (owner, 2026-11-02). Three bands: the band's heading and sentence
+     * (`contact`), the fields (`form`), and one paragraph per outcome (`states`).
+     *
+     * **No address appears in this fixture, and none may.** The mailbox the message goes to is
+     * `data/brands/<brand>.ts`'s `supportEmail`, read by `app/api/contact/route.ts` on the server;
+     * `tests/public-contact.test.tsx` sweeps every public page's words for an address-shaped
+     * string, including the placeholders, so a well-meant "you@example.com" fails the suite.
+     *
+     * **`sent` and `received` are two sentences on purpose.** A message stored in Postgres whose
+     * notification failed is *received* — a person can read it — and saying "sent" there would be
+     * claiming a delivery that did not happen. `failed` is the only state that means "nothing
+     * reached us", and it is the only one reached when the insert throws.
+     *
+     * The five ids are `lib/contact/validation.ts`'s `CONTACT_STATES`, in the same order; the
+     * page's outcome band resolves one by the query string the 303 writes.
+     */
+    {
+      id: "contact",
+      heading: "Contact us",
+      body: "Did not find your answer? Send us a message with the form below and we will reply to the address you leave.",
+    },
+    {
+      id: "form",
+      heading: "Send us a message",
+      items: [
+        { id: "name", label: "Your name" },
+        { id: "name-placeholder", label: "First or full name" },
+        { id: "email", label: "Your email" },
+        { id: "email-placeholder", label: "Where should we reply?" },
+        { id: "message", label: "Message" },
+        { id: "message-placeholder", label: "How can we help?" },
+        { id: "honeypot", label: "Leave this field empty" },
+        { id: "submit", label: "Send message" },
+        { id: "note", label: "All three fields are required. We reply by email." },
+      ],
+    },
+    {
+      id: "states",
+      heading: "What happened",
+      items: [
+        {
+          id: "sent",
+          label: "Message sent",
+          body: "Thank you — we have your message and we will reply to the address you left.",
+        },
+        {
+          id: "received",
+          label: "Message received",
+          body: "Your message is saved and we will reply to the address you left. We could not send our own notification just now, so nothing you wrote was lost.",
+        },
+        {
+          id: "failed",
+          label: "Not saved",
+          body: "Your message was not saved, so nothing has reached us. Please try again in a moment.",
+        },
+        {
+          id: "invalid",
+          label: "Check the fields",
+          body: "Please give us your name, a reply address we can use, and a message.",
+        },
+        {
+          id: "throttled",
+          label: "Too many messages",
+          body: "We have had several messages from you in the last few minutes. Please try again shortly.",
+        },
+      ],
+    },
+    /**
      * The one band about a person, and the honest answer is a link rather than a form.
      *
      * `/support` answers two things: a signed-in member gets the account page, and a visitor

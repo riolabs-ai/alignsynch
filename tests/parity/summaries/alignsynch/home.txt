@@ -26,14 +26,14 @@ landmarks (3)
   contentinfo    1
   navigation     1
 
-links (13 unique, 20 total)
+links (13 unique, 21 total)
   /                                                    1
   /#questions                                          2
   /#templates                                          2
   /assessment/avery-rowan                              2
   /assessment/marco-priya                              2
   /assessment/ruth-sam                                 2
-  /help                                                2
+  /help                                                3
   /login                                               1
   /pricing                                             1
   /privacy                                             2
@@ -42,8 +42,8 @@ links (13 unique, 20 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
 
 counts
-  elements  224
+  elements  218
   images    3
-  buttons   1
+  buttons   0
   inputs    0
-  classes   193 (sha 011ef711f828)
+  classes   184 (sha d345ea36f050)

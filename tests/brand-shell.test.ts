@@ -90,8 +90,8 @@ const alignSynch: Brand = zBrand.parse({
   // The tab icon is brand data like the logo (#187 stage 4): read from the record, not restated.
   icon: alignSynchBrand.icon,
   colors: alignSynchBrand.colors,
-  supportEmail: "alignsynch@riolabs.ai",
-  affiliateEmail: "alignsynch@riolabs.ai",
+  supportEmail: "support@alignsynch.com",
+  affiliateEmail: "hello@alignsynch.com",
   referralBase: "https://alignsynch.com",
 });
 
@@ -163,7 +163,9 @@ describe("shell projection — the product name comes from the brand", () => {
     expect(sectionBody(footer.brand)).toBe(
       "Create engaging quizzes, challenge others, and earn rewards for your knowledge. Join our community of quiz creators and players today.",
     );
-    expect(itemLabel(footer.contact, "cta")).toBe("Contact Support");
+    expect(footer.contact.cta?.label).toBe("Contact us");
+    // The contact path is the form, at a route the manifest knows (owner, 2026-11-02).
+    expect(footer.contact.cta?.href).toBe("/help");
   });
 
   it("gives the alignment build footer words with no quiz vocabulary in them", () => {
@@ -175,24 +177,32 @@ describe("shell projection — the product name comes from the brand", () => {
     expect(words).not.toContain("quiz creators");
     expect(words).not.toContain("quiz tips");
     expect(words).not.toContain("Quiz Street");
-    // Same ids, different words: the footer resolves one set of ids per brand.
-    for (const id of ["email", "cta"]) {
-      expect(itemLabel(footer.contact, id).length).toBeGreaterThan(0);
+    // Same shape, different words: both brands' contact bands carry a sentence and a link.
+    for (const value of [footer.contact.body ?? "", footer.contact.cta?.label ?? ""]) {
+      expect(value.length).toBeGreaterThan(0);
     }
+    expect(footer.contact.cta?.href).toBe("/help");
   });
 
-  it("prints the record's support address in every block that prints one", () => {
-    // The header's account block used to be one of these (`display-email`) — it printed the
-    // brand's support mailbox as if it were the signed-in person's own address. Since #212 that
-    // block prints the session's address, so the two footer bands are the blocks that print one.
-    const blocks: { section: string; id: string }[] = [
-      { section: "footer-contact", id: "email" },
-      { section: "footer-contact-alignsynch", id: "email" },
-    ];
-    for (const block of blocks) {
-      expect(itemLabel(sectionOf(shellPageCopy, block.section), block.id)).toBe(brand.supportEmail);
+  it("prints no support address in either contact band — the path is the form", () => {
+    // Owner, 2026-11-02: the two footer bands printed `brand.supportEmail` on every page of both
+    // builds. They carry one sentence and one link to `/help` now; the mailbox is the form's
+    // recipient, read on the server by `app/api/contact/route.ts` and never rendered.
+    //
+    // The header's account block used to print it too (`display-email`), and since #212 it prints
+    // the session's own address, so no band on the page prints the support mailbox any more.
+    const ADDRESS = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}/;
+    for (const [sectionId, href] of [
+      ["footer-contact", "/help"],
+      ["footer-contact-alignsynch", "/help"],
+    ] as const) {
+      const section = sectionOf(shellPageCopy, sectionId);
+      expect(section.cta?.href).toBe(href);
+      expect(section.items).toBeUndefined();
+      expect(JSON.stringify(section)).not.toMatch(ADDRESS);
     }
-    expect(render(shellPageCopy)).not.toContain("info@");
+    expect(render(shellPageCopy)).not.toContain(brand.supportEmail);
+    expect(render(shellPageCopy)).not.toContain("mailto:");
   });
 
   it("exports today's shell as the QuizHub instance", () => {
@@ -315,8 +325,8 @@ describe("one build flag, one brand", () => {
   it("ships the AlignSynch record as a second Brand on its own domain", () => {
     expect(alignSynchBrand.name).toBe("AlignSynch");
     expect(alignSynchBrand.domain).toBe("alignsynch.com");
-    expect(alignSynchBrand.supportEmail).toBe("alignsynch@riolabs.ai");
-    expect(alignSynchBrand.affiliateEmail).toBe("alignsynch@riolabs.ai");
+    expect(alignSynchBrand.supportEmail).toBe("support@alignsynch.com");
+    expect(alignSynchBrand.affiliateEmail).toBe("hello@alignsynch.com");
     expect(alignSynchBrand.referralBase).toBe("https://alignsynch.com");
     // The shell proof above runs on a fixture; this is that fixture, so the proof is
     // about the record the `BRAND=alignsynch` build actually renders.
@@ -354,14 +364,21 @@ describe("one build flag, one brand", () => {
     expect(alignSynchBrand.colors.foreground).toBe("#363d49");
   });
 
-  it("keeps the mailbox off the site domain, on purpose", () => {
-    // Decided 2026-10-30: the templates answer at `@riolabs.ai` while each brand claims its
-    // own site domain. An address derived from `domain` would invent an unread mailbox, so
-    // this pins the two records' behaviour rather than the strings.
+  it("keeps each mailbox on the domain that actually receives it", () => {
+    // QuizHub answers at `@riolabs.ai` (decided 2026-10-30): an address derived from `domain`
+    // would invent an unread mailbox, so the two records' behaviour is pinned rather than the
+    // strings. AlignSynch moved the other way on 2026-11-02 (owner): `alignsynch.com` carries
+    // Microsoft 365 MX (`alignsynch-com.mail.protection.outlook.com`), so aliases on it are real
+    // and the mailbox is internal — never rendered, only the contact form's recipient.
+    //
+    // Neither address is printed on a public page; `tests/public-contact.test.tsx` sweeps that
+    // rule over every surface, and this case is only about where each mailbox lives.
+    expect(quizHubBrand.supportEmail).toBe("quizhub@riolabs.ai");
+    expect(quizHubBrand.affiliateEmail).toBe("quizhub@riolabs.ai");
+    expect(alignSynchBrand.supportEmail).toBe("support@alignsynch.com");
+    expect(alignSynchBrand.affiliateEmail).toBe("hello@alignsynch.com");
     for (const record of [quizHubBrand, alignSynchBrand]) {
-      expect(record.supportEmail.endsWith("@riolabs.ai")).toBe(true);
-      expect(record.affiliateEmail.endsWith("@riolabs.ai")).toBe(true);
-      expect(record.supportEmail.endsWith(`@${record.domain}`)).toBe(false);
+      expect(record.supportEmail.endsWith(`@${record.domain}`)).toBe(record === alignSynchBrand);
     }
   });
 

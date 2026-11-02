@@ -14,6 +14,7 @@ import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 /** One group of FAQ rows, as the accordion renders it. */
@@ -88,7 +89,7 @@ export function pricingFaqCategories(
         },
         {
           question: "Can I cancel or change plans?",
-          answer: `Not from inside the app yet: the subscription panel in settings is a mock — it changes what it displays, not what you are charged. Write to ${brand.supportEmail} and a plan change is made by hand.`,
+          answer: `Not from inside the app yet: the subscription panel in settings is a mock — it changes what it displays, not what you are charged. Send us a message from the contact form on the Help page and a plan change is made by hand.`,
         },
       ],
     },
@@ -102,7 +103,7 @@ export function pricingFaqCategories(
         },
         {
           question: "Can I delete my account and data?",
-          answer: `Not from inside the app yet: the settings screen draws the delete control, but the action is not wired up, and there is no self-serve way to remove an account. Ask at ${brand.supportEmail} and the account and its data are removed by hand.`,
+          answer: `Not from inside the app yet: the settings screen draws the delete control, but the action is not wired up, and there is no self-serve way to remove an account. Send us a message from the contact form on the Help page and the account and its data are removed by hand.`,
         },
       ],
     },
@@ -195,13 +196,15 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
 
         <div className="mt-12 text-center">
           <p className="text-slate-600 dark:text-slate-400">
-            {itemLabel(copy, "contact-prompt")}{" "}
-            <a
-              href={`mailto:${brand.supportEmail}`}
-              className="text-action hover:text-action/80 font-medium"
-            >
-              {itemLabel(copy, "contact-email")}
-            </a>
+            {itemLabel(copy, "contact-prompt")} {/*
+             * The contact link is the form, not a mailbox (owner, 2026-11-02). This anchor used to
+             * print `brand.supportEmail` behind a `mailto:`; `/help` is the one contact path on the
+             * public site now, and it stores the message before mailing it, so a visitor without a
+             * mail client is not left with a link that does nothing.
+             */}
+            <Link href="/help" className="text-action hover:text-action/80 font-medium">
+              {itemLabel(copy, "contact-link")}
+            </Link>
           </p>
         </div>
       </div>

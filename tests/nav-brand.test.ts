@@ -299,6 +299,9 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
       "/#templates",
       "/#questions",
       "/help",
+      // The contact band's one link, to the form (owner, 2026-11-02): the band no longer prints
+      // a mailbox, so the destination is the same public page the column's Help row opens.
+      "/help",
       "/privacy",
       "/terms",
       "/privacy",

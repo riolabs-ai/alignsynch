@@ -8,7 +8,7 @@ import { brandMark } from "@/lib/brand-mark";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { ExternalLink, Mail } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
@@ -185,23 +185,25 @@ export function Footer({
                   <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-action"></span>
                 </h3>
                 {/*
-                 * One row: the mailbox. The street line and the telephone number that stood
-                 * above it are gone (#272) — an invented address and a number from the block
-                 * reserved for fiction, printed as this company's details on every page of
-                 * both builds. A row comes back when a real value does; a placeholder that
-                 * looks like a fact is the defect, not the empty space.
+                 * One sentence and one link (owner, 2026-11-02). The row that stood here printed
+                 * `brand.supportEmail` — an address on every public page of both builds, and a
+                 * `mailto:` is not a contact path a visitor without a mail client can use. The
+                 * destination is now the form on `/help`, where a message is stored before it is
+                 * mailed, so nothing is lost when the sender has no mail app.
+                 *
+                 * The fixture carries no address at all (`footer-contact` / its alignment twin),
+                 * and `contact.cta.href` is E23's to check against the route manifest.
                  */}
-                <ul className="space-y-4">
-                  <li className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                      <Mail className="h-4 w-4 text-action" />
-                    </div>
-                    <span className="text-slate-600 dark:text-slate-400">
-                      {itemLabel(contact, "email")}
-                    </span>
-                  </li>
-                </ul>
-                <Button variant={"action"}>{itemLabel(contact, "cta")}</Button>
+                {contact.body !== undefined && (
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                    {sectionBody(contact)}
+                  </p>
+                )}
+                {contact.cta !== undefined && (
+                  <Button asChild variant={"action"}>
+                    <Link href={contact.cta.href}>{contact.cta.label}</Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
