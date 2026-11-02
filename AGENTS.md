@@ -40,6 +40,7 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 | `pnpm db:migrate`                | exit 0, ~1 s         | `node scripts/db-migrate.mjs`; applies `db/migrations/*.sql` in order via `schema_migrations`; wants the unpooled URL  |
 | `pnpm db:seed`                   | exit 0, ~1 s         | mirrors `data/assessments.ts` into the six tables, idempotent, prints counts; removes the temp e2e auth user first     |
 | `pnpm db:verify`                 | exit 0, ~1 s         | the DB port of E31 (drift) plus the party rules, read through `lib/db/**`; exit 1 with a named failure per violation   |
+| `pnpm demo:verify`               | exit 0, ~50 s        | seeds the demo dataset, drives the app, diffs rows + 9 answers against `data/verify/demo-expectations.json`            |
 | `pnpm objstore:smoke`            | exit 0, <1 s         | put → get → bytes compared → deleted; reads `NEON_OBJSTORE_*` (falls back to the `AWS_*` names `neon env pull` writes) |
 | `pnpm lint`                      | exit 0, ~1.6–2.6 s   | `biome check` then `node scripts/lint-brand-classes.mjs`; **0 errors**, 203 warnings, 34 infos                         |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 442 files; CI gate                                                                                     |
@@ -267,6 +268,15 @@ noun in a component's name is the sign that question 3 was skipped. Full text:
 
 ## Pitfalls
 
+- **A render cannot write a cookie, and a session read must not need to.** Next 16 refuses
+  `cookies().set()` inside a React Server Component render, and Better Auth re-signs the session
+  cookie as its expiry approaches — so `auth.getSession()` attempts a write during a perfectly
+  ordinary render, periodically. `lib/auth/session.ts` reads through `neonAuthReader()`
+  (`lib/auth/server.ts`), whose request context (`lib/auth/request-context.ts`) has no write to
+  refuse; the first attempt still uses `neonAuth()`, so a server action or route handler persists
+  the refresh where a write is legal. Never turn that refusal into "signed out" — that is what
+  bounced signed-in people to `/login` while `typecheck`, `lint`, `data:check`, `vitest`, `parity`
+  and `next build` all stayed green (`tests/auth-session-render-write.test.ts`).
 - **`/usr/bin/node` is 18.19.1** and shadows newer runtimes, so every Next command dies with
   `You are using Node.js 18.19.1. For Next.js, Node.js version ">=20.9.0" is required.` Fix the
   PATH (above) before touching code.

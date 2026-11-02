@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import type { PageCopySection } from "@/content/pages";
-import { brand } from "@/data/brand";
 import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export function AffiliateCta({ copy }: { copy: PageCopySection }) {
   return (
@@ -30,9 +30,9 @@ export function AffiliateCta({ copy }: { copy: PageCopySection }) {
           </div>
           <p className="mt-8 text-sm text-action-foreground/70">
             {itemLabel(copy, "contact-prompt")}
-            <a href={`mailto:${brand.affiliateEmail}`} className="underline hover:text-white">
+            <Link href="/help" className="underline hover:text-white">
               {itemLabel(copy, "contact-email")}
-            </a>
+            </Link>
           </p>
         </div>
       </div>
