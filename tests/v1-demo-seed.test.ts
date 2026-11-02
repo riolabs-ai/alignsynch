@@ -9,8 +9,10 @@
  *      from the accept/submit flags, never a stored label — with both Modes and both Settings
  *      somewhere in it;
  *   4. the Gap distribution is deliberate: In Synch is 10–20% of every comparison rather than
- *      most of them, one relationship is In Synch on **every** Gap, and every scored row reaches
- *      the maximum (4) — plus some rows are deliberately unscored, so a surface must print `—`.
+ *      most of them, one relationship is In Synch on **every** Gap, and the widest Gap (4) is in
+ *      the set — plus some rows are deliberately unscored, so a surface must print `—`;
+ *   5. a completed row stores the Steps its own answers derive, so the Steps panel renders on a
+ *      fresh store instead of needing two sheets played by hand.
  *
  * The factories beside this file are pinned the same way: `makeRelationship` parses, and a
  * malformed override throws instead of producing a fixture that would fail somewhere else.
@@ -48,12 +50,27 @@ import {
   demoSeedJson,
   installDemoSeed,
 } from "@/lib/v1/demo-seed";
-import { makeAnswerSheet, makeRelationship } from "./helpers/v1-factories";
+import {
+  makeAnswerSheet,
+  makeCompletedRelationship,
+  makeRelationship,
+} from "./helpers/v1-factories";
 
 /** Every Gap value one Aspect carries, as numbers. */
 function gapValues(rel: V1Relationship, itemId: string) {
   const aspect = allAspectGaps(rel).find((entry) => entry.itemId === itemId);
   return (Object.values(aspect?.gaps ?? {}) as number[]).map(Number);
+}
+
+/** The Steps a row's own answers derive — the rule `storedStepsOf` stores, restated by hand. */
+function deriveOf(rel: V1Relationship) {
+  return deriveSteps({
+    relationshipId: rel.id,
+    items: rel.items,
+    initiatorAnswers: rel.initiatorAnswers,
+    counterpartyAnswers: rel.counterpartyAnswers,
+    createdAt: rel.lastSessionAt ?? rel.createdAt,
+  });
 }
 
 /** The scored rows only: an unscored row has no Gaps to spread. */
@@ -225,6 +242,23 @@ describe("both ends of the Gap range are reachable per Mode", () => {
     }
     expect([...magnitudes].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4]);
   });
+
+  // The row shape gained two required fields (#404): `inviteeName`, which only the create entry
+  // writes, and `steps`, which is derived at completion and then stored. A generated row has to
+  // say the same thing the fixtures say — no seat named, and exactly the Steps its own answers
+  // produce — or the demo set is a state the store itself cannot reach.
+  it("stores the Steps each completed row derives, and names no seat", () => {
+    let completed = 0;
+    for (const rel of relationships) {
+      expect(rel.inviteeName).toBeNull();
+      const complete = rel.initiatorAccepted && rel.counterpartyAccepted;
+      if (complete) completed += 1;
+      expect(rel.steps).toEqual(complete ? deriveOf(rel) : []);
+    }
+    // A set where nothing completed would satisfy the loop above for the wrong reason.
+    expect(completed).toBeGreaterThan(0);
+    console.log("completed rows carrying Steps:", completed, "of", relationships.length);
+  });
 });
 
 describe("the seeded distribution is deliberate", () => {
@@ -299,25 +333,6 @@ describe("a completed relationship stores the Steps its answers derive", () => {
     (rel) => rel.initiatorAccepted && rel.counterpartyAccepted,
   );
 
-  it("stores exactly what deriveSteps produces, and nothing for an incomplete row", () => {
-    expect(completed.length).toBeGreaterThan(0);
-    for (const rel of relationships) {
-      // The completion is the only event that writes Steps, so the expected list is the real
-      // derivation over the row's own answers — not a count this test could drift from.
-      const expected =
-        rel.initiatorAccepted && rel.counterpartyAccepted
-          ? deriveSteps({
-              relationshipId: rel.id,
-              items: rel.items,
-              initiatorAnswers: rel.initiatorAnswers,
-              counterpartyAnswers: rel.counterpartyAnswers,
-              createdAt: rel.counterpartyAcceptedAt ?? "",
-            })
-          : [];
-      expect(rel.steps).toEqual(expected);
-    }
-  });
-
   it("gives a reviewer a completed relationship whose Steps panel is not empty", () => {
     // `components/v1/steps-panel.tsx` renders nothing when `rel.steps` is empty, so the demo set
     // is only reviewable if at least one *completed* row carries Steps. A row that is In Synch on
@@ -339,6 +354,9 @@ describe("a completed relationship stores the Steps its answers derive", () => {
     }
 
     const headline = withSteps[0];
+    // The row a reviewer is told to open holds the derivation over its own answers — not a list
+    // this generator typed, and not a count that could drift from the rule.
+    expect(headline.steps).toEqual(deriveOf(headline));
     console.log(
       "steps:",
       `${withSteps.length} of ${completed.length} completed rows carry Steps · open`,
@@ -353,6 +371,30 @@ describe("the test factories produce schema-valid objects", () => {
     expect(zV1Relationship.safeParse(makeRelationship()).success).toBe(true);
     expect(zV1Relationship.safeParse(makeRelationship({ mode: "advanced" })).success).toBe(true);
     console.log("factory row:", JSON.stringify(makeRelationship({ id: "rel-printed" })));
+  });
+
+  // The two constructors this repo has for a relationship both have to carry the shape the model
+  // requires: `steps` is a stored plan, so a completed row is built with the Steps its own answers
+  // derive, and an unstarted one is built with none.
+  it("a completed factory row carries the Steps its answers derive", () => {
+    // Even two identical sheets carry a Gap — `wish` and `feel` differ inside one answer — so a
+    // completed row always derives at least one Step, and the factory stores it.
+    const completed = makeCompletedRelationship();
+    expect(completed.steps.length).toBeGreaterThan(0);
+    expect(completed.steps).toEqual(deriveOf(completed));
+
+    // A wide Gap on one Aspect changes the plan, and the factory follows it.
+    const aspectId = makeRelationship().items[0].id;
+    const gapped = makeCompletedRelationship({
+      mode: "advanced",
+      initiatorAnswers: makeAnswerSheet({ [aspectId]: { feel: 1 } }, { mode: "advanced" }),
+      counterpartyAnswers: makeAnswerSheet({ [aspectId]: { feel: 5 } }, { mode: "advanced" }),
+    });
+    expect(gapped.steps).toEqual(deriveOf(gapped));
+    expect(zV1Relationship.safeParse(gapped).success).toBe(true);
+
+    // An unstarted row has agreed nothing, so it holds no plan.
+    expect(makeRelationship().steps).toEqual([]);
   });
 
   it("makeAnswerSheet answers every Aspect and parses against zOpinions", () => {

@@ -26,6 +26,7 @@ import {
   type Opinions,
 } from "@/content/assessment";
 import {
+  storedStepsOf,
   v1Templates,
   zV1Relationship,
   type V1Relationship,
@@ -108,7 +109,6 @@ export function makeRelationship(overrides: Partial<V1Relationship> = {}): V1Rel
     setting: "soft",
     initiatorName: "Jordan",
     counterpartyName: "Sam",
-    inviteeName: null,
     initiatorAnswers: {},
     counterpartyAnswers: {},
     initiatorSubmitted: false,
@@ -119,19 +119,21 @@ export function makeRelationship(overrides: Partial<V1Relationship> = {}): V1Rel
     counterpartyAcceptedAt: null,
     inviteToken: "inv-factory",
     inviteExpiresAt: null,
+    // The base relationship was not created through the create entry, so no seat is named on it.
+    inviteeName: null,
     archivedAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
     aspectComments: {},
-    // A Step is derived when a session completes, never authored into a fixture: the default
-    // factory row has not completed one, so it holds none. A test that needs Steps passes them in.
-    steps: [],
     openedSessions: 0,
     completedSessions: 0,
     subscription: null,
     history: [],
     lastSessionAt: null,
+    // An unstarted session has agreed nothing, so it holds no Steps. `makeCompletedRelationship`
+    // fills this from the row's own answers, which is the only way the store ever produces them.
+    steps: [],
     createdAt: FACTORY_AT,
     modifiedAt: FACTORY_AT,
   };
@@ -158,7 +160,7 @@ export function makeCompletedRelationship(
       mode,
     },
   );
-  return makeRelationship({
+  const row = makeRelationship({
     mode,
     setting: options.setting ?? "soft",
     initiatorAnswers: counterparties,
@@ -174,4 +176,8 @@ export function makeCompletedRelationship(
     lastSessionAt: FACTORY_AT,
     ...overrides,
   });
+  // A completed session stores its Steps (`content/steps.ts`). The factory stores them too, unless
+  // the caller supplied its own, so a test that opens the Steps panel is not handed a state the
+  // store cannot produce — a completed relationship with an empty plan.
+  return makeRelationship({ ...row, steps: overrides.steps ?? storedStepsOf(row) });
 }

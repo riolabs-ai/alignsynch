@@ -23,10 +23,11 @@
  *     which must still render honestly) and the widest Gap (4) is present in the set;
  *   - **some rows are unscored on purpose** — `invited` and `connected` rows have not completed
  *     a session, so a surface must print `—`, never `0`, and this set proves it;
- *   - **a completed row carries the Steps its answers derive** — the completed rows store what
- *     `content/steps.ts::deriveSteps` produces (one Step per Aspect, from that Aspect's widest
- *     Gap, dated at the completion), never a hand-written list, so the Steps panel has something
- *     to render on a fresh store instead of requiring a reviewer to play two sheets by hand.
+ *   - **a completed row carries the Steps its answers derive** — the completed rows store
+ *     `storedStepsOf(row)`, the same helper the fixtures use, which is `content/steps.ts`'
+ *     derivation (one Step per Aspect, from that Aspect's widest Gap, dated at the completion).
+ *     Never a hand-written list, so the Steps panel has something to render on a fresh store
+ *     instead of requiring a reviewer to play two sheets by hand.
  *
  * `demoSeed()` returns the flow slice in the exact shape `lib/v1/store.tsx` persists
  * (`version`, `relationships`, `accounts`, `tickets`) under the key that store reads. Nothing
@@ -40,7 +41,6 @@
 import type { AlignmentSetting, AssessmentMode, Opinions } from "@/content/assessment";
 import { DEMO_NOW_ISO } from "@/content/core";
 import type { RelationshipStage } from "@/content/stages";
-import { deriveSteps } from "@/content/steps";
 import {
   RELATIONSHIP_PRICE_CENTS,
   purchasableRelationshipTypes,
@@ -49,6 +49,7 @@ import {
 import {
   SEED_VERSION,
   seedAccounts,
+  storedStepsOf,
   type V1Account,
   type V1Relationship,
   type V1Ticket,
@@ -460,22 +461,7 @@ function demoRelationship(
   const counterpartyAcceptedAt = complete ? at(-(index % 9) - 1) : null;
   const claimed = stage !== "invited";
 
-  // The Steps a completed session stores, produced by the **real** derivation rather than typed
-  // here: one per Aspect, sourced from that Aspect's widest Gap, dated at the session's
-  // completion. Rows that have not completed carry none — submitting is not accepting, so there
-  // is no agreement to hold yet. A row that is In Synch on every Gap derives none, which is the
-  // honest answer: there is no distance to name.
-  const steps = complete
-    ? deriveSteps({
-        relationshipId: id,
-        items,
-        initiatorAnswers: sheet.initiator,
-        counterpartyAnswers: sheet.counterparty,
-        createdAt: counterpartyAcceptedAt ?? at(-(index % 9) - 1),
-      })
-    : [];
-
-  return {
+  const row: Omit<V1Relationship, "steps" | "inviteeName"> = {
     id,
     // The id the store's own `templateFromType` clones a catalogue type under, so a type the
     // initiator has actually cloned and this demo row agree on what they are.
@@ -487,9 +473,6 @@ function demoRelationship(
     setting,
     initiatorName: "Jordan",
     counterpartyName: claimed ? "Sam" : null,
-    // No demo row was created through the create entry, so no demo row carries a typed invitee
-    // name — the field is display-only and `counterpartyName` is the claim.
-    inviteeName: null,
     initiatorAnswers: answersInitiator ? sheet.initiator : {},
     counterpartyAnswers: answersBoth ? sheet.counterparty : {},
     initiatorSubmitted,
@@ -507,7 +490,6 @@ function demoRelationship(
     coachComments: [],
     comments: [],
     aspectComments: {},
-    steps,
     openedSessions: claimed ? 1 : 0,
     completedSessions: complete ? 1 : 0,
     subscription: subscriptionFor(index),
@@ -515,6 +497,17 @@ function demoRelationship(
     lastSessionAt: complete ? counterpartyAcceptedAt : null,
     createdAt: at(-24 * (index + 12)),
     modifiedAt: at(-(index + 1)),
+  };
+
+  return {
+    ...row,
+    // No generated row came through the create entry, so no demo relationship carries a seat named
+    // at creation — the same statement `data/v1/fixtures.ts` makes about its own seed rows.
+    inviteeName: null,
+    // A Step is derived at completion and then stored, so a completed demo row holds exactly the
+    // rows its own answers produce; an invited or connected one holds none. The rule is
+    // `storedStepsOf`, which the fixtures use too — one derivation, not two.
+    steps: storedStepsOf(row),
   };
 }
 
