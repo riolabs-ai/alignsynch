@@ -41,10 +41,10 @@ import {
 function subscription(over: Partial<Subscription> = {}): Subscription {
   return {
     userId: "account-avery",
-    planId: "pro",
+    planId: "principal",
     interval: "month",
     provider: "mock",
-    providerSubscriptionId: "mock-sub-pro-month-avery",
+    providerSubscriptionId: "mock-sub-principal-month-avery",
     status: "active",
     currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     ...over,
@@ -56,8 +56,7 @@ describe("plan → what the server allows", () => {
     expect(gateSummary()).toEqual([
       { plan: "Free", activeInstances: "1", modes: "basic" },
       { plan: "Basic", activeInstances: "unlimited", modes: "basic + advanced" },
-      { plan: "Pro", activeInstances: "unlimited", modes: "basic + advanced" },
-      { plan: "Enterprise", activeInstances: "unlimited", modes: "basic + advanced" },
+      { plan: "Principal", activeInstances: "unlimited", modes: "basic + advanced" },
     ]);
   });
 
@@ -70,7 +69,7 @@ describe("plan → what the server allows", () => {
   });
 
   it("gives every paid tier unlimited instances and both modes", () => {
-    for (const planId of ["basic", "pro", "enterprise"] as const) {
+    for (const planId of ["basic", "principal"] as const) {
       const paid = entitlementForPlan(planId);
       expect(paid.maxActiveInstances).toBeNull();
       expect(paid.advancedMode).toBe(true);
@@ -87,7 +86,7 @@ describe("plan → what the server allows", () => {
     expect(subscriptionGrantsPaid("incomplete")).toBe(false);
 
     expect(entitlementOf(subscription({ status: "canceled" })).planId).toBe("free");
-    expect(entitlementOf(subscription({ status: "past_due" })).planId).toBe("pro");
+    expect(entitlementOf(subscription({ status: "past_due" })).planId).toBe("principal");
     expect(entitlementOf(null).planId).toBe("free");
   });
 
@@ -98,7 +97,7 @@ describe("plan → what the server allows", () => {
 
 describe("the refusals name the plan and the number", () => {
   const free = entitlementForPlan(FREE_PLAN_ID);
-  const pro = entitlementForPlan("pro");
+  const principal = entitlementForPlan("principal");
 
   it("refuses a second active instance on Free", () => {
     const refusal = instanceGateRefusal({ entitlement: free, activeInstances: 1, mode: "basic" });
@@ -130,12 +129,14 @@ describe("the refusals name the plan and the number", () => {
 
   it("allows a paid account both, at any count", () => {
     expect(
-      instanceGateRefusal({ entitlement: pro, activeInstances: 0, mode: "advanced" }),
+      instanceGateRefusal({ entitlement: principal, activeInstances: 0, mode: "advanced" }),
     ).toBeNull();
     expect(
-      instanceGateRefusal({ entitlement: pro, activeInstances: 9, mode: "advanced" }),
+      instanceGateRefusal({ entitlement: principal, activeInstances: 9, mode: "advanced" }),
     ).toBeNull();
-    expect(instanceGateRefusal({ entitlement: pro, activeInstances: 9, mode: "basic" })).toBeNull();
+    expect(
+      instanceGateRefusal({ entitlement: principal, activeInstances: 9, mode: "basic" }),
+    ).toBeNull();
   });
 
   it("counts a plural correctly — the sentence reads as English at two", () => {
@@ -148,15 +149,18 @@ describe("the refusals name the plan and the number", () => {
 describe("what can be bought", () => {
   it("sells the two self-serve tiers", () => {
     expect(checkoutRefusal("basic")).toBeNull();
-    expect(checkoutRefusal("pro")).toBeNull();
+    expect(checkoutRefusal("principal")).toBeNull();
   });
 
   it("refuses the free tier, which is not a purchase", () => {
     expect(checkoutRefusal("free")).toContain("The Free plan is not bought");
   });
 
-  it("refuses Enterprise, which is arranged rather than bought", () => {
-    expect(checkoutRefusal("enterprise")).toContain("The Enterprise plan is arranged");
+  it("refuses a tier that was removed from the catalogue, naming it", () => {
+    // `pro` became `principal` and `enterprise` left the catalogue (owner, 2026-11-02), so a
+    // checkout for either retired id is a bad request rather than a purchase.
+    expect(checkoutRefusal("enterprise")).toBe('"enterprise" is not a plan this product sells');
+    expect(checkoutRefusal("pro")).toBe('"pro" is not a plan this product sells');
   });
 
   it("refuses a tier that does not exist, naming it", () => {

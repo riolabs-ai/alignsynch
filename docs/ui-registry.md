@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **91** — 51 static, 40 dynamic, from `app/**/page.tsx`
-- component domains: **38** — 327 files under `components/`, 322 of them `.tsx`
+- routes: **92** — 52 static, 40 dynamic, from `app/**/page.tsx`
+- component domains: **38** — 329 files under `components/`, 323 of them `.tsx`
 - route handlers: **15** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 14 · **fixture** 54 · **db** 20 · **live** 7 · **prototype** 34
-- templates: Both templates 26 · AlignSynch 59 · QuizHub 42 · No template yet 2
+- status: **mock** 14 · **fixture** 55 · **db** 20 · **live** 7 · **prototype** 34
+- templates: Both templates 27 · AlignSynch 59 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -49,6 +49,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/auth`, `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`
   - notes: The one surface that writes `public.password_reset` and, through the auth server's own /reset-password, the `credential` row a Google-only account has never had. Its message is the fourth sender in `lib/flow/email.ts` (#password-reset).
+
+- `/help` — **fixture**
+  - capability: The public help centre: the help categories, the FAQ and the knowledge base, in the marketing chrome and with no contact form anywhere on the page.
+  - components: `components/support`, `components/ui`
+  - reads: 7 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+4 more)
+  - notes: The public half of the Help/Support split (owner's review). A variation of the old `/support` hub with its Contact tab removed rather than left empty: the answers are public, and the band at the foot of the page says where a person is. It renders the same panels the account page links back to (`components/support/**`), so the two surfaces cannot tell a reader different things about one product.
 
 - `/login` — **live**
   - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials, Google-only and network states.
@@ -88,9 +94,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/support` — **fixture**
-  - capability: The help centre: FAQ, help categories and a contact form.
+  - capability: Account support inside the app: the contact form, what the form does today, what to include in a message, and the links to the help centre and account settings.
   - components: `components/support`, `components/ui`
-  - reads: 7 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+4 more)
+  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `lib/auth/server.ts`
+  - notes: The in-app half of the Help/Support split (owner's review) and the only place a contact form is drawn. The route resolves the session first: a member gets this page and a visitor with none is redirected to `/help` — not to `/login` and not to a 404 — because the same URL has two correct answers. The form has no sender (`RESEND_*` unset), so the submit is disabled and the line above it, which the button names through `aria-describedby`, says so; that is #290's rule kept in the place the reader is actually looking. The `lib/db` reach above is the admin-allowlist grant's (`lib/auth/session.ts` → `admin-allowlist.ts`), which returns before any query when `ADMIN_EMAILS` is unset: this page renders no row.
 
 - `/support/articles/[slug]` — **fixture**
   - capability: One help article from the knowledge base, with related articles and a 'was this helpful?' prompt.
@@ -164,14 +171,14 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: `pending-surface.tsx` varies `components/ui/alert.tsx` — the alert's frame with `role="status"` instead of `role="alert"`, because a pending surface is a state a reader is told about, not a failure they must act on. It renders `data/surface-registry.ts` and nothing else: the labels, reasons and `needs` lines are that fixture's (issue #409), so the panel and the nav's greyed row cannot disagree about what a surface is. Server component, no client state.
 
 - `components/support` — **fixture**
-  - capability: The support centre: header, help categories, knowledge base, FAQ, contact form and the article detail.
-  - files (7): `article-detail.tsx`, `contact-form.tsx`, `knowledge-base.tsx`, `support-categories.tsx`, `support-faq.tsx`, `support-header.tsx`, `support-page.tsx`
-  - routes (2): `/support`, `/support/articles/[slug]`
+  - capability: The help panels shared by the two halves of the split — the two-tab help header, help categories, FAQ and knowledge base — plus the account page's contact form and its article reader.
+  - files (9): `account-support-page.tsx`, `article-detail.tsx`, `category.ts`, `contact-form.tsx`, `help-header.tsx`, `help-page.tsx`, `knowledge-base.tsx`, `support-categories.tsx`, `support-faq.tsx`
+  - routes (3): `/help`, `/support`, `/support/articles/[slug]`
 
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (65): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/templates`, `/v1/admin/console`, `/v1/admin/console/relationships`, `/v1/admin/console/relationships/[id]`, `/v1/admin/console/templates`, `/v1/admin/console/templates/[id]`, `/v1/admin/console/users`, `/v1/initiator/templates/new`, `/v1/profile/[handle]`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/review`, `/v1/templates/[type]`, `/v1/templates/[type]/create`, `/welcome` — and every other route through `app/layout.tsx`
+  - routes (66): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/help`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/templates`, `/v1/admin/console`, `/v1/admin/console/relationships`, `/v1/admin/console/relationships/[id]`, `/v1/admin/console/templates`, `/v1/admin/console/templates/[id]`, `/v1/admin/console/users`, `/v1/initiator/templates/new`, `/v1/profile/[handle]`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/review`, `/v1/templates/[type]`, `/v1/templates/[type]/create`, `/welcome` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch

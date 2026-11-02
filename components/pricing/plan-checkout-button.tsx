@@ -11,7 +11,7 @@ import { useCallback, useState } from "react";
  *
  * Three states, and the third one is the reason this is a component rather than a `Link`:
  *
- *   idle     the fixture's own label ("Choose Pro")
+ *   idle     the fixture's own label ("Choose Principal")
  *   pending  the same button, disabled, saying that something is happening
  *   error    the button says so and stays clickable — a failed checkout is not a dead end
  *

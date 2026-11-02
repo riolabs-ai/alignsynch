@@ -39,6 +39,7 @@ const STATIC_ROUTES = [
   "/explore",
   "/explore/featured",
   "/forgot-password",
+  "/help",
   "/how-it-works",
   "/leaderboard",
   "/login",
@@ -136,8 +137,8 @@ const INDEXABLE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
   { path: "/create/editor", title: "Create Quiz" },
   { path: "/create/generator", title: "Quiz Generator" },
   { path: "/affiliate", title: "Affiliate Page" },
+  { path: "/help", title: "Help" },
   { path: "/pricing", title: "Pricing Plan" },
-  { path: "/support", title: "Support" },
 ];
 
 export const routeManifest: RouteManifest = zRouteManifest.parse({
