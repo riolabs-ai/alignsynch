@@ -1304,8 +1304,14 @@ export interface V1SeedState {
  * name a kind, and no suggestion at all, so its plan is a list of a different shape: re-seeding
  * replaces it from the fixtures rather than presenting old rows as if they were agreed under the
  * new rule.
+ *
+ * 11 — the `staff-manager` demo sheet (`data/v1/relationship-types.ts`). This one is **not** a
+ * shape change and does not need the bump to be correct: the demo report is rendered from that
+ * file on the server, so no persisted store ever holds a copy of it. The bump is deliberate anyway,
+ * so a browser that has been walking the demo since before the exemplar existed re-seeds into the
+ * same state a first-time visitor gets, rather than a half-updated one.
  */
-export const SEED_VERSION = 10;
+export const SEED_VERSION = 11;
 
 /**
  * The chat's seeded read watermark — `threadId -> lastReadAt` per persona. A thread with
