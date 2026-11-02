@@ -543,6 +543,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       id: uid("rel"),
       templateId: template.id,
       items,
+      deletedAspects: [],
       mode: "basic",
       setting: "soft",
       initiatorName: PERSONA_META.initiator.name,
@@ -556,6 +557,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       initiatorAcceptedAt: null,
       counterpartyAcceptedAt: null,
       inviteToken: null,
+      inviteExpiresAt: null,
       sharedWithCoach: false,
       coachComments: [],
       comments: [],
@@ -566,6 +568,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       history: [],
       lastSessionAt: null,
       createdAt: now,
+      modifiedAt: now,
     };
     setRelationships((previous) => [...previous, relationship]);
     return relationship;
@@ -848,7 +851,15 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
         aspectComments: {},
         openedSessions: 0,
         completedSessions: 0,
-        subscription: { plan: "monthly", status: "active", periodEnd, startedAt: now },
+        subscription: {
+          plan: "monthly",
+          status: "active",
+          periodEnd,
+          startedAt: now,
+          // The prototype charges nothing, so the ledger starts empty and only a checkout
+          // appends to it. A subscription with no payments is the honest new-subscriber state.
+          payments: [],
+        },
         history: [],
         lastSessionAt: null,
         createdAt: now,

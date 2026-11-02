@@ -876,6 +876,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
       status: "active",
       periodEnd: "2026-11-30T08:00:00.000Z",
       startedAt: "2026-10-30T08:00:00.000Z",
+      payments: [
+        {
+          id: "pay-same-sheet-1",
+          plan: "monthly",
+          amountCents: RELATIONSHIP_PRICE_CENTS,
+          paidAt: "2026-10-30T08:00:00.000Z",
+        },
+      ],
     },
     history: [],
     lastSessionAt: "2026-10-30T09:00:00.000Z",
@@ -888,6 +896,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     id: "rel-unsubscribed",
     templateId: "v1-template-basics",
     items: aspectCopy("v1-template-basics"),
+    deletedAspects: [],
     mode: "basic",
     setting: "soft",
     initiatorName: "Jordan",
@@ -901,6 +910,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     initiatorAcceptedAt: null,
     counterpartyAcceptedAt: null,
     inviteToken: "inv-4c0e7a19",
+    inviteExpiresAt: null,
     sharedWithCoach: false,
     coachComments: [],
     comments: [],
@@ -911,6 +921,7 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     history: [],
     lastSessionAt: null,
     createdAt: "2026-10-31T09:00:00.000Z",
+    modifiedAt: "2026-10-31T09:00:00.000Z",
   },
 ];
 

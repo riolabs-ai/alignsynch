@@ -20,11 +20,7 @@ import { notFound } from "next/navigation";
  * (`canTakeLibraryActions`: initiator and admin). Gating the whole route on the action was the
  * deviation the owner flagged: a counterparty could not open the catalogue from their dashboard.
  */
-export default async function TemplatesPage({
-  params,
-}: {
-  params: Promise<{ persona: string }>;
-}) {
+export default async function TemplatesPage({ params }: { params: Promise<{ persona: string }> }) {
   const { persona } = await params;
   if (!isDashboardPersona(persona) || !sectionAllowedFor(persona, "templates")) notFound();
 
