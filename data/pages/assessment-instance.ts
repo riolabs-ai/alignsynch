@@ -244,7 +244,7 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       items: [
         {
           id: "frozen",
-          label: "Both of you have submitted, so an answer cannot be changed.",
+          label: "You have accepted this session, so an answer cannot be changed.",
         },
         {
           id: "incomplete",

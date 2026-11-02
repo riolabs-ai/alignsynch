@@ -73,6 +73,9 @@ interface RegistryQueryRow {
   readonly aspect_count: number;
   readonly initiator_answered: number;
   readonly counterparty_answered: number;
+  /** The two acceptances (#R2) — an instance is complete only when both are true. */
+  readonly initiator_accepted: boolean;
+  readonly counterparty_accepted: boolean;
   readonly initiator: SeatJson | null;
   readonly counterparty: SeatJson | null;
   readonly invite: InviteJson | null;
@@ -114,6 +117,12 @@ const ADMIN_INSTANCES_SQL = `
        WHERE o.session_record_id = r.id AND o.role = 'initiator')::int AS initiator_answered,
     (SELECT count(*) FROM opinion o
        WHERE o.session_record_id = r.id AND o.role = 'counterparty')::int AS counterparty_answered,
+    COALESCE((SELECT p4.accepted_at IS NOT NULL FROM party p4
+               WHERE p4.session_record_id = r.id AND p4.role = 'initiator'), false)
+                                    AS initiator_accepted,
+    COALESCE((SELECT p5.accepted_at IS NOT NULL FROM party p5
+               WHERE p5.session_record_id = r.id AND p5.role = 'counterparty'), false)
+                                    AS counterparty_accepted,
     (SELECT json_build_object('name', p.name, 'has_account', p.user_id IS NOT NULL)
        FROM party p
       WHERE p.session_record_id = r.id AND p.role = 'initiator') AS initiator,
@@ -217,7 +226,12 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
         row.counterparty !== null &&
         row.aspect_count > 0 &&
         row.initiator_answered >= row.aspect_count &&
-        row.counterparty_answered >= row.aspect_count,
+        row.counterparty_answered >= row.aspect_count &&
+        // #R2: an instance is complete only when both seats have ACCEPTED it. Reading the
+        // opinions behind a stage is the one permission the blind rule grants at `complete`, so
+        // the acceptance is a condition of this statement, not a decoration on the view.
+        row.initiator_accepted &&
+        row.counterparty_accepted,
     )
     .map((row) => row.session_record_id);
 
@@ -241,6 +255,8 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
         aspectCount: row.aspect_count,
         initiatorAnswered: row.initiator_answered,
         counterpartyAnswered: row.counterparty_answered,
+        initiatorAccepted: row.initiator_accepted,
+        counterpartyAccepted: row.counterparty_accepted,
         initiator: seatOf(row.initiator),
         counterparty: seatOf(row.counterparty),
         invite: inviteOf(row.invite),

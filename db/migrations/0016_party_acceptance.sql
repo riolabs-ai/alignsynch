@@ -1,0 +1,27 @@
+-- 0016_party_acceptance.sql — acceptance is a stored instant, never a status (#R2).
+--
+-- The flow had no acceptance anywhere: the accept page's own words said so, and no column, no
+-- table and no row recorded that a party had agreed to what the session now holds. This file adds
+-- the one fact that was missing, and it adds it the way `party.submitted_at` (0011) and
+-- `party.unlock_seen_at` (0007) were added — as an **instant**, nullable, with no default and no
+-- backfill:
+--
+--   party.accepted_at   when this seat accepted the session, or NULL for "not yet".
+--
+-- **Why an instant and not a status.** `complete` is derived (`lib/flow/state.ts::instanceStatusOf`)
+-- from the opinion rows plus this column, exactly as it was derived from the opinion rows alone
+-- before this file: a stored status would be a second authored copy of a fact the rows already
+-- carry, and nothing in SQL could compare the two — the same reason the Gap is `gapOf()` and not
+-- a column. Acceptance is the *one* new stored fact, because it is the one fact the opinions
+-- cannot imply: a party can answer their whole sheet and still decline to accept it.
+--
+-- **The hinge this moves.** A session used to complete when both parties had submitted. It now
+-- completes when both have *accepted*: the blind rule keeps both sheets sealed through the review
+-- window, and the Gap opens at the second acceptance, not the second submit. The migration does
+-- not decide that — it only stores when each seat said yes, so the derivation can.
+--
+-- **Existing rows read as "not accepted".** Every session written before this file has no
+-- acceptance to recover: `NULL` is the honest absence, and no backfill could invent an instant
+-- without inventing the agreement itself. An instance mid-review at deploy time therefore stays
+-- mid-review, and its second acceptance completes it from the rows as they are then.
+ALTER TABLE party ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMPTZ NULL;

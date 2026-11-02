@@ -58,6 +58,11 @@ function facts(overrides: Partial<RegistryFacts> = {}): RegistryFacts {
     aspectCount: 1,
     initiatorAnswered: 1,
     counterpartyAnswered: 1,
+    // Defaulted to an accepted session (#R2): `complete` needs the acceptance counts as well as
+    // the answered ones, so a fixture that omitted them would be asserting about a state the
+    // derivation can no longer reach.
+    initiatorAccepted: true,
+    counterpartyAccepted: true,
     initiator: { name: "Avery", hasAccount: true },
     counterparty: { name: "Rowan", hasAccount: true },
     invite: null,

@@ -185,7 +185,7 @@ const stub = vi.hoisted(() => {
         rowCount: 1,
       };
     }
-    if (sql.startsWith("SELECT session_record_id, role, name FROM party")) {
+    if (sql.startsWith("SELECT session_record_id, role, name")) {
       return { rows: state.parties, rowCount: state.parties.length };
     }
     if (sql.startsWith("SELECT email, counterparty_name, claimed_at")) {
@@ -454,7 +454,13 @@ describe("the blind rule survives the new read", () => {
     expect(screen.aspects.every((aspect) => aspect.own === null)).toBe(true);
     expect(screen.report).toBeNull();
     const serialized = JSON.stringify(screen);
-    expect(serialized).not.toContain('"role":"counterparty"');
+    // The seat panel (#R2) names both parties and carries each one's answered **count** and
+    // acceptance instant; neither is a score, and 5/1 appear nowhere.
+    for (const seat of screen.seats) {
+      expect(Object.keys(seat).sort()).toEqual(["acceptedAt", "answered", "name", "role"]);
+    }
+    expect(serialized).not.toContain('"feel":5');
+    expect(serialized).not.toContain('"wish":1');
     expect(serialized).not.toContain("data-feel-gap");
 
     // And nothing reached the markup: every segment still shows "no answer chosen" (the band

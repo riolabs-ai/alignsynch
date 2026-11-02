@@ -3,19 +3,22 @@
  *
  * This is the blind rule made into a data shape. The store reads **only** the opinions the
  * viewer is allowed to see (`visibleRoles()`), and this projection never asks for another
- * party's answers to fill in a column: before both parties submit, `aspects[].own` is the
+ * party's answers to fill in a column: during the review window `aspects[].own` is the
  * viewer's own score and there is no field that could carry anybody else's. The report —
  * the only screen with Gaps on it — exists in this shape only when the status is
- * `complete`, and it is built from the same `assessmentInstanceFromRows()` every other read
- * uses, so the Gap is `gapOf()` over two rows rather than a number this module made up.
+ * `complete`, which since #R2 means both parties have answered every Aspect **and both have
+ * accepted** the session; it is built from the same `assessmentInstanceFromRows()` every other
+ * read uses, so the Gap is `gapOf()` over two rows rather than a number this module made up.
  *
  * Pure: rows in, view model out. `tests/flow-screen.test.ts` drives it with hand-built
  * rows, including the two-answer arithmetic (Feel 2 against Feel 5 is a Gap of 3) and the
  * blind state (no report, no counterparty score, whatever the markup is asked for).
  */
 import {
+  zAlignmentSetting,
   zAssessmentMode,
   zOpinions,
+  type AlignmentSetting,
   type Assessment,
   type AssessmentMode,
   type Opinions,
@@ -28,6 +31,7 @@ import { assessmentReport } from "@/lib/assessment-report";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import {
   assessmentInstanceFromRows,
+  isoInstantOf,
   orderedItems,
   type InstanceRow,
   type ItemRow,
@@ -95,6 +99,21 @@ export interface FlowInvite {
   readonly link: string | null;
 }
 
+/**
+ * One seat as the accept screen draws it (#R2).
+ *
+ * Three facts and no score: who the seat is, how many Aspects they have answered (**a count**,
+ * never the values), and when they accepted. The acceptance instant is an ISO string or `null`
+ * for "not yet" — the same absence `FlowInvite.expiresAt` carries, and the page formats it with
+ * the repo's UTC formatter rather than re-deriving a date.
+ */
+export interface FlowSeat {
+  readonly role: PartyRole;
+  readonly name: string;
+  readonly answered: number;
+  readonly acceptedAt: string | null;
+}
+
 export interface FlowScreen {
   readonly instanceRecordId: string;
   readonly slug: string;
@@ -109,6 +128,14 @@ export interface FlowScreen {
    */
   readonly mode: AssessmentMode;
   /**
+   * The Setting the instance is read through (#259): `soft` or `full`. Parsed from the row
+   * (`zAlignmentSetting.parse`), so a value the model rejects is drift and never a default.
+   *
+   * Carried on the screen because the accept page names it in its "what you are accepting" band —
+   * a party accepts the Setting as well as the Mode, and the report's limits are a function of it.
+   */
+  readonly setting: AlignmentSetting;
+  /**
    * Who is reading. `role` is the seat this request answers as, **or `coach`** — the invited,
    * read-only membership role (`lib/flow/membership.ts`). A coach has no party row, so `name` is
    * the empty string and the view renders the coach's own band instead of a party name.
@@ -117,12 +144,21 @@ export interface FlowScreen {
   readonly aspects: readonly FlowAspect[];
   readonly initiatorName: string;
   readonly counterpartyName: string | null;
+  /** Both seats, the Initiator first — the accept screen's two panels, one row each. */
+  readonly seats: readonly FlowSeat[];
+  /**
+   * The viewer's own seat facts (#R2). A coach has answered nothing and accepted nothing, so both
+   * are the absence: `false` and `0`, never a guess at a party's row.
+   */
+  readonly viewerAnswered: number;
+  readonly viewerAccepted: boolean;
   /** Who has not finished. Before the claim that is the Counterparty, every time. */
   readonly waiting: readonly PartyRole[];
   readonly invite: FlowInvite | null;
   /**
-   * The report, present **only** when both parties have submitted. Its absence is the
-   * blind state: there is no partial report, no greyed-out column, no "hidden" scores in
+   * The report, present **only** when both parties have accepted — the acceptance is the
+   * completion hinge (#R2), so the submission that fills the last sheet is not enough. Its absence
+   * is the blind state: there is no partial report, no greyed-out column, no "hidden" scores in
    * the markup — a screen that cannot be drawn cannot leak.
    */
   readonly report: AssessmentReport | null;
@@ -162,7 +198,24 @@ export function progressOf(rows: FlowInstanceRows): InstanceProgress {
     hasCounterparty: partyIn(rows.parties, "counterparty") !== undefined,
     initiatorAnswered: rows.answerCounts.initiator,
     counterpartyAnswered: rows.answerCounts.counterparty,
+    // The hinge (#R2): a count of the seats whose `accepted_at` is set, read off the same party
+    // rows the names come from. `1`/`0` and never a boolean, so `instanceStatusOf()` treats the
+    // two shapes the same way.
+    initiatorAccepted: acceptedCountIn(rows.parties, "initiator"),
+    counterpartyAccepted: acceptedCountIn(rows.parties, "counterparty"),
   };
+}
+
+/** `1` when the seat's `accepted_at` is set, `0` for a seat that has not accepted (or is absent). */
+function acceptedCountIn(parties: readonly PartyRow[], role: PartyRole): number {
+  const party = partyIn(parties, role);
+  return party?.accepted_at === null || party?.accepted_at === undefined ? 0 : 1;
+}
+
+/** `party.accepted_at` as the model's UTC instant, or `null` — the accept screen's one date. */
+function acceptedAtOf(party: PartyRow | undefined): string | null {
+  if (party?.accepted_at === null || party?.accepted_at === undefined) return null;
+  return isoInstantOf(party.accepted_at);
 }
 
 /**
@@ -229,6 +282,7 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     summary: template.summary,
     status,
     mode: zAssessmentMode.parse(rows.instance.mode),
+    setting: zAlignmentSetting.parse(rows.instance.setting),
     // A coach has no party row, so their name is the empty string and the view renders the
     // coach's own band (`viewer` copy id) rather than a party name.
     viewer: { role: viewerRole, name: viewerRole === "coach" ? "" : (viewerRow?.name ?? "") },
@@ -245,6 +299,22 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     })),
     initiatorName: partyIn(rows.parties, "initiator")?.name ?? "",
     counterpartyName: partyIn(rows.parties, "counterparty")?.name ?? null,
+    // The two seats as rows, Initiator first (the glossary's order). A missing Counterparty is
+    // simply absent — there is no seat panel for a person who has not claimed the invitation.
+    seats: (["initiator", "counterparty"] as const)
+      .map((role) => {
+        const party = partyIn(rows.parties, role);
+        if (party === undefined) return undefined;
+        return {
+          role,
+          name: party.name,
+          answered: rows.answerCounts[role],
+          acceptedAt: acceptedAtOf(party),
+        } satisfies FlowSeat;
+      })
+      .filter((seat): seat is FlowSeat => seat !== undefined),
+    viewerAnswered: viewerRole === "coach" ? 0 : (rows.answerCounts[viewerRole] ?? 0),
+    viewerAccepted: viewerRole !== "coach" && acceptedCountIn(rows.parties, viewerRole) === 1,
     waiting: waitingOn(progress, partyIn(rows.parties, "initiator") !== undefined),
     invite,
     report,

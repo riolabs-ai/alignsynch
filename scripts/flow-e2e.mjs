@@ -19,10 +19,14 @@
  *   4. blind       the Counterparty's screen shows no report and no Gap while only the
  *                  Initiator has answered
  *   5. submit      the Counterparty answers differently on one Aspect
- *   6. gap         both parties now see `data-feel-gap="3"` where Feel 2 meets Feel 5, and
+ *   6. hinge       both sheets are in and the report is still locked: acceptance, not submission,
+ *                  is what completes a session (#R2)
+ *   6b. accept     the Initiator accepts (still locked), the Counterparty accepts (the Gap opens);
+ *                  the completing acceptance is the one that mails the other seat
+ *   6c. locked     an edit after the seat accepted is a 409 and the stored row is unchanged
+ *   6d. gap        both parties now see `data-feel-gap="3"` where Feel 2 meets Feel 5, and
  *                  "In synch" where they agree; an Advanced instance draws all eight kinds,
  *                  the four prediction ones against the other party's actual (#219)
- *   7. freeze      a post-completion submit is a 409, and the stored rows are unchanged
  *   8. copy        editing the Template's prompt afterwards does not change the instance
  *   9. hashes      the invitation row stores the SHA-256 of the token, never the token
  *
@@ -242,11 +246,13 @@ async function main() {
   );
 
   /* 1b. the sheet Basic Mode asks (#213) ----------------------------- */
-  const basicSelects = (initiatorScreen.html.match(/<select /g) ?? []).length;
+  // The sheet is radios since #427's answer card — five notches per Opinion kind, per Aspect —
+  // so the count is "Aspects × the Mode's kinds × the 1..5 band", not a `<select>` per question.
+  const basicRadios = (initiatorScreen.html.match(/type="radio"/g) ?? []).length;
   check(
     "a Basic instance asks two scores on every Aspect, and only two",
-    basicSelects === ASPECT_IDS.length * 2,
-    `${basicSelects} selects for ${ASPECT_IDS.length} Aspects`,
+    basicRadios === ASPECT_IDS.length * 2 * 5,
+    `${basicRadios} radios for ${ASPECT_IDS.length} Aspects × 2 kinds × 5 notches`,
   );
   check(
     "it asks Feel then Wish, and names no Think or Guess field",
@@ -570,7 +576,45 @@ async function main() {
   );
 
   const afterBoth = await initiator.get(instancePath);
-  const gapAttribute = afterBoth.html.match(
+  // #R2 — the hinge. Both sheets are in, and that is *not* completion: the report stays locked
+  // until both parties accept, which is the review window the accept page exists for.
+  check(
+    "both submitted: the report is still locked, with no Gap on the instance screen",
+    !afterBoth.html.includes("data-feel-gap") && !afterBoth.html.includes("data-wish-gap"),
+  );
+  const editBeforeAccept = await initiator.post(
+    `${instancePath}/answers`,
+    answers({ feel: 2, wish: 5 }, { [MONEY]: { feel: 4, wish: 4 } }),
+  );
+  check(
+    "a re-submit before this seat accepts is allowed (the edit-before-accept window)",
+    editBeforeAccept.status === 303,
+    `status ${editBeforeAccept.status}`,
+  );
+
+  const initiatorAccept = await initiator.post(`${instancePath}/accepts`, {});
+  check(
+    "the Initiator's acceptance answers 303 to the accept page",
+    initiatorAccept.status === 303 &&
+      (initiatorAccept.location ?? "").endsWith(`${instancePath}/accept`),
+    `${initiatorAccept.status} ${initiatorAccept.location}`,
+  );
+  const afterFirstAccept = await initiator.get(instancePath);
+  check(
+    "one acceptance: the Gap is still sealed for both of you",
+    !afterFirstAccept.html.includes("data-feel-gap") &&
+      !afterFirstAccept.html.includes("data-wish-gap"),
+  );
+  const counterpartyAccept = await counterparty.post(`${instancePath}/accepts`, {});
+  check(
+    "the completing acceptance answers 303 to the report",
+    counterpartyAccept.status === 303 &&
+      (counterpartyAccept.location ?? "").endsWith(`${instancePath}/report`),
+    `${counterpartyAccept.status} ${counterpartyAccept.location}`,
+  );
+  const afterAcceptance = await initiator.get(instancePath);
+
+  const gapAttribute = afterAcceptance.html.match(
     /data-aspect="aspect-time-together" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
   );
   check(
@@ -583,12 +627,12 @@ async function main() {
     gapAttribute !== null && gapAttribute[2] === "2",
     gapAttribute === null ? "" : `data-wish-gap="${gapAttribute[2]}"`,
   );
-  const moneyRow = afterBoth.html.match(
+  const moneyRow = afterAcceptance.html.match(
     /data-aspect="aspect-money" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
   );
   check(
     "the agreed Aspect renders 'In synch'",
-    moneyRow !== null && moneyRow[1] === "0" && afterBoth.html.includes("In synch"),
+    moneyRow !== null && moneyRow[1] === "0" && afterAcceptance.html.includes("In Synch"),
     moneyRow === null ? "" : "gap 0",
   );
   note(
@@ -605,19 +649,19 @@ async function main() {
     `counterparty data-feel-gap="${counterpartyGap?.[1]}"`,
   );
 
-  /* 7. freeze -------------------------------------------------------- */
+  /* 7. the freeze, now per party (#R2) -------------------------------- */
   const editAttempt = await initiator.post(
     `${instancePath}/answers`,
     answers({ feel: 4, wish: 4 }),
   );
   check(
-    "editing after both submitted answers 409",
+    "editing after this seat accepted answers 409",
     editAttempt.status === 409,
     `status ${editAttempt.status}`,
   );
   check(
-    "the refusal says the answers are frozen",
-    editAttempt.html.includes("Both of you have submitted, so an answer cannot be changed."),
+    "the refusal names the acceptance as the reason, not the other party's submit",
+    editAttempt.html.includes("You have accepted this session, so an answer cannot be changed."),
   );
   const storedFeel = await db.query(
     "SELECT feel, wish FROM opinion WHERE session_record_id = $1 AND role = 'initiator' AND item_id = $2",
@@ -707,15 +751,19 @@ async function main() {
     advScreen.status === 200,
     `status ${advScreen.status}`,
   );
-  const advSelects = (advScreen.html.match(/<select /g) ?? []).length;
+  const advRadios = (advScreen.html.match(/type="radio"/g) ?? []).length;
   check(
     "an Advanced instance asks four scores on every Aspect, and only four",
-    advSelects === ASPECT_IDS.length * 4,
-    `${advSelects} selects for ${ASPECT_IDS.length} Aspects`,
+    advRadios === ASPECT_IDS.length * 4 * 5,
+    `${advRadios} radios for ${ASPECT_IDS.length} Aspects × 4 kinds × 5 notches`,
   );
-  const advFieldOrder = [...advScreen.html.matchAll(new RegExp(`name="(\\w+):${TIME}"`, "g"))].map(
-    (match) => match[1],
-  );
+  const advFieldOrder = [
+    ...new Set(
+      [...advScreen.html.matchAll(new RegExp(`name="(\\w+):${TIME}"`, "g"))].map(
+        (match) => match[1],
+      ),
+    ),
+  ];
   check(
     "the four are asked in the glossary's order",
     advFieldOrder.join(",") === "feel,wish,think,guess",
@@ -783,6 +831,17 @@ async function main() {
     "the Advanced Counterparty submits four scores",
     advCounterpartySubmit.status === 303,
     `status ${advCounterpartySubmit.status}`,
+  );
+  check(
+    "and the Advanced report is still locked until both accept",
+    !(await advInitiator.get(advPath)).html.includes("data-feel-gap"),
+  );
+  const advAccept1 = await advInitiator.post(`${advPath}/accepts`, {});
+  const advAccept2 = await advCounterparty.post(`${advPath}/accepts`, {});
+  check(
+    "both Advanced acceptances answer 303",
+    advAccept1.status === 303 && advAccept2.status === 303,
+    `${advAccept1.status} / ${advAccept2.status}`,
   );
 
   const advReport = await advInitiator.get(advPath);

@@ -57,12 +57,15 @@ const stub = vi.hoisted(() => {
     hasCounterparty: boolean;
     aspects: number;
     answered: Record<PartyRole, number>;
+    /** #R2 — the two seats' acceptance, which `complete` now requires. */
+    accepted: Record<PartyRole, boolean>;
   } = {
     invite: undefined,
     roles: [],
     hasCounterparty: false,
     aspects: 2,
     answered: { initiator: 0, counterparty: 0 },
+    accepted: { initiator: false, counterparty: false },
   };
 
   const narrow = (text: string): string => text.replace(/\s+/g, " ").trim();
@@ -74,6 +77,7 @@ const stub = vi.hoisted(() => {
     state.hasCounterparty = false;
     state.aspects = 2;
     state.answered = { initiator: 0, counterparty: 0 };
+    state.accepted = { initiator: false, counterparty: false };
   }
 
   async function query(text: string, values: readonly unknown[] = []) {
@@ -106,7 +110,14 @@ const stub = vi.hoisted(() => {
       const roles: PartyRole[] = state.hasCounterparty
         ? ["initiator", "counterparty"]
         : ["initiator"];
-      return { rows: roles.map((role) => ({ role, answered: state.answered[role] })), rowCount: 2 };
+      return {
+        rows: roles.map((role) => ({
+          role,
+          answered: state.answered[role],
+          accepted: state.accepted[role],
+        })),
+        rowCount: 2,
+      };
     }
     if (sql.startsWith("UPDATE session_invite SET token_hash = $2")) {
       return { rows: [], rowCount: 1 };
@@ -375,6 +386,9 @@ describe("every refusal writes nothing", () => {
         unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
         stub.state.hasCounterparty = true;
         stub.state.answered = { initiator: 2, counterparty: 2 };
+        // #R2 — the session is complete because both seats accepted it, not because both sheets
+        // were filled in. The refusal is the same one it always was; what produces it moved.
+        stub.state.accepted = { initiator: true, counterparty: true };
       },
       code: "instance-complete",
     },
