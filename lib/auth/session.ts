@@ -25,13 +25,20 @@ import { authConfigured } from "@/lib/auth/config";
 import { neonAuth } from "@/lib/auth/server";
 import { grantAdminIfAllowlisted } from "@/lib/auth/admin-allowlist";
 
-/** The session as the app uses it. No token, no session id, no roles. */
+/** The session as the app uses it. No token, no roles. */
 export interface SessionUser {
   /** Neon Auth's user id — `user_profile.user_id`. */
   readonly userId: string;
   readonly email: string;
   /** What the person typed at sign-up; empty when the provider holds no name. */
   readonly name: string;
+  /**
+   * The session's own id, and only ever used to *keep* it: `/settings`' set-password card revokes
+   * every other session and must not revoke the one it was posted from (`lib/db/password-reset.ts`
+   * ::revokeSessions). `null` when the auth server answered without one — in which case the caller
+   * revokes everything, because keeping an unidentified session alive is the wrong way to be safe.
+   */
+  readonly sessionId: string | null;
 }
 
 /**
@@ -55,6 +62,10 @@ export async function currentUser(): Promise<SessionUser | null> {
       userId: user.id,
       email: user.email,
       name: typeof user.name === "string" ? user.name : "",
+      sessionId:
+        typeof result?.data?.session?.id === "string" && result.data.session.id !== ""
+          ? result.data.session.id
+          : null,
     };
   } catch (error) {
     console.error("auth: getSession failed — treating the request as signed out", error);

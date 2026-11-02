@@ -20,9 +20,11 @@ import { publicProfileOf } from "@/content/identity";
 import { settingsPageCopy } from "@/data/pages/settings";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
+import { accountHasPassword } from "@/lib/db/password-reset";
 import { readUserProfileByUserId } from "@/lib/db/user-profiles";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { savePassword } from "./password-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -38,12 +40,19 @@ export default async function SettingsPage() {
   // creates one, so the page renders with their auth name as the starting display name.
   const profile = await readUserProfileByUserId(user.userId);
 
+  // Whether there is a password to change, asked of the account rows rather than guessed from a
+  // provider id (`lib/db/password-reset.ts::accountHasPassword`). A Google-only account answers
+  // `false` and the card offers to set one — the case that makes this card worth having.
+  const hasPassword = await accountHasPassword(user.userId);
+
   return (
     <SettingsView
       copy={settingsPageCopy}
       email={user.email}
       signedInName={user.name}
       profile={profile === null ? null : publicProfileOf(profile)}
+      hasPassword={hasPassword}
+      savePassword={savePassword}
     />
   );
 }

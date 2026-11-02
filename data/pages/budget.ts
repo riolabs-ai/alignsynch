@@ -145,6 +145,31 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/affiliate",
     budget: 0,
   },
+  /**
+   * The three password surfaces (#password-reset), budget 0 from the first commit like the other
+   * flow surfaces: every sentence — the five request outcomes, the four link states, the six
+   * password refusals, the message body — is `data/pages/password-reset.ts`, and the views only
+   * join ids to sentences. One fixture for three routes, like the two legal pages: the same person
+   * reads them in sequence, and two copies of "Ask for a new link" is two places a typo hides.
+   */
+  "/forgot-password": {
+    page: "app/(auth)/forgot-password/page.tsx",
+    dirs: ["components/auth"],
+    fixture: "data/pages/password-reset",
+    budget: 0,
+  },
+  "/reset/[token]": {
+    page: "app/(auth)/reset/[token]/page.tsx",
+    dirs: ["components/auth"],
+    fixture: "data/pages/password-reset",
+    budget: 0,
+  },
+  "/reset/complete": {
+    page: "app/(auth)/reset/complete/page.tsx",
+    dirs: ["components/auth"],
+    fixture: "data/pages/password-reset",
+    budget: 0,
+  },
   "/pricing": {
     page: "app/(marketing)/pricing/page.tsx",
     dirs: ["components/pricing"],

@@ -11,6 +11,10 @@
  * no sender behind it. They are the same defect in a different element: a page asserting a fact
  * nobody can check out.
  *
+ * The login card's dead reset link has since been made real (#password-reset: `/forgot-password`,
+ * `/reset/[token]`, `/reset/complete`), so the case below now pins that the item exists and names a
+ * route rather than that it is absent.
+ *
  * These cases pin the *markup* that replaced them, which is the half `rg` cannot see: the footer
  * draws no social row on either brand, prints no fabricated contact row, has no subscribe band,
  * and a row that acts is a `<button type="button">` rather than a link with an empty `href`. The
@@ -22,6 +26,7 @@ import { describe, expect, it } from "vitest";
 
 import { Footer } from "@/components/layout/footer";
 import { NavRow } from "@/components/layout/nav-menus";
+import { ROUTE_PATTERNS } from "@/content/routes";
 import { loginCopy } from "@/data/pages/login";
 import { shellPageCopy } from "@/data/pages/shell";
 import { loginCopyFor } from "@/lib/auth-copy";
@@ -123,10 +128,27 @@ describe("a row that acts is a control, not a link", () => {
   });
 });
 
-describe("the login card promises no reset it cannot start", () => {
-  it("declares no password-reset item, which is what the removed link asked for", () => {
+describe("the login card only promises a reset the app can start", () => {
+  /**
+   * This case used to assert the opposite — that the card declared **no** reset item — because the
+   * one it drew was an `href="#"` that started nothing, and a link that goes nowhere is worse than
+   * an absent element (#272).
+   *
+   * #password-reset built the route, so the honest assertion is now the one that keeps the promise
+   * checkable: the item exists, and the path it names is in the route manifest — i.e. the card
+   * promises a reset only because `/forgot-password` answers. If the route is ever removed, this
+   * fails here as well as in E10, and the sentence that says why is in this comment.
+   */
+  it("declares a reset item that names a route the app ships", () => {
     const copy = loginCopyFor(loginCopy({ name: "Test" }), "quizhub");
     const ids = (sectionOf(copy, "sign-in").items ?? []).map((item: { id: string }) => item.id);
-    expect(ids).not.toContain("forgot");
+    expect(ids).toContain("forgot");
+
+    const items = sectionOf(copy, "sign-in").items ?? [];
+    const forgot = items.find((item) => item.id === "forgot");
+    expect(forgot?.label.toLowerCase()).toContain("password");
+    // The destination is the view's (`components/auth/login-view.tsx`), and E10 checks the literal
+    // against `content/routes.ts`; the route is asserted here so this file reads as the pair.
+    expect(ROUTE_PATTERNS).toContain("/forgot-password");
   });
 });

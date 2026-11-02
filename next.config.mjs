@@ -132,6 +132,31 @@ const nextConfig = {
     unoptimized: true,
   },
   /**
+   * The reset page's credential must not travel in a `Referer` header (#password-reset).
+   *
+   * `/reset/<token>` puts a single-use bearer credential in the URL, and a URL in the address bar
+   * is a URL in every `Referer` a subresource request sends — an avatar hosted elsewhere, a
+   * support widget, a font on a CDN. `no-referrer` on this path is the fix, and it is a *rule* here
+   * rather than a per-page decision because it has to survive the next component that fetches
+   * something from this page: the alternative is an audit of every request the reset form makes.
+   *
+   * `no-store` beside it for the same reason the route is `force-dynamic`: a cached copy of a page
+   * that says "this link is live" would outlive the link. The meta tag in
+   * `app/(auth)/reset/[token]/page.tsx` repeats the referrer rule, because a header this important
+   * should not depend on a deployment's config being intact.
+   */
+  async headers() {
+    return [
+      {
+        source: "/reset/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+        ],
+      },
+    ];
+  },
+  /**
    * Legacy paths the pre-P1 shell emitted and never had a page for (issue #20).
    *
    * The components now link at the real routes (`/dashboard/user`, `/register`) and
