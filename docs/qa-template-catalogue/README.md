@@ -20,7 +20,8 @@ that with a drawer below 768 px, which gives the catalogue the full viewport: th
 now **10,006 px** (whole catalogue) and **4,259 px** (`?realm=Home`) instead of 11,292 and 4,757 —
 same 28 cards, same 8 groups, same count line, and still no horizontal overflow
 (`scrollWidth === innerWidth`, checked at both widths). The desktop shots keep their heights
-(5,804 px and 2,305 px); the chrome above them changed with the rail.
+(5,804 px and 2,305 px); the chrome above them changed with the rail, and the lockup in the corner
+with #470.
 
 Two things these shots do not show, because the preview route below is not the real path: the rail
 does not highlight **Templates** (its active state is derived from the pathname), and the account
