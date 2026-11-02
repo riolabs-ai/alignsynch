@@ -77,7 +77,7 @@ export const howItWorksPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "product",
           label:
-            "Each sheet is sealed on submit. Until you have both submitted, neither of you can see the other's answers — they are absent, not greyed out — and the relationship list says only that the other person is not done.",
+            "Each sheet is sealed on submit and stays sealed through the review window. Until you have both accepted, neither of you can see the other's answers — they are absent, not greyed out — and the relationship list says only that the other person is not done.",
         },
       ],
     },
@@ -89,7 +89,7 @@ export const howItWorksPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "product",
           label:
-            "The accept screen puts the two seats side by side with the Aspects beneath them and opens only what both of you have submitted. Where a decision cannot be recorded yet, the control is disabled and the screen says why.",
+            "The accept screen puts the two seats side by side with the Aspects beneath them. The second acceptance is what completes the relationship and opens the report: one acceptance is not the relationship agreeing, and the control is disabled wherever a decision cannot be recorded, with the reason beside it.",
         },
       ],
     },
@@ -101,7 +101,7 @@ export const howItWorksPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "product",
           label:
-            "Every Gap is computed when the page is read, from the two stored sheets, and judged against the Setting. Each Aspect gets exactly one Step, sourced from its widest Gap; an Aspect in synch gets none, because there is nothing to do.",
+            "Once both of you have accepted, every Gap is computed when the page is read, from the two stored sheets, and judged against the Setting. Each Aspect gets exactly one Step, sourced from its widest Gap; an Aspect in synch gets none, because there is nothing to do.",
         },
       ],
     },
