@@ -395,6 +395,20 @@ export const PERSONA_SURFACE_ROWS: readonly PersonaSurface[] = [
       admin: absent,
     },
   },
+  {
+    route: "/v1/profile/[handle]",
+    surface: "Profile",
+    ancestor: "components/identity/member-profile.tsx",
+    order: 17,
+    flag: null,
+    personas: {
+      visitor: use("read a member's public profile"),
+      initiator: use("read another member's profile; their own carries the actions"),
+      counterparty: use("read another member's profile; their own carries the actions"),
+      coach: use("read another member's profile"),
+      admin: use("read another member's profile"),
+    },
+  },
 ];
 
 /* ------------------------------------------------------------------ *
