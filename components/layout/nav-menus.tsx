@@ -5,6 +5,7 @@
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
+import { surfaceFor } from "@/data/surface-registry";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { type NavViewer, sees } from "@/lib/nav";
@@ -120,14 +121,30 @@ export type NavRowProps = {
  * worse than an absent row because it says the session ended when it did not. `onSelect` is
  * that row; every destination row is still a `Link`, class for class, so the menus this module
  * draws are byte-for-byte what they were.
+ *
+ * **A pending destination is not a link (issue #409).** A row whose `href` names a surface
+ * `data/surface-registry.ts` declares `pending` or `preview` renders as a **disabled `<button>`**:
+ * no `<Link>`, no href, no click, `aria-disabled`, the muted tone and the registry's own reason
+ * under the label (a `title` carries it in the collapsed rail, where there is no second line to
+ * read). The
+ * registry decides, not this file, so a surface cannot be greyed in one menu and linked in the
+ * other — and a live row is untouched, which is what keeps this a status rule rather than a
+ * second menu. Nothing is added or removed by it: greying changes how a row that already exists
+ * is drawn, never which rows exist.
  */
 export function NavRow(props: NavRowProps) {
   const { icon, label, active, collapsed, onNavigate, hidden } = props;
   if (hidden) return null;
 
-  const tone = active
-    ? "bg-nav-active text-action-foreground"
-    : "hover:bg-accent hover:text-accent-foreground";
+  const surface = props.href === undefined ? undefined : surfaceFor(props.href);
+  const pending = surface !== undefined && surface.status !== "live";
+  const statusWord = surface?.status === "preview" ? "Preview" : "Pending";
+
+  const tone = pending
+    ? "cursor-not-allowed text-muted-foreground opacity-70"
+    : active
+      ? "bg-nav-active text-action-foreground"
+      : "hover:bg-accent hover:text-accent-foreground";
 
   const className = collapsed
     ? cn("flex h-10 w-10 items-center justify-center rounded-md transition-colors", tone)
@@ -141,20 +158,40 @@ export function NavRow(props: NavRowProps) {
   ) : (
     <>
       <span>{icon}</span>
-      <span>{label}</span>
+      {pending ? (
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate">{label}</span>
+          <span className="truncate text-xs font-normal">
+            {statusWord} — {surface?.reason}
+          </span>
+        </span>
+      ) : (
+        <span>{label}</span>
+      )}
     </>
   );
 
-  const row =
-    props.onSelect === undefined ? (
-      <Link href={props.href} onClick={onNavigate} className={className}>
-        {content}
-      </Link>
-    ) : (
-      <button type="button" onClick={props.onSelect} className={className}>
-        {content}
-      </button>
-    );
+  const row = pending ? (
+    <button
+      type="button"
+      disabled
+      aria-disabled="true"
+      aria-label={collapsed ? `${label} — ${statusWord.toLowerCase()}` : undefined}
+      title={surface?.reason}
+      data-surface-status={surface?.status}
+      className={className}
+    >
+      {content}
+    </button>
+  ) : props.onSelect === undefined ? (
+    <Link href={props.href} onClick={onNavigate} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <button type="button" onClick={props.onSelect} className={className}>
+      {content}
+    </button>
+  );
 
   if (!collapsed) return row;
   return <div className="relative group flex justify-center items-center">{row}</div>;
