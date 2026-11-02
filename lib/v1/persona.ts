@@ -160,7 +160,17 @@ export function relationshipsVisibleTo(
     case "initiator":
       return relationships.filter((rel) => rel.initiatorName === PERSONA_META.initiator.name);
     case "counterparty":
-      return relationships.filter((rel) => rel.counterpartyName === PERSONA_META.counterparty.name);
+      // A relationship is visible to the counterparty once they are named from their own side — by
+      // claiming an invite (`counterpartyName`) or by having a seat named for them at creation
+      // (`inviteeName`, #404 §6). The second case is what makes a created relationship reachable at
+      // all: without it the create entry's counterparty field would name a person who could never
+      // open the invitation it produced. Visibility is not a claim — the row still reads `invited`,
+      // and the blind rule still hides the other party's answers until both accept.
+      return relationships.filter(
+        (rel) =>
+          rel.counterpartyName === PERSONA_META.counterparty.name ||
+          (rel.counterpartyName === null && rel.inviteeName === PERSONA_META.counterparty.name),
+      );
     case "coach":
       return relationships.filter((rel) => rel.sharedWithCoach);
     case "admin":

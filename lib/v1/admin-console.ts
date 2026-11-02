@@ -35,6 +35,7 @@
  * the graph and fails on the crossing).
  */
 import type { AlignmentSetting, Assessment, AssessmentMode } from "@/content/assessment";
+import { stepProgressOf } from "@/content/steps";
 import type { RelationshipStage } from "@/content/stages";
 import type {
   Persona,
@@ -215,6 +216,13 @@ export interface AdminRelationshipRow {
   readonly sessionsScored: number;
   /** `1` when a sheet is open (answered or not), `0` when the last session is complete. */
   readonly sessionsOpen: number;
+  /**
+   * The Steps for Improving the Relationship the row holds (#404 §7): how many were derived at
+   * completion, and how many the parties have ticked. A count, never a Step's words — the words are
+   * a party's plan and the console's job is to say the plan exists.
+   */
+  readonly stepsRecorded: number;
+  readonly stepsDone: number;
   /** ISO instants: rows cross to a client component, so no `Date` objects. */
   readonly createdAt: string;
   readonly lastActivity: string;
@@ -232,6 +240,7 @@ export function adminRelationshipRow(
   const accepted = bothAcceptedOf(rel);
   const live = rel.archivedAt === null;
   const sessions = adminSessionRows(rel, archivedSessions);
+  const progress = stepProgressOf(rel.steps);
   return {
     id: rel.id,
     name: relationshipNameOf(rel, templateTitle),
@@ -253,6 +262,8 @@ export function adminRelationshipRow(
     awaitingAcceptance: live && counterparty.state === "claimed" && submitted && !accepted,
     sessionsScored: sessions.filter((session) => session.scored).length,
     sessionsOpen: sessions.filter((session) => !session.scored).length,
+    stepsRecorded: progress.total,
+    stepsDone: progress.done,
     createdAt: rel.createdAt,
     lastActivity: rel.modifiedAt,
   };

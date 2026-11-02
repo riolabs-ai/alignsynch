@@ -830,6 +830,14 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/v1/templates/[type]/create",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The create entry — the template fixed by the route, an optional name, the initiator's display name, an optional name for the counterparty's seat, and the two required choices: Mode (fixed at creation) and Setting (the bar the report is judged against). Submitting creates the relationship in the store and opens it.",
+  },
+  {
+    kind: "route",
     surface: "/v1/templates/[type]/demo",
     status: "prototype",
     templates: ["alignsynch"],

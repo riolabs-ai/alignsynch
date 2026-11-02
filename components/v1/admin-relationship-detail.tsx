@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminLimitsPanel } from "@/components/v1/admin-limits";
+import { RelationshipMetadata } from "@/components/v1/relationship-metadata";
+import { StepsPanel } from "@/components/v1/steps-panel";
 import {
   EmptyState,
   LoadingState,
@@ -165,6 +167,12 @@ export function AdminRelationshipDetail({ relationshipId }: { relationshipId: st
               <Fact label="Sessions listed" value={String(sessions.length)} />
               <Fact label="Sessions scored" value={String(row.sessionsScored)} />
               <Fact
+                label="Steps recorded"
+                value={
+                  row.stepsRecorded === 0 ? "—" : `${row.stepsDone} of ${row.stepsRecorded} done`
+                }
+              />
+              <Fact
                 label="Archived"
                 value={row.archivedAt === null ? "No" : formatDate(row.archivedAt)}
               />
@@ -194,6 +202,11 @@ export function AdminRelationshipDetail({ relationshipId }: { relationshipId: st
           </CardContent>
         </Card>
       </div>
+
+      {/* The metadata writes the matrix grants an operator (#404 §7): the name, and the Setting
+          between sessions. The Mode is read-only even here — a change would invalidate answers
+          already given, so the honest move is a new relationship. */}
+      <RelationshipMetadata rel={rel} viewer="admin" />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -260,6 +273,10 @@ export function AdminRelationshipDetail({ relationshipId }: { relationshipId: st
           </ul>
         )}
       </section>
+
+      {/* Read-only on this screen: the matrix grants an operator Steps to read, and a party alone
+          ticks them. Rendering the tick here would be a write the matrix does not grant. */}
+      <StepsPanel rel={rel} canMark={false} />
 
       <Card>
         <CardHeader>

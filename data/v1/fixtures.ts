@@ -49,6 +49,7 @@
  */
 import { z } from "zod";
 import {
+  INSTANCE_NAME_MAX,
   MODE_LABELS,
   zAlignmentSetting,
   zAssessment,
@@ -59,6 +60,7 @@ import {
   type Aspect,
   type Opinions,
 } from "../../content/assessment";
+import { deriveSteps, zStep, type Step } from "../../content/steps";
 import { RELATIONSHIP_PRICE_CENTS } from "./relationship-types";
 
 /* ------------------------------------------------------------------ *
@@ -402,6 +404,14 @@ export const zV1Relationship = z
     initiatorName: z.string().min(1),
     /** Null until the invite is claimed; that is the whole difference between `invited` and the rest. */
     counterpartyName: z.string().min(1).nullable(),
+    /**
+     * The name the initiator typed for the counterparty's seat at creation (#404 §6) — display
+     * only, and **not** a claim. `counterpartyName` stays null until the invitation is claimed
+     * (`claimInvite`), because that is the difference between `invited` and `connected`; this field
+     * only lets a surface say who the seat is waiting for, so the create entry can record the name
+     * without pretending the other person has joined.
+     */
+    inviteeName: z.string().min(1).max(INSTANCE_NAME_MAX).nullable(),
     initiatorAnswers: z.record(z.string(), zOpinions),
     counterpartyAnswers: z.record(z.string(), zOpinions),
     initiatorSubmitted: z.boolean(),
@@ -435,6 +445,14 @@ export const zV1Relationship = z
     comments: z.array(zComment),
     /** A thread per Aspect, keyed by Aspect id, open only after a session completes. */
     aspectComments: z.record(z.string(), z.array(zComment)),
+    /**
+     * The Steps for Improving the Relationship (#404 §7, Decision 3) — derived once, when a session
+     * completes, and then **stored**, so a party can mark progress and the panel shows what was
+     * agreed rather than recomputing history. `content/steps.ts` owns the rule and the words; this
+     * field is only where the rows live in the prototype. The real app needs a `step` table and a
+     * migration, deliberately NOT in this batch.
+     */
+    steps: z.array(zStep),
     /** Sessions opened for this relationship, for the Manage dashboard's completion figure. */
     openedSessions: z.number().int().min(0),
     /** Sessions completed, for the same figure. */
@@ -559,7 +577,18 @@ const irisAnswers: AnswerMap = {
   "aspect-privacy": { feel: 4, wish: 5, think: 3, guess: 5 },
 };
 
-const seedRelationshipRows: readonly V1Relationship[] = [
+/**
+ * A seed row before its Steps are derived: every field of a relationship except the one a
+ * fixture cannot assert by hand.
+ *
+ * `steps` is never typed here. A Step is a function of the row's own answers
+ * (`content/steps.ts::deriveSteps`), so authoring the rows by hand would be a second copy of the
+ * derivation — exactly the drift the Gap-as-column rule forbids. `seedRelationships` derives them
+ * below, for the rows whose session is complete, and gives every other row an empty list.
+ */
+type SeedRelationshipRow = Omit<V1Relationship, "steps" | "inviteeName">;
+
+const seedRelationshipRows: readonly SeedRelationshipRow[] = [
   {
     id: "rel-invited",
     templateId: "v1-template-basics",
@@ -947,9 +976,33 @@ const seedRelationshipRows: readonly V1Relationship[] = [
   },
 ];
 
-export const seedRelationships: readonly V1Relationship[] = z
-  .array(zV1Relationship)
-  .parse(seedRelationshipRows);
+/**
+ * The Steps a seed row stores: its own derivation when its session is complete, and nothing when it
+ * is not.
+ *
+ * A Step is derived at completion and then stored (`content/steps.ts`), so a fixture that is
+ * already complete must hold exactly the rows its answers produce — not a hand-typed list. An
+ * incomplete row holds none: submitting is not accepting, and nothing has been agreed yet.
+ */
+function seedStepsOf(row: SeedRelationshipRow): Step[] {
+  if (!row.initiatorAccepted || !row.counterpartyAccepted) return [];
+  return deriveSteps({
+    relationshipId: row.id,
+    items: row.items,
+    initiatorAnswers: row.initiatorAnswers,
+    counterpartyAnswers: row.counterpartyAnswers,
+    createdAt: row.lastSessionAt ?? row.createdAt,
+  });
+}
+
+export const seedRelationships: readonly V1Relationship[] = z.array(zV1Relationship).parse(
+  seedRelationshipRows.map((row) => ({
+    ...row,
+    // No seed was created through the create entry, so no seed carries a typed invitee name.
+    inviteeName: null,
+    steps: seedStepsOf(row),
+  })),
+);
 
 /**
  * A relationship's mode and its answers agree — the same rule `zAssessmentInstance` enforces
@@ -1221,8 +1274,14 @@ export interface V1SeedState {
  * `lastSignInAt` on `V1Account` (the console's users list). A store written at 7 has no
  * `archivedAt`, so a console row would read `undefined` and every archive would look like a
  * corrupt one; re-seeding is the honest repair.
+ *
+ * 9 — `steps` and `inviteeName` on `V1Relationship` (#404). A store written at 8 carries neither,
+ * so every relationship would read `undefined` where the Steps panel expects a list — and a
+ * relationship created before this batch could not be given Steps by derivation, because the store
+ * has no record of the session that would have produced them. Re-seeding is the honest repair
+ * again: a 9 store is built from the fixtures, whose complete rows derive their own Steps.
  */
-export const SEED_VERSION = 8;
+export const SEED_VERSION = 9;
 
 /**
  * The chat's seeded read watermark — `threadId -> lastReadAt` per persona. A thread with
