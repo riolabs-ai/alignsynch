@@ -37,6 +37,33 @@
  * The accounts are `seedAccounts`, imported rather than invented: a persona account is how the
  * prototype signs in, not demo content, and a second copy here would be a second identity system.
  * The two tickets are derived from the demo rows themselves so every `relationshipId` resolves.
+ *
+ * ## The richer set (issue #415)
+ *
+ * A seeded store that only proves the model is not yet a demo: one name on both sides, one
+ * subscription state, and empty threads. This module therefore also spreads the set over
+ * **named parties** (`PARTY_NAMES`), writes the **chat** the surfaces read (a relationship's
+ * `comments`, its `aspectComments` and the coach's `coachComments` — the store's own records, never
+ * a second message store), and returns the **social slice** `lib/v1/store.tsx` persists
+ * (`notifications` + the chat read watermarks) so the bell and the conversation list open with
+ * content. Nothing here is a new shape: every value is a field the real schema already has, and
+ * every claim is derived from a row the store holds:
+ *
+ *   - **parties** — the demo seats stay populated, because `relationshipsVisibleTo` scopes by name:
+ *     `Jordan` owns the first row of every Stage and `Sam` is the counterparty of the first
+ *     *claimed* row of every Stage, so each persona's list spans the ladder; the rest of the set
+ *     rotates over `PARTY_NAMES`, so every named person is in more than one relationship;
+ *   - **subscriptions** — `active`, `past_due` and `lapsed` all appear, plus the unsubscribed
+ *     `null` the checkout exists to leave. A payment row records what was paid for the period that
+ *     started; nothing sums them, and no total is written anywhere;
+ *   - **chat** — only on rows that support it: a relationship thread after the session completes,
+ *     an Aspect thread for the discussion that a blind session explicitly allows. Every message is
+ *     a comment record, so `inventedMessagesOf` finds nothing;
+ *   - **notifications** — the four events the product emits, dated from a stored instant on the row
+ *     they describe (`unlockedAtOf`, a comment's `at`, a failed renewal's `periodEnd`), never a
+ *     synthesized one. Each is delivered to a persona that can actually open its link;
+ *   - **read state** — a few threads carry an unread tail so the chat list and the bell have
+ *     something to count; the rest read as already read, which is what an absent watermark means.
  */
 import type { AlignmentSetting, AssessmentMode, Opinions } from "@/content/assessment";
 import { DEMO_NOW_ISO } from "@/content/core";
@@ -50,10 +77,18 @@ import {
   SEED_VERSION,
   seedAccounts,
   storedStepsOf,
+  type Persona,
+  type SubscriptionPlan,
+  type SubscriptionStatus,
   type V1Account,
+  type V1Comment,
   type V1Relationship,
+  type V1ThreadReadAt,
   type V1Ticket,
 } from "@/data/v1/fixtures";
+import type { V1Notification } from "@/data/v1/notifications";
+import { sessionCompleteOf, unlockedAtOf } from "@/lib/v1/derive";
+import { relationshipsVisibleTo } from "@/lib/v1/persona";
 
 /* ------------------------------------------------------------------ *
  * Constants the store owns
@@ -69,6 +104,40 @@ export const DEMO_FLOW_STORAGE_KEY = "alignsynch.v1.relationships.v1";
 
 /** The default seed. Any integer works; this one is the demo clock's own date. */
 export const DEMO_SEED = 20261029;
+
+/**
+ * The key `lib/v1/store.tsx` persists its **social** slice under — the notifications with their
+ * read flags, and the chat read watermarks. Same control as the flow key above: the store keeps
+ * `SOCIAL_STORAGE_KEY` private, so the literal lives here and the test reads the store's source to
+ * prove the two strings are one. Without that check a seeded bell would write a payload no bell
+ * reads, and the failure would look like "the seed has no notifications".
+ */
+export const DEMO_SOCIAL_STORAGE_KEY = "alignsynch.v1.social.v1";
+
+/* ------------------------------------------------------------------ *
+ * The parties — the people the set is between
+ * ------------------------------------------------------------------ */
+
+/**
+ * The named people the demo relationships are between.
+ *
+ * The store scopes by **name**, not by account (`relationshipsVisibleTo`): the initiator persona
+ * sees the rows it is the initiator of, the counterparty the rows it was named in. So the roster
+ * cannot simply spread every row over strangers — that would empty both personas' dashboards.
+ * Each list keeps its anchors (the first row of every Stage is Jordan's, the first claimed row of
+ * every Stage is Sam's) and the rest of the set rotates over the roster, which is what makes this a
+ * directory of parties rather than one pair repeated 27 times.
+ *
+ * `PERSONA_META` fixes the two names the personas read: Jordan (initiator) and Sam (counterparty).
+ * The two pools are disjoint so a person is never their own counterparty, and every name here
+ * folds to a distinct handle (`personaHandle`'s rule: lowercase, hyphen between name and surname),
+ * which is what the profile cover and the avatar are drawn from.
+ */
+const OWNER_NAMES = ["Jordan", "Avery", "Noor"] as const;
+const COUNTERPARTY_NAMES = ["Sam", "Ruth", "Iris", "Rowan", "Maya", "Theo", "Priya"] as const;
+
+/** Every named person the demo names, in a fixed order — the openers are the two demo seats. */
+const PARTY_NAMES: readonly string[] = [...new Set([...OWNER_NAMES, ...COUNTERPARTY_NAMES])];
 
 /* ------------------------------------------------------------------ *
  * The plan — what each row is, before a single score is drawn
@@ -179,6 +248,11 @@ const HOUR_MS = 3_600_000;
 /** An ISO instant `hours` after the demo clock; negative is before it. */
 function at(hours: number): string {
   return new Date(DEMO_CLOCK_MS + hours * HOUR_MS).toISOString();
+}
+
+/** An ISO instant `minutes` after another instant — a message that follows the event it answers. */
+function after(iso: string, minutes: number): string {
+  return new Date(Date.parse(iso) + minutes * 60_000).toISOString();
 }
 
 /* ------------------------------------------------------------------ *
@@ -385,29 +459,228 @@ function aspectsOf(type: RelationshipType): V1Relationship["items"] {
   return type.aspects.map((aspect) => ({ ...aspect, scale: { ...aspect.scale } }));
 }
 
+/* ------------------------------------------------------------------ *
+ * Who the row is between
+ * ------------------------------------------------------------------ */
+
+/** The two names on one row: the initiator's, and the counterparty's (null while unclaimed). */
+interface PartyPair {
+  readonly owner: string;
+  readonly counterparty: string | null;
+}
+
+/**
+ * The names for every catalogue slot, in catalogue order.
+ *
+ * Two rules, both there so a persona's dashboard is populated rather than merely present:
+ *
+ *   - the **first** slot of each Stage is owned by `Jordan` and, when claimed, named `Sam` — the
+ *     two names `PERSONA_META` gives the initiator and counterparty personas. That is what keeps
+ *     every Stage reachable on both lists without storing a Stage anywhere;
+ *   - every other slot rotates over the roster, one name per claimed row, so each named person is
+ *     in more than one relationship and the set reads as a directory rather than one pair.
+ *
+ * Owners rotate on odd/even index rather than on the claim count so an unclaimed row still has an
+ * initiator (it always does — a seat exists before the invitation is claimed).
+ */
+function partyPairs(count: number): PartyPair[] {
+  const anchors = new Set<string>();
+  let claimedPosition = 0;
+  const pairs: PartyPair[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const stage = planFor(index).stage;
+    const claimed = stage !== "invited";
+    const anchor = !anchors.has(stage);
+    anchors.add(stage);
+    // `anchor || index % 3 === 0` is a grouped condition, not a chained ternary: the first row of
+    // each Stage and every third row belong to the demo's own initiator.
+    const owner = anchor || index % 3 === 0 ? OWNER_NAMES[0] : OWNER_NAMES[1 + (index % 2)];
+    let counterparty: string | null = null;
+    if (claimed) {
+      counterparty = anchor
+        ? COUNTERPARTY_NAMES[0]
+        : COUNTERPARTY_NAMES[claimedPosition % COUNTERPARTY_NAMES.length];
+      claimedPosition += 1;
+    }
+    pairs.push({ owner, counterparty });
+  }
+  return pairs;
+}
+
+/* ------------------------------------------------------------------ *
+ * The subscription — what was paid, and the state it is in
+ * ------------------------------------------------------------------ */
+
+/** The days one paid period covers, per plan — the price's own period, not a rounded guess. */
+const PLAN_PERIOD_DAYS: Readonly<Record<SubscriptionPlan, number>> = {
+  monthly: 30,
+  quarterly: 90,
+};
+
+/**
+ * Which state a slot's subscription is in, or `null` for the unsubscribed row.
+ *
+ * All four states a surface can print are reachable, because a demo with one state hides the
+ * interesting case: `past_due` is the renewal that did not clear, and `lapsed` is the one that
+ * blocks a new session (the store says so, `requestNewSession`). The unsubscribed `null` stays
+ * too — it is the state the checkout exists to leave, and a shop with no unsubscribed row cannot
+ * show its own primary action.
+ */
+function subscriptionStatusFor(index: number): SubscriptionStatus | null {
+  if (index % 7 === 6) return null;
+  if (index % 11 === 3) return "past_due";
+  if (index % 13 === 5) return "lapsed";
+  return "active";
+}
+
 /**
  * The one subscription each demo relationship may carry, mocked and never charged: one payment
- * for the period it started, the amount the plan costs. `null` is the unsubscribed state the
- * shop's checkout exists to leave.
+ * for the period it **started** — the amount the plan costs, in integer cents. That payment record
+ * is what was paid; nothing here totals the history, and no field states a lifetime figure.
+ *
+ * The dates are chosen from the state rather than the other way round, so the state is true of
+ * the dates: an `active` row started inside its current period and ends in the future, a
+ * `past_due` one is a few days past its renewal, and a `lapsed` one ended ten days ago.
  */
 function subscriptionFor(index: number): V1Relationship["subscription"] {
-  if (index % 7 === 6) return null;
-  const plan = index % 2 === 0 ? "monthly" : "quarterly";
-  const amountCents = plan === "monthly" ? RELATIONSHIP_PRICE_CENTS : RELATIONSHIP_PRICE_CENTS * 3;
+  const status = subscriptionStatusFor(index);
+  if (status === null) return null;
+
+  const plan: SubscriptionPlan = index % 2 === 0 ? "monthly" : "quarterly";
+  const periodHours = PLAN_PERIOD_DAYS[plan] * 24;
+  // Hours before the demo clock that the paid period began.
+  const startedHoursAgo =
+    status === "active"
+      ? 24 * (10 + (index % 5)) + index
+      : status === "past_due"
+        ? periodHours + 24 * 3 + index
+        : periodHours + 24 * 10 + index;
+
+  const startedAt = at(-startedHoursAgo);
   return {
     plan,
-    status: index % 13 === 0 ? "past_due" : "active",
-    periodEnd: at(24 * 30 - index),
-    startedAt: at(-24 * 30 - index),
+    status,
+    periodEnd: at(-startedHoursAgo + periodHours),
+    startedAt,
     payments: [
       {
         id: `pay-demo-${index + 1}`,
         plan,
-        amountCents,
-        paidAt: at(-24 * 30 - index),
+        amountCents: plan === "monthly" ? RELATIONSHIP_PRICE_CENTS : RELATIONSHIP_PRICE_CENTS * 3,
+        paidAt: startedAt,
       },
     ],
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * The chat — comment records, because that is the only message shape
+ * ------------------------------------------------------------------ */
+
+/**
+ * The lines two people exchange after a session. A fixed, rotated set rather than free prose: the
+ * point of seeded chat is that the thread renders with content, and a rotation keeps the bodies
+ * stable under the same seed without pretending to be a transcript of a real conversation.
+ *
+ * The words are deliberately about the report and the next conversation — never about a score
+ * value, so a message can never leak what the other party answered.
+ */
+const THREAD_LINES = [
+  "The report is up. The priorities Aspect is the one I want to talk about first.",
+  "Same read on my side — I think we were answering two slightly different questions.",
+  "That helps. Let's take one of the Steps to Saturday and leave the rest for now.",
+  "Works for me. I have added it to the calendar so it does not get pushed again.",
+  "Thank you for doing this properly. It reads fair, which is what I wanted from it.",
+] as const;
+
+/** The coach's note on a shared row — advice, dated after the session it comments on. */
+const COACH_NOTE =
+  "You each picked a different Aspect as the urgent one. Before the next session, agree which " +
+  "one you are actually working on, so the Steps do not compete.";
+
+/** One message record, authored by a party the schema allows. */
+function commentAt(
+  id: string,
+  author: "initiator" | "counterparty",
+  body: string,
+  at_: string,
+): V1Comment {
+  return { id, author, body, at: at_ };
+}
+
+/**
+ * The chat one row carries.
+ *
+ * Gated by what the row supports, not by what would look busy:
+ *
+ *   - **the relationship thread** opens when the session completes (`comments`, in the schema's own
+ *     words), so only a completed row carries one — three messages, alternating authors, dated
+ *     after the instant the report unlocked;
+ *   - **an Aspect thread** is the discussion a *blind* session explicitly allows, so a completed
+ *     row and one connected row carry one too: two messages on the row's first Aspect;
+ *   - **the coach's note** lands only on a row actually shared with the coach, and only on the
+ *     relationship thread (the store refuses an Aspect note from a coach).
+ *
+ * Every instant here is derived from the row's own acceptance instant or the demo clock, never from
+ * the run.
+ */
+function chatFor(
+  index: number,
+  items: V1Relationship["items"],
+  unlockedAt: string | null,
+  claimed: boolean,
+  sharedWithCoach: boolean,
+): Pick<V1Relationship, "comments" | "aspectComments" | "coachComments"> {
+  const comments: V1Comment[] = [];
+  const aspectComments: Record<string, V1Comment[]> = {};
+  const coachComments: V1Relationship["coachComments"] = [];
+
+  if (unlockedAt !== null) {
+    const first: "initiator" | "counterparty" = index % 2 === 0 ? "initiator" : "counterparty";
+    const second = first === "initiator" ? "counterparty" : "initiator";
+    const bodies = [0, 1, 2].map((offset) => THREAD_LINES[(index + offset) % THREAD_LINES.length]);
+    // The offsets stay under the hour the acceptance instant is at most from the clock, so the
+    // newest message is always in the past — a thread dated after `DEMO_NOW_ISO` would render as a
+    // message from the future.
+    comments.push(
+      commentAt(`cmt-demo-${index + 1}-1`, first, bodies[0], after(unlockedAt, 12)),
+      commentAt(`cmt-demo-${index + 1}-2`, second, bodies[1], after(unlockedAt, 24)),
+      commentAt(`cmt-demo-${index + 1}-3`, first, bodies[2], after(unlockedAt, 36)),
+    );
+  }
+
+  // A blind row may still discuss the Aspect — the rule is that no *answer* may appear there, and
+  // a comment record has no field an answer could occupy (`chat.ts` states the same rule). It still
+  // takes two parties: an unclaimed invite has nobody to reply, so an invited row carries nothing.
+  const aspectTarget = items[0];
+  if (claimed && aspectTarget !== undefined && (unlockedAt !== null || index % 4 === 1)) {
+    const anchor = unlockedAt ?? at(-(index % 9) - 1);
+    aspectComments[aspectTarget.id] = [
+      commentAt(
+        `cmt-demo-${index + 1}-a1`,
+        "initiator",
+        "On this one I would rather agree the process first than the outcome. How does it look from your side?",
+        after(anchor, 6),
+      ),
+      commentAt(
+        `cmt-demo-${index + 1}-a2`,
+        "counterparty",
+        "Same instinct, different detail — let's talk it through before we answer it again.",
+        after(anchor, 18),
+      ),
+    ];
+  }
+
+  if (sharedWithCoach && unlockedAt !== null) {
+    coachComments.push({
+      id: `cmt-demo-${index + 1}-coach`,
+      author: "coach",
+      body: COACH_NOTE,
+      at: after(unlockedAt, 45),
+    });
+  }
+
+  return { comments, aspectComments, coachComments };
 }
 
 /**
@@ -421,6 +694,7 @@ function subscriptionFor(index: number): V1Relationship["subscription"] {
 function demoRelationship(
   type: RelationshipType,
   index: number,
+  party: PartyPair,
   inSynchCount: number,
   rng: () => number,
 ): V1Relationship {
@@ -460,6 +734,32 @@ function demoRelationship(
   const initiatorAcceptedAt = complete ? at(-(index % 9) - 2) : null;
   const counterpartyAcceptedAt = complete ? at(-(index % 9) - 1) : null;
   const claimed = stage !== "invited";
+  // A third of the set is shared with the coach, because the coach persona's whole dashboard — its
+  // list, its chat and its profile history — is exactly `relationshipsVisibleTo("coach")`. Sharing
+  // five rows would leave that seat with one scoreable relationship and an empty conversation list.
+  const sharedWithCoach = index % 3 === 0;
+
+  // The chat is the store's own comment records, gated by what this row supports: a relationship
+  // thread once the session completes, an Aspect thread where a blind session may discuss one,
+  // and the coach's note only on a row actually shared with the coach.
+  const chat = chatFor(index, items, counterpartyAcceptedAt, claimed, sharedWithCoach);
+
+  // The row's last write is its newest child record, because a message and an acceptance are both
+  // writes. The plain offset below is the floor; on a row past the ninth the session instant is
+  // later than it, and a row whose last message is newer than its "last modified" would be a record
+  // that contradicts itself on the admin registry's own column. ISO-8601 UTC instants compare
+  // chronologically as strings, which is the same property `unlockedAtOf` relies on.
+  let lastWriteAt = at(-(index + 1));
+  for (const instant of [
+    ...(counterpartyAcceptedAt === null ? [] : [counterpartyAcceptedAt]),
+    ...chat.comments.map((comment) => comment.at),
+    ...Object.values(chat.aspectComments)
+      .flat()
+      .map((comment) => comment.at),
+    ...chat.coachComments.map((comment) => comment.at),
+  ]) {
+    if (instant > lastWriteAt) lastWriteAt = instant;
+  }
 
   const row: Omit<V1Relationship, "steps" | "inviteeName"> = {
     id,
@@ -471,8 +771,8 @@ function demoRelationship(
     deletedAspects: [],
     mode,
     setting,
-    initiatorName: "Jordan",
-    counterpartyName: claimed ? "Sam" : null,
+    initiatorName: party.owner,
+    counterpartyName: party.counterparty,
     initiatorAnswers: answersInitiator ? sheet.initiator : {},
     counterpartyAnswers: answersBoth ? sheet.counterparty : {},
     initiatorSubmitted,
@@ -486,17 +786,15 @@ function demoRelationship(
     // invite states a list can print are reachable without waiting for a clock to move.
     inviteExpiresAt: stage === "invited" ? (index % 8 === 0 ? at(-48) : at(72)) : null,
     archivedAt: null,
-    sharedWithCoach: index % 5 === 0,
-    coachComments: [],
-    comments: [],
-    aspectComments: {},
+    sharedWithCoach,
+    ...chat,
     openedSessions: claimed ? 1 : 0,
     completedSessions: complete ? 1 : 0,
     subscription: subscriptionFor(index),
     history: [],
     lastSessionAt: complete ? counterpartyAcceptedAt : null,
     createdAt: at(-24 * (index + 12)),
-    modifiedAt: at(-(index + 1)),
+    modifiedAt: lastWriteAt,
   };
 
   return {
@@ -526,9 +824,11 @@ export interface PersistedDemoFlow {
 /** Every purchasable type's demo relationship, in catalogue order. */
 export function demoRelationships(seed: number = DEMO_SEED): readonly V1Relationship[] {
   const inSynch = inSynchCounts(purchasableRelationshipTypes.map((type) => type.aspects.length));
-  return purchasableRelationshipTypes.map((type, index) =>
-    demoRelationship(type, index, inSynch[index], demoRng(seed + index * 7919)),
-  );
+  const parties = partyPairs(purchasableRelationshipTypes.length);
+  return purchasableRelationshipTypes.map((type, index) => {
+    const party = parties[index] ?? { owner: OWNER_NAMES[0], counterparty: null };
+    return demoRelationship(type, index, party, inSynch[index], demoRng(seed + index * 7919));
+  });
 }
 
 /**
@@ -560,6 +860,344 @@ function demoTickets(relationships: readonly V1Relationship[]): readonly V1Ticke
   ];
 }
 
+/* ------------------------------------------------------------------ *
+ * The people — one account per named party
+ * ------------------------------------------------------------------ */
+
+/**
+ * One account per named person the set is between, for the whole roster.
+ *
+ * `seedAccounts` stays first and unchanged, and that order is load-bearing: those are the
+ * prototype's **sign-in** identities, and `components/v1/settings/settings-view.tsx` resolves a
+ * persona's own address with a `find`, so the account a persona signs in as must stay the first
+ * match. What is added here is the other half of the Service queue — the members a real store
+ * would hold, one per person a relationship in this set names. The account queue is the only
+ * directory surface the prototype has, and a queue of five rows next to twenty-seven relationships
+ * would read as a data bug rather than a demo.
+ *
+ * Every field is derived, none authored: `persona` is the role the person holds in the set (they
+ * initiate, or they were invited), the address follows the fixture's `@example.com` convention,
+ * `state` is `active` because the seeder has no evidence for any other state, and `lastSignInAt`
+ * is the most recent write on a relationship they are party to — the only activity instant the
+ * store carries.
+ */
+export function demoAccounts(relationships: readonly V1Relationship[]): readonly V1Account[] {
+  const known = new Set(seedAccounts.map((account) => account.name));
+  const accounts: V1Account[] = [];
+  for (const name of PARTY_NAMES) {
+    if (known.has(name)) continue;
+    const partyTo = relationships.filter(
+      (rel) => rel.initiatorName === name || rel.counterpartyName === name,
+    );
+    const earliest = partyTo[0];
+    if (earliest === undefined) continue;
+    let lastSignInAt = earliest.modifiedAt;
+    for (const rel of partyTo) {
+      if (rel.modifiedAt > lastSignInAt) lastSignInAt = rel.modifiedAt;
+    }
+    accounts.push({
+      id: `account-demo-${name.toLowerCase()}`,
+      persona: partyTo.some((rel) => rel.initiatorName === name) ? "initiator" : "counterparty",
+      name,
+      email: `${name.toLowerCase()}@example.com`,
+      state: "active",
+      lastSignInAt,
+    });
+  }
+  return accounts;
+}
+
+/* ------------------------------------------------------------------ *
+ * The social slice — the notifications and the chat read watermarks
+ * ------------------------------------------------------------------ */
+
+/** The four personas a notification can be delivered to — the same four `zV1Notification` allows. */
+const NOTIFIED_PERSONAS = ["initiator", "counterparty", "coach", "admin"] as const;
+
+type NotifiedPersona = (typeof NOTIFIED_PERSONAS)[number];
+
+/**
+ * How many notifications of **each event type** one persona's bell lists.
+ *
+ * A seeded bell has to show every kind of event the set can prove — an invite accepted, a session
+ * scored, a reply, a payment that failed — because one kind repeated sixty times proves only that
+ * the array is long. So the cap is per type and the mix is the point: the newest couple of each
+ * kind, merged newest-first. That is also why the cap is not "the newest N rows", which on this set
+ * would be a wall of `invite_accepted` (the claim instant is the row's last write) and would drop
+ * every `payment_failed` (whose instant is a renewal that failed three days ago).
+ */
+const NOTIFICATIONS_PER_TYPE = 2;
+
+/** The display name a relationship goes by: its own, else the type it copies. */
+function displayNameOf(rel: V1Relationship): string {
+  return rel.name ?? rel.templateId;
+}
+
+/** The /v1 destination a notification opens, per persona — the routes that actually exist. */
+function notificationLink(
+  persona: NotifiedPersona,
+  rel: V1Relationship,
+  kind: "relationship" | "chat",
+): string {
+  // The admin console nests its detail pages under `/v1/admin/console`, unlike the three
+  // dashboards — a link that assumed the shared shape would 404 for the one persona that reads
+  // every relationship.
+  if (persona === "admin") {
+    return kind === "chat"
+      ? `/v1/admin/chat/${rel.id}`
+      : `/v1/admin/console/relationships/${rel.id}`;
+  }
+  return kind === "chat"
+    ? `/v1/${persona}/chat/${rel.id}`
+    : `/v1/${persona}/relationships/${rel.id}`;
+}
+
+/**
+ * Every notification this set can honestly emit, newest-first per persona and capped.
+ *
+ * The four types are the product's whole vocabulary (`data/v1/notifications.ts`), and each one is
+ * dated from an instant the row actually stores rather than from a synthesized time:
+ *
+ *   - `session_scored` — the instant the report unlocked, `unlockedAtOf`;
+ *   - `new_comment` — the comment's own `at`, delivered to the party who did not write it;
+ *   - `payment_failed` — the failed renewal's `periodEnd`;
+ *   - `invite_accepted` — the row's last write, because the store keeps no separate claim instant
+ *     and inventing one would be inventing history.
+ *
+ * A candidate is only delivered to a persona that can **open** its link (`relationshipsVisibleTo`),
+ * so no seeded notification leads to a relationship the reader cannot see. Nothing is emitted for
+ * a row that has not earned it: no comment means no `new_comment`, and a subscription that is not
+ * `past_due` means no `payment_failed`.
+ */
+function notificationCandidates(relationships: readonly V1Relationship[]): V1Notification[] {
+  const visible = new Map<NotifiedPersona, ReadonlySet<string>>();
+  for (const persona of NOTIFIED_PERSONAS) {
+    visible.set(
+      persona,
+      new Set(relationshipsVisibleTo(persona, relationships).map((rel) => rel.id)),
+    );
+  }
+
+  const candidates: V1Notification[] = [];
+  const emit = (
+    persona: NotifiedPersona,
+    rel: V1Relationship,
+    row: Omit<V1Notification, "id" | "persona" | "read" | "link">,
+    kind: "relationship" | "chat",
+  ) => {
+    if (!visible.get(persona)?.has(rel.id)) return;
+    candidates.push({
+      id: `v1n-demo-${persona}-${rel.id}-${row.type}`,
+      persona,
+      link: notificationLink(persona, rel, kind),
+      read: false,
+      ...row,
+    });
+  };
+
+  for (const rel of relationships) {
+    const name = displayNameOf(rel);
+    const counterparty = rel.counterpartyName;
+
+    if (counterparty !== null) {
+      // A claimed seat is an invite that was accepted; the row's last write is the claim.
+      for (const persona of ["initiator", "admin"] as const) {
+        emit(
+          persona,
+          rel,
+          {
+            type: "invite_accepted",
+            title: "Invitation accepted",
+            body:
+              persona === "initiator"
+                ? `${counterparty} accepted your invitation to ${name}.`
+                : `${counterparty} accepted ${rel.initiatorName}'s invitation to ${name}.`,
+            createdAt: rel.modifiedAt,
+          },
+          "relationship",
+        );
+      }
+    }
+
+    const unlockedAt = unlockedAtOf(rel);
+    if (unlockedAt !== null && sessionCompleteOf(rel)) {
+      for (const persona of ["initiator", "counterparty", "coach"] as const) {
+        emit(
+          persona,
+          rel,
+          {
+            type: "session_scored",
+            title: "Session scored",
+            body:
+              persona === "initiator"
+                ? `Your session with ${counterparty ?? "the counterparty"} on ${name} is ready to review.`
+                : persona === "counterparty"
+                  ? `Your session with ${rel.initiatorName} on ${name} is ready to review.`
+                  : `${rel.initiatorName} & ${counterparty ?? "their counterparty"}'s session on ${name} is scored and shared with you.`,
+            createdAt: unlockedAt,
+          },
+          "relationship",
+        );
+      }
+    }
+
+    const lastComment = rel.comments[rel.comments.length - 1];
+    if (lastComment !== undefined) {
+      const recipient = lastComment.author === "initiator" ? "counterparty" : "initiator";
+      const authorName = lastComment.author === "initiator" ? rel.initiatorName : counterparty;
+      for (const persona of [recipient, "coach"] as const) {
+        emit(
+          persona,
+          rel,
+          {
+            type: "new_comment",
+            title: "New comment",
+            body: `${authorName ?? "The other party"} replied on ${name}.`,
+            createdAt: lastComment.at,
+          },
+          "chat",
+        );
+      }
+    }
+
+    const subscription = rel.subscription;
+    if (subscription !== null && subscription.status === "past_due") {
+      for (const persona of ["initiator", "admin"] as const) {
+        emit(
+          persona,
+          rel,
+          {
+            type: "payment_failed",
+            title: "Payment failed",
+            body:
+              persona === "initiator"
+                ? `Your ${subscription.plan} payment for ${name} did not go through.`
+                : `A subscription payment failed (${rel.initiatorName} & ${counterparty ?? "—"}, ${subscription.plan}).`,
+            createdAt: subscription.periodEnd,
+          },
+          "relationship",
+        );
+      }
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * The seeded notifications: for each persona, the newest `NOTIFICATIONS_PER_TYPE` of every event
+ * kind it can be delivered, merged newest-first.
+ *
+ * Read state is part of the seed for the same reason it is in the fixtures: a fresh store must
+ * open with a believable mix, so the newer half of each persona's list is unread and the older half
+ * is already read. The order is total (instant, then id) so two rows sharing an instant cannot swap
+ * between runs and break the byte-identical seed.
+ */
+export function demoNotifications(
+  relationships: readonly V1Relationship[],
+): readonly V1Notification[] {
+  const byPersona = new Map<NotifiedPersona, V1Notification[]>();
+  for (const candidate of notificationCandidates(relationships)) {
+    const bucket = byPersona.get(candidate.persona) ?? [];
+    bucket.push(candidate);
+    byPersona.set(candidate.persona, bucket);
+  }
+
+  const rows: V1Notification[] = [];
+  for (const persona of NOTIFIED_PERSONAS) {
+    const byType = new Map<V1Notification["type"], V1Notification[]>();
+    for (const candidate of byPersona.get(persona) ?? []) {
+      const bucket = byType.get(candidate.type) ?? [];
+      bucket.push(candidate);
+      byType.set(candidate.type, bucket);
+    }
+
+    const kept = [...byType.values()].flatMap((bucket) =>
+      bucket
+        .slice()
+        .sort((a, b) =>
+          a.createdAt === b.createdAt
+            ? a.id.localeCompare(b.id)
+            : b.createdAt.localeCompare(a.createdAt),
+        )
+        .slice(0, NOTIFICATIONS_PER_TYPE),
+    );
+
+    kept
+      .sort((a, b) =>
+        a.createdAt === b.createdAt
+          ? a.id.localeCompare(b.id)
+          : b.createdAt.localeCompare(a.createdAt),
+      )
+      .forEach((row, index) => {
+        rows.push({ ...row, read: index >= kept.length / 2 });
+      });
+  }
+  return rows;
+}
+
+/**
+ * The chat read watermarks: per persona, the thread id to the instant they last read it.
+ *
+ * An absent watermark means "already read" (`unreadCountOf`), so the seed lists a thread at its
+ * **last** message for most rows and at its **first** for every third thread a persona has
+ * comments on — which leaves the later messages, all written by the other party, counted as
+ * unread. That is the state a person returns to: a couple of threads with something waiting, the
+ * rest read. The choice is counted per persona, so a seat that can see only a handful of rows (the
+ * coach) still opens with an unread thread rather than a list of everything read. Every watermark
+ * is a message's own instant, so the read state can never sit after a message that does not exist.
+ */
+export function demoThreadReadAt(relationships: readonly V1Relationship[]): V1ThreadReadAt {
+  const readAt: Record<Persona, Record<string, string>> = {
+    visitor: {},
+    service: {},
+    initiator: {},
+    counterparty: {},
+    coach: {},
+    admin: {},
+  };
+  const seen = new Map<Persona, number>();
+
+  for (const rel of relationships) {
+    const first = rel.comments[0];
+    const last = rel.comments[rel.comments.length - 1];
+    if (first === undefined || last === undefined) continue;
+    for (const persona of ["initiator", "counterparty", "coach"] as const) {
+      if (relationshipsVisibleTo(persona, [rel]).length === 0) continue;
+      const position = seen.get(persona) ?? 0;
+      seen.set(persona, position + 1);
+      readAt[persona][rel.id] = position % 3 === 0 ? first.at : last.at;
+    }
+  }
+
+  return readAt;
+}
+
+/** The social slice exactly as `lib/v1/store.tsx` persists it. */
+export interface PersistedDemoSocial {
+  readonly version: number;
+  readonly notifications: readonly V1Notification[];
+  readonly threadReadAt: V1ThreadReadAt;
+}
+
+/**
+ * The complete social slice for `seed`: the bell's rows and the chat's read watermarks.
+ * Deterministic for the same reason the flow slice is.
+ */
+export function demoSocialSeed(seed: number = DEMO_SEED): PersistedDemoSocial {
+  const relationships = demoRelationships(seed);
+  return {
+    version: SEED_VERSION,
+    notifications: demoNotifications(relationships),
+    threadReadAt: demoThreadReadAt(relationships),
+  };
+}
+
+/** `demoSocialSeed()` serialised — the exact string the control writes under the social key. */
+export function demoSocialJson(seed: number = DEMO_SEED): string {
+  return JSON.stringify(demoSocialSeed(seed));
+}
+
 /**
  * The complete store payload: the flow slice for `seed`. Deterministic — the same seed returns
  * the same JSON, byte for byte, which is what makes a printed report reproducible.
@@ -569,7 +1207,7 @@ export function demoSeed(seed: number = DEMO_SEED): PersistedDemoFlow {
   return {
     version: SEED_VERSION,
     relationships,
-    accounts: seedAccounts,
+    accounts: [...seedAccounts, ...demoAccounts(relationships)],
     tickets: demoTickets(relationships),
   };
 }
@@ -580,12 +1218,17 @@ export function demoSeedJson(seed: number = DEMO_SEED): string {
 }
 
 /**
- * Write the demo flow into the store `storage` belongs to and report how many relationships were
- * written. The caller reloads: the store reads this key once, on hydration, so a live context
+ * Write the demo store into the `storage` it is handed and report how many relationships were
+ * written. The caller reloads: the store reads these keys once, on hydration, so a live context
  * would otherwise keep the rows it already has.
  *
- * Returns the count rather than the payload so the control has something true to say without
- * re-deriving it.
+ * Two keys, because the store persists two slices: the flow (relationships, accounts, tickets) and
+ * the social slice (notifications + read watermarks). A seeder that wrote only the first would
+ * leave the bell on the fixture's nine rows and the chat with no read state — the exact gap this
+ * module exists to close.
+ *
+ * Returns the relationship count rather than the payload so the control has something true to say
+ * without re-deriving it.
  */
 export function installDemoSeed(
   storage: Pick<Storage, "setItem">,
@@ -593,5 +1236,6 @@ export function installDemoSeed(
 ): number {
   const payload = demoSeed(seed);
   storage.setItem(DEMO_FLOW_STORAGE_KEY, JSON.stringify(payload));
+  storage.setItem(DEMO_SOCIAL_STORAGE_KEY, demoSocialJson(seed));
   return payload.relationships.length;
 }
