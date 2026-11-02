@@ -153,8 +153,8 @@ links (72 unique, 90 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
 
 counts
-  elements  2243
+  elements  2247
   images    16
   buttons   32
   inputs    3
-  classes   485 (sha 7480acd11fc4)
+  classes   491 (sha 2356fdde50dc)

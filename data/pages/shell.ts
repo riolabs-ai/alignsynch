@@ -210,7 +210,7 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "home", label: "Home" },
           { id: "dashboard", label: "Dashboard" },
-          { id: "how-it-works", label: "How it works" },
+          { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
           { id: "template-library", label: "Library" },
           { id: "templates", label: "Templates" },
@@ -448,8 +448,8 @@ export function shellCopy(brand: Brand): PageCopy {
            * is not a second `signed-out` — the two links are different destinations, and a slot
            * that derived one from the other would have to spell an href in a component.
            */
-          { id: "signed-out", label: "Sign in" },
-          { id: "sign-up", label: "Sign up" },
+          { id: "signed-out", label: "Sign In" },
+          { id: "sign-up", label: "Sign Up" },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
@@ -540,7 +540,7 @@ export function shellCopy(brand: Brand): PageCopy {
         heading: "Quick Links",
         items: [
           { id: "templates", label: "Templates" },
-          { id: "how-it-works", label: "How it works" },
+          { id: "how-it-works", label: "How It Works" },
           /**
            * The footer's help row (Help/Support split). The footer is mounted by the public pages
            * *and* by four product pages, so this column carries the public destination — `help` —
@@ -623,7 +623,7 @@ export function shellCopy(brand: Brand): PageCopy {
            * same harvestable string as a real one, and it is not an address this product owns.
            */
           { id: "placeholder", label: "Where should we send it?" },
-          { id: "submit", label: "Sign up" },
+          { id: "submit", label: "Sign Up" },
           { id: "pending", label: "Signing up…" },
           { id: "back", label: "Back to the page" },
           {

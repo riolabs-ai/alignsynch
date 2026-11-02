@@ -1,5 +1,5 @@
 "use client";
-// template-ancestor: components/layout/footer.tsx   (variation: the news signup band — one email field and a status line, posted to a route handler instead of the footer's links)
+// template-ancestor: components/home/newsletter-section.tsx   (variation: the same centred band — icon, heading, one line, one field — carried into the footer as a bordered panel instead of a full-bleed overlay, and posting to a route handler instead of a client store)
 
 /**
  * The footer's news signup — one field, one button, and one sentence at a time.
@@ -26,6 +26,7 @@
  * that is not root-relative is stored as `/`, because that value is also what a no-JavaScript
  * submit is redirected with.
  */
+import { Mail } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
 import type React from "react";
@@ -89,59 +90,62 @@ export function NewsSignup({ section }: { section: PageCopySection }) {
     <section
       id="news-signup"
       aria-labelledby={headingId}
-      className="mt-12 grid grid-cols-1 gap-6 border-t border-slate-200 pt-8 dark:border-slate-800 lg:grid-cols-12 lg:items-start"
+      className="mt-12 rounded-2xl border border-slate-200 bg-slate-50/70 px-6 py-9 sm:px-10 dark:border-slate-800 dark:bg-slate-900/40"
     >
-      <div className="lg:col-span-4">
-        <h3 id={headingId} className="text-base font-bold">
+      <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+        <span className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-action/10 text-action">
+          <Mail className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <h3 id={headingId} className="text-xl font-bold tracking-tight">
           {section.heading}
         </h3>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
           {sectionBody(section)}
         </p>
-      </div>
-      <div className="lg:col-span-8">
-        <form
-          action={NEWS_SIGNUP_ENDPOINT}
-          method="post"
-          onSubmit={submit}
-          noValidate
-          className="flex flex-col gap-3 sm:flex-row sm:items-start"
-        >
-          <input type="hidden" name="source" value={path} />
-          <label htmlFor={fieldId} className="sr-only">
-            {itemLabel(section, "field-label")}
-          </label>
-          <input
-            id={fieldId}
-            type="email"
-            name="email"
-            required
-            autoComplete="email"
-            aria-describedby={message === null ? undefined : statusId}
-            placeholder={itemLabel(section, "placeholder")}
-            className="w-full flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-action focus:outline-none focus:ring-2 focus:ring-action/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          />
-          <button
-            type="submit"
-            disabled={status === "pending"}
-            className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+        <div className="mt-6 w-full max-w-lg text-left">
+          <form
+            action={NEWS_SIGNUP_ENDPOINT}
+            method="post"
+            onSubmit={submit}
+            noValidate
+            className="flex flex-col gap-3 sm:flex-row sm:items-start"
           >
-            {status === "pending" ? itemLabel(section, "pending") : itemLabel(section, "submit")}
-          </button>
-        </form>
-        {/*
+            <input type="hidden" name="source" value={path} />
+            <label htmlFor={fieldId} className="sr-only">
+              {itemLabel(section, "field-label")}
+            </label>
+            <input
+              id={fieldId}
+              type="email"
+              name="email"
+              required
+              autoComplete="email"
+              aria-describedby={message === null ? undefined : statusId}
+              placeholder={itemLabel(section, "placeholder")}
+              className="w-full flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-action focus:outline-none focus:ring-2 focus:ring-action/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+            <button
+              type="submit"
+              disabled={status === "pending"}
+              className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              {status === "pending" ? itemLabel(section, "pending") : itemLabel(section, "submit")}
+            </button>
+          </form>
+          {/*
           One live region, and it never says "success" about a write that did not happen: the
           sentence is the route's state resolved through the fixture, so the five outcomes cannot
           drift from the five things the handler can answer.
         */}
-        <p
-          id={statusId}
-          role="status"
-          aria-live="polite"
-          className="mt-3 min-h-5 text-sm text-slate-600 dark:text-slate-400"
-        >
-          {message}
-        </p>
+          <p
+            id={statusId}
+            role="status"
+            aria-live="polite"
+            className="mt-3 min-h-5 text-sm text-slate-600 dark:text-slate-400"
+          >
+            {message}
+          </p>
+        </div>
       </div>
     </section>
   );

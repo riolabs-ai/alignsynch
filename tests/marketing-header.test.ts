@@ -11,7 +11,7 @@
  * This file is the evidence for the two states, because the gate has no session to drive a real
  * one through:
  *
- *   1. `account: null` — `/login` labelled "Sign in" and `/register` labelled "Sign up", and **no**
+ *   1. `account: null` — `/login` labelled "Sign In" and `/register` labelled "Sign Up", and **no**
  *      profile link (a signed-out visitor has no person to open, and a fixture one would be the
  *      stranger #212 removed);
  *   2. a session — the name and the `@handle`, inside one link to `/profile/<handle>` (the session's
@@ -80,7 +80,8 @@ function headerHtml(account: ShellAccount | null): string {
 const PUBLIC_MENU: Anchor[] = [
   { href: "/", text: "Home" },
   { href: "/#templates", text: "Templates" },
-  { href: "/#questions", text: "How it works" },
+  // Title Case: the owner's rule for menu and button labels (`How It Works`, not `How it works`).
+  { href: "/#questions", text: "How It Works" },
   { href: "/pricing", text: "Pricing" },
   // Help, not Support: the public menu opens the FAQ and knowledge base (`/help`), while the
   // rail's own Support row opens the account page inside the app.
@@ -92,8 +93,8 @@ describe("signed out", () => {
   const anchors = anchorsOf(html);
 
   it("offers the two links a visitor without a session can take", () => {
-    expect(anchors).toContainEqual({ href: "/login", text: "Sign in" });
-    expect(anchors).toContainEqual({ href: "/register", text: "Sign up" });
+    expect(anchors).toContainEqual({ href: "/login", text: "Sign In" });
+    expect(anchors).toContainEqual({ href: "/register", text: "Sign Up" });
   });
 
   it("draws no person and no profile link", () => {
@@ -181,7 +182,7 @@ describe("signed in", () => {
     const hrefs = anchors.map((anchor) => anchor.href);
     expect(hrefs).not.toContain("/login");
     expect(hrefs).not.toContain("/register");
-    expect(html).not.toContain("Sign in");
+    expect(html).not.toContain("Sign In");
   });
 
   it("keeps the menu — the identity slot is the only part that reacts to a session", () => {
