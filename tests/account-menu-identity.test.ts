@@ -128,8 +128,8 @@ function hrefsOf(html: string): string[] {
  * Render the shell's header as the layout renders it: the account resolved server-side, one prop.
  *
  * `searchIndex` is the brand's own catalog — a header without one is a different component — and
- * there is no provider around it: the shell has no open/closed state to hand down since the rail
- * became a sticky column (`components/layout/sidebar.tsx`).
+ * the drawer's one boolean arrives as a prop, closed, from the shell
+ * (`components/layout/main-layout.tsx`); there is no provider around the header.
  */
 function renderHeader(options: {
   account: ReturnType<typeof shellAccountOf>;
@@ -145,6 +145,8 @@ function renderHeader(options: {
       viewer,
       account: options.account,
       searchIndex: searchIndexFor(brandId, viewer),
+      navigationOpen: false,
+      onOpenNavigation: () => undefined,
     }),
   );
 }

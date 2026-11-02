@@ -71,18 +71,25 @@ import type React from "react";
 export interface NavRenderProps {
   copy: PageCopy;
   /**
-   * Explicit icon-only markup — the label in `title`/`aria-label`, no text node. The shell passes
-   * `false` at every width now (the rail's narrow form is a class, see `NavRow`), so this is the
-   * prop a caller uses when it wants the icon row *as markup* — which is how the node tests drive
-   * the shape without a browser.
+   * Explicit icon-only markup — the label in `title`/`aria-label`, no text node. No shell mount
+   * passes this any more (the rail's narrow form is a class, see `NavRow`), so it is the prop a
+   * caller uses when it wants the icon row *as markup* — which is how the node tests drive the
+   * shape without a browser.
    */
-  collapsed: boolean;
+  collapsed?: boolean;
+  /**
+   * Render every row's label as a text node, whatever the viewport says (the mobile drawer, see
+   * `AppSidebar`). Without it the label is `hidden lg:inline`: an icon rail between 768 and
+   * 1023px, a labelled column from 1024. The drawer is 250px wide at a 390px viewport, so its
+   * labels have room — a class that asks the viewport instead of the container would leave a
+   * phone with a full-width panel of icons and no words.
+   */
+  labelled?: boolean;
   /** The current route, for the active row (`/` matches only `/`, not everything). */
   pathname: string;
   /**
-   * Called when a row is followed. The shell has nothing to close any more — the rail is a sticky
-   * column — but the callback is kept so a surface that mounts this menu inside a drawer can close
-   * itself without a second menu component.
+   * Called when a row is followed. The desktop rail has nothing to close; the drawer closes
+   * itself with it, so a surface that mounts this menu inside one needs no second menu component.
    */
   onNavigate: () => void;
   /**
@@ -115,7 +122,10 @@ export type NavRowProps = {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
-  collapsed: boolean;
+  /** Explicit icon-only markup. Defaults to false: the row's width is a class (see `NavRow`). */
+  collapsed?: boolean;
+  /** See `NavRenderProps.labelled` — the drawer's rows, where the label has room at any viewport. */
+  labelled?: boolean;
   onNavigate: () => void;
   /** Flagged off: draw nothing (issue #175). See `NavRenderProps.hidden`. */
   hidden?: boolean;
@@ -143,7 +153,7 @@ export type NavRowProps = {
  * is drawn, never which rows exist.
  */
 export function NavRow(props: NavRowProps) {
-  const { icon, label, active, collapsed, onNavigate, hidden } = props;
+  const { icon, label, active, collapsed = false, labelled, onNavigate, hidden } = props;
   if (hidden) return null;
 
   const surface = props.href === undefined ? undefined : surfaceFor(props.href);
@@ -160,21 +170,25 @@ export function NavRow(props: NavRowProps) {
     ? cn("flex h-10 w-10 items-center justify-center rounded-md transition-colors", tone)
     : cn(
         /**
-         * **Below `xl` this row is an icon.** The rail narrows before the label can fit
-         * (`components/layout/sidebar.tsx`), so the text is `hidden xl:inline` and the row is a
-         * 40px square centred in a 56/64px column; from `xl` it is the full-width row it always
-         * was. The accessible name does not depend on the width: `title` and `aria-label` carry
-         * the label at every breakpoint, so the icon-only rail is still readable by a pointer and
-         * announced by a screen reader. That is a class, not state — no component measures a
-         * window to decide whether a label exists.
+         * **The row is an icon between `md` and `lg`.** The rail narrows to 64px there
+         * (`components/layout/sidebar.tsx`), so the text is `hidden lg:inline` and the row is a
+         * 40px square centred in the column; from `lg` — a laptop, and the width the owner asked
+         * the rail to be expanded at — it is the full-width row it always was. The accessible
+         * name does not depend on the width: `title` and `aria-label` carry the label at every
+         * breakpoint, so the icon rail is still readable by a pointer and announced by a screen
+         * reader. That is a class, not state — no component measures a window to decide whether a
+         * label exists. `labelled` is the one exception, and it is not a width: it is the mobile
+         * drawer, which is 250px wide at a 390px viewport.
          */
-        "flex h-10 items-center justify-center gap-3 rounded-md text-sm font-medium transition-colors xl:h-auto xl:justify-start xl:px-3 xl:py-2.5",
+        labelled
+          ? "flex h-10 items-center justify-start gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+          : "flex h-10 items-center justify-center gap-3 rounded-md text-sm font-medium transition-colors lg:h-auto lg:justify-start lg:px-3 lg:py-2.5",
         tone,
       );
 
   /**
    * The words a screen reader hears and a pointer shows on hover. A pending row carries its
-   * status as well, because the second line that explains it is `hidden xl:flex` like every other
+   * status as well, because the second line that explains it is `hidden lg:flex` like every other
    * label — the announcement may not depend on a width either.
    */
   const accessibleLabel = pending ? `${label} — ${statusWord.toLowerCase()}` : label;
@@ -186,14 +200,16 @@ export function NavRow(props: NavRowProps) {
     <>
       <span>{icon}</span>
       {pending ? (
-        <span className="hidden min-w-0 flex-col xl:flex">
+        <span className={labelled ? "flex min-w-0 flex-col" : "hidden min-w-0 flex-col lg:flex"}>
           <span className="truncate">{label}</span>
           <span className="truncate text-xs font-normal">
             {statusWord} — {surface?.reason}
           </span>
         </span>
+      ) : labelled ? (
+        <span className="truncate">{label}</span>
       ) : (
-        <span className="hidden xl:inline">{label}</span>
+        <span className="hidden lg:inline">{label}</span>
       )}
     </>
   );
@@ -244,7 +260,14 @@ export function NavRow(props: NavRowProps) {
  * byte what it was: the brand switch below picks this branch, and the labels still resolve
  * against the `nav` section of the same fixture.
  */
-function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRenderProps) {
+function QuizHubMenu({
+  copy,
+  collapsed = false,
+  labelled = false,
+  pathname,
+  onNavigate,
+  hidden,
+}: NavRenderProps) {
   const nav = sectionOf(copy, "nav");
   return (
     <>
@@ -254,6 +277,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "home")}
         active={pathname === "/"}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -262,6 +286,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "daily-challenge")}
         active={isActive(pathname, "/daily-challenge")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -270,6 +295,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "categories")}
         active={isActive(pathname, "/categories")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -278,6 +304,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "battle")}
         active={isActive(pathname, "/battle")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -286,6 +313,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "news")}
         active={isActive(pathname, "/news")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -294,6 +322,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "explore")}
         active={isActive(pathname, "/explore")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -302,6 +331,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "tournaments")}
         active={isActive(pathname, "/tournaments")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -310,6 +340,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "leaderboard")}
         active={isActive(pathname, "/leaderboard")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
         hidden={hidden?.includes("/leaderboard")}
       />
@@ -319,6 +350,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "creator-tips")}
         active={isActive(pathname, "/creator-tips")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -327,6 +359,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "quiz-discussions")}
         active={isActive(pathname, "/quiz-discussions")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -335,6 +368,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "create-editor")}
         active={isActive(pathname, "/create/editor")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -343,6 +377,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "create-generator")}
         active={isActive(pathname, "/create/generator")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -351,6 +386,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "affiliate")}
         active={isActive(pathname, "/affiliate")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
         hidden={hidden?.includes("/affiliate")}
       />
@@ -360,6 +396,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "pricing")}
         active={isActive(pathname, "/pricing")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -368,6 +405,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "support")}
         active={isActive(pathname, "/support")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
     </>
@@ -410,7 +448,8 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
  */
 function AlignSynchMenu({
   copy,
-  collapsed,
+  collapsed = false,
+  labelled = false,
   pathname,
   onNavigate,
   viewer,
@@ -424,6 +463,7 @@ function AlignSynchMenu({
         label={itemLabel(nav, "dashboard")}
         active={isActive(pathname, "/dashboard")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -432,6 +472,7 @@ function AlignSynchMenu({
         label={itemLabel(nav, "how-it-works")}
         active={isActive(pathname, "/how-it-works")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -440,6 +481,7 @@ function AlignSynchMenu({
         label={itemLabel(nav, "my-relationships")}
         active={isActive(pathname, "/assessment/instances")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -448,6 +490,7 @@ function AlignSynchMenu({
         label={itemLabel(nav, "template-library")}
         active={isActive(pathname, "/assessment/templates")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       {/*
@@ -466,6 +509,7 @@ function AlignSynchMenu({
         label={itemLabel(nav, "templates")}
         active={false}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -474,6 +518,7 @@ function AlignSynchMenu({
         label={itemLabel(nav, "support")}
         active={isActive(pathname, "/support")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       {/*
@@ -495,6 +540,7 @@ function AlignSynchMenu({
           label={itemLabel(nav, "console-gaps")}
           active={isActive(pathname, "/admin/gaps")}
           collapsed={collapsed}
+          labelled={labelled}
           onNavigate={onNavigate}
         />
       )}
@@ -513,6 +559,7 @@ function AlignSynchMenu({
           label={itemLabel(nav, "admin-instances")}
           active={isActive(pathname, "/admin/instances")}
           collapsed={collapsed}
+          labelled={labelled}
           onNavigate={onNavigate}
         />
       )}

@@ -128,6 +128,28 @@ export function shellCopy(brand: Brand): PageCopy {
         ],
       },
       /**
+       * The rail's mobile chrome — the hamburger, the panel it opens, and the panel's own close
+       * control.
+       *
+       * Below 768px the shell's navigation is an overlay drawer (`components/layout/sidebar.tsx`),
+       * so three words that did not exist while the rail was a column at every width now do. They
+       * live here rather than in the components because they are rendered copy like any other: a
+       * literal in `header.tsx` or `sidebar.tsx` is an E23 failure on a surface whose budget is 0.
+       *
+       * One section, both brands: the drawer is the same drawer on either brand, and its trigger
+       * says what it opens, not what the product is. `label` names the panel itself — the words a
+       * screen reader hears after `role="dialog"` takes over the `<aside>` — and `close` is both
+       * the panel's X and the trigger's own name while the panel is open.
+       */
+      {
+        id: "rail",
+        items: [
+          { id: "open", label: "Open navigation" },
+          { id: "close", label: "Close navigation" },
+          { id: "label", label: "Main navigation" },
+        ],
+      },
+      /**
        * The AlignSynch navigation (issue #156) — the alignment product's own destinations.
        *
        * It is a *second section in the same fixture*, not a second fixture: E23 resolves every
