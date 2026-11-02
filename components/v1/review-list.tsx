@@ -20,10 +20,17 @@ import {
   type PersonaSurface,
   type ReviewPersona,
 } from "@/data/v1/persona-surfaces";
-import { REVIEW_SCREENS, type ReviewScreen, type ReviewStatus } from "@/lib/v1/review";
+import {
+  REVIEW_SCREENS,
+  reviewScreenFromHash,
+  reviewScreenId,
+  type ReviewScreen,
+  type ReviewStatus,
+} from "@/lib/v1/review";
 import { useV1Store } from "@/lib/v1/store";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /** The three statuses as one badge tone each — no brand colour, the `StageBadge` rule. */
 const STATUS_VARIANT: Record<ReviewStatus, "outline" | "warning" | "success"> = {
@@ -92,15 +99,30 @@ function PersonaRow({ surface }: { surface: PersonaSurface }) {
  * One row of the checklist: the route (a link), its one-line description, its status and its
  * note, the persona row from the matrix, the ancestor it varies, and the three actions — Open,
  * Approve, Request changes (which reveals a note field).
+ *
+ * The row carries the route's slug as its DOM id, so a screen's review control can link straight
+ * to it (`reviewScreenHref`); `focused` marks the row a deep link landed on, so the reviewer sees
+ * which one it is after the jump rather than guessing.
  */
-function ReviewRow({ screen, surface }: { screen: ReviewScreen; surface: PersonaSurface }) {
+function ReviewRow({
+  screen,
+  surface,
+  focused,
+}: {
+  screen: ReviewScreen;
+  surface: PersonaSurface;
+  focused: boolean;
+}) {
   const { reviews, setReview } = useV1Store();
   const entry: ReviewEntryForRow = reviews[screen.route] ?? { status: "unreviewed", note: "" };
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState(entry.note);
 
   return (
-    <Card>
+    <Card
+      id={reviewScreenId(screen.route)}
+      className={cn("scroll-mt-24", focused && "ring-2 ring-action ring-offset-2")}
+    >
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -176,6 +198,32 @@ export function ReviewList() {
   const { hydrated, reviews } = useV1Store();
   const [filter, setFilter] = useState<Filter>("all");
   const [personaFilter, setPersonaFilter] = useState<PersonaFilter>("all");
+  /** The route a deep link landed on, so its row is scrolled to and marked. */
+  const [focused, setFocused] = useState<string | null>(null);
+
+  /**
+   * Honour `/v1/review#screen-…` — the review control's deep link to one row.
+   *
+   * The rows only exist once the store has hydrated, so the browser's own fragment scroll has
+   * nothing to scroll to on first paint; this runs after the rows are committed and does it
+   * instead, and listens for a later `hashchange` so a second link on the same page works. The
+   * list is not filtered to the target: the row is marked in place, which keeps the surrounding
+   * rows (and the counts) intact.
+   */
+  useEffect(() => {
+    if (!hydrated) return;
+    const focusFromHash = () => {
+      const target = reviewScreenFromHash(window.location.hash);
+      setFocused(target?.route ?? null);
+      if (target === undefined) return;
+      document
+        .getElementById(reviewScreenId(target.route))
+        ?.scrollIntoView({ block: "start", behavior: "auto" });
+    };
+    focusFromHash();
+    window.addEventListener("hashchange", focusFromHash);
+    return () => window.removeEventListener("hashchange", focusFromHash);
+  }, [hydrated]);
 
   const statusOf = (screen: ReviewScreen): ReviewStatus =>
     reviews[screen.route]?.status ?? "unreviewed";
@@ -260,7 +308,12 @@ export function ReviewList() {
       ) : (
         <div className="space-y-3">
           {ordered.map(({ screen, surface }) => (
-            <ReviewRow key={screen.route} screen={screen} surface={surface} />
+            <ReviewRow
+              key={screen.route}
+              screen={screen}
+              surface={surface}
+              focused={focused === screen.route}
+            />
           ))}
           {ordered.length === 0 && (
             <p className="rounded-lg border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
