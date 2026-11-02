@@ -1,8 +1,13 @@
-// template-ancestor: components/ui/card.tsx
-import { SectionStub } from "@/components/v1/section-stub";
-import { SECTION_SUMMARIES } from "@/lib/v1/persona";
+// template-ancestor: components/console/overview.tsx
+import { AdminConsoleOverview } from "@/components/v1/admin-console-overview";
 
-/** `/v1/admin/console` — the admin console stub (admin only; the sidebar gates the row). */
-export default function AdminConsoleStubPage() {
-  return <SectionStub section="Admin console" persona="admin" summary={SECTION_SUMMARIES.admin} />;
+/**
+ * `/v1/admin/console` — the admin console's overview.
+ *
+ * A server page that renders one client component, because every figure on it is a count over the
+ * in-browser store (`lib/v1/store.tsx`): the page has nothing to read on the server, and shipping
+ * a count the server invented would be the one thing this console exists to prevent.
+ */
+export default function AdminConsolePage() {
+  return <AdminConsoleOverview />;
 }

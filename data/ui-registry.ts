@@ -686,6 +686,46 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/v1/admin/console/relationships",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The relationship registry — every relationship, live or archived, with its template, derived stage, both seat states and its subscription state, filtered by the same links the overview's counts produce; read-only for answers, with a one-click restore on an archived row.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/admin/console/relationships/[id]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "One relationship as an operator sees it — its seats, subscription and a session list that says scored or open and nothing a party answered — with Archive behind a confirmation and a Restore that is one click.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/admin/console/templates",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The template registry — every template with the number of relationships started from it, and an enable/disable action behind a confirmation that the store can undo.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/admin/console/templates/[id]",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "One template as an operator sees it — the Aspects as authored, and every relationship started from it, live and archived, with the enable/disable pair.",
+  },
+  {
+    kind: "route",
+    surface: "/v1/admin/console/users",
+    status: "prototype",
+    templates: ["alignsynch"],
+    capability:
+      "The two seats and the members, with role, account state and last sign-in from the store — no addresses, and no user-management form that would pretend to write to Neon.",
+  },
+  {
+    kind: "route",
     surface: "/v1/initiator/templates/new",
     status: "prototype",
     templates: ["alignsynch"],
