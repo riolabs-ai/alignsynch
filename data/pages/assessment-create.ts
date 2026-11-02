@@ -1,6 +1,5 @@
 /**
- * `/assessment/templates/[templateId]/create` — the create step, shipped as **in-progress UI**
- * (#409, R1-E).
+ * `/assessment/templates/[templateId]/create` — the create step (#409, wired by #427).
  *
  * The v1 create form's shape, on the app's own route: the template and its two seats at the
  * top, then the counterparty, then the two choices that shape everything after creation.
@@ -13,8 +12,11 @@
  * - **Setting is what a party may change later.** It moves the bar the report is judged
  *   against; it never changes a question.
  *
- * The submit cannot work yet, and the form says so beside the control. Nothing on this screen
- * calls a write path, so a reader is never handed a success for something that did not happen.
+ * **The submit now creates the relationship**, so the sentence beside it says what submitting
+ * does rather than that it cannot. A refusal comes back to this same screen as
+ * `?problem=<code>`; the `problems` section is the one sentence per code the store can answer
+ * with, and `refused` is the screen drawn when the code means the template itself cannot be
+ * read (somebody else's, an instance, an id that names nothing).
  *
  * `{count}` is the template's own Aspect count, filled by `fillLabel()` from the record the
  * page read. The Mode and Setting option names are the model's own glossary (`MODE_LABELS`,
@@ -76,11 +78,61 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "submit", label: "Create the relationship" },
         {
-          id: "not-wired",
+          id: "submit-note",
           label:
-            "Not wired yet — this screen is not connected to the create path, so submitting it cannot create a relationship. Nothing was saved.",
+            "Submitting copies the Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.",
         },
       ],
+    },
+    {
+      id: "problems",
+      heading: "That relationship was not created",
+      items: [
+        {
+          id: "invalid-input",
+          label:
+            "A field was missing or was not one this form offers. Choose a Mode and a Setting, then try again.",
+        },
+        {
+          id: "unknown-template",
+          label: "There is no template at that address, so there is nothing to copy.",
+        },
+        {
+          id: "template-not-published",
+          label:
+            "That template is not published. Only a published template can be copied into a relationship.",
+        },
+        {
+          id: "template-has-no-aspects",
+          label:
+            "That template has no Aspects, so a relationship made from it would have nothing to ask.",
+        },
+        {
+          id: "record-is-an-instance",
+          label:
+            "That record is already a relationship. A relationship is created from a template, not from another relationship.",
+        },
+        {
+          id: "template-not-yours",
+          label:
+            "That template was written by another account. You can copy the platform's templates and the ones you wrote.",
+        },
+        {
+          id: "instance-limit",
+          label:
+            "You already hold as many open relationships as your plan allows. Close one before creating another.",
+        },
+        {
+          id: "mode-not-entitled",
+          label: "The Mode you chose is not on your plan. Choose Basic, or change your plan.",
+        },
+      ],
+    },
+    {
+      id: "refused",
+      heading: "Nothing was created",
+      body: "The template this form would have copied could not be read, so there is no form to fill in. Your templates are still where you left them.",
+      items: [{ id: "back", label: "Back to your templates" }],
     },
   ],
 });
