@@ -172,7 +172,7 @@ export interface AlignmentAspectScore {
 export interface AlignmentWorkedExample {
   /** `"Worked example · Relationship Basics"`. */
   readonly title: string;
-  /** The mode the instance was answered in — `"Basic"`, and it is the record's, not a design's. */
+  /** The mode the instance was answered in — `"Basic mode"`, and it is the record's, not a design's. */
   readonly mode: string;
   /** The two parties, named, because the bars are two people's answers and not two abstractions. */
   readonly you: string;
@@ -208,7 +208,13 @@ export interface AlignmentHomeModel {
     readonly primary?: { readonly label: string; readonly href: string };
     /** The proof link beside it — the worked example, in the outline treatment. */
     readonly secondary?: { readonly label: string; readonly href: string };
-    /** Under the CTAs: bought once, and which seat the reader is named to. */
+    /**
+     * Directly under the pair, above the fineprint: the risk-reducer that makes the primary
+     * button safe to press ("Free to start · no card"). Its own line rather than a third link,
+     * because it is a promise and not a destination.
+     */
+    readonly reassurance?: string;
+    /** Under the CTAs: bought once, and which seat the reader is named to. One sentence. */
     readonly fineprint?: string;
   };
   /** The hero's right-hand card: the featured relationship's own answers. */
@@ -456,7 +462,8 @@ function feelOf(party: Party, itemId: string): number {
  * does not. A Gap of 0 is printed as the glossary's In Synch rather than "Feel Gap 0".
  *
  * The mode pill is the instance's `mode`, not a design choice: the featured relationship was
- * answered in Basic Mode, so the card says Basic.
+ * answered in Basic Mode, so the card says "Basic mode" — the word "mode" is what stops a reader
+ * taking a bare "Basic" for a plan tier or for a verdict on the product.
  */
 function workedExampleOf(instance: AssessmentInstance, copy: PageCopy): AlignmentWorkedExample {
   const initiator = partyIn(instance, "initiator");
@@ -698,6 +705,7 @@ export function alignmentHome(
       ...(copy.secondaryCta === undefined
         ? {}
         : { secondary: { label: copy.secondaryCta.label, href: copy.secondaryCta.href } }),
+      reassurance: pageItemOf(copy, "hero-reassurance").label,
       fineprint: pageItemOf(copy, "hero-fineprint").label,
     },
     workedExample: workedExampleOf(featured, copy),

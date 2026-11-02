@@ -252,13 +252,34 @@ describe("the page is six bands, in the order the argument runs", () => {
     expect(html).toContain('data-score-tone="action"');
     expect(html).toContain('data-score-tone="accent"');
     expect(card.title).toContain(featured.title);
-    expect(card.mode).toBe("Basic");
+    // "Answered in Basic mode", not a bare "Basic" badge: in a hero, a pill word reads as a plan
+    // tier, or as a verdict on the product.
+    expect(card.mode).toBe("Answered in Basic mode");
   });
 
   it("leads with the hero the practice framing asks for", () => {
     expect(model.hero.heading).toBe("Turn one assessment into a practice you can charge for.");
+    expect(model.hero.reassurance).toBe("Free to start · no card");
+    /**
+     * The fineprint is **one sentence** carrying the three facts a buyer needs, and the heading's
+     * money word appears once on the page rather than three times: the old footnote said "bought
+     * once", "yours to run" and the subtitle said "paid to run" underneath a heading that already
+     * said "charge for". A second full stop here is a regression, which is what the split counts.
+     */
     expect(model.hero.fineprint).toContain("One relationship is bought once");
-    expect(model.hero.fineprint).toContain("named on the relationship as its coach");
+    expect(model.hero.fineprint).toContain("named as its coach");
+    const sentences = (model.hero.fineprint ?? "").split(/[.!?]+/).filter((part) => part.trim());
+    expect(sentences).toHaveLength(1);
+    expect(model.hero.subtitle).not.toContain("paid to run");
+  });
+
+  it("defines the one term on the card a reader cannot infer", () => {
+    // `In Synch` is the brand's and the glossary's spelling, so it stays — with its definition on
+    // the card, so the row that prints it is not read as a typo.
+    const inSynchRow = model.workedExample.rows.find((row) => row.note.includes("In Synch"));
+    expect(inSynchRow).toBeDefined();
+    expect(model.workedExample.note).toContain("In Synch");
+    expect(model.workedExample.note).toContain("in sync");
   });
 
   it("runs the cycle as three cards", () => {
