@@ -91,6 +91,7 @@ const DYNAMIC_ROUTES = [
   "/v1/[persona]/settings",
   "/v1/[persona]/shop",
   "/v1/[persona]/templates",
+  "/v1/profile/[handle]",
   "/v1/relationships/[id]",
   "/v1/relationships/[id]/accept",
   "/v1/relationships/[id]/answer",

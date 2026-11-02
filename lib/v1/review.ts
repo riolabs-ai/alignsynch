@@ -146,6 +146,12 @@ export const REVIEW_SCREENS: readonly ReviewScreen[] = [
     href: "/v1/templates/co-founders/demo",
     description: "A completed-session report rendered from fixture answers for the type.",
   },
+  {
+    route: "/v1/profile/[handle]",
+    href: "/v1/profile/jordan-lee",
+    description:
+      "The public, read-only profile — the same component as the in-app profile with its actions hidden.",
+  },
 ];
 
 /** Does a live pathname fall under this route pattern? Static rows match exactly. */
