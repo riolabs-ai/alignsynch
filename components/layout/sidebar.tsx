@@ -11,7 +11,7 @@ import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
-import { LogOut, Pin, PinOff, X } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,9 +24,15 @@ import { BrandGlyph } from "@/components/layout/brand-glyph";
  * The menu lives in `components/layout/nav-menus.tsx`, because it is brand-selected and
  * capability-filtered since issue #156 and keeping it in a hook-free module is what lets a
  * node test render either brand's destinations. This file owns the *chrome*: the mark, the
- * rail's collapse state and the mobile drawer. `brandId` and `viewer` arrive from the server
+ * wide rail and the mobile drawer. `brandId` and `viewer` arrive from the server
  * layout (`app/(mainlayout)/layout.tsx`) because both are facts the browser must not decide —
  * the brand is a build flag, and a viewer's capabilities will be read from a session.
+ *
+ * **The rail has no collapse control.** It used to carry a pin that narrowed the desktop
+ * column to 70px and remembered that choice in localStorage; the owner's review asked for it
+ * removed on the AlignSynch skin and everywhere else — the sidebar is always expanded, and
+ * only a phone gets the drawer. There is no pin button, no icon, no label and nothing written
+ * to storage; `sidebar-context.tsx` clears the preference the old control left behind.
  *
  * Every label resolves an id on `data/pages/shell.ts` (`itemLabel` against the `nav`,
  * `nav-alignsynch` and `logout` ids). The hrefs stay literal JSX attributes **on purpose** —
@@ -54,7 +60,7 @@ export function AppSidebar({
   const nav = sectionOf(copy, "nav");
   const pathname = usePathname();
 
-  const { collapsed, mobileOpen, closeMobile, toggleCollapsed } = useSidebar();
+  const { collapsed, mobileOpen, closeMobile } = useSidebar();
 
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
@@ -69,8 +75,6 @@ export function AppSidebar({
   const logoutLabel = itemLabel(nav, "logout");
   const logoutPendingLabel = itemLabel(nav, "logout-pending");
   const logoutErrorLabel = itemLabel(nav, "logout-error");
-  const pinLabel = itemLabel(nav, "pin");
-  const unpinLabel = itemLabel(nav, "unpin");
 
   /**
    * Sign out — for real (issue #272).
@@ -99,22 +103,20 @@ export function AppSidebar({
    * Closed is the CSS default below `xl` — off-canvas *and* `invisible` — so nothing
    * bleeds through before hydration and the panel's links leave the tab order while it is
    * dismissed; only `mobileOpen` slides it in. Desktop (`xl:`) is untouched by both
-   * classes, so the rail keeps its 250px/70px behaviour.
+   * classes: the rail is a permanent 250px column there, and `collapsed` is the context's
+   * constant `false` rather than a second width.
    */
   return (
     <aside
       id="app-sidebar"
       className={cn(
-        "fixed top-0 left-0 h-screen flex flex-col border-r bg-background transition-all duration-300",
-        collapsed ? "w-[250px] xl:w-[70px]" : "w-[250px]",
+        "fixed top-0 left-0 h-screen flex flex-col border-r bg-background transition-all duration-300 w-[250px]",
         mobileOpen
           ? "max-xl:visible max-xl:translate-x-0 max-xl:shadow-2xl"
           : "max-xl:invisible max-xl:-translate-x-full",
       )}
     >
-      <div
-        className={`flex h-16 items-center max-xl:justify-between gap-2 border-b px-4 ${collapsed ? "justify-center" : "justify-between"}`}
-      >
+      <div className="flex h-16 items-center justify-between gap-2 border-b px-4">
         <Link
           href="/"
           aria-label={mark ? copy.heading : undefined}
@@ -137,7 +139,7 @@ export function AppSidebar({
              *
              * `alt=""` because the wordmark beside it already says the name — a second
              * description would make a screen reader read the brand twice — and the link
-             * carries `aria-label` so it still has a name when the rail is collapsed.
+             * carries `aria-label` so it still has a name.
              */
             <span className="block h-7 w-10 shrink-0 overflow-hidden">
               <Image
@@ -152,7 +154,7 @@ export function AppSidebar({
           ) : (
             <BrandGlyph className="h-6 w-6 text-primary" />
           )}
-          {!collapsed && <span className="text-xl font-bold">{copy.heading}</span>}
+          <span className="text-xl font-bold">{copy.heading}</span>
         </Link>
         <button
           type="button"
@@ -161,25 +163,6 @@ export function AppSidebar({
           aria-label="Close navigation"
         >
           <X className="size-5" />
-        </button>
-        {/*
-         * The pin — the rail's one collapse control, at the top right of the sidebar (issue
-         * #383's shell rules). Expanded (pinned) is the default; clicking unpins the rail to its
-         * icon-only 70px state and clicking again re-pins it. `aria-pressed` carries the pinned
-         * state so the control announces it, and the preference is remembered per person by the
-         * `SidebarProvider` (localStorage). It is *not* the only way to reach navigation: below
-         * `xl` the header's hamburger opens the drawer, and a collapsed rail still renders every
-         * row as an icon the person can follow.
-         */}
-        <button
-          type="button"
-          className="hidden xl:inline-flex"
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? pinLabel : unpinLabel}
-          aria-pressed={!collapsed}
-          aria-controls="app-sidebar"
-        >
-          {collapsed ? <PinOff className="size-5" /> : <Pin className="size-5" />}
         </button>
       </div>
 
@@ -208,20 +191,15 @@ export function AppSidebar({
             onSelect={signOut}
           />
         </nav>
-        {signOutFailed && !collapsed && (
-          <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>
-        )}
+        {signOutFailed && <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>}
       </div>
 
-      {/*
-       * The version badge — the bottom of the rail (issue #269). Last in the document, so it is
-       * the last stop the keyboard makes inside the sidebar, and below the sign-out row on
-       * purpose: signing out is an action, the version is a fact about the build you signed in
-       * to. The rail collapses to 70 px, which cannot hold the long label, so the collapsed
-       * state asks `AppVersion` for its short form rather than clipping the long one.
-       */}
+      {/* The version badge — the bottom of the rail (issue #269). Last in the document, so it is
+          the last stop the keyboard makes inside the sidebar, and below the sign-out row on
+          purpose: signing out is an action, the version is a fact about the build you signed in
+          to. The rail is always 250px now, so the long form always fits. */}
       <div className="border-t px-2 py-3 text-center">
-        <AppVersion copy={copy} compact={collapsed} />
+        <AppVersion copy={copy} />
       </div>
     </aside>
   );
