@@ -319,11 +319,20 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-instance",
     budget: 0,
   },
-  // R1-E (#409) — the three write surfaces, shipped as in-progress UI. Budget 0 from the first
-  // commit, like every flow surface above: the headings, the blind rule, the seat rows, the
-  // Mode/Setting explanations and both not-wired notices are `data/pages/assessment-*.ts`, so a
-  // sentence typed back into a component is a red build — including the ones that say a control
-  // does not work yet, which is the whole point of the card.
+  // #409 — the relationship report, the one read surface the app did not have. Budget 0 from the
+  // first commit, for the same reason: the locked state, the verdict band, the opinion matrix and
+  // the Gap table's four headings are all in `data/pages/assessment-relationship-report.ts`, so
+  // the next literal written in `report-view.tsx` is a red build.
+  "/assessment/instances/[instanceId]/report": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/report/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-relationship-report",
+    budget: 0,
+  },
+  // R1-E (#409) — the three write surfaces, shipped as in-progress UI. Budget 0 from the
+  // first commit: the headings, the blind rule, the seat rows, the Mode/Setting explanations
+  // and both not-wired notices are `data/pages/assessment-*.ts`, so a sentence typed back into
+  // a component is a red build.
   "/assessment/instances/[instanceId]/answer": {
     page: "app/(mainlayout)/assessment/instances/[instanceId]/answer/page.tsx",
     dirs: ["components/assessment-flow"],

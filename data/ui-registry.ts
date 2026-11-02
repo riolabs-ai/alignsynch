@@ -205,6 +205,17 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/assessment/instances/[instanceId]/report",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The report both parties read once the sheet is scored: per Aspect the prompt, both named ends of the scale, the verdict under the instance's Setting, both parties' Opinions, and every Gap with the two Opinions it subtracts printed beside it.",
+    notes:
+      "The read surface the app did not have until #409, ported from the `/v1` prototype's `report-body.tsx` as a server component over `lib/assessment-report.ts` — never a rewiring of the client store (#228, E34). The blind rule is the `screen.report === null` branch, not a redaction: before both parties have submitted, `readFlowScreen` has not read the other party's opinion rows at all and the route draws the locked page, which carries no score, no Gap and no count of the other party's progress. Every number is `gapKindsOf()` over stored rows; an unanswered Opinion prints a dash, never a 0. The viewer is the party cookie's seat (or a coach's membership), so a browser with no role on the relationship gets a 404.",
+  },
+
+  {
+    kind: "route",
     surface: "/assessment/instances/[instanceId]/accept",
     status: "db",
     templates: ["alignsynch"],
@@ -221,7 +232,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "Answer the Aspect sheet: every Aspect's prompt, both named Values, and one row per seat asking the Opinion kinds the instance's Mode defines.",
     notes:
-      "In-progress UI (#409, R1-E), and singular `answer` on purpose: `/answers` is the POST-only endpoint the live sheet on `/assessment/instances/[instanceId]` submits to, and Next refuses a `page.tsx` beside a `route.ts`. `readInstanceBundle()` supplies the Aspects, the Mode, the Setting and the two `party` rows; the blind rule is stated on the page and every control is disabled with the not-wired note, because this screen has no write path and no viewer session.",
+      "In-progress UI (#409, R1-E), and singular `answer` on purpose: `/answers` is the POST-only endpoint the live sheet submits to, and Next refuses a `page.tsx` beside a `route.ts`. `readInstanceBundle()` supplies the Aspects, the Mode, the Setting and the two `party` rows; the blind rule is stated on the page and every control is disabled with the not-wired note, because this screen has no write path and no viewer session.",
   },
   {
     kind: "route",
@@ -229,7 +240,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The template library: the platform's own templates plus the ones this account wrote, with a tab for each, a status filter, a title search, and open/duplicate/archive on every row.",
+      "The template catalogue, grouped by the relationship type each template names (Business · Personal, then the ones that name none): one card per template with its type, realm, roles and Aspect count, a View details link, and duplicate/archive on the rows this account owns.",
     notes:
       "`record.author_user_id` is the whole rule — `NULL` is a built-in, the author's id is a template a person wrote, and the read returns `author_user_id IS NULL OR author_user_id = $1`, so another account's template is never in the payload. A template written before `0011_console_columns.sql` has no author and therefore reads as built-in; the page says so in its own band rather than leaving it to be discovered. Archiving flips `record.status` to `archived` (author only): the catalogue stops listing it and `createInstanceFromTemplate` refuses it, while every instance already made from it keeps its own copy of the Aspects and still opens. Duplicating copies the record and its items into a new template authored by the caller, whatever state the source is in.",
   },
@@ -239,7 +250,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "One template, read-only: its Aspects in authored order with their Left and Right Values, how many instances were made from it, who wrote it and whether it is archived. The place the editor will land later.",
+      "One template as a landing page: a header band naming its group, realm, Relationship Type and the two role seats, who it is for and who it is not for, every Aspect with both named ends of the scale, and what a Mode and a Setting are. No person's name, no price, no testimonial.",
     notes:
       "The 'open' action. Read-only on purpose — editing is a separate decision, and the spec puts the editor on this same route when it exists. The read applies the same author rule as the library, so another account's template is a 404 here and nothing distinguishes it from an id that does not exist.",
   },
@@ -251,7 +262,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "Create a relationship from one template: the template and its two seats at the top, the counterparty, then Mode (fixed at creation) and Setting (the one choice a party may change later).",
     notes:
-      "In-progress UI (#409, R1-E). A child of the template's own address, so the template being copied is the route's fact and the form cannot name a different one; the read is `readLibraryTemplate()` with the session's id, which is the same author rule the library and the detail page apply. The form has no `action` and a disabled submit with the reason beside it: creation is not wired on this screen yet, and a control that cannot work says so rather than failing silently.",
+      "In-progress UI (#409, R1-E). A child of the template's own address, so the template being copied is the route's fact and the form cannot name a different one; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply. The form has no `action` and a disabled submit with the reason beside it: creation is not wired on this screen yet, and a control that cannot work says so rather than failing silently.",
   },
   {
     kind: "route",

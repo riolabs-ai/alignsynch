@@ -17,15 +17,16 @@ import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { adminGapsPageCopy } from "./admin-gaps";
 import { adminInstancesPageCopy } from "./admin-instances";
 import { affiliatePageCopy } from "./affiliate";
-import { assessmentAcceptPageCopy } from "./assessment-accept";
-import { assessmentAnswerPageCopy } from "./assessment-answer";
-import { assessmentCreatePageCopy } from "./assessment-create";
 import { assessmentPageCopy } from "./assessment";
 import { assessmentInstancePageCopy } from "./assessment-instance";
 import { myInstancesPageCopy } from "./assessment-instances";
 import { assessmentTemplatePageCopy } from "./assessment-template-new";
 import { templateDetailPageCopy } from "./assessment-template-detail";
 import { templateLibraryPageCopy } from "./assessment-templates";
+import { relationshipReportPageCopy } from "./assessment-relationship-report";
+import { assessmentAcceptPageCopy } from "./assessment-accept";
+import { assessmentAnswerPageCopy } from "./assessment-answer";
+import { assessmentCreatePageCopy } from "./assessment-create";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
@@ -63,9 +64,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/assessment": assessmentPageCopy,
   "/assessment/instances": myInstancesPageCopy,
   "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
-  // R1-E (#409) — the three write surfaces, shipped as in-progress UI. Three fixtures, three
-  // budgets at 0: the screens are real and every control that cannot work says so in words that
-  // live here, not in the component.
+  "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
+  // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
   "/assessment/instances/[instanceId]/answer": assessmentAnswerPageCopy,
   "/assessment/instances/[instanceId]/accept": assessmentAcceptPageCopy,
   "/assessment/templates": templateLibraryPageCopy,
