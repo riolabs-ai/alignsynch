@@ -1538,10 +1538,30 @@ export interface TypeDemoAnswers {
 }
 
 /**
- * One completed Advanced-Mode sheet per type. Only `co-founders` keeps a demo today: its
- * Aspects are unchanged from before this taxonomy, so its answers still match. Every other
- * type's Aspects are new (#385), and the issue does not author demo answers — a type with no
- * sheet renders the demo page's "no example yet" state rather than a fabricated report.
+ * One completed Advanced-Mode sheet per type.
+ *
+ * Two types carry a demo today: `co-founders`, whose Aspects predate this taxonomy and whose
+ * answers still match, and `staff-manager`, the Office exemplar a prospect is walked through
+ * first. The rest have no sheet yet, and a type with no sheet renders the demo page's "no
+ * example yet" state rather than a fabricated report — absence is the honest answer there.
+ *
+ * **These are authored rows, not a generator.** Every number a demo report prints is one of the
+ * numbers below: the report derives its Gaps by subtraction (`content/gaps.ts`), but it never
+ * invents an opinion. The `staff-manager` sheet is written as one plausible pair — the same two
+ * people across all six Aspects — so its Gaps spread over the whole 0–3 range a real pair
+ * produces instead of the perfect score a generated sheet would show:
+ *
+ *   say-in-decisions        staff feel 2 / wish 4, manager feel 4 / wish 4   widest 2
+ *   feedback-flow           staff feel 2 / wish 5, manager feel 4 / wish 4   widest 3
+ *   clarity-of-expectations both feel 3 / wish 4 — the pair agree              widest 1
+ *   workload-reality        staff feel 1 / wish 4, manager feel 4 / wish 4   widest 3
+ *   credit                  staff feel 3 / wish 4, manager feel 4 / wish 4   widest 1
+ *   escalation              staff feel 2 / wish 5, manager feel 4 / wish 4   widest 3
+ *
+ * The two parties disagree about the same three things a real staff–manager pair disagrees
+ * about (direction of feedback, the real weight of the work, whether raising a problem early is
+ * safe) and agree about expectations and credit. Both predictions are wrong in the direction
+ * people usually get it wrong: each assumes the other is closer to their own reading.
  */
 export const demoAnswersByType: Readonly<Record<string, TypeDemoAnswers>> = {
   "co-founders": {
@@ -1562,6 +1582,24 @@ export const demoAnswersByType: Readonly<Record<string, TypeDemoAnswers>> = {
       "cofounder-money": { feel: 3, wish: 4, think: 3, guess: 4 },
       "cofounder-visibility": { feel: 3, wish: 5, think: 3, guess: 4 },
       "cofounder-exit": { feel: 2, wish: 3, think: 2, guess: 4 },
+    },
+  },
+  "staff-manager": {
+    you: {
+      "say-in-decisions": { feel: 2, wish: 4, think: 4, guess: 4 },
+      "feedback-flow": { feel: 2, wish: 5, think: 3, guess: 4 },
+      "clarity-of-expectations": { feel: 3, wish: 4, think: 3, guess: 4 },
+      "workload-reality": { feel: 1, wish: 4, think: 4, guess: 4 },
+      credit: { feel: 3, wish: 4, think: 4, guess: 4 },
+      escalation: { feel: 2, wish: 5, think: 3, guess: 4 },
+    },
+    them: {
+      "say-in-decisions": { feel: 4, wish: 4, think: 2, guess: 2 },
+      "feedback-flow": { feel: 4, wish: 4, think: 3, guess: 3 },
+      "clarity-of-expectations": { feel: 3, wish: 4, think: 4, guess: 4 },
+      "workload-reality": { feel: 4, wish: 4, think: 2, guess: 4 },
+      credit: { feel: 4, wish: 4, think: 3, guess: 3 },
+      escalation: { feel: 4, wish: 4, think: 2, guess: 3 },
     },
   },
 };

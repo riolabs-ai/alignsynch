@@ -10,7 +10,10 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { zOpinions, type Opinions } from "@/content/assessment";
+import { gapKindsIn, gapKindsOf } from "@/content/gaps";
 import {
+  demoAnswersByType,
   isPurchasable,
   purchasableRelationshipTypes,
   purchasableTypesByRealm,
@@ -88,5 +91,71 @@ describe("the relationship catalogue (#385)", () => {
     for (const id of DATING_IDS) {
       expect(ids).not.toContain(id);
     }
+  });
+});
+
+/**
+ * The demo sheets — sample content, held to the same bar as the catalogue.
+ *
+ * A demo report is only worth showing if the numbers behind it are someone's authored answers.
+ * `demoAnswersByType` is a literal record — no generator, no clock, no random — and these tests
+ * pin the two properties a future edit could quietly destroy: every Aspect the type asks is
+ * answered by both parties on all four Opinions, and the `staff-manager` sheet produces the Gap
+ * spread a real pair produces (In Synch somewhere, ≥2 somewhere) instead of the all-zero sheet
+ * that would make the report look like a marketing score.
+ */
+describe("the demo sheets", () => {
+  it("only names types that exist and are purchasable", () => {
+    for (const id of Object.keys(demoAnswersByType)) {
+      const type = relationshipTypes.find((candidate) => candidate.id === id);
+      expect(type, `"${id}" has a demo but no type`).toBeDefined();
+      expect(isPurchasable(type as RelationshipType)).toBe(true);
+    }
+  });
+
+  it("answers every Aspect on all four Opinions, both parties, 1..5", () => {
+    for (const [id, demo] of Object.entries(demoAnswersByType)) {
+      const type = relationshipTypes.find((candidate) => candidate.id === id);
+      if (type === undefined) continue;
+      const aspects = type.aspects.map((item) => item.id).sort();
+      for (const party of ["you", "them"] as const) {
+        const answers = demo[party];
+        expect(Object.keys(answers).sort()).toEqual(aspects);
+        for (const itemId of aspects) {
+          const parsed = zOpinions.parse(answers[itemId]);
+          // All four, not merely the two Basic requires: the demo is an Advanced sheet.
+          expect(Object.keys(parsed).sort()).toEqual(["feel", "guess", "think", "wish"]);
+          for (const value of Object.values(parsed)) {
+            expect(value).toBeGreaterThanOrEqual(1);
+            expect(value).toBeLessThanOrEqual(5);
+          }
+        }
+      }
+    }
+  });
+
+  it("staff-manager spans the Gaps a real pair produces — never a perfect score", () => {
+    const type = relationshipTypes.find((candidate) => candidate.id === "staff-manager");
+    const demo = demoAnswersByType["staff-manager"];
+    expect(type).toBeDefined();
+    expect(demo).toBeDefined();
+    if (type === undefined || demo === undefined) return;
+
+    const gaps = type.aspects.flatMap((item) => {
+      const perAspect = gapKindsOf(demo.you[item.id] as Opinions, demo.them[item.id] as Opinions);
+      return gapKindsIn(perAspect).map((kind) => perAspect[kind] as number);
+    });
+
+    // Eight Gaps per Aspect on an Advanced sheet, all present when both parties answer all four.
+    expect(gaps).toHaveLength(type.aspects.length * 8);
+    // At least one Aspect where the two answers agree — In Synch has to exist to be reportable.
+    expect(gaps).toContain(0);
+    // And at least one that a real pair would feel as a distance.
+    expect(Math.max(...gaps)).toBeGreaterThanOrEqual(2);
+    // The sheet is authored on a 1..5 scale, so a Gap above 3 would mean a score off the scale.
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(3);
+    // The report says "Not yet aligned" because some Gaps exceed Soft — not because every Gap does.
+    expect(gaps.filter((gap) => gap === 0).length).toBeGreaterThan(0);
+    expect(gaps.filter((gap) => gap > 1).length).toBeGreaterThan(0);
   });
 });
