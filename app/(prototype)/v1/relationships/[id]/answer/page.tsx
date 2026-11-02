@@ -13,18 +13,30 @@ import Link from "next/link";
  * form) or a party who already submitted (no form until the next session). This is the
  * curl-provable half of the rule — the client `AnswerSheet` repeats the same refusal from the
  * live store.
+ *
+ * `?edit=1` is the acceptance step's way back in: it asks for the same sheet with the gate's edit
+ * reading, which a party who has already submitted may use until they accept. Any other query
+ * value is ignored, so a stale or hand-typed link cannot open a form the gate refuses.
  */
-export default async function V1AnswerPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function V1AnswerPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const query = await searchParams;
+  const editing = query.edit === "1";
   const jar = await cookies();
   const persona = jar.get("v1_persona")?.value ?? "visitor";
   const rel = seedRelationships.find((candidate) => candidate.id === id);
 
   if (rel === undefined) {
-    return <AnswerSheet relationshipId={id} />;
+    return <AnswerSheet relationshipId={id} editing={editing} />;
   }
 
-  const gate = answerGateFor(rel, persona);
+  const gate = answerGateFor(rel, persona, { edit: editing });
   if (gate !== null) {
     return (
       <div className="mx-auto max-w-3xl space-y-4 p-4 sm:p-8">
@@ -42,5 +54,5 @@ export default async function V1AnswerPage({ params }: { params: Promise<{ id: s
     );
   }
 
-  return <AnswerSheet relationshipId={id} />;
+  return <AnswerSheet relationshipId={id} editing={editing} />;
 }
