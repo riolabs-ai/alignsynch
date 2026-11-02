@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The rail answers the viewport in one order, and it is not the obvious one (rail v3).
  *
@@ -16,14 +17,25 @@
  *   4. the drawer's wired the way a screen reader asks for it: `aria-expanded` + `aria-controls`
  *      on the trigger, `role="dialog"` + `aria-modal` on the panel, a scrim, a close control and
  *      a name for the panel.
+ *
+ * **The drawer half is mounted, not grepped.** A class string proves which CSS a browser *would*
+ * apply; it cannot prove that opening the panel moves focus into it, that `Escape` gives focus
+ * back to the hamburger, or that the page behind stops scrolling. Those are the claims the card
+ * is accepted on, so the last two describes render the real `MainLayout` — the header's trigger
+ * and the rail are brothers there, wired by one boolean — and drive it with the events a keyboard
+ * user actually produces. `jsdom` has no layout engine, so the two stubs at the bottom of this
+ * file stand in for the two browser facts the effect reads: a visibility answer from
+ * `getClientRects()` and a media query. Everything else is the component's own code.
  */
-import { createElement, type ReactNode } from "react";
+import { createElement, type ComponentType, type ReactNode } from "react";
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
-  useRouter: () => ({ replace: () => undefined, refresh: () => undefined }),
+  useRouter: () => ({ replace: () => undefined, refresh: () => undefined, push: () => undefined }),
 }));
 
 vi.mock("next/link", () => ({
@@ -31,9 +43,19 @@ vi.mock("next/link", () => ({
     createElement("a", { href, ...rest }, children),
 }));
 
+/**
+ * `next/image` needs a running Next server to resolve its loader; the rail only ever uses it for
+ * the brand mark, which is not what any assertion here is about.
+ */
+vi.mock("next/image", () => ({
+  default: ({ src, alt }: { src: string; alt: string }) => createElement("img", { src, alt }),
+}));
+
 import { AppSidebar, railClassName } from "@/components/layout/sidebar";
+import { MainLayout } from "@/components/layout/main-layout";
 import { NavRow } from "@/components/layout/nav-menus";
 import { shellPageCopy } from "@/data/pages/shell";
+import type { SearchIndex } from "@/content/search";
 import { PLATFORM_VIEWER } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -146,6 +168,263 @@ describe("the drawer is an overlay below md, and nothing at all above it", () =>
 
   it("draws the labelled menu when it is open — the panel has the room", () => {
     expect(rail(true)).toContain(">My Relationships<");
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// The drawer, mounted — what a keyboard user can actually reach
+// ---------------------------------------------------------------------------------------------
+
+declare global {
+  // React reads this to know it is inside `act()`; without it every update is unmocked.
+  // eslint-disable-next-line no-var
+  var IS_REACT_ACT_ENVIRONMENT: boolean;
+}
+
+/**
+ * The media queries the rail asks about, as a stub a test can flip.
+ *
+ * `AppSidebar` reads one query — `(min-width: 768px)` — to close a drawer that a resize has
+ * turned into a column, and `jsdom` implements no `matchMedia` at all. The stub records the
+ * listeners the component registers so a test can fire the change event a browser would.
+ */
+let wide = false;
+let mediaListeners: Array<(event: MediaQueryListEvent) => void> = [];
+
+function stubMatchMedia() {
+  wide = false;
+  mediaListeners = [];
+  window.matchMedia = ((query: string) => ({
+    media: query,
+    get matches() {
+      return wide;
+    },
+    onchange: null,
+    addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+      mediaListeners.push(listener);
+    },
+    removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+      mediaListeners = mediaListeners.filter((entry) => entry !== listener);
+    },
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+}
+
+/**
+ * One element's worth of boxes for every element.
+ *
+ * The drawer filters its tab stops with `getClientRects().length > 0` — deliberately, because
+ * `offsetParent` is `null` for everything under a `position: fixed` ancestor. `jsdom` lays
+ * nothing out and answers `[]` for everything, which would make every panel look empty and the
+ * Tab assertion vacuous. Answering one box is the smallest stub that keeps the component's own
+ * test ("is this thing rendered") in charge.
+ */
+const aBox = {
+  x: 0,
+  y: 0,
+  width: 10,
+  height: 10,
+  top: 0,
+  left: 0,
+  right: 10,
+  bottom: 10,
+  toJSON: () => ({}),
+} as DOMRect;
+
+/**
+ * The shell's props, minus `children`.
+ *
+ * `children` is a required member of `MainLayout`'s prop type, so `createElement`'s third
+ * argument alone does not satisfy the compiler and passing it as a *prop* trips
+ * `lint/correctness/noChildrenProp`. Narrowing the component to its non-children props keeps
+ * both honest: React still gets its child the canonical way.
+ */
+type ShellProps = Omit<Parameters<typeof MainLayout>[0], "children">;
+const Shell = MainLayout as unknown as ComponentType<ShellProps>;
+
+let restoreRects: (() => void) | undefined;
+let container: HTMLDivElement;
+let root: Root;
+
+const EMPTY_INDEX = {
+  quizzes: [],
+  categories: [],
+  creators: [],
+  pages: [],
+} as unknown as SearchIndex;
+
+beforeEach(() => {
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  stubMatchMedia();
+  const original = Element.prototype.getClientRects;
+  Element.prototype.getClientRects = function getClientRects() {
+    return [aBox] as unknown as DOMRectList;
+  };
+  restoreRects = () => {
+    Element.prototype.getClientRects = original;
+  };
+
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+  act(() => {
+    root.render(
+      createElement(
+        Shell,
+        {
+          copy: shellPageCopy,
+          brandId: "alignsynch",
+          viewer: PLATFORM_VIEWER,
+          account: null,
+          searchIndex: EMPTY_INDEX,
+        },
+        createElement("p", null, "the page behind the drawer"),
+      ),
+    );
+  });
+});
+
+afterEach(() => {
+  act(() => root.unmount());
+  container.remove();
+  restoreRects?.();
+  document.body.style.overflow = "";
+});
+
+/** The one control in the shell that opens navigation. */
+function trigger(): HTMLElement {
+  const element = container.querySelector<HTMLElement>('[aria-controls="app-sidebar"]');
+  if (element === null) throw new Error("the shell rendered no drawer trigger");
+  return element;
+}
+
+/** The rail itself — `<aside id="app-sidebar">`. */
+function panel(): HTMLElement {
+  const element = container.querySelector<HTMLElement>("#app-sidebar");
+  if (element === null) throw new Error("the shell rendered no rail");
+  return element;
+}
+
+/** What a keyboard user does to a button: focus it, then press it. */
+function press(element: HTMLElement) {
+  element.focus();
+  act(() => {
+    element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+}
+
+function pressKey(key: string, options: KeyboardEventInit = {}) {
+  const target = document.activeElement ?? document.body;
+  act(() => {
+    target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...options }));
+  });
+}
+
+describe("the drawer below 768: the hamburger, and what pressing it does", () => {
+  it("starts closed, with a trigger that says so", () => {
+    const button = trigger();
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+    // Below `md` only. At `md` and up the rail is a column, and a control that toggles something
+    // already on screen is the button-that-does-nothing this shell has removed twice.
+    expect(button.className).toContain("md:hidden");
+    expect(panel().getAttribute("role")).toBeNull();
+  });
+
+  it("opens a dialog and moves focus into it, not into the page behind", () => {
+    press(trigger());
+
+    expect(trigger().getAttribute("aria-expanded")).toBe("true");
+    expect(panel().getAttribute("role")).toBe("dialog");
+    expect(panel().getAttribute("aria-modal")).toBe("true");
+
+    const focused = document.activeElement;
+    expect(focused).not.toBeNull();
+    expect(panel().contains(focused)).toBe(true);
+    // The close control, specifically: the first thing a keyboard user needs is the way out.
+    expect(focused?.getAttribute("aria-label")).toBe(
+      itemLabel(sectionOf(shellPageCopy, "rail"), "close"),
+    );
+  });
+
+  it("locks the page behind it, and gives the page back when it closes", () => {
+    expect(document.body.style.overflow).toBe("");
+
+    press(trigger());
+    expect(document.body.style.overflow).toBe("hidden");
+
+    pressKey("Escape");
+    expect(document.body.style.overflow).toBe("");
+  });
+
+  it("closes on Escape and puts focus back on the hamburger", () => {
+    press(trigger());
+    expect(trigger().getAttribute("aria-expanded")).toBe("true");
+
+    pressKey("Escape");
+
+    expect(trigger().getAttribute("aria-expanded")).toBe("false");
+    expect(panel().getAttribute("role")).toBeNull();
+    // Without this a keyboard user is dropped at the top of the document the moment the panel
+    // disappears — the failure the click-to-close paths never show you.
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it("closes from its own X and puts focus back too", () => {
+    press(trigger());
+    const close = Array.from(panel().querySelectorAll<HTMLElement>("button")).find(
+      (element) =>
+        element.getAttribute("aria-label") ===
+          itemLabel(sectionOf(shellPageCopy, "rail"), "close") && !element.hasAttribute("tabindex"),
+    );
+    if (close === undefined) throw new Error("the drawer rendered no close control");
+
+    press(close);
+
+    expect(trigger().getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it("keeps Tab inside the panel, wrapping at both ends", () => {
+    press(trigger());
+
+    const stops = Array.from(
+      panel().querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((element) => element.getClientRects().length > 0);
+    expect(stops.length).toBeGreaterThan(2);
+
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+
+    first.focus();
+    expect(document.activeElement).toBe(first);
+    pressKey("Tab", { shiftKey: true });
+    expect(document.activeElement).toBe(last);
+
+    last.focus();
+    expect(document.activeElement).toBe(last);
+    pressKey("Tab");
+    expect(document.activeElement).toBe(first);
+  });
+
+  it("steps out of the way when the viewport becomes a column", () => {
+    press(trigger());
+    expect(trigger().getAttribute("aria-expanded")).toBe("true");
+
+    // The panel is `md:sticky` from 768px, so an open drawer would otherwise sit over a page that
+    // stays scroll-locked. The effect listens for exactly this transition.
+    wide = true;
+    act(() => {
+      for (const listener of mediaListeners) {
+        listener({ matches: true } as MediaQueryListEvent);
+      }
+    });
+
+    expect(trigger().getAttribute("aria-expanded")).toBe("false");
+    expect(document.body.style.overflow).toBe("");
   });
 });
 
