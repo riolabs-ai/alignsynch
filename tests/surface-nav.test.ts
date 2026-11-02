@@ -98,7 +98,7 @@ describe("the shell's menus", () => {
   it("keeps every alignment destination — a status never adds or removes a row", () => {
     expect(hrefsOf(navHtml("platform"))).toEqual([
       "/dashboard",
-      "/#questions",
+      "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
       "/#templates",
@@ -106,7 +106,7 @@ describe("the shell's menus", () => {
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
       "/dashboard",
-      "/#questions",
+      "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
       "/#templates",

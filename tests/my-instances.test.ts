@@ -222,12 +222,12 @@ describe("signed in", () => {
     expect(rows).toHaveLength(1);
     expect(rowText(html, "complete")).toContain("Relationship Basics");
     expect(rowText(html, "complete")).toContain("Rowan");
-    expect(rowText(html, "complete")).toContain("You have both answered");
+    expect(rowText(html, "complete")).toContain("You have both accepted");
     expect(html).toContain(`href="${instancePath(completeRow.instanceRecordId)}"`);
     expect(html).not.toContain("data-empty-state");
     // The title row carries the one primary action — the ancestor's header, translated.
     expect(html).toContain('href="/assessment"');
-    expect(textOf(html)).toContain("Start an assessment");
+    expect(textOf(html)).toContain("Start a relationship");
   });
 
   it("shows the empty state, with a way to start one, when the account is in nothing", async () => {
@@ -242,11 +242,40 @@ describe("signed in", () => {
     const text = textOf(html);
 
     expect(html).toContain('data-empty-state="true"');
-    expect(text).toContain("You are not in an assessment yet");
-    expect(text).toContain("An instance starts when you pick a template and invite someone");
+    expect(text).toContain("You are not in a relationship yet");
+    expect(text).toContain("A relationship starts when you pick a template and invite someone");
     expect(html).toContain('href="/assessment"');
     // An empty list is not a blank page and not an error panel.
     expect(html).not.toContain("data-my-instances-unreadable");
+  });
+
+  /**
+   * The owner's vocabulary, on the one page that has to carry it.
+   *
+   * A *relationship* is the container this list is a list of; an *assessment* is the scored Gap
+   * analysis a finished session produces. So the word assessment cannot appear in the page's
+   * visible copy at all — not as the title, not as the CTA, not in the empty state — and the Gap
+   * is said to open on **acceptance**, which is the hinge `instanceStatusOf()` actually has since
+   * R2. Rendered text only: a class name or a `data-` attribute is not copy, and `textOf()` has
+   * already dropped them.
+   */
+  it("calls the container a relationship, and the Gap's hinge acceptance", async () => {
+    currentUser.mockResolvedValue({
+      userId: "52dfe892-be03-421b-ac34-1b35d74633dc",
+      email: "initiator@demo.alignsynch.test",
+      name: "Avery",
+    });
+    listRelationshipCards.mockResolvedValue([completeRow]);
+
+    const html = await render();
+    const text = textOf(html);
+
+    expect(text).toContain("My Relationships");
+    expect(text).toContain("Start a relationship");
+    expect(text).not.toMatch(/assessment/i);
+    expect(text).toContain("read the Gap once you&#x27;ve both accepted");
+    expect(text).not.toMatch(/submitted/i);
+    expect(rowText(html, "complete")).toContain("You have both accepted");
   });
 
   it("says only that the other party is still to answer — no score, no answered count", async () => {
@@ -448,7 +477,7 @@ describe("the unlock marker (#252)", () => {
     const html = await render();
     const row = rowText(html, "complete");
 
-    expect(row).toContain("You have both answered");
+    expect(row).toContain("You have both accepted");
     expect(html).not.toContain("data-instance-marker");
     expect(html).not.toContain("Complete since you last looked");
     expect(listSection(html)).toContain('data-instance-unlock="seen"');
@@ -508,7 +537,7 @@ describe("the unlock marker (#252)", () => {
     expect(initiatorHtml).toContain("Complete since you last looked");
     expect(counterpartyHtml).not.toContain("data-instance-marker");
     expect(counterpartyHtml).not.toContain("Complete since you last looked");
-    expect(counterpartyHtml).toContain("You have both answered");
+    expect(counterpartyHtml).toContain("You have both accepted");
     // …and the "other party" line is the other one, from the seat the read resolved.
     expect(rowText(initiatorHtml, "complete")).toContain("Rowan");
     expect(rowText(counterpartyHtml, "complete")).toContain("Avery");

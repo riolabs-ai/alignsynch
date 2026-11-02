@@ -138,7 +138,6 @@ export async function renderRoute(
   pathname: string,
   layout: RouteLayout = "mainlayout",
 ): Promise<string> {
-  const { SidebarProvider } = await import("@/components/layout/sidebar-context");
   const Layout =
     layout === "marketing"
       ? (await import("@/app/(marketing)/layout")).default
@@ -175,11 +174,7 @@ export async function renderRoute(
         "data-parity-brand": brand.name,
         "data-parity-brand-vars": JSON.stringify(brandThemeVars(brand)),
       },
-      React.createElement(
-        SidebarProvider as unknown as React.ComponentType<{ children: React.ReactNode }>,
-        null,
-        shell,
-      ),
+      shell,
     ),
   );
 }

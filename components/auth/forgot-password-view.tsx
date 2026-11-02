@@ -2,11 +2,14 @@
 
 // template-ancestor: components/auth/login-view.tsx   (variation: one email field and one button, and the answer is a sentence rather than a session)
 
+import { AuthHomeLink } from "@/components/auth/auth-home-link";
+import { MarkGlyph } from "@/components/auth/mark-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy } from "@/content/pages";
+import type { AuthMarkId } from "@/lib/auth/marks";
 import {
   RESET_TTL_MINUTES,
   resetRequestItemId,
@@ -38,11 +41,24 @@ import { type FormEvent, useState } from "react";
 export function ForgotPasswordView({
   copy,
   request,
+  mark,
 }: {
   copy: PageCopy;
   request: (email: string) => Promise<ResetRequestOutcome>;
+  /**
+   * This build's mark, resolved on the server from `lib/auth/marks.ts` and passed down as an id.
+   *
+   * Before this prop the route drew no mark at all, so an AlignSynch person who followed a
+   * "forgot password" link landed on a page with nothing of the product on it — the one auth
+   * surface the brand table never reached. It is an *id* and not a component for the reason
+   * `components/auth/mark-icon.tsx` states: a React component is not a serialisable prop across
+   * the server→client boundary, and this view is a client module.
+   */
+  mark: AuthMarkId;
 }) {
   const band = sectionOf(copy, "request");
+  /** The way back to the site (`auth-home-link.tsx`); `back` above is the way back to sign-in. */
+  const home = sectionOf(copy, "home");
   const values = { minutes: String(RESET_TTL_MINUTES) };
   const [address, setAddress] = useState("");
   const [pending, setPending] = useState(false);
@@ -65,6 +81,9 @@ export function ForgotPasswordView({
   return (
     <div className="w-full max-w-md space-y-6">
       <header className="space-y-2 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-action">
+          <MarkGlyph id={mark} className="h-6 w-6 text-action-foreground" />
+        </div>
         <h1 className="text-3xl font-bold">{copy.heading}</h1>
         {copy.subtitle !== undefined && (
           <p className="text-muted-foreground">{fillLabel(copy.subtitle, values)}</p>
@@ -111,7 +130,7 @@ export function ForgotPasswordView({
         </CardContent>
       </Card>
 
-      <div className="text-center">
+      <div className="flex items-center justify-between gap-4">
         <Link
           href="/login"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground"
@@ -119,6 +138,7 @@ export function ForgotPasswordView({
           <ArrowLeft className="h-3 w-3" />
           {itemLabel(band, "back")}
         </Link>
+        <AuthHomeLink label={itemLabel(home, "back")} />
       </div>
     </div>
   );

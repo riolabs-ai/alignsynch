@@ -132,7 +132,8 @@ export function shellCopy(brand: Brand): PageCopy {
        *
        *   Home           `/`                      the marketing header's front-page row
        *   Dashboard      `/dashboard`             the signed-in console's front page (console 2/5)
-       *   How it works   the `#questions` band of `/` — how the two questions are asked
+       *   How it works   `/how-it-works`          the in-app onboarding page: the order a member
+       *                                           does the work in, step by step
        *   My Relationships `/assessment/instances` — the relationship list R1 ships, read from
        *                                             Postgres; not the browser-local `/v1/` prototype
        *   Library        `/assessment/templates`  the template catalogue: built-ins plus this
@@ -155,6 +156,20 @@ export function shellCopy(brand: Brand): PageCopy {
        * templates" look like a settings page. Templates then follows, one row above Support,
        * which is the order the review asked for: the marketing bands end the menu rather than
        * interrupting the console.
+       *
+       * **How it works is a page now, not the marketing band.** The row used to be `/#questions`
+       * — a signed-in member was sent out to the public site to be told how the product works —
+       * and the owner's review asked for the opposite: a wizard/onboarding page inside the
+       * console (`app/(mainlayout)/how-it-works/page.tsx`, words in `data/pages/how-it-works.ts`).
+       * The label is unchanged, and it is still the second row: the order the review set is
+       * Dashboard, How it works, My Relationships, Library, Templates, Support, operator rows.
+       *
+       * **Templates and Library are two rows with two jobs, never one renamed to the other.**
+       * Templates is the catalogue a member starts from (`Use Template` → a new My Relationship);
+       * Library is that member's own templates, built from their own relationships and Aspects.
+       * Both rows resolve to the catalogue today — a second catalogue page is not this card — so
+       * neither word may stand in for the other: "Templates" is what you use, "Library" is what
+       * is yours.
        *
        * Every console row here is a route this build serves to every viewer: a signed-out request
        * is answered with the route's own redirect to `/login?next=…`, never a 404, so a member's

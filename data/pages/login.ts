@@ -151,7 +151,17 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
        */
       {
         id: "sign-in-alignsynch",
-        body: "Sign in to see your assessments.",
+        body: "Sign in to see your relationships.",
+      },
+      /**
+       * The way back to the site (every auth screen carries one — `components/auth/
+       * auth-home-link.tsx`). It is a shared section, not a brand's: a door out of a sign-in form
+       * is the same door on both products, and `loginCopyFor` names it like `legal` and `google`
+       * because that projection rebuilds the section list.
+       */
+      {
+        id: "home",
+        items: [{ id: "back", label: "Back to home" }],
       },
       /**
        * The demo surfaces this route may draw (#218), and they are mutually exclusive: the page

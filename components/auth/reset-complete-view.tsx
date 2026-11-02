@@ -1,6 +1,9 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: the success band alone — no fields, no submit, one sentence and a way back to sign in)
 
+import { AuthHomeLink } from "@/components/auth/auth-home-link";
+import { MarkGlyph } from "@/components/auth/mark-icon";
 import type { PageCopy } from "@/content/pages";
+import type { AuthMarkId } from "@/lib/auth/marks";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -17,18 +20,31 @@ import Link from "next/link";
  * The words are `data/pages/password-reset.ts`'s `complete` band, passed in by the page. The one
  * sentence the card requires — other devices are signed out — is `signed-out`, and it is a fact
  * the store measured (`revokeSessions` returned a count) rather than a promise.
+ *
+ * **Two doors and a mark.** `mark` is this build's glyph, resolved on the server
+ * (`AUTH_MARKS_BY_BRAND`) exactly like `/login`'s and `/register`'s, so the end of the reset flow
+ * is not a bare page on the alignment build; `home` is the way back to the site, which this band
+ * never had — a person who has just set a password is the least likely to want another form, and
+ * the only control here used to be one.
  */
-export function ResetCompleteView({ copy }: { copy: PageCopy }) {
+export function ResetCompleteView({ copy, mark }: { copy: PageCopy; mark: AuthMarkId }) {
   const band = sectionOf(copy, "complete");
+  const home = sectionOf(copy, "home");
   return (
     <div className="w-full max-w-md space-y-4 text-center">
+      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-action">
+        <MarkGlyph id={mark} className="h-6 w-6 text-action-foreground" />
+      </div>
       <h1 className="text-3xl font-bold">{copy.heading}</h1>
       {copy.subtitle !== undefined && <p className="text-muted-foreground">{copy.subtitle}</p>}
       <p className="text-sm text-muted-foreground">{itemLabel(band, "signed-out")}</p>
-      <Link href="/login" className="inline-flex items-center gap-1 font-medium text-action">
-        {itemLabel(band, "sign-in")}
-        <ArrowRight className="h-3 w-3" />
-      </Link>
+      <div className="flex items-center justify-center gap-6">
+        <Link href="/login" className="inline-flex items-center gap-1 font-medium text-action">
+          {itemLabel(band, "sign-in")}
+          <ArrowRight className="h-3 w-3" />
+        </Link>
+        <AuthHomeLink label={itemLabel(home, "back")} />
+      </div>
     </div>
   );
 }

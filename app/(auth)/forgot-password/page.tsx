@@ -1,5 +1,7 @@
 import { ForgotPasswordView } from "@/components/auth/forgot-password-view";
+import { brand, brandIdOf } from "@/data/brand";
 import { resetRequestPageCopy } from "@/data/pages/password-reset";
+import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import type { Metadata } from "next";
 import { requestReset } from "./actions";
 
@@ -23,13 +25,19 @@ export const metadata: Metadata = {
  * The route is reachable from `/login` (`data/pages/login.ts`'s `forgot` item) and from
  * `/reset/[token]` when a link is stale — the two places a person actually finds themselves
  * needing it.
+ *
+ * **The mark is resolved here, on the server** (`AUTH_MARKS_BY_BRAND[brandId]`), the same way
+ * `/login` and `/register` resolve theirs: this module may read `data/brand`, and the client view
+ * is handed an id. Until this card the route drew nothing of the product at all, which is how the
+ * alignment build's reset surface came to have no brand on it.
  */
 export const dynamic = "force-dynamic";
 
 export default function ForgotPasswordPage() {
+  const marks = AUTH_MARKS_BY_BRAND[brandIdOf(brand)];
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
-      <ForgotPasswordView copy={resetRequestPageCopy} request={requestReset} />
+      <ForgotPasswordView copy={resetRequestPageCopy} request={requestReset} mark={marks.hero} />
     </main>
   );
 }

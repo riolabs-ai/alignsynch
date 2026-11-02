@@ -46,7 +46,12 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Your assessments",
+  /**
+   * The page's `heading` is the title, not a second string: the rail says "My Relationships"
+   * (`data/pages/shell.ts`), and a `<title>` spelled here would be the one place the console
+   * could call this surface something else. The `<h1>` reads the same field.
+   */
+  title: myInstancesPageCopy.heading,
 };
 
 /** The first value of a search param — Next hands a repeated param back as an array. */

@@ -2,11 +2,14 @@
 
 // template-ancestor: components/auth/login-view.tsx   (variation: two password fields, no email, and the credential is the link in the address)
 
+import { AuthHomeLink } from "@/components/auth/auth-home-link";
+import { MarkGlyph } from "@/components/auth/mark-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy } from "@/content/pages";
+import type { AuthMarkId } from "@/lib/auth/marks";
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -44,6 +47,7 @@ export function ResetPasswordView({
   token,
   state,
   setPassword,
+  mark,
 }: {
   copy: PageCopy;
   token: string;
@@ -53,8 +57,19 @@ export function ResetPasswordView({
     password: string;
     confirmation: string;
   }) => Promise<ResetSetOutcome>;
+  /**
+   * This build's mark, resolved on the server from `lib/auth/marks.ts` and passed down as an id —
+   * the same contract `/forgot-password` and `/register` use, and the only mechanism here.
+   *
+   * The route had none before: a person who opened the link from their mail saw a bare form with
+   * nothing of the product on it. It is an id, not a component, because a React component is not a
+   * serialisable prop across the server→client boundary and this view is a client module.
+   */
+  mark: AuthMarkId;
 }) {
   const band = sectionOf(copy, "form");
+  /** The way back to the site (`auth-home-link.tsx`); `back` above is the way back to sign-in. */
+  const home = sectionOf(copy, "home");
   const values = { min: String(PASSWORD_MIN_LENGTH), max: String(PASSWORD_MAX_LENGTH) };
   const router = useRouter();
   const [passwordValue, setPasswordValue] = useState("");
@@ -88,6 +103,9 @@ export function ResetPasswordView({
   return (
     <div className="w-full max-w-md space-y-6">
       <header className="space-y-2 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-action">
+          <MarkGlyph id={mark} className="h-6 w-6 text-action-foreground" />
+        </div>
         <h1 className="text-3xl font-bold">{copy.heading}</h1>
         {copy.subtitle !== undefined && <p className="text-muted-foreground">{copy.subtitle}</p>}
       </header>
@@ -156,7 +174,7 @@ export function ResetPasswordView({
         </CardContent>
       </Card>
 
-      <div className="text-center">
+      <div className="flex items-center justify-between gap-4">
         <Link
           href="/login"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground"
@@ -164,6 +182,7 @@ export function ResetPasswordView({
           <ArrowLeft className="h-3 w-3" />
           {itemLabel(band, "back")}
         </Link>
+        <AuthHomeLink label={itemLabel(home, "back")} />
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 import { ResetPasswordView } from "@/components/auth/reset-password-view";
+import { brand, brandIdOf } from "@/data/brand";
 import { resetFormPageCopy } from "@/data/pages/password-reset";
+import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { readResetToken } from "@/lib/auth/reset-set";
 import type { ResetTokenState } from "@/lib/auth/reset-token";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -59,6 +61,13 @@ export default async function ResetPasswordPage({
         token={token}
         state={state}
         setPassword={setPassword}
+        /**
+         * The build's own mark, resolved on the server like every other auth surface's: this
+         * module may read `data/brand`, the view is a client module and is handed an id. The
+         * route drew none before, and it is the one screen a person reaches from a mailbox on a
+         * device that has never seen the product.
+         */
+        mark={AUTH_MARKS_BY_BRAND[brandIdOf(brand)].hero}
       />
     </main>
   );

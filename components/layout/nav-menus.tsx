@@ -70,11 +70,20 @@ import type React from "react";
 /** What the sidebar knows and the menu needs — passed in, never read from context. */
 export interface NavRenderProps {
   copy: PageCopy;
-  /** `xl` and up: the rail renders icons with a tooltip-free `aria-label`-less link. */
+  /**
+   * Explicit icon-only markup — the label in `title`/`aria-label`, no text node. The shell passes
+   * `false` at every width now (the rail's narrow form is a class, see `NavRow`), so this is the
+   * prop a caller uses when it wants the icon row *as markup* — which is how the node tests drive
+   * the shape without a browser.
+   */
   collapsed: boolean;
   /** The current route, for the active row (`/` matches only `/`, not everything). */
   pathname: string;
-  /** Called when a row is followed — the mobile drawer closes itself on this. */
+  /**
+   * Called when a row is followed. The shell has nothing to close any more — the rail is a sticky
+   * column — but the callback is kept so a surface that mounts this menu inside a drawer can close
+   * itself without a second menu component.
+   */
   onNavigate: () => void;
   /**
    * The hrefs whose destination is powered off by a feature flag (issue #175). Absent means
@@ -150,9 +159,26 @@ export function NavRow(props: NavRowProps) {
   const className = collapsed
     ? cn("flex h-10 w-10 items-center justify-center rounded-md transition-colors", tone)
     : cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 xl:py-2.5 text-sm font-medium transition-colors",
+        /**
+         * **Below `xl` this row is an icon.** The rail narrows before the label can fit
+         * (`components/layout/sidebar.tsx`), so the text is `hidden xl:inline` and the row is a
+         * 40px square centred in a 56/64px column; from `xl` it is the full-width row it always
+         * was. The accessible name does not depend on the width: `title` and `aria-label` carry
+         * the label at every breakpoint, so the icon-only rail is still readable by a pointer and
+         * announced by a screen reader. That is a class, not state — no component measures a
+         * window to decide whether a label exists.
+         */
+        "flex h-10 items-center justify-center gap-3 rounded-md text-sm font-medium transition-colors xl:h-auto xl:justify-start xl:px-3 xl:py-2.5",
         tone,
       );
+
+  /**
+   * The words a screen reader hears and a pointer shows on hover. A pending row carries its
+   * status as well, because the second line that explains it is `hidden xl:flex` like every other
+   * label — the announcement may not depend on a width either.
+   */
+  const accessibleLabel = pending ? `${label} — ${statusWord.toLowerCase()}` : label;
+  const title = pending ? surface?.reason : label;
 
   const content = collapsed ? (
     icon
@@ -160,14 +186,14 @@ export function NavRow(props: NavRowProps) {
     <>
       <span>{icon}</span>
       {pending ? (
-        <span className="flex min-w-0 flex-col">
+        <span className="hidden min-w-0 flex-col xl:flex">
           <span className="truncate">{label}</span>
           <span className="truncate text-xs font-normal">
             {statusWord} — {surface?.reason}
           </span>
         </span>
       ) : (
-        <span>{label}</span>
+        <span className="hidden xl:inline">{label}</span>
       )}
     </>
   );
@@ -177,19 +203,31 @@ export function NavRow(props: NavRowProps) {
       type="button"
       disabled
       aria-disabled="true"
-      aria-label={collapsed ? `${label} — ${statusWord.toLowerCase()}` : undefined}
-      title={surface?.reason}
+      aria-label={accessibleLabel}
+      title={title}
       data-surface-status={surface?.status}
       className={className}
     >
       {content}
     </button>
   ) : props.onSelect === undefined ? (
-    <Link href={props.href} onClick={onNavigate} className={className}>
+    <Link
+      href={props.href}
+      onClick={onNavigate}
+      aria-label={accessibleLabel}
+      title={title}
+      className={className}
+    >
       {content}
     </Link>
   ) : (
-    <button type="button" onClick={props.onSelect} className={className}>
+    <button
+      type="button"
+      onClick={props.onSelect}
+      aria-label={accessibleLabel}
+      title={title}
+      className={className}
+    >
       {content}
     </button>
   );
@@ -338,8 +376,8 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
 
 /**
  * The alignment product's menu: the console's own destinations in the order the owner's review
- * set, then the two front-page bands and Support, then the operator's rows when the viewer
- * carries `admin-console`.
+ * set, then the one front-page band it still links, then Support, then the operator's rows when
+ * the viewer carries `admin-console`.
  *
  * **The rail opens on Dashboard and there is exactly one row for `/dashboard`.** The old menu had
  * "Home" at `/` and a separate "Overview" at `/dashboard`: two words, one console. They are one
@@ -389,10 +427,10 @@ function AlignSynchMenu({
         onNavigate={onNavigate}
       />
       <NavRow
-        href="/#questions"
+        href="/how-it-works"
         icon={<Workflow className="size-5" />}
         label={itemLabel(nav, "how-it-works")}
-        active={false}
+        active={isActive(pathname, "/how-it-works")}
         collapsed={collapsed}
         onNavigate={onNavigate}
       />
@@ -413,15 +451,14 @@ function AlignSynchMenu({
         onNavigate={onNavigate}
       />
       {/*
-        The two front-page bands the brand shipped. They are anchors into `/`'s own sections
-        (`/#templates`, `/#questions`), which is why `/` gives those bands an `id`: a route that
-        does not exist yet is a later card, and a nav that links to it early is the same 404 this
-        issue removes. `tests/nav-brand.test.ts` holds these hrefs to the ids the rendered page
-        emits, so an anchor cannot drift from its band.
-
-        Templates is one row above Support on purpose (the review's order), and it stays after the
-        console rows: the rail reads console → marketing bands, so the product a member signed up
-        for comes before the page it was sold on.
+        Templates is the front page's `#templates` band, the one marketing anchor the console
+        still carries: the four record templates the brand ships are drawn there, and the rail
+        names them with the page that shows them. **How it works is not an anchor any more** — it
+        is `/how-it-works`, an in-app onboarding page
+        (`app/(mainlayout)/how-it-works/page.tsx`) — because the owner's review of the console
+        said a signed-in member must not be sent to the public site to be told how the product
+        works. `tests/nav-brand.test.ts` holds every remaining `/#…` href to an `id` the rendered
+        front page emits; this comment is the record of why there is only one left.
       */}
       <NavRow
         href="/#templates"
