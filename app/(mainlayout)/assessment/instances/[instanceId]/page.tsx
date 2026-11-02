@@ -6,35 +6,50 @@ import {
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
+import { readRelationshipById } from "@/lib/db/assessments";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { resendRefusalOf } from "@/lib/flow/resend";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
-import { markUnlockSeen, readFlowScreen } from "@/lib/flow/store";
+import { markUnlockSeen } from "@/lib/flow/store";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { cache } from "react";
 
 /**
- * `/assessment/instances/[instanceId]` — the screen both parties share (#146).
+ * `/assessment/instances/[instanceId]` — one relationship, both seats (#146, #409).
  *
- * The viewer is resolved from the **cookie**, never from the URL: the instance id is in the
- * path because a page needs an address, and the cookie is what says which party is reading
- * it. A browser with no party token for this instance gets a 404 — the screen does not
- * exist for it, and there is nothing to leak by saying so.
+ * The viewer is resolved from the **cookie**, never from the URL: the id is in the path because a
+ * page needs an address, and the cookie (or, failing it, the signed-in account, or a relationship
+ * membership) is what says which party is reading it. A request that is none of those gets a 404
+ * — the screen does not exist for it, and there is nothing to leak by saying so.
  *
- * **A signed-in account is the second kind of party** (#183, part 2). `demo_account` binds
- * Avery and Rowan to their party rows, so the demo panel can sign in as a person and land here;
- * `readFlowScreen` asks the cookie first and the session second, and either way the role comes
- * out of Postgres. `authConfigured()` guards the session read, because the gate — and every
- * render of this route in it — runs with no `NEON_AUTH_*` env at all.
+ * **A signed-in account is the second kind of party** (#183, part 2). `demo_account` binds Avery
+ * and Rowan to their party rows, so the demo panel can sign in as a person and land here;
+ * `readFlowScreen` asks the cookie first and the session second, and either way the role comes out
+ * of Postgres. `authConfigured()` guards the session read, because the gate — and every render of
+ * this route in it — runs with no `NEON_AUTH_*` env at all.
+ *
+ * **One read, two halves.** `readRelationshipById()` resolves the relationship the id names and
+ * hands back both the money facts — sliced to the Initiator — and the screen's gated projection,
+ * which is `readFlowScreen()`: it asks Postgres only for the roles `visibleRoles()` allows, so the
+ * page is handed `report: null` and `aspects[].own` before a session is complete, and `paid: null`
+ * for every viewer who is not the Initiator. This page filters neither; it draws what it was
+ * given.
+ *
+ * **The id may name either noun.** Every link in this tree carries a session record id
+ * (`lib/flow/paths.ts::instancePath`), and the `/v1` prototype addresses the relationship, so the
+ * read answers both and takes the newest session of a relationship. That is what keeps
+ * `/assessment/instances/assessment-instance-avery-rowan` — the demo's own URL — the same screen
+ * as a relationship-shaped one, with no second route.
  *
  * `force-dynamic`, and no `generateStaticParams`: both would be a database read at build.
  *
  * **Opening this screen is the event that clears the unlock marker** (#252). The list says
  * "complete since you last looked"; this page writes `party.unlock_seen_at` for the party the
  * request resolved as, once and only once the instance is complete — see `recordUnlockSeen()`
- * above for the three rules that keep the write from firing on a prefetch, on an unfinished
+ * below for the three rules that keep the write from firing on a prefetch, on an unfinished
  * instance, or on a connection that has already dropped.
  *
  * The invite notice (`?invite=sent|unset|failed`) is the creation redirect's own fact. It is
@@ -54,6 +69,34 @@ async function viewerUserId(): Promise<string | null> {
   if (!authConfigured()) return null;
   const user = await currentUser();
   return user?.userId ?? null;
+}
+
+/**
+ * The detail for one id, memoised for the request (#204's rule, applied here).
+ *
+ * `generateMetadata()` and the page ask the same question about the same request, and the answer
+ * costs a round trip for the relationship plus the flow screen's own statements. `cache()` holds
+ * it for the life of one request and nothing longer: a failure is not memoised, and the next
+ * request reads the database again.
+ */
+const readDetail = cache(
+  async (
+    ref: string,
+    token: string | undefined,
+    inviteToken: string | null,
+    viewer: string | null,
+  ) => readRelationshipById(ref, { token, inviteToken, viewerUserId: viewer }),
+);
+
+/** One call, from either entry point — the cookies and the session are resolved here. */
+async function detailFor(ref: string) {
+  const jar = await cookies();
+  return readDetail(
+    ref,
+    jar.get(partyCookieName(ref))?.value,
+    jar.get(inviteCookieName(ref))?.value ?? null,
+    await viewerUserId(),
+  );
 }
 
 /**
@@ -99,13 +142,8 @@ export async function generateMetadata({
   params: Promise<{ instanceId: string }>;
 }): Promise<Metadata> {
   const { instanceId } = await params;
-  const jar = await cookies();
-  const screen = await readFlowScreen({
-    instanceRecordId: instanceId,
-    token: jar.get(partyCookieName(instanceId))?.value,
-    viewerUserId: await viewerUserId(),
-  });
-  return { title: screen?.title ?? "Assessment Not Found" };
+  const detail = await detailFor(instanceId);
+  return { title: detail?.screen.title ?? "Assessment Not Found" };
 }
 
 export default async function AssessmentInstancePage({
@@ -118,14 +156,9 @@ export default async function AssessmentInstancePage({
   const { instanceId } = await params;
   const { problem, invite, resend } = await searchParams;
 
-  const jar = await cookies();
-  const screen = await readFlowScreen({
-    instanceRecordId: instanceId,
-    token: jar.get(partyCookieName(instanceId))?.value,
-    inviteToken: jar.get(inviteCookieName(instanceId))?.value ?? null,
-    viewerUserId: await viewerUserId(),
-  });
-  if (screen === undefined) notFound();
+  const detail = await detailFor(instanceId);
+  if (detail === undefined) notFound();
+  const { screen } = detail;
 
   // #252 — this visit is the event that clears "complete since you last looked" on
   // `/assessment/instances`, for **this** party only: `screen.viewer.role` is the seat the read
@@ -149,6 +182,7 @@ export default async function AssessmentInstancePage({
     <AssessmentInstanceView
       screen={screen}
       copy={assessmentInstancePageCopy}
+      paid={detail.paid}
       {...(inviteNotice === undefined ? {} : { inviteNotice })}
       {...(problemCode === undefined ? {} : { problem: problemCode })}
       {...(refusedReinvite === undefined ? {} : { resendRefusal: refusedReinvite })}
