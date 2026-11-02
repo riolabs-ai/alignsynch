@@ -1,11 +1,11 @@
-// template-ancestor: components/ui/card.tsx
-import { SectionStub } from "@/components/v1/section-stub";
-import { SECTION_SUMMARIES, isDashboardPersona, sectionAllowedFor } from "@/lib/v1/persona";
+// template-ancestor: components/pricing/pricing-plans.tsx
+import { V1Shop } from "@/components/v1/v1-shop";
+import { isDashboardPersona, sectionAllowedFor } from "@/lib/v1/persona";
 import { notFound } from "next/navigation";
 
-/** `/v1/[persona]/shop` — the shop stub (initiator only). */
-export default async function ShopStubPage({ params }: { params: Promise<{ persona: string }> }) {
+/** `/v1/[persona]/shop` — the per-relationship subscription and checkout (initiator only). */
+export default async function ShopPage({ params }: { params: Promise<{ persona: string }> }) {
   const { persona } = await params;
   if (!isDashboardPersona(persona) || !sectionAllowedFor(persona, "shop")) notFound();
-  return <SectionStub section="Shop" persona={persona} summary={SECTION_SUMMARIES.shop} />;
+  return <V1Shop canManageBilling />;
 }

@@ -59,6 +59,7 @@ import {
   type Aspect,
   type Opinions,
 } from "../../content/assessment";
+import { RELATIONSHIP_PRICE_CENTS } from "./relationship-types";
 
 /* ------------------------------------------------------------------ *
  * Templates — the library the editor and the relationship form read
@@ -309,8 +310,26 @@ export type SubscriptionStatus = z.infer<typeof zSubscriptionStatus>;
 export const SUBSCRIPTION_STATUSES = zSubscriptionStatus.options;
 
 /**
+ * One payment, recorded when a subscription starts or renews — the payment-history rows the shop
+ * lists, one per period. The amount is the plan's price from `data/v1/plans.ts`, in integer
+ * cents; the history lists the purchases and never sums them into a total.
+ */
+const zV1Payment = z
+  .object({
+    id: z.string().min(1),
+    plan: zSubscriptionPlan,
+    amountCents: z.number().int().positive(),
+    paidAt: z.string().min(1),
+  })
+  .strict();
+
+export type V1Payment = z.infer<typeof zV1Payment>;
+
+/**
  * One subscription — there is only ever one per relationship in the prototype, mocked and
- * never charged. `periodEnd` is an ISO instant, the same convention as every other date here.
+ * never charged. `periodEnd` is an ISO instant, the same convention as every other date here,
+ * and `payments` is the one-purchase-per-period history the shop reads (no total is ever
+ * derived from it).
  */
 const zSubscription = z
   .object({
@@ -318,6 +337,7 @@ const zSubscription = z
     status: zSubscriptionStatus,
     periodEnd: z.string().min(1),
     startedAt: z.string().min(1),
+    payments: z.array(zV1Payment),
   })
   .strict();
 
@@ -555,6 +575,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
       status: "past_due",
       periodEnd: "2026-11-30T09:00:00.000Z",
       startedAt: "2026-10-30T09:00:00.000Z",
+      payments: [
+        {
+          id: "pay-invited-1",
+          plan: "monthly",
+          amountCents: RELATIONSHIP_PRICE_CENTS,
+          paidAt: "2026-10-30T09:00:00.000Z",
+        },
+      ],
     },
     history: [],
     lastSessionAt: null,
@@ -621,6 +649,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
       status: "active",
       periodEnd: "2026-11-30T11:30:00.000Z",
       startedAt: "2026-10-30T11:30:00.000Z",
+      payments: [
+        {
+          id: "pay-blind-1",
+          plan: "monthly",
+          amountCents: RELATIONSHIP_PRICE_CENTS,
+          paidAt: "2026-10-30T11:30:00.000Z",
+        },
+      ],
     },
     history: [],
     lastSessionAt: null,
@@ -668,6 +704,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
       status: "past_due",
       periodEnd: "2026-11-28T18:00:00.000Z",
       startedAt: "2026-10-28T18:00:00.000Z",
+      payments: [
+        {
+          id: "pay-unmet-1",
+          plan: "quarterly",
+          amountCents: RELATIONSHIP_PRICE_CENTS * 3,
+          paidAt: "2026-10-28T18:00:00.000Z",
+        },
+      ],
     },
     history: [],
     lastSessionAt: null,
@@ -735,6 +779,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
       status: "active",
       periodEnd: "2026-11-28T18:45:00.000Z",
       startedAt: "2026-10-28T18:45:00.000Z",
+      payments: [
+        {
+          id: "pay-aligned-1",
+          plan: "quarterly",
+          amountCents: RELATIONSHIP_PRICE_CENTS * 3,
+          paidAt: "2026-10-28T18:45:00.000Z",
+        },
+      ],
     },
     history: [],
     lastSessionAt: "2026-10-29T10:00:00.000Z",
@@ -772,6 +824,14 @@ const seedRelationshipRows: readonly V1Relationship[] = [
       status: "lapsed",
       periodEnd: "2026-10-28T09:00:00.000Z",
       startedAt: "2026-09-28T09:00:00.000Z",
+      payments: [
+        {
+          id: "pay-advanced-1",
+          plan: "monthly",
+          amountCents: RELATIONSHIP_PRICE_CENTS,
+          paidAt: "2026-09-28T09:00:00.000Z",
+        },
+      ],
     },
     history: [],
     lastSessionAt: "2026-10-30T15:00:00.000Z",
@@ -821,6 +881,36 @@ const seedRelationshipRows: readonly V1Relationship[] = [
     lastSessionAt: "2026-10-30T09:00:00.000Z",
     createdAt: "2026-10-30T08:00:00.000Z",
     modifiedAt: "2026-10-30T09:00:00.000Z",
+  },
+  {
+    // An unsubscribed relationship — the shop's checkout is the path that subscribes it. This is
+    // the "before" state the acceptance transition exercises: plan → confirm → subscribed.
+    id: "rel-unsubscribed",
+    templateId: "v1-template-basics",
+    items: aspectCopy("v1-template-basics"),
+    mode: "basic",
+    setting: "soft",
+    initiatorName: "Jordan",
+    counterpartyName: null,
+    initiatorAnswers: {},
+    counterpartyAnswers: {},
+    initiatorSubmitted: false,
+    counterpartySubmitted: false,
+    initiatorAccepted: false,
+    counterpartyAccepted: false,
+    initiatorAcceptedAt: null,
+    counterpartyAcceptedAt: null,
+    inviteToken: "inv-4c0e7a19",
+    sharedWithCoach: false,
+    coachComments: [],
+    comments: [],
+    aspectComments: {},
+    openedSessions: 0,
+    completedSessions: 0,
+    subscription: null,
+    history: [],
+    lastSessionAt: null,
+    createdAt: "2026-10-31T09:00:00.000Z",
   },
 ];
 
@@ -1087,7 +1177,7 @@ export interface V1SeedState {
 }
 
 /** Bump to invalidate a persisted store that predates a shape change. */
-export const SEED_VERSION = 6;
+export const SEED_VERSION = 7;
 
 /**
  * The chat's seeded read watermark — `threadId -> lastReadAt` per persona. A thread with

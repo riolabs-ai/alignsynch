@@ -97,6 +97,16 @@ export function AcceptSession({ relationshipId }: { relationshipId: string }) {
         </ul>
       </section>
 
+      {viewer === "counterparty" && (
+        <section className="rounded-lg border border-border bg-card p-4">
+          <p className="text-sm font-semibold text-foreground">Your membership is free</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Your membership is free — the initiator holds the subscription. You join by link and pay
+            nothing.
+          </p>
+        </section>
+      )}
+
       <section className="rounded-lg border border-border bg-card p-4">
         <p className="text-sm font-semibold text-foreground">Acceptance</p>
         <dl className="mt-2 space-y-1 text-sm text-muted-foreground">
