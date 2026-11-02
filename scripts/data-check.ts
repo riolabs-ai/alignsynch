@@ -118,6 +118,15 @@ import {
   templateAncestorFindings,
 } from "./template-ancestor";
 import {
+  ALIGNMENT_COPY_EXTRAS,
+  ALIGNMENT_COPY_OVERRIDES,
+  BRAND_WORD_ALLOWANCES,
+  alignmentFixtures,
+  brandWordFindings,
+  gatedPages,
+  type CopySurface,
+} from "./brand-word";
+import {
   danglingEntries,
   generatedKeys,
   registryProblems,
@@ -1013,6 +1022,66 @@ for (const problem of surfaceRegistryProblems(surfaceRows, (route) =>
 
 const surfaceCensus = `${surfaceRows.filter((row) => row.status === "live").length} live, ${surfaceRows.filter((row) => row.status !== "live").length} declared not wired`;
 
+/* ------------------------------------------------------------------ *
+ * E37 — the alignment brand never names the template
+ *
+ * `BRAND=quizhub` is the start template and a first-class product: its copy says its own name
+ * on every page it renders. `BRAND=alignsynch` is the relationship product built on it, and a
+ * reader there must never be told they are looking at somebody else's product. `pnpm parity`
+ * already asserts that for the seven routes it hashes (`expect(html).not.toContain(otherName)`),
+ * which is a claim about *rendered* output; this is the same claim at the copy layer, where the
+ * words live, so it covers every surface instead of seven and fails on the fixture rather than
+ * on a hash.
+ *
+ * Which fixtures count is **derived**, not listed. An E23 budget row names the page module and
+ * the fixture it renders; a page whose source calls `requireQuizProduct()` answers 404 on this
+ * brand (`lib/brand-boundary.ts`), so nothing it renders reaches an alignment reader. The two
+ * facts together are the subset of the copy table this brand actually serves — adding a quiz
+ * surface means gating its page, and the gate is what exempts the fixture here. `/` is the one
+ * override (the alignment composition in `home-alignsynch.ts` replaces the template's front
+ * page), and `data/brands/alignsynch.ts` is read because the brand's own name and description
+ * are printed in the tab, the metadata and the OG image.
+ *
+ * `scripts/brand-word.ts` owns the extraction — the AST walk that skips comments (`id`, `href`
+ * and object keys along with them) and reads a template literal by its fragments — and is pure,
+ * so `scripts/__tests__/brand-word.test.ts` drives every shape and its last section asserts the
+ * real tree is clean. The walk reads only the fixtures it resolved: ~40 files, not all of
+ * `data/`, because this rule has no business parsing the quiz catalogue.
+ * ------------------------------------------------------------------ */
+
+const brandWordSurfaces: CopySurface[] = Object.entries(pageCopyBudget).map(([route, entry]) => ({
+  route,
+  page: entry.page,
+  fixture: entry.fixture,
+}));
+
+const brandWordGated = gatedPages(uiSources.filter((file) => /(^|\/)page\.tsx?$/.test(file.path)));
+
+const brandWordFixtures = alignmentFixtures({
+  surfaces: brandWordSurfaces,
+  gated: brandWordGated,
+  overrides: ALIGNMENT_COPY_OVERRIDES,
+  extras: ALIGNMENT_COPY_EXTRAS,
+});
+
+const brandWordFiles = brandWordFixtures
+  .map((fixture) => `${fixture}.ts`)
+  .filter((path) => existsSync(join(process.cwd(), path)))
+  .map((path) => ({ path, source: readFileSync(join(process.cwd(), path), "utf8") }));
+
+const brandWordResult = brandWordFindings({
+  surfaces: brandWordSurfaces,
+  gated: brandWordGated,
+  overrides: ALIGNMENT_COPY_OVERRIDES,
+  extras: ALIGNMENT_COPY_EXTRAS,
+  files: brandWordFiles,
+  allowances: BRAND_WORD_ALLOWANCES,
+});
+
+for (const problem of brandWordResult.problems) err(problem.rule, problem.message);
+
+const brandWordCensus = `${brandWordResult.census.fixtures.length} alignment fixtures, ${brandWordResult.census.strings} reader-visible strings, ${brandWordResult.census.gated} gated pages, ${brandWordResult.census.allowances} allowance${brandWordResult.census.allowances === 1 ? "" : "s"}`;
+
 const imageTags = nextImageTags(imageSources);
 const imageMeasured = imageCensus(imageTags);
 
@@ -1730,6 +1799,7 @@ console.log(
   `      ${ancestorCoverage.walked} components walked, ${ancestorCoverage.withAncestor} with an ancestor, ${ancestorCoverage.approved} approved exceptions (E35; components/ui/** is vendored and excluded from the walk)`,
 );
 console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
+console.log(`      ${brandWordCensus} (E37)`);
 console.log(
   `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
 );
