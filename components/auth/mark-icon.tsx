@@ -105,3 +105,23 @@ export function MarkGlyph({
 export function tileMarkClass(id: AuthMarkId): string {
   return id === "brand-mark" ? "h-12 w-12" : "h-6 w-6";
 }
+
+/**
+ * The ground the auth cards paint behind a mark — `bg-action`, or nothing at all.
+ *
+ * A glyph is ink and needs a ground: white paths on the brand's `action` is the tile these cards
+ * have drawn since the template had one brand. A brand's *own mark* is a file — full colour, with
+ * its own white keyline — and the owner's decision (2026-11-03) is that nothing is painted behind
+ * it on any surface. Measured on the rendered card, the ground was also the bug: on the graphite
+ * `#37474f` the mark's dark S and navy A merge into the tile, and a ~30 px monogram reads as a
+ * smudge; on the card's own light ground the blue A and the black S separate and the mark is
+ * legible at the same size.
+ *
+ * So the ground is a property of the *kind* of mark, not of the surface: `brand-mark` gets `""`
+ * and every glyph id keeps `bg-action` byte-for-byte, which is what leaves QuizHub's auth cards
+ * exactly as they were. A full-bleed brand *panel* (the login/register split screen) is not a tile
+ * and keeps its `bg-action` — that panel carries the page's copy, not just the mark.
+ */
+export function markGroundClass(id: AuthMarkId): string {
+  return id === "brand-mark" ? "" : "bg-action";
+}

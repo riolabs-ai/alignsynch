@@ -3,7 +3,7 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: two password fields, no email, and the credential is the link in the address)
 
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
-import { MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
+import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -106,7 +106,9 @@ export function ResetPasswordView({
   return (
     <div className="w-full max-w-md space-y-6">
       <header className="space-y-2 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-action">
+        <div
+          className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${markGroundClass(mark)}`}
+        >
           <MarkGlyph
             id={mark}
             src={markSrc}

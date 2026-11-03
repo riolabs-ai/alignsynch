@@ -6,7 +6,7 @@ import { AppVersion } from "@/components/layout/app-version";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
-import { MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
+import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -358,7 +358,9 @@ export function LoginView({
         </div>
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-8">
-            <div className="lg:hidden mx-auto mb-4 w-12 h-12 bg-action rounded-lg flex items-center justify-center">
+            <div
+              className={`lg:hidden mx-auto mb-4 w-12 h-12 ${markGroundClass(marks.hero)} rounded-lg flex items-center justify-center`}
+            >
               <MarkGlyph
                 id={marks.hero}
                 src={markSrc}

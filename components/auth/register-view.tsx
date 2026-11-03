@@ -14,7 +14,7 @@ import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import type { AuthMarkSet } from "@/lib/auth/marks";
-import { MARK_ICONS, MarkGlyph } from "@/components/auth/mark-icon";
+import { markGroundClass, MARK_ICONS, MarkGlyph } from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -238,7 +238,9 @@ export function RegisterView({
           </div>
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
-            <div className="mx-auto mb-4 w-16 h-16 bg-action rounded-xl flex items-center justify-center">
+            <div
+              className={`mx-auto mb-4 w-16 h-16 ${markGroundClass(marks.hero)} rounded-xl flex items-center justify-center`}
+            >
               <MarkGlyph id={marks.hero} src={markSrc} className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold  mb-2">{mobile.heading}</h1>

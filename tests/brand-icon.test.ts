@@ -36,6 +36,7 @@ import {
   markSvg,
 } from "@/lib/brand-icon";
 import { alphaBBox, decodePng, pngSize } from "@/scripts/image-bytes";
+import { type GlyphMarkId, MARK_ICONS, markGroundClass } from "@/components/auth/mark-icon";
 
 const BRANDS = [
   { id: "quizhub", brand: quizHubBrand },
@@ -272,6 +273,19 @@ describe("the generated icon set", () => {
         existsSync(join(process.cwd(), "public", "brand", `${id}-mark-192.png`)),
         `${id} still ships a second raster for the card`,
       ).toBe(false);
+    }
+  });
+
+  it("paints no ground behind the mark on the auth card, and keeps it for a glyph", () => {
+    // The owner's rule (2026-11-03) is about the *kind* of mark, not about one surface: a card
+    // that draws the brand's own file paints nothing behind it — the file is full colour with its
+    // own white keyline, and on a `#37474f` chip the mark's dark S and navy A merge into the
+    // ground until a 30 px monogram reads as a smudge. A card that draws a *glyph* is white ink
+    // that needs the chip, and that half must not move: it is what leaves QuizHub's auth cards
+    // exactly as they were.
+    expect(markGroundClass("brand-mark")).toBe("");
+    for (const id of Object.keys(MARK_ICONS)) {
+      expect(markGroundClass(id as GlyphMarkId), id).toBe("bg-action");
     }
   });
 

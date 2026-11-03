@@ -1,7 +1,7 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: the success band alone — no fields, no submit, one sentence and a way back to sign in)
 
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
-import { MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
+import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
 import type { PageCopy } from "@/content/pages";
 import type { AuthMarkId } from "@/lib/auth/marks";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -41,7 +41,9 @@ export function ResetCompleteView({
   const home = sectionOf(copy, "home");
   return (
     <div className="w-full max-w-md space-y-4 text-center">
-      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-action">
+      <div
+        className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl ${markGroundClass(mark)}`}
+      >
         <MarkGlyph
           id={mark}
           src={markSrc}
