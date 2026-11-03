@@ -27,6 +27,7 @@
  * breaks the typecheck before any status is compared.
  */
 import AffiliatePage from "@/app/(mainlayout)/affiliate/page";
+import AdminAuditPage from "@/app/(mainlayout)/admin/audit/page";
 import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
 import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
 import AdminInstancesPage from "@/app/(mainlayout)/admin/instances/page";
@@ -199,6 +200,12 @@ export type AdminProductRoute = {
  * Next's not-found on one that does not.
  */
 export const adminProductRoutes: readonly AdminProductRoute[] = [
+  {
+    route: "/admin/audit",
+    page: AdminAuditPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
   {
     route: "/admin/console",
     page: AdminConsolePage as unknown as ParityPage,

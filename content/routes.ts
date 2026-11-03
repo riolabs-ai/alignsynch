@@ -22,6 +22,7 @@ const STATIC_ROUTES = [
   "/admin/console/relationships",
   "/admin/console/templates",
   "/admin/console/users",
+  "/admin/audit",
   "/admin/gaps",
   "/admin/instances",
   "/affiliate",
