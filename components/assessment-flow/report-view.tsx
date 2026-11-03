@@ -49,7 +49,7 @@ import { GAP_KIND_LABELS, GAP_KIND_SOURCES, gapKindsIn, groupsIn } from "@/conte
 import { MAX_GAP } from "@/content/record";
 import { relationshipReportPageCopy } from "@/data/pages/assessment-relationship-report";
 import type { AspectReportRow, AssessmentReport, ReportedParty } from "@/lib/assessment-report";
-import { answersPath, instancePath } from "@/lib/flow/paths";
+import { answerSheetPath, instancePath } from "@/lib/flow/paths";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -398,9 +398,16 @@ function ReportGate({
         <p className={`mt-2 ${MUTED}`} data-report-no-leak="true">
           {itemLabel(gate, "no-leak")}
         </p>
+        {/*
+          The sheet, not the endpoint. `/answers` is the POST-only handler this party's form
+          submits to (`lib/flow/paths.ts` keeps the two names side by side for exactly this
+          reason), so an anchor pointed there is a GET that answers 405 — the one control the
+          locked page offers a party, failing. `answerSheetPath()` is the page that draws their
+          unfinished sheet; the form on it does the posting.
+        */}
         <a
           className={`mt-4 ${PRIMARY}`}
-          href={answersPath(screen.instanceRecordId)}
+          href={answerSheetPath(screen.instanceRecordId)}
           data-report-continue="true"
         >
           {itemLabel(gate, "continue")}
