@@ -33,7 +33,7 @@ import { RegisterView } from "@/components/auth/register-view";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { registerCopy } from "@/data/pages/register";
 import { registerCopyFor } from "@/lib/auth-copy";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 
 declare global {
@@ -76,6 +76,7 @@ const advance = () => {
         copy: registerCopyFor(registerCopy(alignSynchBrand), "alignsynch"),
         destination: AFTER_SIGN_IN_BY_BRAND.alignsynch,
         marks: AUTH_MARKS_BY_BRAND.alignsynch,
+        markSrc: AUTH_MARK_SRC_BY_BRAND.alignsynch,
       }),
     );
   });

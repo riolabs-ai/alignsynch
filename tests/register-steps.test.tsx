@@ -32,7 +32,7 @@ import { RegisterView } from "@/components/auth/register-view";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { quizHubBrand } from "@/data/brand";
 import { registerCopy } from "@/data/pages/register";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import { registerCopyFor } from "@/lib/auth-copy";
 
@@ -51,6 +51,7 @@ const viewProps = (id: (typeof BRANDS)[number][0], record: Brand) => ({
   copy: registerCopyFor(registerCopy(record), id),
   destination: AFTER_SIGN_IN_BY_BRAND[id],
   marks: AUTH_MARKS_BY_BRAND[id],
+  markSrc: AUTH_MARK_SRC_BY_BRAND[id],
 });
 
 let container: HTMLDivElement;

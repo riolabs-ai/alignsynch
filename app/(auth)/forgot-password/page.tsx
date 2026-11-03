@@ -1,7 +1,7 @@
 import { ForgotPasswordView } from "@/components/auth/forgot-password-view";
 import { brand, brandIdOf } from "@/data/brand";
 import { resetRequestPageCopy } from "@/data/pages/password-reset";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import type { Metadata } from "next";
 import { requestReset } from "./actions";
 
@@ -37,7 +37,12 @@ export default function ForgotPasswordPage() {
   const marks = AUTH_MARKS_BY_BRAND[brandIdOf(brand)];
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
-      <ForgotPasswordView copy={resetRequestPageCopy} request={requestReset} mark={marks.hero} />
+      <ForgotPasswordView
+        copy={resetRequestPageCopy}
+        request={requestReset}
+        mark={marks.hero}
+        markSrc={AUTH_MARK_SRC_BY_BRAND[brandIdOf(brand)]}
+      />
     </main>
   );
 }

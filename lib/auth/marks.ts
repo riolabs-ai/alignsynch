@@ -31,12 +31,15 @@
  * module exists to fix — one brand's marks inherited by another.
  */
 import type { BrandId } from "@/data/brand";
+import { brands } from "@/data/brand";
+import { brandCardMarkPath } from "@/lib/brand-icon";
 
 /**
  * A glyph these surfaces can draw. Each id is one entry in `MARK_ICONS`
- * (`components/auth/mark-icon.tsx`).
+ * (`components/auth/mark-icon.tsx`) — except `brand-mark`, which is not a glyph at all: it is the
+ * brand's own generated app mark, drawn from `AUTH_MARK_SRC_BY_BRAND` below.
  */
-export type AuthMarkId = "book-open" | "trophy" | "users" | "handshake" | "compass";
+export type AuthMarkId = "book-open" | "trophy" | "users" | "handshake" | "compass" | "brand-mark";
 
 /** The marks one brand's screens draw. */
 export type AuthMarkSet = {
@@ -60,11 +63,39 @@ export type AuthMarkSet = {
  *
  * - `quizhub` — `book-open` and `trophy`: byte-for-byte the glyphs `/register` has always drawn,
  *   and the 404's trophy, so the quiz brand does not change.
- * - `alignsynch` — `users` for the pair who answer the questions, `handshake` for the agreement
- *   those answers produce, and `compass` on the 404: an address that is on no map this product
- *   draws. A trophy there was a quiz score in the moment the product had already failed.
+ * - `alignsynch` — `brand-mark` for the hero: the brand's **own mark**, generated from
+ *   `data/brands/alignsynch.ts`'s `mark` (the AS monogram) exactly as the tab icon is. It used to
+ *   be `users` — a lucide person pair standing in for "two people answer the same questions" —
+ *   which put a white silhouette on the brand's blue on every auth screen while the monogram sat
+ *   unused. A glyph can say what the product *is*; it cannot be the product's mark. `handshake` is
+ *   still the action mark (the agreement those answers produce), and `compass` is the 404's: an
+ *   address that is on no map this product draws.
  */
 export const AUTH_MARKS_BY_BRAND: Readonly<Record<BrandId, AuthMarkSet>> = {
   quizhub: { hero: "book-open", action: "trophy", fact: "trophy" },
-  alignsynch: { hero: "users", action: "handshake", fact: "compass" },
+  alignsynch: { hero: "brand-mark", action: "handshake", fact: "compass" },
 };
+
+/**
+ * The image the `brand-mark` id draws, per brand — the generated app mark (`brand.icon`).
+ *
+ * A glyph id and an image path are different kinds of value, which is why this is a table beside
+ * the marks rather than a fourth field inside `AuthMarkSet` (whose three entries are all ids a
+ * client view can look up in one table). It is derived from the brand id through the same
+ * `brandIconPaths` the icon generator and the manifest use, and a test holds it equal to the
+ * record's own `icon`, so "the card shows the tab icon" is structural rather than a coincidence
+ * of two strings.
+ *
+ * Only a brand whose set names `brand-mark` reads it; QuizHub's entry is here for the same reason
+ * `Record<BrandId, …>` is the type — a third brand must decide, not inherit.
+ */
+export const AUTH_MARK_SRC_BY_BRAND: Readonly<Record<BrandId, string>> = Object.fromEntries(
+  Object.entries(brands).map(([id, brand]) => [
+    id,
+    // The mark alone on transparent, at 192 px — not the app icon, which spends 38 % of its canvas
+    // on a ground the card's own tile already paints (`brandCardMarkPath`). A brand with no `mark`
+    // draws a glyph on these screens and never requests this path, so its entry is its icon: a
+    // value that exists, rather than a path to a file the generator never writes.
+    brand.mark === undefined ? brand.icon : brandCardMarkPath(id),
+  ]),
+) as Record<BrandId, string>;

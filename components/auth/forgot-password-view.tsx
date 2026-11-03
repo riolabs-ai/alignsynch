@@ -3,7 +3,7 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: one email field and one button, and the answer is a sentence rather than a session)
 
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
-import { MarkGlyph } from "@/components/auth/mark-icon";
+import { MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,7 @@ export function ForgotPasswordView({
   copy,
   request,
   mark,
+  markSrc,
 }: {
   copy: PageCopy;
   request: (email: string) => Promise<ResetRequestOutcome>;
@@ -55,6 +56,12 @@ export function ForgotPasswordView({
    * the server→client boundary, and this view is a client module.
    */
   mark: AuthMarkId;
+  /**
+   * The image the `brand-mark` id draws (`AUTH_MARK_SRC_BY_BRAND`) — the brand's generated app
+   * mark. This view is a client module, so it cannot resolve a brand path itself; the page hands
+   * it down beside the id.
+   */
+  markSrc: string;
 }) {
   const band = sectionOf(copy, "request");
   /** The way back to the site (`auth-home-link.tsx`); `back` above is the way back to sign-in. */
@@ -82,7 +89,11 @@ export function ForgotPasswordView({
     <div className="w-full max-w-md space-y-6">
       <header className="space-y-2 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-action">
-          <MarkGlyph id={mark} className="h-6 w-6 text-action-foreground" />
+          <MarkGlyph
+            id={mark}
+            src={markSrc}
+            className={`${tileMarkClass(mark)} text-action-foreground`}
+          />
         </div>
         <h1 className="text-3xl font-bold">{copy.heading}</h1>
         {copy.subtitle !== undefined && (
