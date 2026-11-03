@@ -21,6 +21,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ActRequest, ActSql, AuditTargetTable } from "@/lib/admin/act";
 import { act, ActRefused, REASON_MIN_LENGTH, transactionRunner } from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
+import type { UserRole } from "@/content/identity";
 
 /**
  * A connection that behaves like a transaction, in one table.
@@ -315,5 +316,145 @@ describe("act() — a failure leaves nothing", () => {
     await expect(actOver(db)(roleChange())).rejects.toThrow("audit insert failed");
     expect(db.committed).toEqual([]);
     expect(db.order.at(-1)).toBe("ROLLBACK");
+  });
+});
+
+/**
+ * The five #503 operations, driven through the same gate.
+ *
+ * Each has a different target table and a different floor, and the card's acceptance covers both
+ * halves of a refusal: a reason that is too short never opens a transaction at all, and a rung below
+ * the floor opens one only to read the actor's role and roll back — no mutation statement, no
+ * `INSERT admin_action`, nothing committed. The case at the floor is the third assertion, so a
+ * floor that quietly moved fails here rather than in a 404 an operator has to reproduce.
+ *
+ * The five are asserted through `act()` and not through a screen on purpose: the gate is this
+ * module, and a caller that bypassed it would leave no `INSERT admin_action` between its write and
+ * its commit — which is what the order assertions below would catch.
+ */
+describe("act() — the five #503 operations", () => {
+  interface Operation {
+    readonly action: AdminAction;
+    readonly table: AuditTargetTable;
+    readonly floor: UserRole;
+    readonly below: UserRole;
+    readonly mutation: string;
+  }
+
+  const OPERATIONS: readonly Operation[] = [
+    {
+      action: "party.unlock",
+      table: "party",
+      floor: "support",
+      below: "member",
+      mutation: "UPDATE party SET unlock_seen_at = NULL WHERE session_record_id = $1",
+    },
+    {
+      action: "invite.resend",
+      table: "session_invite",
+      floor: "support",
+      below: "member",
+      mutation: "UPDATE session_invite SET token_hash = $1 WHERE session_record_id = $2",
+    },
+    {
+      action: "invite.revoke",
+      table: "session_invite",
+      floor: "admin",
+      below: "support",
+      mutation: "UPDATE session_invite SET revoked_at = now() WHERE session_record_id = $1",
+    },
+    {
+      action: "session.void",
+      table: "session",
+      floor: "admin",
+      below: "support",
+      mutation: "UPDATE session SET voided_at = now() WHERE record_id = $1",
+    },
+    {
+      action: "instance.force-close",
+      table: "party",
+      floor: "admin",
+      below: "support",
+      mutation:
+        "UPDATE party SET accepted_at = now(), impersonated_by = $2 WHERE session_record_id = $1",
+    },
+  ];
+
+  /** One request per operation, with a counter so a test can prove `mutate` never ran. */
+  function requestFor(operation: Operation, reason = "verified by phone, stuck relationship") {
+    const calls = { mutations: 0 };
+    const request: ActRequest<{ before: boolean }> = {
+      actorUserId: "auth-actor",
+      action: operation.action,
+      target: { table: operation.table, id: "target-1" },
+      reason,
+      mutate: async (sql: ActSql) => {
+        calls.mutations += 1;
+        await sql.query(operation.mutation, ["target-1", "auth-actor"]);
+        return { before: { before: true }, after: { before: true } };
+      },
+    };
+    return { request, calls };
+  }
+
+  it("refuses a seven-character reason for all five, before a transaction is opened", async () => {
+    for (const operation of OPERATIONS) {
+      const db = new FakeConnection();
+      const { request, calls } = requestFor(operation, "stuck!!");
+
+      await expect(actOver(db)(request), operation.action).rejects.toMatchObject({
+        name: "ActRefused",
+        reason: "reason-too-short",
+      });
+      expect("stuck!!".length).toBe(REASON_MIN_LENGTH - 1);
+      // Not one statement: no BEGIN, no role read, no mutation, no audit row.
+      expect(db.statements, operation.action).toEqual([]);
+      expect(calls.mutations, operation.action).toBe(0);
+    }
+  });
+
+  it("refuses a rung below the floor without a mutation and without an audit row", async () => {
+    for (const operation of OPERATIONS) {
+      const db = new FakeConnection();
+      db.role = operation.below;
+      const { request, calls } = requestFor(operation);
+
+      await expect(actOver(db)(request), operation.action).rejects.toMatchObject({
+        name: "ActRefused",
+        reason: "role-too-low",
+      });
+      // The role read is the only statement the attempt is allowed to make.
+      expect(db.order, operation.action).toEqual(["BEGIN", "SELECT role", "ROLLBACK"]);
+      expect(db.order, operation.action).not.toContain("INSERT admin_action");
+      expect(db.committed, operation.action).toEqual([]);
+      expect(db.pending, operation.action).toEqual([]);
+      expect(calls.mutations, operation.action).toBe(0);
+    }
+  });
+
+  it("admits each operation at its floor, as one audited transaction", async () => {
+    for (const operation of OPERATIONS) {
+      const db = new FakeConnection();
+      db.role = operation.floor;
+      const { request } = requestFor(operation);
+
+      const result = await actOver(db)(request);
+      const label = operation.mutation.split(/\s+/).slice(0, 2).join(" ");
+
+      expect(db.order, operation.action).toEqual([
+        "BEGIN",
+        "SELECT role",
+        label,
+        "INSERT admin_action",
+        "COMMIT",
+      ]);
+      expect(result.actorRole, operation.action).toBe(operation.floor);
+
+      // The audit row names the action and the table the caller asked for — the vocabulary this
+      // card had to make true (a pre-0013 table name refuses the write, it does not audit it).
+      const audit = db.statements.find(({ text }) => /insert into admin_action/i.test(text));
+      expect(audit?.values[2], operation.action).toBe(operation.action);
+      expect(audit?.values[3], operation.action).toBe(operation.table);
+    }
   });
 });

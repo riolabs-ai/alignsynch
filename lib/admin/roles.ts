@@ -107,6 +107,19 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "instance.force-close": "admin",
 };
 
+// The one floor #503 does not name, and the stricter reading this tree took.
+//
+// Issue #503 lists "resend / revoke an invite (new token, old one dies)" in one bullet and gives a
+// rung for the other four operations only — `support` may unlock and resend, `void` and
+// `force-close` are `admin`+. A revoke is not named, so it keeps the floor it has held since #501:
+// `admin`. That is also the stricter of the two readings, which is the direction an ambiguity
+// should resolve in: a revoke kills a live link until somebody reissues it, and every other write
+// to `admin_invite` (`invite.create`, `invite.revoke`) is already `admin`.
+//
+// `tests/admin-roles.test.ts` asserts this exact floor, and the ambiguity is recorded on kanban
+// card t_a4ea6098. A later widening to `support` is a deliberate edit to both, with the issue that
+// authorises it — never a quiet retune of the table.
+
 /** Is this string one of `ADMIN_ACTIONS`? The runtime half of a closed union read from a row. */
 export function isAdminAction(value: string): value is AdminAction {
   return (ADMIN_ACTIONS as readonly string[]).includes(value);
@@ -157,7 +170,9 @@ export function atLeast(role: UserRole | null, needed: UserRole): boolean {
  * `assessment_instance` to `session` and `instance_invite` to `session_invite`, and #503's repairs
  * write those rows: an entry naming the pre-0013 spelling would refuse every relationship repair
  * with `unknown-target-table` while type-checking perfectly. The audit log's own vocabulary is the
- * live table names or it is nothing a reader can join back to.
+ * live table names or it is nothing a reader can join back to. `relationship_member` is here for
+ * the same reason: it is the table a coach operation writes. A rename changes this array in the
+ * same commit that renames the table.
  */
 export const AUDIT_TARGET_TABLES = [
   "user_profile",

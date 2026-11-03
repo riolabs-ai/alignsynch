@@ -17,6 +17,8 @@ import {
   ACTION_REQUIREMENTS,
   ADMIN_ACTIONS,
   atLeast,
+  AUDIT_TARGET_TABLES,
+  type AdminAction,
   can,
   isAdminAction,
   requirementFor,
@@ -117,5 +119,78 @@ describe("atLeast()", () => {
     expect(atLeast("owner", "admin")).toBe(true);
     expect(atLeast("support", "admin")).toBe(false);
     expect(atLeast(null, "member")).toBe(false);
+  });
+});
+
+/**
+ * The five relationship operations of #503, named one by one.
+ *
+ * The cases above already prove that every action clears its own floor and refuses the rung below
+ * it. This block is narrower on purpose: #503 is the card that introduced four of these names, and
+ * its policy is easier to review as a table than as a loop — `support` may repair a marker or
+ * reissue a link, and anything that ends a relationship or speaks for a person needs `admin`.
+ */
+describe("the #503 relationship operations", () => {
+  /** `action` → the rung that clears it, and the rung that does not. The policy, in one place. */
+  const OPERATIONS: readonly (readonly [AdminAction, UserRole, UserRole | null])[] = [
+    ["party.unlock", "support", "member"],
+    ["invite.resend", "support", "member"],
+    ["invite.revoke", "admin", "support"],
+    ["session.void", "admin", "support"],
+    ["instance.force-close", "admin", "support"],
+  ];
+
+  it("records exactly these floors — five actions, two rungs", () => {
+    for (const [action, floor] of OPERATIONS) {
+      expect(requirementFor(action), `${action}'s floor`).toBe(floor);
+    }
+  });
+
+  it("lets support repair a marker and a link, and nothing that ends or speaks for a party", () => {
+    expect(can("support", "party.unlock")).toBe(true);
+    expect(can("support", "invite.resend")).toBe(true);
+    // A revoke kills a live link until somebody reissues it; a void and a force-close end a
+    // relationship or write a person's agreement for them. All three are `admin`.
+    expect(can("support", "invite.revoke")).toBe(false);
+    expect(can("support", "session.void")).toBe(false);
+    expect(can("support", "instance.force-close")).toBe(false);
+  });
+
+  it("lets admin and owner take all five, and a member none of them", () => {
+    for (const [action] of OPERATIONS) {
+      expect(can("admin", action), `admin may ${action}`).toBe(true);
+      expect(can("owner", action), `owner may ${action}`).toBe(true);
+      expect(can("member", action), `member may not ${action}`).toBe(false);
+      expect(can(null, action), `nobody may ${action}`).toBe(false);
+    }
+  });
+
+  it("refuses each operation one rung below its floor, and nothing higher", () => {
+    for (const [action, , below] of OPERATIONS) {
+      if (below === null) continue;
+      expect(can(below, action), `${below} may not ${action}`).toBe(false);
+    }
+  });
+
+  it("keeps revoke at admin although #503 names no rung for it", () => {
+    // The recorded ambiguity: #503's bullet pairs "resend / revoke an invite" and gives rungs for
+    // the other four operations only. The stricter reading is `admin`, so a later widening to
+    // `support` has to change this line and cite the issue that authorises it.
+    expect(requirementFor("invite.revoke")).toBe("admin");
+    expect(can("support", "invite.revoke")).toBe(false);
+  });
+});
+
+describe("the audit target vocabulary", () => {
+  it("names the tables the five operations write, and no table a migration renamed", () => {
+    // party (unlock, force-close), session (void), session_invite (resend, revoke).
+    expect(AUDIT_TARGET_TABLES).toContain("party");
+    expect(AUDIT_TARGET_TABLES).toContain("session");
+    expect(AUDIT_TARGET_TABLES).toContain("session_invite");
+
+    // `0013_relationship_sessions.sql` renamed both of these; a list carrying either spelling
+    // would refuse the write at runtime with `unknown-target-table`, having type-checked.
+    expect(AUDIT_TARGET_TABLES as readonly string[]).not.toContain("instance_invite");
+    expect(AUDIT_TARGET_TABLES as readonly string[]).not.toContain("assessment_instance");
   });
 });
