@@ -19,6 +19,8 @@ import { adminGapsPageCopy } from "./admin-gaps";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInstancesPageCopy } from "./admin-instances";
 import { adminRelationshipPageCopy } from "./admin-relationship";
+import { adminTemplateEditorPageCopy } from "./admin-template-editor";
+import { adminTemplatesPageCopy } from "./admin-templates";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
 import { assessmentInstancePageCopy } from "./assessment-instance";
@@ -69,6 +71,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/health": adminHealthPageCopy,
   "/admin/instances": adminInstancesPageCopy,
   "/admin/instances/[id]": adminRelationshipPageCopy,
+  "/admin/templates": adminTemplatesPageCopy,
+  "/admin/templates/[id]": adminTemplateEditorPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   "/assessment/instances": myInstancesPageCopy,

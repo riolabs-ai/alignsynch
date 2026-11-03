@@ -26,6 +26,8 @@ const STATIC_ROUTES = [
   "/admin/gaps",
   "/admin/health",
   "/admin/instances",
+  // #502a — template authoring: the console's authored catalogue and one template's editor.
+  "/admin/templates",
   "/affiliate",
   "/assessment",
   "/assessment/instances",
@@ -70,6 +72,8 @@ const DYNAMIC_ROUTES = [
   "/admin/console/templates/[id]",
   // #503 — one relationship's repair screen, a child of the registry route above it.
   "/admin/instances/[id]",
+  // #502a — one template being drafted, a child of `/admin/templates`.
+  "/admin/templates/[id]",
   "/assessment/[slug]",
   "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",
