@@ -2,6 +2,7 @@ import { AdminGapsUnreadable, AdminGapsView } from "@/components/console/gap-ana
 import { adminGapsPageCopy } from "@/data/pages/admin-gaps";
 import { aggregateGapPopulation } from "@/lib/admin/gap-aggregates";
 import { requireAdmin } from "@/lib/auth/require-role";
+import { requireAdminProduct } from "@/lib/brand-boundary";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { readGapPopulation } from "@/lib/db/gap-rows";
 import type { Metadata } from "next";
@@ -18,9 +19,11 @@ import type { Metadata } from "next";
  * are computed by a pure module (`lib/admin/gap-aggregates.ts`); this file is the gate, the read
  * and the two failure states.
  *
- * **Three gates, in this order.** `requireAdmin()` first — a member gets the 404 a URL that never
- * existed returns, and a signed-out visitor is sent to `/login`; the role is read from
- * `user_profile` on this request, never from a prop or a cookie. Then the read. Then the render.
+ * **Three gates, in this order.** `requireAdminProduct()` first (#509) — the console is a template
+ * capability, so a product that does not claim it answers 404 before anything else happens — then
+ * `requireAdmin()`: a member gets the 404 a URL that never existed returns, and a signed-out visitor
+ * is sent to `/login`; the role is read from `user_profile` on this request, never from a prop or a
+ * cookie. Then the read. Then the render.
  *
  * **Request-time, always.** `force-dynamic` for two reasons that both matter: the population
  * changes whenever a relationship is completed, so a cached HTML for this route would be a stale
@@ -42,6 +45,9 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminGapsPage() {
+  // The capability before the role (#509): a template that does not claim `product.admin` answers
+  // the 404 an unknown URL gets, with no session read and no database work behind it.
+  requireAdminProduct();
   await requireAdmin({ next: "/admin/gaps" });
 
   let population: Awaited<ReturnType<typeof readGapPopulation>>;

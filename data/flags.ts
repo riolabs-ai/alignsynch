@@ -26,7 +26,7 @@
  *      surface reviewable: `/leaderboard` is off for every visitor and still reachable by the
  *      one person who needs to look at it before it ships. It is opt-in per flag and never
  *      global — a flag that does not declare it keeps the three steps above exactly as they
- *      were, which is why `adminBypass` is absent on the other seven.
+ *      were, which is why `adminBypass` is absent on the other nine.
  *
  *      The role is **not** read here and is not read by the resolver: a caller passes it in,
  *      resolved server-side from the request's own session (`lib/auth/flag-gate.ts` is the one
@@ -50,9 +50,12 @@
  *
  * `templates` is empty on the eight deferred surfaces: each has the same status on both templates,
  * so an override would be a claim nobody made. The field is schema, not decoration — the resolver
- * reads it and `tests/flags.test.ts` proves it beats `default` and loses to the env. It has
- * exactly one real user, `product.quiz-surfaces` (#300): the quiz product's surfaces ship on
- * `quizhub` and not on `alignsynch`, which is a per-template *on* and nothing else.
+ * reads it and `tests/flags.test.ts` proves it beats `default` and loses to the env. It has two
+ * real users, and both are **product capabilities** rather than mocks: `product.quiz-surfaces`
+ * (#300) ships the quiz product on `quizhub` and not on `alignsynch`, and `product.admin` (#509)
+ * ships the console on both templates this tree has, so a template that does not name itself gets
+ * neither — which is what "a derived product turns it off" means. Both are a per-template *on*
+ * and nothing else.
  *
  * `adminBypass` is set on **one** flag, `community.leaderboard`, and it does not weaken the rule
  * above: the surface still ships off for every visitor, and an admin reaching it is a review
@@ -108,6 +111,7 @@ export const zFlags = z
     "create.editor": zFlagDefinition,
     "create.generator": zFlagDefinition,
     "product.quiz-surfaces": zFlagDefinition,
+    "product.admin": zFlagDefinition,
   })
   .strict();
 
@@ -166,6 +170,35 @@ export const flags: Flags = zFlags.parse({
     default: false,
     templates: ["quizhub"],
     note: "Shipped by the quiz template only: twenty-two routes (the quiz catalogue, a quiz and its two views, the authoring pair, an author's own quizzes, tournaments, battle, the daily challenge, creator tips, discussions, chat and the quiz dashboard) answer 404 on the alignment build (#300). Gated, never removed.",
+  },
+  /**
+   * The second product capability, and the console's switch (#509).
+   *
+   * A console is a *product feature*, not a patch on one product: a derived template inherits the
+   * operator surfaces it was built from or it turns them off, exactly as `product.quiz-surfaces`
+   * decides whether the quiz product exists on this build. So the switch is a flag and not a
+   * `BRAND === …` check, for the three reasons the header gives: one resolver, one env lever, one
+   * place a reviewer reads.
+   *
+   * **`templates` names both records this tree ships, and `default` stays `false`.** That is the
+   * capability read honestly: on for `quizhub` and on for `alignsynch` — the card's "true for both
+   * brands today" — and off for a template that has not claimed the console. A derived product
+   * inherits it by naming itself here, or turns it off by leaving the list (or `FLAG_PRODUCT_ADMIN=0`
+   * on a deployment that has one). The alternative, `default: true`, would hand an operator console
+   * to the next template before anybody decided it should have one, and it would break the
+   * "every default is false" rule this file states above.
+   *
+   * What it closes: `/admin/console` and its subtree, `/admin/gaps` and `/admin/instances`, through
+   * `lib/brand-boundary.ts::requireAdminProduct()` — which runs *before* `requireAdmin()`, so a
+   * template without the console answers 404 instead of asking a visitor to sign in to a surface it
+   * does not sell. `tests/parity/boundary.ts` lists the entry points and
+   * `tests/parity/parity.check.ts` walks them, on a live template and on a template that never
+   * claimed the capability.
+   */
+  "product.admin": {
+    default: false,
+    templates: ["quizhub", "alignsynch"],
+    note: "Shipped by both templates this tree has (#509): /admin/console and its subtree, /admin/gaps and /admin/instances answer 404 on a template that does not claim the console, through requireAdminProduct() ahead of the role gate. On for both brands today; off for a derived product until it names itself in `templates`.",
   },
 });
 

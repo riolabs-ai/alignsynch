@@ -64,12 +64,18 @@ function routesNamed(brandId: BrandKey): string[] {
  * the other does not, and a second copy is a second list to forget.
  *
  * Read as source text on purpose. Importing the module evaluates twenty-two page modules, and this
- * is a claim about strings, not about renders.
+ * is a claim about strings, not about renders. The slice matters: the same file also lists the
+ * admin console's entry points (`adminProductRoutes`, #509), and those answer on this brand — they
+ * are closed by a *capability* a template turns off, not by the product boundary this test is
+ * about. Reading every `route:` in the file would quietly fold them into "quiz-only".
  */
 function quizOnlyRoutes(): string[] {
   const path = fileURLToPath(new URL("./parity/boundary.ts", import.meta.url));
   const source = readFileSync(path, "utf8");
-  return [...source.matchAll(/route: "([^"]+)"/g)].map((match) => match[1]);
+  const start = source.indexOf("export const quizOnlyRoutes");
+  const end = source.indexOf("\nexport const ", start + 1);
+  const block = source.slice(start, end === -1 ? undefined : end);
+  return [...block.matchAll(/route: "([^"]+)"/g)].map((match) => match[1]);
 }
 
 /** Does `route` name `pattern`, or a page under it? (`/quiz` covers `/quiz/[id]`.) */
