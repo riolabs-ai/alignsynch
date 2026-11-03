@@ -11,8 +11,9 @@
  * renders real rows, and needs nothing from this file to explain itself. That is why
  * `surfaceRegistryProblems()` refuses `live` for a route `content/routes.ts` does not carry, and
  * why a live row may not carry a `reason` or `needs` — a live surface with an excuse is a
- * pending one with a better story. The five live entries below are `#409`'s reads plus the
- * report R1-C shipped, and they are the only rows that may be called live.
+ * pending one with a better story. The live entries below are `#409`'s reads, the report R1-C
+ * shipped, the acceptance R2 wired and — since the console moved out of `/v1` (#478) — the
+ * operator console's index, and they are the only rows that may be called live.
  *
  * **`preview` is a shipped screen whose actions are not wired.** R1 ships create, answer and
  * accept as real layouts with every write control disabled and labelled "Not wired yet"; the
@@ -28,10 +29,13 @@
  * the route manifest.
  *
  * **No fabricated status.** `/admin/instances` and `/admin/gaps` do read Postgres, and they are
- * deliberately *not* live entries here: the shell cannot offer them (`lib/nav.ts::navViewer`
- * reads no role, so no viewer carries `admin-console`), and the console has no index. The admin
- * row below names that missing capability rather than calling a working read shipped, and rather
- * than calling a working read broken.
+ * not rows here: the shell offers them to an `admin` (`lib/nav.ts::navViewer` maps the role onto
+ * `admin-console`), so there is no missing capability for this file to name. The one admin row it
+ * carried was the console's **index**, declared pending because the console had no landing page;
+ * #478 moved the six console pages out of `/v1` to `/admin/console`, so that route now exists,
+ * renders the operator's rows behind `requireAdmin()`, and the row is live. An operator's console
+ * that reads the in-browser store rather than Postgres says so in `data/ui-registry.ts`, which is
+ * the file that describes what is behind a screen; this one says only that nothing is missing.
  *
  * Validated the way every fixture is: the schema is `strict()`, so an unknown key is a red
  * build, and a `status` outside the three literals is a TypeScript error the moment it is
@@ -196,18 +200,15 @@ export const surfaceRegistry: readonly Surface[] = [
     ],
   },
 
-  /* ---- pending: admin ---------------------------------------------------------- */
+  /* ---- live: admin ---------------------------------------------------------- */
   {
     route: "/admin/console",
     label: "Admin console",
+    // Live since #478: the six console pages moved out of `/v1` to `/admin/console`, under the
+    // app shell, and the subtree's layout gates them with `requireAdmin()` — a signed-out visitor
+    // is sent to `/login`, a member gets the 404 a URL that never existed returns.
+    status: "live",
     area: "admin",
-    status: "pending",
-    reason:
-      "The console has no index: /admin/instances and /admin/gaps answer only a session the shell cannot grant, because lib/nav.ts reads no role into the admin-console capability.",
-    needs: [
-      "needs the operator role read on the session",
-      "needs the console's reads offered in navigation",
-    ],
   },
 ];
 

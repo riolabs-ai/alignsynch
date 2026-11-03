@@ -997,13 +997,13 @@ function notificationLink(
   rel: V1Relationship,
   kind: "relationship" | "chat",
 ): string {
-  // The admin console nests its detail pages under `/v1/admin/console`, unlike the three
-  // dashboards — a link that assumed the shared shape would 404 for the one persona that reads
-  // every relationship.
+  // The admin reads every relationship, but not through the console any more: #478 moved the
+  // console out of `/v1` to the gated `/admin/console`, and a notification in the prototype's own
+  // store must open a `/v1` page an unlocked reviewer can actually reach. The admin persona's
+  // detail page has the same shape the other dashboards use, and it is the address the seeded
+  // fixtures in `data/v1/notifications.ts` already point at.
   if (persona === "admin") {
-    return kind === "chat"
-      ? `/v1/admin/chat/${rel.id}`
-      : `/v1/admin/console/relationships/${rel.id}`;
+    return kind === "chat" ? `/v1/admin/chat/${rel.id}` : `/v1/admin/relationships/${rel.id}`;
   }
   return kind === "chat"
     ? `/v1/${persona}/chat/${rel.id}`
