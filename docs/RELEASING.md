@@ -6,10 +6,12 @@ an **annotated tag `v<version>`**, and a **GitHub Release** whose body is that e
 The script is the procedure; this page is why.
 
 The live prototype is <https://alignsynch-amber.vercel.app/>. The script does not deploy and does not
-wait for a deploy, and **nothing else in this repository deploys either**: a merge to `main` is not a
-deployment, and a tag is not a deploy trigger. Production is promoted deliberately, by naming a
-commit to the Vercel API — [`main → production`](#main--production-promoting-a-release) below is the
-procedure, and [`DEPLOYING.md`](DEPLOYING.md) is why the build policy is shaped the way it is.
+wait for a deploy, and a tag is not a deploy trigger. A **merge** is: while the project's Git
+integration creates production deployments, the push that merges a PR is the deployment, and
+production serves `main`'s tip once the build finishes (measured on 2026-11-03 — see
+[`main → production`](#main--production-promoting-a-release) below). The API promotion in that
+section is the deliberate path for everything a merge does not cover, and
+[`DEPLOYING.md`](DEPLOYING.md) is why the build policy is shaped the way it is.
 
 ## Prerequisites
 
@@ -122,22 +124,35 @@ build identifies nothing. `scripts/release.sh` creates the tag and the Release i
 
 ## main → production: promoting a release
 
-A tag fixes the artefact; production is a separate decision, made by naming a commit rather than by
-pushing a branch. Deployment **creation** from Git is switched off on the project
-(`gitProviderOptions.createDeployments: "disabled"`), so a push to `main` — or to a tag — creates no
-deployment at all, and `vercel.json`'s `ignoreCommand` only ever decides whether a deployment that
-already exists is allowed to build. Promotion is one API call that names the repository, the ref and
-the sha, and it is the only thing that moves production.
+A tag fixes the artefact; production is a separate decision, and the first honest sentence about it
+is a measurement rather than a policy: **on 2026-11-03 a merge to `main` reached production on its
+own.** Two squash merges that day — `94070089` (`perf(db)`, #479) and `f3b76581`
+(`chore(release): 1.3.0`) — were each reported by `GET /api/version` within about two minutes of the
+merge, with no promotion call from this machine and no deploy hook anywhere in the tree. The
+project's Git integration created both. On 2026-10-31 and 2026-11-01 the same project reported
+creation _disabled_ (`previewDeploymentsDisabled`, `gitProviderOptions.createDeployments:
+"disabled"`), so this setting has already changed twice and can change again: step 1 measures it
+instead of trusting either state.
+
+That leaves two paths, and they are not alternatives to choose between on faith:
+
+- **The merge deploys.** While creation is on, the push that merges a PR _is_ the deployment;
+  `vercel.json`'s `ignoreCommand` decides whether that deployment builds, and production serves
+  `main`'s tip once the build finishes.
+- **The API promotes.** `POST /v13/deployments` with `gitSource.repoId` names a commit explicitly.
+  It is the only way to deploy what a push did not — another ref, a commit whose deployment failed,
+  a re-promotion after a rollback — and the only way while creation is switched off.
 
 Two orderings are not negotiable, and both have already been paid for once:
 
 - **The tag comes first.** The version badge on every build links to `releases/tag/v<version>` (see
   above), so deploying a commit whose version has no tag ships a badge that answers 404.
-- **The migrations come before the deploy that reads them.** A page selecting a column the database
-  does not have is a 500 at request time, not a missing panel — and the relationship list, the
-  template catalogue and the relationship screen all read at request time. Migrations `0020` and
-  `0021` (`contact_message`) are what this rule is written from: the contact form inserts into a
-  table that must exist before the build posting to it is serving.
+- **The migrations come before the deploy that reads them — which, while merges deploy, means before
+  the merge.** A page selecting a column the database does not have is a 500 at request time, not a
+  missing panel — and the relationship list, the template catalogue and the relationship screen all
+  read at request time. Migrations `0020` and `0021` (`contact_message`) are what this rule is
+  written from: the contact form inserts into a table that must exist before the build posting to it
+  is serving. Applied after the merge, the migration is already too late.
 
 ### 1. What production serves now
 
@@ -148,8 +163,10 @@ node scripts/deploy-check.mjs --expect "$(git rev-parse HEAD)"
 curl -s https://alignsynch.com/api/version
 ```
 
-`OK` means production already serves the commit named. `STALE` prints what it does serve, and the
-rest of this section is the fix. `UNKNOWN` is never `OK`: the script exits 2 and says why.
+`OK` means production already serves the commit named — for a merge that deployed on push, that is
+`main`'s tip about two minutes after the merge. `STALE` prints what it does serve: either the build
+is still running (check again in a minute) or the push did not deploy, and step 3 is the fix.
+`UNKNOWN` is never `OK`: the script exits 2 and says why.
 
 ### 2. Migrations, against production, before anything reads them
 
@@ -169,15 +186,17 @@ answer — cheaper than discovering the column is missing at request time.
 
 ### 3. Create the deployment, naming the commit
 
+For when the merge did not deploy — creation is off, the commit is not `main`'s tip, a deployment
+failed, or a rollback has to be reversed — this is the deliberate path. `.vercel/project.json` is
+written by `vercel link` (gitignored), and both ids are also on the project's Settings page:
+
 ```bash
 export VERCEL_TOKEN=...   # a team token; never committed, never in .env
 vercel link --yes --project alignsynch --scope riolabs-ai   # writes .vercel/project.json (gitignored)
 read -r PROJECT_ID TEAM_ID <<<"$(node -p 'const p=require("./.vercel/project.json");`${p.projectId} ${p.orgId}`')"
 ```
 
-`PROJECT_ID` and `TEAM_ID` are in `.vercel/project.json` after `vercel link`, and on the project's
-Settings page. The repository id is the one Vercel itself stores for this project, read back rather
-than typed:
+The repository id is the one Vercel itself stores for this project, read back rather than typed:
 
 ```bash
 curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
