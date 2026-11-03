@@ -108,7 +108,12 @@ not a ritual: the release notes are the only place a reader learns that, say, no
 that a screen reads a fixture. An empty block is how a prototype ships as if it were a product.
 
 Write what is true **on the commit being tagged**, and check it there before writing it. A limit that
-was accurate a week ago is still a false claim in a public document.
+was accurate a week ago is still a false claim in a public document. Nothing re-derives the block
+from the tree — `--limits <file>` takes hand-written prose — so re-derive it yourself against the tag
+you are about to cut: a path or a `path::symbol` the bullet names must exist there, an importer it
+claims does not exist must not, and a rendered consequence it asserts (a greyed nav row, a CTA that is
+not there) must be something the tree can actually produce. `v1.3.0`'s answer-sheet bullet named
+`lib/flow/paths.ts::answerPath`, a symbol that has never existed, and a nav that had no row to grey.
 
 ## The version badge points at the tag
 
@@ -275,11 +280,23 @@ It fails when:
 
 ## Failure path
 
-**A pushed tag is never moved.** If a cut is wrong — the wrong commit, a typo in the notes, a limit
-that is no longer true — report it, delete the tag and the Release, and cut the **next** version
+**A pushed tag is never moved.** If the tag itself is wrong — the wrong commit, a bump that shipped a
+tree nobody gated — report it, delete the tag and the Release, and cut the **next** version
 (`v1.0.1`). Re-tagging the same version silently rewrites what someone may already have pinned.
 A pre-release is no exception: `v1.1.0-rc1` is not re-pointed at a repaired commit, `v1.1.0-rc2` is.
 `--tag-only` refuses an existing tag by design; do not work around it with `git tag -f`.
+
+**A Known limit that is false is the prose, not the tag, and it is corrected in place while that
+version is the one readers land on.** The entry is the Release body, and the version badge on every
+screen links `releases/tag/v<version>` — so a false bullet there is a page the running product sends
+people to, not an archived opinion. Fix the bullet, say inside the bullet that it was corrected after
+publication, re-publish the body (`gh release edit v<version> --notes-file <entry>`), and prove the
+body and the entry are byte-equal. The tag does not move, so `git show v<version>:CHANGELOG.md` keeps
+the wording the cut shipped: that divergence is the cost, and the disclosure in the bullet is what
+makes the edit auditable instead of silent. Once a later version exists the older entry is history
+rather than a live claim — a false statement _there_ is superseded in the next entry, and the old
+wording stays as the record. A release candidate keeps the stricter rule above: it is deleted and
+re-cut, because its only reader is the cut itself.
 
 A release is done when all four artefacts agree:
 
