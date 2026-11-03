@@ -43,9 +43,9 @@ import { currentUserIfConfigured } from "@/lib/auth/session";
  * **The target is the group root, not the segment asked for, and that is a limit of the place the
  * gate lives.** A Next server component is never handed the request's pathname — `headers()` on a
  * live request carries no path (`host`, `accept`, `x-forwarded-*` and nothing else), and a layout
- * sees `params` only for the segments *above* it. `/v1/admin/console` is three segments below this
- * file, so this file cannot spell it without a proxy whose only job would be to copy the path into
- * a header. Two reasons not to add that: a global `proxy.ts` for one header is a request hop on
+ * sees `params` only for the segments *above* it. `/v1/initiator/templates/new` is three segments
+ * below this file, so this file cannot spell it without a proxy whose only job would be to copy the
+ * path into a header. Two reasons not to add that: a global `proxy.ts` for one header is a request hop on
  * every route in the tree, and the group root is where a returning visitor wants to start anyway
  * — the persona bar is the entry screen, and the prototype is a review surface whose screens are
  * not bookmarkable links in circulation. If deep-path preservation is ever wanted, the honest fix

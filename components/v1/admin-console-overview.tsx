@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 
 /**
- * `/v1/admin/console` — the console's overview.
+ * `/admin/console` — the console's overview.
  *
  * The arrangement is `components/console/overview.tsx`: a heading, a grid of `<Card>` figures,
  * then the prose that says what the screen is. The figure grid itself is the shipped

@@ -103,9 +103,9 @@ export function overviewHref(persona: DashboardPersona): string {
   return `/v1/${persona}`;
 }
 
-/** The section's href under a persona; the admin section is the console, not a route under `/v1/admin`. */
+/** The section's href; the admin section leaves the prototype for the real console at `/admin/console`. */
 export function sectionHref(persona: DashboardPersona, section: NavSection): string {
-  if (section === "admin") return "/v1/admin/console";
+  if (section === "admin") return "/admin/console";
   return `/v1/${persona}/${section}`;
 }
 

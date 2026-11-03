@@ -58,8 +58,12 @@ const SECTION_LABELS: Record<NavSection, string> = {
   admin: "Admin",
 };
 
+/**
+ * A row is active on its own path and every path under it. The one row that leaves the prototype
+ * — the admin console at `/admin/console` (#478), which now lives under the app shell — is
+ * therefore never active inside `/v1`, which is the honest answer: it is not a `/v1` page any more.
+ */
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/v1/admin/console") return pathname.startsWith(href);
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
