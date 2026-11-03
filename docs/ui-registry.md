@@ -19,7 +19,7 @@ How a template picks from this page — the order a new surface is decided in �
 - component domains: **40** — 276 files under `components/`, 270 of them `.tsx`
 - route handlers: **19** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 14 · **fixture** 62 · **db** 23 · **live** 8 · **prototype** 1
-- templates: Both templates 28 · AlignSynch 36 · QuizHub 42 · No template yet 2
+- templates: Both templates 29 · AlignSynch 35 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -38,6 +38,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The front page: QuizHub leads with category, latest and featured shelves, top players and live winners; AlignSynch leads with the practice a coach runs — a template of their own, a blind two-sided answer and the Gap as the session's agenda — and backs it with the four assessment templates, the counted relationship scope and the three seats on a relationship.
   - components: `components/categories`, `components/home`, `components/media`, `components/ui`
   - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
+
+- `/admin/audit` — **db**
+  - capability: The audit log: every audited admin write, newest first — when, who and the rung they held at the moment they acted, the action, the row it touched, the reason and both sides of the change — filterable by actor, action, target table and date range, with the filter in the URL so a view is a link.
+  - components: `components/admin`, `components/ui`
+  - reads: Postgres — `lib/db/admin-audit.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: Read-only, and structurally so: it reads `admin_action` through `lib/db/admin-audit.ts`, imports no write path, and `tests/admin-audit-page.test.ts` drives a `support` session at it to prove the 404 and that nothing was read or written. `admin` and `owner` reach it (the ladder is ranked, and the page names only `admin`). Both templates this tree ships claim the `product.admin` capability (#509), which is why the row says both; the console rows beside it say `alignsynch` because those screens carry that product's words. `before`/`after` are drawn as keys and a 48-character truncation with the full value behind a `<details>` click, because the JSONB may hold a party's name. Filters are SQL (`WHERE` clauses built in `lib/admin/audit-log.ts`), not client-side: the log only grows. Migration 0024 adds the `actor_role` column this screen's actor column prints, written by `act()` in the same transaction as the change.
 
 - `/dashboard/user` — **db**
   - capability: The signed-in person's account home: their saved profile, wallet, recent activity and their quizzes, read from Postgres.
@@ -190,12 +196,6 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 ## AlignSynch
 
 ### Routes
-
-- `/admin/audit` — **db**
-  - capability: Every audited write, newest first: when, which operator, which action, which row, the reason, and the before/after values the writer recorded inside the transaction.
-  - components: `components/admin`, `components/ui`
-  - reads: Postgres — `lib/db/admin-audit.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
-  - notes: #503 — the read half of `act()`'s contract (`lib/db/admin-audit.ts`, one bounded `SELECT` over the append-only `admin_action` table). Nothing here writes: the module has no UPDATE or DELETE and the screen has no controls. `before`/`after` cross as pretty-printed JSON and are never reinterpreted per action, so a new action gains no second model here. Admin-only, and the third operator row in the sidebar beside the registry it records.
 
 - `/admin/console` — **fixture**
   - capability: The admin console — records, relationships, templates and the two seats, read-only for answers.
@@ -353,10 +353,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 ### Component domains
 
 - `components/admin` — **db**
-  - capability: The operator's three screens' chrome: the registry table with its stage tabs and filters, one relationship's five repair bands, and the audit log's table.
+  - capability: The operator's three screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, and the audit log's filtered table whose before/after values open on a click.
   - files (3): `audit-log.tsx`, `instance-registry.tsx`, `relationship-operations.tsx`
   - routes (3): `/admin/audit`, `/admin/instances`, `/admin/instances/[id]`
-  - notes: `db`, and by a different route than it first claimed: every component here renders props the page read (a client component must not reach `pg`), and what pulls the domain into the database graph is the _type_ it renders — `relationship-operations.tsx` and `audit-log.tsx` annotate their props with `AdminRelationshipDetail` and `AdminAuditEntry`, and `import type` from `lib/db/**` still walks to `lib/db/client.ts` in this generator's graph. E34 is the runtime claim and it stays green: no `"use client"` module here value-imports a server module, which is why the pages render rather than 500.
+  - notes: `db`, and by a different route than it first claimed: every component here renders props the page read (a client component must not reach `pg`), and what pulls the domain into the database graph is the _type_ it renders — `relationship-operations.tsx` annotates its props with `AdminRelationshipDetail`, and `import type` from `lib/db/**` still walks to `lib/db/client.ts` in this generator's graph. E34 is the runtime claim and it stays green: no `"use client"` module here value-imports a server module, which is why the pages render rather than 500. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.
 
 - `components/assessment` — **mock**
   - capability: The assessment report: each Aspect's two Opinions, the Values behind them and the Gap between the parties.

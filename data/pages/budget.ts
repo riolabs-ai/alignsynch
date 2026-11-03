@@ -54,6 +54,12 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/home",
     budget: 0,
   },
+  "/admin/audit": {
+    page: "app/(mainlayout)/admin/audit/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-audit",
+    budget: 0,
+  },
   "/admin/gaps": {
     page: "app/(mainlayout)/admin/gaps/page.tsx",
     dirs: ["components/console"],

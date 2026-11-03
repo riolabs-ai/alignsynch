@@ -1,4 +1,4 @@
--- 0024_relationship_operations.sql — the three facts an operator's repair writes (#503, epic #500).
+-- 0025_relationship_operations.sql — the three facts an operator's repair writes (#503, epic #500).
 --
 -- The console can act now. Four of the five operations in #503 reuse a column that already
 -- exists (`party.unlock_seen_at`, `party.accepted_at`, `session_invite.token_hash` / `expires_at`),
