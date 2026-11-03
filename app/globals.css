@@ -204,3 +204,110 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/*
+ * The first-run tour's callout (#455). `driver.js/dist/driver.css` ships a white card with its own
+ * palette (`#2d2d2d` text, `#fff` ground, `#ccc` buttons); this block repaints it from the token
+ * layer instead, so the callout is the product's own surface on both brands: `--popover` is the
+ * ground, `--primary` the button, `--border` the hairline. The library's rules are unlayered and
+ * single-class, so these (`0,2,0`) win on specificity rather than on order — the stylesheet is
+ * imported by the tour component and this file by the root layout, and those two can load in
+ * either sequence.
+ *
+ * The arrow is four borders with three of them transparented per direction — the library's own
+ * scheme, re-pointed at `--popover` so it does not stay white on a branded card.
+ */
+.driver-popover.tour-popover {
+  max-width: 22rem;
+  padding: 1rem;
+  color: hsl(var(--popover-foreground));
+  background-color: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px hsl(var(--foreground) / 0.18);
+}
+
+.tour-popover .driver-popover-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tour-popover .driver-popover-description {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+
+.tour-popover .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.tour-popover .driver-popover-close-btn {
+  color: hsl(var(--muted-foreground));
+}
+
+.tour-popover .driver-popover-close-btn:hover,
+.tour-popover .driver-popover-close-btn:focus-visible {
+  color: hsl(var(--foreground));
+}
+
+.tour-popover .driver-popover-footer-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(var(--primary-foreground));
+  background-color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary));
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.tour-popover .driver-popover-footer-btn:hover,
+.tour-popover .driver-popover-footer-btn:focus-visible {
+  opacity: 0.9;
+}
+
+.tour-popover .driver-popover-arrow {
+  border: 5px solid hsl(var(--popover));
+}
+
+.tour-popover .driver-popover-arrow-side-left {
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-right-color: transparent;
+}
+
+.tour-popover .driver-popover-arrow-side-right {
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+
+.tour-popover .driver-popover-arrow-side-top {
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+.tour-popover .driver-popover-arrow-side-bottom {
+  border-top-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+/*
+ * Reduced motion is the second half of the component's `animate: false` (#455): the engine drops
+ * the `driver-fade` class when animation is off, and this rule covers the one case the class cannot
+ * — a stylesheet preference that changed after the tour started, which only CSS can answer. The
+ * selectors carry one class more than the library's own (`.driver-active.driver-fade …`,
+ * `.driver-active …tour-popover`) so this wins on specificity rather than on load order.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .driver-active.driver-fade .driver-overlay,
+  .driver-active .driver-popover.tour-popover {
+    animation: none;
+    transition: none;
+  }
+}

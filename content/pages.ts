@@ -144,10 +144,12 @@ export type PageCopyTable = z.infer<typeof zPageCopyTable>;
  * Copy surfaces that are not routes. `shell` is the `(mainlayout)` chrome, mounted by
  * `app/(mainlayout)/layout.tsx` (header, sidebar) and by the pages that render the
  * footer; `not-found` is `app/not-found.tsx`, which Next renders for any path that
- * matches nothing. Named on purpose: an unnamed key is a typo, and a surface that is
- * neither a route nor one of these would silently skip the ratchet.
+ * matches nothing; `tour` is the first-run tour's callout (#455), which renders over
+ * `/dashboard` and in the shell's rail rather than owning a route of its own. Named on
+ * purpose: an unnamed key is a typo, and a surface that is neither a route nor one of
+ * these would silently skip the ratchet.
  */
-export const NON_ROUTE_COPY_SURFACES = ["shell", "not-found"] as const;
+export const NON_ROUTE_COPY_SURFACES = ["shell", "not-found", "tour"] as const;
 
 export type NonRouteCopySurface = (typeof NON_ROUTE_COPY_SURFACES)[number];
 
