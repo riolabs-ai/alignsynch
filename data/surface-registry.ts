@@ -152,9 +152,11 @@ export const surfaceRegistry: readonly Surface[] = [
     // inside its transaction; it answers 409 once that party has accepted (403 for a browser that
     // is not a party, 404 for an unknown instance). What it renders is real rows, not a layout: the
     // seat comes from Postgres and the prefills are that seat's own `opinion` rows. It is reached
-    // from the acceptance screen's "answer first" band, and the relationship screen draws the same
-    // form inline; the sheet has no nav row of its own, and a nav gap is not a missing write —
-    // acceptance has been live here since #427 with no inbound link at all.
+    // from the acceptance screen's "answer first" band and from the locked report's "Answer your
+    // Aspects" CTA (`report-view.tsx`, which points here and not at `…/answers` — a GET of that
+    // handler is a 405, #488), and the relationship screen draws the same form inline; the sheet
+    // has no nav row of its own, and a nav gap is not a missing write — acceptance has been live
+    // here since #427 with no inbound link at all.
     status: "live",
   },
   {
