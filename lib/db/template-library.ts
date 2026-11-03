@@ -22,6 +22,7 @@
  */
 import type { PublishStatus } from "@/content/core";
 import { queryRows } from "@/lib/db/client";
+import { assessmentTemplateFromPayload } from "@/lib/db/rows";
 import { authorshipOf, type LibraryTemplate } from "@/lib/flow/template-library";
 
 interface LibraryRow {
@@ -37,10 +38,36 @@ interface LibraryRow {
   readonly instances: number;
 }
 
+/**
+ * The **published** version's words, falling back to the working copy for a template that has never
+ * been published (#502b).
+ *
+ * The catalogue offers what has been published, not what somebody is currently editing: without
+ * this lateral join an unsaved (or saved-but-unpublished) edit to a published template would change
+ * what the catalogue offers while every relationship still reads the version it was created from.
+ * The fallback is the draft's own words, which is what a never-published row is — and a draft is
+ * only in this list for its author.
+ *
+ * `jsonb_array_length` is the Aspect count of the offered version; the row's own `item` count is the
+ * fallback, and the two are equal until somebody edits a published template.
+ */
 const LIBRARY_COLUMNS = `
-  r.id, r.slug, r.title, r.summary, r.status, r.date, r.author_user_id,
-  (SELECT count(*) FROM item i WHERE i.record_id = r.id)::int AS aspects,
+  r.id, r.slug, r.status, r.date, r.author_user_id,
+  COALESCE(live.payload->>'title', r.title)       AS title,
+  COALESCE(live.payload->>'summary', r.summary)   AS summary,
+  COALESCE(jsonb_array_length(live.payload->'items'),
+           (SELECT count(*) FROM item i WHERE i.record_id = r.id))::int AS aspects,
   (SELECT count(*) FROM session ai WHERE ai.template_record_id = r.id)::int AS instances
+`;
+
+const LIVE_VERSION_JOIN = `
+  LEFT JOIN LATERAL (
+    SELECT v.payload
+      FROM template_version v
+     WHERE v.template_record_id = r.id
+     ORDER BY v.version DESC
+     LIMIT 1
+  ) live ON true
 `;
 
 /** `record.date` as the model's one UTC instant, whichever way `pg` hands the column back. */
@@ -86,6 +113,7 @@ export async function listLibraryTemplates(
   const rows = await queryRows<LibraryRow>(
     `SELECT ${LIBRARY_COLUMNS}
        FROM record r
+       ${LIVE_VERSION_JOIN}
       WHERE r.record_type = 'assessment'
         AND (r.status <> 'draft' OR r.author_user_id = $1)
         AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
@@ -122,42 +150,67 @@ interface AspectRow {
 /**
  * The template an id names, if this viewer may use it; `undefined` otherwise.
  *
- * "Otherwise" covers all three misses with one answer — no such record, a record that is an
- * instance, and a template somebody else wrote — because the page turns every one of them into
- * `notFound()`. Distinguishing them in the response would tell a stranger that an id exists,
- * which is the one thing a 404 is for.
+ * "Otherwise" covers all four misses with one answer — no such record, a record that is an
+ * instance, a template somebody else wrote, and a withdrawn one — because the page turns every one
+ * of them into `notFound()`. Distinguishing them in the response would tell a stranger that an id
+ * exists, which is the one thing a 404 is for.
+ *
+ * **A draft is readable only by its author**, which is the list's own rule and what makes
+ * unpublishing withdraw the offer rather than merely hide a row: an unpublished template is
+ * `draft`, so a bookmark or a shared link to its detail page answers `notFound()` instead of
+ * drawing the Aspects of a template the catalogue no longer offers. The history is not withdrawn
+ * with it — the versions and every relationship bound to one are untouched (#502b).
  */
 export async function readLibraryTemplate(
   recordId: string,
   viewerUserId: string | null,
 ): Promise<LibraryTemplateDetail | undefined> {
-  const [row] = await queryRows<LibraryRow>(
-    `SELECT ${LIBRARY_COLUMNS}
+  const [row] = await queryRows<LibraryRow & { readonly live_payload: unknown }>(
+    `SELECT ${LIBRARY_COLUMNS}, live.payload AS live_payload
        FROM record r
+       ${LIVE_VERSION_JOIN}
       WHERE r.id = $1
         AND r.record_type = 'assessment'
+        AND (r.status <> 'draft' OR r.author_user_id = $2)
         AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
         AND (r.author_user_id IS NULL OR r.author_user_id = $2)`,
     [recordId, viewerUserId],
   );
   if (row === undefined) return undefined;
 
-  const aspects = await queryRows<AspectRow>(
-    `SELECT item_id, position, prompt, left_value, right_value
-       FROM item
-      WHERE record_id = $1
-      ORDER BY position`,
-    [recordId],
-  );
+  // The detail page shows what the catalogue offers: the published version's Aspects when there is
+  // one, the working copy otherwise. Both are `zAssessment` items, so a version's payload is parsed
+  // exactly as the rows would be, and `position` is the version's own order.
+  const aspects: readonly TemplateAspect[] =
+    row.live_payload === null
+      ? (
+          await queryRows<AspectRow>(
+            `SELECT item_id, position, prompt, left_value, right_value
+               FROM item
+              WHERE record_id = $1
+              ORDER BY position`,
+            [recordId],
+          )
+        ).map((aspect) => ({
+          id: aspect.item_id,
+          position: aspect.position,
+          prompt: aspect.prompt,
+          leftValue: aspect.left_value ?? "",
+          rightValue: aspect.right_value ?? "",
+        }))
+      : assessmentTemplateFromPayload(
+          row.live_payload,
+          `template version of "${row.id}"`,
+        ).items.map((item, position) => ({
+          id: item.id,
+          position,
+          prompt: item.prompt,
+          leftValue: item.leftValue,
+          rightValue: item.rightValue,
+        }));
 
   return {
     template: libraryTemplateOf(row, viewerUserId),
-    aspects: aspects.map((aspect) => ({
-      id: aspect.item_id,
-      position: aspect.position,
-      prompt: aspect.prompt,
-      leftValue: aspect.left_value ?? "",
-      rightValue: aspect.right_value ?? "",
-    })),
+    aspects,
   };
 }

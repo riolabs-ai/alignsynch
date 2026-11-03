@@ -33,7 +33,7 @@ import { ADMIN_TEMPLATES_PATH, readAdminTemplate } from "@/lib/admin/templates";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { requireAdminProduct, requireAlignmentProduct } from "@/lib/brand-boundary";
 import { DatabaseUnavailableError } from "@/lib/db/client";
-import { saveTemplate } from "../actions";
+import { saveTemplate, publishTemplateVersion, unpublishTemplateVersion } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -85,8 +85,12 @@ export default async function AdminTemplatePage({ params }: { params: Promise<{ 
         sheetCopy={assessmentInstancePageCopy}
         template={view.template}
         editable={view.editable}
+        status={view.status}
+        versions={view.versions}
         catalogue={catalogue}
         onSave={saveTemplate}
+        onPublish={publishTemplateVersion}
+        onUnpublish={unpublishTemplateVersion}
       />
     </div>
   );

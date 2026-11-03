@@ -105,6 +105,18 @@ export const ADMIN_ACTIONS = [
    */
   "read_submission",
   /**
+   * Publish the working copy as an immutable version (#502b). `admin`, like the two above: it is
+   * what the catalogue offers and what every new relationship copies, and the write is a snapshot
+   * — no relationship that already exists reads it.
+   */
+  "template.publish",
+  /**
+   * Withdraw a published template from the catalogue (#502b). Same rung: it stops offering a
+   * template without touching a version row or a relationship, so it is reversible by publishing
+   * again.
+   */
+  "template.unpublish",
+  /**
    * Give a relationship a tier for a period, or extend the one it has (#505). The action name is
    * the card's word — an operator "comps" a plan — and the row it writes is `plan_grant`, not
    * `billing_subscription`: no money moved, so it must not read as a purchase.
@@ -146,6 +158,11 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // rungs is what lets support answer "what does the report say" without reissuing one.
   "report.regenerate": "admin",
   read_submission: "support",
+  // #502b — publishing is what the catalogue offers and what every new relationship copies, and
+  // unpublishing withdraws it. Both are the same decision at the same rung; neither reaches a
+  // relationship that already exists, which is why an `admin` may do either.
+  "template.publish": "admin",
+  "template.unpublish": "admin",
   /**
    * #505 — **`owner` alone, and the second action in this table that is owner-floored.**
    *
