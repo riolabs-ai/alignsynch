@@ -1105,7 +1105,7 @@ const brandWordCensus = `${brandWordResult.census.fixtures.length} alignment fix
  * The rule is deliberately perceptual rather than byte-exact: it passes a re-rendered icon, a
  * different encoder and a mark re-exported with different padding, and it fails a different shape.
  * Its negative cases live in `scripts/__tests__/icon-fingerprint.test.ts`, which asserts the old
- * glyph fails (83.3) and the regenerated monogram passes (3.9) on the same fixture.
+ * glyph fails (78.8) and the regenerated monogram passes (3.5) on the same fixture.
  * ------------------------------------------------------------------ */
 
 const iconMarkMeasurements: string[] = [];
