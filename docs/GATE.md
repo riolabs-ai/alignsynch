@@ -213,9 +213,9 @@ CI on that tree: the first post-change run was **1 m 0 s** end to end, of which 
 itself was **43.6 s** (`data:check` and `test` skipped there too). The extra ~17 s was runner
 setup.
 
-This is the table that makes the current one readable: the same steps, 3–15× slower each,
-because `test`, `data:check` and `parity` are now real work and `typecheck` compiles a much
-larger tree.
+This is the table that makes the current one readable: `data:check`, `test` and `parity` went from
+skipped-or-absent to 8.4 s / 16.8 s / 7.1 s in CI (18.3 / 18.4 / 14.7 s locally), `typecheck` went
+3.8 s → 6.2 s warm and 29.0 s cold, and `build` 40.5 s → 64–74 s.
 
 ## Negative controls (each run against this tree, then reverted)
 
