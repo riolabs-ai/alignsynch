@@ -38,7 +38,7 @@ export function HeroSection({ copy }: { copy: PageCopy }) {
             {copy.secondaryCta && (
               <Button
                 size="lg"
-                className="bg-action text-action-foreground duration-300 hover:bg-action/90"
+                className="bg-action text-action-foreground duration-300 hover:bg-action-hover"
                 asChild
               >
                 <Link href={copy.secondaryCta.href}>{copy.secondaryCta.label}</Link>

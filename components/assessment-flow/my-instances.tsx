@@ -230,7 +230,7 @@ export function MyInstances({
         {copy.cta === undefined ? null : (
           <Link
             href={copy.cta.href}
-            className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground hover:bg-action/90"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground hover:bg-action-hover"
           >
             {copy.cta.label}
           </Link>
@@ -338,7 +338,7 @@ export function MyInstances({
               <p className="mt-4">
                 <Link
                   href={empty.cta.href}
-                  className="inline-flex h-11 items-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground hover:bg-action/90"
+                  className="inline-flex h-11 items-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground hover:bg-action-hover"
                 >
                   {empty.cta.label}
                 </Link>

@@ -112,7 +112,19 @@ function gifSize(buf) {
   return { width: buf.readUInt16LE(6), height: buf.readUInt16LE(8) };
 }
 
-const PARSERS = [pngSize, jpegSize, webpSize, svgSize, gifSize];
+/**
+ * An ICO (the `/favicon.ico` files). The header is 6 bytes — reserved, type (1 = icon), count —
+ * and each 16-byte directory entry starts with a one-byte width and height where **0 means 256**,
+ * so a 256 px icon stores `0` and a reader that took the byte at face value would size it to
+ * nothing. The first entry is the size reported; the registry is a description, not a manifest.
+ */
+function icoSize(buf) {
+  if (buf.length < 22 || buf.readUInt16LE(0) !== 0 || buf.readUInt16LE(2) !== 1) return undefined;
+  if (buf.readUInt16LE(4) === 0) return undefined;
+  return { width: buf.readUInt8(6) || 256, height: buf.readUInt8(7) || 256 };
+}
+
+const PARSERS = [pngSize, jpegSize, webpSize, svgSize, gifSize, icoSize];
 
 function sizeOf(file) {
   const buf = readFileSync(file);

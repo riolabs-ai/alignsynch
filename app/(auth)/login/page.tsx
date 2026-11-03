@@ -7,7 +7,7 @@ import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
 import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
 import { signInDestination } from "@/lib/auth/next-path";
 import { AFTER_SIGN_IN_BY_BRAND, GOOGLE_FAILURE_VALUE } from "@/lib/auth/paths";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { loginCopyFor } from "@/lib/auth-copy";
 import type { Metadata } from "next";
 import { signInAsDemoRole } from "./demo-actions";
@@ -103,6 +103,12 @@ export default async function AuthPage({
    * alignment build's sign-in page opened on a quiz book.
    */
   const marks = AUTH_MARKS_BY_BRAND[brandId];
+  /**
+   * The image the `brand-mark` id draws — the brand's generated app mark (the same file the tab
+   * icon is, `brand.icon`). It travels beside the ids because the view is a client module and
+   * cannot derive a brand path; a brand whose set names glyphs ignores it.
+   */
+  const markSrc = AUTH_MARK_SRC_BY_BRAND[brandId];
 
   const mode = demoMode();
   const surface = demoSurfaceFor(mode, mode.kind === "demo" ? await readDemoUnlock() : null);
@@ -117,6 +123,7 @@ export default async function AuthPage({
     <LoginView
       copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandId), loginPageCopy)}
       marks={marks}
+      markSrc={markSrc}
       next={signInDestination(target, destination)}
       googleFailure={googleFailure}
       demo={demo}

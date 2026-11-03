@@ -36,6 +36,10 @@ const config: Config = {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          // The pressed shade of an accent *surface* (`content/brand.ts` `accentPress`). Not an
+          // ink: on AlignSynch white on the cyan is 2.64:1, so the accent never carries white
+          // text and `text-accent` is banned by `scripts/lint-brand-classes.mjs`.
+          press: "var(--accent-press)",
         },
         // The brand's interactive colour (#187): `--primary` is the template's ink and
         // `--accent` is shadcn's subtle hover surface, so a CTA had no token to name and was
@@ -45,6 +49,10 @@ const config: Config = {
         action: {
           DEFAULT: "hsl(var(--action))",
           foreground: "hsl(var(--action-foreground))",
+          // A pressed button, as a token rather than a 90 % fade: `var(--action-hover)` is the
+          // record's shade when it names one, and `hsl(var(--action) / 0.9)` from `:root` when it
+          // does not — so QuizHub's computed hover is exactly what it was.
+          hover: "var(--action-hover)",
         },
         "nav-active": "hsl(var(--nav-active))",
         destructive: {

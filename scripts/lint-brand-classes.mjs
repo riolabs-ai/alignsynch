@@ -34,12 +34,17 @@ const MUST_FLAG = [
   ["x.ts", "const s = `flex text-indigo-500 " + String.fromCharCode(36) + "{label} items-center`;"],
   ["x.tsx", 'export const b = <i className={"bg-gradient-to-r from-a to-b"} />;'],
   ["x.ts", 'const c = "bg-[linear-gradient(red,blue)]";'],
+  // Rule 3: the accent as an ink. 2.64:1 on white with the owner's cyan.
+  ["x.tsx", 'export const g = <a className="text-accent underline">link</a>;'],
+  ["x.tsx", 'export const h = <span className="hover:text-accent">chip</span>;'],
 ];
 const MUST_PASS = [
   ["x.tsx", 'export const d = <div className="bg-action text-action-foreground" />;'],
   ["x.tsx", 'export const e = <div className="bg-blue-500 border-amber-200" />;'],
   ["x.ts", "// bg-purple-600 was here once; the record owns the hue now."],
-  ["x.ts", 'const f = "bg-action/10 hover:bg-action/90";'],
+  ["x.ts", 'const f = "bg-action/10 hover:bg-action/90 hover:bg-action-hover";'],
+  // An accent *surface* and the ink on it stay legal; only the accent as text is a violation.
+  ["x.tsx", 'export const i = <span className="bg-accent text-accent-foreground">ok</span>;'],
 ];
 
 function selfTest() {
@@ -87,7 +92,7 @@ for (const root of roots) {
 
 console.log(
   `  brand classes: ${files} file(s) under ${roots.map((r) => `${r}/`).join(", ")} ` +
-    `— palette steps (indigo/purple/violet) and bg-gradient-* utilities banned, no allowlist`,
+    `— palette steps (indigo/purple/violet), bg-gradient-* utilities and text-accent bans, no allowlist`,
 );
 console.log(`  rule self-test: ${selfTestReport}`);
 
@@ -97,7 +102,7 @@ if (violations.length > 0) {
   console.error(
     `\n✗ brand classes: ${violations.length} violation(s). The palette has one home — ` +
       `data/brand.ts. Use bg-action / text-action / border-action (and their /opacity forms), ` +
-      `or add a token to the record; do not exempt the line.`,
+      `text-accent-foreground on an accent fill, or add a token to the record; do not exempt the line.`,
   );
   process.exit(1);
 }
