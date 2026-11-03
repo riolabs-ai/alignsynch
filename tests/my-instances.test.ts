@@ -710,6 +710,7 @@ describe("the row → card mapping (#409)", () => {
       mode: "basic",
       session_name: null,
       session_date: new Date("2026-10-28T18:30:00.000Z"),
+      voided: false,
       viewer_role: "initiator",
       viewer_unlock_seen_at: null,
       initiator_name: "Avery",
@@ -729,6 +730,7 @@ describe("the row → card mapping (#409)", () => {
           hasCounterparty: true,
           initiatorAccepted: true,
           counterpartyAccepted: true,
+          voided: false,
         },
       ],
       opinions: [
@@ -779,6 +781,7 @@ describe("the row → card mapping (#409)", () => {
             hasCounterparty: true,
             initiatorAccepted: true,
             counterpartyAccepted: true,
+            voided: false,
           },
         ],
       }),

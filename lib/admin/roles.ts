@@ -62,6 +62,23 @@ export const ADMIN_ACTIONS = [
   "instance.delete",
   /** Hand the one owner seat on. `owner` only: an `admin` cannot make themselves an `owner`. */
   "owner.transfer",
+  /**
+   * Clear a party's unlock mark — the V11 repair (#503). `support`'s second write: it changes
+   * nothing a party wrote, and it is the first thing a stuck relationship asks for.
+   */
+  "party.unlock",
+  /** Mint a new invitation token; the old link dies (#503). `support`, like the unlock. */
+  "invite.resend",
+  /**
+   * End a session, terminally (#503). `admin`: nothing a party wrote is deleted, but the pair can
+   * never finish it, which is a decision about somebody's relationship and not a courtesy.
+   */
+  "session.void",
+  /**
+   * Accept a session on one party's behalf, recorded as `impersonated_by` (#503). `admin` for the
+   * same reason as the void — it writes a person's agreement for them.
+   */
+  "instance.force-close",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -81,7 +98,27 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "role.change": "admin",
   "instance.delete": "admin",
   "owner.transfer": "owner",
+  // #503 — the two repairs `support` exists for: neither writes anything a party said. Clearing an
+  // unlock mark changes a marker; reissuing a token changes a link. Everything that ends a
+  // relationship or speaks for a person is `admin`.
+  "party.unlock": "support",
+  "invite.resend": "support",
+  "session.void": "admin",
+  "instance.force-close": "admin",
 };
+
+// The one floor #503 does not name, and the stricter reading this tree took.
+//
+// Issue #503 lists "resend / revoke an invite (new token, old one dies)" in one bullet and gives a
+// rung for the other four operations only — `support` may unlock and resend, `void` and
+// `force-close` are `admin`+. A revoke is not named, so it keeps the floor it has held since #501:
+// `admin`. That is also the stricter of the two readings, which is the direction an ambiguity
+// should resolve in: a revoke kills a live link until somebody reissues it, and every other write
+// to `admin_invite` (`invite.create`, `invite.revoke`) is already `admin`.
+//
+// `tests/admin-roles.test.ts` asserts this exact floor, and the ambiguity is recorded on kanban
+// card t_a4ea6098. A later widening to `support` is a deliberate edit to both, with the issue that
+// authorises it — never a quiet retune of the table.
 
 /** Is this string one of `ADMIN_ACTIONS`? The runtime half of a closed union read from a row. */
 export function isAdminAction(value: string): value is AdminAction {
@@ -109,3 +146,47 @@ export function can(role: UserRole | null, action: AdminAction): boolean {
 export function atLeast(role: UserRole | null, needed: UserRole): boolean {
   return role !== null && roleRank(role) >= roleRank(needed);
 }
+
+/* ------------------------------------------------------------------ *
+ * The tables an audited write may target
+ * ------------------------------------------------------------------ */
+
+/**
+ * Every table an audited write may name, closed at this list — the other vocabulary of an `act()`
+ * call, beside the action names above.
+ *
+ * **Why it lives here and not in `lib/admin/act.ts`.** #501 put it there, next to the INSERT it
+ * describes. `/admin/audit` (#501b) renders a filter over the same list, and the ui-registry gate
+ * named the cost: `act.ts` opens a pool, so a view that imported the array from it dragged
+ * `lib/db/` into `components/admin`'s closure and turned a props-only domain into a database one —
+ * for the sake of a list of strings. A vocabulary is pure; the module that writes with it is not.
+ *
+ * Closed on purpose: `target_table` is read by the audit screen's filter and by anyone asking "what
+ * happened to this row", and a table name no reader knows is a dead filter. Adding a table is a
+ * deliberate edit here, and the list is the migration's table set rather than a copy of
+ * `information_schema` — a table this app does not audit is not a target.
+ *
+ * **The names are the tables as 0013 left them.** `0013_relationship_sessions.sql` renamed
+ * `assessment_instance` to `session` and `instance_invite` to `session_invite`, and #503's repairs
+ * write those rows: an entry naming the pre-0013 spelling would refuse every relationship repair
+ * with `unknown-target-table` while type-checking perfectly. The audit log's own vocabulary is the
+ * live table names or it is nothing a reader can join back to. `relationship_member` is here for
+ * the same reason: it is the table a coach operation writes. A rename changes this array in the
+ * same commit that renames the table.
+ */
+export const AUDIT_TARGET_TABLES = [
+  "user_profile",
+  "admin_invite",
+  "record",
+  "session",
+  "party",
+  "item",
+  "response_option",
+  "opinion",
+  "relationship",
+  "relationship_member",
+  "session_invite",
+  "coach_invite",
+] as const;
+
+export type AuditTargetTable = (typeof AUDIT_TARGET_TABLES)[number];

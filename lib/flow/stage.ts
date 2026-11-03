@@ -49,15 +49,21 @@ export const FLOW_STAGES = [
 
 export type FlowStage = (typeof FLOW_STAGES)[number];
 
-/** Status → stage, as a total table so a fourth status cannot be added without a decision. */
-const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage> = {
+/**
+ * The status → stage table. `voided` has **no** stage (#503): a session an operator ended is off
+ * the ladder, so `null` is the honest answer and the instance screen draws its own notice instead
+ * of a badge. Typing the value as `FlowStage | null` rather than adding a fourth stage name makes
+ * "draw the ladder for a void" a compile error at the call site.
+ */
+const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage | null> = {
   awaiting_counterparty: "invited",
   answering: "connected",
   complete: "sharing",
+  voided: null,
 };
 
-/** The stage this instance's screen is at. One call, three answers, no state. */
-export function relationshipStage(status: InstanceStatus): FlowStage {
+/** The stage this instance's screen is at — `null` when the session was voided. */
+export function relationshipStage(status: InstanceStatus): FlowStage | null {
   return STAGE_OF_STATUS[status];
 }
 

@@ -59,6 +59,16 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
       body: "Invitations last seven days. Ask {initiator} to send you a new one.",
     },
     {
+      /**
+       * #503 — an operator withdrew the link. A different sentence from `expired` because it is a
+       * different fact: nothing ran out, somebody decided, and "ask for a new one" is a request to
+       * the team rather than to the other party.
+       */
+      id: "revoked",
+      heading: "This invitation was withdrawn",
+      body: "The link was cancelled before it was used. If you were expecting it, reply to whoever sent it to you.",
+    },
+    {
       id: "unknown",
       heading: "No such invitation",
       body: "This link does not name an invitation. Check that it was copied whole.",

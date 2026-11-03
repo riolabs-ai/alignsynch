@@ -436,6 +436,10 @@ export function RelationshipReport({
   const back = sectionOf(copy, "back");
   const header = sectionOf(copy, "header");
   const setting = SETTING_LABELS[report.setting];
+  /** The seats whose acceptance an operator recorded on their behalf (#503). Usually none. */
+  const impersonated = screen.seats
+    .filter((seat) => seat.impersonated === true)
+    .map((seat) => seat.name);
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -467,6 +471,24 @@ export function RelationshipReport({
         <p className={`mt-2 ${MUTED}`}>{report.summary}</p>
         <p className="mt-2 text-xs text-muted-foreground">{itemLabel(header, "read-only")}</p>
       </header>
+
+      {/*
+        #503 — an acceptance an operator wrote. The report is the surface where an acceptance is
+        a fact about the relationship, so this is where "somebody accepted for them" has to be
+        said: the answers are the party's own, and the acceptance was taken on their behalf. It
+        names the seat and never the operator — who took it, and why, is the audit row's job, and
+        an operator's account id is not a party's business.
+      */}
+      {impersonated.length === 0 ? null : (
+        <p
+          data-report-impersonated="true"
+          className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"
+        >
+          {fillLabel(itemLabel(sectionOf(copy, "provenance"), "operator-recorded"), {
+            name: impersonated.join(", "),
+          })}
+        </p>
+      )}
 
       <VerdictBand report={report} copy={copy} />
 

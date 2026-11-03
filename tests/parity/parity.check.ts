@@ -179,6 +179,16 @@ vi.mock("@/lib/db/gap-rows", () => ({
 }));
 
 /**
+ * `/admin/audit`'s one read, answered with an empty log (#501b) — the same move, for the same
+ * reason: the boundary case measures the *capability* gate, and an empty log renders the screen's
+ * own empty state rather than a failure panel. `tests/admin-audit-page.test.ts` is where the
+ * populated render is pinned.
+ */
+vi.mock("@/lib/db/admin-audit", () => ({
+  readAuditLog: async () => [],
+}));
+
+/**
  * The console's **role** gate, opened for the whole run (#509).
  *
  * The admin boundary block asks one question — does `product.admin` close these routes — and the

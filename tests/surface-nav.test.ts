@@ -113,6 +113,8 @@ describe("the shell's menus", () => {
       "/support",
       "/admin/gaps",
       "/admin/instances",
+      // #503 — the audit log, the operator's third row.
+      "/admin/audit",
     ]);
   });
 

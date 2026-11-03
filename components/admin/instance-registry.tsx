@@ -35,6 +35,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -67,6 +68,7 @@ import {
   type SeatRow,
 } from "@/lib/admin/instance-registry";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { adminRelationshipPath } from "@/lib/admin/paths";
 import { useState } from "react";
 
 /** The badge tone a seat's state gets: an account is good, an expired invitation is not. */
@@ -76,6 +78,7 @@ const SEAT_VARIANT: Record<SeatRow["state"], "success" | "secondary" | "outline"
     seat: "secondary",
     invited: "outline",
     expired: "destructive",
+    revoked: "destructive",
     none: "outline",
   };
 
@@ -132,6 +135,8 @@ export function InstanceRegistry({
   const columns = sectionOf(copy, "columns");
   const seatCopy = sectionOf(copy, "seat");
   const stageCopy = sectionOf(copy, "stage-filter");
+  /** #503 — the words a session's own state adds beside the ladder's four. */
+  const stateCopy = sectionOf(copy, "state");
   const filtersCopy = sectionOf(copy, "filters");
   const listCopy = sectionOf(copy, "list");
 
@@ -274,6 +279,11 @@ export function InstanceRegistry({
                     <TableHead>{itemLabel(columns, "stage")}</TableHead>
                     <TableHead>{itemLabel(columns, "created")}</TableHead>
                     <TableHead>{itemLabel(columns, "last-activity")}</TableHead>
+                    {/* #503 — the row's way into its repair screen. The registry is where an
+                        operator finds the relationship; the five audited repairs live one click
+                        away, and a detail route nobody links to is a route only its author can
+                        open. */}
+                    <TableHead>{itemLabel(columns, "open")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -293,8 +303,13 @@ export function InstanceRegistry({
                       <TableCell>{REGISTRY_LABELS.mode[row.mode]}</TableCell>
                       <TableCell>{REGISTRY_LABELS.setting[row.setting]}</TableCell>
                       <TableCell>
-                        <Badge variant={STAGE_VARIANT[row.stage]}>
-                          {REGISTRY_LABELS.stage[row.stage]}
+                        {/* #503 — a voided session prints the operator's word, not a rung: the
+                            ladder is where the rows stopped, and saying it here would read as a
+                            relationship still waiting for something. */}
+                        <Badge variant={row.voided ? "destructive" : STAGE_VARIANT[row.stage]}>
+                          {row.voided
+                            ? itemLabel(stateCopy, "voided")
+                            : REGISTRY_LABELS.stage[row.stage]}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -302,6 +317,14 @@ export function InstanceRegistry({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(row.lastActivity)}
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          href={adminRelationshipPath(row.instanceRecordId)}
+                          className="text-action text-sm font-medium hover:underline"
+                        >
+                          {itemLabel(columns, "open")}
+                        </Link>
                       </TableCell>
                     </TableRow>
                   ))}
