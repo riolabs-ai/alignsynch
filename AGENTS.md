@@ -147,6 +147,19 @@ back through those schemas, so the model stays the single source of truth.
   into the client bundle.
 - **`pnpm db:seed` reads `data/assessments.ts`**, so a fixture edit is one `db:seed` away from
   the database; `pnpm db:verify` is what proves the rows still say what the fixture says.
+- **Two seeds on the demo branch queue; they do not interleave.** The branch is shared fleet-wide
+  and the seed is deliberately two transactions — phase 1 deletes the `neon_auth` accounts, phase 2
+  re-creates them through the branch's own sign-up endpoint — so the run takes a **session-level
+  advisory lock on the branch** (`scripts/db-seed-lock.mjs`, key `algn/1`) before phase 1 and
+  releases it after phase 2 commits, in a `finally`. Overlapping runs used to fail the loser with
+  `422 USER_ALREADY_EXISTS` while its own phase 1 honestly printed `0 … removed`; now the second
+  seeder prints `seed lock: algn/1 … held by pid N ("db:seed" on neondb)` and waits
+  (`SEED_LOCK_WAIT_SECONDS`, default 300), then reports `acquired after Ns`. A killed seed releases
+  the lock with its connection, so a crash cannot wedge the branch. What a crash _can_ leave is a
+  **half-seeded** branch — phase 1 committed, phase 2 aborted — which is measured as the content
+  intact and no demo identities (`33 records / 172 items / 0 demo_account / 0 demo profile / 0
+  bound party`); the recovery is the next successful seed, not a manual repair, because phase 1
+  deletes by email _and_ by stored id.
 - The `db:*` scripts import TypeScript source directly through `scripts/ts-modules.mjs` (a node
   resolve hook for the `@/` alias and extensionless imports), which is why `db:verify` runs the
   same mapper the page runs instead of a second copy of the rule.
