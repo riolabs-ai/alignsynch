@@ -17,7 +17,7 @@ How a template picks from this page — the order a new surface is decided in �
 
 - routes: **66** — 43 static, 23 dynamic, from `app/**/page.tsx`
 - component domains: **39** — 273 files under `components/`, 267 of them `.tsx`
-- route handlers: **17** — `app/**/route.ts`, listed below and not a UI surface
+- route handlers: **18** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 15 · **fixture** 62 · **db** 20 · **live** 7 · **prototype** 1
 - templates: Both templates 28 · AlignSynch 33 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -635,6 +635,7 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/api/contact` — `app/api/contact/route.ts`
 - `/api/news/subscribe` — `app/api/news/subscribe/route.ts`
 - `/api/profile` — `app/api/profile/route.ts`
+- `/api/tour` — `app/api/tour/route.ts`
 - `/api/version` — `app/api/version/route.ts`
 - `/assessment/instances/[instanceId]/accepts` — `app/(mainlayout)/assessment/instances/[instanceId]/accepts/route.ts`
 - `/assessment/instances/[instanceId]/answers` — `app/(mainlayout)/assessment/instances/[instanceId]/answers/route.ts`
