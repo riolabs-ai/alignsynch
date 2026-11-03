@@ -92,6 +92,11 @@
  *       parses as `zAssessment` (#502b). The binding is what a party-facing read goes through, so an
  *       unbound row is a relationship whose template nobody can draw — the read answers 404 for it,
  *       which is correct and would otherwise be silent.
+ *   V24 the inbound mail record (#439b): `email_event` exists with the `UNIQUE (provider_event_id)`
+ *       constraint that makes a provider redelivery idempotent, its `payload` is `jsonb`, and
+ *       `news_signup` carries the two marks (`bounced_at`, `complained_at`) a hard bounce and a
+ *       complaint write. The marks are the column #507 reads before it sends, so a database
+ *       migrated without `0027` is a request-time 500 on the first bounce; this names it instead.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -1158,6 +1163,67 @@ async function main() {
       liveSubscriptions = live[0]?.n ?? 0;
     }
 
+    /* V24 — the inbound mail record (#439b).
+     *
+     * Three facts, checked together because any one of them alone is a false green: the table, the
+     * constraint that makes a redelivery idempotent, and the two columns the suppression write
+     * targets. A `UNIQUE` index is looked up by its definition, not by "an index exists" — a plain
+     * index on `provider_event_id` would be a table that accepts a second row for one delivery, and
+     * that is precisely the bug the card's replay acceptance is about.
+     */
+    const { rows: emailTable } = await client.query(
+      "SELECT to_regclass('public.email_event') IS NOT NULL AS present",
+    );
+    let emailEvents = 0;
+    let suppressedAddresses = 0;
+    if (emailTable[0]?.present !== true) {
+      fail("V24", "public.email_event does not exist — run `pnpm db:migrate`");
+    } else {
+      const { rows: uniqueDelivery } = await client.query(
+        `SELECT c.conname FROM pg_constraint c
+          WHERE c.conrelid = 'public.email_event'::regclass
+            AND c.contype = 'u'
+            AND pg_get_constraintdef(c.oid) = 'UNIQUE (provider_event_id)'`,
+      );
+      if (uniqueDelivery.length === 0) {
+        fail(
+          "V24",
+          "public.email_event has no UNIQUE (provider_event_id) — a provider redelivery would write a second row",
+        );
+      }
+      const { rows: payloadColumn } = await client.query(
+        `SELECT data_type FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'email_event'
+            AND column_name = 'payload'`,
+      );
+      if (payloadColumn[0]?.data_type !== "jsonb") {
+        fail(
+          "V24",
+          "public.email_event.payload is not jsonb — the provider's own envelope is stored as parsed JSON",
+        );
+      }
+      const { rows: counts } = await client.query(
+        `SELECT (SELECT count(*)::int FROM email_event) AS events,
+                (SELECT count(*)::int FROM news_signup
+                  WHERE bounced_at IS NOT NULL OR complained_at IS NOT NULL) AS suppressed`,
+      );
+      emailEvents = counts[0]?.events ?? 0;
+      suppressedAddresses = counts[0]?.suppressed ?? 0;
+    }
+    const { rows: signupMarks } = await client.query(
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'news_signup'
+          AND column_name IN ('bounced_at', 'complained_at')`,
+    );
+    for (const column of ["bounced_at", "complained_at"]) {
+      if (!signupMarks.some((row) => row.column_name === column)) {
+        fail(
+          "V24",
+          `public.news_signup.${column} does not exist — a bounce has nowhere to be recorded (run \`pnpm db:migrate\`)`,
+        );
+      }
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -1173,7 +1239,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
