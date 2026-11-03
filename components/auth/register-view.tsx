@@ -14,7 +14,7 @@ import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import type { AuthMarkSet } from "@/lib/auth/marks";
-import { MARK_ICONS } from "@/components/auth/mark-icon";
+import { markGroundClass, MARK_ICONS, MarkGlyph } from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -58,15 +58,17 @@ export function RegisterView({
   copy,
   destination,
   marks,
+  markSrc,
 }: {
   copy: PageCopy;
   destination: string;
   marks: AuthMarkSet;
+  /**
+   * The image the `brand-mark` id draws (`AUTH_MARK_SRC_BY_BRAND`) — the brand's generated app
+   * mark, handed down for every brand and read by the one whose hero names that id.
+   */
+  markSrc: string;
 }) {
-  /** The panel/header mark and the button mark for this build. */
-  const HeroMark = MARK_ICONS[marks.hero];
-  const ActionMark = MARK_ICONS[marks.action];
-
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -189,7 +191,7 @@ export function RegisterView({
         <div className="relative mx-auto z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto">
-              <HeroMark className="w-12 h-12 text-white" />
+              <MarkGlyph id={marks.hero} src={markSrc} className="w-12 h-12 text-white" />
             </div>
             <h1 className="text-4xl font-bold mb-4">{copy.heading}</h1>
             <p className="text-xl text-white/90 leading-relaxed mb-8">{copy.subtitle}</p>
@@ -236,8 +238,10 @@ export function RegisterView({
           </div>
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
-            <div className="mx-auto mb-4 w-16 h-16 bg-action rounded-xl flex items-center justify-center">
-              <HeroMark className="w-8 h-8 text-white" />
+            <div
+              className={`mx-auto mb-4 w-16 h-16 ${markGroundClass(marks.hero)} rounded-xl flex items-center justify-center`}
+            >
+              <MarkGlyph id={marks.hero} src={markSrc} className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold  mb-2">{mobile.heading}</h1>
             <p>{mobile.body}</p>
@@ -433,7 +437,7 @@ export function RegisterView({
                         ? itemLabel(status, "pending")
                         : itemLabel(navigation, "create-account")}
                     </span>
-                    <ActionMark className="w-4 h-4" />
+                    <MarkGlyph id={marks.action} src={markSrc} className="w-4 h-4" />
                   </Button>
                 )}
               </div>

@@ -183,6 +183,17 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
+    owner: "the brand icon set (lib/brand-icon.ts + scripts/gen-brand-icons.mjs)",
+    // One file: the rule *lives* in `scripts/icon-fingerprint.ts` (the fingerprints and the
+    // threshold) but the code is minted only here, where the brand records and the files on disk
+    // meet. `icon-fingerprint.ts` returns measurements and names no code, so declaring it an
+    // owner would be a file allowed to emit something it never emits.
+    files: ["data-check.ts"],
+    codes: {
+      E38: "a brand whose record names `mark` draws its icon set from that file — the shipped `-icon-512.png`'s 32×32 fingerprint must sit within `ICON_MARK_MAX_DISTANCE` of the mark's, so an icon built from a generic glyph cannot ship",
+    },
+  },
+  {
     owner: "bundle import/export (scripts/bundles.ts, content/bundle.ts — issue #147)",
     // Two files, because the refusal is authored in the model and raised by the CLI: the
     // codes are *minted* where the rule lives (`content/bundle.ts` detects B1–B4/B6) and B5

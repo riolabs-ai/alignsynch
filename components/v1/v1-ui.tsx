@@ -115,7 +115,7 @@ export function NotFoundState({ message, back }: { message: string; back: string
       <p className="mt-1 text-sm text-muted-foreground">{message}</p>
       <Link
         href={back}
-        className="mt-4 inline-flex items-center rounded-md bg-action px-3 py-2 text-sm font-medium text-action-foreground hover:bg-action/90"
+        className="mt-4 inline-flex items-center rounded-md bg-action px-3 py-2 text-sm font-medium text-action-foreground hover:bg-action-hover"
       >
         Back
       </Link>

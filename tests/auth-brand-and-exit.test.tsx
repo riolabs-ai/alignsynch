@@ -22,6 +22,8 @@
  * container a person signs in to see.
  */
 import { createElement, type ReactNode } from "react";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -50,7 +52,7 @@ import {
 } from "@/data/pages/password-reset";
 import { registerCopy } from "@/data/pages/register";
 import { loginCopyFor, registerCopyFor } from "@/lib/auth-copy";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
 import type { ResetRequestOutcome, ResetSetOutcome } from "@/lib/auth/reset-token";
@@ -65,6 +67,7 @@ const loginView = (id: (typeof BRANDS)[number][0], record: Brand) =>
   createElement(LoginView, {
     copy: loginCopyFor(loginCopy(record), id),
     marks: AUTH_MARKS_BY_BRAND[id],
+    markSrc: AUTH_MARK_SRC_BY_BRAND[id],
     next: AFTER_SIGN_IN_BY_BRAND[id],
     googleFailure: false,
     demo: { kind: "off" },
@@ -80,6 +83,7 @@ const registerView = (id: (typeof BRANDS)[number][0], record: Brand) =>
     copy: registerCopyFor(registerCopy(record), id),
     destination: AFTER_SIGN_IN_BY_BRAND[id],
     marks: AUTH_MARKS_BY_BRAND[id],
+    markSrc: AUTH_MARK_SRC_BY_BRAND[id],
   });
 
 /** Every `href` in a rendered tree, in document order. */
@@ -104,6 +108,7 @@ const surfaces = (id: (typeof BRANDS)[number][0], record: Brand) => ({
       copy: resetRequestPageCopy,
       request: async (): Promise<ResetRequestOutcome> => ({ kind: "sent" }),
       mark: AUTH_MARKS_BY_BRAND[id].hero,
+      markSrc: AUTH_MARK_SRC_BY_BRAND[id],
     }),
   ),
   reset: renderToStaticMarkup(
@@ -113,12 +118,14 @@ const surfaces = (id: (typeof BRANDS)[number][0], record: Brand) => ({
       state: "valid",
       setPassword: async (): Promise<ResetSetOutcome> => ({ kind: "set" }),
       mark: AUTH_MARKS_BY_BRAND[id].hero,
+      markSrc: AUTH_MARK_SRC_BY_BRAND[id],
     }),
   ),
   "reset/complete": renderToStaticMarkup(
     createElement(ResetCompleteView, {
       copy: resetCompletePageCopy,
       mark: AUTH_MARKS_BY_BRAND[id].hero,
+      markSrc: AUTH_MARK_SRC_BY_BRAND[id],
     }),
   ),
 });
@@ -135,16 +142,50 @@ describe("every auth screen", () => {
   it("draws this build's mark, and never the other brand's", () => {
     for (const [id, record] of BRANDS) {
       const hero = AUTH_MARKS_BY_BRAND[id].hero;
-      const foreign = BRANDS.filter(([other]) => other !== id).map(
-        ([other]) => AUTH_MARKS_BY_BRAND[other].hero,
-      );
+      /**
+       * The marks this build draws, as the markup names them: a `lucide-*` class for a glyph, or
+       * the image a `brand-mark` brand draws. Both are *the mark*, and the difference is what the
+       * brand chose — not an implementation detail the assertion should paper over.
+       */
+      const drawn = (html: string): string[] =>
+        hero === "brand-mark"
+          ? [...new Set([...html.matchAll(/<img[^>]*\ssrc="([^"]*)"/g)].map((match) => match[1]))]
+          : marksOf(html);
+      const expected = hero === "brand-mark" ? AUTH_MARK_SRC_BY_BRAND[id] : hero;
+      const foreign = BRANDS.filter(([other]) => other !== id).map(([other]) => ({
+        brand: other,
+        mark: AUTH_MARKS_BY_BRAND[other].hero,
+        src: AUTH_MARK_SRC_BY_BRAND[other],
+      }));
       for (const [name, html] of Object.entries(surfaces(id, record))) {
-        const marks = marksOf(html);
-        expect(marks, `${id} /${name} does not draw ${hero}`).toContain(hero);
+        expect(drawn(html), `${id} /${name} does not draw ${expected}`).toContain(expected);
         for (const other of foreign) {
-          expect(marks, `${id} /${name} draws ${other}`).not.toContain(other);
+          const foreignMark = other.mark === "brand-mark" ? other.src : other.mark;
+          expect(drawn(html), `${id} /${name} draws ${other.brand}'s mark`).not.toContain(
+            foreignMark,
+          );
         }
       }
+    }
+  });
+
+  it("hands each screen the image its own record names", () => {
+    // The `brand-mark` id is only ever as good as the path beside it: this is the join between
+    // `lib/auth/marks.ts` and `data/brand.ts`, and it is what makes "the auth card wears the brand's
+    // own mark" a fact rather than two strings that happen to match today. The file is the app icon
+    // itself — the mark on transparency since 2026-11-03 — so the card and the tab cannot drift.
+    for (const [id, record] of BRANDS) {
+      const expected = record.icon;
+      expect(AUTH_MARK_SRC_BY_BRAND[id], id).toBe(expected);
+      if (AUTH_MARKS_BY_BRAND[id].hero === "brand-mark") {
+        expect(record.mark, `${id} draws its own mark but names no file`).toBeDefined();
+      }
+      // The path must name a file the generator actually wrote: a `src` that 404s is a blank square
+      // that no type, lint or build check would have caught.
+      expect(
+        existsSync(join(process.cwd(), "public", expected.replace(/^\//, ""))),
+        `${id}'s card mark ${expected} does not exist — run pnpm brand:icons`,
+      ).toBe(true);
     }
   });
 });

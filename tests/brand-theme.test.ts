@@ -50,19 +50,33 @@ describe("brandThemeVars", () => {
     });
   });
 
-  it("paints the skin's sampled accents, the ground and the ink", () => {
-    // `#ffffff` -> `0 0% 100%`; `#363d49` -> `217.9 15% 24.9%`; `#1c1c1c` -> `0 0% 11%`.
+  it("paints the skin's palette, its state shades, the ground and the ink", () => {
+    // The owner's sheet (2026-11-03), measured into `H S% L%`: `#ffffff` -> `0 0% 100%`;
+    // `#363d49` -> `217.9 15% 24.9%`; `#37474f` -> `200 17.9% 26.3%`; `#08add5` -> `191.7 92.8% 43.3%`;
+    // `#2a373e` -> `200 20% 20.4%`; `#0693b8` -> `192.5 93.7% 37.3%`. The two state shades are
+    // painted because the record names them: a brand that names none keeps `:root`'s 90 % step.
     expect(brandThemeVars(alignSynchBrand)).toEqual({
       "--background": "0 0% 100%",
       "--foreground": "217.9 15% 24.9%",
-      "--primary": "202 75.7% 33.9%",
+      "--primary": "200 17.9% 26.3%",
       "--primary-foreground": "0 0% 100%",
-      "--accent": "85.3 54.2% 51.2%",
-      "--accent-foreground": "0 0% 11%",
-      "--action": "202 75.7% 33.9%",
+      "--accent": "191.7 92.8% 43.3%",
+      "--accent-foreground": "217.9 15% 24.9%",
+      "--action": "200 17.9% 26.3%",
       "--action-foreground": "0 0% 100%",
-      "--nav-active": "202 75.7% 33.9%",
+      "--nav-active": "200 17.9% 26.3%",
+      "--action-hover": "201 19.2% 20.4%",
+      "--accent-press": "192.5 93.7% 37.3%",
     });
+  });
+
+  it("leaves a brand that names no state shade on the sheet's default", () => {
+    // QuizHub's `<html>` carries the three roles the sheet has no default for and nothing else:
+    // `--action-hover` / `--accent-press` come from `:root` as `hsl(var(--action) / 0.9)`, which is
+    // the declaration `hover:bg-action/90` produced — the hover QuizHub always had.
+    const vars = brandThemeVars(quizHubBrand);
+    expect(vars["--action-hover"]).toBeUndefined();
+    expect(vars["--accent-press"]).toBeUndefined();
   });
 
   it("keeps the ground and the ink for the brand that changes them", () => {

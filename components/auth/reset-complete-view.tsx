@@ -1,7 +1,7 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: the success band alone — no fields, no submit, one sentence and a way back to sign in)
 
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
-import { MarkGlyph } from "@/components/auth/mark-icon";
+import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
 import type { PageCopy } from "@/content/pages";
 import type { AuthMarkId } from "@/lib/auth/marks";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -27,13 +27,28 @@ import Link from "next/link";
  * never had — a person who has just set a password is the least likely to want another form, and
  * the only control here used to be one.
  */
-export function ResetCompleteView({ copy, mark }: { copy: PageCopy; mark: AuthMarkId }) {
+export function ResetCompleteView({
+  copy,
+  mark,
+  markSrc,
+}: {
+  copy: PageCopy;
+  mark: AuthMarkId;
+  /** The image the `brand-mark` id draws (`AUTH_MARK_SRC_BY_BRAND`), handed down beside the id. */
+  markSrc: string;
+}) {
   const band = sectionOf(copy, "complete");
   const home = sectionOf(copy, "home");
   return (
     <div className="w-full max-w-md space-y-4 text-center">
-      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-action">
-        <MarkGlyph id={mark} className="h-6 w-6 text-action-foreground" />
+      <div
+        className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl ${markGroundClass(mark)}`}
+      >
+        <MarkGlyph
+          id={mark}
+          src={markSrc}
+          className={`${tileMarkClass(mark)} text-action-foreground`}
+        />
       </div>
       <h1 className="text-3xl font-bold">{copy.heading}</h1>
       {copy.subtitle !== undefined && <p className="text-muted-foreground">{copy.subtitle}</p>}

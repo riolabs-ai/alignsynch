@@ -249,7 +249,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 {model.hero.primary && (
                   <Link
-                    className="inline-flex w-full items-center justify-center rounded-lg bg-action px-6 py-3.5 text-[16px] font-bold text-action-foreground shadow-sm transition-colors hover:bg-action/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 sm:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-lg bg-action px-6 py-3.5 text-[16px] font-bold text-action-foreground shadow-sm transition-colors hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 sm:w-auto"
                     href={model.hero.primary.href}
                   >
                     {model.hero.primary.label}

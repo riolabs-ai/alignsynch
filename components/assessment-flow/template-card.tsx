@@ -57,7 +57,7 @@ const SHELL = "flex h-full flex-col rounded-lg border border-border bg-card p-5"
 const CHIP = "rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground";
 const MUTED = "text-sm text-muted-foreground";
 const PRIMARY =
-  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90";
+  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 const SECONDARY =
   "inline-flex h-10 items-center justify-center rounded-md border border-border px-3 text-sm font-medium text-foreground hover:bg-muted";
 

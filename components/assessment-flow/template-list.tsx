@@ -31,7 +31,7 @@ import {
 const CARD = "rounded-lg border border-border bg-card p-5";
 const MUTED = "text-sm text-muted-foreground";
 const PRIMARY =
-  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90";
+  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 
 /** The card's words, out of this surface's fixture — see `CatalogueCardCopy`. */
 function catalogueCardCopyOf(copy: PageCopy): CatalogueCardCopy {
