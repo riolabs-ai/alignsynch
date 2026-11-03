@@ -18,6 +18,8 @@
  *                  refused 403 and writes no Counterparty opinion (#202)
  *   4. blind       the Counterparty's screen shows no report and no Gap while only the
  *                  Initiator has answered
+ *   4b. cta        the locked report's "continue" CTA opens that party's own sheet — `/answer`,
+ *                  200 — and never the POST-only `/answers`, which a GET answers 405
  *   5. submit      the Counterparty answers differently on one Aspect
  *   6. hinge       both sheets are in and the report is still locked: acceptance, not submission,
  *                  is what completes a session (#R2)
@@ -562,6 +564,36 @@ async function main() {
   check(
     "the Initiator is told who is still to answer",
     initiatorWhileBlind.html.includes("Rowan E2E"),
+  );
+
+  /* 4b. the locked report's continue CTA is the sheet, not the endpoint --------------- */
+  // The Counterparty has not submitted, so their report page is the gate — and the gate's one
+  // control is the button this card fixes. It used to be `answersPath()`, the POST-only handler,
+  // so the click was a GET and the party finished their own sheet against a 405.
+  const lockedReport = await counterparty.get(`${instancePath}/report`);
+  check(
+    "the Counterparty's report page renders the gate while their sheet is unfinished",
+    lockedReport.status === 200 && lockedReport.html.includes('data-report-gated="true"'),
+    `status ${lockedReport.status}`,
+  );
+  const continueAnchor = lockedReport.html.match(/<a [^>]*data-report-continue="true"[^>]*>/);
+  const continueHref = continueAnchor?.[0].match(/href="([^"]*)"/)?.[1];
+  check(
+    "the gate's continue CTA points at the answer sheet",
+    continueHref === `${instancePath}/answer`,
+    `href ${continueHref ?? "(no anchor)"}`,
+  );
+  const viaContinue = continueHref === undefined ? undefined : await counterparty.get(continueHref);
+  check(
+    "clicking it answers 200 and draws that party's own sheet",
+    viaContinue?.status === 200 && viaContinue.html.includes(`name="feel:${TIME}"`),
+    `status ${viaContinue?.status ?? "(not followed)"}`,
+  );
+  const getTheEndpoint = await counterparty.get(`${instancePath}/answers`);
+  check(
+    "a GET of the endpoint the CTA used to name is a 405 — the defect this card fixes",
+    getTheEndpoint.status === 405,
+    `status ${getTheEndpoint.status}`,
   );
 
   /* 5-6. the Counterparty answers, and the Gap unlocks --------------- */
