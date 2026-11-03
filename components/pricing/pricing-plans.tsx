@@ -126,7 +126,7 @@ LimitationsList.displayName = "LimitationsList";
  */
 const PlanFooter = memo<{ plan: PricingPlanView; cycle: BillingInterval; copy: PageCopySection }>(
   ({ plan, cycle, copy }) => {
-    const buttonClassName = `w-full ${plan.popular ? "bg-action hover:bg-action/90 text-white border-0" : ""}`;
+    const buttonClassName = `w-full ${plan.popular ? "bg-action hover:bg-action-hover text-white border-0" : ""}`;
     const variant = plan.popular ? "default" : "outline";
 
     if (plan.current) {
@@ -186,7 +186,7 @@ const PricingCard = memo<{
     <Card className={cardClassName}>
       {plan.popular && (
         <div className="absolute -top-4 left-0 right-0 flex justify-center">
-          <Badge className="bg-action hover:bg-action/90 px-3 py-1 text-white border-0">
+          <Badge className="bg-action hover:bg-action-hover px-3 py-1 text-white border-0">
             {itemLabel(copy, "most-popular")}
           </Badge>
         </div>

@@ -109,7 +109,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
                   seed={testimonials[activeIndex].name}
                   width={256}
                 />
-                <Badge className="absolute bottom-4 right-4 bg-action hover:bg-action/90 text-action-foreground px-3 py-1.5">
+                <Badge className="absolute bottom-4 right-4 bg-action hover:bg-action-hover text-action-foreground px-3 py-1.5">
                   {testimonials[activeIndex].role}
                 </Badge>
               </div>

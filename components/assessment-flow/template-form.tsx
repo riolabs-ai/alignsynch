@@ -130,7 +130,7 @@ export function TemplateForm({
 
           <button
             type="submit"
-            className="justify-self-start rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action/90"
+            className="justify-self-start rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
           >
             {itemLabel(form, "submit")}
           </button>

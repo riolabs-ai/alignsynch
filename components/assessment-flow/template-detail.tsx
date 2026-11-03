@@ -55,7 +55,7 @@ const MUTED = "text-sm text-muted-foreground";
 const CHIP = "rounded-md border border-background/30 px-2 py-0.5 text-xs text-background/80";
 const FACT_LABEL = "text-xs uppercase tracking-wide text-muted-foreground";
 const PRIMARY =
-  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90";
+  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 
 const SETTINGS: readonly AlignmentSetting[] = ["soft", "full"];
 

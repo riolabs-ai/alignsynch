@@ -1,7 +1,7 @@
 import { ResetCompleteView } from "@/components/auth/reset-complete-view";
 import { brand, brandIdOf } from "@/data/brand";
 import { resetCompletePageCopy } from "@/data/pages/password-reset";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -27,6 +27,7 @@ export default function ResetCompletePage() {
       <ResetCompleteView
         copy={resetCompletePageCopy}
         mark={AUTH_MARKS_BY_BRAND[brandIdOf(brand)].hero}
+        markSrc={AUTH_MARK_SRC_BY_BRAND[brandIdOf(brand)]}
       />
     </main>
   );

@@ -58,6 +58,13 @@ export const media = {
     height: 180,
     kind: "illustration",
   },
+  "brand.alignsynch-favicon": {
+    src: "/brand/alignsynch-favicon.ico",
+    alt: "Alignsynch Favicon",
+    width: 32,
+    height: 32,
+    kind: "illustration",
+  },
   "brand.alignsynch-icon": {
     src: "/brand/alignsynch-icon.svg",
     alt: "Alignsynch Icon",
@@ -79,6 +86,13 @@ export const media = {
     height: 512,
     kind: "illustration",
   },
+  "brand.alignsynch-mark-1024": {
+    src: "/brand/alignsynch-mark-1024.png",
+    alt: "Alignsynch Mark 1024",
+    width: 1024,
+    height: 1024,
+    kind: "illustration",
+  },
   "brand.as2-logo_v2_cl": {
     src: "/brand/as2-logo_v2_cl.png",
     alt: "As2 Logo V2 Cl",
@@ -91,6 +105,13 @@ export const media = {
     alt: "Quizhub Apple Touch Icon",
     width: 180,
     height: 180,
+    kind: "illustration",
+  },
+  "brand.quizhub-favicon": {
+    src: "/brand/quizhub-favicon.ico",
+    alt: "Quizhub Favicon",
+    width: 32,
+    height: 32,
     kind: "illustration",
   },
   "brand.quizhub-icon": {

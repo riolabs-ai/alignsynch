@@ -8,7 +8,7 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-transparent bg-action hover:bg-action/90 text-action-foreground",
+        default: "border-transparent bg-action hover:bg-action-hover text-action-foreground",
         secondary: "border-transparent bg-secondary hover:bg-secondary/80",
         destructive: "border-transparent bg-destructive hover:bg-destructive/80",
         success: "border-transparent bg-green-400 hover:bg-green-400/80 text-gray-800",
@@ -32,7 +32,7 @@ const badgeVariants = cva(
          * under both brands, and re-pointing them at `action` would erase the distinction rather
          * than move the palette's home.
          */
-        action: "border-transparent bg-action text-action-foreground hover:bg-action/90",
+        action: "border-transparent bg-action text-action-foreground hover:bg-action-hover",
         muted: "border-transparent bg-muted text-foreground hover:bg-muted/80",
       },
     },

@@ -191,7 +191,7 @@ export function ChatPage() {
     <div className="md:flex h-[calc(100vh-4rem)] overflow-y-auto bg-background">
       <button
         onClick={() => setShowChat(!showChat)}
-        className="px-4 py-2 bg-action hover:bg-action/90 text-white rounded-md md:hidden"
+        className="px-4 py-2 bg-action hover:bg-action-hover text-white rounded-md md:hidden"
       >
         Open Chat
       </button>

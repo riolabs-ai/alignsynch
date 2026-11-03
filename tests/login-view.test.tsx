@@ -31,7 +31,7 @@ import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { quizHubBrand } from "@/data/brand";
 import { loginCopy } from "@/data/pages/login";
 import { loginCopyFor } from "@/lib/auth-copy";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 
 const BRANDS = [
   ["quizhub", quizHubBrand as Brand],
@@ -47,6 +47,7 @@ const BRANDS = [
 const viewProps = (id: (typeof BRANDS)[number][0], record: Brand) => ({
   copy: loginCopyFor(loginCopy(record), id),
   marks: AUTH_MARKS_BY_BRAND[id],
+  markSrc: AUTH_MARK_SRC_BY_BRAND[id],
   next: "/dashboard",
   googleFailure: false,
   demo: { kind: "off" as const },
@@ -60,15 +61,23 @@ const viewProps = (id: (typeof BRANDS)[number][0], record: Brand) => ({
 describe("the sign-in panel's marks on both brands", () => {
   it("draws the brand's own mark, on the panel and on the mobile header", () => {
     for (const [id, record] of BRANDS) {
+      const hero = AUTH_MARKS_BY_BRAND[id].hero;
       const html = renderToStaticMarkup(createElement(LoginView, viewProps(id, record)));
       // Both are always in the markup — `hidden lg:flex` / `lg:hidden` decide which one a reader
       // sees — so the two chrome marks are the floor this component owes on every brand. QuizHub
       // adds a third because its `categories` tile draws the same book (`STAT_MARKS`), which is
       // why the exact counts are pinned per brand below rather than here.
-      expect(
-        html.split(`lucide-${AUTH_MARKS_BY_BRAND[id].hero}`).length - 1,
-        id,
-      ).toBeGreaterThanOrEqual(2);
+      //
+      // A brand whose mark is its own image draws that image, not a glyph: the alignment build
+      // used to draw a lucide person pair here, which is the defect this assertion replaced.
+      const drawn =
+        hero === "brand-mark"
+          ? html.split(`src="${AUTH_MARK_SRC_BY_BRAND[id]}"`).length - 1
+          : html.split(`lucide-${hero}`).length - 1;
+      expect(drawn, `${id} draws its ${hero} mark`).toBeGreaterThanOrEqual(2);
+      if (hero === "brand-mark") {
+        expect(html, `${id} still draws a stand-in glyph`).not.toContain("lucide-users");
+      }
     }
   });
 

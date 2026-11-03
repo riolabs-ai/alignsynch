@@ -33,7 +33,7 @@ import { MARK_ICONS, RegisterView } from "@/components/auth/register-view";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { quizHubBrand } from "@/data/brand";
 import { registerCopy } from "@/data/pages/register";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import { registerCopyFor } from "@/lib/auth-copy";
 
@@ -51,6 +51,7 @@ const viewProps = (id: (typeof BRANDS)[number][0], record: Brand) => ({
   copy: registerCopyFor(registerCopy(record), id),
   destination: AFTER_SIGN_IN_BY_BRAND[id],
   marks: AUTH_MARKS_BY_BRAND[id],
+  markSrc: AUTH_MARK_SRC_BY_BRAND[id],
 });
 
 describe("the sign-up form on both brands", () => {
@@ -108,11 +109,17 @@ describe("the sign-up form on both brands", () => {
       const marks = AUTH_MARKS_BY_BRAND[id];
 
       // The panel mark is server-rendered, so the served HTML is where the defect was visible:
-      // a quiz book on the alignment build's sign-up page.
-      expect(html, id).toContain(`lucide-${marks.hero}`);
+      // a quiz book on the alignment build's sign-up page. A brand whose mark is its own image
+      // draws that image instead of a glyph — the alignment build's AS monogram, not a stand-in.
+      if (marks.hero === "brand-mark") {
+        expect(html, id).toContain(`src="${AUTH_MARK_SRC_BY_BRAND[id]}"`);
+      } else {
+        expect(html, id).toContain(`lucide-${marks.hero}`);
+      }
       for (const other of BRANDS) {
         if (other[0] === id) continue;
         const foreign = AUTH_MARKS_BY_BRAND[other[0]];
+        if (foreign.hero === "brand-mark") continue;
         expect(html, `${id} must not draw ${other[0]}'s mark`).not.toContain(
           `lucide-${foreign.hero}`,
         );
@@ -120,11 +127,12 @@ describe("the sign-up form on both brands", () => {
     }
 
     // The button mark only renders on step 2, which is client state a static render never reaches,
-    // so the table is checked directly: every id a brand names has a glyph, and the glyph is the
-    // `lucide-react` component that id names. A missing entry would render the button with no mark
-    // at all rather than fail anything at build time.
+    // so the table is checked directly: every id a brand names is a glyph `MARK_ICONS` draws, or
+    // the brand's own image (asserted on the render above). A missing entry would render the
+    // button with no mark at all rather than fail anything at build time.
     for (const [id] of BRANDS) {
       for (const markId of Object.values(AUTH_MARKS_BY_BRAND[id])) {
+        if (markId === "brand-mark") continue;
         const Icon = MARK_ICONS[markId];
         expect(
           Icon,
