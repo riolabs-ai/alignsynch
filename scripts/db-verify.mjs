@@ -507,7 +507,17 @@ async function main() {
       // V11 — the mark (#252). `party.unlock_seen_at` is written when a party opens a COMPLETE
       // instance, so a value on an unfinished one was written too early: the row would read
       // "already seen" the moment it became complete, and the unlocking event would pass in
-      // silence. `complete` is terminal, so there is no legitimate version of this.
+      // silence.
+      //
+      // `complete` is terminal per *writer* and per *product row set* — `markUnlockSeen` only ever
+      // runs against a complete screen, and no product path deletes an `opinion` row (V18 keeps
+      // scored rows immutable; a seed or a manual DELETE is the other way a mark gets stranded) —
+      // but it is **not** terminal per *rule*. #427/R2 made acceptance the hinge, and an instance
+      // that was complete when its mark was written read `answering` afterwards: avery-rowan on
+      // production carried a mark from 2026-11-02T08:42Z, three hours before that merge. So this
+      // check names a real defect either way, and the repair is the mark (docs/RELEASING.md
+      // §"main → production", 2a), never the instance — a rule change is a data event, and this is
+      // the check that finds it.
       if (hasUnlockColumn && status !== "complete") {
         const { rows: premature } = await client.query(
           `SELECT role FROM party
