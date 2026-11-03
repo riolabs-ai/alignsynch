@@ -142,14 +142,14 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
        * The groups the catalogue is drawn in — the v1 library's `Business · Personal`, plus the
        * one group for templates whose own words name no type (the platform's starter set and
        * anything this account wrote). The group is a projection of `realm` in
-       * `data/v1/relationship-types.ts`; it is never inferred from a title.
+       * `data/relationship-types.ts`; it is never inferred from a title.
        */
       id: "groups",
       heading: "By realm",
       items: [
         /**
          * Only the group with no realm has a word of its own. The seven realm headings are the
-         * taxonomy's own values (`REALMS` in `data/v1/relationship-types.ts`), rendered as the
+         * taxonomy's own values (`REALMS` in `data/relationship-types.ts`), rendered as the
          * field they are — a second authored spelling of "Office" here would be drift.
          */
         { id: "other", label: "No realm" },

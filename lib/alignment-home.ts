@@ -29,7 +29,7 @@
  *      example ({title}, answered by {left} and {right}) and stops; a count of "responses" would
  *      be a product claim this fixture set is not making.
  *   4. **The scope band's numbers are counted, never typed.** `relationshipScope()` reads the
- *      purchasable rows of `data/v1/relationship-types.ts` and returns the type count, the realm
+ *      purchasable rows of `data/relationship-types.ts` and returns the type count, the realm
  *      count and each realm's share; the fixture's heading is `"{types} relationship types,
  *      across {realms} realms."` and the projection *refuses* a heading without both
  *      placeholders, so a spelled-out count cannot survive a fixture change. That refusal is
@@ -52,7 +52,7 @@ import {
   isPurchasable,
   purchasableRelationshipTypes,
   type RelationshipType,
-} from "@/data/v1/relationship-types";
+} from "@/data/relationship-types";
 import { assessments } from "@/data/assessments";
 import {
   TEMPLATE_LIBRARY_PATH,
@@ -545,7 +545,7 @@ function workedExampleOf(instance: AssessmentInstance, copy: PageCopy): Alignmen
  * throws while `/` is prerendered and stops `next build` instead.
  *
  * `relationshipTypes` is the taxonomy the scope band counts. It defaults to the purchasable
- * gate in `data/v1/relationship-types.ts` — the page cannot be handed a list by accident — and
+ * gate in `data/relationship-types.ts` — the page cannot be handed a list by accident — and
  * is a parameter so a test can prove the heading follows the fixture instead of agreeing with a
  * constant.
  */
@@ -591,7 +591,7 @@ export function alignmentHome(
     !familiesHeading.includes("{realms}")
   ) {
     throw new Error(
-      `alignmentHome: section "families" in data/pages/home-alignsynch.ts must spell its heading with {types} and {realms} — the counts come from data/v1/relationship-types.ts, and a typed number is a number nobody re-measures (have: ${familiesHeading ?? "no heading"})`,
+      `alignmentHome: section "families" in data/pages/home-alignsynch.ts must spell its heading with {types} and {realms} — the counts come from data/relationship-types.ts, and a typed number is a number nobody re-measures (have: ${familiesHeading ?? "no heading"})`,
     );
   }
   const scope = relationshipScope(relationshipTypes);

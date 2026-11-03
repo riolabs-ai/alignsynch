@@ -9,7 +9,7 @@
  *      instance and the parties named in the band's sentence are the same record;
  *   4. the page is six bands — `practice`, `questions`, `templates`, `families`, `seats`,
  *      `boundary` — and every one of them carries the words the issue asked for;
- *   5. the scope band's numbers are counted from `data/v1/relationship-types.ts`: a **changed
+ *   5. the scope band's numbers are counted from `data/relationship-types.ts`: a **changed
  *      fixture moves the heading**, and a heading that spells its count is refused;
  *   6. the rendered page claims no proof it cannot show — no money figure, no client count, no
  *      praise, no star — because that absence is the page's argument, not a style choice;
@@ -36,7 +36,7 @@ import {
   demoAnswersByType,
   purchasableRelationshipTypes,
   relationshipTypes,
-} from "@/data/v1/relationship-types";
+} from "@/data/relationship-types";
 import {
   alignmentHome,
   countWord,

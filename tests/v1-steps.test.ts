@@ -40,7 +40,7 @@ import { deriveSteps, stepProgressOf } from "@/content/steps";
 import type { Opinions } from "@/content/assessment";
 import type { V1Relationship } from "@/data/v1/fixtures";
 import { PERSONA_META } from "@/data/v1/fixtures";
-import { purchasableRelationshipType, type RelationshipType } from "@/data/v1/relationship-types";
+import { purchasableRelationshipType, type RelationshipType } from "@/data/relationship-types";
 import { relationshipsVisibleTo } from "@/lib/v1/persona";
 import { V1StoreProvider, useV1Store, type V1Store } from "@/lib/v1/store";
 

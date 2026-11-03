@@ -19,7 +19,7 @@
  * picker say "Create and invite" where the catalogue says "Duplicate" without the card knowing
  * either word.
  *
- * **The group is a field, never a guess.** `data/v1/relationship-types.ts` authors the catalogue
+ * **The group is a field, never a guess.** `data/relationship-types.ts` authors the catalogue
  * with a `realm` on every record. A template record carries no realm — its `slug` is the type it
  * is a template of, and `relationshipType(slug)` resolves it — so the card is drawn under its
  * realm, in the taxonomy's own order (`REALMS`). The platform's starter template
@@ -45,7 +45,7 @@ import {
   relationshipType,
   type Realm,
   type RelationshipType,
-} from "@/data/v1/relationship-types";
+} from "@/data/relationship-types";
 import { assessmentDemoPath, createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
 import type { ReactNode } from "react";
 

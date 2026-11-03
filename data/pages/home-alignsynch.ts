@@ -30,7 +30,7 @@
  * the words meet the data.
  *
  * **No number in this file is typed.** The scope band's heading is `{types}` types across
- * `{realms}` realms, filled from `data/v1/relationship-types.ts` by `relationshipScope()`;
+ * `{realms}` realms, filled from `data/relationship-types.ts` by `relationshipScope()`;
  * the projection refuses a heading that does not carry both placeholders, so a spelled-out
  * count cannot creep back in and drift from the fixture. There is likewise no figure anywhere
  * in this file for what a practice takes in, how many clients it has, or who has bought one:

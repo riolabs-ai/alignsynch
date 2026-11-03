@@ -3,7 +3,7 @@
  *
  * Launch criterion 5 is that the Gap report renders from both answers, and a criterion nobody
  * can look at is a claim. This module builds the one page that shows it before anyone pays: the
- * type's own Aspects, the authored demo sheet (`data/v1/relationship-types.ts`) as the two
+ * type's own Aspects, the authored demo sheet (`data/relationship-types.ts`) as the two
  * parties' Opinions, and `assessmentReport()` over both — the **same projection and the same
  * renderer** `/assessment/[slug]` and the instance report use. There is one report in the app,
  * not a marketing copy of one; that is what `docs/V1-RETIREMENT.md`'s demo row means by "owns
@@ -34,7 +34,7 @@ import {
   demoAnswersFor,
   purchasableRelationshipType,
   type RelationshipType,
-} from "@/data/v1/relationship-types";
+} from "@/data/relationship-types";
 import { assessmentReport, type AssessmentReport } from "@/lib/assessment-report";
 import { TEMPLATE_LIBRARY_PATH, createRelationshipPath } from "@/lib/flow/paths";
 
