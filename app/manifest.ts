@@ -9,9 +9,11 @@
  * drift the generator exists to prevent (E17 forbids a `public/` path literal in `app/` anyway).
  *
  * Both sizes are declared twice — `purpose: "any"` for the unmasked install tile and
- * `purpose: "maskable"` for the OS to crop to its own shape — because the one full-bleed square
- * serves both, and the mark inside sits within the 80 % safe circle `lib/brand-icon.ts` scales
- * it to.
+ * `purpose: "maskable"` for the OS to crop to its own shape — because one square serves both and
+ * the mark inside sits within the 80 % safe circle `lib/brand-icon.ts` scales it to. For a brand
+ * with its own mark the square is **transparent** (owner, 2026-11-03): there is no field to
+ * bleed, so the margin around the ink is what keeps it clear of the crop. That is a stated
+ * departure from the maskable guidance, not an omission.
  */
 import type { MetadataRoute } from "next";
 

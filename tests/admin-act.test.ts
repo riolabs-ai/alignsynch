@@ -38,6 +38,8 @@ class FakeConnection {
   role: string | null = "admin";
   failRollback = false;
   failAudit = false;
+  /** Answer the audit INSERT with no row: a database doing something `act()` does not model. */
+  auditAnswersNoId = false;
   private inTransaction = false;
 
   async query<R>(
@@ -71,6 +73,7 @@ class FakeConnection {
     if (/^INSERT INTO admin_action/i.test(head)) {
       if (this.failAudit) throw new Error("audit insert failed");
       if (!this.inTransaction) throw new Error("an audit row outside a transaction is a bug");
+      if (this.auditAnswersNoId) return { rows: [] as unknown as readonly R[] };
       // `values[2]` is the action name: index 1 is the actor's rung (#501b), which an order label
       // in this file should not start depending on.
       this.pending.push(`admin_action:${String(values[2])}`);
@@ -316,6 +319,26 @@ describe("act() — a failure leaves nothing", () => {
     await expect(actOver(db)(roleChange())).rejects.toThrow("audit insert failed");
     expect(db.committed).toEqual([]);
     expect(db.order.at(-1)).toBe("ROLLBACK");
+  });
+
+  it("rolls back rather than committing an unlinked write when the audit insert answers no id", async () => {
+    const db = new FakeConnection();
+    db.auditAnswersNoId = true;
+
+    // The mutation ran and the INSERT was sent; what came back was not a row id. Committing here
+    // would leave a change on the table with no `admin_action` row pointing at it, so `act()` fails
+    // the transaction instead of trusting the silence.
+    await expect(actOver(db)(roleChange())).rejects.toThrow(/audit insert returned no id/);
+    expect(db.order).toEqual([
+      "BEGIN",
+      "SELECT role",
+      "UPDATE user_profile",
+      "INSERT admin_action",
+      "ROLLBACK",
+    ]);
+    expect(db.committed).toEqual([]);
+    expect(db.pending).toEqual([]);
+    expect(db.releases).toEqual([false]);
   });
 });
 
