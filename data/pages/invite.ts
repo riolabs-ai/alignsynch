@@ -41,7 +41,7 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "claim",
-      body: "You answer every Aspect first. You will not see their answers, and they will not see yours, until you have both submitted — and after that, the answers are frozen.",
+      body: "You answer every Aspect first. You will not see their answers, and they will not see yours, until you have both accepted the session — and after that, the answers are frozen.",
       items: [
         { id: "join", label: "You are joining as {counterparty}, the Counterparty." },
         { id: "confirm", label: "I am {counterparty}, and I am joining as the Counterparty." },

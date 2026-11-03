@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/ui/button.tsx   (variation: the copy control hand-rolled on a raw button instead of components/ui/button.tsx)
+ *
  * The invitation link's copy control (#257).
  *
  * When no email carried the invitation, this screen prints the link and, until this unit,

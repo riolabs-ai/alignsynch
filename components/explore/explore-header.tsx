@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/input.tsx   (variation: the search header — one query field and a grid/list toggle where the title band would be)
+
 import { Search, Grid3X3, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

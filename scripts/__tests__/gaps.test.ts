@@ -32,13 +32,19 @@ import type {
 import {
   ADVANCED_GAP_KINDS,
   BASIC_GAP_KINDS,
+  FLAG_SEVERITIES,
+  FLAG_SEVERITY_LABELS,
   GAP_GROUPS,
   GAP_KINDS,
   GAP_KIND_LABELS,
   GAP_KIND_SOURCES,
+  flagCountsOf,
+  flagSeverityOf,
   gapKindsIn,
   gapKindsOf,
   groupsIn,
+  zFlagSeverity,
+  type AspectGaps,
   type GapKind,
   type GapSource,
 } from "../../content/gaps";
@@ -457,5 +463,58 @@ describe("the groups", () => {
         GAP_GROUPS.map((group) => group.id),
       );
     }
+  });
+});
+
+/**
+ * The flag severities — the spec's four colours (p.65): the mapping the report's flag
+ * counts read, and the counts themselves. The counts are the honest answer to "how many flags
+ * does this sheet have" — a function of the Gaps, never a stored total, and `null` when
+ * nothing was scored rather than a zero that would print "no flags" about a sheet nobody
+ * finished.
+ */
+describe("the flag severities", () => {
+  it("names four severities in the spec's order, one label each", () => {
+    assert.deepEqual([...FLAG_SEVERITIES], ["yellow", "orange", "pink", "red"]);
+    assert.deepEqual(Object.keys(FLAG_SEVERITY_LABELS).sort(), [...FLAG_SEVERITIES].sort());
+    assert.equal(FLAG_SEVERITY_LABELS.red, "Red");
+    assert.equal(new Set(Object.values(FLAG_SEVERITY_LABELS)).size, 4);
+  });
+
+  it("maps a Gap of 1..4 to its severity, and In Synch (0) to no flag", () => {
+    assert.equal(flagSeverityOf(1), "yellow");
+    assert.equal(flagSeverityOf(2), "orange");
+    assert.equal(flagSeverityOf(3), "pink");
+    assert.equal(flagSeverityOf(4), "red");
+    assert.equal(flagSeverityOf(0), null);
+  });
+
+  it("rejects a severity the model does not define", () => {
+    assert.equal(zFlagSeverity.safeParse("green").success, false);
+    assert.equal(zFlagSeverity.safeParse("yellow").success, true);
+  });
+});
+
+describe("the flag counts", () => {
+  it("is null when nothing was scored — no present Gap kind, never four zeroes", () => {
+    assert.equal(flagCountsOf([]), null);
+    assert.equal(flagCountsOf([{ itemId: "a", gaps: {} }]), null);
+  });
+
+  it("counts each severity exactly, and In Synch contributes no flag", () => {
+    const aspects: AspectGaps[] = [
+      { itemId: "a", gaps: { feel: 1, wish: 2, initiator: 3, counterparty: 4 } },
+      { itemId: "b", gaps: { feel: 4, wish: 1, initiator: 2, counterparty: 0 } },
+    ];
+    assert.deepEqual(flagCountsOf(aspects), { yellow: 2, orange: 2, pink: 1, red: 2 });
+  });
+
+  it("returns four zeroes for an aligned sheet, not null", () => {
+    assert.deepEqual(flagCountsOf([{ itemId: "a", gaps: { feel: 0, wish: 0 } }]), {
+      yellow: 0,
+      orange: 0,
+      pink: 0,
+      red: 0,
+    });
   });
 });

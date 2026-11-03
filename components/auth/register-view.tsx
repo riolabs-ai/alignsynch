@@ -1,29 +1,36 @@
 "use client";
 
+// template-ancestor: components/auth/login-view.tsx   (variation: the same card with name, username and role fields and a confirm-password row)
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthHomeLink } from "@/components/auth/auth-home-link";
+import { PasswordStrengthMeter } from "@/components/auth/password-strength";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
+import type { AuthMarkSet } from "@/lib/auth/marks";
+import { MARK_ICONS } from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
-import { ArrowLeft, ArrowRight, BookOpen, Eye, EyeOff, Loader2, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 
 /** The step ids, in order. The rail, the header counter and the lookups all read this. */
 const STEPS = ["step-1", "step-2"] as const;
+
+/**
+ * Re-exported for `tests/register-view.test.tsx`, which proves every id a brand can name has a
+ * glyph. The table itself is `components/auth/mark-icon.tsx`: it moved out of this file when the
+ * 404 — a server module — needed the same table, and a server component cannot read a value from
+ * a `"use client"` module. One table, two boundaries.
+ */
+export { MARK_ICONS };
 
 /**
  * `/register`, the client half. The words come from `data/pages/register.ts`, parsed by
@@ -40,21 +47,36 @@ const STEPS = ["step-1", "step-2"] as const;
  * quiz product's account home — a 404 on the alignment build, so a successful sign-up there landed
  * on a not-found page. The value is `AFTER_SIGN_IN_BY_BRAND[brandId]` (`lib/auth/paths.ts`), and
  * this component never learns which brand it is.
+ *
+ * `marks` is the same arrangement for the page's glyphs: this screen drew `BookOpen` and `Trophy`
+ * unconditionally, so the alignment build's sign-up page showed a quiz book and a quiz trophy.
+ * The server hands over an `AuthMarkSet` (`lib/auth/marks.ts`) — ids, resolved to glyphs by
+ * `MARK_ICONS` (`components/auth/mark-icon.tsx`, re-exported above) — and QuizHub's two ids are
+ * the two components that used to be written here, so that brand renders what it always rendered.
  */
-export function RegisterView({ copy, destination }: { copy: PageCopy; destination: string }) {
+export function RegisterView({
+  copy,
+  destination,
+  marks,
+}: {
+  copy: PageCopy;
+  destination: string;
+  marks: AuthMarkSet;
+}) {
+  /** The panel/header mark and the button mark for this build. */
+  const HeroMark = MARK_ICONS[marks.hero];
+  const ActionMark = MARK_ICONS[marks.action];
+
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    // Step 1: Personal Details
+    // Step 1: the email address, and nothing else.
+    email: "",
+
+    // Step 2: the name, then the credentials.
     firstName: "",
     lastName: "",
-    email: "",
-    phone: "",
-    dateOfBirth: "",
-    country: "",
-
-    // Step 2: Account Setup
     password: "",
     confirmPassword: "",
     terms: false,
@@ -66,6 +88,8 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
   const details = sectionOf(copy, "details");
   const account = sectionOf(copy, "account");
   const navigation = sectionOf(copy, "navigation");
+  /** The way back to the site — every auth screen carries one (`auth-home-link.tsx`). */
+  const home = sectionOf(copy, "home");
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -75,14 +99,21 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
     if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
   };
 
+  /**
+   * Whether the current step's required fields are filled. Step 1 asks one question, so it needs
+   * one answer; the two name fields are required on step 2 (their labels carry the `*`) and are
+   * checked here — a field the server-side check below refuses must not be reachable through Next.
+   */
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.firstName && formData.lastName && formData.email && formData.phone;
+        return formData.email.trim() !== "";
       case 2:
         return (
-          formData.password &&
-          formData.confirmPassword &&
+          formData.firstName.trim() !== "" &&
+          formData.lastName.trim() !== "" &&
+          formData.password !== "" &&
+          formData.confirmPassword !== "" &&
           formData.terms &&
           formData.password === formData.confirmPassword
         );
@@ -97,11 +128,12 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
    * The sign-up itself (issue #164). Until that card the last step's button did nothing at all.
    *
    * `name` is the auth user's display name — `zUserProfile.displayName` starts from it on
-   * `/settings`, so a person who never saves a profile still has a name on their page. The phone
-   * number and date of birth are not part of the auth user or the profile schema, so they are not
-   * sent anywhere: a form field that silently goes nowhere is worse than one the product does not
-   * ask for yet. (The quiz-interests and skill-level fields had the same problem and were removed
-   * outright in #291 rather than being left in the form.)
+   * `/settings`, so a person who never saves a profile still has a name on their page. Sign-up
+   * collects the identity the account needs and nothing else: the phone number, date of birth and
+   * country used to sit on step 1 and went nowhere (they are not part of the auth user or the
+   * profile schema), so they were removed rather than kept as fields with no reader — `/settings`
+   * is where the profile asks for country, and it owns that question. (The quiz-interests and
+   * skill-level fields had the same problem and were removed outright in #291.)
    */
   const status = sectionOf(copy, "status");
   const [pending, setPending] = useState(false);
@@ -157,7 +189,7 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
         <div className="relative mx-auto z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto">
-              <BookOpen className="w-12 h-12 text-white" />
+              <HeroMark className="w-12 h-12 text-white" />
             </div>
             <h1 className="text-4xl font-bold mb-4">{copy.heading}</h1>
             <p className="text-xl text-white/90 leading-relaxed mb-8">{copy.subtitle}</p>
@@ -198,10 +230,14 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
       {/* Right Side - Registration Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 ">
         <div className="w-full max-w-lg">
+          {/* The way back to the site, above everything else on the screen. */}
+          <div className="mb-6">
+            <AuthHomeLink label={itemLabel(home, "back")} />
+          </div>
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="mx-auto mb-4 w-16 h-16 bg-action rounded-xl flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-white" />
+              <HeroMark className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold  mb-2">{mobile.heading}</h1>
             <p>{mobile.body}</p>
@@ -219,36 +255,9 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
               <CardDescription>{itemValue(stepsCopy, STEPS[currentStep - 1])}</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Step 1: Personal Details */}
+              {/* Step 1: the email address only */}
               {currentStep === 1 && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName" className="text-sm font-medium ">
-                        {itemLabel(details, "first-name")}
-                      </Label>
-                      <Input
-                        id="firstName"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange("firstName", e.target.value)}
-                        placeholder={itemLabel(details, "first-name-placeholder")}
-                        className="h-12 mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName" className="text-sm font-medium ">
-                        {itemLabel(details, "last-name")}
-                      </Label>
-                      <Input
-                        id="lastName"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange("lastName", e.target.value)}
-                        placeholder={itemLabel(details, "last-name-placeholder")}
-                        className="h-12 mt-1"
-                      />
-                    </div>
-                  </div>
-
                   <div>
                     <Label htmlFor="email" className="text-sm font-medium ">
                       {itemLabel(details, "email")}
@@ -262,65 +271,39 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
                       className="h-12 mt-1"
                     />
                   </div>
+                </div>
+              )}
 
-                  <div>
-                    <Label htmlFor="phone" className="text-sm font-medium ">
-                      {itemLabel(details, "phone")}
-                    </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      placeholder={itemLabel(details, "phone-placeholder")}
-                      className="h-12 mt-1"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+              {/* Step 2: the name, then the account */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="dateOfBirth" className="text-sm font-medium ">
-                        {itemLabel(details, "date-of-birth")}
+                      <Label htmlFor="firstName" className="text-sm font-medium ">
+                        {itemLabel(account, "first-name")}
                       </Label>
                       <Input
-                        id="dateOfBirth"
-                        type="date"
-                        value={formData.dateOfBirth}
-                        onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange("firstName", e.target.value)}
+                        placeholder={itemLabel(account, "first-name-placeholder")}
                         className="h-12 mt-1"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="country" className="text-sm font-medium ">
-                        {itemLabel(details, "country")}
+                      <Label htmlFor="lastName" className="text-sm font-medium ">
+                        {itemLabel(account, "last-name")}
                       </Label>
-                      <Select
-                        value={formData.country}
-                        onValueChange={(value) => handleInputChange("country", value)}
-                      >
-                        <SelectTrigger className="h-12 mt-1">
-                          <SelectValue placeholder={itemLabel(details, "country-placeholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="us">{itemLabel(details, "country-us")}</SelectItem>
-                          <SelectItem value="uk">{itemLabel(details, "country-uk")}</SelectItem>
-                          <SelectItem value="ca">{itemLabel(details, "country-ca")}</SelectItem>
-                          <SelectItem value="au">{itemLabel(details, "country-au")}</SelectItem>
-                          <SelectItem value="de">{itemLabel(details, "country-de")}</SelectItem>
-                          <SelectItem value="fr">{itemLabel(details, "country-fr")}</SelectItem>
-                          <SelectItem value="other">
-                            {itemLabel(details, "country-other")}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange("lastName", e.target.value)}
+                        placeholder={itemLabel(account, "last-name-placeholder")}
+                        className="h-12 mt-1"
+                      />
                     </div>
                   </div>
-                </div>
-              )}
 
-              {/* Step 2: Account Setup */}
-              {currentStep === 2 && (
-                <div className="space-y-4">
                   <div>
                     <Label htmlFor="password" className="text-sm font-medium ">
                       {itemLabel(account, "password")}
@@ -349,6 +332,13 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
                     <p className="text-xs text-gray-500 mt-1">
                       {itemLabel(account, "password-hint")}
                     </p>
+                    {/*
+                      The strength meter, under the field it describes. It reads the value the
+                      person is typing, so it moves with every keystroke — and it is advice only:
+                      nothing here disables the Create Account button or refuses a password the
+                      server would accept.
+                    */}
+                    <PasswordStrengthMeter value={formData.password} copy={copy} />
                   </div>
 
                   <div>
@@ -443,7 +433,7 @@ export function RegisterView({ copy, destination }: { copy: PageCopy; destinatio
                         ? itemLabel(status, "pending")
                         : itemLabel(navigation, "create-account")}
                     </span>
-                    <Trophy className="w-4 h-4" />
+                    <ActionMark className="w-4 h-4" />
                   </Button>
                 )}
               </div>

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: one subject — its generated tile, a dropdown filter and the quiz list)
+
 import type { CategoryType } from "@/components/categories/categories-data";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";

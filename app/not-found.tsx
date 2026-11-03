@@ -1,15 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { MarkGlyph } from "@/components/auth/mark-icon";
 import { FloatingGlyphs } from "@/components/not-found/floating-glyphs";
 import { GoBackButton } from "@/components/not-found/go-back-button";
 import { brand, brandIdOf } from "@/data/brand";
 import { notFoundPageCopy } from "@/data/pages/not-found";
 import { hiddenNavHrefs } from "@/lib/flags";
+import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { notFoundCopyFor } from "@/lib/not-found-copy";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
-import { BookOpen, Brain, Home, Search, Trophy } from "lucide-react";
+import { Brain, Home, Search, Trophy } from "lucide-react";
 import Link from "next/link";
+import { BrandGlyph } from "@/components/layout/brand-glyph";
 
 /**
  * Next 16 reads `metadata` from the root `app/not-found.tsx`, so the 404 carries a
@@ -60,12 +63,29 @@ export const metadata: Metadata = {
  * from the brand record, so this module renders one set of ids (`message`, `fact`, `actions`) on
  * either build and still holds no sentence of its own.
  *
+ * **The band's mark is brand-keyed too.** It was `<Trophy>` unconditionally, in the same yellow as
+ * the heading: a quiz score, on both builds, beside a statement about the status code. The glyph
+ * is now `AUTH_MARKS_BY_BRAND[brandId].fact` (`lib/auth/marks.ts`) drawn through `MarkGlyph`
+ * (`components/auth/mark-icon.tsx`) — the same table and the same renderer `/login` and
+ * `/register` use, which is why the 404 cannot drift back to a quiz mark on its own. QuizHub's
+ * `fact` is still `trophy`, so its page renders exactly what it rendered before; AlignSynch's is
+ * `compass` — an address on no map this product draws. `<BrandGlyph>` on the disc above is a
+ * different mark (the product's own geometry) and is unchanged.
+ *
  * The suggestion band goes with it: with every one of its three destinations gated off — which is
  * the case on the alignment build — the page draws no band at all rather than a question
  * ("Looking for something else?") with no answers under it.
  */
 export default function NotFound() {
-  const copy = notFoundCopyFor(notFoundPageCopy, brandIdOf(brand));
+  const brandId = brandIdOf(brand);
+  const copy = notFoundCopyFor(notFoundPageCopy, brandId);
+  /**
+   * The band's mark, chosen by brand in `lib/auth/marks.ts` — the same table `/login` and
+   * `/register` read. The trophy the band used to draw was QuizHub's: on the alignment build this
+   * page put a quiz score beside a statement about an HTTP status code, on the first error page a
+   * new customer can see. QuizHub keeps its trophy (`fact: "trophy"`), so its page is unchanged.
+   */
+  const marks = AUTH_MARKS_BY_BRAND[brandId];
   const message = sectionOf(copy, "message");
   const fact = sectionOf(copy, "fact");
   const actions = sectionOf(copy, "actions");
@@ -94,7 +114,7 @@ export default function NotFound() {
               </h1>
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center animate-bounce">
-                  <BookOpen className="w-12 h-12 text-white" />
+                  <BrandGlyph className="w-12 h-12 text-white" />
                 </div>
               </div>
             </div>
@@ -113,7 +133,7 @@ export default function NotFound() {
               {/* About the error (#291: the false CERN trivia lived here) */}
               <div className="bg-white/10 rounded-lg p-4 mb-6 border border-white/20">
                 <div className="flex items-center justify-center mb-2">
-                  <Trophy className="w-5 h-5 text-yellow-400 mr-2" />
+                  <MarkGlyph id={marks.fact} className="w-5 h-5 text-yellow-400 mr-2" />
                   <span className="text-sm font-semibold text-yellow-400">{fact.heading}</span>
                 </div>
                 <p className="text-sm text-gray-200">{fact.body}</p>

@@ -80,6 +80,9 @@ interface MyInstanceRow {
   readonly viewer_answered: number;
   readonly other_answered: number;
   readonly has_counterparty: boolean;
+  /** The two seats' acceptances (#R2) — `complete` now needs both, not just both sheets. */
+  readonly viewer_accepted: boolean;
+  readonly other_accepted: boolean;
   readonly viewer_unlock_seen_at: Date | null;
 }
 
@@ -105,6 +108,8 @@ const MY_INSTANCES_SQL = `
       WHERE o.session_record_id = r.id AND o.role <> vp.role)::int AS other_answered,
     EXISTS (SELECT 1 FROM party cp
              WHERE cp.session_record_id = r.id AND cp.role = 'counterparty') AS has_counterparty,
+    (vp.accepted_at IS NOT NULL)            AS viewer_accepted,
+    COALESCE((op.accepted_at IS NOT NULL), false) AS other_accepted,
     vp.unlock_seen_at                       AS viewer_unlock_seen_at
   FROM party vp
   JOIN record r             ON r.id = vp.session_record_id AND r.record_type = 'assessment'
@@ -144,6 +149,17 @@ export async function listMyInstances(userId: string): Promise<MyInstance[]> {
       viewerRole === "initiator"
         ? { initiator: row.viewer_answered, counterparty: row.other_answered }
         : { initiator: row.other_answered, counterparty: row.viewer_answered };
+    // The acceptance counts, mapped back to roles the same way the answered ones are (#R2).
+    const acceptedBy: Record<PartyRole, number> =
+      viewerRole === "initiator"
+        ? {
+            initiator: row.viewer_accepted ? 1 : 0,
+            counterparty: row.other_accepted ? 1 : 0,
+          }
+        : {
+            initiator: row.other_accepted ? 1 : 0,
+            counterparty: row.viewer_accepted ? 1 : 0,
+          };
 
     // One derivation, then the mark on top of it: `unlockMarkOf()` is handed the state it just
     // decided, so a row can never say "complete" and show a marker for something else.
@@ -152,6 +168,8 @@ export async function listMyInstances(userId: string): Promise<MyInstance[]> {
       hasCounterparty: row.has_counterparty,
       initiatorAnswered: answeredBy.initiator,
       counterpartyAnswered: answeredBy.counterparty,
+      initiatorAccepted: acceptedBy.initiator,
+      counterpartyAccepted: acceptedBy.counterparty,
       viewerRole,
     });
 

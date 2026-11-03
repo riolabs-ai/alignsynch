@@ -1,3 +1,5 @@
+// template-ancestor: components/home/featured-quizzes.tsx   (variation: one featured tip with its author and read time, no curation tabs and no card grid)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
 import { tipCategoryName } from "@/data/creator-tips-data";

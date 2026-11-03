@@ -105,6 +105,8 @@ describe("the blind rule on the Overview", () => {
       hasCounterparty: true,
       initiatorAnswered: 0,
       counterpartyAnswered: 3,
+      initiatorAccepted: 0,
+      counterpartyAccepted: 1,
       viewerRole: "initiator",
     });
 
@@ -121,6 +123,8 @@ describe("the blind rule on the Overview", () => {
       hasCounterparty: true,
       initiatorAnswered: 3,
       counterpartyAnswered: 1,
+      initiatorAccepted: 1,
+      counterpartyAccepted: 0,
       viewerRole: "initiator",
     });
 

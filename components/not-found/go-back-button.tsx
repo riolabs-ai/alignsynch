@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/button.tsx   (variation: a back button that pops history and falls back to a route)
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 

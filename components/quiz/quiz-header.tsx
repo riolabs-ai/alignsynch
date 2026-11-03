@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/page-header.tsx   (variation: the quiz band hand-written — a back link, the title, a category badge and a slot for the timer)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";

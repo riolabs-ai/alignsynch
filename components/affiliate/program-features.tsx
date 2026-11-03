@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/card.tsx   (variation: the feature band as a three-column card grid with icon chips and one comparison link)
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel, itemValue } from "@/lib/page-copy";

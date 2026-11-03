@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: none — approved #336
+ *
  * `/assessment/instances/[instanceId]` — the one screen both parties share (#146).
  *
  * Three states, and the third one is the only one that draws a score:
@@ -50,16 +52,35 @@ import { AssessmentReportView } from "@/components/assessment/assessment-report"
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
 import { InviteLink } from "@/components/assessment-flow/invite-link";
 import { ReinviteForm } from "@/components/assessment-flow/reinvite-form";
+import { StepsPanel } from "@/components/assessment-flow/steps-panel";
 import { MODE_LABELS } from "@/content/assessment";
+import type { Step } from "@/content/steps";
 import { formatDate } from "@/content/core";
+import { STAGE_LABELS } from "@/content/stages";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { answersPath, reinvitePath } from "@/lib/flow/paths";
+import { answersPath, reinvitePath, stepsPath } from "@/lib/flow/paths";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import type { ResendRefusal } from "@/lib/flow/resend";
 import { RESEND_LIFETIME_CAP } from "@/lib/flow/tokens";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { relationshipStage, stageCopyId } from "@/lib/flow/stage";
+
+/** The one glyph an absent figure is drawn as — never `0`, never an empty cell. */
+const ABSENT = "—";
+
+/**
+ * What was paid, as the read sliced it (#409).
+ *
+ * `null` is **not** this viewer's fact — the read hands it to the Initiator alone — so the panel
+ * below is not drawn from a value that was withheld at render time; the component was never given
+ * one. Two columns and no arithmetic: the plan and the instant it was bought. There is no total
+ * because there is one purchase, and a sum of one number is not a fact about anything.
+ */
+export interface RelationshipPaid {
+  readonly plan: string | null;
+  readonly purchasedAt: string | null;
+}
 
 /** The codes a `?invite=` query may carry. Anything else is ignored, not rendered. */
 const INVITE_NOTICES = ["sent", "unset", "failed"] as const;
@@ -110,6 +131,8 @@ export function AssessmentInstanceView({
   problem,
   inviteNotice,
   resendRefusal,
+  paid = null,
+  steps = [],
 }: {
   screen: FlowScreen;
   copy: PageCopy;
@@ -123,6 +146,24 @@ export function AssessmentInstanceView({
    * placed inside the panel would be a refusal nobody could read.
    */
   resendRefusal?: ResendRefusal;
+  /**
+   * What was paid — `null` for every viewer who is not the Initiator (#409).
+   *
+   * The default is `null`, not an empty object, so a caller that forgets it draws nothing rather
+   * than a panel of dashes claiming nothing was paid. `lib/db/assessments.ts::readRelationshipById`
+   * is the only producer, and it slices the money facts to the Initiator's seat before this
+   * component ever sees them.
+   */
+  paid?: RelationshipPaid | null;
+  /**
+   * The relationship's Steps (#478) — read by the page, drawn only in the report state.
+   *
+   * The default is `[]` so a caller that has not read them draws the panel's empty state rather than
+   * a crash. The list is the relationship's, not the session's: a Step outlives the session that
+   * agreed it, which is the whole point of storing it. A coach is handed it like a party (the plan is
+   * shared) and simply gets no controls.
+   */
+  steps?: readonly Step[];
 }) {
   const waiting = sectionOf(copy, "waiting");
   const reportBand = sectionOf(copy, "report");
@@ -130,6 +171,8 @@ export function AssessmentInstanceView({
   const problems = sectionOf(copy, "problems");
   const viewerBand = sectionOf(copy, "viewer");
   const stageBand = sectionOf(copy, "stage");
+  const partiesBand = sectionOf(copy, "parties");
+  const paidBand = sectionOf(copy, "paid");
   const problemLabel = problem === undefined ? undefined : itemLabel(problems, problem);
   const resendLabel =
     resendRefusal === undefined
@@ -176,7 +219,18 @@ export function AssessmentInstanceView({
         <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
           {copy.heading}
         </p>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{screen.title}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{screen.title}</h1>
+          {/* The ladder's word, drawn beside the title. `data-stage` stays the sentence's own
+              attribute — the stage is said once in words and once as a badge, and neither is a
+              progress bar (#274). */}
+          <span
+            data-stage-badge={stage}
+            className="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
+          >
+            {STAGE_LABELS[stage]}
+          </span>
+        </div>
         <p
           data-mode={screen.mode}
           className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
@@ -204,6 +258,92 @@ export function AssessmentInstanceView({
       >
         {fillLabel(itemLabel(viewerBand, screen.viewer.role), { name: screen.viewer.name })}
       </p>
+
+      {/* The two seats (#409) — the block `components/my-quizzes/quiz-details.tsx` draws for a
+          quiz's players, on a relationship's parties. The parties are always legible; what either
+          of them wrote is not, and nothing here is a count. `you` comes from the role the read
+          resolved, so a card cannot mark the wrong seat. */}
+      <section
+        data-parties="true"
+        className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+      >
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {partiesBand.heading}
+        </h2>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          <li
+            data-party="initiator"
+            className="rounded-md border border-gray-200 p-3 dark:border-gray-700"
+          >
+            <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {itemLabel(partiesBand, "initiator")}
+            </p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+              {screen.initiatorName === "" ? ABSENT : screen.initiatorName}
+              {screen.viewer.role === "initiator" ? (
+                <span className="ml-2 rounded bg-gray-100 px-1 text-xs uppercase tracking-wide text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  {itemLabel(partiesBand, "you")}
+                </span>
+              ) : null}
+            </p>
+          </li>
+          <li
+            data-party="counterparty"
+            className="rounded-md border border-gray-200 p-3 dark:border-gray-700"
+          >
+            <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {itemLabel(partiesBand, "counterparty")}
+            </p>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+              {screen.counterpartyName ?? itemLabel(partiesBand, "unclaimed")}
+              {screen.viewer.role === "counterparty" ? (
+                <span className="ml-2 rounded bg-gray-100 px-1 text-xs uppercase tracking-wide text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  {itemLabel(partiesBand, "you")}
+                </span>
+              ) : null}
+            </p>
+          </li>
+        </ul>
+        {screen.viewer.role === "coach" ? (
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+            {itemLabel(partiesBand, "coach")}
+          </p>
+        ) : null}
+      </section>
+
+      {/* What was paid (#409). The Initiator alone is handed this — every other viewer's `paid`
+          is `null`, so this panel is not a withheld value drawn as dashes; it is absent from the
+          props. Two facts and no sum. */}
+      {paid === null ? null : (
+        <section
+          data-paid="true"
+          className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+        >
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {paidBand.heading}
+          </h2>
+          <dl className="mt-2 flex flex-wrap gap-x-6 text-sm">
+            <div className="flex gap-2">
+              <dt className="text-gray-500 dark:text-gray-400">{itemLabel(paidBand, "plan")}</dt>
+              <dd className="font-medium text-gray-900 dark:text-gray-100">
+                {paid.plan ?? ABSENT}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+            {paid.purchasedAt === null
+              ? ABSENT
+              : fillLabel(itemLabel(paidBand, "bought"), {
+                  date: formatDate(paid.purchasedAt),
+                })}
+          </p>
+          {paid.plan === null && paid.purchasedAt === null ? (
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              {itemLabel(paidBand, "nothing")}
+            </p>
+          ) : null}
+        </section>
+      )}
 
       {problemLabel === undefined ? null : (
         <p
@@ -317,6 +457,21 @@ export function AssessmentInstanceView({
             <p className="mt-1">{sectionBody(reportBand)}</p>
           </section>
           <AssessmentReportView report={screen.report} />
+          {/* #478 — the plan the completion derived, drawn on the screen that owns it. A party
+              ticks and rewords; a coach reads. Only in the report state: a Step names the widest Gap
+              on its Aspect, so drawing one before both seats have accepted would hand a party the
+              other's answers by way of the plan. */}
+          <StepsPanel
+            steps={steps}
+            aspects={screen.aspects.map((aspect) => ({
+              itemId: aspect.itemId,
+              prompt: aspect.prompt,
+            }))}
+            action={stepsPath(screen.instanceRecordId)}
+            canMark={!isCoach}
+            aligned={screen.report.verdict.aligned}
+            copy={copy}
+          />
         </>
       )}
     </div>

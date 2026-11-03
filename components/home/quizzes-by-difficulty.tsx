@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/explore/explore-quiz-list.tsx   (variation: three difficulty sections, each a card row, over one catalogue read)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";

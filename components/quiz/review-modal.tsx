@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/dialog.tsx   (variation: the review dialog — a star row, a slug field, and cancel/submit)
+
 import { useState } from "react";
 import {
   Dialog,

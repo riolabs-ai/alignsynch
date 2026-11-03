@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: the results page — tabs for quizzes, categories, creators and pages, a sort select and card rows)
+
 import type React from "react";
 
 import { Badge } from "@/components/ui/badge";

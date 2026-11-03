@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/chart.tsx   (variation: per-question accuracy and completion charts over one quiz's results)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

@@ -10,7 +10,7 @@
  * Only type imports cross into `content/` or `data/` here — a value import of `data/brand`
  * would put zod in the browser bundle, which is why the brand id arrives as an argument.
  */
-import type { PageCopy, PageCopySection } from "@/content/pages";
+import type { PageCopy, PageCopyItem, PageCopySection } from "@/content/pages";
 import type { SearchIndex } from "@/content/search";
 import type { BrandId } from "@/data/brand";
 import { sectionOf } from "./page-copy";
@@ -35,6 +35,67 @@ export function searchSectionFor(copy: PageCopy, brandId: BrandId): PageCopySect
     }
   }
 }
+
+/**
+ * The **public chrome's** slice of the shell fixture — the marketing header's words and nothing else.
+ *
+ * The shell fixture is one document for both chromes: it carries the quiz menu's fifteen rows, the
+ * console's rows, the drawer words, the footer's columns. `PublicNav` is a **client** component
+ * (`components/layout/nav-menus.tsx`), so every prop it receives is serialised into the RSC payload
+ * the browser downloads — which meant a public page shipped the console's whole vocabulary
+ * ("My Relationships", "Gap Analysis", "Affiliate Page") in its JavaScript payload, invisible in
+ * the DOM and visible to anyone reading it. The layout renders no sidebar, so those words had no
+ * business on `/pricing` at all.
+ *
+ * This function cuts the fixture down to what the public menu actually draws: the brand's nav
+ * section, narrowed to the ids its component renders, plus the account slot's two words. The ids
+ * it keeps are the ones `AlignSynchPublicNav` / `QuizHubPublicNav` ask for; a row added there
+ * without adding its id here fails at `itemLabel` in the component (E23 sees the id in
+ * `components/` and this list in `lib/`, which the ratchet does not attribute).
+ *
+ * It is a derived value, never an authored one: every string is the fixture's own.
+ */
+export function publicChromeCopy(copy: PageCopy, brandId: BrandId): PageCopy {
+  const plan = PUBLIC_NAV_ROWS[brandId];
+  const nav = sectionOf(copy, plan.section);
+  const account = sectionOf(copy, "account");
+  return {
+    heading: copy.heading,
+    sections: [
+      { id: nav.id, heading: nav.heading, items: pickItems(nav.items ?? [], plan.ids) },
+      {
+        id: account.id,
+        heading: account.heading,
+        items: pickItems(account.items ?? [], ACCOUNT_IDS),
+      },
+    ],
+  };
+}
+
+/** The two rows `PublicAccountSlot` draws — the account section also carries the shell's menu. */
+const ACCOUNT_IDS: readonly string[] = ["signed-out", "sign-up"];
+
+/**
+ * The named items, in the order the view draws them.
+ *
+ * An id the section does not declare is dropped here and then throws at `itemLabel` in the
+ * component that asked for it, which is the loud failure the fixture readers exist for — the same
+ * shape a typo has today, one call earlier.
+ */
+function pickItems(items: readonly PageCopyItem[], ids: readonly string[]): PageCopyItem[] {
+  return ids.flatMap((id) => items.filter((item) => item.id === id));
+}
+
+/** The section each brand's public menu reads, and the rows it draws from it, in render order. */
+const PUBLIC_NAV_ROWS: Readonly<
+  Record<BrandId, { readonly section: string; readonly ids: readonly string[] }>
+> = {
+  quizhub: { section: "nav", ids: ["home", "categories", "pricing", "help"] },
+  alignsynch: {
+    section: "nav-alignsynch",
+    ids: ["home", "templates", "how-it-works", "pricing", "help"],
+  },
+};
 
 /**
  * The footer's two brand-owned sections (issue #188, stage S3; trimmed by #272).

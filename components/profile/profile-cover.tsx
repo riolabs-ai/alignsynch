@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/aspect-ratio.tsx   (variation: the cover slot — one registry image with a gradient fallback, the ratio set by hand)
+
 import { Media } from "@/components/media/media";
 import { FALLBACK_KIND, coverSeedOf } from "@/lib/media-entry";
 import { cn } from "@/lib/utils";

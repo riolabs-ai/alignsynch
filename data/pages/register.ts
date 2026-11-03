@@ -33,10 +33,13 @@
  * a newsletter that has never existed. What is left is the form the app actually submits:
  * personal details, then the account.
  *
- * The phone number and date of birth in `details` are still collected and still unread.
- * That is a separate defect (the form's own validation, not the quiz vocabulary this card
- * removed), so this table describes the form as it stands rather than claiming every
- * field is used.
+ * ## What each step asks (owner review, 2026-11-02)
+ *
+ * Step 1 is the email address and nothing else; the name fields moved to step 2, two columns
+ * beside the password fields. The phone number, date of birth and country that used to sit on
+ * step 1 are gone from sign-up entirely: none of the three is part of the auth user or the
+ * profile schema, so nothing read them, and `/settings` is where the profile asks for country.
+ * Sign-up collects the identity the account needs — signing up should not be a profile form.
  */
 import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
@@ -101,29 +104,17 @@ export function registerCopy(record: Pick<Brand, "name">): PageCopy {
       {
         id: "details",
         items: [
-          { id: "first-name", label: "First Name *" },
-          { id: "first-name-placeholder", label: "John" },
-          { id: "last-name", label: "Last Name *" },
-          { id: "last-name-placeholder", label: "Smith" },
           { id: "email", label: "Email *" },
-          { id: "email-placeholder", label: "john@example.com" },
-          { id: "phone", label: "Phone Number *" },
-          { id: "phone-placeholder", label: "+1 (555) 123-4567" },
-          { id: "date-of-birth", label: "Date of Birth" },
-          { id: "country", label: "Country" },
-          { id: "country-placeholder", label: "Select country" },
-          { id: "country-us", label: "United States" },
-          { id: "country-uk", label: "United Kingdom" },
-          { id: "country-ca", label: "Canada" },
-          { id: "country-au", label: "Australia" },
-          { id: "country-de", label: "Germany" },
-          { id: "country-fr", label: "France" },
-          { id: "country-other", label: "Other" },
+          { id: "email-placeholder", label: "The address you sign in with" },
         ],
       },
       {
         id: "account",
         items: [
+          { id: "first-name", label: "First Name *" },
+          { id: "first-name-placeholder", label: "John" },
+          { id: "last-name", label: "Last Name *" },
+          { id: "last-name-placeholder", label: "Smith" },
           { id: "password", label: "Password *" },
           { id: "password-placeholder", label: "Create a strong password" },
           { id: "password-hint", label: "Password must be at least 8 characters long" },
@@ -144,6 +135,35 @@ export function registerCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "next", label: "Next" },
           { id: "create-account", label: "Create Account" },
         ],
+      },
+      /**
+       * The strength meter under the password field (`components/auth/password-strength.tsx`).
+       *
+       * Three words and two rules: `weak`/`fair`/`strong` are what the level reads, and
+       * `rule-length`/`rule-classes` are the two lines beside it, each carrying a `data-met` state
+       * so the guidance turns on as the value satisfies it. `{min}` is `PASSWORD_MIN_LENGTH`
+       * (`lib/auth/reset-token.ts`), filled by the view — the floor is the server's and is never
+       * typed here. The meter is advice: nothing in it can refuse a password the server accepts.
+       */
+      {
+        id: "strength",
+        items: [
+          { id: "label", label: "Password strength" },
+          { id: "weak", label: "Weak password" },
+          { id: "fair", label: "Fair password" },
+          { id: "strong", label: "Strong password" },
+          { id: "rule-length", label: "At least {min} characters" },
+          { id: "rule-classes", label: "Mix capitals, numbers or symbols" },
+        ],
+      },
+      /**
+       * The way back to the site — every auth screen carries it (`components/auth/
+       * auth-home-link.tsx`), because a sign-up form that offers no exit is a dead end for anyone
+       * who arrived by link and did not mean to create an account.
+       */
+      {
+        id: "home",
+        items: [{ id: "back", label: "Back to home" }],
       },
     ],
   });

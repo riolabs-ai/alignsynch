@@ -30,6 +30,7 @@ import {
   clearFlowCookieHeader,
   decodeFlowCookie,
   encodeFlowCookie,
+  flowCookieAgeSeconds,
   flowCookieHeader,
   GOOGLE_FINISH_PATH,
   GOOGLE_FLOW_COOKIE,
@@ -87,10 +88,19 @@ describe("the flow cookie — our own carrier for the challenge", () => {
   const state = {
     challenge: "4844a007f6483068b220f009016b7197d044cfeadfe817275033dfb4219bbb3e.sig%3D",
     next: "/dashboard",
+    iat: 1_700_000_000,
   };
 
-  it("round-trips the challenge and the destination", () => {
+  it("round-trips the challenge, the destination and the issued-at second", () => {
     expect(decodeFlowCookie(encodeFlowCookie(state))).toEqual(state);
+  });
+
+  it("reports the cookie's age as the seconds between the start and the callback", () => {
+    expect(flowCookieAgeSeconds(1_700_000_000, 1_700_000_600)).toBe(600);
+    // A clock ahead of the minting host cannot produce a negative age.
+    expect(flowCookieAgeSeconds(1_700_000_600, 1_700_000_000)).toBe(0);
+    // Whole seconds only — a fractional second is not a log line's business.
+    expect(flowCookieAgeSeconds(1_700_000_000, 1_700_000_000)).toBe(0);
   });
 
   it("is a legal cookie value: no ; , or space", () => {
@@ -100,7 +110,7 @@ describe("the flow cookie — our own carrier for the challenge", () => {
 
   it("refuses a destination that leaves the site", () => {
     for (const next of ["https://evil.example/x", "//evil.example/x", "javascript:alert(1)"]) {
-      expect(decodeFlowCookie(encodeFlowCookie({ challenge: "c", next }))).toBeNull();
+      expect(decodeFlowCookie(encodeFlowCookie({ challenge: "c", next, iat: 0 }))).toBeNull();
     }
   });
 
@@ -114,6 +124,15 @@ describe("the flow cookie — our own carrier for the challenge", () => {
     ).toBeNull();
     expect(
       decodeFlowCookie(encodeURIComponent(JSON.stringify({ challenge: "c", next: "" }))),
+    ).toBeNull();
+    // Without an issued-at second there is no age to report, so it is not a flow this build wrote.
+    expect(
+      decodeFlowCookie(encodeURIComponent(JSON.stringify({ challenge: "c", next: "/x" }))),
+    ).toBeNull();
+    expect(
+      decodeFlowCookie(
+        encodeURIComponent(JSON.stringify({ challenge: "c", next: "/x", iat: "soon" })),
+      ),
     ).toBeNull();
   });
 

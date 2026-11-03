@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/quiz/quiz-discustion.tsx   (variation: the tournament thread — posts with votes, a dropdown per post and a composer)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -29,10 +29,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 import type { Brand } from "@/content/brand";
-import { RegisterView } from "@/components/auth/register-view";
+import { MARK_ICONS, RegisterView } from "@/components/auth/register-view";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { quizHubBrand } from "@/data/brand";
 import { registerCopy } from "@/data/pages/register";
+import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import { registerCopyFor } from "@/lib/auth-copy";
 
@@ -42,23 +43,34 @@ const BRANDS = [
 ] as const;
 
 /**
- * The two props the page hands the view in `app/(auth)/register/page.tsx` (#351 added
- * `destination`). The view is a client module, so the brand's post-sign-in page arrives from the
- * server exactly like the copy does.
+ * The three props the page hands the view in `app/(auth)/register/page.tsx`: `destination` (#351)
+ * and `marks` (#225's pattern applied to the glyphs). The view is a client module, so the brand's
+ * post-sign-in page and its marks arrive from the server exactly like the copy does.
  */
 const viewProps = (id: (typeof BRANDS)[number][0], record: Brand) => ({
   copy: registerCopyFor(registerCopy(record), id),
   destination: AFTER_SIGN_IN_BY_BRAND[id],
+  marks: AUTH_MARKS_BY_BRAND[id],
 });
 
 describe("the sign-up form on both brands", () => {
-  it("opens on personal details, step 1 of 2", () => {
+  it("opens on step 1 with the email address and nothing else", () => {
     for (const [id, record] of BRANDS) {
       const html = renderToStaticMarkup(createElement(RegisterView, viewProps(id, record)));
       expect(html, id).toContain("Step 1 of 2");
       expect(html, id).toContain("Personal Details");
-      expect(html, id).toContain("First Name *");
-      expect(html, id).toContain("Email *");
+      expect(html, id).toContain('id="email"');
+
+      // Step 1 collects the email and nothing else (owner review, 2026-11-02): the names moved
+      // to step 2 and the profile fields left sign-up. This is a real render, so a control still
+      // sitting on step 1 would appear here.
+      for (const gone of ["firstName", "lastName", "phone", "dateOfBirth", "country"]) {
+        expect(html, `${id} still renders ${gone} on step 1`).not.toContain(`id="${gone}"`);
+      }
+      expect(html, id).not.toContain("First Name *");
+      expect(html, id).not.toContain("Phone Number *");
+      expect(html, id).not.toContain("Date of Birth");
+      expect(html, id).not.toContain("Select country");
     }
   });
 
@@ -88,5 +100,39 @@ describe("the sign-up form on both brands", () => {
     const lucideImport = source.match(/import\s*\{([^}]*)\}\s*from\s*"lucide-react"/);
     expect(lucideImport, "the lucide import moved — update this guard").not.toBeNull();
     expect(lucideImport?.[1]).not.toMatch(/\bLink\b/);
+  });
+
+  it("draws this brand's marks, and no glyph a brand did not choose", () => {
+    for (const [id, record] of BRANDS) {
+      const html = renderToStaticMarkup(createElement(RegisterView, viewProps(id, record)));
+      const marks = AUTH_MARKS_BY_BRAND[id];
+
+      // The panel mark is server-rendered, so the served HTML is where the defect was visible:
+      // a quiz book on the alignment build's sign-up page.
+      expect(html, id).toContain(`lucide-${marks.hero}`);
+      for (const other of BRANDS) {
+        if (other[0] === id) continue;
+        const foreign = AUTH_MARKS_BY_BRAND[other[0]];
+        expect(html, `${id} must not draw ${other[0]}'s mark`).not.toContain(
+          `lucide-${foreign.hero}`,
+        );
+      }
+    }
+
+    // The button mark only renders on step 2, which is client state a static render never reaches,
+    // so the table is checked directly: every id a brand names has a glyph, and the glyph is the
+    // `lucide-react` component that id names. A missing entry would render the button with no mark
+    // at all rather than fail anything at build time.
+    for (const [id] of BRANDS) {
+      for (const markId of Object.values(AUTH_MARKS_BY_BRAND[id])) {
+        const Icon = MARK_ICONS[markId];
+        expect(
+          Icon,
+          `${id} names the mark "${markId}", which MARK_ICONS does not draw`,
+        ).toBeDefined();
+        const html = renderToStaticMarkup(createElement(Icon, { className: "w-4 h-4" }));
+        expect(html, `${id} → ${markId}`).toContain(`lucide-${markId}`);
+      }
+    }
   });
 });

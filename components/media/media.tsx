@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/aspect-ratio.tsx   (variation: the image slot hand-written in place of components/ui/aspect-ratio.tsx — a registry source, a generated fallback and a mark)
+
 import Image from "next/image";
 import { useState } from "react";
 

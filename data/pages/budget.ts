@@ -121,6 +121,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/explore",
     budget: 0,
   },
+  /**
+   * `/how-it-works` — the console's onboarding page. Budget 0 from the first commit, like the
+   * flow surfaces: the six moves, the two half-labels and the three honest limits are all
+   * `data/pages/how-it-works.ts`, so the next sentence typed into the view is a red build.
+   */
+  "/how-it-works": {
+    page: "app/(mainlayout)/how-it-works/page.tsx",
+    dirs: ["components/onboarding"],
+    fixture: "data/pages/how-it-works",
+    budget: 0,
+  },
   "/explore/featured": {
     page: "app/(mainlayout)/explore/featured/page.tsx",
     dirs: ["components/explore"],
@@ -143,6 +154,31 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/affiliate/page.tsx",
     dirs: ["components/affiliate"],
     fixture: "data/pages/affiliate",
+    budget: 0,
+  },
+  /**
+   * The three password surfaces (#password-reset), budget 0 from the first commit like the other
+   * flow surfaces: every sentence — the five request outcomes, the four link states, the six
+   * password refusals, the message body — is `data/pages/password-reset.ts`, and the views only
+   * join ids to sentences. One fixture for three routes, like the two legal pages: the same person
+   * reads them in sequence, and two copies of "Ask for a new link" is two places a typo hides.
+   */
+  "/forgot-password": {
+    page: "app/(auth)/forgot-password/page.tsx",
+    dirs: ["components/auth"],
+    fixture: "data/pages/password-reset",
+    budget: 0,
+  },
+  "/reset/[token]": {
+    page: "app/(auth)/reset/[token]/page.tsx",
+    dirs: ["components/auth"],
+    fixture: "data/pages/password-reset",
+    budget: 0,
+  },
+  "/reset/complete": {
+    page: "app/(auth)/reset/complete/page.tsx",
+    dirs: ["components/auth"],
+    fixture: "data/pages/password-reset",
     budget: 0,
   },
   "/pricing": {
@@ -180,10 +216,28 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/news-article",
     budget: 0,
   },
+  /**
+   * `/support` — the account support page, in the app shell since the Help/Support split.
+   *
+   * The route moved from `app/(marketing)/` to `app/(mainlayout)/` and the panel components stayed
+   * in `components/support/`, which `/help` also renders: a shared band is counted once per
+   * surface it reaches, and both surfaces must keep measuring 0.
+   */
   "/support": {
-    page: "app/(marketing)/support/page.tsx",
+    page: "app/(mainlayout)/support/page.tsx",
     dirs: ["components/support"],
     fixture: "data/pages/support",
+    budget: 0,
+  },
+  /**
+   * `/help` — the public help centre (FAQ + knowledge base). Budget 0 from the first commit, like
+   * every surface this tree adds: the two tab labels, the taxonomy, the two bands' chrome and the
+   * "need a person" paragraph are all `data/pages/help.ts`.
+   */
+  "/help": {
+    page: "app/(marketing)/help/page.tsx",
+    dirs: ["components/support", "components/contact"],
+    fixture: "data/pages/help",
     budget: 0,
   },
   "/support/articles/[slug]": {
@@ -292,6 +346,38 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/assessment/instances/[instanceId]/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-instance",
+    budget: 0,
+  },
+  // #409 — the relationship report, the one read surface the app did not have. Budget 0 from the
+  // first commit, for the same reason: the locked state, the verdict band, the opinion matrix and
+  // the Gap table's four headings are all in `data/pages/assessment-relationship-report.ts`, so
+  // the next literal written in `report-view.tsx` is a red build.
+  "/assessment/instances/[instanceId]/report": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/report/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-relationship-report",
+    budget: 0,
+  },
+  // R1-E (#409) — the three write surfaces, shipped as in-progress UI. Budget 0 from the
+  // first commit: the headings, the blind rule, the seat rows, the Mode/Setting explanations
+  // and both not-wired notices are `data/pages/assessment-*.ts`, so a sentence typed back into
+  // a component is a red build.
+  "/assessment/instances/[instanceId]/answer": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/answer/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-answer",
+    budget: 0,
+  },
+  "/assessment/instances/[instanceId]/accept": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/accept/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-accept",
+    budget: 0,
+  },
+  "/assessment/templates/[templateId]/create": {
+    page: "app/(mainlayout)/assessment/templates/[templateId]/create/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
     budget: 0,
   },
   // #255 — the template authoring form. Budget 0 from the first commit, for the reason the

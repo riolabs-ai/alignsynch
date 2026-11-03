@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/layout/main-layout.tsx   (variation: the page slot as two panes — the conversation list beside the open thread)
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockContacts, mockConversations } from "@/data/chat-data";

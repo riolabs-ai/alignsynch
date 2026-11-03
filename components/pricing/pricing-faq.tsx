@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/support/support-faq.tsx   (variation: the FAQ with a search field and brand-keyed categories)
+
 import {
   Accordion,
   AccordionContent,
@@ -12,6 +14,7 @@ import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 /** One group of FAQ rows, as the accordion renders it. */
@@ -26,51 +29,64 @@ export type PricingFaqCategory = {
  * The rows themselves are record-shaped blocks with no schema in P2 (see
  * `data/pages/pricing.ts`, "not here, on purpose"), so they stay in this feature. What
  * they must not own is the product's name: a sentence that spells it is a sentence a
- * second brand cannot render, so every row below reads `brand.name` (and the contact
- * line reads `brand.supportEmail`) and the projection is what `tests/brand-shell.test.ts`
+ * second brand cannot render, so every row below reads `brand.name` and the projection is what `tests/brand-shell.test.ts`
  * renders with a different record.
  *
- * The list is pruned to the questions this app can answer today (#286). A row whose
- * honest answer is "there is no such feature" is a row that sells something the build
- * does not contain, so the seven that had no code behind them were removed rather than
- * reworded into a denial. Nothing was widened to fill the space: the generator row names
- * the template library it actually reads, and the deletion row names the mailbox because
- * the settings button it would otherwise point at does nothing.
+ * **These are the questions this product can answer (owner, 2026-11-02).** The page carried the
+ * QuizHub FAQ — what quizzes you can build, how quiz generation works — and those are not this
+ * product. Rather than reword another product's answer, the rows that had no counterpart here
+ * were deleted, and the rows below describe what the build actually does: a two-party alignment
+ * assessment, a template the practice authors, a blind answer from each side, the report, the
+ * Gap and its Steps, the coach seat, and the data the app holds. Nothing here claims a customer,
+ * a rating, an earnings figure or a feature behind no code.
  */
-export function pricingFaqCategories(
-  brand: Pick<Brand, "name" | "supportEmail">,
-): PricingFaqCategory[] {
+export function pricingFaqCategories(brand: Pick<Brand, "name">): PricingFaqCategory[] {
   return [
     {
-      name: "General",
+      name: "The assessment",
       questions: [
         {
           question: `What is ${brand.name}?`,
-          answer: `${brand.name} is a comprehensive platform that allows users to create, share, and take quizzes on various topics. It's designed for educators, content creators, businesses, and quiz enthusiasts who want to create engaging learning experiences.`,
+          answer: `${brand.name} runs a two-party alignment assessment. You pick a relationship type, keep the Aspects you actually work on, and send the assessment to the two people in that relationship. Each answers the same Aspects separately, blind to the other's answers — and the report shows where they align, and the Gap where they don't.`,
         },
         {
           question: `How do I get started with ${brand.name}?`,
           answer:
-            "Getting started is easy! Simply sign up for a free account, explore the dashboard, and create your first quiz using our intuitive editor. You can also take existing quizzes to get familiar with the platform.",
+            "Sign up for a free account, start from a template in the library or write the Aspects yourself, and send the invitation link to the other party. Once both people have answered and accepted their sheets, the report is ready to read.",
         },
         {
-          question: `Can I try ${brand.name} before purchasing?`,
+          question: "What is a Gap?",
           answer:
-            "Nothing is charged while you are trying it: there is no paid subscription to manage yet, so there is no checkout, no billing cycle, and no card on file. You can use the app and see what it does first.",
+            "The distance between two answers on the same Aspect. Basic Mode asks how the relationship feels to each side and how each wishes it to be, so the Feel Gap and the Wish Gap fall out of the pair. Advanced Mode adds Think and Guess. The report names every Gap by kind and size, and the Steps that follow from it.",
+        },
+        {
+          question: "Can I use my own questions?",
+          answer:
+            "Yes — a template is yours. You write the Aspects for one relationship type, the things you actually ask about in session, and the same template runs with every relationship of that type. The templates already in the library are starting points to edit or ignore.",
+        },
+        {
+          question: "Who can see my answers before I submit?",
+          answer:
+            "Nobody but you. A party reads their own sheet and nothing else until the session is complete, and a session is complete when both parties have accepted their answers — not merely submitted them. The coach reads nothing before then either, so the report cannot be shaped by the person running the session.",
         },
       ],
     },
     {
-      name: "Features",
+      name: "Plans",
       questions: [
         {
-          question: "What types of quizzes can I create?",
-          answer: `${brand.name} builds a quiz from multiple-choice questions: each question offers a list of named answers, at least two, and one of them is marked correct. Its second template, the assessment, asks each item on a fixed five-point band, 1 to 5, and names the value at each end of that band. Those two response scales — a list of options and the 1-to-5 band — are the whole question model, and a question is its prompt plus its scale.`,
+          question: `Can I try ${brand.name} before purchasing?`,
+          answer:
+            "Yes. The Free plan works today: one active relationship at a time and Basic Mode, with no card and no subscription. A paid plan is bought through a card checkout, monthly or yearly; in this release that checkout runs on test keys, so no card is charged.",
         },
         {
-          question: "How does quiz generation work?",
+          question: "What is the difference between Basic Mode and Advanced Mode?",
           answer:
-            "It assembles a draft from the built-in template library and retitles it with your topic. No language model is involved: it does not read the topic for meaning and does not write new questions, it selects existing templates and puts your topic in their titles, so the draft is a starting point to edit.",
+            "Basic Mode asks two questions of every Aspect: how it feels to each side, and how each wishes it to be — Feel and Wish, which produce the Feel Gap and the Wish Gap. Advanced Mode adds Think and Guess. The Free plan is Basic Mode only; both paid plans include both modes.",
+        },
+        {
+          question: "Can I cancel or change plans?",
+          answer: `Not from inside the app yet: the subscription panel in settings is a mock — it changes what it displays, not what you are charged. Send us a message from the contact form on the Help page and a plan change is made by hand.`,
         },
       ],
     },
@@ -84,7 +100,7 @@ export function pricingFaqCategories(
         },
         {
           question: "Can I delete my account and data?",
-          answer: `Not from inside the app yet: the settings screen draws the delete control, but the action is not wired up, and there is no self-serve way to remove an account. Ask at ${brand.supportEmail} and the account and its data are removed by hand.`,
+          answer: `Not from inside the app yet: the settings screen draws the delete control, but the action is not wired up, and there is no self-serve way to remove an account. Send us a message from the contact form on the Help page and the account and its data are removed by hand.`,
         },
       ],
     },
@@ -177,13 +193,15 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
 
         <div className="mt-12 text-center">
           <p className="text-slate-600 dark:text-slate-400">
-            {itemLabel(copy, "contact-prompt")}{" "}
-            <a
-              href={`mailto:${brand.supportEmail}`}
-              className="text-action hover:text-action/80 font-medium"
-            >
-              {itemLabel(copy, "contact-email")}
-            </a>
+            {itemLabel(copy, "contact-prompt")} {/*
+             * The contact link is the form, not a mailbox (owner, 2026-11-02). This anchor used to
+             * print `brand.supportEmail` behind a mail link; `/help` is the one contact path on the
+             * public site now, and it stores the message before mailing it, so a visitor without a
+             * mail client is not left with a link that does nothing.
+             */}
+            <Link href="/help" className="text-action hover:text-action/80 font-medium">
+              {itemLabel(copy, "contact-link")}
+            </Link>
           </p>
         </div>
       </div>

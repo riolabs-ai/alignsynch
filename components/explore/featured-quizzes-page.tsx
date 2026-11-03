@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: six-card tabs and a pagination row instead of the filter rail)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

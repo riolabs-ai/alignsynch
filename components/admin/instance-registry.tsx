@@ -1,6 +1,8 @@
 "use client";
 
 /**
+ * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: the record list as a table — components/ui/table.tsx inside a Card, every filter client-side over one read)
+ *
  * `/admin/instances` — the filterable record registry (console-ia §3.5, card 3/5).
  *
  * **The template it copies, and the axes it varies.** This is `components/my-quizzes/my-quizzes.tsx`

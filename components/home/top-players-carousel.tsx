@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/card.tsx   (variation: the leaderboard carousel — ranked cards with avatars, arrows and a view-all link)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

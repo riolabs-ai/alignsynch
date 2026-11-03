@@ -6,6 +6,17 @@
  * an unauthenticated request never reaches a database read. The redirect is what a browser sees;
  * the denial happened a line earlier, which is the card's "independently of any redirect".
  *
+ * **No auth environment is not "signed out" here — it is the configuration error, deliberately.**
+ * `currentUser()` builds the auth server outside its `try` and throws
+ * `NEON_AUTH_BASE_URL is not set` when `NEON_AUTH_*` is absent: a page behind an auth wall must not
+ * turn a deployment mistake into an endless signed-out session (`lib/auth/session.ts`). So a
+ * deployment with no auth env — a fresh clone, a preview without secrets, the gate tree — answers
+ * 500 with that error on a request, by design (kanban t_c6398125 kept the 500 and documented it
+ * rather than redirecting). `/support` and `/how-it-works` answer the login redirect instead
+ * because they call `currentUserIfConfigured()`; this page does not, and
+ * `tests/auth-session-render-write.test.ts` pins the throw so the choice cannot be flipped by
+ * accident.
+ *
  * What this route is no longer: a tab shell over eight fixture panels. Four of them simulated a
  * save with `setTimeout`, the security panel offered a password change Managed Auth cannot
  * perform from the app, and the profile panel rendered "Alex Johnson". They are unimported now;
@@ -20,9 +31,11 @@ import { publicProfileOf } from "@/content/identity";
 import { settingsPageCopy } from "@/data/pages/settings";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
+import { accountHasPassword } from "@/lib/db/password-reset";
 import { readUserProfileByUserId } from "@/lib/db/user-profiles";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { savePassword } from "./password-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -38,12 +51,19 @@ export default async function SettingsPage() {
   // creates one, so the page renders with their auth name as the starting display name.
   const profile = await readUserProfileByUserId(user.userId);
 
+  // Whether there is a password to change, asked of the account rows rather than guessed from a
+  // provider id (`lib/db/password-reset.ts::accountHasPassword`). A Google-only account answers
+  // `false` and the card offers to set one — the case that makes this card worth having.
+  const hasPassword = await accountHasPassword(user.userId);
+
   return (
     <SettingsView
       copy={settingsPageCopy}
       email={user.email}
       signedInName={user.name}
       profile={profile === null ? null : publicProfileOf(profile)}
+      hasPassword={hasPassword}
+      savePassword={savePassword}
     />
   );
 }

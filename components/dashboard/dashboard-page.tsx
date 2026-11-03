@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/tabs.tsx   (variation: the creator dashboard — six tabs over the player's own quizzes, wallet, affiliate, settings and history)
+
 import { AffiliateDashboard } from "@/components/dashboard/affiliate-dashboard";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardOverview } from "@/components/dashboard/dashboard-overview";

@@ -339,6 +339,44 @@ describe("createInstanceFromTemplate binds the creator", () => {
 });
 
 /* ------------------------------------------------------------------ *\
+ * Create — the Setting the form chose (#427)
+ * ------------------------------------------------------------------ */
+
+describe("createInstanceFromTemplate writes the Setting the form chose", () => {
+  /** The one `session` INSERT, with whitespace collapsed so the column list reads as a line. */
+  function sessionInsert() {
+    const [insert] = callsMatching(/^INSERT INTO session \(record_id, template_record_id/);
+    expect(insert).toBeDefined();
+    return insert;
+  }
+
+  it("writes `full` on the session row when the form chose Full", async () => {
+    await createInstanceFromTemplate(createInput({ alignmentSetting: "full" }));
+
+    // The settings are the fourth bound parameter: record_id, template_record_id, mode, setting.
+    expect(sessionInsert().values[3]).toBe("full");
+  });
+
+  it("writes `soft` when the form was not given a Setting at all", async () => {
+    // The five-field post the endpoint has always accepted: the schema's documented default
+    // (`0008_alignment_setting.sql`), never a refusal.
+    await createInstanceFromTemplate(createInput());
+
+    expect(sessionInsert().values[3]).toBe("soft");
+  });
+
+  it("refuses a Setting the model does not name, before the transaction opens", async () => {
+    await expect(
+      createInstanceFromTemplate(createInput({ alignmentSetting: "bogus" })),
+    ).rejects.toMatchObject({ code: "invalid-input" });
+
+    // Not "wrote nothing and rolled back": the parse happens before `getPool()`, so the stub
+    // client is never asked for a statement and no transaction exists to roll back.
+    expect(stub.calls).toHaveLength(0);
+  });
+});
+
+/* ------------------------------------------------------------------ *\
  * Claim — the Counterparty's row
  * ------------------------------------------------------------------ */
 

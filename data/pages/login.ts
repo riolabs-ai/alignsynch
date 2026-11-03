@@ -113,6 +113,13 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           },
           { id: "error-unknown", label: "Something went wrong. Sign in again." },
           { id: "error-required", label: "Enter your email and password." },
+          /**
+           * The forgotten-password link (#password-reset) — the only way back in for an account
+           * whose password nobody remembers, and the link a Google-only account needs when Google
+           * is the thing that is unavailable. It sits beside the submit button rather than under
+           * the form: it is the alternative to pressing it.
+           */
+          { id: "forgot", label: "Forgot your password?" },
           { id: "signup-prompt", label: "Don't have an account?" },
           { id: "signup-action", label: "Sign up here" },
         ],
@@ -144,7 +151,17 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
        */
       {
         id: "sign-in-alignsynch",
-        body: "Sign in to see your assessments.",
+        body: "Sign in to see your relationships.",
+      },
+      /**
+       * The way back to the site (every auth screen carries one — `components/auth/
+       * auth-home-link.tsx`). It is a shared section, not a brand's: a door out of a sign-in form
+       * is the same door on both products, and `loginCopyFor` names it like `legal` and `google`
+       * because that projection rebuilds the section list.
+       */
+      {
+        id: "home",
+        items: [{ id: "back", label: "Back to home" }],
       },
       /**
        * The demo surfaces this route may draw (#218), and they are mutually exclusive: the page

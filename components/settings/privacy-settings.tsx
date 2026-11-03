@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the privacy panel — a visibility select and two switches)
+
 import { Button } from "@/components/ui/button";
 import {
   Card,

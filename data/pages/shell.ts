@@ -108,6 +108,14 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "affiliate", label: "Affiliate Page" },
           { id: "pricing", label: "Pricing Plan" },
           { id: "support", label: "Support" },
+          /**
+           * The public menu's help row (Help/Support split). One id per surface, because the two
+           * rows now lead to two different pages: `support` is the in-app account page the rail
+           * opens, and `help` is the public FAQ and knowledge base the marketing header opens. A
+           * shared id would force one word onto both, which is exactly the confusion the split
+           * removes.
+           */
+          { id: "help", label: "Help" },
           { id: "logout", label: "Logout" },
           /**
            * The sign-out row's two other states (issue #272). The row is a control now, not a
@@ -117,6 +125,28 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "logout-pending", label: "Signing out…" },
           { id: "logout-error", label: "Couldn't sign out. Try again." },
+        ],
+      },
+      /**
+       * The rail's mobile chrome — the hamburger, the panel it opens, and the panel's own close
+       * control.
+       *
+       * Below 768px the shell's navigation is an overlay drawer (`components/layout/sidebar.tsx`),
+       * so three words that did not exist while the rail was a column at every width now do. They
+       * live here rather than in the components because they are rendered copy like any other: a
+       * literal in `header.tsx` or `sidebar.tsx` is an E23 failure on a surface whose budget is 0.
+       *
+       * One section, both brands: the drawer is the same drawer on either brand, and its trigger
+       * says what it opens, not what the product is. `label` names the panel itself — the words a
+       * screen reader hears after `role="dialog"` takes over the `<aside>` — and `close` is both
+       * the panel's X and the trigger's own name while the panel is open.
+       */
+      {
+        id: "rail",
+        items: [
+          { id: "open", label: "Open navigation" },
+          { id: "close", label: "Close navigation" },
+          { id: "label", label: "Main navigation" },
         ],
       },
       /**
@@ -130,18 +160,52 @@ export function shellCopy(brand: Brand): PageCopy {
        *
        * Only destinations that exist today, and each one is honest:
        *
-       *   Home         `/`               the alignment front page
-       *   Templates    the `#templates` band of `/` — the four records' own heading
-       *   How it works the `#questions` band of `/` — how the two questions are asked
-       *   Pricing      `/pricing`        the public price page (the marketing header's fourth row)
-       *   Support      `/support`        the shell's existing support route, brand-projected
-       *   Overview     `/dashboard`      the signed-in console's front page (console 2/5)
-       *   Your templates `/assessment/templates` — the library: built-ins plus this account's
+       *   Home           `/`                      the marketing header's front-page row
+       *   Dashboard      `/dashboard`             the signed-in console's front page (console 2/5)
+       *   How it works   `/how-it-works`          the in-app onboarding page: the order a member
+       *                                           does the work in, step by step
+       *   My Relationships `/assessment/instances` — the relationship list R1 ships, read from
+       *                                             Postgres; not the browser-local `/v1/` prototype
+       *   Library        `/assessment/templates`  the template catalogue: built-ins plus this
+       *                                             account's
+       *   Templates      the `#templates` band of `/` — the four records' own heading
+       *   Pricing        `/pricing`               the public price page (the marketing header's
+       *                                             fourth row)
+       *   Support        `/support`               the shell's existing support route,
+       *                                             brand-projected
        *
-       * The console's two rows are the last, so the menu reads front page → console → operator and
-       * the alignment band above them keeps the order issue #156 shipped. Both are routes this
-       * build serves to every viewer: a signed-out request is answered with the route's own
-       * redirect to `/login?next=…`, never a 404, so a member's row is a row that works.
+       * **The rail opens on Dashboard, and there is one row for `/dashboard`.** "Home" and the
+       * separate "Overview" row used to name two different things and pointed at one product
+       * whose front page is the console — so the owner's review merged them: the rail's first row
+       * is Dashboard at `/dashboard`, and no second row aims at the same route. `home` survives
+       * below because the *marketing header* still draws a front-page row at `/` out of this
+       * section (`AlignSynchPublicNav`); it is the public chrome's word, not a sidebar row.
+       *
+       * **Library sits directly under My Relationships**, because they are the console's two
+       * lists — what you own and what you build from — and reading them apart is what made "Your
+       * templates" look like a settings page. Templates then follows, one row above Support,
+       * which is the order the review asked for: the marketing bands end the menu rather than
+       * interrupting the console.
+       *
+       * **How it works is a page now, not the marketing band.** The row used to be `/#questions`
+       * — a signed-in member was sent out to the public site to be told how the product works —
+       * and the owner's review asked for the opposite: a wizard/onboarding page inside the
+       * console (`app/(mainlayout)/how-it-works/page.tsx`, words in `data/pages/how-it-works.ts`).
+       * The label is unchanged, and it is still the second row: the order the review set is
+       * Dashboard, How it works, My Relationships, Library, Templates, Support, operator rows.
+       *
+       * **Templates and Library are two rows with two jobs, never one renamed to the other.**
+       * Templates is the catalogue a member starts from (`Use Template` → a new My Relationship);
+       * Library is that member's own templates, built from their own relationships and Aspects.
+       * Both rows resolve to the catalogue today — a second catalogue page is not this card — so
+       * neither word may stand in for the other: "Templates" is what you use, "Library" is what
+       * is yours.
+       *
+       * Every console row here is a route this build serves to every viewer: a signed-out request
+       * is answered with the route's own redirect to `/login?next=…`, never a 404, so a member's
+       * row is a row that works. None of them renders on the quiz brand — whose rail is its own
+       * menu (`components/layout/nav-menus.tsx`'s `QuizHubMenu`), so an AlignSynch destination
+       * cannot reach a quiz build.
        *
        * There is no About: no route answers "about this company", and the closest thing
        * (`/welcome`, the marketing page) is a landing page, not an About page. Pointing at
@@ -155,24 +219,39 @@ export function shellCopy(brand: Brand): PageCopy {
        * `/admin/instances` console 3/5). Each is drawn only for a viewer carrying `admin-console`,
        * because a row that leads to a 404 for a member advertises a surface the member must not
        * learn exists — a 404 is the whole refusal. A six-row menu for everybody else is the
-       * alignment menu plus the console's own two destinations.
+       * alignment menu plus the console's own three destinations.
        */
       {
         id: "nav-alignsynch",
         items: [
-          { id: "home", label: "Home" },
-          { id: "templates", label: "Templates" },
-          { id: "how-it-works", label: "How it works" },
           /**
-           * The public menu's fourth row. The sidebar does not ask for this id — it reads Home,
-           * Templates, How it works, Support and then the console's rows — and the word is
-           * shared deliberately: the marketing header and the quiz brand's nav both say
-           * "Pricing", and a second spelling for one destination is the drift a fixture avoids.
+           * The marketing header's front-page row, kept apart from the rail's first row: `home`
+           * is `/` and the public chrome draws it, while the sidebar opens on `dashboard` and
+           * never asks for this id. One destination per row — a rail row labelled Home that went
+           * to `/dashboard` is how the word stopped matching the page.
+           */
+          { id: "home", label: "Home" },
+          { id: "dashboard", label: "Dashboard" },
+          { id: "how-it-works", label: "How It Works" },
+          { id: "my-relationships", label: "My Relationships" },
+          { id: "template-library", label: "Library" },
+          { id: "templates", label: "Templates" },
+          /**
+           * The public menu's fourth row. The sidebar does not ask for this id — it reads
+           * Dashboard, How it works, My Relationships, Library, Templates, Support and then the
+           * console's operator rows — and the word is shared deliberately: the marketing header
+           * and the quiz brand's nav both say "Pricing", and a second spelling for one
+           * destination is the drift a fixture avoids.
            */
           { id: "pricing", label: "Pricing" },
           { id: "support", label: "Support" },
-          { id: "console-overview", label: "Overview" },
-          { id: "template-library", label: "Your templates" },
+          /**
+           * The marketing header's help row (Help/Support split), and the same division the quiz
+           * section above spells: `support` is the account page the rail opens, `help` is the
+           * public FAQ and knowledge base. The rail never asks for this id, so a member's menu is
+           * unchanged.
+           */
+          { id: "help", label: "Help" },
           { id: "console-gaps", label: "Gap Analysis" },
           { id: "admin-instances", label: "Relationships" },
           { id: "quiz-tools", label: "Quiz tools" },
@@ -391,8 +470,8 @@ export function shellCopy(brand: Brand): PageCopy {
            * is not a second `signed-out` — the two links are different destinations, and a slot
            * that derived one from the other would have to spell an href in a component.
            */
-          { id: "signed-out", label: "Sign in" },
-          { id: "sign-up", label: "Sign up" },
+          { id: "signed-out", label: "Sign In" },
+          { id: "sign-up", label: "Sign Up" },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
@@ -409,6 +488,14 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "settings", label: "Settings" },
           { id: "settings-hint", label: "Preferences" },
           { id: "logout", label: "Log out" },
+          /**
+           * The account menu's sign-out states. The menu's "Log out" is the same action the rail's
+           * row performs, so it needs the same two words beside `logout` — the moment between the
+           * click and the session ending, and the failure said out loud rather than swallowed
+           * (issue #272's rule, on the header's control rather than the rail's).
+           */
+          { id: "logout-pending", label: "Signing out…" },
+          { id: "logout-error", label: "Couldn't sign out. Try again." },
         ],
       },
       {
@@ -475,8 +562,17 @@ export function shellCopy(brand: Brand): PageCopy {
         heading: "Quick Links",
         items: [
           { id: "templates", label: "Templates" },
-          { id: "how-it-works", label: "How it works" },
-          { id: "support", label: "Support" },
+          { id: "how-it-works", label: "How It Works" },
+          /**
+           * The footer's help row (Help/Support split). The footer is mounted by the public pages
+           * *and* by four product pages, so this column carries the public destination — `help` —
+           * and the rail's `support` row stays the account page. A marketing footer pointing at
+           * the account page is the same mistake as a console row pointing at the marketing site.
+           *
+           * One row, not two: "Support" and "Help" beside each other in a four-row column is the
+           * same question asked twice, and the split exists so that one URL is not two pages.
+           */
+          { id: "help", label: "Help" },
         ],
       },
       {
@@ -487,44 +583,99 @@ export function shellCopy(brand: Brand): PageCopy {
         id: "footer-contact",
         heading: "Contact",
         /**
-         * Two rows, not four (issue #272). The block used to print a street line and a telephone
-         * number. Neither is a fact about this company: the street was invented, and the number
-         * came from the range reserved for fiction, so it cannot reach anyone. A mailbox someone
-         * can write to and a button that opens the support surface are the two rows that
-         * survive; a real address or number comes back only from the brand record, when someone
-         * supplies one.
+         * **A form, not a mailbox** (owner, 2026-11-02). This block printed the brand record's
+         * address as a dead row — a string on every page of both builds, and on the AlignSynch
+         * side one a visitor could not write to without a mail client. The contact path is one
+         * link to the contact form, and the fixture names no address at all: an address no
+         * fixture carries cannot be printed by accident.
+         *
+         * The street line and the telephone number left in #272 for the same reason: neither was
+         * a fact. `cta.href` is checked against the route manifest by E23, so the row cannot
+         * outlive the page it points at.
          */
-        items: [
-          { id: "email", label: brand.supportEmail },
-          { id: "cta", label: "Contact Support" },
-        ],
+        body: "Send us a message from the contact form and we will reply to the address you leave.",
+        cta: { label: "Contact us", href: "/help" },
       },
       /**
-       * The alignment brand's contact block — the same ids, because the footer resolves one set
-       * of ids whichever section the brand picked.
+       * The alignment brand's contact block — the same shape, because the footer resolves one
+       * section either way.
        *
-       * It differs in nothing but the words the brands do not share; the two fabricated rows
-       * (street line, 555 number) are gone from both sections because the ids have to match and
-       * neither value is a fact about either product. The mailbox is the record's, read twice on
-       * purpose: the two brands route to different inboxes and the address is a field, not a
-       * literal.
+       * It differs in nothing but the words the brands do not share. Neither section names a
+       * mailbox: `supportEmail` is the contact form's *recipient*, read on the server by
+       * `app/api/contact/route.ts`, and a rendering rule that kept it out of one brand's footer
+       * and not the other's would be the same defect with a brand check in front of it.
        */
       {
         id: "footer-contact-alignsynch",
         heading: "Contact",
-        items: [
-          { id: "email", label: brand.supportEmail },
-          { id: "cta", label: "Contact Support" },
-        ],
+        body: "Send us a message from the contact form and we will reply to the address you leave.",
+        cta: { label: "Contact us", href: "/help" },
       },
       /**
-       * No mailing-list band (issue #272). The footer carried a box that took an address and a
-       * button that did nothing with it: no handler, and no marketing mail exists in this app
-       * (an invitation and an unlock notice are the only messages it sends). A box that promises
-       * a subscription on every page of both builds is a claim about a feature nobody can reach,
-       * so the band, its two sections and the projection that chose between them are gone. It
-       * comes back with the sender behind it.
+       * The footer's news band — the second life of the box #272 removed.
+       *
+       * #272 deleted it because it took an address and the button had no handler: a promise of
+       * delivery with no sender behind it. The band is back because the sender is real now —
+       * `app/api/news/subscribe/route.ts` writes the row and `lib/news/message.ts` sends through
+       * the one transport in `lib/flow/email.ts` — and it lives in the *footer* rather than on a
+       * band of `/`, so it appears on every marketing page and on the three product pages that
+       * mount the same footer.
+       *
+       * Six of these items are the six states the route can answer with, and the mapping is
+       * one-to-one (`components/layout/news-signup.tsx`): a person is never told their address
+       * was kept when it was not, and never told it was lost when it was kept. `duplicate` is a
+       * sentence about nothing having changed, because a second submit sending a second
+       * confirmation would be a spam loop with a friendly face.
+       *
+       * **The body claims no cadence.** "No schedule" is the phrase, because nobody has
+       * committed to one and a fixture is not the place to invent one. The two `confirm-*` items
+       * are the email itself: what the person asked for, that this note confirms it, and how to
+       * stop — the only two facts a subscription note owes a reader.
        */
+      {
+        id: "footer-news",
+        heading: "Product news",
+        body: "A note when we ship something that changes how the product works. No schedule, and every message says how to stop.",
+        items: [
+          { id: "field-label", label: "Email address" },
+          /**
+           * No address-shaped placeholder (owner, 2026-11-02): the sweep in
+           * `tests/public-contact.test.tsx` reads every string in this fixture for an
+           * address, and `you@example.com` is one — a placeholder a visitor can copy is the
+           * same harvestable string as a real one, and it is not an address this product owns.
+           */
+          { id: "placeholder", label: "Where should we send it?" },
+          { id: "submit", label: "Sign Up" },
+          { id: "pending", label: "Signing up…" },
+          { id: "back", label: "Back to the page" },
+          {
+            id: "subscribed",
+            label: "You're on the list. A confirmation is on its way to that address.",
+          },
+          {
+            id: "duplicate",
+            label:
+              "That address was already on the list — nothing changed, and nothing was sent again.",
+          },
+          {
+            id: "send-failed",
+            label:
+              "You're on the list. We couldn't send the confirmation, so there may be nothing in your inbox.",
+          },
+          { id: "invalid", label: "That doesn't look like an email address. Nothing was saved." },
+          {
+            id: "storage-failed",
+            label: "We couldn't save that just now. Nothing was stored — try again in a moment.",
+          },
+          { id: "confirm-subject", label: "You're on the {brand} product news list" },
+          {
+            id: "confirm-body",
+            label:
+              "You asked for product news from {brand}, so the address {email} is on the list.\n\nWe send a note when something in the product changes, and nothing on a schedule. To stop receiving them, reply to this message or write to {support} and the address is removed.\n\nThis is the only message you will get until we ship something.",
+          },
+        ],
+      },
+
       {
         id: "footer-legal",
         items: [

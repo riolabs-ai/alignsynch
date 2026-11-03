@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the featured band — a cover image, a badge, the dates, an entry count and a join action)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

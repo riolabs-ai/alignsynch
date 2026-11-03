@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/button.tsx   (variation: the title band hand-written, with two actions where a page header puts its description)
+
 import { Button } from "@/components/ui/button";
 import { Download, PlusCircle } from "lucide-react";
 

@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/card.tsx   (variation: the achievement grid — seven tiles with earned and locked states)
+
 import type { Achievement } from "@/lib/data/users";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

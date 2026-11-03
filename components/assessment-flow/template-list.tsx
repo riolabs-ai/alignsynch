@@ -1,22 +1,69 @@
 /**
- * `/assessment`'s list: the published templates, each with its own create form (#146).
+ * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: cards over Postgres template records grouped by the type each names, surface-owned action row)
  *
- * One form per template rather than a template picker plus one form: the template is the
- * thing being copied, so it belongs in the form's own payload (`templateRecordId`) and a
- * submit cannot be posted against the wrong one.
+ * `/assessment`'s list: the published templates, each card carrying its own create form (#146,
+ * #409).
  *
- * Plain HTML forms — no `"use client"`, no handler, no state. `action` is the POST-only
- * route handler (`lib/flow/paths.ts`), the fields are `name`d for `FormData`, and the
- * browser does the rest. That is also what makes the flow testable with `curl` and with two
- * plain browser sessions, which is the acceptance's dogfood.
+ * The **card** is not this file's: it is `TemplateCard` in `template-card.tsx`, shared with
+ * `/assessment/templates`. This file owns what the picker adds — the create form per template, the
+ * notice a save leaves, and the copy object the card draws with, resolved from
+ * `data/pages/assessment.ts` (E23, budget 0) — so the two catalogue surfaces render one card and
+ * two action rows rather than two cards that drift.
  *
- * The words come from `data/pages/assessment.ts` (E23); this file holds none.
+ * One form per template rather than a template picker plus one form: the template is the thing
+ * being copied, so it belongs in the form's own payload (`templateRecordId`) and a submit cannot be
+ * posted against the wrong one. Plain HTML forms, `name`d fields, no `"use client"` — which is also
+ * what makes the flow drivable with `curl` and two plain browser sessions.
  */
 import type { PageCopy } from "@/content/pages";
 import { ASSESSMENT_MODES } from "@/content/assessment";
-import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { formatCurrency } from "@/content/core";
 import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
 import type { TemplateSummary } from "@/lib/flow/store";
+import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import {
+  TemplateCatalogueGrid,
+  templateGroupsOf,
+  type CatalogueCardCopy,
+  type TemplateGroupId,
+} from "./template-card";
+
+const CARD = "rounded-lg border border-border bg-card p-5";
+const MUTED = "text-sm text-muted-foreground";
+const PRIMARY =
+  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90";
+
+/** The card's words, out of this surface's fixture — see `CatalogueCardCopy`. */
+function catalogueCardCopyOf(copy: PageCopy): CatalogueCardCopy {
+  const card = sectionOf(copy, "card");
+  return {
+    viewDetails: itemLabel(card, "view-details"),
+    unnamedType: itemLabel(card, "unnamed-type"),
+    rolesOf: (type) =>
+      fillLabel(itemLabel(card, "roles"), {
+        initiator: type.roles.initiator,
+        counterparty: type.roles.counterparty,
+      }),
+    aspectsOf: (count) => fillLabel(itemLabel(card, "aspects"), { count }),
+    priceLabel: itemLabel(card, "price-label"),
+    priceOf: (plan, cents) =>
+      fillLabel(itemLabel(card, "price"), { plan, price: formatCurrency(cents) }),
+    useTemplate: itemLabel(card, "use"),
+    seeExample: itemLabel(card, "see-example"),
+  };
+}
+
+/**
+ * The group headings, out of this surface's fixture — with one exception.
+ *
+ * A realm's heading is the realm itself: `realm` is a field of the taxonomy (`REALMS`), and a
+ * second authored spelling of "Office" in a copy fixture is the drift this tree keeps deleting.
+ * Only `other` — templates whose own words name no type — has words of its own.
+ */
+function templateGroupLabelOf(copy: PageCopy): (id: TemplateGroupId) => string {
+  const groups = sectionOf(copy, "groups");
+  return (id) => (id === "other" ? itemLabel(groups, "other") : id);
+}
 
 export function TemplateList({
   copy,
@@ -39,28 +86,24 @@ export function TemplateList({
   const created = sectionOf(copy, "created");
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10">
+    <div className="container mx-auto max-w-5xl px-4 py-10">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{copy.heading}</h1>
-        {copy.subtitle === undefined ? null : (
-          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">{copy.subtitle}</p>
-        )}
+        <h1 className="text-3xl font-bold text-foreground">{copy.heading}</h1>
+        {copy.subtitle === undefined ? null : <p className={`mt-3 ${MUTED}`}>{copy.subtitle}</p>}
       </header>
 
       {createdTitle === null ? null : (
         <div
           data-template-created="true"
           role="status"
-          className="mb-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+          className={`mb-6 p-4 text-sm text-foreground ${CARD}`}
         >
           <p className="font-semibold">{created.heading}</p>
           <p className="mt-1">{fillLabel(sectionBody(created), { title: createdTitle })}</p>
         </div>
       )}
 
-      <p className="mb-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-        {sectionBody(create)}
-      </p>
+      <p className={`mb-3 p-4 text-sm ${MUTED} ${CARD}`}>{sectionBody(create)}</p>
 
       {create.cta === undefined ? null : (
         <p className="mb-6 text-sm">
@@ -70,33 +113,26 @@ export function TemplateList({
         </p>
       )}
 
-      <section className="space-y-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{list.heading}</h2>
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground">{list.heading}</h2>
+        <p className={MUTED}>{sectionBody(list)}</p>
 
         {templates.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            {sectionBody(sectionOf(copy, "empty"))}
-          </p>
+          <p className={MUTED}>{sectionBody(sectionOf(copy, "empty"))}</p>
         ) : (
-          templates.map((template) => (
-            <article
-              key={template.id}
-              data-template={template.id}
-              className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900"
-            >
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                {template.title}
-              </h3>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{template.summary}</p>
-
-              <form action={CREATE_INSTANCE_PATH} method="post" className="mt-4 grid gap-3">
+          <TemplateCatalogueGrid
+            copy={catalogueCardCopyOf(copy)}
+            groups={templateGroupsOf(templates)}
+            groupLabelOf={templateGroupLabelOf(copy)}
+            actionsOf={(template) => (
+              <form action={CREATE_INSTANCE_PATH} method="post" className="grid gap-3">
                 <input type="hidden" name="templateRecordId" value={template.id} />
 
-                {/* The mode is chosen **here**, when the instance is created (#213): it belongs
-                    to the play, and the answer sheet never offers a way to change it. Basic is
-                    ticked because it is what the flow asked before modes existed. */}
+                {/* The mode is chosen **here**, when the instance is created (#213): it belongs to
+                    the play, and the answer sheet never offers a way to change it. Basic is ticked
+                    because it is what the flow asked before modes existed. */}
                 <fieldset className="grid gap-1 text-sm">
-                  <legend className="font-medium text-gray-700 dark:text-gray-200">
+                  <legend className="font-medium text-foreground">
                     {itemLabel(create, "mode-label")}
                   </legend>
                   {ASSESSMENT_MODES.map((mode) => (
@@ -112,13 +148,11 @@ export function TemplateList({
                       </span>
                     </label>
                   ))}
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {itemLabel(create, "mode-help")}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{itemLabel(create, "mode-help")}</p>
                 </fieldset>
 
                 <label className="grid gap-1 text-sm" htmlFor={`initiator-name-${template.id}`}>
-                  <span className="font-medium text-gray-700 dark:text-gray-200">
+                  <span className="font-medium text-foreground">
                     {itemLabel(create, "initiator-name")}
                   </span>
                   <input
@@ -126,12 +160,12 @@ export function TemplateList({
                     name="initiatorName"
                     required
                     placeholder={itemLabel(create, "initiator-placeholder")}
-                    className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950"
+                    className="rounded-md border border-border bg-background px-3 py-2"
                   />
                 </label>
 
                 <label className="grid gap-1 text-sm" htmlFor={`counterparty-name-${template.id}`}>
-                  <span className="font-medium text-gray-700 dark:text-gray-200">
+                  <span className="font-medium text-foreground">
                     {itemLabel(create, "counterparty-name")}
                   </span>
                   <input
@@ -139,33 +173,28 @@ export function TemplateList({
                     name="counterpartyName"
                     required
                     placeholder={itemLabel(create, "counterparty-placeholder")}
-                    className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950"
+                    className="rounded-md border border-border bg-background px-3 py-2"
                   />
                 </label>
 
                 <label className="grid gap-1 text-sm" htmlFor={`email-${template.id}`}>
-                  <span className="font-medium text-gray-700 dark:text-gray-200">
-                    {itemLabel(create, "email")}
-                  </span>
+                  <span className="font-medium text-foreground">{itemLabel(create, "email")}</span>
                   <input
                     id={`email-${template.id}`}
                     name="email"
                     type="email"
                     required
                     placeholder={itemLabel(create, "email-placeholder")}
-                    className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950"
+                    className="rounded-md border border-border bg-background px-3 py-2"
                   />
                 </label>
 
-                <button
-                  type="submit"
-                  className="justify-self-start rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action/90"
-                >
+                <button type="submit" className={`justify-self-start ${PRIMARY}`}>
                   {itemLabel(create, "submit")}
                 </button>
               </form>
-            </article>
-          ))
+            )}
+          />
         )}
       </section>
     </div>

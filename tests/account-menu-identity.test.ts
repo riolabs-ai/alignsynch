@@ -64,8 +64,14 @@ vi.mock("@/lib/db/user-profiles", () => ({
   writeUserProfile: vi.fn(async () => ({ ok: true })),
 }));
 
+/**
+ * The header's account menu now signs out through `endSession`, which reaches `@neon/auth`
+ * (unresolvable outside a Next server). Stubbed here for the same reason the session module above
+ * is: the file renders the header, not the auth client.
+ */
+vi.mock("@/lib/auth/sign-out", () => ({ endSession: vi.fn(async () => true) }));
+
 import { Header } from "@/components/layout/header";
-import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { ConnectedAccounts } from "@/components/settings/connected-accounts";
 import type { UserProfile } from "@/content/identity";
 import { notifications } from "@/data/notifications";
@@ -96,7 +102,9 @@ const DEMO = [
 
 /** The session as `currentUser()` hands it over. */
 function session(email: string, name: string): SessionUser {
-  return { userId: `user_${email}`, email, name };
+  // `sessionId` is only ever read by the set-password path; a fixture that never signs in as this
+  // person has no session to keep alive.
+  return { userId: `user_${email}`, email, name, sessionId: null };
 }
 
 /** A saved `user_profile` row — `handle` is what `db:seed` writes for each demo account. */
@@ -120,8 +128,8 @@ function hrefsOf(html: string): string[] {
  * Render the shell's header as the layout renders it: the account resolved server-side, one prop.
  *
  * `searchIndex` is the brand's own catalog — a header without one is a different component — and
- * `SidebarProvider` is the real provider, so the render is the tree the app mounts rather than a
- * component beside it.
+ * the drawer's one boolean arrives as a prop, closed, from the shell
+ * (`components/layout/main-layout.tsx`); there is no provider around the header.
  */
 function renderHeader(options: {
   account: ReturnType<typeof shellAccountOf>;
@@ -131,16 +139,15 @@ function renderHeader(options: {
   const brandId = options.brandId;
   const viewer = options.viewer ?? PLATFORM_VIEWER;
   return renderToStaticMarkup(
-    createElement(SidebarProvider, null, [
-      createElement(Header, {
-        key: "header",
-        copy: shellPageCopy,
-        brandId,
-        viewer,
-        account: options.account,
-        searchIndex: searchIndexFor(brandId, viewer),
-      }),
-    ]),
+    createElement(Header, {
+      copy: shellPageCopy,
+      brandId,
+      viewer,
+      account: options.account,
+      searchIndex: searchIndexFor(brandId, viewer),
+      navigationOpen: false,
+      onOpenNavigation: () => undefined,
+    }),
   );
 }
 

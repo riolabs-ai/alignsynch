@@ -1,3 +1,5 @@
+// template-ancestor: components/dashboard/recent-quizzes.tsx   (variation: the played history — a score badge, a progress bar, a date and a link per row)
+
 import Link from "next/link";
 import type { QuizHistoryItem } from "@/lib/data/users";
 import { Card, CardContent } from "@/components/ui/card";

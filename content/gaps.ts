@@ -355,3 +355,91 @@ export function instanceAlignment(
   }
   return { setting, limit, aligned: unmet.length === 0, unmet };
 }
+
+/* ------------------------------------------------------------------ *
+ * The flag colours — the spec's four severities over the Gap
+ * ------------------------------------------------------------------ */
+
+/**
+ * The four flag severities, in the spec's order (p.65, mockup 09 — "gap severity → flag
+ * colour"). A Gap of 0 is In Synch and is **not** a flag; a Gap of 1..4 is one flag of
+ * these severities, colour as a secondary channel only (`docs/specs/ux-report.md` §4 — the
+ * number and the words carry the fact, never colour alone).
+ */
+export const zFlagSeverity = z.enum(["yellow", "orange", "pink", "red"]);
+
+export type FlagSeverity = z.infer<typeof zFlagSeverity>;
+
+export const FLAG_SEVERITIES = zFlagSeverity.options;
+
+/** The spec's own words for the four severities, authored once. */
+export const FLAG_SEVERITY_LABELS: Record<FlagSeverity, string> = {
+  yellow: "Yellow",
+  orange: "Orange",
+  pink: "Pink",
+  red: "Red",
+};
+
+/**
+ * The severity one Gap is — Yellow/Orange/Pink/Red for 1/2/3/4, and `null` for 0 (In Synch
+ * is the green check, not a flag). The mapping is the spec's, stated once so a report and a
+ * count can never disagree about which colour a Gap of 3 is.
+ */
+export function flagSeverityOf(gap: Gap): FlagSeverity | null {
+  switch (gap) {
+    case 1:
+      return "yellow";
+    case 2:
+      return "orange";
+    case 3:
+      return "pink";
+    case 4:
+      return "red";
+    default:
+      return null;
+  }
+}
+
+/**
+ * How many Gaps sit at each severity across a scored sheet — the counts a report's flag
+ * summary reads. The four keys are the four severities; a Gap of 0 contributes to none of
+ * them (it is In Synch, the green check, not a flag).
+ *
+ * `null` means **nothing was scored**: no present Gap kind anywhere in `aspects`. That is an
+ * absent answer, never a zero — an unscored relationship (a party has not answered, so every
+ * Aspect's Gaps are `{}`) reports `null`, and a scored-but-aligned relationship reports four
+ * zeroes, because "four zeroes" is the honest answer to a sheet that was actually measured.
+ */
+export interface FlagCounts {
+  readonly yellow: number;
+  readonly orange: number;
+  readonly pink: number;
+  readonly red: number;
+}
+
+/** The zero counts, so a caller can build on them without restating the four keys. */
+export function emptyFlagCounts(): FlagCounts {
+  return { yellow: 0, orange: 0, pink: 0, red: 0 };
+}
+
+/**
+ * The per-severity counts over a scored sheet, derived from the Gaps on every call — never
+ * stored, never authored. The count is a function of the opinion rows, exactly as the Gap and
+ * the verdict are, so a stored flag total could only ever drift from the numbers it was
+ * computed from (the same rule that forbids a `gap` column). Returns `null` when nothing is
+ * measurable, never a zero when nothing was asked.
+ */
+export function flagCountsOf(aspects: readonly AspectGaps[]): FlagCounts | null {
+  const counts = { yellow: 0, orange: 0, pink: 0, red: 0 };
+  let present = false;
+  for (const aspect of aspects) {
+    for (const kind of gapKindsIn(aspect.gaps)) {
+      const gap = aspect.gaps[kind];
+      if (gap === undefined) continue;
+      present = true;
+      const severity = flagSeverityOf(gap);
+      if (severity !== null) counts[severity] += 1;
+    }
+  }
+  return present ? counts : null;
+}

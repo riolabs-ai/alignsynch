@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/button.tsx   (variation: a ghost button that posts to the sign-out route and re-renders)
+
 import { Button } from "@/components/ui/button";
 import { endSession } from "@/lib/auth/sign-out";
 import { LogOut } from "lucide-react";
@@ -45,7 +47,7 @@ export function SignOutButton({
       setFailed(true);
       return;
     }
-    router.replace("/login");
+    router.replace("/");
     router.refresh();
   };
 

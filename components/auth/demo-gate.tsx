@@ -1,6 +1,8 @@
 "use client";
 
 /**
+ * template-ancestor: components/ui/card.tsx   (variation: one card, one PIN field, one submit — no role, email or password control by design)
+ *
  * The PIN gate — one field, one submit, and nothing else that could sign anyone in (#218).
  *
  * What this component does **not** have is the point of it: no role buttons, no email field, no

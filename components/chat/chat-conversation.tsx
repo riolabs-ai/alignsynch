@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/button.tsx   (variation: the thread header hand-written — avatar, name, presence and icon buttons, no page-header primitive)
+
 // Import cn function
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Button } from "@/components/ui/button";

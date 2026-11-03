@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the appearance panel — a theme radio group, a font size and two display switches)
+
 import { Button } from "@/components/ui/button";
 import {
   Card,

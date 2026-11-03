@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quiz-list.tsx   (variation: the card grid with curation tabs and a progress ring per card, six per shelf)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";

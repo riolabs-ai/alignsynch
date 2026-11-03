@@ -57,6 +57,20 @@ export const NEW_TEMPLATE_PATH = "/assessment/templates/new";
  */
 export const TEMPLATE_LIBRARY_PATH = "/assessment/templates";
 
+/**
+ * `/assessment/demo/[type]` — the worked example's own segment (#478, the `release` demo row).
+ *
+ * Not `/assessment/templates/demo/<type>`: `[templateId]` already owns
+ * `/assessment/templates/<id>`, and Next refuses two dynamic segment names at one level. A
+ * sibling segment keeps the address stable and the manifest's dynamic rows unambiguous.
+ */
+export const ASSESSMENT_DEMO_PATH = "/assessment/demo";
+
+/** One type's finished example report — the only page a stranger may read a report on. */
+export function assessmentDemoPath(typeId: string): string {
+  return `${ASSESSMENT_DEMO_PATH}/${typeId}`;
+}
+
 /** One template, read-only: its Aspects, its instances and whether it is archived. */
 export function templateDetailPath(recordId: string): string {
   return `${TEMPLATE_LIBRARY_PATH}/${recordId}`;
@@ -88,9 +102,64 @@ export function instancePath(instanceRecordId: string): string {
   return `/assessment/instances/${instanceRecordId}`;
 }
 
+/**
+ * `/assessment/instances/[instanceId]/answer` — the answer sheet **page** (#409, R1-E).
+ *
+ * Singular, and deliberately not `answersPath()` above: `/answers` is the POST-only endpoint the
+ * live form submits to, and Next refuses a `page.tsx` in the same segment as a `route.ts`. The
+ * two names sit beside each other so the difference is read, not remembered.
+ */
+export function answerSheetPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/answer`;
+}
+
+/** `/assessment/instances/[instanceId]/accept` — the acceptance step (#409, R1-E). A page. */
+export function acceptPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/accept`;
+}
+
+/**
+ * The accept endpoint — a form post, so a refused acceptance is a status code and not a banner.
+ *
+ * **Plural, and for the same mechanical reason `/answers` is.** Next refuses a `page.tsx` and a
+ * `route.ts` in one segment (it loads both as parallel pages for one URL and throws), so the
+ * POST cannot live at `acceptPath()`. The pair reads as the flow's other pair — `/answer` renders
+ * the sheet, `/answers` writes it — and the two function names sit side by side so the difference
+ * is read rather than remembered (#R2).
+ */
+export function acceptsPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/accepts`;
+}
+
+/** `/assessment/instances/[instanceId]/report` — the report the second acceptance opens. */
+export function reportPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/report`;
+}
+
+/**
+ * `/assessment/templates/[templateId]/create` — the create step (#409, R1-E).
+ *
+ * A child of the template's own address rather than a sibling, so the template being copied is
+ * the route's own fact and the form's payload cannot name a different one.
+ */
+export function createRelationshipPath(templateRecordId: string): string {
+  return `${templateDetailPath(templateRecordId)}/create`;
+}
+
 /** The submit endpoint: a form post, so a frozen answer is a status code and not a banner. */
 export function answersPath(instanceRecordId: string): string {
   return `${instancePath(instanceRecordId)}/answers`;
+}
+
+/**
+ * The Steps endpoint — a form post, so a refused tick is a status code and not a banner (#478).
+ *
+ * Plural, like `/answers` and `/accepts`, and for the same mechanical reason: this is a route handler,
+ * not a page, and the panel's two controls (the tick and the reword) both post here with the Step's id
+ * and nothing that identifies a person. A GET of it is a 405, exactly as a GET of `/answers` is.
+ */
+export function stepsPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/steps`;
 }
 
 /**

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/quiz/quiz-details.tsx   (variation: the author's own quiz detail — a stats header, question cards, edit and publish actions)
+
 import {
   Accordion,
   AccordionContent,

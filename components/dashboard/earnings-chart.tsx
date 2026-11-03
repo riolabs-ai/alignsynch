@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/chart.tsx   (variation: one bar chart in a card, with period tabs over the same series)
+
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";

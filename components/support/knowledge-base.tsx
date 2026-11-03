@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quiz-list.tsx   (variation: the article grid — a search field, one card per article and a view-all link)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +13,7 @@ import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, FileText, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import type { SupportCategory } from "./support-page";
+import type { SupportCategory } from "./category";
 
 interface KnowledgeBaseProps {
   selectedCategory: SupportCategory;

@@ -73,6 +73,7 @@ import { createdQuizzes } from "../data/created-quizzes";
 import { currentQuiz } from "../data/currentQuiz";
 import { mockQuizzes } from "../data/mock-quizzes";
 import { searchIndex } from "../data/searchdata";
+import { surfaceRegistry, surfaceRegistryProblems, zSurface } from "../data/surface-registry";
 import { users } from "../lib/data/users";
 import { isFileMedia, zMediaRegistry, type MediaEntry } from "../content/media";
 import { zLeaderboardRow, zPlayer, zWinEvent } from "../content/people";
@@ -109,6 +110,22 @@ import {
 } from "./mode-invariants";
 import { durationLabels, findMetricLiterals, relativeLabels } from "./metric-refs";
 import { clientGraphFindings, hasClientDirective } from "./client-graph";
+import {
+  TEMPLATE_ANCESTOR_EXEMPTIONS,
+  TEMPLATE_ANCESTOR_MIN_WALKED,
+  ancestorCensus,
+  exportsJsx,
+  templateAncestorFindings,
+} from "./template-ancestor";
+import {
+  ALIGNMENT_COPY_EXTRAS,
+  ALIGNMENT_COPY_OVERRIDES,
+  BRAND_WORD_ALLOWANCES,
+  alignmentFixtures,
+  brandWordFindings,
+  gatedPages,
+  type CopySurface,
+} from "./brand-word";
 import {
   danglingEntries,
   generatedKeys,
@@ -928,6 +945,143 @@ if (clientEntries.length === 0) {
   );
 }
 
+/**
+ * E35 — every component names the template it varies (#336)
+ *
+ * The repo is a base core webapp and AlignSynch is a brand variation of it, so a component that
+ * was authored from scratch is a component the next brand has to author again. That was not a
+ * hypothesis: `docs/UI-DIVERGENCE.md` read twenty-seven files, named six hand-built surfaces with
+ * an ancestor sitting beside each one, and measured **zero** variations actually derived from an
+ * ancestor. Docs did not stop it, so the claim is checked: the first comment block of every
+ * `components/` file that renders JSX must say either
+ *
+ *     template-ancestor: components/<path>.tsx   (variation: what changes)
+ *     template-ancestor: none — approved #<issue>
+ *
+ * and the second form is only legal for a file in `TEMPLATE_ANCESTOR_EXEMPTIONS`
+ * (`scripts/template-ancestor.ts`), the array that must only shrink.
+ *
+ * `scripts/template-ancestor.ts` owns the extraction — comment stripping, the header parse, the
+ * JSX test, the ancestry graph — and is pure, so `scripts/__tests__/template-ancestor.test.ts`
+ * drives every shape and its last section asserts the real tree is clean. The census is printed
+ * below on both paths, and the floor is the point: a rule that walks zero files passes every tree.
+ *
+ * `components/ui/**` is excluded: the vendored shadcn primitives are the bottom of every chain, so
+ * requiring them to name an ancestor would only make them name each other. They are legal targets.
+ * ------------------------------------------------------------------ */
+
+const repoPath = (path: string) => path.split("\\").join("/");
+
+const componentSources = uiSources
+  .map((file) => ({ path: repoPath(file.path), source: file.source }))
+  .filter(
+    (file) =>
+      file.path.startsWith("components/") &&
+      file.path.endsWith(".tsx") &&
+      !file.path.startsWith("components/ui/"),
+  );
+
+const ancestorFiles = componentSources.filter((file) => exportsJsx(file.source));
+
+for (const finding of templateAncestorFindings({
+  files: ancestorFiles,
+  exemptions: TEMPLATE_ANCESTOR_EXEMPTIONS,
+  exists: (path) => existsSync(join(process.cwd(), path)),
+})) {
+  err(finding.rule, finding.message);
+}
+
+if (ancestorFiles.length < TEMPLATE_ANCESTOR_MIN_WALKED) {
+  err(
+    "E35",
+    `the template-ancestor walk found ${ancestorFiles.length} JSX components under components/ and this rule is measured over at least ${TEMPLATE_ANCESTOR_MIN_WALKED} — a walk that quietly found nothing checks nothing`,
+  );
+}
+
+const ancestorCoverage = ancestorCensus(ancestorFiles);
+
+/* ------------------------------------------------------------------ *
+ * E36 — the surface registry is honest about what is wired (#409)
+ *
+ * `data/surface-registry.ts` is the product's statement about itself: eight relationship
+ * surfaces are live, the rest are declared pending with the capability each one is missing.
+ * The schema refuses a shape nobody can act on (`strict()`, three statuses) and the const is
+ * typed, so a status outside the three literals is already a compile error — this is the half
+ * a *valid* row can still get wrong: one route declared twice, a pending surface with no
+ * `needs` (a 404 with extra steps), a live surface carrying an excuse, or a live surface whose
+ * route the manifest does not carry. `E7` holds the manifest and `app/` to each other, so a
+ * live entry that passes here is a route that exists as a page.
+ * ------------------------------------------------------------------ */
+
+const surfaceRows = validateCollection("E36", "surface", zSurface, [...surfaceRegistry]);
+for (const problem of surfaceRegistryProblems(surfaceRows, (route) =>
+  ROUTE_PATTERNS.includes(route),
+)) {
+  err("E36", problem);
+}
+
+const surfaceCensus = `${surfaceRows.filter((row) => row.status === "live").length} live, ${surfaceRows.filter((row) => row.status !== "live").length} declared not wired`;
+
+/* ------------------------------------------------------------------ *
+ * E37 — the alignment brand never names the template
+ *
+ * `BRAND=quizhub` is the start template and a first-class product: its copy says its own name
+ * on every page it renders. `BRAND=alignsynch` is the relationship product built on it, and a
+ * reader there must never be told they are looking at somebody else's product. `pnpm parity`
+ * already asserts that for the seven routes it hashes (`expect(html).not.toContain(otherName)`),
+ * which is a claim about *rendered* output; this is the same claim at the copy layer, where the
+ * words live, so it covers every surface instead of seven and fails on the fixture rather than
+ * on a hash.
+ *
+ * Which fixtures count is **derived**, not listed. An E23 budget row names the page module and
+ * the fixture it renders; a page whose source calls `requireQuizProduct()` answers 404 on this
+ * brand (`lib/brand-boundary.ts`), so nothing it renders reaches an alignment reader. The two
+ * facts together are the subset of the copy table this brand actually serves — adding a quiz
+ * surface means gating its page, and the gate is what exempts the fixture here. `/` is the one
+ * override (the alignment composition in `home-alignsynch.ts` replaces the template's front
+ * page), and `data/brands/alignsynch.ts` is read because the brand's own name and description
+ * are printed in the tab, the metadata and the OG image.
+ *
+ * `scripts/brand-word.ts` owns the extraction — the AST walk that skips comments (`id`, `href`
+ * and object keys along with them) and reads a template literal by its fragments — and is pure,
+ * so `scripts/__tests__/brand-word.test.ts` drives every shape and its last section asserts the
+ * real tree is clean. The walk reads only the fixtures it resolved: ~40 files, not all of
+ * `data/`, because this rule has no business parsing the quiz catalogue.
+ * ------------------------------------------------------------------ */
+
+const brandWordSurfaces: CopySurface[] = Object.entries(pageCopyBudget).map(([route, entry]) => ({
+  route,
+  page: entry.page,
+  fixture: entry.fixture,
+}));
+
+const brandWordGated = gatedPages(uiSources.filter((file) => /(^|\/)page\.tsx?$/.test(file.path)));
+
+const brandWordFixtures = alignmentFixtures({
+  surfaces: brandWordSurfaces,
+  gated: brandWordGated,
+  overrides: ALIGNMENT_COPY_OVERRIDES,
+  extras: ALIGNMENT_COPY_EXTRAS,
+});
+
+const brandWordFiles = brandWordFixtures
+  .map((fixture) => `${fixture}.ts`)
+  .filter((path) => existsSync(join(process.cwd(), path)))
+  .map((path) => ({ path, source: readFileSync(join(process.cwd(), path), "utf8") }));
+
+const brandWordResult = brandWordFindings({
+  surfaces: brandWordSurfaces,
+  gated: brandWordGated,
+  overrides: ALIGNMENT_COPY_OVERRIDES,
+  extras: ALIGNMENT_COPY_EXTRAS,
+  files: brandWordFiles,
+  allowances: BRAND_WORD_ALLOWANCES,
+});
+
+for (const problem of brandWordResult.problems) err(problem.rule, problem.message);
+
+const brandWordCensus = `${brandWordResult.census.fixtures.length} alignment fixtures, ${brandWordResult.census.strings} reader-visible strings, ${brandWordResult.census.gated} gated pages, ${brandWordResult.census.allowances} allowance${brandWordResult.census.allowances === 1 ? "" : "s"}`;
+
 const imageTags = nextImageTags(imageSources);
 const imageMeasured = imageCensus(imageTags);
 
@@ -1641,6 +1795,11 @@ console.log(
 console.log(
   `      ${clientEntries.length} "use client" entries walked, ${clientCrossings.length} reaching a server-only module (E34)`,
 );
+console.log(
+  `      ${ancestorCoverage.walked} components walked, ${ancestorCoverage.withAncestor} with an ancestor, ${ancestorCoverage.approved} approved exceptions (E35; components/ui/** is vendored and excluded from the walk)`,
+);
+console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
+console.log(`      ${brandWordCensus} (E37)`);
 console.log(
   `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
 );

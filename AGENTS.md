@@ -40,6 +40,7 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 | `pnpm db:migrate`                | exit 0, ~1 s         | `node scripts/db-migrate.mjs`; applies `db/migrations/*.sql` in order via `schema_migrations`; wants the unpooled URL  |
 | `pnpm db:seed`                   | exit 0, ~1 s         | mirrors `data/assessments.ts` into the six tables, idempotent, prints counts; removes the temp e2e auth user first     |
 | `pnpm db:verify`                 | exit 0, ~1 s         | the DB port of E31 (drift) plus the party rules, read through `lib/db/**`; exit 1 with a named failure per violation   |
+| `pnpm demo:verify`               | exit 0, ~50 s        | seeds the demo dataset, drives the app, diffs rows + 9 answers against `data/verify/demo-expectations.json`            |
 | `pnpm objstore:smoke`            | exit 0, <1 s         | put → get → bytes compared → deleted; reads `NEON_OBJSTORE_*` (falls back to the `AWS_*` names `neon env pull` writes) |
 | `pnpm lint`                      | exit 0, ~1.6–2.6 s   | `biome check` then `node scripts/lint-brand-classes.mjs`; **0 errors**, 203 warnings, 34 infos                         |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 442 files; CI gate                                                                                     |
@@ -61,7 +62,7 @@ merge-queue group; the job name is `typecheck / lint / build`.
 ## The gate: one script, two callers
 
 ```bash
-bash scripts/verify.sh       # THE gate. ~45 s locally, green = shippable
+bash scripts/verify.sh       # THE gate. ~150 s locally (code lane), green = shippable
 ```
 
 It runs, in order, and stops at the first failure (printing the failing step and its exit
@@ -200,6 +201,15 @@ process bug.
   while `next build` stays green. `import type` is erased and stays legal; a value import from the
   same module is not. The census (`N "use client" entries walked, 0 reaching a server-only module`)
   prints every run.
+  E37 holds the **brand boundary in the copy**: `scripts/brand-word.ts` walks the fixtures the
+  AlignSynch build renders and fails on any reader-visible string naming the template (case
+  insensitive). The render set is derived, never listed — a surface is in it when its
+  `data/pages/budget.ts` row's page does **not** call `requireQuizProduct()`, so a new quiz surface
+  exempts its fixture by gating its page. Comments are provenance and are not read; `id` and `href`
+  are a handle and a route; a template literal is read by its fragments, so `across${brand.name}.`
+  passes on both brands. `BRAND_WORD_ALLOWANCES` holds **exact strings in exact files**, never a
+  whole file, and a row no walked string uses is itself a finding — the check cannot be widened in
+  place. QuizHub stays first-class: nothing here constrains what the quiz brand's own copy says.
 - `content/bundle.ts` + `scripts/bundles.ts` — the bundle (#147): a template or a demo dataset as
   one versioned JSON document, and the CLI that exports and imports it. The canonical demo
   bundle is committed at `data/bundles/demo-dataset.alignsynch.json`; an import writes the tenant
@@ -267,6 +277,26 @@ noun in a component's name is the sign that question 3 was skipped. Full text:
 
 ## Pitfalls
 
+- **A render cannot write a cookie, and a session read must not need to.** Next 16 refuses
+  `cookies().set()` inside a React Server Component render, and Better Auth re-signs the session
+  cookie as its expiry approaches — so `auth.getSession()` attempts a write during a perfectly
+  ordinary render, periodically. `lib/auth/session.ts` reads through `neonAuthReader()`
+  (`lib/auth/server.ts`), whose request context (`lib/auth/request-context.ts`) has no write to
+  refuse; the first attempt still uses `neonAuth()`, so a server action or route handler persists
+  the refresh where a write is legal. Never turn that refusal into "signed out" — that is what
+  bounced signed-in people to `/login` while `typecheck`, `lint`, `data:check`, `vitest`, `parity`
+  and `next build` all stayed green (`tests/auth-session-render-write.test.ts`).
+- **A gated console route with no auth env answers 500 `NEON_AUTH_BASE_URL is not set`, on purpose.**
+  `currentUser()` builds the auth server _outside_ its `try` (`lib/auth/session.ts`), so a request on
+  a tree with no `NEON_AUTH_*` — a fresh clone, a preview without secrets, the gate build — raises
+  the configuration error instead of rendering an endless signed-out session. That is the
+  documented answer for `/assessment/instances`, `/dashboard`, `/settings`, `/profile/<handle>` and
+  `/assessment/templates` (kanban t_c6398125, decision A: keep the 500, say so in the docstring),
+  not a defect to card. `pnpm build` passes with no auth env by design, so only a _request_
+  surfaces it and the gate never issues one. `/support` and `/how-it-works` answer `307 → /login`
+  instead because they call `currentUserIfConfigured()`; `tests/auth-session-render-write.test.ts`
+  pins the throw, so moving a route between those two answers is a deliberate change with its
+  docstring, never a quiet one.
 - **`/usr/bin/node` is 18.19.1** and shadows newer runtimes, so every Next command dies with
   `You are using Node.js 18.19.1. For Next.js, Node.js version ">=20.9.0" is required.` Fix the
   PATH (above) before touching code.
@@ -430,8 +460,11 @@ head cannot merge — see `docs/GATE.md` for the evidence and for why the classi
 
 ## Numbers
 
-Baseline and how to re-measure: `docs/GATE.md`. As of 2026-10-29: gate p50 **45 s** locally,
-CI job p50 **55 s**, first-pass yield **81.8 %** (18/22 pushes green on the first run).
+Baseline and how to re-measure: `docs/GATE.md` — that file is the one home for these numbers,
+because a figure copied here has already gone stale once. Measured 2026-11-03 over the
+2026-11-02 CI window: run incl. queue p50 **144 s** / p95 **176 s**, first-pass yield
+**97.4 %** (185/190 head SHAs green on their first run); local full gate **138–152 s** (n=2).
+The 2026-10-29 figures (55 s a job, 81.8 %) are history rows in that file, not today's.
 
 ## Docs
 

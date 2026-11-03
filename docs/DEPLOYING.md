@@ -1,14 +1,20 @@
 # Deploying
 
-`alignsynch.com` is a Vercel project (`alignsynch`, team `riolabs-ai`) that builds this repository
-on every push to `main`. Two things about that are easy to get wrong, and both have already cost a
-day: **which pushes are allowed to build**, and **whether what is serving is what merged**.
+`alignsynch.com` is a Vercel project (`alignsynch`, team `riolabs-ai`) that builds this repository.
+Whether a **push** produces that build is a setting on the project, not a property of this tree: on
+2026-11-01 the project reported deployment creation switched off; on 2026-11-03 two merges to `main`
+were serving within about two minutes each. So this page documents both the policy of record (the
+`ignoreCommand` below) and the deliberate promotion path
+([`RELEASING.md`](RELEASING.md#main--production-promoting-a-release)), and "did that merge deploy?"
+is answered by `scripts/deploy-check.mjs`, never by assumption. Two things about deployment are easy
+to get wrong, and both have already cost a day: **what a deployment is allowed to build**, and
+**whether what is serving is what merged**.
 
 Neither is visible to `bash scripts/verify.sh`. The gate is network-free by contract — it "never
 opens a connection" ([`AGENTS.md`](../AGENTS.md)) — so it cannot see a deployment, and a green gate
 is not a claim about production. It is a claim about the tree.
 
-## 1. Which pushes build: production, plus one branch named in the file
+## 1. What a deployment is allowed to build: production, plus one branch named in the file
 
 The rule lives in [`vercel.json`](../vercel.json), in one `ignoreCommand`:
 
@@ -18,7 +24,7 @@ The rule lives in [`vercel.json`](../vercel.json), in one `ignoreCommand`:
 
 Read it as four rules, in the order they are checked:
 
-- **`production` builds.** A push to `main` carries `VERCEL_ENV=production`, the first test passes
+- **`production` builds.** A deployment created for `main` carries `VERCEL_ENV=production`, the first test passes
   and the command exits `1` — Vercel's "build" answer.
 - **The branch named `demo` builds, in any environment.** The second test,
   `[ "${VERCEL_GIT_COMMIT_REF:-}" = demo ]`, is joined to the first by `||`, so it is consulted for
@@ -119,12 +125,22 @@ itself reports `previewDeploymentsDisabled: true` with
 returns on feature branches are all from 2026-10-30 between 18:29Z and 19:02Z — before creation was
 switched off — so nothing has been created since.
 
-So the project's Git settings still suppress a preview before a deployment exists, and this
-`ignoreCommand` never gets the chance to answer a branch push — including the push to `demo` the
-second rule above is written for. That is why the rule here is the **policy of record** rather than
-the working switch: it is the reviewable statement of what may build, it costs nothing, and it
-becomes the effective gate the moment preview creation is allowed again or the project is
-transferred.
+**Re-measured on 2026-11-03: production deployments are being created again.** Two squash merges to
+`main` entered the cut for `v1.3.0` and both were serving within about two minutes of the merge —
+`GET /api/version` answered `940700893181…` after `perf(db)` (#479) and `f3b765815b16…` after
+`chore(release): 1.3.0`, with no promotion call made from this machine and no deploy hook in the
+tree. What the 2026-11-01 paragraph describes is therefore a dashboard state that has already
+changed once, which is exactly why the promotion procedure in
+[`RELEASING.md`](RELEASING.md#main--production-promoting-a-release) begins by measuring what
+production serves rather than trusting either reading. The `ignoreCommand` below is the effective
+gate in this state: it is what decides whether the deployment a push created builds at all.
+
+Previews are still suppressed before a deployment exists — the deployments above are `production`,
+not a preview — so this `ignoreCommand` never gets the chance to answer a _branch_ push, including
+the push to `demo` the second rule above is written for. For those refs the rule is the **policy of
+record** rather than the working switch: it is the reviewable statement of what may build, it costs
+nothing, and it becomes the effective gate the moment preview creation is allowed again or the
+project is transferred.
 
 Turning previews on takes two changes that have to agree, and only one of them is in this
 repository:

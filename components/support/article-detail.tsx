@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the article page — a back link, a hand-written title band, the block body, an action row and a related strip)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,14 +49,14 @@ export function ArticleDetail({ article, relatedArticles, copy }: ArticleDetailP
       {/* Breadcrumb */}
       <div className="flex items-center text-sm mb-6">
         <Link
-          href="/support"
+          href="/help"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           {itemLabel(detail, "breadcrumb-support")}
         </Link>
         <ChevronLeft className="h-4 w-4 mx-2 text-muted-foreground rotate-180" />
         <Link
-          href="/support"
+          href="/help"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           {itemLabel(detail, "breadcrumb-knowledge-base")}
@@ -120,10 +122,10 @@ export function ArticleDetail({ article, relatedArticles, copy }: ArticleDetailP
               <p className="mb-2">{itemLabel(detail, "helpful-follow-up")}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <Button asChild variant="outline" size="sm">
-                  <Link href="/support">{itemLabel(detail, "browse-articles")}</Link>
+                  <Link href="/help">{itemLabel(detail, "browse-articles")}</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <Link href="/support?tab=contact">{itemLabel(detail, "contact-support")}</Link>
+                  <Link href="/support">{itemLabel(detail, "contact-support")}</Link>
                 </Button>
               </div>
             </div>

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-header.tsx   (variation: the search field alone, no grid/list toggle, over the tips index)
+
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
 import type React from "react";

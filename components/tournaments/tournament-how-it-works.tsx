@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/categories/categories-how-it-works.tsx   (variation: four numbered steps over the tournament cycle, one button at the end)
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PageCopySection } from "@/content/pages";

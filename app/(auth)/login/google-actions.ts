@@ -65,15 +65,26 @@ export async function startGoogleSignIn(requested: string): Promise<StartGoogleS
   if (!started.ok) return { ok: false, failure: started.failure };
 
   // The challenge and the destination, kept together: they are one flow, and the callback must
-  // spend the challenge the same browser started with.
+  // spend the challenge the same browser started with. `iat` is the epoch second this cookie was
+  // set — the callback logs the cookie's age against it, which is how a round-trip that outlived
+  // the ten-minute lifetime is told apart from one that was never started. It is a server action,
+  // not a render path, so reading the clock here is the one place it belongs.
   const jar = await cookies();
-  jar.set(GOOGLE_FLOW_COOKIE, encodeFlowCookie({ challenge: started.challenge, next }), {
-    path: "/",
-    maxAge: GOOGLE_FLOW_TTL_SECONDS,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: origin.secure,
-  });
+  jar.set(
+    GOOGLE_FLOW_COOKIE,
+    encodeFlowCookie({
+      challenge: started.challenge,
+      next,
+      iat: Math.floor(Date.now() / 1000),
+    }),
+    {
+      path: "/",
+      maxAge: GOOGLE_FLOW_TTL_SECONDS,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: origin.secure,
+    },
+  );
 
   return { ok: true, url: started.url };
 }

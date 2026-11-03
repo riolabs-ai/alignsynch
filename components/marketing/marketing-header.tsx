@@ -1,3 +1,5 @@
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the public chrome — the brand mark, PublicNav and the account slot, no sidebar, search palette or drawers)
+
 import { PublicAccountSlot, PublicNav } from "@/components/layout/nav-menus";
 import type { Brand } from "@/content/brand";
 import type { PageCopy } from "@/content/pages";
@@ -28,10 +30,13 @@ import Image from "next/image";
  *   - the account slot is `PublicAccountSlot`, the signed-out pair of links or the signed-in
  *     person, resolved **on the server** by the layout and handed down as `account`.
  *
- * **`copy` is the shell fixture, not the marketing one.** These are chrome words — "Pricing",
- * "Sign in", "Sign up" — and they are the words the sidebar's own rows use, so the ids resolve
- * against `data/pages/shell.ts` exactly as `AppNav`'s do. The landing page's bands keep their own
- * fixture (`data/pages/marketing.ts`) and their own component (`marketing-landing.tsx`).
+ * **`copy` is the shell fixture's public slice, not the marketing one.** These are chrome words —
+ * "Pricing", "Sign in", "Sign up" — and they are the words the sidebar's own rows use, so the ids
+ * resolve against `data/pages/shell.ts` exactly as `AppNav`'s do… but only the ids this header
+ * draws: `app/(marketing)/layout.tsx` hands over `publicChromeCopy()`
+ * (`lib/shell-copy.ts`), because `PublicNav` is a client component and everything it is given is
+ * serialised into the browser's payload. The landing page's bands keep their own fixture
+ * (`data/pages/marketing.ts`) and their own component (`marketing-landing.tsx`).
  *
  * **The old single CTA is gone.** The header used to print `copy.cta` — one action, repeated from
  * the page's closing band — and on a marketing page that action was "start the assessment", which a
@@ -58,7 +63,7 @@ export function MarketingHeader({
   brand: Brand;
   /** The build's brand, so the public menu picks its rows the way the sidebar does. */
   brandId: BrandId;
-  /** The **shell** fixture (`data/pages/shell.ts`) — the chrome's words, not a route's. */
+  /** The **shell fixture's public slice** (`publicChromeCopy`, `lib/shell-copy.ts`) — the chrome's words, not a route's. */
   copy: PageCopy;
   mark?: BrandMark;
   /**
@@ -74,9 +79,20 @@ export function MarketingHeader({
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-6">
         <span className="flex items-center gap-2">
           {mark ? (
+            /**
+             * The official lockup, whole — and never squeezed.
+             *
+             * `max-h-8 w-auto` rather than `h-8 w-auto`: a fixed height with a shrinkable width
+             * lets the flex row *compress* the mark instead of scaling it, which is exactly what
+             * happened at 390 — the logo rendered 190×32 where its own 818×127 ratio asks for
+             * 206×32, an 8 % squash in the one place the brand is most looked at. With both
+             * dimensions auto and only max constraints, the browser scales the file down when the
+             * row is narrow and keeps its aspect ratio (owner's rule: place the asset, correct
+             * aspect ratio, clear space).
+             */
             <Image
               alt={brand.name}
-              className="h-8 w-auto"
+              className="max-h-8 w-auto"
               height={mark.height}
               priority
               src={mark.src}

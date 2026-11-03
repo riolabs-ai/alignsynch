@@ -1,22 +1,38 @@
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { opinionKindsFor } from "@/content/assessment";
+import { authConfigured } from "@/lib/auth/config";
+import { currentUser } from "@/lib/auth/session";
 import { answersFrom } from "@/lib/flow/answers";
 import { instancePath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { readInstanceMode, submitAnswers } from "@/lib/flow/store";
-import { sendUnlockNotice } from "@/lib/flow/unlock-notice";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 /**
+ * The signed-in account id, or `null` — never a thrown error on a tree without auth env.
+ *
+ * The same helper the instance, report and accept routes carry: `currentUser()` answers `null` for
+ * "no session", and `authConfigured()` keeps a tree with no `NEON_AUTH_*` env rendering rather than
+ * throwing.
+ */
+async function viewerUserId(): Promise<string | null> {
+  if (!authConfigured()) return null;
+  const user = await currentUser();
+  return user?.userId ?? null;
+}
+
+/**
  * `POST /assessment/instances/[instanceId]/answers` — one party's whole sheet, or a refusal.
  *
- * **The freeze is a status code.** When both parties have submitted, this answers **409**
- * with a page that says the answers cannot be changed — not a 303 back to a screen that
- * looks the way a successful submit looks. A browser that is not a party to the instance
- * gets **403**; an unknown instance **404**. That is the difference the acceptance asks
- * for: an edit after the freeze is an error, and a test reads the status.
+ * **The freeze is per party, and it is a status code (#R2).** A submit is answered **409** once
+ * the *submitting party* has accepted — their sheet is the record they agreed to, and an edit
+ * would rewrite it for the other party without their knowing. Before that acceptance the window is
+ * open even if the other party has already submitted: that is the prototype's edit-before-accept
+ * review, and it is why the freeze is no longer "both parties have submitted". A browser that is
+ * not a party to the instance gets **403**; an unknown instance **404**. An edit after the freeze
+ * is an error, and a test reads the status.
  *
  * **The sheet is the instance's mode's sheet (#213).** The field names are read against
  * `opinionKindsFor(mode)` — `feel`/`wish` for Basic, all four for Advanced — and the mode
@@ -26,11 +42,12 @@ import { NextResponse } from "next/server";
  * exists to prevent. The store re-reads the mode under its lock and parses the sheet against
  * that value, so this read is a refusal's convenience and never the authority.
  *
- * The party is resolved from the cookie's token hash inside the store's transaction; the
- * form cannot say who it is. A form field called `role`, if one is posted, is not read as an
- * instruction — it is read as an **assertion**, and an assertion the cookie contradicts is
- * refused (403) rather than quietly written under the cookie's role (#202). That is what
- * makes a hand-written POST unable to record the other party's column.
+ * The party is resolved from the cookie's token hash inside the store's transaction, and from the
+ * signed-in account when the cookie is gone (#R2); the form cannot say who it is. A form field
+ * called `role`, if one is posted, is not read as an instruction — it is read as an **assertion**,
+ * and an assertion the cookie contradicts is refused (403) rather than quietly written under the
+ * cookie's role (#202). That is what makes a hand-written POST unable to record the other party's
+ * column.
  *
  * The refusal page is assembled here as HTML rather than rendered from a component, for
  * one mechanical reason: this Next version refuses `react-dom/server` inside `app/` (it
@@ -38,12 +55,11 @@ import { NextResponse } from "next/server";
  * words are still the fixture's — `problems` in `data/pages/assessment-instance.ts` — plus
  * the store's own reason line, which says which role this session actually answers as.
  *
- * **The completing submit emails the other party (#258).** `submitAnswers` answers `complete`
- * only on the write that filled the last missing answer, so that result is the transition the
- * notice exists for and the freeze is what keeps it to one. The send happens **after** the
- * transaction committed and after the refusal branches, so a mail failure can neither unstore an
- * answer nor change the status code a person sees: the redirect below is the same 303 it always
- * was, and the screen it lands on is the report, which is the truth either way.
+ * **The unlock notice no longer fires here (#R2).** Submission stopped being the completion hinge:
+ * the session completes at the second *acceptance*, so the notice moved to the accept endpoint
+ * (`…/accepts/route.ts`). This endpoint cannot complete a session any more — the store refuses a
+ * submit from a party who has accepted, and the second acceptance is what completes — so sending
+ * from here would be a notice for an event that did not happen.
  */
 export async function POST(
   request: Request,
@@ -66,32 +82,14 @@ export async function POST(
   const result = await submitAnswers({
     instanceRecordId: instanceId,
     token,
+    // #R2 — the account is the second answer to "which seat is writing", asked only when the
+    // cookie holds no party token for this instance.
+    viewerUserId: await viewerUserId(),
     ...(typeof asserted === "string" ? { assertedRole: asserted } : {}),
     answers: parsed.answers,
   });
 
   if (result.ok) {
-    // #258 — the submit that completes the instance is the one event that emails the other party.
-    // `result.status === "complete"` is that transition and only that transition: the submit
-    // before it reads `answering`, and a submit after it never reaches here (the store refuses it
-    // `frozen`, so the captured email count stays at one). The send is a **single attempt**, and
-    // it cannot turn a stored answer into a failed submit: the rows committed before
-    // `submitAnswers` returned, `sendUnlockNotice` never throws, and this `catch` is the belt for
-    // the one path that could — a read-back that dies after the commit, which still must land the
-    // person on their report rather than an error page.
-    if (result.status === "complete") {
-      await sendUnlockNotice({
-        instanceRecordId: instanceId,
-        submittedBy: result.role,
-      }).catch((error: unknown) => {
-        // Operator line only, and never the message, the link or a token: the screen below is
-        // what the reader sees, and it says the Gap is open because it is.
-        console.error(
-          "[unlock] the notice could not be attempted after a submit completed the instance — the answers are stored and the report is unaffected",
-          error instanceof Error ? error.name : "unknown",
-        );
-      });
-    }
     return NextResponse.redirect(new URL(instancePath(instanceId), request.url), 303);
   }
 

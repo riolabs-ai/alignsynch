@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: none — approved #336
+ *
  * `/dashboard` — the console's Overview (Console 2/5).
  *
  * The arrangement is `components/identity/account-home.tsx` (#164): a header that names the person

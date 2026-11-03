@@ -1,3 +1,5 @@
+// template-ancestor: components/explore/explore-quiz-list.tsx   (variation: the card grid of tips with an empty state for a search that matches nothing)
+
 import type { PageCopySection } from "@/content/pages";
 import type { TipRecord } from "@/lib/article-records";
 import { fillLabel, itemLabel } from "@/lib/page-copy";

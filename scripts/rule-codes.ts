@@ -155,6 +155,34 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
+    owner: "the template-ancestor header (scripts/template-ancestor.ts — issue #336)",
+    // Two files for the same reason the client-graph group has two: the code is *minted* where the
+    // rule lives (a finding carries `rule: "E35"`), and `data-check.ts` mints it once more for the
+    // coverage floor — "the walk found fewer than 100 components" is a failure of the same rule.
+    files: ["template-ancestor.ts", "data-check.ts"],
+    codes: {
+      E35: "every file under `components/` that renders JSX names the template it varies — `template-ancestor: components/<path>.tsx   (variation: …)` — or carries an approval from the shrink-only `TEMPLATE_ANCESTOR_EXEMPTIONS` array (`none — approved #<issue>`)",
+    },
+  },
+  {
+    owner: "the surface registry (data/surface-registry.ts — issue #409)",
+    files: ["data-check.ts"],
+    codes: {
+      E36: "the surface registry is honest: one route one status, a not-live surface names its reason and needs, a live surface carries neither and its route is one `content/routes.ts` carries",
+    },
+  },
+  {
+    owner: "the brand boundary's copy (scripts/brand-word.ts)",
+    // Two files for the same reason the client-graph and template-ancestor groups have two: the
+    // code is *minted* where the rule lives (a finding carries `rule: "E37"`), and `data-check.ts`
+    // mints it once more for the census floor — a walk that resolved too few fixtures is a failure
+    // of the same rule.
+    files: ["brand-word.ts", "data-check.ts"],
+    codes: {
+      E37: "no reader-visible string the alignment build renders names the template brand — `QuizHub` in an alignment fixture is another product's name in this one's mouth; the exact strings the quiz brand owns are the shrink-only `BRAND_WORD_ALLOWANCES` table",
+    },
+  },
+  {
     owner: "bundle import/export (scripts/bundles.ts, content/bundle.ts — issue #147)",
     // Two files, because the refusal is authored in the model and raised by the CLI: the
     // codes are *minted* where the rule lives (`content/bundle.ts` detects B1–B4/B6) and B5

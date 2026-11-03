@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/page-header.tsx   (variation: the legal page — a hand-written title band, then numbered sections and a body from one fixture)
+
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";

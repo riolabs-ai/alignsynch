@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quiz-list.tsx   (variation: one row of four newest cards, no tabs and no filters)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

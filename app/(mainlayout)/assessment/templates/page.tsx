@@ -10,6 +10,15 @@
  * author_user_id = $1` — the platform's templates plus this account's, and nobody else's. Signed
  * out is the other gated routes' answer: `redirect(/login?next=…)` with this path preserved.
  *
+ * **No auth environment is not "signed out" here — it is the configuration error, deliberately.**
+ * `currentUser()` builds the auth server outside its `try` and throws
+ * `NEON_AUTH_BASE_URL is not set` when `NEON_AUTH_*` is absent: a console page must not turn a
+ * deployment mistake into an endless signed-out session (`lib/auth/session.ts`). So on a tree with
+ * no auth env — a fresh clone, a preview without secrets, the gate build — a *request* here
+ * answers 500 with that error, and that is the documented answer, not a defect (kanban t_c6398125
+ * kept the 500 and documented it). `/support` and `/how-it-works` answer the login redirect
+ * instead because they call `currentUserIfConfigured()`; this page does not.
+ *
  * **A template written before the author column existed reads as a built-in.** It has
  * `author_user_id IS NULL`, exactly like a seeded one, and there is no backfill that could say
  * otherwise. The page says so in its own band (`legacy` in the fixture) rather than leaving a
@@ -30,6 +39,11 @@
  * list is a database read, so `pnpm build` must pass with `DATABASE_URL` unset.
  */
 import { TemplateLibrary, type LibraryNotice } from "@/components/assessment-flow/template-library";
+import {
+  groupCountsOf,
+  parseRealmFilter,
+  templatesInRealm,
+} from "@/components/assessment-flow/template-card";
 import { templateLibraryPageCopy } from "@/data/pages/assessment-templates";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
@@ -49,13 +63,19 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Your templates",
+  /**
+   * Read from the fixture, never spelled here: the catalogue's title is one string
+   * (`data/pages/assessment-templates.ts::heading`) and the page's own `<h1>` renders the same
+   * field, so a rename cannot leave the tab saying one thing and the page another.
+   */
+  title: templateLibraryPageCopy.heading,
 };
 
 type LibraryParams = {
   readonly view?: string | string[];
   readonly status?: string | string[];
   readonly q?: string | string[];
+  readonly realm?: string | string[];
   readonly archived?: string | string[];
   readonly unarchived?: string | string[];
   readonly duplicated?: string | string[];
@@ -113,6 +133,7 @@ export default async function TemplateLibraryPage({
     view: parseLibraryView(first(params.view)),
     status: parseLibraryStatus(first(params.status)),
     query: (first(params.q) ?? "").slice(0, 120),
+    realm: parseRealmFilter(first(params.realm)),
   };
 
   let visible: readonly LibraryTemplate[] = [];
@@ -127,7 +148,15 @@ export default async function TemplateLibraryPage({
     unreadable = error.reason;
   }
 
-  const shown = filterLibrary(visible, filter);
+  /**
+   * The tab, the status and the search narrow the rows; the realm narrows what is left.
+   *
+   * `filterLibrary` is `lib/flow`'s pure function and stays as it is — a realm is not an
+   * authorship fact, it is the type taxonomy's field (`REALMS`), so the second narrowing is a
+   * projection of the rows the first one returned and needs no database column.
+   */
+  const narrowed = filterLibrary(visible, filter);
+  const shown = templatesInRealm(narrowed, filter.realm);
 
   return (
     <TemplateLibrary
@@ -135,6 +164,7 @@ export default async function TemplateLibraryPage({
       shown={shown}
       state={libraryStateOf(visible, shown)}
       filter={filter}
+      counts={groupCountsOf(narrowed)}
       notice={unreadable === null ? noticeOf(visible, params) : null}
       unreadable={unreadable}
     />

@@ -8,8 +8,8 @@
  * changed is **who is shown it**:
  *
  *   a platform user  sees the menu of the product they signed up for. On
- *                    `BRAND=alignsynch` that is Home, Templates, How it works, Support, then the
- *                    console's Overview and Your templates — the alignment destinations, not
+ *                    `BRAND=alignsynch` that is Dashboard, How it works, My Relationships,
+ *                    Library, Templates and Support — the alignment destinations, not
  *                    `/leaderboard`. The operator's rows (`/admin/*`) are above this function's
  *                    grant: they need `admin-console`, which only an administrator carries.
  *   everyone else    sees their brand's menu and nothing more. The quiz destinations are
@@ -72,15 +72,19 @@ export function viewerWith(...capabilities: NavCapability[]): NavViewer {
 }
 
 /**
- * The routes an alignment visitor is shown: the front page, their account settings, and the
- * support centre. Everything else in the tree is the quiz product, which the same capability
+ * The routes an alignment visitor is shown: the front page, the public help centre and their
+ * account settings. Everything else in the tree is the quiz product, which the same capability
  * that gates the nav keeps out of their menu and out of their search results
  * (`data/searchdata.ts`).
+ *
+ * `/help` and not `/support`: the support route is the account page behind a session now, and a
+ * search result is a landing page a signed-out visitor takes. The answers live on `/help`, which
+ * is public — the split's own rule, applied to the palette.
  *
  * A positive list rather than a list of exclusions, because the failure to avoid is a new quiz
  * route arriving in the index — and in a menu — without anyone deciding it belongs there.
  */
-export const ALIGNMENT_ROUTES: readonly string[] = ["/", "/settings", "/support"];
+export const ALIGNMENT_ROUTES: readonly string[] = ["/", "/settings", "/help"];
 
 /**
  * The viewer the shell renders for, from the role the **server** resolved for this request.

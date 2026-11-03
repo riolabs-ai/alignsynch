@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/tabs.tsx   (variation: the author — tabs over the edit panels, a per-item accordion, add/remove, reorder and delete)
+
 import {
   Accordion,
   AccordionContent,

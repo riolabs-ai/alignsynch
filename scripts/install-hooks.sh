@@ -24,5 +24,5 @@ chmod +x scripts/git-hooks/pre-push
 git config core.hooksPath scripts/git-hooks
 
 printf '✓ pre-push hook installed (core.hooksPath=%s)\n' "$(git config --get core.hooksPath)"
-printf '  every `git push` now runs scripts/verify.sh first (~45 s); a failure blocks the push.\n'
+printf '  every `git push` now runs scripts/verify.sh first (~150 s in the code lane); a failure blocks the push.\n'
 printf '  bypass only in a real emergency: git push --no-verify\n'

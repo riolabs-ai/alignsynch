@@ -1,6 +1,8 @@
 "use client";
 
 /**
+ * template-ancestor: components/ui/card.tsx   (variation: the connected-accounts panel — one row per provider with a connect or disconnect button)
+ *
  * The "Connected Accounts" panel — and the person it names (#226).
  *
  * Every "Connected as …" line here used to name a fixture: a demo player's handle, the matching

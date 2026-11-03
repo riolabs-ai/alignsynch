@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/page-header.tsx   (variation: the tournament band hand-written — a cover image, the dates, a badge row and share and join actions)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PageCopy } from "@/content/pages";

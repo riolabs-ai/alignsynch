@@ -481,24 +481,43 @@ async function main() {
       }
 
       const { rows: answerCounts } = await client.query(
-        `SELECT p.role, (SELECT count(*) FROM opinion o
-                          WHERE o.session_record_id = p.session_record_id
-                            AND o.role = p.role)::int AS answered
+        `SELECT p.role,
+                (SELECT count(*) FROM opinion o
+                  WHERE o.session_record_id = p.session_record_id
+                    AND o.role = p.role)::int AS answered,
+                (p.accepted_at IS NOT NULL) AS accepted
            FROM party p WHERE p.session_record_id = $1`,
         [listed.recordId],
       );
       const answeredBy = (role) => answerCounts.find((row) => row.role === role)?.answered ?? 0;
+      // #R2 — acceptance is the completion hinge, so the status this check reads is the same
+      // derivation the screen reads, acceptances included. Omitting them here would call every
+      // seeded instance `answering` and fail V11 on a marker that is perfectly legitimate.
+      const acceptedBy = (role) =>
+        answerCounts.find((row) => row.role === role)?.accepted === true ? 1 : 0;
       const status = instanceStatusOf({
         aspectCount: rows.items.length,
         hasCounterparty: counterparties === 1,
         initiatorAnswered: answeredBy("initiator"),
         counterpartyAnswered: answeredBy("counterparty"),
+        initiatorAccepted: acceptedBy("initiator"),
+        counterpartyAccepted: acceptedBy("counterparty"),
       });
 
       // V11 — the mark (#252). `party.unlock_seen_at` is written when a party opens a COMPLETE
       // instance, so a value on an unfinished one was written too early: the row would read
       // "already seen" the moment it became complete, and the unlocking event would pass in
-      // silence. `complete` is terminal, so there is no legitimate version of this.
+      // silence.
+      //
+      // `complete` is terminal per *writer* and per *product row set* — `markUnlockSeen` only ever
+      // runs against a complete screen, and no product path deletes an `opinion` row (V18 keeps
+      // scored rows immutable; a seed or a manual DELETE is the other way a mark gets stranded) —
+      // but it is **not** terminal per *rule*. #427/R2 made acceptance the hinge, and an instance
+      // that was complete when its mark was written read `answering` afterwards: avery-rowan on
+      // production carried a mark from 2026-11-02T08:42Z, three hours before that merge. So this
+      // check names a real defect either way, and the repair is the mark (docs/RELEASING.md
+      // §"main → production", 2a), never the instance — a rule change is a data event, and this is
+      // the check that finds it.
       if (hasUnlockColumn && status !== "complete") {
         const { rows: premature } = await client.query(
           `SELECT role FROM party

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-categories.tsx   (variation: the subject strip as a wrapping row of icon chips, no horizontal scroller)
+
 import { cn } from "@/lib/utils";
 import type { PageCopySection } from "@/content/pages";
 import type { Category } from "@/content/category";

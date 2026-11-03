@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: one comment hand-written — avatar, body, vote and reply controls, collapsible replies, no card primitive)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";

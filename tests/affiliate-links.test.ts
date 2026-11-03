@@ -42,6 +42,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => {}, replace: () => {}, refresh: () => {} }),
 }));
 
+/**
+ * The header imports `endSession` (its account-menu sign-out), which reaches `@neon/auth` and
+ * cannot resolve in a node process. Stubbed so this file renders the header's notification rows,
+ * not the auth client.
+ */
+vi.mock("@/lib/auth/sign-out", () => ({ endSession: vi.fn(async () => true) }));
+
 /** A closed Radix menu renders no rows; these two are open in the header's markup. */
 vi.mock("@/components/ui/dropdown-menu", () => {
   const Box = ({ children }: { children?: ReactNode }) => createElement("div", null, children);
@@ -58,7 +65,6 @@ import { AffiliateDashboard } from "@/components/dashboard/affiliate-dashboard";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { AppNav } from "@/components/layout/nav-menus";
-import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndexFor } from "@/data/searchdata";
 import { hiddenNavHrefs } from "@/lib/flags";
@@ -123,17 +129,16 @@ const SITES: readonly { site: string; html: (hiddenNav: readonly string[]) => st
     site: "the notification drawer",
     html: (hiddenNav) =>
       renderToStaticMarkup(
-        createElement(SidebarProvider, null, [
-          createElement(Header, {
-            key: "header",
-            copy: shellPageCopy,
-            brandId: "quizhub",
-            viewer: PLATFORM_VIEWER,
-            account: null,
-            searchIndex: searchIndexFor("quizhub", PLATFORM_VIEWER),
-            hiddenNav,
-          }),
-        ]),
+        createElement(Header, {
+          copy: shellPageCopy,
+          brandId: "quizhub",
+          viewer: PLATFORM_VIEWER,
+          account: null,
+          searchIndex: searchIndexFor("quizhub", PLATFORM_VIEWER),
+          hiddenNav,
+          navigationOpen: false,
+          onOpenNavigation: () => undefined,
+        }),
       ),
   },
   {

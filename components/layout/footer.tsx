@@ -1,3 +1,5 @@
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the footer band — brand-keyed link columns, a legal row and the version badge)
+
 import { Button } from "@/components/ui/button";
 import { quizCategories } from "@/content/categories";
 import type { PageCopy, PageCopySection } from "@/content/pages";
@@ -6,11 +8,13 @@ import { brandMark } from "@/lib/brand-mark";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { BookOpen, ExternalLink, Mail } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 import { AppVersion } from "@/components/layout/app-version";
+import { BrandGlyph } from "@/components/layout/brand-glyph";
+import { NewsSignup } from "@/components/layout/news-signup";
 
 /**
  * The footer — the one shell band the pages render themselves, so it takes the whole
@@ -41,9 +45,10 @@ import { AppVersion } from "@/components/layout/app-version";
  *   - the ground: the white-to-slate pair becomes `from-background to-muted`, which is the same
  *     two stops the theme already names (`slate-100` and `--muted` are within a percent of
  *     each other on both brands).
- *   - the product mark: `BookOpen` in a purple→indigo 600 box, and a wordmark filled by the
- *     same gradient, become `brandMark(brand.logo)` beside `text-action`. The record's mark
- *     when it has one, the old icon when `data/media.ts` calls it a fallback.
+ *   - the product mark: the open book (`BrandGlyph`) in a solid brand box, and a wordmark filled
+ *     by the same action colour, become `brandMark(brand.logo)`. The record's mark when it has
+ *     one, the book glyph and the typed name when `data/media.ts` calls it a fallback. The mark
+ *     is drawn whole — no crop window (owner, brand marks; see the slot itself).
  *
  * The old class names are deliberately not quoted here: the acceptance test is a `git grep` for
  * the three palette prefixes over the card's paths, and a comment that repeats a banned literal
@@ -107,12 +112,28 @@ export function Footer({
    *
    * `brandMark` is the same call `components/layout/sidebar.tsx` makes: `undefined` for
    * `brand.logo` when the registry marks the file a `fallback`, so the template build keeps the
-   * `BookOpen` icon it has always drawn and gains no markup, and the real size and `src` of an
-   * exported lockup otherwise. A footer that hardcoded its own glyph was drawing "a generic quiz
-   * icon" on an AlignSynch page — the exact sentence in issue #187 — so the mark is read from the
-   * record here for the same reason the sidebar reads it.
+   * book mark it has always drawn (`BrandGlyph`, the open book the icon set is drawn from) and
+   * gains no markup, and the real size and `src` of an exported lockup otherwise. A footer that
+   * hardcoded its own glyph was drawing "a generic quiz icon" on an AlignSynch page — the exact
+   * sentence in issue #187 — so the mark is read from the record here for the same reason the
+   * sidebar reads it.
    */
   const mark = brandMark(brand.logo);
+
+  /**
+   * The footer's news band.
+   *
+   * It stands where the band #272 deleted stood — under the link columns, above the legal row —
+   * because that is where a footer's signup belongs and it is the position the old markup had.
+   * It appears on every page that mounts this footer, which is why it lives here and not on a
+   * band of `/`: the card's acceptance is "every marketing route", and the marketing chrome is
+   * this component.
+   *
+   * The section is handed down as data; the form is a client component
+   * (`components/layout/news-signup.tsx`) that reads its words from it, so this file still holds
+   * no copy and still value-imports nothing that reaches `lib/db/**`.
+   */
+  const news = sectionOf(copy, "footer-news");
 
   return (
     <footer className="relative overflow-hidden bg-muted pt-16 pb-8 sm:px-4 xl:px-8">
@@ -129,30 +150,38 @@ export function Footer({
             <div className="flex items-center space-x-2">
               {mark ? (
                 /**
-                 * The brand's mark, in the slot the product mark has always had.
+                 * The brand's mark, at the size the record exports it.
                  *
-                 * `alt=""` because the wordmark beside it already says the name — a second
-                 * description would have a screen reader read the brand twice. The 44 px window
-                 * crops the lockup to its monogram, exactly as the sidebar does: the AlignSynch
-                 * file's wordmark is black "Align" beside gray "Synch", so the whole file in the
-                 * footer's light ground reads as two different greys beside the type already set
-                 * next to it. `max-w-none` is load-bearing (preflight would scale, not crop).
+                 * `alt=""` because the mark *is* the name — the lockup sets "AlignSynch"
+                 * itself — so a description here would have a screen reader say the brand
+                 * twice, and the type beside it (below) is not drawn when a lockup is.
+                 *
+                 * **No window, no crop (owner, brand marks).** This slot used to render the
+                 * 818×127 file inside a 44×32 `overflow-hidden` span, which showed the AS
+                 * monogram and clipped the wordmark off at the right edge. That is a crop of a
+                 * fixed asset, which the owner's rule forbids beside redraw and re-tint
+                 * (`tests/brand-immutable.test.ts` records it), and it was never load-bearing:
+                 * the footer's brand column is 380 px at 1440 and the full column at 390, so
+                 * the 206 px lockup has always had room. `h-8 w-auto` is the whole file at its
+                 * natural aspect ratio; `max-w-none` is gone with the window that needed it.
                  */
-                <span className="block h-8 w-11 shrink-0 overflow-hidden">
-                  <Image
-                    src={mark.src}
-                    alt=""
-                    width={mark.width}
-                    height={mark.height}
-                    className="h-8 w-auto max-w-none"
-                  />
-                </span>
+                <Image
+                  src={mark.src}
+                  alt=""
+                  width={mark.width}
+                  height={mark.height}
+                  className="h-8 w-auto"
+                />
               ) : (
                 <div className="bg-action p-2 rounded-lg">
-                  <BookOpen className="h-6 w-6 text-action-foreground" />
+                  <BrandGlyph className="h-6 w-6 text-action-foreground" />
                 </div>
               )}
-              <span className="text-2xl font-bold text-action">{copy.heading}</span>
+              {/* The name in type only when there is no lockup to say it — the template's
+                  placeholder logo resolves to no mark, and its footer has always been the
+                  glyph plus the word. A fallback mark and a typed wordmark together would set
+                  the brand's name twice. */}
+              {!mark && <span className="text-2xl font-bold text-action">{copy.heading}</span>}
             </div>
             <p className="text-slate-600 dark:text-slate-400 max-w-xs leading-relaxed">
               {sectionBody(brandBlurb)}
@@ -181,35 +210,37 @@ export function Footer({
                   <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-action"></span>
                 </h3>
                 {/*
-                 * One row: the mailbox. The street line and the telephone number that stood
-                 * above it are gone (#272) — an invented address and a number from the block
-                 * reserved for fiction, printed as this company's details on every page of
-                 * both builds. A row comes back when a real value does; a placeholder that
-                 * looks like a fact is the defect, not the empty space.
+                 * One sentence and one link (owner, 2026-11-02). The row that stood here printed
+                 * `brand.supportEmail` — an address on every public page of both builds, and a
+                 * mail link is not a contact path a visitor without a mail client can use. The
+                 * destination is now the form on `/help`, where a message is stored before it is
+                 * mailed, so nothing is lost when the sender has no mail app.
+                 *
+                 * The fixture carries no address at all (`footer-contact` / its alignment twin),
+                 * and `contact.cta.href` is E23's to check against the route manifest.
                  */}
-                <ul className="space-y-4">
-                  <li className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                      <Mail className="h-4 w-4 text-action" />
-                    </div>
-                    <span className="text-slate-600 dark:text-slate-400">
-                      {itemLabel(contact, "email")}
-                    </span>
-                  </li>
-                </ul>
-                <Button variant={"action"}>{itemLabel(contact, "cta")}</Button>
+                {contact.body !== undefined && (
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                    {sectionBody(contact)}
+                  </p>
+                )}
+                {contact.cta !== undefined && (
+                  <Button asChild variant={"action"}>
+                    <Link href={contact.cta.href}>{contact.cta.label}</Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         {/*
-         * No mailing-list band (#272). It took an email address and offered to deliver news to
-         * it, with a button that had no handler and no sender behind it — this app sends an
-         * invitation and an unlock notice, nothing else. A box that promises a subscription on
-         * every page of both builds is the same defect as a link that goes nowhere; the band
-         * returns when something can keep the promise.
+         * The news signup. It replaced the comment that stood here — #272 had removed a
+         * mailing band because it took an address with no sender behind it. The sender is real
+         * now: `app/api/news/subscribe/route.ts` writes the address to `news_signup` and sends
+         * through `lib/flow/email.ts`, so the band can make the promise its markup implies.
          */}
+        <NewsSignup section={news} />
 
         {/* Bottom footer */}
         <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
@@ -390,7 +421,7 @@ function AlignSynchLinkColumn({ links }: { links: PageCopySection }) {
       <ul className="space-y-3">
         <FooterLinkRow href="/#templates" label={itemLabel(links, "templates")} />
         <FooterLinkRow href="/#questions" label={itemLabel(links, "how-it-works")} />
-        <FooterLinkRow href="/support" label={itemLabel(links, "support")} />
+        <FooterLinkRow href="/help" label={itemLabel(links, "help")} />
       </ul>
     </div>
   );

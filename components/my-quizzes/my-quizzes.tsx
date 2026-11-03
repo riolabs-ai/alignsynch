@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/tabs.tsx   (variation: the record list — tabs, a search field, a per-row menu and an empty state)
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";

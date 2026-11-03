@@ -99,6 +99,85 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
     },
     {
+      /**
+       * The Steps panel (#478) — "Steps for Improving the Relationship", ported from the `/v1`
+       * prototype's `steps-panel.tsx` into the screen that already stores the rows.
+       *
+       * Every word is here because the panel is a server component: a tick is a form post, a reword
+       * is a `<details>` form, and neither carries a sentence of its own. The two state labels
+       * (`Open` / `Done` / `Closed`) are **not** here — they are `STEP_STATUS_LABELS` in
+       * `content/steps.ts`, authored once beside the state machine.
+       *
+       * `progress` divides by `active` (rows that are still work), never by `total`: a closed Step is
+       * history and counting it would make a finished plan look half-done. `closed` is a separate
+       * sentence because it is a separate fact.
+       */
+      id: "steps",
+      heading: "Steps for Improving the Relationship",
+      body: "Each Step comes from the widest Gap on its Aspect in the last session. Tick it off, or reword it into something you will actually do — the suggestion stays beside your words, and the list is kept on this relationship, so it survives a reload.",
+      items: [
+        { id: "progress", label: "{done} of {active} done" },
+        { id: "progress-closed", label: "{closed} closed" },
+        { id: "empty", label: "No Steps yet" },
+        {
+          id: "empty-body",
+          label:
+            "Steps appear when you both accept a session — each one is derived from the widest Gap on its Aspect, and then kept here so you can mark it done.",
+        },
+        {
+          id: "empty-body-aligned",
+          label: "Every Gap on the last session was In Synch, so there is nothing to work on.",
+        },
+        { id: "mark-done", label: "Mark done: {text}" },
+        { id: "mark-open", label: "Mark open: {text}" },
+        { id: "suggested", label: "Suggested: {text}" },
+        { id: "edit", label: "Edit" },
+        { id: "save", label: "Save" },
+        { id: "cancel", label: "Cancel" },
+        { id: "step-text", label: "Step text" },
+        { id: "closed-note", label: "No Gap left on this Aspect; kept as history" },
+        { id: "read-only", label: "A coach reads the Steps; only a party ticks them." },
+      ],
+    },
+    {
+      /**
+       * The two seats, named — the header block `components/my-quizzes/quiz-details.tsx` draws for
+       * a quiz's players, translated to a relationship's two parties (#409).
+       *
+       * `you` marks the seat this request answers as; it is drawn from the role the read resolved,
+       * never from a name compared in the view. `unclaimed` is the Counterparty seat before the
+       * invitation is claimed — the one state in which a party row does not exist at all, and the
+       * honest word for it rather than an empty name.
+       *
+       * Nothing in this band is a count. A seat's *name* is not a fact about its answers, which is
+       * the whole line the blind rule draws: the parties are always legible, and what either of
+       * them wrote is not.
+       */
+      id: "parties",
+      heading: "The two seats",
+      items: [
+        { id: "initiator", label: "Initiator" },
+        { id: "counterparty", label: "Counterparty" },
+        { id: "you", label: "you" },
+        { id: "unclaimed", label: "Not claimed yet" },
+        { id: "coach", label: "Coach — read-only" },
+      ],
+    },
+    {
+      /**
+       * What was paid, for the Initiator alone (#409). Two facts and no arithmetic: the plan and
+       * the instant it was bought. A total would be a number nobody was charged — one
+       * relationship, one purchase — so there is no item for one here.
+       */
+      id: "paid",
+      heading: "What was paid",
+      items: [
+        { id: "plan", label: "Plan" },
+        { id: "bought", label: "Bought {date}" },
+        { id: "nothing", label: "Nothing has been paid on this relationship." },
+      ],
+    },
+    {
       id: "unlock-email",
       items: [
         { id: "subject", label: "{other} has answered {template}" },
@@ -206,7 +285,7 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       items: [
         {
           id: "frozen",
-          label: "Both of you have submitted, so an answer cannot be changed.",
+          label: "You have accepted this session, so an answer cannot be changed.",
         },
         {
           id: "incomplete",
@@ -215,6 +294,10 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "not-a-party", label: "This instance is not yours to answer." },
         { id: "no-such-instance", label: "No instance answers to that link." },
+        // #478 — the Steps endpoint's two codes. A tick can name a row this relationship does not
+        // hold (`no-such-step`), and a party can write a status the model does not allow (`invalid`).
+        { id: "no-such-step", label: "That Step is not on this relationship." },
+        { id: "invalid", label: "That change is not one a Step allows." },
         { id: "back", label: "Back to the instance" },
       ],
     },

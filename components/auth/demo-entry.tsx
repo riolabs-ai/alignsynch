@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: components/ui/button.tsx   (variation: a plain anchor styled by hand where components/ui/button.tsx asChild would do)
+ *
  * The demo entry point — a real anchor from `/login` to the PIN gate (#218).
  *
  * Without it the gate is reachable only by typing the URL, which means the demo is usable only by

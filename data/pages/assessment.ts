@@ -51,6 +51,38 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
       body: "An instance copies the template's Aspects when it is created. Editing a template later never touches an instance someone has answered.",
     },
     {
+      /**
+       * The catalogue card (#409), the same one `/assessment/templates` draws. The picker needs
+       * two words of its own only because its card carries the create form: the link out, and the
+       * type/realm the template's summary names.
+       */
+      id: "card",
+      items: [
+        { id: "view-details", label: "View details" },
+        { id: "aspects", label: "{count} Aspects" },
+        { id: "type", label: "Relationship Type" },
+        { id: "realm", label: "Realm" },
+        { id: "unnamed-type", label: "No relationship type" },
+        { id: "unnamed-realm", label: "Not stated" },
+        { id: "roles", label: "{initiator} / {counterparty}" },
+        /**
+         * The same four words `/assessment/templates` draws, in this surface's own voice: the
+         * price is the plan's (`CATALOGUE_PRICE_CENTS`), the primary action is the create screen
+         * this page links to, and the exemplar link appears only where a finished sheet exists.
+         */
+        { id: "price-label", label: "Included in" },
+        { id: "price", label: "{plan} · {price}/mo" },
+        { id: "use", label: "Use this template" },
+        { id: "see-example", label: "See a finished example" },
+      ],
+    },
+    {
+      /** The seven realm groups, and the one for templates that name no type (#409). */
+      id: "groups",
+      heading: "By realm",
+      items: [{ id: "other", label: "No realm" }],
+    },
+    {
       id: "empty",
       heading: "No published template",
       body: "A template has to be published before an instance can be created from it.",
@@ -73,7 +105,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "body",
           label:
-            "Hi {counterparty},\n\n{initiator} has started an assessment called {template} and asked you to answer it.\n\nEvery Aspect asks two things: how it feels now, and how you wish it to be. Neither of you can see the other's answers until you have both submitted them, and after that the answers are frozen.\n\nOpen your invitation here: {link}\n\nThe link works once.",
+            "Hi {counterparty},\n\n{initiator} has started an assessment called {template} and asked you to answer it.\n\nEvery Aspect asks two things: how it feels now, and how you wish it to be. Neither of you can see the other's answers until you have both answered and accepted them, and after that the answers are frozen.\n\nOpen your invitation here: {link}\n\nThe link works once.",
         },
       ],
     },

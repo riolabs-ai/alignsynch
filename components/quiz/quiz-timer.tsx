@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/badge.tsx   (variation: the countdown chip hand-written — the remaining time and a clock glyph, no ring)
+
 import { Clock } from "lucide-react";
 
 interface QuizTimerProps {

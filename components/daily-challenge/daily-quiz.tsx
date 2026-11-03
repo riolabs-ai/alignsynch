@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/quiz/quiz-play.tsx   (variation: the day's five questions one at a time, no timer, no stepper and no progress bar)
+
 import { Button } from "@/components/ui/button";
 import {
   Card,

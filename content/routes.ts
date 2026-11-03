@@ -18,6 +18,10 @@ import { zRouteManifest, type RouteManifest } from "./route-manifest";
 /** Routes without a dynamic segment. Order is irrelevant; `matchRoute` is exact. */
 const STATIC_ROUTES = [
   "/",
+  "/admin/console",
+  "/admin/console/relationships",
+  "/admin/console/templates",
+  "/admin/console/users",
   "/admin/gaps",
   "/admin/instances",
   "/affiliate",
@@ -38,6 +42,9 @@ const STATIC_ROUTES = [
   "/demo/admin",
   "/explore",
   "/explore/featured",
+  "/forgot-password",
+  "/help",
+  "/how-it-works",
   "/leaderboard",
   "/login",
   "/my-quizzes",
@@ -46,6 +53,7 @@ const STATIC_ROUTES = [
   "/privacy",
   "/quiz-discussions",
   "/register",
+  "/reset/complete",
   "/search",
   "/settings",
   "/support",
@@ -56,9 +64,19 @@ const STATIC_ROUTES = [
 
 /** Routes with `[param]` segments, as Next spells them. */
 const DYNAMIC_ROUTES = [
+  "/admin/console/relationships/[id]",
+  "/admin/console/templates/[id]",
   "/assessment/[slug]",
+  "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",
+  "/assessment/instances/[instanceId]/report",
+  // R1-E (#409): the two write screens sit one segment below the instance, beside the
+  // `answers`/`invite` route handlers — `answer` (singular), because Next forbids a
+  // `page.tsx` in the same segment as a `route.ts`.
+  "/assessment/instances/[instanceId]/answer",
+  "/assessment/instances/[instanceId]/accept",
   "/assessment/templates/[templateId]",
+  "/assessment/templates/[templateId]/create",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/invite/[token]",
@@ -69,6 +87,7 @@ const DYNAMIC_ROUTES = [
   "/quiz/[id]",
   "/quiz/[id]/discussion",
   "/quiz/[id]/play",
+  "/reset/[token]",
   "/support/articles/[slug]",
   "/tournaments/[id]",
 ] as const;
@@ -92,8 +111,8 @@ const INDEXABLE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
   { path: "/create/editor", title: "Create Quiz" },
   { path: "/create/generator", title: "Quiz Generator" },
   { path: "/affiliate", title: "Affiliate Page" },
+  { path: "/help", title: "Help" },
   { path: "/pricing", title: "Pricing Plan" },
-  { path: "/support", title: "Support" },
 ];
 
 export const routeManifest: RouteManifest = zRouteManifest.parse({

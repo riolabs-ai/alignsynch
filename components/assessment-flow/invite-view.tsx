@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: none — approved #336
+ *
  * `/invite/[token]` — the claim page, and the claim is a `POST` (#146, #202).
  *
  * The GET renders this and changes nothing. That is deliberate: the token is single-use,

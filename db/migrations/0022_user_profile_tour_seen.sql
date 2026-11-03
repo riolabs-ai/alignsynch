@@ -1,0 +1,39 @@
+-- 0022_user_profile_tour_seen.sql — the first-run tour's "I have seen this" mark (#456).
+--
+-- One nullable instant on `user_profile`, and the NULL is the fact that matters:
+--
+--   user_profile.tour_seen_at   WHEN this person completed or dismissed the first-run tour.
+--                               NULL = not seen, so the tour should show (#454).
+--
+-- **Why an instant and not a boolean.** The two writes this column takes are "seen" and
+-- "see it again" (#458's replay sets it back to NULL), which a boolean spells just as well. The
+-- instant is stored because the event that writes it has a time and support will one day ask
+-- *when* a person's tour was dismissed — a second column added later costs a migration, this one
+-- costs four bytes. It is not compared against anything: as `party.unlock_seen_at` (0007) records
+-- for the same shape, NULL-versus-non-NULL is the whole fact, and nothing in the app does date
+-- arithmetic on it.
+--
+-- **A new account has no row to update, and this column cannot fix that.** `user_profile` is
+-- created when a person first saves `/settings` or when the admin allowlist grants them a row —
+-- a brand-new sign-in has an auth user and nothing else (`lib/auth/shell-account.ts` renders that
+-- state deliberately). So `UPDATE … WHERE user_id = $1` would match zero rows for exactly the
+-- people a first-run tour is for, and the tour would show on every sign-in. The write path
+-- (`lib/db/tour.ts`) therefore provisions the row on the first completion, the way
+-- `lib/auth/admin-allowlist.ts` already provisions one on a first allowlisted sign-in. That is a
+-- property of the statement, not of this file; this file only makes the column exist.
+--
+-- **No backfill.** NULL is the honest value for every existing row: nobody has been shown a tour
+-- that did not exist, so every account signed in at the deploy sees it once. That is the intended
+-- behaviour of a first-run tour for accounts that predate it, and it is also what "first sign-in
+-- shows the tour" means for the demo accounts a reviewer signs in with.
+--
+-- **No index.** The mark is read and written by `user_id`, which is this table's primary key.
+--
+-- **Not in `zUserProfile`.** `content/identity.ts` models the profile — what a person writes on
+-- `/settings` and what a stranger reads on `/profile/<handle>`. This column is neither: no form
+-- writes it, `publicProfileOf()` drops it, and adding it to the model would put a tour mark on
+-- every profile read in the tree. Its shape is `lib/db/tour.ts`'s `TourState`.
+--
+-- Idempotent on purpose, like 0001–0021: `db:migrate` ledgers each file and skips what it applied,
+-- but a re-run of this file alone must still be a no-op.
+ALTER TABLE user_profile ADD COLUMN IF NOT EXISTS tour_seen_at TIMESTAMPTZ NULL;

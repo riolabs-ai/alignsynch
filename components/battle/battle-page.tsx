@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/quiz/quiz-play.tsx   (variation: one state value switching four stages — lobby, mode select, live rounds, results)
+
 import type { BattleModeId } from "@/content/battle";
 import type { PageCopy } from "@/content/pages";
 import { battleMode } from "@/data/battle-modes";

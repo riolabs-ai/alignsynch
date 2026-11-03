@@ -1,6 +1,9 @@
+// template-ancestor: components/ui/button.tsx   (variation: a close band — a heading, one button and a three-item benefits list)
+
 import { buttonVariants } from "@/components/ui/button";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
+import { cn } from "@/lib/utils";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 
@@ -35,12 +38,22 @@ export function PricingCta({ copy }: { copy: PageCopySection }) {
               </ul>
 
               <div className="flex flex-col sm:flex-row gap-4">
+                {/*
+                  White on the action ground, resolved through `cn` rather than by CSS order.
+                  `buttonVariants()` always emits a variant's own fill — `outline` carries
+                  `bg-background text-primary`, `default` carries `bg-action text-action-foreground` —
+                  and a `className` appended beside it does not replace those classes, it competes
+                  with them: whichever rule Tailwind emits later wins, which is how this button
+                  once shipped white-on-white. `cn` is `twMerge`, so the conflicting utilities are
+                  dropped before the class attribute is written and the pair below is the only
+                  background and the only text colour on the element (measured 6.06:1).
+                */}
                 <Link
                   href="/register"
-                  className={buttonVariants({
-                    size: "lg",
-                    className: "bg-white text-action hover:bg-action/10 border-0",
-                  })}
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "outline" }),
+                    "border-0 bg-white text-action hover:bg-white/90 hover:text-action",
+                  )}
                 >
                   {itemLabel(copy, "get-started")}
                 </Link>

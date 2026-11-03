@@ -47,6 +47,27 @@ export type OpinionKind = z.infer<typeof zOpinionKind>;
 
 export const OPINION_KINDS = zOpinionKind.options;
 
+/** The glossary's own four words, authored once: "Feel", "Wish", "Think", "Guess". */
+export const OPINION_LABELS: Record<OpinionKind, string> = {
+  feel: "Feel",
+  wish: "Wish",
+  think: "Think",
+  guess: "Guess",
+};
+
+/**
+ * Each opinion's one-line definition — the product's words beside the name, so the answer sheet
+ * and the report say what a kind means instead of leaving the word bare. `feel` is how the
+ * Aspect is now, `wish` how it should be, `think` how the party predicts the other feels, and
+ * `guess` how the party predicts the other wishes it.
+ */
+export const OPINION_DEFINITIONS: Record<OpinionKind, string> = {
+  feel: "how it is now",
+  wish: "how it should be",
+  think: "how they predict the other feels",
+  guess: "how they predict the other wishes",
+};
+
 /** Basic Mode: two opinions per Aspect per party. */
 export const BASIC_OPINION_KINDS = ["feel", "wish"] as const;
 
@@ -245,6 +266,16 @@ export const zParty = z
      * a surface that draws it must treat absent as "not recorded", not as "not answered".
      */
     submittedAt: zIsoDateTime.optional(),
+    /**
+     * When this seat **accepted** the session — the completion hinge (#R2), or absent for "not
+     * accepted yet".
+     *
+     * The same rule `submittedAt` follows, one column over: an instant, never a status. Whether a
+     * seat has accepted is read from this column by `instanceStatusOf()`, and whether the sheet is
+     * frozen is read from it per party — `complete` is derived from it and the opinion rows
+     * together, and there is no `accepted` boolean anywhere to disagree with them.
+     */
+    acceptedAt: zIsoDateTime.optional(),
     /** One entry per Aspect of the instance, in the instance's own order. */
     opinions: z.array(zAspectOpinions).min(1),
   })

@@ -1,4 +1,6 @@
 /**
+ * template-ancestor: none — approved #336
+ *
  * The assessment report, drawn — the read-only half of `/assessment/[slug]`, and the report
  * the instance screen draws once both parties have submitted (#274).
  *

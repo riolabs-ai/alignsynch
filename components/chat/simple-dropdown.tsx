@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/dropdown-menu.tsx   (variation: a hand-rolled single-level menu with the same item, label and separator parts — no portal and no collision handling)
+
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 

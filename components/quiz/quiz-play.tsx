@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/progress.tsx   (variation: the play surface — one question at a time, a progress bar, a timer, previous/next and submit)
+
 import { QuizHeader } from "@/components/quiz/quiz-header";
 import { QuizQuestion } from "@/components/quiz/quiz-question";
 import { QuizResults } from "@/components/quiz/quiz-results";

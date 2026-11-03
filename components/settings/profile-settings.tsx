@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the profile panel hand-written — an avatar upload, name, username and bio fields with their labels)
+
 import type React from "react";
 
 import { Button } from "@/components/ui/button";

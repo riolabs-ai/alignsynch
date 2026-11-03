@@ -1,6 +1,12 @@
 /**
  * `/assessment/templates` — the template library (#console 5/5).
  *
+ * **The heading is "Relationship Templates", and it is the page's title too.** "Your templates"
+ * described a page it did not point at: the rail row is Templates (the catalogue a member starts
+ * from) and Library is the row beside it, and the page itself is the catalogue — the platform's
+ * templates plus the ones this account wrote. The `<h1>` and the `<title>` both read `heading`,
+ * so the title cannot drift from the screen.
+ *
  * The screen answers one question: **which templates may this account use, and which of them did
  * it write?** The data side is `record.author_user_id` — `NULL` for a built-in, the author's id
  * for a template a person wrote — and the three tabs are that one column read three ways.
@@ -24,14 +30,26 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
-  heading: "Your templates",
+  heading: "Relationship Templates",
   subtitle:
-    "The templates this account can use: the platform's own, and the ones you wrote. Open one to see its Aspects, copy it, or archive it when you no longer want it in the list.",
+    "Every relationship type the platform sells, grouped by the realm the relationship lives in, plus the templates you wrote. Open one for its Aspects, use it to start a relationship, copy it, or archive it when you no longer want it in the list.",
   sections: [
     {
       id: "list",
       heading: "Every template you can use",
-      body: "A row counts the Aspects it asks and the instances made from it. Archiving a template hides it from the catalogue and stops new instances; the instances already made from it keep working.",
+      body: "A card counts the Aspects the template asks, and the plan that includes every type here is Basic. Archiving a template hides it from the catalogue and stops new relationships; the relationships already made from it keep working.",
+      items: [
+        /**
+         * The count the filter has to move (#catalogue). `{shown}` is the cards on this screen,
+         * `{total}` the cards the tab and status left, both counted from the rows the page read.
+         */
+        { id: "count", label: "Showing {shown} of {total} templates" },
+        /**
+         * The same sentence once a realm is chosen — the filter names itself, so the count and
+         * the shelf it was counted on are read in one line rather than two places apart.
+         */
+        { id: "count-realm", label: "Showing {shown} of {total} templates in {realm}" },
+      ],
     },
     {
       id: "tabs",
@@ -89,6 +107,62 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
         { id: "archive", label: "Archive" },
         { id: "unarchive", label: "Unarchive" },
       ],
+    },
+    {
+      /**
+       * The catalogue's one card (#409). A card states the record's own facts — the title, the
+       * summary, the Aspects it asks, the Relationship Type and Realm the summary names — and
+       * carries one link out of it. Nothing here is a count the card invented: `{count}` is
+       * `count(item)` and the type is the template's own words.
+       */
+      id: "card",
+      items: [
+        { id: "view-details", label: "View details" },
+        { id: "aspects", label: "{count} Aspects" },
+        /**
+         * The two chips a realm heading does not already say (#catalogue). The realm chip and the
+         * type chip this card used to draw repeated the heading above it and the title above
+         * them; what a card adds is who the parties are, what it asks and what it costs.
+         */
+        { id: "unnamed-type", label: "No relationship type" },
+        { id: "roles", label: "{initiator} / {counterparty}" },
+        /**
+         * The price (#catalogue). One figure on every card, and it is the plan's, not a
+         * per-relationship charge: `CATALOGUE_PRICE_CENTS` is Basic's monthly price, so no type
+         * can be sold at a figure the pricing page does not carry. `{price}` is `formatCurrency`.
+         */
+        { id: "price-label", label: "Included in" },
+        { id: "price", label: "{plan} · {price}/mo" },
+        { id: "use", label: "Use this template" },
+        { id: "see-example", label: "See a finished example" },
+      ],
+    },
+    {
+      /**
+       * The groups the catalogue is drawn in — the v1 library's `Business · Personal`, plus the
+       * one group for templates whose own words name no type (the platform's starter set and
+       * anything this account wrote). The group is a projection of `realm` in
+       * `data/relationship-types.ts`; it is never inferred from a title.
+       */
+      id: "groups",
+      heading: "By realm",
+      items: [
+        /**
+         * Only the group with no realm has a word of its own. The seven realm headings are the
+         * taxonomy's own values (`REALMS` in `data/relationship-types.ts`), rendered as the
+         * field they are — a second authored spelling of "Office" here would be drift.
+         */
+        { id: "other", label: "No realm" },
+      ],
+    },
+    {
+      /**
+       * The realm filter (#catalogue). The seven realm labels are the taxonomy's values; this
+       * section owns the one label that is not a realm — the link back to every card.
+       */
+      id: "realms",
+      heading: "Realm",
+      items: [{ id: "all", label: "All realms" }],
     },
     {
       id: "create",

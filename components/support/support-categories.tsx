@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/card.tsx   (variation: the category cards — one per subject with an icon, a count and a description)
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PageCopySection } from "@/content/pages";
@@ -8,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { FileQuestion, HelpCircle, Lock, Settings, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { supportCategories, type SupportFaqCategory } from "@/data/support-categories";
-import type { SupportCategory } from "./support-page";
+import type { SupportCategory } from "./category";
 
 interface SupportCategoriesProps {
   selectedCategory: SupportCategory;

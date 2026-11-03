@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/dashboard/dashboard-page.tsx   (variation: the same tabbed shell over the challenge's six panels, one of which is the day's dismissible header)
+
 import type { PageCopy } from "@/content/pages";
 import { sectionOf } from "@/lib/page-copy";
 import { useState } from "react";

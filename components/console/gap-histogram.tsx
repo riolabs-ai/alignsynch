@@ -1,6 +1,8 @@
 "use client";
 
 /**
+ * template-ancestor: components/ui/chart.tsx   (variation: five Gap sizes as one token at five opacities, the counts printed in the table beside it)
+ *
  * The histogram one Setting's kind table adds up to (#289 follow-up).
  *
  * A Gap is 0..4 and ordinal, so the honest picture is **how many of each size**, not a line and

@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/button.tsx   (variation: the composer bar — an input, an attach popover and a send button in one row)
+
 import type React from "react";
 
 import { Button } from "@/components/ui/button";

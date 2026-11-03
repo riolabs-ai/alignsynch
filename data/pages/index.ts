@@ -23,6 +23,10 @@ import { myInstancesPageCopy } from "./assessment-instances";
 import { assessmentTemplatePageCopy } from "./assessment-template-new";
 import { templateDetailPageCopy } from "./assessment-template-detail";
 import { templateLibraryPageCopy } from "./assessment-templates";
+import { relationshipReportPageCopy } from "./assessment-relationship-report";
+import { assessmentAcceptPageCopy } from "./assessment-accept";
+import { assessmentAnswerPageCopy } from "./assessment-answer";
+import { assessmentCreatePageCopy } from "./assessment-create";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
@@ -33,6 +37,8 @@ import { dashboardPageCopy } from "./dashboard";
 import { exploreFeaturedPageCopy } from "./explore-featured";
 import { explorePageCopy } from "./explore";
 import { homePageCopy } from "./home";
+import { helpPageCopy } from "./help";
+import { howItWorksPageCopy } from "./how-it-works";
 import { invitePageCopy } from "./invite";
 import { legalPages } from "./legal";
 import { loginPageCopy } from "./login";
@@ -41,6 +47,7 @@ import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
 import { overviewPageCopy } from "./overview";
+import { resetCompletePageCopy, resetFormPageCopy, resetRequestPageCopy } from "./password-reset";
 import { pricingPageCopy } from "./pricing";
 import { profilePageCopy } from "./profile";
 import { registerPageCopy } from "./register";
@@ -59,8 +66,13 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/assessment": assessmentPageCopy,
   "/assessment/instances": myInstancesPageCopy,
   "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
+  "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
+  // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
+  "/assessment/instances/[instanceId]/answer": assessmentAnswerPageCopy,
+  "/assessment/instances/[instanceId]/accept": assessmentAcceptPageCopy,
   "/assessment/templates": templateLibraryPageCopy,
   "/assessment/templates/[templateId]": templateDetailPageCopy,
+  "/assessment/templates/[templateId]/create": assessmentCreatePageCopy,
   "/assessment/templates/new": assessmentTemplatePageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
@@ -72,6 +84,9 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/dashboard/user": dashboardPageCopy,
   "/explore": explorePageCopy,
   "/explore/featured": exploreFeaturedPageCopy,
+  "/forgot-password": resetRequestPageCopy,
+  "/help": helpPageCopy,
+  "/how-it-works": howItWorksPageCopy,
   "/invite/[token]": invitePageCopy,
   "/login": loginPageCopy,
   "/news": newsPageCopy,
@@ -80,6 +95,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/privacy": legalPages.privacy,
   "/profile/[username]": profilePageCopy,
   "/register": registerPageCopy,
+  "/reset/[token]": resetFormPageCopy,
+  "/reset/complete": resetCompletePageCopy,
   /**
    * `/search` is the one route that points at the shell's fixture (issue #156 follow-up).
    *

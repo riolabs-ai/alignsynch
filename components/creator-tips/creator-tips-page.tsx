@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: the tips magazine — hero with search, subject strip, one featured row, the grid and a close band)
+
 import type { PageCopySection } from "@/content/pages";
 import { articleCategoryRows, publishedArticles, searchArticles } from "@/lib/article-records";
 import { useState } from "react";

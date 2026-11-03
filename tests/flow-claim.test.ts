@@ -236,10 +236,19 @@ function screen(role: "initiator" | "counterparty"): FlowScreen {
     summary: "An instance between two people.",
     status: "awaiting_counterparty",
     mode: "basic",
+    setting: "soft",
     viewer: { role, name: role === "initiator" ? "Avery" : "Rowan" },
     aspects: [],
     initiatorName: "Avery",
     counterpartyName: role === "initiator" ? null : "Rowan",
+    seats: [
+      { role: "initiator" as const, name: "Avery", answered: 0, acceptedAt: null },
+      ...(role === "initiator"
+        ? []
+        : [{ role: "counterparty" as const, name: "Rowan", answered: 0, acceptedAt: null }]),
+    ],
+    viewerAnswered: 0,
+    viewerAccepted: false,
     waiting: [role === "initiator" ? "counterparty" : "initiator"],
     invite: null,
     report: null,

@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/button.tsx   (variation: a centred close band — a heading, one line, two buttons and three icon facts)
+
 import { Button } from "@/components/ui/button";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";

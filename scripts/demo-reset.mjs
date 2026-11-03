@@ -595,6 +595,10 @@ function countQueries() {
     ["opinion", "SELECT count(*)::int AS n FROM opinion"],
     ["user_profile", "SELECT count(*)::int AS n FROM user_profile"],
     ["demo_account", "SELECT count(*)::int AS n FROM demo_account"],
+    [
+      "platform admin",
+      "SELECT count(*)::int AS n FROM user_profile WHERE role = 'admin' AND user_id NOT IN (SELECT user_id FROM demo_account)",
+    ],
     ["neon_auth user", 'SELECT count(*)::int AS n FROM neon_auth."user"'],
   ];
 }
@@ -1061,12 +1065,15 @@ async function main() {
 
   // The accounts are the seed's own half of the demo; the bundle says nothing about them. The
   // invariant that holds them to the file is structural: one credential, one profile, one auth
-  // user per demo account — no more (a leftover copy of the source's users) and no fewer.
+  // user per demo account — no more (a leftover copy of the source's users) and no fewer — plus
+  // the platform admins the seed adds from `ADMIN_*`, which are the difference between the demo
+  // row count and the profile/auth-user counts.
   const accountsAgree =
     typeof afterSeed.demo_account === "number" &&
     afterSeed.demo_account > 0 &&
-    afterSeed.demo_account === afterSeed.user_profile &&
-    afterSeed.demo_account === afterSeed["neon_auth user"];
+    typeof afterSeed["platform admin"] === "number" &&
+    afterSeed["neon_auth user"] === afterSeed.user_profile &&
+    afterSeed.user_profile === afterSeed.demo_account + afterSeed["platform admin"];
   if (!accountsAgree) mismatches += 1;
 
   step("verdict");
@@ -1092,7 +1099,7 @@ async function main() {
     `  row-set     ${mismatches === 0 ? "matches the bundle" : `${mismatches} count(s) do not match the bundle`}`,
   );
   say(
-    `  accounts    ${afterSeed.demo_account} demo account(s), ${accountsAgree ? "one profile and one auth user each" : "INCONSISTENT with the seed's accounts"}`,
+    `  accounts    ${afterSeed.demo_account} demo account(s) + ${afterSeed["platform admin"]} platform admin(s) — ${accountsAgree ? "one profile and one auth user each" : "INCONSISTENT with the seed's accounts"}`,
   );
   say(`  elapsed     ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 

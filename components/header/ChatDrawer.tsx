@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/sheet.tsx   (variation: the drawer hand-rolled as a positioned panel instead of components/ui/sheet.tsx — the thread list, then the thread)
+
 import { formatRelative } from "@/content/core";
 import type { PageCopySection } from "@/content/pages";
 import type { RecentMessage } from "@/data/chat-data";

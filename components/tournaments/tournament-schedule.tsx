@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/admin/instance-registry.tsx   (variation: the schedule as a dated table inside a card)
+
 import { Badge } from "@/components/ui/badge";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

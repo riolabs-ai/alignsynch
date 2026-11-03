@@ -1,6 +1,25 @@
 /**
  * `/assessment/instances` — the instances the signed-in account is a party to (#213).
  *
+ * **The heading is "My Relationships", and it is the page's title too.** The rail has called this
+ * destination My Relationships since the console rail was rewritten (`data/pages/shell.ts`), and
+ * the page said "Your assessments" in two places — an `<h1>` from this fixture and a `<title>`
+ * spelled in the page module. Both now read this one field: the product's noun is *relationship*,
+ * and an instance is the row that holds one, not the word a member is asked to recognise.
+ *
+ * **Three words, and this page only uses two of them.** A *relationship* is the ongoing container
+ * — bought once, holding every cycle. A *session* is one cycle of answering inside it. An
+ * *assessment* is the scored Gap analysis a finished session produces, so it is never the thing a
+ * reader is "in", starts, or opens from this list: the CTA starts a relationship, the empty state
+ * is about relationships, and the word assessment does not appear in this file's visible copy.
+ *
+ * **The Gap opens on acceptance, not on submission (#R2).** `lib/flow/state.ts::instanceStatusOf`
+ * completes a session only when both parties have answered every Aspect **and both have accepted**
+ * it (`party.accepted_at`); the report is built at `complete` and nowhere earlier, so a party
+ * cannot read the other's column — or the Gap — after the second *submit* any more. Every
+ * sentence here about when the Gap becomes readable says **accepted**, which is the hinge the
+ * code actually has.
+ *
  * The third band is the whole point of the route: `yours-to-answer`, `awaiting-other` and
  * `complete` are the three things a row may say, and `awaiting-other` is the only one that
  * mentions the other party — as *awaiting*, with no score, no count of what they have answered
@@ -26,14 +45,15 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
-  heading: "Your assessments",
+  heading: "My Relationships",
   subtitle:
-    "Every instance you are a party to, whichever link brought you in. Open one to answer, or to read the Gap once you have both submitted.",
+    "Every relationship you're a party to, whichever link brought you in. Open one to answer, or to read the Gap once you've both accepted.",
+  cta: { label: "Start a relationship", href: "/assessment" },
   sections: [
     {
       id: "list",
       heading: "What you are in the middle of",
-      body: "Newest first. A row says only where the instance stands: neither of you sees the other's answers until you have both submitted.",
+      body: "Newest first. A row says only where the relationship stands: neither of you sees the other's answers until you have both accepted it.",
     },
     {
       id: "row",
@@ -42,7 +62,87 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
         { id: "counterparty", label: "Counterparty" },
         { id: "you", label: "you" },
         { id: "unnamed-party", label: "the other party" },
-        { id: "open", label: "Open this instance" },
+        { id: "open", label: "Open this relationship" },
+      ],
+    },
+    {
+      /**
+       * The card's own words — the ancestor is `components/my-quizzes/my-quizzes.tsx`, and this is
+       * the translation of its header, filter row and grid. Every label here is a word a reader
+       * sees; none of them is a figure, because a figure is derived and this fixture holds no
+       * numbers (the card's rule: a count comes from the rows, never from a fixture).
+       *
+       * The stage tab labels are **not** here: they are the glossary's own four names, authored
+       * once in `content/stages.ts` (`STAGE_LABELS`) and read by both this surface and the
+       * instance screen's stage sentence, the same way a mode name is. `all` is the one tab that
+       * is not a stage, so it is a word this surface owns.
+       */
+      id: "stage",
+      items: [
+        { id: "all", label: "All relationships" },
+        { id: "empty", label: "No relationship is at this stage right now." },
+      ],
+    },
+    {
+      id: "search",
+      items: [
+        { id: "label", label: "Search your relationships" },
+        { id: "placeholder", label: "Search by name, template or person" },
+        { id: "count", label: "Showing {shown} of {total}" },
+        { id: "submit", label: "Search" },
+        { id: "clear", label: "Clear the search" },
+        { id: "no-match", label: "No relationship matches this search." },
+      ],
+    },
+    {
+      id: "metric",
+      items: [
+        { id: "sessions", label: "Sessions" },
+        { id: "none-opened", label: "none opened" },
+        { id: "completed-of-opened", label: "completed of opened" },
+        { id: "completion", label: "Completion" },
+        { id: "alignment", label: "Avg alignment" },
+        { id: "mean-gap", label: "mean Gap" },
+        { id: "aspects", label: "Aspects" },
+        { id: "unscored", label: "No scored session yet" },
+      ],
+    },
+    {
+      id: "card",
+      items: [
+        { id: "with", label: "With" },
+        { id: "not-claimed", label: "Not claimed yet" },
+        { id: "no-session", label: "No session yet" },
+        { id: "last-session", label: "Last session {when}" },
+        { id: "view", label: "View" },
+      ],
+    },
+    {
+      /**
+       * What was paid — the Initiator's card only, and never a total.
+       *
+       * `nothing` is a sentence, not a figure: a relationship with no plan has been charged
+       * nothing, and saying so is more honest than an amount of zero. There is no `total` item
+       * and there cannot be one: one relationship, one purchase, no second payment to add.
+       */
+      id: "paid",
+      items: [
+        { id: "label", label: "Paid" },
+        { id: "nothing", label: "No plan yet" },
+        { id: "statement", label: "{plan} · bought {date}" },
+      ],
+    },
+    {
+      id: "invite",
+      items: [
+        // These ids are `INVITE_STATES` (lib/flow/invite-state.ts`), and they are the only
+        // source: the row renders `itemLabel(inviteCopy, instance.inviteState)`, so a state
+        // with no item here throws PageCopy at render time and takes the whole list down.
+        // The block previously carried not-sent / pending / expired / accepted — an older
+        // design, three of whose names the code can no longer produce.
+        { id: "unclaimed", label: "Not claimed yet" },
+        { id: "expired", label: "Expired" },
+        { id: "claimed", label: "Accepted" },
       ],
     },
     {
@@ -50,7 +150,7 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "yours-to-answer", label: "Yours to answer" },
         { id: "awaiting-other", label: "Waiting for {name} to answer." },
-        { id: "complete", label: "You have both answered — the Gap is open" },
+        { id: "complete", label: "You have both accepted — the Gap is open" },
       ],
     },
     {
@@ -63,9 +163,9 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "empty",
-      heading: "You are not in an assessment yet",
-      body: "An instance starts when you pick a template and invite someone, or when someone invites you. Either way it turns up here afterwards, without needing the invitation link again.",
-      cta: { label: "Start an assessment", href: "/assessment" },
+      heading: "You are not in a relationship yet",
+      body: "A relationship starts when you pick a template and invite someone, or when someone invites you. Either way it turns up here afterwards, without needing the invitation link again.",
+      cta: { label: "Start a relationship", href: "/assessment" },
     },
     {
       /**
@@ -75,7 +175,7 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
        * `yours-to-answer`, `reports-open` — and `lib/flow/overview.ts` owns the predicate, so this
        * band only supplies the words. `showing` is the line above the list; `show-all` is the way
        * back to the unfiltered list; `empty` is what a filter that keeps no rows says, which is a
-       * different sentence from "you are not in an assessment yet" — the reader has relationships,
+       * different sentence from "You are not in a relationship yet" — the reader has relationships,
        * none of them in this state.
        */
       id: "filter",
@@ -90,7 +190,7 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "unreadable",
-      heading: "Your assessments could not be read",
+      heading: "Your relationships could not be read",
       body: "This list is read from the database on every visit, and this visit did not get an answer. Nothing here came from a cache, and no answers were shown, guessed or reused.",
       items: [{ id: "reload", label: "Try the list again" }],
     },

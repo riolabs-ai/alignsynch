@@ -1,7 +1,7 @@
 # AlignSynch
 
 <p align="center">
-  <img src="docs/assets/hero.svg" alt="AlignSynch — two people answer the same questions; the distance between their answers is the Gap." width="960" />
+  <img src="docs/assets/og_image.png" alt="The AlignSynch share card: AlignSynch Relationship Alignment, with the relationships dashboard showing two demo relationships and their Gap",parent pricing for relationship alignment, three plans — Free, Basic at $8.95 marked Recommended and Principal at $16.95 — above a monthly and yearly toggle, a test-mode line under the prices, the FAQ, a closing call to action and the footer." width="720" />
 </p>
 
 <p align="center">
@@ -15,18 +15,82 @@
   <img src="https://img.shields.io/badge/licence-private-363d49?style=flat" alt="Licence: private" />
 </p>
 
-AlignSynch is a relationship and learning platform: two people answer the same questions about how
-they feel and how they wish it to be, and the distance between the two answers is the Gap.
+AlignSynch asks two people the same questions about how they feel and how they wish it to be. Where
+their answers part is the **Gap** — a difference of two opinions, computed on the page rather than
+stored in a column.
 
-This repository is the **template** that product is built from, not a single site. One codebase, one
-route table, several templates and several brands, and a build picks the brand. It ships as
-AlignSynch, and **QuizHub is the second shipped brand and template** — the quiz and tournament
-product the platform grew out of, still buildable, still green, not the thing this repository is.
+This repository is the **template** that product is built from, not a single site: one Next.js
+codebase, one route table, several templates and several brands, and a build picks the brand. It is
+built on the QuizHub starting UI template, the shared core every expression of this repo is cut from
+([docs/TEMPLATE-DOCTRINE.md](docs/TEMPLATE-DOCTRINE.md), #318).
 
 > [!NOTE]
-> **What this is.** One Next.js codebase and one route table that render several brands; it ships as
-> **AlignSynch**, and **QuizHub** is the second shipped brand and template. **Live demo:**
-> <https://alignsynch-amber.vercel.app/> — `main` deploys on every merge.
+> **Live demo:** <https://alignsynch-amber.vercel.app/> — `main` deploys on every merge.
+
+## What it looks like
+
+Every image on this page is this commit running locally: `BRAND=alignsynch`, served by `next start`
+on `http://localhost:3100` (not `127.0.0.1`, which is a different origin for the auth server — see
+[Environment variables](#environment-variables)), signed in through the demo panel as its Initiator
+where a route needs a session, at 1440 CSS pixels wide and device scale 1. Each capture is the full
+page, so what you see is the whole route — nothing is cropped, upscaled or retouched.
+
+Three things in these images are honestly temporary and are left visible rather than cropped out:
+`/pricing` carries the billing driver's **test-mode** line, because the checkout runs on test keys;
+`/login` is captured with the demo panel off, which is how a production build serves it; and the two
+assessment screens show the demo branch's dataset — one relationship and three templates — because
+that is what the demo branch carries.
+
+The hero is `/pricing`: three plans, the middle one recommended, a yearly toggle at 20% off, the FAQ,
+and a card checkout behind the paid ones. What follows is the rest of what runs, one route at a time.
+The same six routes are also captured at 390 wide under `docs/screenshots/` for the mobile layout;
+they are not embedded here, because six full pages already fill this section.
+
+### Sign in — `/login`
+
+<p align="center">
+  <img src="docs/screenshots/login-1440.png" alt="The sign-in page at 1440 wide: a left panel reading AlignSynch, the same questions for both of you, and where your answers part is the Gap, beside a form with Google sign-in, email and password, and a sign-up link." width="720" />
+</p>
+
+Google, email and password on the right; the two-answers, one-Gap panel on the left, with the demo
+accounts panel off as a production build serves it.
+
+### Help — `/help`
+
+<p align="center">
+  <img src="docs/screenshots/help-1440.png" alt="The help centre at 1440 wide: the FAQ list with a category sidebar and a search field, a Need a person callout, the contact form with name, email and message fields, and the footer." width="720" />
+</p>
+
+The public FAQ with its category sidebar and search field, a callout pointing at in-app support, and
+the contact form behind it.
+
+### Support — `/support`
+
+<p align="center">
+  <img src="docs/screenshots/support-1440.png" alt="Account support at 1440 wide, signed in: a Contact support card pointing at the help form, and cards explaining what happens to a message, what to include and where the faster answers are." width="720" />
+</p>
+
+Signed in: where to send a message, what happens to it — stored first, mailed second, read by a
+person — and what to include. Signed out, the same route answers with `/help`.
+
+### My Relationships — `/assessment/instances`
+
+<p align="center">
+  <img src="docs/screenshots/assessment-instances-1440.png" alt="The My Relationships list at 1440 wide: filters, a result count, and one relationship card reading Relationship Basics with Rowan, one of one session completed, 100 percent completion, an average alignment of 1.1 mean Gap and five Aspects." width="720" />
+</p>
+
+Every relationship the account is a party to — invited, connected or sharing — with the numbers on
+the card read from Postgres: one session of one completed, a 1.1 mean Gap across five Aspects.
+
+### Relationship Templates — `/assessment/templates`
+
+<p align="center">
+  <img src="docs/screenshots/assessment-templates-1440.png" alt="The template catalogue at 1440 wide: filters for which templates and which status, and three cards — Staff and Manager, Parent and Child and Relationship Basics — each counting its Aspects and the instances made from it." width="720" />
+</p>
+
+Three templates — Staff & Manager, Parent & Child and Relationship Basics — each counting its five
+Aspects and the instances made from it; archiving one hides it from the catalogue and leaves its
+instances working.
 
 ## What actually runs
 
@@ -36,7 +100,7 @@ product the platform grew out of, still buildable, still green, not the thing th
 | UI            | React 19, TypeScript 5 in `strict` mode, Tailwind CSS 3.4 and shadcn/ui over Radix                                              | `components/` |
 | Content model | zod 3 schemas as the single source of truth; every type is `z.infer`red from them                                               | `content/`    |
 | Fixtures      | the validated records pages render; `pnpm data:check` fails a build when one drifts from the schema                             | `data/`       |
-| Data          | Neon Postgres over `pg`, eight tables, forward-only SQL in `db/migrations/`                                                     | `lib/db/`     |
+| Data          | Neon Postgres over `pg`, nineteen tables, forward-only SQL in `db/migrations/`                                                  | `lib/db/`     |
 | Auth          | Neon Managed Auth (hosted Better Auth), proxied at `app/api/auth/[...path]`; the app owns no users or sessions table of its own | `lib/auth/`   |
 | Deploy        | Vercel — `main` deploys; the AlignSynch build is at <https://alignsynch-amber.vercel.app/>                                      | —             |
 
@@ -44,41 +108,13 @@ product the platform grew out of, still buildable, still green, not the thing th
 app, validated by a plain `node` script, and checked against the database with no browser in the
 loop.
 
-## What it looks like
-
-Every image below is this commit running locally — `BRAND=alignsynch`, `DEMO_AUTH=1`, 1440×900 at
-device scale 1, served by `next start` on `http://localhost` (not `127.0.0.1`: that is a different
-origin and the auth server refuses it, see [Environment variables](#environment-variables)). The
-report is the demo dataset's `assessment-instance-avery-rowan`, reached by signing in through
-`/demo` as Avery, so the numbers in it are the ones Postgres returned. Nothing is cropped, upscaled
-or retouched; the PNGs are palette-optimised and nothing else.
-
-### Home
-
-<img src="docs/assets/screens/home.png" alt="The AlignSynch home page at / — the app shell with its assessment navigation, a hero asking 'How do you feel, against how they feel?', and two cards explaining the Feel Gap and the Wish Gap." width="720" />
-
-`/` — the home the AlignSynch brand record composes.
-
-### Welcome
-
-<img src="docs/assets/screens/welcome.png" alt="The AlignSynch public landing page at /welcome — the hero 'Where two people's answers part', and beneath it the Align (business) and Synch (personal) cards." width="720" />
-
-`/welcome` — the standalone marketing route, with no app shell.
-
-### Assessment
-
-<img src="docs/assets/screens/assessment.png" alt="The assessment report at /assessment/instances/assessment-instance-avery-rowan, read from Postgres and signed in as Avery — five Aspects with Avery's and Rowan's answers beside each other and the computed Gap on each; on the first question a Feel Gap of 3 and a Wish Gap of 2." width="720" />
-
-`/assessment/instances/assessment-instance-avery-rowan` — the Avery and Rowan instance, as Avery
-sees it.
-
 ## Two brands from one build
 
 `data/brand.ts` holds the records; `next.config.mjs` inlines one flag that selects between them.
 
 ```bash
-BRAND=quizhub pnpm build      # the default: the QuizHub record
 BRAND=alignsynch pnpm build   # the AlignSynch record
+pnpm build                    # the template's default brand
 ```
 
 A brand record carries the name, legal name, description, domain, logo path, the palette, the
@@ -88,11 +124,8 @@ by name — so "this demo is AlignSynch now" is one build rather than a find-and
 inlined by the bundler because client components read the record too: a `process.env` the bundler did
 not replace would render one brand on the server and another at hydration.
 
-`BRAND=<anything else>` throws at build time instead of rendering a half-swapped product:
-
-```
-BRAND=acme is not a brand — expected one of: quizhub, alignsynch
-```
+A `BRAND` that names no record in `data/brand.ts` throws at build time instead of rendering a
+half-swapped product.
 
 What the flag does **not** do: it swaps a record, not a page. The route table is identical, and the
 copy in `data/` and `data/pages/` still speaks whichever product it was written for. See
@@ -127,12 +160,11 @@ the cheapest possible failure, and it still costs an hour if you find it by watc
 `packageManager` and the lockfile, and the gate refuses another major.
 
 **`pnpm build` succeeds without a database.** Verified on a clean checkout with `DATABASE_URL` and
-`NEON_AUTH_BASE_URL` unset and no `.env.local`: exit 0, and the route table it printed is the same 39
-pages the registry counts. Only the database-backed
-routes need a connection, and only at request time — the pool is created lazily on the first query,
-and the auth server is constructed on first use rather than at import. That distinction is why CI
-runs the full gate with no connection string attached: a build that needed a database would leave
-every pull request unable to test itself.
+`NEON_AUTH_BASE_URL` unset and no `.env.local`: exit 0, and the route table it printed is the same 92
+pages the registry counts. Only the database-backed routes need a connection, and only at request
+time — the pool is created lazily on the first query, and the auth server is constructed on first use
+rather than at import. That distinction is why CI runs the full gate with no connection string
+attached: a build that needed a database would leave every pull request unable to test itself.
 
 ### Before you push: the gate
 
@@ -161,7 +193,7 @@ build. Nothing below is needed by `pnpm build`.
 | `DATABASE_URL_UNPOOLED`   | `scripts/load-env.mjs`             | `pnpm db:migrate`, `db:seed`, `db:verify`; falls back to `DATABASE_URL`                               |
 | `NEON_AUTH_BASE_URL`      | `lib/auth/server.ts`               | signing in and out, sessions, `/api/auth/*`; written by `neon env pull`                               |
 | `NEON_AUTH_COOKIE_SECRET` | `lib/auth/server.ts`               | the same; application config, supplied per environment rather than injected by Neon                   |
-| `BRAND`                   | `data/brand.ts`, `next.config.mjs` | `quizhub` (default) or `alignsynch`                                                                   |
+| `BRAND`                   | `data/brand.ts`, `next.config.mjs` | `alignsynch`, or another key of the `brands` table; unset builds the template's default brand         |
 | `NEXT_PUBLIC_BASE_URL`    | `lib/flow/email.ts`                | the origin in an invitation link; defaults to `http://localhost:3000`                                 |
 | `RESEND_API_KEY`          | `lib/flow/email.ts`                | sending the invitation mail; without it the link is shown in the UI instead and the flow carries on   |
 | `RESEND_FROM`             | `lib/flow/email.ts`                | the sender address; defaults to Resend's `onboarding@resend.dev` development sender                   |
@@ -196,7 +228,7 @@ a reset, or check it first when `127.0.0.1` starts failing on a demo that worked
 
 ```bash
 curl "https://console.neon.tech/api/v2/projects/$PROJECT_ID/branches/$BRANCH_ID/auth/domains" \
-  -H "Authorization: Bearer $NEON_API_KEY"   # [] after a restore means re-add it
+  -H "Authorization: Bearer ***"   # [] after a restore means re-add it
 ```
 
 Folding that step into the reset itself is [#214](https://github.com/riolabs-ai/alignsynch/issues/214).
@@ -206,7 +238,7 @@ To give another dev branch the same origin (include the protocol, no trailing sl
 ```bash
 # Console: Project → Branch → Auth → Configuration → Domains — or:
 curl -X POST "https://console.neon.tech/api/v2/projects/$PROJECT_ID/branches/$BRANCH_ID/auth/domains" \
-  -H "Authorization: Bearer $NEON_API_KEY" -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ***" -H "Content-Type: application/json" \
   -d '{"domain": "http://127.0.0.1:3000", "auth_provider": "better_auth"}'
 # read the list back: GET the same path; also `neon neon-auth domain add http://127.0.0.1:3000`
 ```
@@ -249,23 +281,22 @@ pnpm ui:registry:check   # what the gate runs: regenerate in memory, compare, ex
 pnpm ui:registry         # rewrite docs/ui-registry.md after a legitimate change
 ```
 
-- **39 routes** — 25 static, 14 dynamic, from `app/**/page.tsx`
-- **32 component domains** — 224 files under `components/`, 220 of them `.tsx`
-- **5 route handlers** — `app/**/route.ts`, listed in the registry and not counted as UI
-- **71 catalogued surfaces** — 39 routes + 32 domains, each with a `status`
-- **status split** — 5 live, 7 database-backed, 50 fixture-backed, 9 mock
+- **66 routes** — 43 static, 23 dynamic, from `app/**/page.tsx`
+- **39 component domains** — 275 files under `components/`, 269 of them `.tsx`
+- **16 route handlers** — `app/**/route.ts`, listed in the registry and not counted as UI
+- **105 catalogued surfaces** — 66 routes + 39 domains, each with a `status`
+- **status split** — 7 live, 20 database-backed, 61 fixture-backed, 15 mock, 2 prototype
 
-The four statuses are wiring claims, not opinions: `db` reaches `lib/db/`, `live` reaches an `/api`
-write, `fixture` reaches a record module under `data/`, and `mock` reaches neither — so a surface
-whose numbers are literals is a stand-in however finished it looks.
-
-Live today: `/login`, `/register`, `/settings`. Database-backed: `/dashboard/user`,
-`/profile/[username]`, `/assessment`, `/assessment/[slug]`, `/assessment/instances/[instanceId]`,
-`/invite/[token]`. Everything else renders from `data/`, and nine surfaces are still mocks.
+The statuses are wiring claims, not opinions: `db` reaches `lib/db/`, `live` reaches an `/api` write,
+`fixture` reaches a record module under `data/`, and `mock` reaches neither — so a surface whose
+numbers are literals is a stand-in however finished it looks. `prototype` is the last of the `/v1`
+iteration — the operator console's in-browser store and the one worked demo report — and the
+iteration itself is retired: see [docs/V1-RETIREMENT.md](docs/V1-RETIREMENT.md) for what was
+classified and what was deleted.
 
 A template that oversells its own completeness is worse than one that says which parts are mocked, so
-the registry also records which template claims each surface: 19 by both, 8 by AlignSynch, 42 by
-QuizHub, and 2 by neither yet.
+the registry also records which template claims each surface. Read that column there rather than
+here: it is generated, and a copy of it in this file would drift.
 
 ## Adopting the template for a new brand
 
@@ -280,55 +311,63 @@ QuizHub, and 2 by neither yet.
 3. **Build and gate it.** `BRAND=<id> pnpm build`, then `bash scripts/verify.sh`. A record that fails
    `zBrand`, or a palette that reaches for an unregistered asset, fails here.
 4. **Retarget the nouns.** The brand record swaps a name, a palette and a mailbox — not copy. The
-   fixtures in `data/pages/` still speak the product they were written for, and 42 of the 71 surfaces
-   are claimed by QuizHub alone. There is no vocabulary layer yet, so a third brand inherits QuizHub's
-   words wherever its own copy has not been written.
+   fixtures in `data/pages/` still speak the product they were written for, and 42 of the 131
+   surfaces are claimed by the template AlignSynch grew out of alone. There is no vocabulary layer
+   yet, so a third brand inherits those words wherever its own copy has not been written.
 5. **Retire, do not delete.** A surface a new brand does not want is a flag, not a fork:
    `data/flags.ts` declares it, the route answers 404 when it is off, and one build serves both
    templates.
 
 ## Docs
 
-| File                                             | What it answers                                                           |
-| ------------------------------------------------ | ------------------------------------------------------------------------- |
-| [AGENTS.md](AGENTS.md)                           | command table with verified results, conventions, pitfalls                |
-| [docs/glossary.md](docs/glossary.md)             | the domain's words, generated from the schema comments                    |
-| [docs/ui-registry.md](docs/ui-registry.md)       | every surface, its status, and which template claims it                   |
-| [docs/DATA-MODEL.md](docs/DATA-MODEL.md)         | the content model: entities, invariants, strictness                       |
-| [docs/TWO-PARTY-FLOW.md](docs/TWO-PARTY-FLOW.md) | the assessment flow: create, invite, answer, unlock the Gap               |
-| [docs/BUNDLES.md](docs/BUNDLES.md)               | importing and exporting a template or a demo dataset as one file          |
-| [docs/DEMO.md](docs/DEMO.md)                     | the demo branch: what a reset is, what it prints, how to promote a bundle |
-| [docs/GATE.md](docs/GATE.md)                     | gate baseline, first-pass yield, the required-check ruleset               |
-| [docs/REPO-LAYERS.md](docs/REPO-LAYERS.md)       | lane table, classifier rules, build semaphore                             |
-| [docs/ENV-SPEC.md](docs/ENV-SPEC.md)             | environment, team, integrations, feature flags, the P1–P4 stage gates     |
-| [docs/RELEASING.md](docs/RELEASING.md)           | cutting a version: changelog entry, tag, GitHub Release, the deploy       |
+| File                                                   | What it answers                                                           |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| [AGENTS.md](AGENTS.md)                                 | command table with verified results, conventions, pitfalls                |
+| [docs/TEMPLATE-DOCTRINE.md](docs/TEMPLATE-DOCTRINE.md) | one core, many expressions: the three questions a new surface answers     |
+| [docs/glossary.md](docs/glossary.md)                   | the domain's words, generated from the schema comments                    |
+| [docs/ui-registry.md](docs/ui-registry.md)             | every surface, its status, and which template claims it                   |
+| [docs/DATA-MODEL.md](docs/DATA-MODEL.md)               | the content model: entities, invariants, strictness                       |
+| [docs/TWO-PARTY-FLOW.md](docs/TWO-PARTY-FLOW.md)       | the assessment flow: create, invite, answer, unlock the Gap               |
+| [docs/BUNDLES.md](docs/BUNDLES.md)                     | importing and exporting a template or a demo dataset as one file          |
+| [docs/DEMO.md](docs/DEMO.md)                           | the demo branch: what a reset is, what it prints, how to promote a bundle |
+| [docs/billing.md](docs/billing.md)                     | the billing port, its adapters, and why test mode says so on the page     |
+| [docs/GATE.md](docs/GATE.md)                           | gate baseline, first-pass yield, the required-check ruleset               |
+| [docs/REPO-LAYERS.md](docs/REPO-LAYERS.md)             | lane table, classifier rules, build semaphore                             |
+| [docs/ENV-SPEC.md](docs/ENV-SPEC.md)                   | environment, team, integrations, feature flags, the P1–P4 stage gates     |
+| [docs/RELEASING.md](docs/RELEASING.md)                 | cutting a version: changelog entry, tag, GitHub Release, the deploy       |
 
 `AGENTS.md` is the agent-facing companion to this file. The two must agree on commands, the package
 manager and the Node version; a command change belongs in both.
 
 ## Status and limits
 
-**Beta.** `package.json` is `1.0.0`, the AlignSynch build is deployed at
+**Beta.** `package.json` is `1.2.0`, the AlignSynch build is deployed at
 <https://alignsynch-amber.vercel.app/>, and the gate is green on `main`.
 
 What works end to end: registration, sign-in and sessions through Neon Managed Auth; account settings
-and public profiles persisted in Postgres; and the two-party assessment flow — create an instance
-from a template, invite the other party, both answer, and the Gap unlocks when both have submitted.
+and public profiles persisted in Postgres; the two-party flow — pick a template, start a
+relationship, invite the other party, both answer, and the Gap unlocks when both have submitted; and
+a contact form that stores the message before it mails it.
 
 What does not:
 
-- **Payments are absent.** `/pricing` and `/affiliate` are fixture-backed plans with no checkout, and
-  both are off by default: a price a client can read is an offer.
-- **Nine surfaces are mocks** — the quiz editor's save, the generator, the leaderboard, tournaments,
-  battle and chat among them. Each is named in [docs/ui-registry.md](docs/ui-registry.md), and
-  `data/flags.ts` carries a note per surface saying what would have to exist before it is on.
-- **One template has a server behind it.** The QuizHub product's create, play and community surfaces
-  are fixtures; only the assessment flow, accounts and profiles touch the database.
+- **No payment is taken.** `/pricing` sells three plans and the card checkout is implemented against
+  the billing port, but the hosted adapter runs **test keys**: the page says so on one line and no
+  card is charged. See [docs/billing.md](docs/billing.md).
+- **Fifteen surfaces are mocks** — the quiz editor's save, the generator, the leaderboard,
+  tournaments, battle and chat among them. Each is named in [docs/ui-registry.md](docs/ui-registry.md),
+  and `data/flags.ts` carries a note per surface saying what would have to exist before it is on.
+- **The `/v1` prototype is retired.** Its 118 items were classified in
+  [docs/V1-RETIREMENT.md](docs/V1-RETIREMENT.md) — the operator console moved to `/admin/console`,
+  the 95-item customer half is deleted (#478), and the one `release` demo report now lives at
+  `/assessment/demo/[type]`. No `/v1` route answers any more. Nothing here is pictured from it.
+- **One template has a server behind it.** The quiz product's create, play and community surfaces are
+  fixtures; only the relationship flow, accounts, support and billing touch the database.
 - **No multi-tenancy, no i18n, no course schema.** A brand is a build, not a tenant.
 - **One brand is written, one is partly inherited.** AlignSynch has its own front page, palette and
-  copy; the surfaces it does not claim still read QuizHub's fixtures.
+  copy; the surfaces it does not claim still read the other template's fixtures.
 - **Image optimization is off on purpose** (`images.unoptimized` in `next.config.mjs`, which carries
-  the full reason), and 22 of the 57 `<Image>` tags still pass `fill` with no `sizes`.
+  the full reason), and a `<Image>` that passes `fill` still has to bring its own `sizes`.
 
 No metric, testimonial, customer count or uptime figure appears on this page, and no count above was
 copied from an issue: each one comes from the command that produces it.

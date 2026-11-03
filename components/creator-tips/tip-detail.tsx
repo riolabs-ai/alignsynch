@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/support/article-detail.tsx   (variation: the tip page — back link, cover, author row, body blocks and a bookmark action)
+
 import { Button } from "@/components/ui/button";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { ContentBlocks } from "@/components/content/content-blocks";

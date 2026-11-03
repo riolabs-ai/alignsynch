@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/motion.tsx   (variation: three floating icons over motion — decorative only, no content)
+
 import { Brain, Star, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 

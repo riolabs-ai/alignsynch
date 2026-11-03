@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **50** — 35 static, 15 dynamic, from `app/**/page.tsx`
-- component domains: **36** — 244 files under `components/`, 239 of them `.tsx`
-- route handlers: **13** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 13 · **fixture** 51 · **db** 14 · **live** 7 · **prototype** 1
-- templates: Both templates 22 · AlignSynch 20 · QuizHub 42 · No template yet 2
+- routes: **66** — 43 static, 23 dynamic, from `app/**/page.tsx`
+- component domains: **39** — 273 files under `components/`, 267 of them `.tsx`
+- route handlers: **18** — `app/**/route.ts`, listed below and not a UI surface
+- status: **mock** 15 · **fixture** 62 · **db** 20 · **live** 7 · **prototype** 1
+- templates: Both templates 28 · AlignSynch 33 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -35,54 +35,79 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 ### Routes
 
 - `/` — **fixture**
-  - capability: The front page: QuizHub leads with category, latest and featured shelves, top players and live winners; AlignSynch leads with the two questions each party answers and the four assessment templates.
+  - capability: The front page: QuizHub leads with category, latest and featured shelves, top players and live winners; AlignSynch leads with the practice a coach runs — a template of their own, a blind two-sided answer and the Gap as the session's agenda — and backs it with the four assessment templates, the counted relationship scope and the three seats on a relationship.
   - components: `components/categories`, `components/home`, `components/media`, `components/ui`
-  - reads: 15 record fixtures — `data/assessments.ts`, `data/authored-quizzes.ts`, `data/browse-quizzes.ts` (+12 more)
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/dashboard/user` — **db**
   - capability: The signed-in person's account home: their saved profile, wallet, recent activity and their quizzes, read from Postgres.
   - components: `components/identity`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/client.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
+
+- `/forgot-password` — **db**
+  - capability: Ask for a password reset link. Always answers the same sentence for a known and an unknown address; rate-limited per address and per requester; shows the link instead of claiming a send when the deployment has no RESEND_* configured.
+  - components: `components/auth`, `components/ui`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
+  - notes: The one surface that writes `public.password_reset` and, through the auth server's own /reset-password, the `credential` row a Google-only account has never had. Its message is the fourth sender in `lib/flow/email.ts` (#password-reset).
+
+- `/help` — **fixture**
+  - capability: The public help centre: the help categories, the FAQ and the knowledge base in the marketing chrome, and — under the answers — the one public contact form: a name, a reply address, a message and one submit, posted as plain HTML to `/api/contact` with no captcha and no third-party widget.
+  - components: `components/contact`, `components/support`, `components/ui`
+  - reads: an `/api` path — `app/(marketing)/help/page.tsx`, `components/contact/contact-form.tsx`, `components/contact/contact-section.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/help.ts`
+  - notes: The public half of the Help/Support split (owner's review). A variation of the old `/support` hub with its Contact tab removed rather than left empty: the answers are public, and the band at the foot of the page says where a person is. It renders the same panels the account page links back to (`components/support/**`), so the two surfaces cannot tell a reader different things about one product.
 
 - `/login` — **live**
   - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials, Google-only and network states.
   - components: `components/auth`, `components/layout`, `components/ui`
-  - reads: Postgres — `lib/db/account-providers.ts`, `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `lib/auth/client.ts`, `lib/auth/google-flow-neon.ts`, `lib/auth/google-flow.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/account-providers.ts`, `lib/db/client.ts`, `lib/db/demo-accounts.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/client.ts`, `lib/auth/google-flow-neon.ts`, `lib/auth/google-flow.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/privacy` — **fixture**
   - capability: The draft privacy policy: what the build actually collects, why, where it lives and what the reader can ask for, behind a draft notice that cannot be dismissed.
   - components: `components/legal`
-  - reads: 3 fixture modules of page copy, assets or decisions — no records
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/profile/[username]` — **db**
   - capability: A public profile read from Postgres: header, stats, achievements, followers, quiz history and created quizzes.
   - components: `components/identity`, `components/media`, `components/profile`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/register` — **live**
   - capability: Create a real Neon Managed Auth account: personal details, then email, password and the terms agreement.
   - components: `components/auth`, `components/ui`
-  - reads: an `/api` path — `lib/auth/client.ts`
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/client.ts`
+
+- `/reset/[token]` — **db**
+  - capability: Spend a reset link: a single-use, hour-long token in the path, refused with its own sentence when it is expired, already used or not one this app issued. Setting the password revokes every session.
+  - components: `components/auth`, `components/ui`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/password-provider.ts`
+  - notes: `Referrer-Policy: no-referrer` and `Cache-Control: no-store` come from `next.config.mjs` for `/reset/:path*`, and the page repeats the referrer rule as a meta tag. The token is stored only as a SHA-256 hash.
+
+- `/reset/complete` — **fixture**
+  - capability: The success screen after a reset, at a token-free address: the password is set and every other device was signed out.
+  - components: `components/auth`
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
+  - notes: Separate route on purpose — a spent token should leave the address bar and the history. Static, with no session and no database read.
 
 - `/settings` — **live**
   - capability: The parts of your account you can change — display name, handle, bio and the country pair — saved through the guarded POST /api/profile.
   - components: `components/identity`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `lib/auth/client.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/support` — **fixture**
-  - capability: The help centre: FAQ, help categories and a contact form.
+  - capability: Account support inside the app: what to include in a message and what actually happens to it (stored in Postgres first, mailed second, read by a person), the links to the help centre and account settings, and a pointer to the one contact form rather than a second copy of it.
   - components: `components/support`, `components/ui`
-  - reads: 7 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+4 more)
+  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `app/(mainlayout)/support/page.tsx`, `components/support/contact-pointer.tsx`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The in-app half of the Help/Support split (owner's review). It draws no form: `ContactPointer` renders the fixture's sentence and a link to the form on `/help`, so exactly one contact form exists in the tree and it is the public one. The route resolves the session first: a member gets this page and a visitor with none is redirected to `/help` — not to `/login` and not to a 404 — because the same URL has two correct answers. The `lib/db` reach above is the admin-allowlist grant's (`lib/auth/session.ts` → `admin-allowlist.ts`), which returns before any query when `ADMIN_EMAILS` is unset: this page renders no row.
 
 - `/support/articles/[slug]` — **fixture**
   - capability: One help article from the knowledge base, with related articles and a 'was this helpful?' prompt.
   - components: `components/content`, `components/support`, `components/ui`
-  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/terms` — **fixture**
   - capability: The draft terms of service: the rules for using the product, its liability and dispute clauses, and a draft notice that cannot be dismissed.
   - components: `components/legal`
-  - reads: 3 fixture modules of page copy, assets or decisions — no records
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 ### Component domains
 
@@ -93,9 +118,15 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/auth` — **live**
   - capability: The sign-in and sign-up forms, including pending, invalid-credentials and network states, plus the two demo surfaces `/login` draws only in demo mode: the anchor to the PIN gate and, under a valid unlock cookie, the three role buttons.
-  - files (5): `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `login-view.tsx`, `register-view.tsx`
-  - routes (3): `/demo`, `/login`, `/register`
+  - files (11): `auth-home-link.tsx`, `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `forgot-password-view.tsx`, `login-view.tsx`, `mark-icon.tsx`, `password-strength.tsx`, `register-view.tsx`, `reset-complete-view.tsx`, `reset-password-view.tsx`
+  - routes (6): `/demo`, `/forgot-password`, `/login`, `/register`, `/reset/[token]`, `/reset/complete`
   - notes: The demo surfaces are decided on the server (`lib/auth/demo-surface.ts`) and render nothing outside demo mode; the PIN gate itself is `/demo` (`components/auth/demo-gate.tsx`), not this route.
+
+- `components/contact` — **mock**
+  - capability: The public contact surface: the three-field form, its hidden honeypot and render instant, the plain HTML POST to `/api/contact`, and the outcome band the query selects.
+  - files (2): `contact-form.tsx`, `contact-section.tsx`
+  - routes (1): `/help`
+  - notes: Reads no data module: every word arrives as a `PageCopy` prop from `data/pages/help` (the `/help` route above claims it), and the write is the route handler's. `mock` for the same reason `components/legal` is: the closure reaches page copy and prop types, never a record fixture and never `lib/db/`.
 
 - `components/content` — **mock**
   - capability: The block renderer every article record is drawn through: paragraphs, headings, lists, images and quotes.
@@ -104,19 +135,19 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: Holds no words of its own — the blocks arrive from `content/blocks.ts` through props.
 
 - `components/home` — **fixture**
-  - capability: Both front pages: the QuizHub shelves (hero, category slider, latest, featured, top players, winners, testimonials) and the AlignSynch two-question block.
-  - files (11): `alignment-home.tsx`, `categories-slider.tsx`, `featured-quizzes.tsx`, `hero-section.tsx`, `latest-quizzes.tsx`, `live-winners.tsx`, `newsletter-section.tsx`, `player-testimonials.tsx`, `quizzes-by-difficulty.tsx`, `resources-and-referral.tsx`, `top-players-carousel.tsx`
+  - capability: Both front pages: the QuizHub shelves (hero, category slider, latest, featured, top players, winners, testimonials) and the AlignSynch practice page — a two-column hero over the worked-example card, then the cycle, the mechanism, the catalogue, the scope ledger and the seats.
+  - files (12): `alignment-home.tsx`, `alignment-templates.tsx`, `categories-slider.tsx`, `featured-quizzes.tsx`, `hero-section.tsx`, `latest-quizzes.tsx`, `live-winners.tsx`, `newsletter-section.tsx`, `player-testimonials.tsx`, `quizzes-by-difficulty.tsx`, `resources-and-referral.tsx`, `top-players-carousel.tsx`
   - routes (1): `/`
 
 - `components/identity` — **live**
   - capability: The account surfaces: the signed-in home, the member profile, the settings form that POSTs /api/profile, sign-out and the demo-account notice.
-  - files (5): `account-home.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
+  - files (6): `account-home.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `password-card.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
   - routes (3): `/dashboard/user`, `/profile/[username]`, `/settings`
 
 - `components/layout` — **fixture**
-  - capability: The shell: header, sidebar, the layout that composes them, the sidebar context they share and the footer.
-  - files (7): `app-version.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `sidebar-context.tsx`, `sidebar.tsx`
-  - routes (6): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/tournaments` — and every other route through `app/layout.tsx`
+  - capability: The shell: header, the sticky sidebar, the layout that composes them, and the footer.
+  - files (8): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `news-signup.tsx`, `sidebar.tsx`
+  - routes (6): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/tournaments`
 
 - `components/legal` — **mock**
   - capability: The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.
@@ -139,100 +170,173 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - files (11): `message-modal.tsx`, `profile-achievements.tsx`, `profile-activity.tsx`, `profile-cover.tsx`, `profile-created-quizzes.tsx`, `profile-followers.tsx`, `profile-following.tsx`, `profile-header.tsx`, `profile-quiz-history.tsx`, `profile-stats.tsx`, `user-profile.tsx`
   - routes (1): `/profile/[username]`
 
+- `components/shell` — **fixture**
+  - capability: The shell's own panels: the declared-not-wired surface a pending route renders — its label, the reason it is not live and the capability it needs, read from the surface registry rather than typed into the page.
+  - files (1): `pending-surface.tsx`
+  - routes: none — no route imports this domain today
+  - notes: `pending-surface.tsx` varies `components/ui/alert.tsx` — the alert's frame with `role="status"` instead of `role="alert"`, because a pending surface is a state a reader is told about, not a failure they must act on. It renders `data/surface-registry.ts` and nothing else: the labels, reasons and `needs` lines are that fixture's (issue #409), so the panel and the nav's greyed row cannot disagree about what a surface is. Server component, no client state.
+
 - `components/support` — **fixture**
-  - capability: The support centre: header, help categories, knowledge base, FAQ, contact form and the article detail.
-  - files (7): `article-detail.tsx`, `contact-form.tsx`, `knowledge-base.tsx`, `support-categories.tsx`, `support-faq.tsx`, `support-header.tsx`, `support-page.tsx`
-  - routes (2): `/support`, `/support/articles/[slug]`
+  - capability: The help panels shared by the two halves of the split — the two-tab help header, help categories, FAQ and knowledge base — plus the account page's contact form and its article reader.
+  - files (9): `account-support-page.tsx`, `article-detail.tsx`, `category.ts`, `contact-pointer.tsx`, `help-header.tsx`, `help-page.tsx`, `knowledge-base.tsx`, `support-categories.tsx`, `support-faq.tsx`
+  - routes (3): `/help`, `/support`, `/support/articles/[slug]`
 
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (40): `/`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/welcome` — and every other route through `app/layout.tsx`
+  - routes (49): `/`, `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/help`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/welcome` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch
 
 ### Routes
 
+- `/admin/console` — **fixture**
+  - capability: The admin console — records, relationships, templates and the two seats, read-only for answers.
+  - components: `components/console`, `components/ui`, `components/v1`
+  - reads: 2 record fixtures — `data/relationship-types.ts`, `data/v1/fixtures.ts`
+  - notes: Moved out of the `/v1` prototype tree (#478) so the prototype can be deleted without taking it: the six console pages now sit under the app shell at `/admin/console`, and their layout gates the subtree with `requireAdmin()`. The rows are still the in-browser store seeded from `data/v1/fixtures.ts` — the operator's Postgres registry is `/admin/instances`, a different screen — which is why this is `fixture` and not `db`.
+
+- `/admin/console/relationships` — **fixture**
+  - capability: The relationship registry — every relationship, live or archived, with its template, derived stage, both seat states and its subscription state, filtered by the same links the overview's counts produce; read-only for answers, with a one-click restore on an archived row.
+  - components: `components/ui`, `components/v1`
+  - reads: 2 record fixtures — `data/relationship-types.ts`, `data/v1/fixtures.ts`
+
+- `/admin/console/relationships/[id]` — **fixture**
+  - capability: One relationship as an operator sees it — its seats, subscription and a session list that says scored or open and nothing a party answered — with Archive behind a confirmation and a Restore that is one click.
+  - components: `components/ui`, `components/v1`
+  - reads: 2 record fixtures — `data/relationship-types.ts`, `data/v1/fixtures.ts`
+
+- `/admin/console/templates` — **fixture**
+  - capability: The template registry — every template with the number of relationships started from it, and an enable/disable action behind a confirmation that the store can undo.
+  - components: `components/ui`, `components/v1`
+  - reads: 2 record fixtures — `data/relationship-types.ts`, `data/v1/fixtures.ts`
+
+- `/admin/console/templates/[id]` — **fixture**
+  - capability: One template as an operator sees it — the Aspects as authored, and every relationship started from it, live and archived, with the enable/disable pair.
+  - components: `components/ui`, `components/v1`
+  - reads: 2 record fixtures — `data/relationship-types.ts`, `data/v1/fixtures.ts`
+
+- `/admin/console/users` — **fixture**
+  - capability: The two seats and the members, with role, account state and last sign-in from the store — no addresses, and no user-management form that would pretend to write to Neon.
+  - components: `components/ui`, `components/v1`
+  - reads: 2 record fixtures — `data/relationship-types.ts`, `data/v1/fixtures.ts`
+
 - `/admin/gaps` — **db**
   - capability: The Gap across a population: the eight kinds the model defines, counted over relationships both parties have finished, read under each relationship's own Setting. Nameless aggregates — no party, no score, no ranking — and a Setting with fewer complete relationships than the floor states that instead of charting.
   - components: `components/console`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/gap-rows.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/gap-rows.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: The console's one relationship-specific screen and the only caller of `lib/admin/gap-aggregates.ts`. Its generic form is response analytics (stat cards, one distribution per measure, a comparison axis); what varies is the measure (`gapOf` over eight kinds), the population (complete instances) and the comparison (Setting). Admin only: `requireAdmin()` first, so a member gets the 404 `/demo/admin` documents. No migration and no stored aggregate — every number is a function of the `opinion` rows.
 
 - `/admin/instances` — **db**
   - capability: Every relationship in the database, for an operator: the template, both seats' identity state, mode, Setting, the derived stage, when it was created and when anything last happened to it — filterable by stage, mode, Setting and "stalled".
   - components: `components/admin`, `components/ui`
-  - reads: Postgres — `lib/db/admin-instances.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/admin-instances.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: Admin-only, and the first caller of `requireAdmin()` outside `/demo/admin`: a member gets the 404 a URL that never existed returns, a signed-out visitor is sent to `/login?next=` this path. The blind rule holds for an admin too — the read selects seats, mode, Setting and the stage, never an opinion, a score, a Gap or an answered count, so there is no column and no prop through which an answer could reach the page. Read-and-filter only: no delete, no force-complete. Every filter is client-side over the one read (`lib/db/admin-instances.ts`).
 
 - `/assessment` — **db**
   - capability: The published assessment templates, each with its create form: pick a template and open a two-party instance from the templates that read from Postgres.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/assessment/[slug]` — **db**
   - capability: One assessment instance from Postgres: both parties' answers per Aspect, the Opinions and Values behind them, and the Gap between the two.
   - components: `components/assessment`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/client.ts`, `lib/db/rows.ts`
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`
+
+- `/assessment/demo/[type]` — **fixture**
+  - capability: The worked example: one Relationship Type's finished report, answered by You and Them and labelled Example, rendered through the live report projection and component — the value shown before anyone pays, and launch criterion 5's one readable proof.
+  - components: `components/assessment`
+  - reads: 2 record fixtures — `data/assessments.ts`, `data/relationship-types.ts`
+  - notes: Lands here as `docs/V1-RETIREMENT.md`'s `release` demo row: it was `/v1/templates/[type]/demo`, the last customer route under `/v1`, and it moved out when that namespace was retired (#478). The projection and renderer are `lib/assessment-report.ts` + `components/assessment/assessment-report.tsx` — the v1 report component was deleted with the move, so the app has one report renderer, not two. The example is built from the type's own Aspects and authored demo sheet, never from a stored template record (the staff-manager record predates the taxonomy and carries Aspects its sheet never answered).
 
 - `/assessment/instances` — **db**
-  - capability: Every instance the signed-in account is a party to, with both parties and where each one stands: yours to answer, awaiting the other party, or complete with the Gap open.
+  - capability: Every relationship the signed-in account is a member of, as the My Quizzes card grid — the template, the stage, both parties, the session counts and the alignment once a session is complete.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/my-instances.ts` · an `/api` path — `lib/auth/server.ts`
-  - notes: Filtered by party.user_id against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. A row says only where the instance stands: the blind rule holds in the list too, and nothing here draws a score, a count or a Gap.
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: Scoped by relationship_member.user_id (or party.user_id for rows seeded before #340) against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. The stage, the counts and the search are derived per render; `alignment` is the mean Gap of the latest session and is drawn `—`, never 0, until that session is complete, and the money block is the plan and its purchase instant on the Initiator's card alone — never a total.
 
 - `/assessment/instances/[instanceId]` — **db**
-  - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered.
+  - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered **and both have accepted**.
   - components: `components/assessment`, `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
-  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own until both seats have accepted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
+
+- `/assessment/instances/[instanceId]/accept` — **db**
+  - capability: Review and accept a session: the decision first, both seats side by side with what each party has answered, then every Aspect beneath with both Opinion columns sealed.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: Live since R2 (#427): `POST /assessment/instances/[instanceId]/accepts` records one seat's acceptance in `party.accepted_at` (0016) and the **second** acceptance is what completes the session, so the page draws a real decision rather than a disabled control. The endpoint answers 303 and never renders: a first acceptance returns to this page with that seat marked accepted, the completing acceptance redirects to `/report`, and a refusal comes back as `?accept=<code>` — `already-accepted`, `incomplete` (the seat's own sheet must answer every Aspect), `not-a-party` (a coach holds a membership row and no `party` row, so the same resolver refuses them as a stranger), `no-such-instance`. The blind rule holds through the review window: both sheets stay sealed, and only the second acceptance opens the Gap. The transition derives the relationship's Steps from the same `opinion` rows the report reads, closes the ones whose Gap fell to 0, and commits them in the acceptance's own transaction — 'accepted but no Steps' is unrepresentable — and the unlock notice (#258) fires from the completing acceptance, once.
+
+- `/assessment/instances/[instanceId]/answer` — **db**
+  - capability: Answer the Aspect sheet: every Aspect's prompt, both named Values, and one row per seat asking the Opinion kinds the instance's Mode defines.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The gated sheet (#427, R2-2), and singular `answer` on purpose: `/answers` in the same segment is the POST-only endpoint the form submits to, and Next refuses a `page.tsx` beside a `route.ts`. The viewer is resolved by `readFlowScreen()` from the party cookie's token hash, then the signed-in account, then a relationship membership, and a request that is none of those gets a 404 — the sheet does not exist for it. `lib/flow/answer-gate.ts` picks one of three shapes: the live form for a seat that may answer (prefilled from that seat's own `opinion` rows), the viewer's own sheet drawn disabled once the answers are sealed, and a coach band with no form at all. The form posts no identity field; the submit is written by `submitAnswers()` under the role the cookie resolves inside its transaction. Pre-completion the other party's rows never leave Postgres — the only opinion query the read runs is filtered by `visibleRoles()` — so the blindness is the shape of the projection, not a conditional in this page.
+
+- `/assessment/instances/[instanceId]/report` — **db**
+  - capability: The report both parties read once the sheet is scored: per Aspect the prompt, both named ends of the scale, the verdict under the instance's Setting, both parties' Opinions, and every Gap with the two Opinions it subtracts printed beside it.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The read surface the app did not have until #409, ported from the `/v1` prototype's `report-body.tsx` as a server component over `lib/assessment-report.ts` — never a rewiring of the client store (#228, E34). The blind rule is the `screen.report === null` branch, not a redaction: before both parties have submitted, `readFlowScreen` has not read the other party's opinion rows at all and the route draws the locked page, which carries no score, no Gap and no count of the other party's progress. Every number is `gapKindsOf()` over stored rows; an unanswered Opinion prints a dash, never a 0. The viewer is the party cookie's seat (or a coach's membership), so a browser with no role on the relationship gets a 404.
 
 - `/assessment/templates` — **db**
-  - capability: The template library: the platform's own templates plus the ones this account wrote, with a tab for each, a status filter, a title search, and open/duplicate/archive on every row.
+  - capability: The template catalogue, grouped by the relationship type each template names (Business · Personal, then the ones that name none): one card per template with its type, realm, roles and Aspect count, a View details link, and duplicate/archive on the rows this account owns.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: `record.author_user_id` is the whole rule — `NULL` is a built-in, the author's id is a template a person wrote, and the read returns `author_user_id IS NULL OR author_user_id = $1`, so another account's template is never in the payload. A template written before `0011_console_columns.sql` has no author and therefore reads as built-in; the page says so in its own band rather than leaving it to be discovered. Archiving flips `record.status` to `archived` (author only): the catalogue stops listing it and `createInstanceFromTemplate` refuses it, while every instance already made from it keeps its own copy of the Aspects and still opens. Duplicating copies the record and its items into a new template authored by the caller, whatever state the source is in.
 
 - `/assessment/templates/[templateId]` — **db**
-  - capability: One template, read-only: its Aspects in authored order with their Left and Right Values, how many instances were made from it, who wrote it and whether it is archived. The place the editor will land later.
+  - capability: One template as a landing page: a header band naming its group, realm, Relationship Type and the two role seats, who it is for and who it is not for, every Aspect with both named ends of the scale, and what a Mode and a Setting are. No person's name, no price, no testimonial.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: The 'open' action. Read-only on purpose — editing is a separate decision, and the spec puts the editor on this same route when it exists. The read applies the same author rule as the library, so another account's template is a 404 here and nothing distinguishes it from an id that does not exist.
+
+- `/assessment/templates/[templateId]/create` — **db**
+  - capability: Create a relationship from one template: the template and its two seats at the top, the counterparty, then Mode (fixed at creation) and Setting (the one choice a party may change later).
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: Wired by #427 (R2), and the form is the create path's client end: it posts `templateRecordId`, both seats, the Mode and the Setting to `POST /assessment/new`, which copies the template's Aspects into a new relationship and writes the record, the relationship, the session and the initiating seat in one transaction, then answers a 303 to `/assessment/instances/<id>`. A refusal comes back as a 303 to this path carrying `?problem=<code>`, which the page resolves into the fixture's own sentence — no text anybody typed travels in a URL, and an unrecognised code draws no sentence rather than an invented one. A child of the template's own address, so the template being copied is the route's fact and the hidden `templateRecordId` cannot name a different one; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply.
 
 - `/assessment/templates/new` — **fixture**
   - capability: Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.
   - components: `components/assessment-flow`
-  - reads: an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: `fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/save/route.ts` (moved one segment deeper when `/assessment/templates` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/assessment/templates`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app's only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.
 
 - `/dashboard` — **db**
   - capability: The signed-in console's Overview: four counts of the viewer's own relationships — awaiting the other party, needing the viewer's answers, complete and unread — plus the templates available, each figure linking to the list it counts.
   - components: `components/console`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/my-instances.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/my-instances.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: Every figure is arithmetic over `listMyInstances(user.userId)` plus the length of the published-template read, and each card links to `/assessment/instances?filter=<id>` (or `/assessment` for the templates) where the same predicate filters the same array (`lib/flow/overview.ts`), so a count cannot disagree with its list. No percentage, no total, and no authored metric: the numbers `data/pages/dashboard.ts` rejected for `/dashboard/user` (#164) have no equivalent here and were not re-created. The blind rule holds by construction — the three relationship counts are the three `MyInstanceState` values, derived from the viewer's own answered count and their own `unlock_seen_at`.
 
 - `/demo` — **mock**
   - capability: The demo PIN gate: one four-digit field and a submit. A correct PIN sets a signed, httpOnly unlock cookie and redirects to `/login`, where the three role buttons appear.
   - components: `components/auth`, `components/ui`
-  - reads: 3 fixture modules of page copy, assets or decisions — no records
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
   - notes: Exists only under DEMO_AUTH=1, and refused when VERCEL_ENV=production unless DEMO_ALLOW_PRODUCTION=1 is also set; outside demo mode the route answers the same 404 a URL that never existed does. `mock` rather than `db` since #218: the gate reads no Postgres — it compares the PIN and signs a cookie, and the credential read moved to the role action behind `/login`.
 
 - `/demo/admin` — **db**
   - capability: The admin-only check the demo's role buttons prove: it prints the session and the role it read from Postgres, and a member account asking for it gets a 404 rather than a 403. Reachable by URL — the demo's Admin button lands on `/admin/instances` instead, and this page's own button opens it.
   - components: `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route. A proof, not a destination: nothing in the flow links here.
+
+- `/how-it-works` — **fixture**
+  - capability: The console's onboarding page: the six moves of one relationship in order — pick a type and a template, invite the Member, both answer blind, both accept, read the report and its Steps, start the next session — with what the member does beside what the product does, and the honest limits of this build.
+  - components: `components/onboarding`
+  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The rail's How it works row used to leave the console for `/#questions` on the public front page; this route is its real destination (owner's review of the console). A variation of the alignment front page's `#questions` composition, not a new pattern — the heading/body band, numbered, with the member's half against the product's half (`components/onboarding/how-it-works.tsx`, ancestor in its `template-ancestor:` header). It resolves the session first and answers a signed-out request with `redirect(/login?next=/how-it-works)`, and it refuses to render on a build that ships the quiz product instead (`quizProductShipped()`, the same flag resolver the quiz routes read) — the copy is the relationship product's, and #300 is the record of what happens when one product's words are served under the other's name. `fixture` and not `db`: it reads page copy and a session, and no row.
 
 - `/invite/[token]` — **db**
   - capability: What an invitation says, and the button that claims it — a single-use token spent by a POST once the invited party accepts.
   - components: `components/assessment-flow`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/welcome` — **fixture**
   - capability: The public AlignSynch landing page in its own chrome: what a Gap is, how it works, four opinions and two modes.
   - components: `components/marketing`, `components/ui`
-  - reads: 3 fixture modules of page copy, assets or decisions — no records
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 ### Component domains
 
@@ -245,19 +349,19 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/assessment` — **mock**
   - capability: The assessment report: each Aspect's two Opinions, the Values behind them and the Gap between the parties.
   - files (2): `assessment-report.tsx`, `assessment-unreadable.tsx`
-  - routes (2): `/assessment/[slug]`, `/assessment/instances/[instanceId]`
+  - routes (3): `/assessment/[slug]`, `/assessment/demo/[type]`, `/assessment/instances/[instanceId]`
   - notes: Reads nothing itself — the instance arrives as props from the route that read Postgres, which is why the surface is `mock` and the route above it is `db`. Since #204 it also draws the one failure state the route can describe: `assessment-unreadable.tsx` prints the database layer's own sentence when the read did not answer, instead of Next's 500 and a digest.
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (10): `answer-form.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`
-  - routes (7): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/new`, `/invite/[token]`
+  - files (16): `accept-session.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `steps-panel.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`
+  - routes (11): `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/new`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/console` — **mock**
   - capability: The console's generic shapes: a stat-card grid of linked figures with the Overview built from it (a header naming the viewer, four counts and the honest empty state for an account with no relationships), and the response-analytics surface — a population's numbers as stat cards, one distribution per measure and a comparison axis, taking the aggregate as a prop so the measure is a plugin rather than a component.
   - files (4): `gap-analysis.tsx`, `gap-histogram.tsx`, `overview.tsx`, `stat-card-grid.tsx`
-  - routes (2): `/admin/gaps`, `/dashboard`
+  - routes (3): `/admin/console`, `/admin/gaps`, `/dashboard`
   - notes: Reads nothing itself: counts and aggregates arrive as props from the route that read Postgres, which is why the domain is `mock` and the `/dashboard` and `/admin/gaps` routes above it are `db` (the same split `components/assessment` records). `stat-card-grid.tsx` is the extracted shape of `components/dashboard/dashboard-overview.tsx` with its metrics removed — `value` is a `number` the caller computed — so the next expression can pass its own rows through the grid without inheriting a wallet balance. Its two callers are `/dashboard` (the viewer's own counts, `lib/flow/overview.ts`) and `/admin/gaps` with AlignSynch's measure (`gapOf` over the eight kinds, `lib/admin/gap-aggregates.ts`); the quiz expression of the analytics surface is the per-question correct rate `components/my-quizzes/quiz-statistics.tsx` mocks. `data/pages/overview.ts` holds every word (E23 budget 0).
 
 - `components/marketing` — **fixture**
@@ -265,11 +369,17 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - files (2): `marketing-header.tsx`, `marketing-landing.tsx`
   - routes (1): `/welcome`
 
+- `components/onboarding` — **mock**
+  - capability: The console's onboarding page: the ordered moves of one relationship, each with what the member does beside what the product does, and the honest limits of this build.
+  - files (1): `how-it-works.tsx`
+  - routes (1): `/how-it-works`
+  - notes: One file (`how-it-works.tsx`), and it is a variation rather than a new pattern: the ancestor is the alignment front page's `#questions` band (`components/home/alignment-home.tsx`), stated in its `template-ancestor:` header. The variation is the sequence — numbered bands instead of a two-up explainer, in the app shell instead of the marketing page. `mock` on the domain and `fixture` on its route for the reason `components/console` is: it renders no data of its own, it takes the route's parsed `PageCopy` as a prop, and the fixture is reached by the page module, not by this domain.
+
 - `components/v1` — **prototype**
-  - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.
-  - files (1): `template-editor.tsx`
-  - routes: none — no route imports this domain today
-  - notes: Guardrail #336, version 1. The first variation here is the template editor (`template-editor.tsx`), ancestor `components/create/quiz-editor.tsx`: tabbed authoring (Details / Aspects / Settings) with per-Aspect accordions, store-backed Save/Publish/Archive/Delete, and no preview — a preview that scores an answer is a lie. `prototype` until the owner approves it; the /v1 route that mounts it is a separate card.
+  - capability: What is left of the /v1 prototype — the operator console's components and the shared primitives they paint with. No route in the app is a `/v1` one.
+  - files (9): `admin-console-overview.tsx`, `admin-limits.tsx`, `admin-relationship-detail.tsx`, `admin-relationship-registry.tsx`, `admin-template-detail.tsx`, `admin-template-registry.tsx`, `admin-users-list.tsx`, `relationship-metadata.tsx`, `v1-ui.tsx`
+  - routes (6): `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`
+  - notes: The prototype is retired (#478): `docs/V1-RETIREMENT.md` classified 118 `/v1` items, and this domain now holds nine files — the console's own components, all of them written below. The **nine admin components** — `admin-console-overview`, `admin-relationship-registry`, `admin-relationship-detail`, `admin-template-registry`, `admin-template-detail`, `admin-users-list`, `admin-limits`, `relationship-metadata`, `v1-ui` — are the operator console at `/admin/console`, behind `requireAdmin`, reading the in-browser store (`lib/v1/store.tsx`) seeded from `data/v1/fixtures.ts`; that is why they stay a fixture surface while the product's `/admin/instances` reads Postgres. `v1-ui.tsx` is the one shared atom set (`StageBadge`, `GapPill`, `StatTile`, `EmptyState`, `NotFoundState`, `SectionIntro`, the status tones) the console paints with, and `relationship-metadata.tsx` is the mode/setting editor the console's relationship detail draws. The two `release` rows this domain once kept are gone to their destinations: `steps-panel.tsx` became `components/assessment-flow/steps-panel.tsx`, drawn on the instance screen from the Steps acceptance already stores, and `template-demo.tsx` with `report-body.tsx` became `/assessment/demo/[type]` over the app's own `components/assessment/assessment-report.tsx` — so there is no second report renderer left anywhere. The `/v1` route group, its layout gate, `lib/v1/persona.ts` and the flag-count derivations went with them; `app/(prototype)` no longer exists. Everything else in the domain — the shell, the persona bar, the chat, the shop, the review checklist, the settings views, the answer sheet and the template authoring — was deleted by the cohort before this one.
 
 ## QuizHub
 
@@ -278,7 +388,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/affiliate` — **fixture**
   - capability: The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA. Not freely available: `commerce.affiliate` ships it off on every template, and the route answers 404 while it is off (#291).
   - components: `components/affiliate`, `components/layout`, `components/media`, `components/ui`
-  - reads: 1 record fixture — `data/metrics.ts`
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/battle` — **fixture**
   - capability: A head-to-head quiz battle: choose a mode, join a lobby, play the same question set live and land on a results screen.
@@ -288,7 +398,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/categories` — **fixture**
   - capability: Every quiz category as a tile generated from its slug, with a how-it-works block and a closing CTA.
   - components: `components/categories`, `components/layout`, `components/media`, `components/ui`
-  - reads: 9 record fixtures — `data/authored-quizzes.ts`, `data/browse-quizzes.ts`, `data/categories.ts` (+6 more)
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/categories/[slug]` — **fixture**
   - capability: One category's quizzes, under the tile generated for that category.
@@ -309,12 +419,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/creator-tips` — **fixture**
   - capability: Editorial tips for quiz creators, browsable by category with featured and latest grids.
   - components: `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/creator-tips/[slug]` — **fixture**
   - capability: One creator-tip article, with its related tips.
   - components: `components/content`, `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/daily-challenge` — **fixture**
   - capability: One quiz a day: today's quiz, your challenge stats, a daily leaderboard, badge progress and your history.
@@ -334,7 +444,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/leaderboard` — **fixture**
   - capability: The player leaderboard: podium, summary stats and a filterable ranked table. Not freely available: `community.leaderboard` ships it off for every visitor, and only an admin session reaches it — through the flag's `adminBypass` (#184) — while its rows are still the `data/players.ts` mock.
   - components: `components/leaderboard`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: The Postgres reach listed here is the flag's role gate (`lib/auth/require-role.ts` reading `user_profile.role`), not the boards: the rows the page renders are still `data/players.ts`, and the read happens before them.
 
 - `/my-quizzes` — **fixture**
@@ -356,17 +466,17 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/news` — **fixture**
   - capability: Product news and updates, featured first, as article records.
   - components: `components/media`, `components/news`, `components/ui`
-  - reads: 6 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+3 more)
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/news/[slug]` — **fixture**
   - capability: One news article with share, its comment thread, the author and related articles.
   - components: `components/content`, `components/media`, `components/news`, `components/ui`
-  - reads: 7 record fixtures — `data/article-publication.ts`, `data/creator-tips-data.ts`, `data/knowledge-base-alignsynch-data.ts` (+4 more)
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/pricing` — **live**
   - capability: Plan comparison read from billing_plan with a checkout per sellable tier, the viewer's own plan marked, an FAQ and a closing CTA.
   - components: `components/pricing`, `components/ui`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `components/pricing/plan-checkout-button.tsx`, `components/pricing/pricing-plans.tsx`, `data/billing-plans.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `components/pricing/plan-checkout-button.tsx`, `components/pricing/pricing-plans.tsx`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/quiz-discussions` — **fixture**
   - capability: Every discussion thread across quizzes, with each quiz's comment count and result beside it.
@@ -391,17 +501,17 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/search` — **fixture**
   - capability: Search the built index over quizzes and categories, rendering hits as quiz cards.
   - components: `components/search`, `components/ui`
-  - reads: 11 record fixtures — `data/assessments.ts`, `data/authored-quizzes.ts`, `data/browse-quizzes.ts` (+8 more)
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/tournaments` — **fixture**
   - capability: Quiz tournaments: the featured championship, the full list, categories, how it works and a CTA.
   - components: `components/layout`, `components/media`, `components/tournaments`, `components/ui`
-  - reads: 1 record fixture — `data/metrics.ts`
+  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/tournaments/[id]` — **fixture**
   - capability: One tournament: overview, key dates, stats, categories, rules, prizes and its leaderboard.
   - components: `components/media`, `components/tournaments`, `components/ui`
-  - reads: 1 record fixture — `data/metrics.ts`
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 ### Component domains
 
@@ -503,7 +613,7 @@ Catalogued, claimed by no template yet.
 - `/chat` — **fixture**
   - capability: A message thread: conversation list, composer, per-message rendering and a conversation search, over the committed chat fixture.
   - components: `components/chat`, `components/media`, `components/ui`
-  - reads: 1 record fixture — `data/chat-data.ts`
+  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
   - notes: A messaging mock that neither product story includes yet — quiz play and assessment are the two stories this tree tells — so it is catalogued here for a future template to claim rather than deleted or implemented.
 
 ### Component domains
@@ -522,10 +632,15 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/api/auth/google/finish` — `app/api/auth/google/finish/route.ts`
 - `/api/billing/checkout` — `app/api/billing/checkout/route.ts`
 - `/api/billing/webhook` — `app/api/billing/webhook/route.ts`
+- `/api/contact` — `app/api/contact/route.ts`
+- `/api/news/subscribe` — `app/api/news/subscribe/route.ts`
 - `/api/profile` — `app/api/profile/route.ts`
+- `/api/tour` — `app/api/tour/route.ts`
 - `/api/version` — `app/api/version/route.ts`
+- `/assessment/instances/[instanceId]/accepts` — `app/(mainlayout)/assessment/instances/[instanceId]/accepts/route.ts`
 - `/assessment/instances/[instanceId]/answers` — `app/(mainlayout)/assessment/instances/[instanceId]/answers/route.ts`
 - `/assessment/instances/[instanceId]/invite` — `app/(mainlayout)/assessment/instances/[instanceId]/invite/route.ts`
+- `/assessment/instances/[instanceId]/steps` — `app/(mainlayout)/assessment/instances/[instanceId]/steps/route.ts`
 - `/assessment/new` — `app/(mainlayout)/assessment/new/route.ts`
 - `/assessment/templates/[templateId]/duplicate` — `app/(mainlayout)/assessment/templates/[templateId]/duplicate/route.ts`
 - `/assessment/templates/[templateId]/status` — `app/(mainlayout)/assessment/templates/[templateId]/status/route.ts`

@@ -44,6 +44,8 @@
  * local proof of this card runs there; an insecure origin that is not loopback would complete at
  * Neon and land here signed out, and nothing in this file can change that.
  */
+import { createHash, randomUUID } from "node:crypto";
+
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -57,6 +59,7 @@ import {
   appOriginOf,
   clearFlowCookieHeader,
   decodeFlowCookie,
+  flowCookieAgeSeconds,
   GOOGLE_FLOW_COOKIE,
   relayedSessionCookie,
   VERIFIER_PARAM,
@@ -83,13 +86,31 @@ export async function GET(request: Request): Promise<Response> {
   const jar = await cookies();
   const flow = decodeFlowCookie(jar.get(GOOGLE_FLOW_COOKIE)?.value);
 
+  // Three identifiers, computed once, so every line this arrival emits can be matched:
+  //
+  //   - `req`      a per-request id, to group the several lines of one arrival when requests
+  //                interleave in `vercel logs`;
+  //   - `verifier` a sha256 prefix of the verifier, not the value: a double hit on this GET — a
+  //                prefetch, a retry, a back-navigation that replays the callback after the first
+  //                hit already spent and cleared the cookie — arrives with the *same* prefix and
+  //                `flow=absent`, which is the one line a double hit needs to be seen, not inferred;
+  //   - `age`      the flow cookie's age, from the `iat` the start wrote, so a round-trip that
+  //                outlived the ten-minute lifetime is told apart from one that was never started.
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const requestId = randomUUID().slice(0, 8);
+  const verifierFingerprint =
+    verifier === "" ? "absent" : createHash("sha256").update(verifier).digest("hex").slice(0, 12);
+  const flowAgeSeconds = flow === null ? null : flowCookieAgeSeconds(flow.iat, nowSeconds);
+
   // One line per arrival, before any branch, so a loop back to `/login` can be told apart from a
-  // handler that was never reached. The three fields are the three hypotheses this card tests:
-  // whether the flow cookie survived the Google round-trip, whether Neon's verifier is in the
-  // query, and what origin this build believes it is.
+  // handler that was never reached. `flow`/`verifier`/`origin` answer whether the flow cookie
+  // survived the Google round-trip, whether Neon's verifier is in the query, and what origin this
+  // build believes it is; `age` and the verifier prefix answer the two that were invisible before.
   console.info(
-    `[auth:google-finish] reached flow=${flow === null ? "absent" : "present"}` +
-      ` verifier=${verifier === "" ? "absent" : "present"}` +
+    `[auth:google-finish] req=${requestId} reached` +
+      ` flow=${flow === null ? "absent" : "present"}` +
+      ` age=${flowAgeSeconds === null ? "-" : String(flowAgeSeconds)}` +
+      ` verifier=${verifierFingerprint}` +
       ` origin=${origin === null ? "absent" : origin.origin}`,
   );
 
@@ -98,15 +119,19 @@ export async function GET(request: Request): Promise<Response> {
   // No `?next=` is composed from a cookie that is not there — `/login` resolves the brand's own
   // destination when nothing was asked for.
   if (flow === null) {
-    console.warn("[auth:google-finish] fail=no-flow-cookie redirect=/login");
+    console.warn(
+      `[auth:google-finish] req=${requestId} fail=no-flow-cookie` +
+        ` flow=absent age=- verifier=${verifierFingerprint}` +
+        ` redirect=/login?${GOOGLE_FAILURE_QUERY}=${GOOGLE_FAILURE_VALUE}`,
+    );
     redirect(`/login?${GOOGLE_FAILURE_QUERY}=${GOOGLE_FAILURE_VALUE}`);
   }
 
   const next = safeNextPath(flow.next);
   if (verifier === "" || origin === null) {
     console.warn(
-      `[auth:google-finish] fail=no-verifier-or-origin` +
-        ` verifier=${verifier === "" ? "absent" : "present"}` +
+      `[auth:google-finish] req=${requestId} fail=no-verifier-or-origin` +
+        ` verifier=${verifierFingerprint}` +
         ` origin=${origin === null ? "absent" : "present"}` +
         ` redirect=${googleFailedLoginPath(next)}`,
     );
@@ -121,7 +146,7 @@ export async function GET(request: Request): Promise<Response> {
 
   if (!exchanged.ok) {
     console.warn(
-      `[auth:google-finish] fail=exchange kind=${exchanged.failure}` +
+      `[auth:google-finish] req=${requestId} fail=exchange kind=${exchanged.failure}` +
         ` status=${exchanged.status === undefined ? "none" : String(exchanged.status)}` +
         ` code=${exchanged.code ?? "none"}` +
         ` redirect=${googleFailedLoginPath(next)}`,
@@ -138,7 +163,8 @@ export async function GET(request: Request): Promise<Response> {
 
   const target = new URL(safeNextPath(next), origin.origin);
   console.info(
-    `[auth:google-finish] ok cookies=${exchanged.setCookies.length} target=${target.toString()}`,
+    `[auth:google-finish] req=${requestId} ok cookies=${exchanged.setCookies.length}` +
+      ` target=${target.toString()}`,
   );
   const response = new Response(null, {
     status: 307,

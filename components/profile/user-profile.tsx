@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/identity/account-home.tsx   (variation: another person's page — the cover and header band, then six tabs of their activity)
+
 import { MessageModal } from "@/components/profile/message-modal";
 import { ProfileAchievements } from "@/components/profile/profile-achievements";
 import { ProfileActivity } from "@/components/profile/profile-activity";

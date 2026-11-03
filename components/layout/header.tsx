@@ -1,6 +1,7 @@
 "use client";
+// template-ancestor: components/layout/nav-menus.tsx   (variation: the top bar — search, the message and notification drawers' triggers and the account menu, over the same nav data as the rail)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
-import { useSidebar } from "@/components/layout/sidebar-context";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ import { metric } from "@/data/metrics";
 import { notificationsFor } from "@/data/notifications";
 import { querySearchIndex } from "@/content/search";
 import { accountProfileHref } from "@/lib/auth/profile-href";
+import { endSession } from "@/lib/auth/sign-out";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { type NavViewer, seesQuizProduct } from "@/lib/nav";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -32,8 +34,6 @@ import {
   Menu,
   MessageCircleQuestion,
   MessageSquare,
-  PanelLeftClose,
-  PanelRightClose,
   Search,
   Settings,
   Tag,
@@ -81,6 +81,8 @@ export function Header({
   account,
   searchIndex,
   hiddenNav,
+  navigationOpen,
+  onOpenNavigation,
 }: {
   copy: PageCopy;
   brandId: BrandId;
@@ -118,6 +120,15 @@ export function Header({
    * drawn (#291 put `/affiliate` on that list). Absent means every gated surface is on.
    */
   hiddenNav?: readonly string[];
+  /**
+   * The mobile drawer is open (`components/layout/main-layout.tsx` owns the boolean). The header
+   * does not render the drawer — `AppSidebar` does — it renders the one trigger, and says so the
+   * way a screen reader asks for it: `aria-expanded` follows the state and `aria-controls` names
+   * the panel's id.
+   */
+  navigationOpen: boolean;
+  /** Open the drawer. Stable identity: the drawer's focus effect keys on the matching close. */
+  onOpenNavigation: () => void;
 }) {
   // The shell's copy, resolved here rather than in each band: `data/pages/shell.ts`
   // owns the words, this file owns which ids it renders. A renamed id is a red build
@@ -126,6 +137,13 @@ export function Header({
   const accountCopy = sectionOf(copy, "account");
   const notificationsCopy = sectionOf(copy, "notifications");
   const messagesCopy = sectionOf(copy, "messages");
+  /**
+   * The drawer trigger's two names. Below 768px only: at `md` and up the rail is a column — 64px
+   * of icons, then the labelled 250px rail from `lg` — so there is nothing for a hamburger to
+   * open, and a control that toggles a panel which is always present is the "button that does
+   * nothing" this shell has already removed twice.
+   */
+  const railCopy = sectionOf(copy, "rail");
 
   /**
    * The account menu's "My Profile" row (#226).
@@ -159,9 +177,10 @@ export function Header({
 
   const pathname = usePathname();
   const router = useRouter();
-  const { toggleCollapsed, collapsed, toggleMobile, mobileOpen } = useSidebar();
   const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
   const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutFailed, setSignOutFailed] = useState(false);
 
   // Add useState for search functionality
   const [searchQuery, setSearchQuery] = useState("");
@@ -237,36 +256,45 @@ export function Header({
     setIsNotificationsDrawerOpen(false);
   };
 
+  /**
+   * Sign out from the account menu — the same step the rail's row runs, so one control does not
+   * pretend while the other revokes. On success the person lands on the marketing front page,
+   * signed out, with no dashboard chrome; a failure is said out loud under the button rather than
+   * swallowed (issue #272's rule, on the header's control).
+   */
+  const signOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutFailed(false);
+    if (!(await endSession())) {
+      setSigningOut(false);
+      setSignOutFailed(true);
+      return;
+    }
+    router.replace("/");
+    router.refresh();
+  };
+
   return (
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
         <div className="flex items-center gap-4">
-          {/* Two toggles, one per layout: below `xl` the sidebar is an overlay drawer, so
-              this opens it; at `xl` and up it is the rail collapse that has always been
-              here. Both are `size="icon"` buttons at the same position, so the desktop
-              header is unchanged. */}
+          {/*
+            The drawer trigger — the one control in the shell that opens navigation, and the only
+            width that has anything to open. Below `md` the rail is an overlay
+            (`components/layout/sidebar.tsx`); from `md` it is a sticky column, so this is
+            `md:hidden` and the button cannot become a toggle for something always on screen.
+          */}
           <Button
             variant="ghost"
             size="icon"
-            className="xl:hidden"
-            onClick={toggleMobile}
-            aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
-            aria-expanded={mobileOpen}
+            className="md:hidden"
+            onClick={onOpenNavigation}
+            aria-label={navigationOpen ? itemLabel(railCopy, "close") : itemLabel(railCopy, "open")}
+            aria-expanded={navigationOpen}
             aria-controls="app-sidebar"
           >
-            <Menu className="!text-3xl" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden xl:inline-flex"
-            onClick={toggleCollapsed}
-          >
-            {collapsed ? (
-              <PanelRightClose className="!text-3xl" />
-            ) : (
-              <PanelLeftClose className="!text-3xl" />
-            )}
+            <Menu className="size-5" aria-hidden="true" />
           </Button>
 
           <div className="relative w-full md:w-64 lg:w-80 xl:w-96 max-md:hidden">
@@ -643,12 +671,24 @@ export function Header({
               </div>
 
               <div className="p-4 pt-0">
-                <Button variant="destructive" className="w-full justify-center" asChild>
-                  <Link href="/login" className="flex items-center gap-2">
-                    <LogOut className="h-4 w-4" />
-                    <span>{itemLabel(accountCopy, "logout")}</span>
-                  </Link>
+                <Button
+                  variant="destructive"
+                  className="w-full justify-center"
+                  onClick={signOut}
+                  disabled={signingOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>
+                    {signingOut
+                      ? itemLabel(accountCopy, "logout-pending")
+                      : itemLabel(accountCopy, "logout")}
+                  </span>
                 </Button>
+                {signOutFailed && (
+                  <p className="pt-2 text-sm text-red-600">
+                    {itemLabel(accountCopy, "logout-error")}
+                  </p>
+                )}
               </div>
             </DropdownMenuContent>
           </DropdownMenu>

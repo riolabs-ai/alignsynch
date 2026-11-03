@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/avatar.tsx   (variation: a gradient avatar drawn instead of components/ui/avatar.tsx — a seed hash, initials and a contrast-checked glyph)
+
 import { cn } from "@/lib/utils";
 
 /**

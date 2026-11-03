@@ -1,11 +1,18 @@
 /**
- * `/` for the AlignSynch build — the alignment page's copy (issue #143).
+ * `/` for the AlignSynch build — the alignment page's copy, positioned as a practice (issue #143).
  *
  * `data/pages/home.ts` is the QuizHub front page: categories, tournaments, leaderboards,
  * "Earn Rewards". This module is the other composition of the same route, and which one
  * renders is a build flag (`BRAND`), not a second page — `app/(marketing)/page.tsx` switches
  * on the brand the way `resolveBrand` does, so neither product inherits the other's front
  * page by accident.
+ *
+ * **The page leads with a practice, and the Gap is the proof underneath.** An earlier version
+ * of this fixture opened on the two questions ("How do you feel, against how they feel?") and
+ * sold a relationship curiosity. The words below sell the thing a practitioner charges for:
+ * a template that is theirs, a blind two-sided answer, and a report that becomes the agenda
+ * of the session they run. The `questions` and `templates` bands are unchanged — the Gap is
+ * still the mechanism — but they now sit under a business framing rather than in front of it.
  *
  * Why this is not an entry in `data/pages/index.ts`: the table is keyed by the route pattern
  * (`/`), and one route carries one `PageCopy` — the fixture the `"/"` budget entry in
@@ -19,8 +26,15 @@
  * templates and their families come from `data/assessments.ts`; the answer counts, the party
  * names and the links are derived from it by `lib/alignment-home.ts`. So this file never names
  * a template, a relationship or a type, and the page cannot claim a fifth template or a
- * response that the fixture does not hold. The two `{...}` placeholders below are the one place
+ * response that the fixture does not hold. The `{...}` placeholders below are the one place
  * the words meet the data.
+ *
+ * **No number in this file is typed.** The scope band's heading is `{types}` types across
+ * `{realms}` realms, filled from `data/relationship-types.ts` by `relationshipScope()`;
+ * the projection refuses a heading that does not carry both placeholders, so a spelled-out
+ * count cannot creep back in and drift from the fixture. There is likewise no figure anywhere
+ * in this file for what a practice takes in, how many clients it has, or who has bought one:
+ * the `boundary` band states that absence as a promise rather than leaving it to be inferred.
  *
  * The featured relationship is the one design decision this file carries that is not copy:
  * `/` leads with an answered assessment, and `ALIGN_SYNCH_FEATURED_SLUG` names which one. The
@@ -40,22 +54,118 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const ALIGN_SYNCH_FEATURED_SLUG = "avery-rowan";
 
 /**
- * The `/` document title for this build — `"<brand> — How you feel, against how they feel"`.
+ * The `/` document title for this build — `"<brand> — Turn one relationship into a practice"`.
  *
  * A function of the brand, like `homeTitle`: the page names the product itself, and the
- * alignment page's tagline is the product's two questions rather than the quiz template's
- * "Play, Share, Earn". Neither word is spelled in a `.tsx`.
+ * alignment page's tagline is the practice the product makes possible rather than the quiz
+ * template's "Play, Share, Earn". Neither word is spelled in a `.tsx`.
  */
 export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
-  return `${brand.name} — How you feel, against how they feel`;
+  return `${brand.name} — Turn one relationship into a practice`;
 }
 
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
-  heading: "How do you feel, against how they feel?",
+  eyebrow: "Relationship alignment · for practitioners",
+  heading: "Turn one assessment into a practice you can charge for.",
+  /**
+   * The hero's three pieces of copy divide one job each, and the division is the fix for a
+   * footnote that said the money three times: the heading states the promise ("charge for"), the
+   * subtitle states the mechanism (pick a type, both answer blind, you get the Gap), and the
+   * fineprint — one sentence, never two — states what a reader is buying. "Paid to run" and
+   * "yours to run" used to repeat the heading's business fact in the two lines beneath it.
+   */
   subtitle:
-    "You both answer the same five Aspects, twice over: how it is now, and how you each want it to be. The answers rarely match, and the distance between them is the Gap.",
-  cta: { label: "Read Avery and Rowan", href: "/assessment/avery-rowan" },
+    "Pick a relationship type, write the Aspects you actually work on, and send it to a client and the person they're aligning with. Both answer blind. You get the Gap — and the agenda for the session.",
+  /**
+   * Two CTAs, and the order is the argument: creating the first relationship is what the reader
+   * came to do, and the worked example is how they check the product can do it. Both are
+   * destinations a reader without an account can reach — `/register` makes one, and the
+   * instance route is public — which is why neither points into the console.
+   */
+  cta: { label: "Create your first assessment", href: "/register" },
+  secondaryCta: { label: "See a worked example", href: "/assessment/avery-rowan" },
   items: [
+    /**
+     * The eyebrow over each band. They live on the page rather than inside their sections
+     * because `cardsOf()` reads every item of `practice` and `seats` as a titled card — an
+     * eyebrow in those arrays would be a card with no paragraph, and the projection refuses it.
+     */
+    { id: "eyebrow-practice", label: "How the practice works" },
+    { id: "eyebrow-questions", label: "The mechanism" },
+    { id: "eyebrow-templates", label: "The catalogue" },
+    { id: "eyebrow-families", label: "Scope" },
+    { id: "eyebrow-seats", label: "Your seat" },
+    /**
+     * The hero's worked-example card: the featured relationship, drawn from its own opinions.
+     * `{title}`, `{from}`, `{to}`, `{gap}` and the two party names are filled by
+     * `lib/alignment-home.ts` out of `data/assessments.ts` — this file owns the frame, never the
+     * numbers inside it.
+     */
+    {
+      id: "worked-example",
+      label: "Worked example · {title}",
+      /**
+       * The card's closing line does two jobs: it says what the Gap is *for*, and it defines the
+       * one term on the card a reader cannot infer. `In Synch` is the glossary's spelling and the
+       * brand's (`AlignSynch`), so it stays — but a row that says it must say what it means, or
+       * the spelling reads as a typo. One line, not a tooltip and not a footnote.
+       */
+      body: "Two answers per Aspect; the distance between them is the Gap. When both answers match, the Gap is 0 and the row says In Synch — the brand's spelling of in sync.",
+    },
+    /**
+     * The mode, as a caption rather than a pill: "Answered in Basic mode" says what it qualifies,
+     * where a bare "Basic" badge in a hero reads as a plan tier — or as a verdict on the product.
+     * It is the instance's own `mode` field, so the words are the record's and not a design's.
+     */
+    { id: "worked-example-mode-basic", label: "Answered in Basic mode" },
+    { id: "worked-example-mode-advanced", label: "Answered in Advanced mode" },
+    /**
+     * One row's note: the scale the two scores sit on, and the Gap their difference came to.
+     * A Gap of 0 is the glossary's In Synch and gets its own sentence rather than "Gap 0".
+     */
+    { id: "worked-example-row", label: "{from} → {to} · {kind} {gap}" },
+    { id: "worked-example-in-synch", label: "{from} → {to} · In Synch" },
+    /** The bars' accessible name: two numbers and who gave them. */
+    { id: "worked-example-scores", label: "{you} {yours}, {them} {theirs}" },
+    /**
+     * The templates band's three views. The values are markup (`catalogue`/`library`/`mine`);
+     * the words are here, because a tab is a label a reader reads.
+     */
+    { id: "templates-tab-catalogue", label: "Relationship templates" },
+    { id: "templates-tab-library", label: "Library templates" },
+    { id: "templates-tab-mine", label: "My relationships" },
+    /** The two card actions, and the frame the two roles are joined by. */
+    { id: "template-use", label: "Use this template" },
+    { id: "template-example", label: "Read the example" },
+    { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
+    /**
+     * The third view, as a door: `/` is public, so it names no relationship and renders none.
+     * `value` is the route the door opens — `/assessment/instances` decides who may walk in.
+     */
+    {
+      id: "templates-mine",
+      label: "Open my relationships",
+      value: "/assessment/instances",
+      body: "Your relationships live behind your session, in the console — not on this page, which anyone can read. Sign in and the list is one click away.",
+    },
+    /**
+     * Under the hero CTA: the two facts that make the button safe to press — one relationship is
+     * bought once and every session after it is the reader's, and the reader's seat is the coach's
+     * rather than a third answer. **One sentence**, because the three-line version repeated the
+     * heading's word ("charge for") twice ("paid to run", "yours to run") and buried the fact it
+     * was trying to make.
+     */
+    {
+      id: "hero-fineprint",
+      label:
+        "One relationship is bought once, every session after it is yours, and you are named as its coach rather than answering as a party.",
+    },
+    /**
+     * The risk-reducer directly under the CTA. It is a claim the product already makes elsewhere —
+     * `/pricing`'s FAQ says the Free plan needs "no card and no subscription" — so this is the
+     * same promise at the point of decision, not a second one.
+     */
+    { id: "hero-reassurance", label: "Free to start · no card" },
     /** The two sides of every Aspect. A reader's own answer, and the other party's. */
     { id: "side-you", label: "You" },
     { id: "side-them", label: "They" },
@@ -78,6 +188,27 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
   ],
   sections: [
     {
+      id: "practice",
+      heading: "Create once. Run it with every client.",
+      items: [
+        {
+          id: "practice-create",
+          label: "Create",
+          body: "Write the Aspects for one relationship type — what you actually ask about in session. That template is your product; it doesn't change per client.",
+        },
+        {
+          id: "practice-invite",
+          label: "Invite both sides",
+          body: "Send it to your client and to their counterparty. Neither sees the other's answers until both accept — so nothing is softened for your benefit.",
+        },
+        {
+          id: "practice-session",
+          label: "Run the session",
+          body: "The report names every Gap by kind and size, and the Steps that follow from it. That's your agenda, and the reason the next session is billable.",
+        },
+      ],
+    },
+    {
       id: "questions",
       heading: "The same question, answered twice",
       body: "Every Aspect gets two answers, one from each of you. Neither is a score to chase. One says where the relationship is today; the other says where you each want it to go.",
@@ -98,13 +229,40 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "templates",
-      heading: "Four templates",
-      body: "A template does nothing until two people copy it and answer its five Aspects. {title}, answered by {left} and {right}, is the one with answers to read.",
+      heading: "Start from a type, a template, or your own list.",
+      body: "The catalogue is every relationship type this product sells; the library is what this deployment has already built. A type is only offered if a template backs it, so nothing here is for sale that the product can't run.",
     },
     {
       id: "families",
-      heading: "Two families",
-      body: "Every Relationship Type the templates cover. If no template backs a type, it isn't offered.",
+      heading: "{types} relationship types, across {realms} realms.",
+      body: "A type is only offered if a template backs it, so you are never selling something the product can't run. Business and Office relationships are a practice's spine; Home and Social are what clients bring with them.",
+    },
+    {
+      id: "seats",
+      heading: "You're the coach on the relationship — a role, not a third answer.",
+      body: "Three seats exist on every relationship. The coach reads the relationship and runs the cycle; the two parties answer. A coach never submits an opinion, so the report can't be shaped by the person being paid for it.",
+      items: [
+        {
+          id: "seat-initiator",
+          label: "Initiator",
+          body: "Bought the relationship and invited the other side.",
+        },
+        {
+          id: "seat-counterparty",
+          label: "Counterparty",
+          body: "Answers independently, blind until both accept.",
+        },
+        {
+          id: "seat-coach",
+          label: "Coach",
+          body: "Reads, runs the session, starts the next cycle. No opinion of their own.",
+        },
+      ],
+    },
+    {
+      id: "boundary",
+      heading: "What this page does not claim.",
+      body: "No pay figures, no client counts, no logos. The product model is real and priced per relationship; what a practice brings in depends on what it charges and how many clients it runs.",
     },
   ],
 });

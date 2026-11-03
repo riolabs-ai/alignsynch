@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/accordion.tsx   (variation: the FAQ — brand-keyed groups, a search field and one accordion per group)
+
 import {
   Accordion,
   AccordionContent,
@@ -19,7 +21,7 @@ import {
 import { itemLabel } from "@/lib/page-copy";
 import { Search } from "lucide-react";
 import { useState } from "react";
-import type { SupportCategory } from "./support-page";
+import type { SupportCategory } from "./category";
 
 interface SupportFAQProps {
   selectedCategory: SupportCategory;
@@ -33,8 +35,14 @@ export type SupportFaqQuestion = { question: string; answer: string };
 /** One product's rows, every category present — see `SupportFaqRows` below. */
 export type SupportFaqRows = Record<SupportFaqCategory, SupportFaqQuestion[]>;
 
-/** What a product's rows are a function of: the name it prints and the mailbox it answers at. */
-type SupportFaqWriter = (brand: Pick<Brand, "name" | "supportEmail">) => SupportFaqRows;
+/**
+ * What a product's rows are a function of: the name it prints.
+ *
+ * It used to be `name` and the mailbox, because two rows said "email ${brand.supportEmail}". No
+ * public page prints an address any more (owner, 2026-11-02), so the mailbox left this type with
+ * the rows that named it — a field a writer cannot read is a field a writer cannot print.
+ */
+type SupportFaqWriter = (brand: Pick<Brand, "name">) => SupportFaqRows;
 
 /**
  * The rows both products answer with the same words, because both products have these facts.
@@ -45,9 +53,7 @@ type SupportFaqWriter = (brand: Pick<Brand, "name" | "supportEmail">) => Support
  * brands — `components/support/**` and `app/(mainlayout)/settings` are, which is why these three
  * categories are shared and `general` is not.
  */
-function sharedFaqRows(
-  brand: Pick<Brand, "name" | "supportEmail">,
-): Pick<SupportFaqRows, "account" | "privacy" | "technical"> {
+function sharedFaqRows(): Pick<SupportFaqRows, "account" | "privacy" | "technical"> {
   return {
     account: [
       {
@@ -76,7 +82,7 @@ function sharedFaqRows(
     technical: [
       {
         question: "A page looks out of date, or a button does nothing. What should I try?",
-        answer: `Reload the page. If it still looks wrong, clear this site's data, sign in again and retry the action. If it keeps happening, email ${brand.supportEmail} with the page you were on and what you saw.`,
+        answer: `Reload the page. If it still looks wrong, clear this site's data, sign in again and retry the action. If it keeps happening, send us a message from the contact form on the Help page with the page you were on and what you saw.`,
       },
     ],
   };
@@ -90,9 +96,9 @@ function sharedFaqRows(
  * destinations is a page this build mounts, so the rows are facts here and a defect on the other
  * brand — which is exactly why they are no longer the only set (`alignSynchFaqRows`).
  */
-function quizHubFaqRows(brand: Pick<Brand, "name" | "supportEmail">): SupportFaqRows {
+function quizHubFaqRows(brand: Pick<Brand, "name">): SupportFaqRows {
   return {
-    ...sharedFaqRows(brand),
+    ...sharedFaqRows(),
     "quiz-creation": [
       {
         question: "How do I write a quiz?",
@@ -117,7 +123,8 @@ function quizHubFaqRows(brand: Pick<Brand, "name" | "supportEmail">): SupportFaq
       },
       {
         question: "How do I contact support?",
-        answer: `Email ${brand.supportEmail}. Include the page you were on and what you expected to happen, and for a bug, what happened instead.`,
+        answer:
+          "Send us a message from the contact form on the Help page (/help). Include the page you were on and what you expected to happen, and for a bug, what happened instead.",
       },
     ],
   };
@@ -151,9 +158,9 @@ function quizHubFaqRows(brand: Pick<Brand, "name" | "supportEmail">): SupportFaq
  * product sound like the other one with the noun swapped, which is what the shared rows above are
  * for and why they are shared rather than copied.
  */
-function alignSynchFaqRows(brand: Pick<Brand, "name" | "supportEmail">): SupportFaqRows {
+function alignSynchFaqRows(brand: Pick<Brand, "name">): SupportFaqRows {
   return {
-    ...sharedFaqRows(brand),
+    ...sharedFaqRows(),
     /**
      * Nothing, and that is the row: this product has no authoring surface for a reading, so the
      * category has no answers. It is not offered either — `supportCategoriesByBrand.alignsynch`
@@ -175,7 +182,8 @@ function alignSynchFaqRows(brand: Pick<Brand, "name" | "supportEmail">): Support
       },
       {
         question: "How do I contact support?",
-        answer: `Email ${brand.supportEmail}. Include the page you were on and what you expected to happen, and for a bug, what happened instead.`,
+        answer:
+          "Send us a message from the contact form on the Help page (/help). Include the page you were on and what you expected to happen, and for a bug, what happened instead.",
       },
     ],
   };
@@ -201,7 +209,7 @@ export const supportFaqRowsByBrand: Readonly<Record<BrandId, SupportFaqWriter>> 
  *
  * An id and not a `Brand` record, for the same reason `supportCategoriesFor` takes one: the record
  * carries no id of its own, and pairing a record with a table key is a pair that can disagree. Here
- * the id *is* the product — the writer reads its name and mailbox out of `data/brand.ts` — so
+ * the id *is* the product — the writer reads its name out of `data/brand.ts` — so
  * "AlignSynch's rows under QuizHub's name" is not a call anybody can make. A brand added to the
  * table without a key fails `tsc`; a key without a writer fails it too.
  */

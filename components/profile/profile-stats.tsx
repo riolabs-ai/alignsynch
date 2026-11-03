@@ -1,3 +1,5 @@
+// template-ancestor: components/console/stat-card-grid.tsx   (variation: three figures with a progress bar and a trend row under them)
+
 import type { UserStats } from "@/lib/data/users";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";

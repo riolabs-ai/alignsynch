@@ -1,3 +1,5 @@
+// template-ancestor: components/support/article-detail.tsx   (variation: the related strip only — three tip cards under the body, no article above them)
+
 import type { PageCopySection } from "@/content/pages";
 import type { TipRecord } from "@/lib/article-records";
 import TipCard from "./tip-card";

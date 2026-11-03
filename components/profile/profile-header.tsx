@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/ui/page-header.tsx   (variation: the profile band hand-written — a cover image, an avatar, a badge row, message and follow actions)
+
 import { Media } from "@/components/media/media";
 import { ProfileCover } from "@/components/profile/profile-cover";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";

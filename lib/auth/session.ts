@@ -22,16 +22,28 @@
  * because nothing else is ours.
  */
 import { authConfigured } from "@/lib/auth/config";
-import { neonAuth } from "@/lib/auth/server";
+import { isRenderCookieWriteRefusal } from "@/lib/auth/render-cookie";
+import { neonAuth, neonAuthReader } from "@/lib/auth/server";
+import { grantAdminIfAllowlisted } from "@/lib/auth/admin-allowlist";
 
-/** The session as the app uses it. No token, no session id, no roles. */
+/** The session as the app uses it. No token, no roles. */
 export interface SessionUser {
   /** Neon Auth's user id — `user_profile.user_id`. */
   readonly userId: string;
   readonly email: string;
   /** What the person typed at sign-up; empty when the provider holds no name. */
   readonly name: string;
+  /**
+   * The session's own id, and only ever used to *keep* it: `/settings`' set-password card revokes
+   * every other session and must not revoke the one it was posted from (`lib/db/password-reset.ts`
+   * ::revokeSessions). `null` when the auth server answered without one — in which case the caller
+   * revokes everything, because keeping an unidentified session alive is the wrong way to be safe.
+   */
+  readonly sessionId: string | null;
 }
+
+/** What one session read answers — the SDK's own shape, so the two clients cannot disagree. */
+type SessionAnswer = Awaited<ReturnType<ReturnType<typeof neonAuth>["getSession"]>>;
 
 /**
  * The signed-in person, or `null`.
@@ -39,23 +51,76 @@ export interface SessionUser {
  * The auth server is built **outside** the `try` on purpose: `neonAuth()` throws when
  * `NEON_AUTH_BASE_URL` / `NEON_AUTH_COOKIE_SECRET` are missing, and that is a configuration
  * error the caller should surface, not a session that happens not to exist. Only the request
- * itself is guarded — a session fetch that fails (upstream 5xx, a reset connection) is treated
- * as "no session", because a page cannot do anything useful with a half-answered auth call and
- * a 500 on `/settings` would hide the real state.
+ * itself is guarded.
+ *
+ * **Two failures, and only one of them is "signed out" (kanban t_98acf062).**
+ *
+ *   - the read failed — upstream 5xx, a reset connection, a token the auth server rejects. A page
+ *     cannot do anything useful with a half-answered auth call, and a 500 on `/settings` would
+ *     hide the real state, so this answers `null`;
+ *   - the session answered and only its **refreshed cookie could not be persisted here**. Next 16
+ *     refuses `cookies().set()` during a render, and Better Auth re-signs the session cookie as
+ *     its expiry approaches, so this happens to a perfectly valid session. It is not a read
+ *     failure, and reporting it as one signed people out mid-session, so it is read again through
+ *     `neonAuthReader()` — the client whose request context has no write to refuse.
+ *
+ * Anything that is neither is treated the way the first case is (logged, `null`): a page must not
+ * 500 because auth hiccuped.
  */
 export async function currentUser(): Promise<SessionUser | null> {
+  const result = await readSession();
+  const user = result?.data?.user;
+  if (user === undefined || user === null) return null;
+  const sessionUser: SessionUser = {
+    userId: user.id,
+    email: user.email,
+    name: typeof user.name === "string" ? user.name : "",
+    sessionId:
+      typeof result?.data?.session?.id === "string" && result.data.session.id !== ""
+        ? result.data.session.id
+        : null,
+  };
+  // The allowlist grant is outside the read: a failed session read is "signed out", but the
+  // grant must not be swallowed into that answer. It never throws (it fails closed and logs), and
+  // it is the one place a session's user is promoted after sign-in (`lib/auth/admin-allowlist.ts`).
+  await grantAdminIfAllowlisted(sessionUser);
+  return sessionUser;
+}
+
+/**
+ * One session read, with the two failures kept apart.
+ *
+ * `null` means "no session, or the read did not answer" — the caller redirects or renders signed
+ * out, which is right for both. A refusal of the refreshed cookie is neither: the auth server has
+ * already answered with a session, so the read is repeated through the client that cannot write
+ * (`lib/auth/server.ts::neonAuthReader`). Only a read that fails *again* there is signed out.
+ *
+ * The first attempt uses `neonAuth()` on purpose. Where a write **is** legal — a server action, a
+ * route handler — the refreshed cookie should be persisted, and only this client can do it. The
+ * retry is the narrow path, taken when Next refused the write because this is a render.
+ */
+async function readSession(): Promise<SessionAnswer | null> {
+  // Both clients are built **before** the `try` on purpose: `neonAuth()` and `neonAuthReader()`
+  // throw when `NEON_AUTH_BASE_URL` / `NEON_AUTH_COOKIE_SECRET` are missing, and a configuration
+  // error must surface as one — "signed out" here is an endless `/login` redirect, the hardest
+  // kind of bug to see.
   const auth = neonAuth();
+  const reader = neonAuthReader();
   try {
-    const result = await auth.getSession();
-    const user = result?.data?.user;
-    if (user === undefined || user === null) return null;
-    return {
-      userId: user.id,
-      email: user.email,
-      name: typeof user.name === "string" ? user.name : "",
-    };
+    return await auth.getSession();
   } catch (error) {
-    console.error("auth: getSession failed — treating the request as signed out", error);
+    if (!isRenderCookieWriteRefusal(error)) {
+      console.error("auth: getSession failed — treating the request as signed out", error);
+      return null;
+    }
+    console.warn(
+      "auth: the refreshed session cookie cannot be persisted in this render — reading the session without writing it",
+    );
+  }
+  try {
+    return await reader.getSession();
+  } catch (error) {
+    console.error("auth: reading the session without persisting its cookie also failed", error);
     return null;
   }
 }

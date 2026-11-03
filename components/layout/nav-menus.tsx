@@ -1,8 +1,11 @@
 "use client";
 
+// template-ancestor: components/ui/navigation-menu.tsx   (variation: the nav definition hand-rolled as rows — role-filtered, brand-keyed groups, no navigation-menu primitive)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
+import { surfaceFor } from "@/data/surface-registry";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { type NavViewer, sees } from "@/lib/nav";
@@ -15,8 +18,9 @@ import {
   Compass,
   DollarSign,
   FileQuestion,
+  Gauge,
+  HeartHandshake,
   Home,
-  LayoutDashboard,
   LayoutTemplate,
   Library,
   LifeBuoy,
@@ -66,11 +70,27 @@ import type React from "react";
 /** What the sidebar knows and the menu needs — passed in, never read from context. */
 export interface NavRenderProps {
   copy: PageCopy;
-  /** `xl` and up: the rail renders icons with a tooltip-free `aria-label`-less link. */
-  collapsed: boolean;
+  /**
+   * Explicit icon-only markup — the label in `title`/`aria-label`, no text node. No shell mount
+   * passes this any more (the rail's narrow form is a class, see `NavRow`), so it is the prop a
+   * caller uses when it wants the icon row *as markup* — which is how the node tests drive the
+   * shape without a browser.
+   */
+  collapsed?: boolean;
+  /**
+   * Render every row's label as a text node, whatever the viewport says (the mobile drawer, see
+   * `AppSidebar`). Without it the label is `hidden lg:inline`: an icon rail between 768 and
+   * 1023px, a labelled column from 1024. The drawer is 250px wide at a 390px viewport, so its
+   * labels have room — a class that asks the viewport instead of the container would leave a
+   * phone with a full-width panel of icons and no words.
+   */
+  labelled?: boolean;
   /** The current route, for the active row (`/` matches only `/`, not everything). */
   pathname: string;
-  /** Called when a row is followed — the mobile drawer closes itself on this. */
+  /**
+   * Called when a row is followed. The desktop rail has nothing to close; the drawer closes
+   * itself with it, so a surface that mounts this menu inside one needs no second menu component.
+   */
   onNavigate: () => void;
   /**
    * The hrefs whose destination is powered off by a feature flag (issue #175). Absent means
@@ -102,7 +122,10 @@ export type NavRowProps = {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
-  collapsed: boolean;
+  /** Explicit icon-only markup. Defaults to false: the row's width is a class (see `NavRow`). */
+  collapsed?: boolean;
+  /** See `NavRenderProps.labelled` — the drawer's rows, where the label has room at any viewport. */
+  labelled?: boolean;
   onNavigate: () => void;
   /** Flagged off: draw nothing (issue #175). See `NavRenderProps.hidden`. */
   hidden?: boolean;
@@ -118,41 +141,112 @@ export type NavRowProps = {
  * worse than an absent row because it says the session ended when it did not. `onSelect` is
  * that row; every destination row is still a `Link`, class for class, so the menus this module
  * draws are byte-for-byte what they were.
+ *
+ * **A pending destination is not a link (issue #409).** A row whose `href` names a surface
+ * `data/surface-registry.ts` declares `pending` or `preview` renders as a **disabled `<button>`**:
+ * no `<Link>`, no href, no click, `aria-disabled`, the muted tone and the registry's own reason
+ * under the label (a `title` carries it in the collapsed rail, where there is no second line to
+ * read). The
+ * registry decides, not this file, so a surface cannot be greyed in one menu and linked in the
+ * other — and a live row is untouched, which is what keeps this a status rule rather than a
+ * second menu. Nothing is added or removed by it: greying changes how a row that already exists
+ * is drawn, never which rows exist.
  */
 export function NavRow(props: NavRowProps) {
-  const { icon, label, active, collapsed, onNavigate, hidden } = props;
+  const { icon, label, active, collapsed = false, labelled, onNavigate, hidden } = props;
   if (hidden) return null;
 
-  const tone = active
-    ? "bg-nav-active text-action-foreground"
-    : "hover:bg-accent hover:text-accent-foreground";
+  const surface = props.href === undefined ? undefined : surfaceFor(props.href);
+  const pending = surface !== undefined && surface.status !== "live";
+  const statusWord = surface?.status === "preview" ? "Preview" : "Pending";
+
+  const tone = pending
+    ? "cursor-not-allowed text-muted-foreground opacity-70"
+    : active
+      ? "bg-nav-active text-action-foreground"
+      : "hover:bg-accent hover:text-accent-foreground";
 
   const className = collapsed
     ? cn("flex h-10 w-10 items-center justify-center rounded-md transition-colors", tone)
     : cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 xl:py-2.5 text-sm font-medium transition-colors",
+        /**
+         * **The row is an icon between `md` and `lg`.** The rail narrows to 64px there
+         * (`components/layout/sidebar.tsx`), so the text is `hidden lg:inline` and the row is a
+         * 40px square centred in the column; from `lg` — a laptop, and the width the owner asked
+         * the rail to be expanded at — it is the full-width row it always was. The accessible
+         * name does not depend on the width: `title` and `aria-label` carry the label at every
+         * breakpoint, so the icon rail is still readable by a pointer and announced by a screen
+         * reader. That is a class, not state — no component measures a window to decide whether a
+         * label exists. `labelled` is the one exception, and it is not a width: it is the mobile
+         * drawer, which is 250px wide at a 390px viewport.
+         */
+        labelled
+          ? "flex h-10 items-center justify-start gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+          : "flex h-10 items-center justify-center gap-3 rounded-md text-sm font-medium transition-colors lg:h-auto lg:justify-start lg:px-3 lg:py-2.5",
         tone,
       );
+
+  /**
+   * The words a screen reader hears and a pointer shows on hover. A pending row carries its
+   * status as well, because the second line that explains it is `hidden lg:flex` like every other
+   * label — the announcement may not depend on a width either.
+   */
+  const accessibleLabel = pending ? `${label} — ${statusWord.toLowerCase()}` : label;
+  const title = pending ? surface?.reason : label;
 
   const content = collapsed ? (
     icon
   ) : (
     <>
       <span>{icon}</span>
-      <span>{label}</span>
+      {pending ? (
+        <span className={labelled ? "flex min-w-0 flex-col" : "hidden min-w-0 flex-col lg:flex"}>
+          <span className="truncate">{label}</span>
+          <span className="truncate text-xs font-normal">
+            {statusWord} — {surface?.reason}
+          </span>
+        </span>
+      ) : labelled ? (
+        <span className="truncate">{label}</span>
+      ) : (
+        <span className="hidden lg:inline">{label}</span>
+      )}
     </>
   );
 
-  const row =
-    props.onSelect === undefined ? (
-      <Link href={props.href} onClick={onNavigate} className={className}>
-        {content}
-      </Link>
-    ) : (
-      <button type="button" onClick={props.onSelect} className={className}>
-        {content}
-      </button>
-    );
+  const row = pending ? (
+    <button
+      type="button"
+      disabled
+      aria-disabled="true"
+      aria-label={accessibleLabel}
+      title={title}
+      data-surface-status={surface?.status}
+      className={className}
+    >
+      {content}
+    </button>
+  ) : props.onSelect === undefined ? (
+    <Link
+      href={props.href}
+      onClick={onNavigate}
+      aria-label={accessibleLabel}
+      title={title}
+      className={className}
+    >
+      {content}
+    </Link>
+  ) : (
+    <button
+      type="button"
+      onClick={props.onSelect}
+      aria-label={accessibleLabel}
+      title={title}
+      className={className}
+    >
+      {content}
+    </button>
+  );
 
   if (!collapsed) return row;
   return <div className="relative group flex justify-center items-center">{row}</div>;
@@ -166,7 +260,14 @@ export function NavRow(props: NavRowProps) {
  * byte what it was: the brand switch below picks this branch, and the labels still resolve
  * against the `nav` section of the same fixture.
  */
-function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRenderProps) {
+function QuizHubMenu({
+  copy,
+  collapsed = false,
+  labelled = false,
+  pathname,
+  onNavigate,
+  hidden,
+}: NavRenderProps) {
   const nav = sectionOf(copy, "nav");
   return (
     <>
@@ -176,6 +277,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "home")}
         active={pathname === "/"}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -184,6 +286,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "daily-challenge")}
         active={isActive(pathname, "/daily-challenge")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -192,6 +295,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "categories")}
         active={isActive(pathname, "/categories")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -200,6 +304,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "battle")}
         active={isActive(pathname, "/battle")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -208,6 +313,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "news")}
         active={isActive(pathname, "/news")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -216,6 +322,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "explore")}
         active={isActive(pathname, "/explore")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -224,6 +331,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "tournaments")}
         active={isActive(pathname, "/tournaments")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -232,6 +340,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "leaderboard")}
         active={isActive(pathname, "/leaderboard")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
         hidden={hidden?.includes("/leaderboard")}
       />
@@ -241,6 +350,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "creator-tips")}
         active={isActive(pathname, "/creator-tips")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -249,6 +359,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "quiz-discussions")}
         active={isActive(pathname, "/quiz-discussions")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -257,6 +368,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "create-editor")}
         active={isActive(pathname, "/create/editor")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -265,6 +377,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "create-generator")}
         active={isActive(pathname, "/create/generator")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -273,6 +386,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "affiliate")}
         active={isActive(pathname, "/affiliate")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
         hidden={hidden?.includes("/affiliate")}
       />
@@ -282,6 +396,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "pricing")}
         active={isActive(pathname, "/pricing")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -290,6 +405,7 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
         label={itemLabel(nav, "support")}
         active={isActive(pathname, "/support")}
         collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
     </>
@@ -297,30 +413,43 @@ function QuizHubMenu({ copy, collapsed, pathname, onNavigate, hidden }: NavRende
 }
 
 /**
- * The alignment product's menu — the four front-page destinations the brand shipped, then the
- * console's own two (Overview, Your templates), then the operator's rows when the viewer carries
- * `admin-console`. Every one of them is a destination that exists on this brand today.
+ * The alignment product's menu: the console's own destinations in the order the owner's review
+ * set, then the one front-page band it still links, then Support, then the operator's rows when
+ * the viewer carries `admin-console`.
  *
- * The two middle rows of the first group are anchors into the front page's own bands
- * (`/#templates`, `/#questions`), which is why `/` gives those bands an `id`: a route that does
- * not exist yet is a later card, and a nav that links to it early is the same 404 this issue
- * removes. `tests/nav-brand.test.ts` holds these three hrefs to the ids the rendered page emits,
- * so an anchor cannot drift from its band.
+ * **The rail opens on Dashboard and there is exactly one row for `/dashboard`.** The old menu had
+ * "Home" at `/` and a separate "Overview" at `/dashboard`: two words, one console. They are one
+ * row now — Dashboard, at `/dashboard` — so the label names the page it opens and no destination
+ * appears twice.
  *
- * **Why the console's rows are appended and not interleaved.** The order above is the order issue
- * #156 shipped and the order the front page reads in; the console is a later layer on top of the
- * same product, so its rows go after them rather than between Home and Support. A reader sees
- * front page → console → operator, and a diff that adds a row never moves an existing one.
+ * **The icon is `Gauge`, deliberately.** A dashboard's job is the state of things at a glance, and
+ * `Gauge` is the instrument-panel mark for that. `LayoutDashboard` was the removed Overview row's
+ * glyph and is a floorplan of a page; carrying it onto the merged row would have kept the look of
+ * the duplicate that was deleted, and the review asked for a new mark. `Home` was a building, and
+ * the row no longer goes to the front page, so keeping it would be the word and the picture
+ * disagreeing with the href.
  *
- * **Both console rows are ungated, and that is the gate's shape, not an omission.** `/dashboard`
- * and `/assessment/templates` are `force-dynamic` routes that answer a signed-out request with
- * `redirect(/login?next=…)` — a redirect is a working destination, unlike `/admin/*`, which
- * answers a signed-in *member* with a 404 and therefore must not be advertised. So the only
- * capability this menu consults is the operator's, via `sees(viewer, "admin-console")` below.
+ * **My Relationships carries `HeartHandshake`, not `Users`.** Two people in agreement is this
+ * product's subject; `Users` is the quiz menu's affiliate glyph and `ShieldCheck` is the operator
+ * registry's, so either would read as a second meaning for one picture.
+ *
+ * **My Relationships and Library are adjacent, and Templates sits one row above Support.** The two
+ * console lists read as a pair (what you own, what you build from), and the marketing bands end
+ * the menu instead of interrupting it.
+ *
+ * **Why this menu cannot reach the quiz build.** These rows live in `AlignSynchMenu`, which
+ * `AppNav`'s `switch` renders only for `BRAND=alignsynch`; the quiz brand renders `QuizHubMenu`
+ * and nothing else. So `/assessment/instances` and `/assessment/templates` — routes the brand
+ * boundary answers `404` for on the quiz build — are structurally absent there rather than hidden
+ * by a check. The only capability consulted below is the operator's,
+ * `sees(viewer, "admin-console")`: every console row here answers a signed-out request with
+ * `redirect(/login?next=…)`, which is a working destination, unlike `/admin/*`, which answers a
+ * signed-in *member* with a 404 and therefore must not be advertised.
  */
 function AlignSynchMenu({
   copy,
-  collapsed,
+  collapsed = false,
+  labelled = false,
   pathname,
   onNavigate,
   viewer,
@@ -329,49 +458,30 @@ function AlignSynchMenu({
   return (
     <>
       <NavRow
-        href="/"
-        icon={<Home className="size-5" />}
-        label={itemLabel(nav, "home")}
-        active={pathname === "/"}
-        collapsed={collapsed}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/#templates"
-        icon={<LayoutTemplate className="size-5" />}
-        label={itemLabel(nav, "templates")}
-        active={false}
-        collapsed={collapsed}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/#questions"
-        icon={<Workflow className="size-5" />}
-        label={itemLabel(nav, "how-it-works")}
-        active={false}
-        collapsed={collapsed}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/support"
-        icon={<LifeBuoy className="size-5" />}
-        label={itemLabel(nav, "support")}
-        active={isActive(pathname, "/support")}
-        collapsed={collapsed}
-        onNavigate={onNavigate}
-      />
-      {/*
-        The console's own two destinations (console 2/5 and 5/5), appended after the brand's four
-        so no existing row moves. Each is a route this build serves to every viewer — signed out,
-        it redirects to `/login?next=…` with the destination preserved — so both rows are drawn
-        unconditionally, and the capability below stays the operators'.
-      */}
-      <NavRow
         href="/dashboard"
-        icon={<LayoutDashboard className="size-5" />}
-        label={itemLabel(nav, "console-overview")}
+        icon={<Gauge className="size-5" />}
+        label={itemLabel(nav, "dashboard")}
         active={isActive(pathname, "/dashboard")}
         collapsed={collapsed}
+        labelled={labelled}
+        onNavigate={onNavigate}
+      />
+      <NavRow
+        href="/how-it-works"
+        icon={<Workflow className="size-5" />}
+        label={itemLabel(nav, "how-it-works")}
+        active={isActive(pathname, "/how-it-works")}
+        collapsed={collapsed}
+        labelled={labelled}
+        onNavigate={onNavigate}
+      />
+      <NavRow
+        href="/assessment/instances"
+        icon={<HeartHandshake className="size-5" />}
+        label={itemLabel(nav, "my-relationships")}
+        active={isActive(pathname, "/assessment/instances")}
+        collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
@@ -380,6 +490,35 @@ function AlignSynchMenu({
         label={itemLabel(nav, "template-library")}
         active={isActive(pathname, "/assessment/templates")}
         collapsed={collapsed}
+        labelled={labelled}
+        onNavigate={onNavigate}
+      />
+      {/*
+        Templates is the front page's `#templates` band, the one marketing anchor the console
+        still carries: the four record templates the brand ships are drawn there, and the rail
+        names them with the page that shows them. **How it works is not an anchor any more** — it
+        is `/how-it-works`, an in-app onboarding page
+        (`app/(mainlayout)/how-it-works/page.tsx`) — because the owner's review of the console
+        said a signed-in member must not be sent to the public site to be told how the product
+        works. `tests/nav-brand.test.ts` holds every remaining `/#…` href to an `id` the rendered
+        front page emits; this comment is the record of why there is only one left.
+      */}
+      <NavRow
+        href="/#templates"
+        icon={<LayoutTemplate className="size-5" />}
+        label={itemLabel(nav, "templates")}
+        active={false}
+        collapsed={collapsed}
+        labelled={labelled}
+        onNavigate={onNavigate}
+      />
+      <NavRow
+        href="/support"
+        icon={<LifeBuoy className="size-5" />}
+        label={itemLabel(nav, "support")}
+        active={isActive(pathname, "/support")}
+        collapsed={collapsed}
+        labelled={labelled}
         onNavigate={onNavigate}
       />
       {/*
@@ -401,6 +540,7 @@ function AlignSynchMenu({
           label={itemLabel(nav, "console-gaps")}
           active={isActive(pathname, "/admin/gaps")}
           collapsed={collapsed}
+          labelled={labelled}
           onNavigate={onNavigate}
         />
       )}
@@ -419,6 +559,7 @@ function AlignSynchMenu({
           label={itemLabel(nav, "admin-instances")}
           active={isActive(pathname, "/admin/instances")}
           collapsed={collapsed}
+          labelled={labelled}
           onNavigate={onNavigate}
         />
       )}
@@ -510,11 +651,17 @@ const PUBLIC_ROW_CLASS =
 
 /**
  * The alignment brand's public menu: the four front-page destinations the sidebar's own
- * `nav-alignsynch` section names, plus `/pricing`.
+ * `nav-alignsynch` section names, plus `/pricing` and the public help centre.
  *
  * Templates and How it works are the front page's own bands (`/#templates`, `/#questions`), the
  * same anchors the sidebar and the footer already point at — a public route for either does not
  * exist yet, and a link to a route that does not exist is the defect this menu removes.
+ *
+ * **The last row is `/help`, not `/support`.** The Help/Support split put the answers in public
+ * (`/help`) and the contact form behind the app's session (`/support`), so a menu drawn on
+ * marketing routes must not send a signed-out reader to the account page — it would only redirect
+ * them back here. `help` is its own fixture id, because the rail's `support` row still says
+ * "Support" and still opens the account page.
  */
 function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
   const nav = sectionOf(copy, "nav-alignsynch");
@@ -532,8 +679,8 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/pricing">
         {itemLabel(nav, "pricing")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/support">
-        {itemLabel(nav, "support")}
+      <Link className={PUBLIC_ROW_CLASS} href="/help">
+        {itemLabel(nav, "help")}
       </Link>
     </nav>
   );
@@ -544,9 +691,14 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
  * product's own destinations and `/` is both front pages at once.
  *
  * It reads the `nav` section — the same one its sidebar reads — so "Pricing Plan" there and here
- * is one string, and the two surfaces cannot drift. `/categories` and `/support` are quiz routes
- * the brand publishes; `/welcome` is the landing page and is reached from the page's own bands, not
- * from this menu (a menu row pointing at the marketing copy beside it is furniture).
+ * is one string, and the two surfaces cannot drift. `/categories` is a quiz route the brand
+ * publishes; `/welcome` is the landing page and is reached from the page's own bands, not from
+ * this menu (a menu row pointing at the marketing copy beside it is furniture).
+ *
+ * The last row is **Help** (`/help`) and not the rail's **Support** (`/support`): the split put the
+ * FAQ and knowledge base in public and the contact form behind a session, so a signed-out reader
+ * on a marketing route gets the page that answers them. The two words are two fixture ids
+ * (`help` / `support`), which is why the rail keeps its own.
  */
 function QuizHubPublicNav({ copy }: { copy: PageCopy }) {
   const nav = sectionOf(copy, "nav");
@@ -561,8 +713,8 @@ function QuizHubPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/pricing">
         {itemLabel(nav, "pricing")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/support">
-        {itemLabel(nav, "support")}
+      <Link className={PUBLIC_ROW_CLASS} href="/help">
+        {itemLabel(nav, "help")}
       </Link>
     </nav>
   );

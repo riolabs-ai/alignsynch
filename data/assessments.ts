@@ -34,11 +34,25 @@
  * against the other's Feel 5 is a Gap of 3, and there is nowhere to write that down;
  * so every instance states the arithmetic in a comment beside the pair it came from
  * (`gapOf(2, 5) === 3`), and a reader can check it without running anything.
+ *
+ * **The catalogue is the rest of the type taxonomy, derived and not retyped.** The four
+ * records above are the hand-authored ones; the collection a practitioner shops from is
+ * `data/relationship-types.ts`, which authors twenty-seven purchasable Relationship
+ * Types across seven realms, each with its own Aspects, its two roles and its price. A
+ * **template is what an instance is copied from** (`lib/flow/store.ts` reads a record, not
+ * a type), so every purchasable type the set above does not already cover gets one record
+ * built from the type itself: same `slug` as the type id (the catalogue's join), the type's
+ * own name and who-it-is-for line, and **the type's own Aspects** — prompts, Left/Right
+ * Values and scale — rather than a second copy of the questions. That is what keeps one
+ * catalogue: editing a question in the taxonomy edits the template it belongs to, and
+ * `data:check` refuses a record whose items a type does not author.
  */
 import type { Assessment, AssessmentInstance } from "../content/assessment";
+import { DEMO_NOW_ISO } from "../content/core";
+import { purchasableRelationshipTypes } from "./relationship-types";
 
 /** One assessment template: five Aspects, each with a Left Value and a Right Value. */
-export const assessments: readonly Assessment[] = [
+const authoredTemplates: readonly Assessment[] = [
   {
     id: "assessment-relationship-basics",
     slug: "relationship-basics",
@@ -243,6 +257,65 @@ export const assessments: readonly Assessment[] = [
     ],
   },
 ];
+
+/* ------------------------------------------------------------------ *
+ * The catalogue — one template per purchasable Relationship Type
+ * ------------------------------------------------------------------ */
+
+/**
+ * The instant every derived template is dated with: the fixture clock.
+ *
+ * Never `new Date()` — nothing in this tree reads a wall clock, a seed has to be byte-identical
+ * on a second run, and a template's date is "when the platform published this type", which is
+ * one day for all of them.
+ */
+const CATALOGUE_DATE = DEMO_NOW_ISO;
+
+/**
+ * One template per purchasable type the hand-authored set does not already cover.
+ *
+ * `parent-child` and `staff-manager` are already authored above — with their own Aspects and
+ * their own instance copies — so they are skipped by slug rather than duplicated: two records
+ * with one slug would be two answers to "which template is this", and the instance documents
+ * that reference them name the authored ids. Everything else is derived from the taxonomy.
+ *
+ * The price, the roles and the realm are **not** copied onto the record: they belong to the
+ * type, and the catalogue reads them from the type by slug (`relationshipType(record.slug)`),
+ * so a price change is a change in one place and never a record that disagrees with the card
+ * beside it.
+ */
+const catalogueTemplates: readonly Assessment[] = purchasableRelationshipTypes
+  .filter((type) => !authoredTemplates.some((template) => template.slug === type.id))
+  .map((type) => ({
+    id: `assessment-${type.id}`,
+    slug: type.id,
+    type: "assessment" as const,
+    status: "published" as const,
+    date: CATALOGUE_DATE,
+    title: type.name,
+    summary: type.descriptor.whoItsFor,
+    items: [...type.aspects],
+  }));
+
+/**
+ * Every template: the hand-authored four, then the catalogue the taxonomy authors.
+ *
+ * One collection, in that order, because the order is what the read's `ORDER BY` cannot carry
+ * (a template's place in the catalogue is its realm's place, and that is the type's field).
+ */
+export const assessments: readonly Assessment[] = [...authoredTemplates, ...catalogueTemplates];
+
+/**
+ * The four hand-authored templates, alone — the set the front page's band names.
+ *
+ * `/` draws a card per template it is handed and heads the band "Four templates"
+ * (`data/pages/home-alignsynch.ts`), so it is handed this list and not the 29-record collection:
+ * the front page introduces the platform's starter set, while the catalogue at
+ * `/assessment/templates` is what a practitioner shops from. The distinction is the card's own
+ * (`{templates}` is a count the read produces, not a constant the page trusts), so a fifth
+ * hand-authored template still reaches the page by being authored here.
+ */
+export const starterTemplates: readonly Assessment[] = authoredTemplates;
 
 /**
  * The templates above, copied and given two parties.

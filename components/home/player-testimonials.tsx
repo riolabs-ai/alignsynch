@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/ui/card.tsx   (variation: three quote cards with a star row and the player's avatar)
+
 import { Media } from "@/components/media/media";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
 import { Badge } from "@/components/ui/badge";

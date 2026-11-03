@@ -1,3 +1,5 @@
+// template-ancestor: components/ui/badge.tsx   (variation: one chip rather than an alert panel — the demo account's standing, stated in place)
+
 import { Badge } from "@/components/ui/badge";
 import type { PageCopy } from "@/content/pages";
 import { itemLabel, sectionOf } from "@/lib/page-copy";

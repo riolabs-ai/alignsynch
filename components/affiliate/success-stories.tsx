@@ -1,5 +1,7 @@
 "use client";
 
+// template-ancestor: components/home/player-testimonials.tsx   (variation: the testimonial carousel over affiliate outcomes, a star row per story and arrow controls)
+
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopySection } from "@/content/pages";
 import { brand } from "@/data/brand";

@@ -1,4 +1,6 @@
 "use client";
+// template-ancestor: components/explore/explore-quizzes-page.tsx   (variation: the subject index — a search field, the tile grid and two closing bands instead of the filter rail)
+
 import { CategoriesCTA } from "@/components/categories/categories-cta";
 import { CategoriesHowItWorks } from "@/components/categories/categories-how-it-works";
 import { CategoryTile } from "@/components/categories/category-tile";
