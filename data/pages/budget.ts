@@ -71,6 +71,26 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-instances",
     budget: 0,
   },
+  // #503 — one relationship's repair screen, the registry's child. Budget 0 from the first
+  // commit: the five bands, their buttons, the two seat pickers, the eleven refusal sentences and
+  // the one-time-link notice are all `data/pages/admin-relationship.ts`. Attribution is
+  // reachability, so only `components/admin/relationship-operations.tsx` joins this row's count —
+  // the registry belongs to `/admin/instances` above it and the log to `/admin/audit` below.
+  "/admin/instances/[id]": {
+    page: "app/(mainlayout)/admin/instances/[id]/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-relationship",
+    budget: 0,
+  },
+  // #503 — the audit log. Budget 0: the seven column labels, the dash for the absent side of a
+  // change, the "no profile row" attribution and the two empty/failure panels are
+  // `data/pages/admin-audit.ts`, so the next literal written in `audit-log.tsx` is a red build.
+  "/admin/audit": {
+    page: "app/(mainlayout)/admin/audit/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-audit",
+    budget: 0,
+  },
   "/battle": {
     page: "app/(mainlayout)/battle/page.tsx",
     dirs: ["components/battle"],

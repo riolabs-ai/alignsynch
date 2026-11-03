@@ -55,7 +55,7 @@ export default async function AdminRelationshipPage({
 
   const { id } = await params;
 
-  let detail;
+  let detail: Awaited<ReturnType<typeof readAdminRelationship>>;
   try {
     // One clock for the request: the invitation's state is a comparison against an instant, and a
     // screen that read the clock twice could disagree with itself about "expired".

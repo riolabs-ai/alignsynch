@@ -37,12 +37,7 @@
  * `app/(mainlayout)/admin/instances/[id]/actions.ts`, which resolves the actor from the session
  * and hands it here — this module never reads a cookie and never opens a pool.
  */
-import {
-  type ActResult,
-  act,
-  type ActSql,
-  type ActTransactionRunner,
-} from "@/lib/admin/act";
+import { type ActResult, act, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
 import type { PartyRole } from "@/content/assessment";
 import { emailLooksDeliverable } from "@/lib/flow/resend";
@@ -280,7 +275,12 @@ export async function resendInvite(
                 resent_count = resent_count + 1, revoked_at = NULL, revoked_by = NULL
           WHERE session_record_id = $1
           RETURNING expires_at, resent_count`,
-        [request.instanceRecordId, hashToken(token), email ?? invite.email, expiresAt.toISOString()],
+        [
+          request.instanceRecordId,
+          hashToken(token),
+          email ?? invite.email,
+          expiresAt.toISOString(),
+        ],
       );
       const after = written.rows[0];
       if (after === undefined) {

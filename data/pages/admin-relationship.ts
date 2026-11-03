@@ -47,7 +47,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "status",
       items: [
-        { id: "awaiting_counterparty", label: "Awaiting counterparty" },
+        { id: "awaiting-counterparty", label: "Awaiting counterparty" },
         { id: "answering", label: "Answering" },
         { id: "complete", label: "Complete" },
         { id: "voided", label: "Voided" },
@@ -90,7 +90,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "op-unlock",
       heading: "Unlock a party",
-      body: "Clears a seat's unlock mark, so the \"complete since you last looked\" marker shows again for that party. This is the V11 repair — a mark that is set on an instance that is not complete is a row the database gate names, and clearing it is this button.",
+      body: 'Clears a seat\'s unlock mark, so the "complete since you last looked" marker shows again for that party. This is the V11 repair — a mark that is set on an instance that is not complete is a row the database gate names, and clearing it is this button.',
       items: [
         { id: "button", label: "Clear the mark" },
         { id: "party", label: "Which seat" },

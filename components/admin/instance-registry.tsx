@@ -35,6 +35,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -67,6 +68,7 @@ import {
   type SeatRow,
 } from "@/lib/admin/instance-registry";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { adminRelationshipPath } from "@/lib/admin/paths";
 import { useState } from "react";
 
 /** The badge tone a seat's state gets: an account is good, an expired invitation is not. */
@@ -277,6 +279,11 @@ export function InstanceRegistry({
                     <TableHead>{itemLabel(columns, "stage")}</TableHead>
                     <TableHead>{itemLabel(columns, "created")}</TableHead>
                     <TableHead>{itemLabel(columns, "last-activity")}</TableHead>
+                    {/* #503 — the row's way into its repair screen. The registry is where an
+                        operator finds the relationship; the five audited repairs live one click
+                        away, and a detail route nobody links to is a route only its author can
+                        open. */}
+                    <TableHead>{itemLabel(columns, "open")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -310,6 +317,14 @@ export function InstanceRegistry({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(row.lastActivity)}
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          href={adminRelationshipPath(row.instanceRecordId)}
+                          className="text-action text-sm font-medium hover:underline"
+                        >
+                          {itemLabel(columns, "open")}
+                        </Link>
                       </TableCell>
                     </TableRow>
                   ))}

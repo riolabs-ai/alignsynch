@@ -47,6 +47,24 @@ export const relationshipReportPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
+       * #503 — an acceptance an operator recorded on a seat's behalf. The report is where an
+       * acceptance becomes a fact about the relationship, so it is where the provenance belongs:
+       * the answers are the party's own, the acceptance was taken for them. The *operator* is
+       * never named here — that is the audit row's job (`/admin/audit`), and the party reading
+       * this page has no business being handed an account id.
+       */
+      id: "provenance",
+      heading: "An operator recorded an acceptance",
+      items: [
+        {
+          id: "operator-recorded",
+          label:
+            "{name} did not accept this session themselves: an operator recorded the acceptance on their behalf, because the seat had answered every Aspect and the relationship was otherwise stuck. The answers on this page are the party's own — only the acceptance was taken for them, and the audit log holds who took it and why.",
+        },
+      ],
+    },
+    {
+      /**
        * The state a viewer gets *instead of* a report (#409, the blind rule). The report does not
        * exist before both parties have submitted — this is not a redacted report, it is the
        * absence of one: no Aspect prompt, no score, no Gap, and no count of what the other party

@@ -621,8 +621,9 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     }
     // #503 — an operator's revocation is terminal until somebody resends. It is asked here, before
     // the expiry, because "the operator killed this link" is the fact the recipient needs to read;
-    // the date it would have died is not.
-    if (invite.revoked_at !== null) {
+    // the date it would have died is not. `!= null` rather than `!== null`: a row read through a
+    // caller that does not select the column is "not revoked", never a crash on an absent instant.
+    if (invite.revoked_at != null) {
       await client.query("ROLLBACK");
       return {
         ok: false,
@@ -1809,7 +1810,10 @@ export async function readInstanceBundle(
   if (instance === undefined) return undefined;
 
   const parties = await query<PartyRow>(
-    "SELECT session_record_id, role, name, submitted_at, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
+    // `impersonated_by` (#503) — the operator who accepted on a seat's behalf. The report says so
+    // where the acceptance is drawn; nothing reads it for a permission, and it is never a party's
+    // score.
+    "SELECT session_record_id, role, name, submitted_at, accepted_at, impersonated_by FROM party WHERE session_record_id = $1 ORDER BY role",
     [instanceRecordId],
   );
   const [invite] = await query<{
@@ -1857,7 +1861,7 @@ export async function readInstanceBundle(
             expiresAt: invite.expires_at,
             resentAt: invite.resent_at,
             resentCount: invite.resent_count,
-            revoked: invite.revoked_at !== null,
+            revoked: invite.revoked_at != null,
           },
     answerCounts: { initiator: answered("initiator"), counterparty: answered("counterparty") },
     voided: instance.voided === true,
@@ -2278,7 +2282,11 @@ export async function previewInvite(
   // sentences `data/pages/invite.ts` gives them) do not move — #503 added `revoked`, which is the
   // operator's decision wearing the recipient's vocabulary.
   const derived = inviteStateOf(
-    { claimed: row.claimed_at !== null, expiresAt: row.expires_at, revoked: row.revoked_at !== null },
+    {
+      claimed: row.claimed_at !== null,
+      expiresAt: row.expires_at,
+      revoked: row.revoked_at != null,
+    },
     now,
   );
   const state: InviteState = derived === "unclaimed" ? "claimable" : derived;

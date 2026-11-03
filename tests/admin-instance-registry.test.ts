@@ -176,6 +176,9 @@ describe("the row is what an operator may see, and nothing else", () => {
         "stalled",
         "status",
         "templateTitle",
+        // #503 — a session an operator ended is off the stage ladder, so the row carries the flag
+        // the table prints instead of a rung. A boolean about the session, never a count.
+        "voided",
       ].sort(),
     );
     // The scores that produced the stage are not on the row anywhere: `gapOf(4, 5)` is 1, and

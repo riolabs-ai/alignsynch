@@ -36,6 +36,7 @@
  * already makes.
  */
 import { useState } from "react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,12 +48,41 @@ import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
 import { formatDate } from "@/content/core";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import type { AdminRelationshipDetail, AdminSeat } from "@/lib/db/admin-relationship";
+import type { InstanceStatus } from "@/lib/flow/state";
+import { ADMIN_AUDIT_PATH } from "@/lib/admin/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
-import type { RepairInput, RepairOutcome } from "@/app/(mainlayout)/admin/instances/[id]/actions";
+import type { RepairInput, RepairOutcome } from "@/lib/admin/repairs";
 
 /** What the screen is doing right now: nothing, or the last repair's outcome. */
 type Phase = { readonly kind: "idle" } | { readonly kind: "done"; readonly outcome: RepairOutcome };
+
+/**
+ * The status the derivation answers, mapped onto the copy id that names it.
+ *
+ * The derivation's vocabulary is snake_case (`instanceStatusOf()` answers `awaiting_counterparty`)
+ * and a page-copy id is kebab-case, so the join is stated here once rather than by a
+ * `replace("_", "-")` that would silently pass an unknown status through as a missing id. Typed
+ * `Record<InstanceStatus, string>`, so a fourth status is a compile error until it has words.
+ */
+const STATUS_COPY_ID: Record<InstanceStatus, string> = {
+  awaiting_counterparty: "awaiting-counterparty",
+  answering: "answering",
+  complete: "complete",
+  voided: "voided",
+};
+
+/**
+ * The repair a band drives, read off the band itself.
+ *
+ * A band's section id is `op-<repair>` (`op-void`, `op-force-close`) — the fixture's convention,
+ * and the id `sectionOf()` already resolves. Deriving the name instead of repeating it as a JSX
+ * attribute keeps the fixture the one place the five repairs are named: a sixth band arrives here
+ * with its own name, and E23 does not count a fixture read as copy.
+ */
+function repairOfBand(section: PageCopySection): string {
+  return section.id.slice(3);
+}
 
 /** A section's heading, or the empty string — `sectionHeading` is not a reader the repo has. */
 function headingOf(section: PageCopySection): string {
@@ -60,7 +90,11 @@ function headingOf(section: PageCopySection): string {
 }
 
 /** Fill `{name}` in a sentence without inventing a second string. */
-function say(section: PageCopySection, id: string, values: Record<string, string | number>): string {
+function say(
+  section: PageCopySection,
+  id: string,
+  values: Record<string, string | number>,
+): string {
   return fillLabel(itemLabel(section, id), values);
 }
 
@@ -295,7 +329,7 @@ export function RelationshipOperations({
             />
             <Fact
               label={itemLabel(facts, "status")}
-              value={itemLabel(statusCopy, detail.status)}
+              value={itemLabel(statusCopy, STATUS_COPY_ID[detail.status])}
             />
             <Fact label={itemLabel(facts, "aspects")} value={String(detail.aspects)} />
             {detail.voidedAt === null ? null : (
@@ -365,6 +399,18 @@ export function RelationshipOperations({
                   {itemLabel(done, "link")}: {outcome.link}
                 </p>
               )}
+              {/* #503 — the repair and its audit row committed together, so the log is where an
+                  operator verifies what they just did. A dead label here would be the screen
+                  claiming a log it does not link to. */}
+              <p>
+                <Link
+                  href={ADMIN_AUDIT_PATH}
+                  className="text-action font-medium hover:underline"
+                  data-audit-link="true"
+                >
+                  {itemLabel(done, "audit")}
+                </Link>
+              </p>
             </CardContent>
           ) : null}
         </Card>
@@ -375,7 +421,7 @@ export function RelationshipOperations({
           section={unlockBand}
           reasonMin={reasonMin}
           formCopy={formCopy}
-          repair="unlock"
+          repair={repairOfBand(unlockBand)}
           instanceRecordId={detail.instanceRecordId}
           action={action}
           seatPicker={unmarkedSeats}
@@ -387,7 +433,7 @@ export function RelationshipOperations({
           section={resendBand}
           reasonMin={reasonMin}
           formCopy={formCopy}
-          repair="resend"
+          repair={repairOfBand(resendBand)}
           instanceRecordId={detail.instanceRecordId}
           action={action}
           emailField={invite?.email ?? null}
@@ -405,7 +451,7 @@ export function RelationshipOperations({
           section={revokeBand}
           reasonMin={reasonMin}
           formCopy={formCopy}
-          repair="revoke"
+          repair={repairOfBand(revokeBand)}
           instanceRecordId={detail.instanceRecordId}
           action={action}
           disabled={invite === null || invite.claimedAt !== null || invite.revokedAt !== null}
@@ -422,7 +468,7 @@ export function RelationshipOperations({
           section={voidBand}
           reasonMin={reasonMin}
           formCopy={formCopy}
-          repair="void"
+          repair={repairOfBand(voidBand)}
           instanceRecordId={detail.instanceRecordId}
           action={action}
           disabled={detail.voided}
@@ -433,7 +479,7 @@ export function RelationshipOperations({
           section={forceBand}
           reasonMin={reasonMin}
           formCopy={formCopy}
-          repair="force-close"
+          repair={repairOfBand(forceBand)}
           instanceRecordId={detail.instanceRecordId}
           action={action}
           seatPicker={openSeats}

@@ -38,34 +38,17 @@ import {
   unlockParty,
   voidSession,
 } from "@/lib/admin/relationship-ops";
+import type { RepairInput, RepairOutcome } from "@/lib/admin/repairs";
 import { invitationLink } from "@/lib/flow/email";
 import type { PartyRole } from "@/content/assessment";
 
-/** The repair names the form may post. Closed: an unknown one is refused, not dispatched. */
-export const REPAIR_NAMES = ["unlock", "resend", "revoke", "void", "force-close"] as const;
-
-export type RepairName = (typeof REPAIR_NAMES)[number];
-
-/** What the form posts. `role` and `email` are only read by the repairs that use them. */
-export interface RepairInput {
-  readonly repair: string;
-  readonly instanceRecordId: string;
-  readonly reason: string;
-  readonly role?: string;
-  readonly email?: string;
-}
-
-/** What the component draws. `code` is always one the copy fixture has a sentence for. */
-export type RepairOutcome =
-  | {
-      readonly ok: true;
-      readonly action: string;
-      readonly actionId: string;
-      /** The one-time link a resend mints. Never stored, never logged, shown once. */
-      readonly link?: string;
-      readonly email?: string;
-    }
-  | { readonly ok: false; readonly code: string };
+/**
+ * The repair names, the request shape and the outcome shape live in `lib/admin/repairs.ts`: a
+ * `"use server"` module may export only async functions, and a `REPAIR_NAMES` array here fails the
+ * build at "collecting configuration" for this route. Re-exported as a *type* only, which is the
+ * one thing the directive allows.
+ */
+export type { RepairInput, RepairOutcome } from "@/lib/admin/repairs";
 
 function seatOf(value: string | undefined): PartyRole | null {
   return value === "initiator" || value === "counterparty" ? value : null;

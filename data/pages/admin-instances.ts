@@ -55,6 +55,9 @@ export const adminInstancesPageCopy: PageCopy = zPageCopy.parse({
         { id: "stage", label: "Stage" },
         { id: "created", label: "Created" },
         { id: "last-activity", label: "Last activity" },
+        // #503 — the row's link into its repair screen. A label, not an action: the registry
+        // itself still acts on nothing, and the repairs live behind their own gate and confirmation.
+        { id: "open", label: "Repairs" },
       ],
     },
     {

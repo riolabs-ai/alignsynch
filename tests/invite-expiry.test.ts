@@ -136,6 +136,8 @@ const stub = vi.hoisted(() => {
     readonly expires_at: Date;
     readonly resent_at: Date | null;
     readonly resent_count: number;
+    /** #503 — an operator's revocation; `NULL` is a link nobody withdrew. */
+    readonly revoked_at?: Date | null;
   }
 
   const calls: Call[] = [];
@@ -297,6 +299,9 @@ function unclaimedInvitation(over: Partial<NonNullable<(typeof stub.state)["invi
     expires_at: EXPIRES_AT,
     resent_at: null,
     resent_count: 0,
+    // #503 — the column `previewInvite()`'s state function reads. `NULL` is "no operator withdrew
+    // this link", which is the same absence `claimed_at` spells for "nobody took it".
+    revoked_at: null,
     ...over,
   };
   stub.state.parties = [{ session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" }];
@@ -312,7 +317,7 @@ describe("the instance bundle reads the invitation's deadline", () => {
     await initiatorScreen(BEFORE_EXPIRY);
 
     const [bundleQuery] = callsMatching(
-      /^SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM session_invite/,
+      /^SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count, revoked_at FROM session_invite/,
     );
     expect(bundleQuery).toBeDefined();
     expect(bundleQuery.values).toEqual([INSTANCE_ID]);
@@ -353,7 +358,7 @@ describe("expiry is derived at read time, from the row", () => {
   it("keeps claimed ahead of expired — an invitation claimed in its window stays claimed", () => {
     const facts = { claimed: true, expiresAt: EXPIRES_AT };
     expect(inviteStateOf(facts, AFTER_EXPIRY)).toBe("claimed");
-    expect(INVITE_STATES).toEqual(["unclaimed", "expired", "claimed"]);
+    expect(INVITE_STATES).toEqual(["unclaimed", "expired", "claimed", "revoked"]);
   });
 
   it("withholds the link once expired, so the panel cannot offer a dead URL", async () => {
@@ -457,7 +462,13 @@ describe("the blind rule survives the new read", () => {
     // The seat panel (#R2) names both parties and carries each one's answered **count** and
     // acceptance instant; neither is a score, and 5/1 appear nowhere.
     for (const seat of screen.seats) {
-      expect(Object.keys(seat).sort()).toEqual(["acceptedAt", "answered", "name", "role"]);
+      expect(Object.keys(seat).sort()).toEqual([
+        "acceptedAt",
+        "answered",
+        "impersonated",
+        "name",
+        "role",
+      ]);
     }
     expect(serialized).not.toContain('"feel":5');
     expect(serialized).not.toContain('"wish":1');

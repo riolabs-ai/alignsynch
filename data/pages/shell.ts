@@ -254,6 +254,9 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "help", label: "Help" },
           { id: "console-gaps", label: "Gap Analysis" },
           { id: "admin-instances", label: "Relationships" },
+          // #503 — the log the five repairs commit into. An operator's row, beside the registry
+          // it audits, drawn only for `admin-console`.
+          { id: "admin-audit", label: "Audit log" },
           { id: "quiz-tools", label: "Quiz tools" },
         ],
       },

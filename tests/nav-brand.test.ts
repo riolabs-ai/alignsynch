@@ -221,7 +221,7 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     expect(member).toContain(`>${itemLabelOf("my-relationships")}<`);
   });
 
-  it("draws both operator rows for an admin, appended after the console's", () => {
+  it("draws every operator row for an admin, appended after the console's", () => {
     expect(adminHrefs).toEqual([
       "/dashboard",
       "/how-it-works",
@@ -231,10 +231,13 @@ describe("the console's own rows are a member's, the operator's rows are not", (
       "/support",
       "/admin/gaps",
       "/admin/instances",
+      // #503 — the log the five repairs commit into.
+      "/admin/audit",
     ]);
     const admin = navHtml("alignsynch", viewerWith("admin-console"));
     expect(admin).toContain(itemLabelOf("console-gaps"));
     expect(admin).toContain(itemLabelOf("admin-instances"));
+    expect(admin).toContain(itemLabelOf("admin-audit"));
   });
 
   it("keeps the member's sidebar a prefix of the admin's — same rows, same order", () => {
