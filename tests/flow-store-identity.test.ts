@@ -127,6 +127,35 @@ const stub = vi.hoisted(() => {
         rowCount: 1,
       };
     }
+    if (sql.startsWith("SELECT id, version, payload FROM template_version")) {
+      // #502b — a create copies the **version** the relationship is bound to, not the template's
+      // working `item` rows. The payload is a `zAssessment` object, so the stub owes a real one.
+      return {
+        rows: [
+          {
+            id: "template-version-assessment-relationship-basics-v1",
+            version: 1,
+            payload: {
+              id: "assessment-relationship-basics",
+              slug: "relationship-basics",
+              type: "assessment",
+              status: "published",
+              date: "2026-10-24T09:00:00.000Z",
+              title: "Relationship Basics",
+              summary: "Three Aspects two people answer.",
+              items: ["One", "Two", "Three"].map((word) => ({
+                id: `aspect-${word.toLowerCase()}`,
+                prompt: `Aspect ${word}`,
+                scale: { kind: "score", min: 1, max: 5 },
+                leftValue: "Low",
+                rightValue: "High",
+              })),
+            },
+          },
+        ],
+        rowCount: 1,
+      };
+    }
     if (sql.startsWith("INSERT INTO party")) {
       return state.seatTaken ? { rows: [], rowCount: 0 } : wrote;
     }

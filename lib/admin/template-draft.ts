@@ -75,12 +75,33 @@ export type TemplateSaveOutcome =
       readonly problems?: readonly DraftProblem[];
     };
 
+/**
+ * What the publish band posts: the template's id and a reason. No record — publishing writes what
+ * is **stored**, not what is in the form, so an unsaved edit cannot be published by accident (and
+ * the validator runs over the rows the transaction read).
+ */
+export interface TemplateVersionFormPayload {
+  readonly templateId?: string;
+  readonly reason?: string;
+}
+
+/** What a publish or an unpublish answers. `version` is the version this write landed on. */
+export type TemplateVersionOutcome =
+  | { readonly ok: true; readonly version: number; readonly actionId: string }
+  | {
+      readonly ok: false;
+      readonly code: TemplateRefusalCode;
+      readonly problems?: readonly DraftProblem[];
+    };
+
 /** The refusal codes a save can answer with: the row's facts, or `act()`'s own refusals. */
 export type TemplateRefusalCode =
   | "no-such-template"
   | "not-editable"
+  | "not-published"
   | "slug-taken"
   | "invalid-draft"
+  | "version-conflict"
   | "reason-too-short"
   | "unknown-action"
   | "unknown-target-table"

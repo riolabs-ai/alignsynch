@@ -22,6 +22,9 @@
  * an instance made from this template asks the questions in the order they were typed.
  */
 import { getPool } from "@/lib/db/client";
+import { readTemplateRowsWithin } from "@/lib/db/assessments";
+import { assessmentTemplateFromRows } from "@/lib/db/rows";
+import { snapshotTemplateVersion } from "@/lib/db/template-versions";
 import { canUseTemplate } from "@/lib/flow/template-library";
 import type { TemplateDraft } from "@/lib/flow/template-draft";
 
@@ -55,6 +58,44 @@ function slugFor(title: string): string {
 /** `assessment-<uuid>` — a kebab-case id that cannot collide with an authored fixture id. */
 function templateRecordId(): string {
   return `assessment-${globalThis.crypto.randomUUID()}`;
+}
+
+/**
+ * Write v1 of a template this module just created, in the caller's transaction (#502b).
+ *
+ * A template is created here already **published** — that has been this module's rule since #255,
+ * because `listPublishedTemplates()` filters on the status and `createInstanceFromTemplate()`
+ * refuses anything else. Since #502b "published" also means "a version exists": a relationship is
+ * created *from* a version and is bound to it, so a published template with no version would be a
+ * template nothing could copy.
+ *
+ * The payload is read back from the rows the transaction just wrote (`readTemplateRowsWithin`) and
+ * parsed with `assessmentTemplateFromRows` — one derivation of "what a version holds", and it means
+ * the row this writes is exactly what a reader will parse.
+ */
+async function writeFirstVersion(
+  client: {
+    query<R = Record<string, unknown>>(
+      text: string,
+      values?: readonly unknown[],
+    ): Promise<{ readonly rows: readonly R[] }>;
+  },
+  recordId: string,
+  publishedBy: string | null,
+): Promise<void> {
+  const rows = await readTemplateRowsWithin(client, recordId);
+  if (rows === undefined) {
+    throw new Error(
+      `template "${recordId}" was just written and does not read back as a template — the insert and the read disagree`,
+    );
+  }
+  const published = await snapshotTemplateVersion(client, {
+    template: assessmentTemplateFromRows(rows),
+    publishedBy,
+  });
+  if (published === undefined) {
+    throw new Error(`template "${recordId}" could not be published as its first version`);
+  }
 }
 
 /**
@@ -125,6 +166,11 @@ export async function createAssessmentTemplate(
         draft.aspects.map((aspect) => aspect.rightValue),
       ],
     );
+
+    // #502b — the published template's first version, in the same transaction as the rows it
+    // snapshots. `authorUserId` is who published it, which for a member's own template is the
+    // account that signed the save.
+    await writeFirstVersion(client, id, authorUserId === "" ? null : authorUserId);
 
     await client.query("COMMIT");
     return { id, slug, title: draft.title, aspectCount };
@@ -222,6 +268,18 @@ export async function setTemplateStatus(
     }
 
     await client.query("UPDATE record SET status = $2 WHERE id = $1", [recordId, status]);
+    // #502b — "published" means a version exists: a relationship is created from one and bound to
+    // it. A row archived before publishing recorded versions (so never a relationship's template)
+    // has none, and unarchiving it would otherwise publish a template nothing could copy.
+    if (status === "published") {
+      const existing = await client.query<{ version: number | null }>(
+        "SELECT max(version) AS version FROM template_version WHERE template_record_id = $1",
+        [recordId],
+      );
+      if (existing.rows[0]?.version === null || existing.rows[0]?.version === undefined) {
+        await writeFirstVersion(client, recordId, viewerUserId);
+      }
+    }
     await client.query("COMMIT");
     return { ok: true, template: { id: row.id, title: row.title, status } };
   } catch (error) {
@@ -306,6 +364,10 @@ export async function duplicateTemplate(
       `SELECT count(*)::int AS aspects FROM item WHERE record_id = $1`,
       [newId],
     );
+
+    // #502b — a duplicate is published, so it carries a v1 like any other published template; the
+    // row it copies from contributes its rows, and the version is this new record's own.
+    await writeFirstVersion(client, newId, viewerUserId);
 
     await client.query("COMMIT");
     return {

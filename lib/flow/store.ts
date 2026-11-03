@@ -89,6 +89,7 @@ import { activeInstanceCount } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import {
   assessmentInstanceFromRows,
+  assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
   type AssessmentInstanceRows,
   type InstanceRow,
@@ -409,6 +410,37 @@ export async function createInstanceFromTemplate(
       throw new FlowError("template-has-no-aspects", `template "${found.slug}" has no Aspects`);
     }
 
+    /**
+     * **The version, not the working copy (#502b).** A relationship is created from the version the
+     * template currently offers, and it is bound to that row for its whole life: the copy's Aspects
+     * come from the version's payload, `relationship.template_version_id` names it, and every later
+     * read draws it. A template with no version has never been published, so there is nothing to
+     * copy — `template-not-published` is the same refusal the status check above gives.
+     */
+    const liveVersion = await client.query<{
+      id: string;
+      version: number;
+      payload: unknown;
+    }>(
+      `SELECT id, version, payload
+         FROM template_version
+        WHERE template_record_id = $1
+        ORDER BY version DESC
+        LIMIT 1`,
+      [found.id],
+    );
+    const version = liveVersion.rows[0];
+    if (version === undefined) {
+      throw new FlowError(
+        "template-not-published",
+        `template "${found.slug}" is ${found.status} with no published version — publish it before a relationship can copy it`,
+      );
+    }
+    const offered = assessmentTemplateFromPayload(
+      version.payload,
+      `template version "${version.id}"`,
+    );
+
     const slug = `${found.slug}-${instanceRecordId.slice(0, 8)}`;
 
     // The instance record. `draft` on purpose: a template is the published thing, an
@@ -421,27 +453,33 @@ export async function createInstanceFromTemplate(
         instanceRecordId,
         slug,
         now.toISOString(),
-        found.title,
-        `${found.title}, answered by ${initiatorName} and ${counterpartyName}.`,
+        offered.title,
+        `${offered.title}, answered by ${initiatorName} and ${counterpartyName}.`,
       ],
     );
 
-    // THE COPY. Rows owned by the instance, taken from the template at this instant and
-    // never joined back — `position` travels with them, because order is part of what a
-    // party answers.
+    // THE COPY. Rows owned by the instance, taken from the **version** at this instant and never
+    // joined back — `position` travels with them, because order is part of what a party answers.
+    //
+    // The source is the version's parsed payload and not the template's `item` rows: an edit saved
+    // against the template after its last publish is not what this relationship agreed to, and a
+    // copy taken from it would fail `db:verify` V4 against the version the relationship is bound
+    // to. No `response_option` copy: a version is `zAssessment`, whose every item's scale is the
+    // fixed 1..5 band, so there is no option row for it to carry.
+    const copyIds = offered.items.map((item) => item.id);
     await client.query(
       `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
-       SELECT $1, item_id, position, prompt, scale_kind, left_value, right_value
-         FROM item
-        WHERE record_id = $2`,
-      [instanceRecordId, found.id],
-    );
-    await client.query(
-      `INSERT INTO response_option (record_id, item_id, option_id, position, text)
-       SELECT $1, item_id, option_id, position, text
-         FROM response_option
-        WHERE record_id = $2`,
-      [instanceRecordId, found.id],
+       SELECT $1, t.item_id, t.position, t.prompt, 'score', t.left_value, t.right_value
+         FROM unnest($2::text[], $3::int[], $4::text[], $5::text[], $6::text[])
+              AS t(item_id, position, prompt, left_value, right_value)`,
+      [
+        instanceRecordId,
+        copyIds,
+        offered.items.map((_, position) => position),
+        offered.items.map((item) => item.prompt),
+        offered.items.map((item) => item.leftValue),
+        offered.items.map((item) => item.rightValue),
+      ],
     );
 
     // #340 — the relationship the session belongs to. Bought once, persists: one row here, and
@@ -453,9 +491,10 @@ export async function createInstanceFromTemplate(
     const relationshipId = cryptoRandomId();
     await client.query(
       `INSERT INTO relationship
-         (id, template_id, initiator_user_id, counterparty_user_id, purchased_at, plan, created_at)
-       VALUES ($1, $2, $3, NULL, $4, NULL, $4)`,
-      [relationshipId, found.id, initiatorUserId, now.toISOString()],
+         (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
+          purchased_at, plan, created_at)
+       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5)`,
+      [relationshipId, found.id, version.id, initiatorUserId, now.toISOString()],
     );
 
     await client.query(

@@ -104,6 +104,18 @@ export const ADMIN_ACTIONS = [
    * satisfy a naming convention would make the epic's own sentence the wrong thing to search for.
    */
   "read_submission",
+  /**
+   * Publish the working copy as an immutable version (#502b). `admin`, like the two above: it is
+   * what the catalogue offers and what every new relationship copies, and the write is a snapshot
+   * — no relationship that already exists reads it.
+   */
+  "template.publish",
+  /**
+   * Withdraw a published template from the catalogue (#502b). Same rung: it stops offering a
+   * template without touching a version row or a relationship, so it is reversible by publishing
+   * again.
+   */
+  "template.unpublish",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -139,6 +151,11 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // rungs is what lets support answer "what does the report say" without reissuing one.
   "report.regenerate": "admin",
   read_submission: "support",
+  // #502b — publishing is what the catalogue offers and what every new relationship copies, and
+  // unpublishing withdraws it. Both are the same decision at the same rung; neither reaches a
+  // relationship that already exists, which is why an `admin` may do either.
+  "template.publish": "admin",
+  "template.unpublish": "admin",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.

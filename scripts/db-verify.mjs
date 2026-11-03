@@ -11,7 +11,9 @@
  *   V1  the six content tables exist
  *   V2  no column anywhere in `public` is named like a Gap
  *   V3  every instance's `template_record_id` resolves to a template record
- *   V4  an instance's copy holds the template's Aspects, in the template's order (E31)
+ *   V4  an instance's copy holds the Aspects of the **version its relationship is bound to**, in
+ *       that version's order (E31, #502b) — not the template's working copy, which an edit may have
+ *       moved and which no relationship reads
  *   V5  exactly one initiator and one counterparty per instance — a **flow** instance may
  *       have no counterparty until its invitation is claimed (#146), and must have one after
  *   V6  every party answers every Aspect exactly once, and think comes with guess — checked
@@ -83,6 +85,13 @@
  *       (`docs/RELEASING.md` 2a). V11 names the *mark* on a non-complete instance; this names the
  *       absence of completion itself. Instances the seed does not author are not checked: their
  *       status is their own.
+ *   V22 `template_version` exists and carries its immutability trigger (#502b): a published version
+ *       is a snapshot, so the guard is what makes "editing a template never mutates N" a property of
+ *       the database rather than of the one write path that happens to be careful.
+ *   V23 every relationship is bound to a version of **its own** template, and every version payload
+ *       parses as `zAssessment` (#502b). The binding is what a party-facing read goes through, so an
+ *       unbound row is a relationship whose template nobody can draw — the read answers 404 for it,
+ *       which is correct and would otherwise be silent.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -307,8 +316,13 @@ async function main() {
     readAssessmentInstanceRowsBySlug,
     readAssessmentTemplateRowsById,
   } = await import("@/lib/db/assessments.ts");
-  const { assessmentInstanceFromRows, assessmentTemplateFromRows, copyDriftProblems, itemIdsOf } =
-    await import("@/lib/db/rows.ts");
+  const {
+    assessmentInstanceFromRows,
+    assessmentTemplateFromPayload,
+    assessmentTemplateFromRows,
+    copyDriftProblems,
+    itemIdsOf,
+  } = await import("@/lib/db/rows.ts");
   const { instanceStatusOf } = await import("@/lib/flow/state.ts");
 
   // The SQL checks run on the unpooled URL, like the writes; the data-layer reads use the
@@ -575,18 +589,58 @@ async function main() {
         );
       } else {
         templatesChecked += 1;
-        for (const problem of copyDriftProblems({
-          instanceId: listed.recordId,
-          templateId: listed.templateRecordId,
-          copyIds: itemIdsOf(rows.items),
-          templateIds: itemIdsOf(templateRows.items),
-        })) {
-          fail("V4", problem);
-        }
+        // The working copy must still be a template the model accepts — an edit that broke it is
+        // drift whether or not it was ever published.
         try {
           assessmentTemplateFromRows(templateRows);
         } catch (error) {
           fail("V7", error.message);
+        }
+      }
+
+      /* V4 — the copy equals the version the relationship is bound to (#502b).
+       *
+       * Not the template's `item` rows: an edit to a published template writes the working copy and
+       * touches no version, so comparing a copy to the working copy would report every such edit as
+       * drift — which is exactly the false alarm that made #502a refuse to edit at all. The version
+       * is what the page reads (`lib/db/assessments.ts::SCREEN_BY_SLUG_SQL`), so it is what the
+       * copy must equal.
+       */
+      const { rows: binding } = await client.query(
+        `SELECT rel.template_version_id, tv.template_record_id, tv.payload
+           FROM session ai
+           JOIN relationship rel ON rel.id = ai.relationship_id
+           LEFT JOIN template_version tv ON tv.id = rel.template_version_id
+          WHERE ai.record_id = $1`,
+        [listed.recordId],
+      );
+      const bound = binding[0];
+      if (bound === undefined || bound.template_version_id === null) {
+        fail(
+          "V23",
+          `instance "${listed.slug}" belongs to a relationship with no template_version_id — there is no version to compare its copy with`,
+        );
+      } else if (bound.template_record_id !== listed.templateRecordId) {
+        fail(
+          "V23",
+          `instance "${listed.slug}" is bound to a version of "${bound.template_record_id}", not of the template it names ("${listed.templateRecordId}")`,
+        );
+      } else {
+        try {
+          const offered = assessmentTemplateFromPayload(
+            bound.payload,
+            `template version "${bound.template_version_id}"`,
+          );
+          for (const problem of copyDriftProblems({
+            instanceId: listed.recordId,
+            templateId: bound.template_version_id,
+            copyIds: itemIdsOf(rows.items),
+            templateIds: offered.items.map((item) => item.id),
+          })) {
+            fail("V4", problem);
+          }
+        } catch (error) {
+          fail("V23", error.message);
         }
       }
 
@@ -962,6 +1016,76 @@ async function main() {
       fail("V3", `session "${row.record_id}" is attached to a record that is not an assessment`);
     }
 
+    /* V22 — the published-version table and its guard (#502b).
+     *
+     * Two facts, checked together because either alone is a false green: a `template_version` table
+     * without the trigger lets a publish rewrite a version a relationship is reading, and a trigger
+     * without the table names nothing. The trigger is looked up by name on the right table, in
+     * `pg_trigger`, not by "some trigger exists".
+     */
+    const { rows: versionTable } = await client.query(
+      "SELECT to_regclass('public.template_version') IS NOT NULL AS present",
+    );
+    if (versionTable[0]?.present !== true) {
+      fail("V22", "public.template_version does not exist — run `pnpm db:migrate`");
+    } else {
+      const { rows: guard } = await client.query(
+        `SELECT t.tgname FROM pg_trigger t
+          WHERE t.tgrelid = 'public.template_version'::regclass
+            AND t.tgname = 'template_version_immutable_guard'
+            AND NOT t.tgisinternal`,
+      );
+      if (guard.length === 0) {
+        fail(
+          "V22",
+          "public.template_version has no template_version_immutable_guard trigger — a published version could be rewritten",
+        );
+      }
+    }
+
+    /* V23 — every relationship is bound to a version of its own template (#502b).
+     *
+     * The binding is what a party-facing read goes through, so an unbound row is not a nicety
+     * missing: it is a relationship whose template nobody can draw (`/assessment/[slug]` answers
+     * 404 for it). The version must belong to the template the relationship names, and every
+     * payload must parse as `zAssessment` — a version that does not parse is a template no report
+     * can draw.
+     */
+    const { rows: unboundRelationships } = await client.query(
+      "SELECT id FROM relationship WHERE template_version_id IS NULL ORDER BY id",
+    );
+    for (const row of unboundRelationships) {
+      fail(
+        "V23",
+        `relationship "${row.id}" has no template_version_id — it cannot read its template`,
+      );
+    }
+    const { rows: mismatchedVersions } = await client.query(
+      `SELECT rel.id, rel.template_id, tv.template_record_id
+         FROM relationship rel
+         JOIN template_version tv ON tv.id = rel.template_version_id
+        WHERE tv.template_record_id <> rel.template_id
+        ORDER BY rel.id`,
+    );
+    for (const row of mismatchedVersions) {
+      fail(
+        "V23",
+        `relationship "${row.id}" names template "${row.template_id}" but is bound to a version of "${row.template_record_id}"`,
+      );
+    }
+    const { rows: versionPayloads } = await client.query(
+      "SELECT id, payload FROM template_version ORDER BY template_record_id, version",
+    );
+    let versionsParsed = 0;
+    for (const row of versionPayloads) {
+      try {
+        assessmentTemplateFromPayload(row.payload, `template version "${row.id}"`);
+        versionsParsed += 1;
+      } catch (error) {
+        fail("V23", error.message);
+      }
+    }
+
     const { rows: unlockMarks } = hasUnlockColumn
       ? await client.query("SELECT count(*)::int AS n FROM party WHERE unlock_seen_at IS NOT NULL")
       : [{ n: 0 }];
@@ -1049,7 +1173,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

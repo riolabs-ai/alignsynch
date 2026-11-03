@@ -97,25 +97,9 @@ function screenRow(instance: AssessmentInstance): ScreenQueryRow {
         guess: answer.opinions.guess ?? null,
       })),
     ),
-    template_record: {
-      id: template.id,
-      slug: template.slug,
-      record_type: template.type,
-      status: template.status,
-      date: template.date,
-      title: template.title,
-      summary: template.summary,
-    },
-    template_items: template.items.map((item, position) => ({
-      record_id: template.id,
-      item_id: item.id,
-      position,
-      prompt: item.prompt,
-      scale_kind: item.scale.kind,
-      left_value: item.leftValue,
-      right_value: item.rightValue,
-    })),
-    template_options: [],
+    template_version_id: `version-${template.id}-1`,
+    template_version: 1,
+    template_payload: template,
     voided_at: null,
   };
 }
@@ -205,7 +189,7 @@ class FakeDb {
     }
 
     // The screen row (instance + template).
-    if (/ai\.template_record_id/i.test(head) && /AS template_options/i.test(head)) {
+    if (/ai\.template_record_id/i.test(head) && /AS template_payload/i.test(head)) {
       return { rows: [screenRow(INSTANCE)] as unknown as R[] };
     }
 

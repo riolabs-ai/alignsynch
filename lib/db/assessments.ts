@@ -40,6 +40,7 @@ import {
 } from "@/lib/flow/state";
 import {
   assessmentInstanceFromRows,
+  assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
   itemIdsOf,
   type AssessmentInstanceRows,
@@ -129,6 +130,29 @@ interface InstanceQueryRow {
 }
 
 /**
+ * The template's rows through any statement surface — a pool read, or the connection a publish
+ * transaction is already holding.
+ *
+ * The console's publish reads the working copy **inside** `act()`'s transaction, and it must be the
+ * same SQL every other reader uses: two statements that each decided what a template's rows are
+ * would be two definitions of the record it snapshots.
+ */
+export async function readTemplateRowsWithin(
+  sql: {
+    query<R = Record<string, unknown>>(
+      text: string,
+      values?: readonly unknown[],
+    ): Promise<{ readonly rows: readonly R[] }>;
+  },
+  recordId: string,
+): Promise<AssessmentTemplateRows | undefined> {
+  const result = await sql.query<TemplateQueryRow>(TEMPLATE_BY_ID_SQL, [recordId]);
+  const row = result.rows[0];
+  if (row === undefined) return undefined;
+  return { record: row.record, items: row.items, options: row.options };
+}
+
+/**
  * The whole screen in one statement: the instance's six row sets **and** the template it names.
  *
  * The template is four subselects on `ai.template_record_id` rather than a second call, because
@@ -136,17 +160,20 @@ interface InstanceQueryRow {
  * measured 160–200 ms, and the screen used to pay four of them (instance, template, then both
  * again for `generateMetadata`).
  *
- * `template_record` is `NULL` when the copy's `templateId` no longer resolves — the state the
- * page turns into `notFound()` and `db:verify` reports as drift. The template subselect keeps
- * the same `NOT EXISTS` definition as `TEMPLATE_BY_ID_SQL`: a template is a record with **no**
- * `session` row, so an instance can never stand in for the template it was copied
- * from.
- *
  * **Two keys, one statement (#504).** The party's screen resolves an instance by its slug; the
  * console's report screen holds the record id it was handed by the registry. Writing the
  * statement twice would be two statements that can drift about which columns the model needs, so
  * `screenSql()` takes the predicate and both callers share the rest — including `voided_at`,
  * which the report reads to answer *is there a report at all* before it derives one.
+ *
+ * **The template is read through the relationship's binding (#502b).** `relationship
+ * .template_version_id` names the immutable version this relationship was created from, and
+ * `tv.payload` is that version's whole template. The join is not a convenience: reading the live
+ * `record`/`item` rows here is what made editing a published template able to change the title and
+ * summary above somebody's answers, and the payload is the only source that cannot move. `NULL` —
+ * an unbound relationship, which `0026_template_version.sql` makes impossible and `db:verify` V23
+ * names — is a 404 here, never a fallback to the working copy, and the same `NULL` is what
+ * `db:verify` reports as drift.
  */
 const screenSql = (where: string) => `
   SELECT
@@ -176,23 +203,13 @@ const screenSql = (where: string) => `
          FROM opinion WHERE opinion.session_record_id = r.id),
       '[]'::json
     ) AS opinions,
-    (SELECT to_jsonb(t) FROM record t
-      WHERE t.id = ai.template_record_id
-        AND t.record_type = 'assessment'
-        AND NOT EXISTS (SELECT 1 FROM session ti WHERE ti.record_id = t.id)
-    ) AS template_record,
-    COALESCE(
-      (SELECT json_agg(to_jsonb(ti) ORDER BY ti.position)
-         FROM item ti WHERE ti.record_id = ai.template_record_id),
-      '[]'::json
-    ) AS template_items,
-    COALESCE(
-      (SELECT json_agg(to_jsonb(to2) ORDER BY to2.position)
-         FROM response_option to2 WHERE to2.record_id = ai.template_record_id),
-      '[]'::json
-    ) AS template_options
+    tv.id      AS template_version_id,
+    tv.version AS template_version,
+    tv.payload AS template_payload
   FROM record r
   JOIN session ai ON ai.record_id = r.id
+  LEFT JOIN relationship rel ON rel.id = ai.relationship_id
+  LEFT JOIN template_version tv ON tv.id = rel.template_version_id
   WHERE ${where} AND r.record_type = 'assessment'
 `;
 
@@ -204,9 +221,11 @@ const SCREEN_BY_RECORD_ID_SQL = screenSql("r.id = $1");
 
 /** One screen row, as the statement above selects it. Exported for the report's reader (#504). */
 export interface ScreenQueryRow extends InstanceQueryRow {
-  readonly template_record: RecordRow | null;
-  readonly template_items: readonly ItemRow[];
-  readonly template_options: readonly OptionRow[];
+  /** The version this relationship was created from — NULL is drift, and a 404. */
+  readonly template_version_id: string | null;
+  readonly template_version: number | null;
+  /** The version's whole validated template — `assessmentTemplateFromPayload()` parses it. */
+  readonly template_payload: unknown;
   /** `session.voided_at` — an operator ended the session; there is no report to draw. */
   readonly voided_at: string | Date | null;
 }
@@ -237,9 +256,10 @@ export const POOL_SCREEN_READERS: ScreenReaders = {
 export function screenFromRow(
   row: ScreenQueryRow,
 ): { instance: AssessmentInstance; template: Assessment } | undefined {
-  // A template that stopped resolving is a 404 and a `db:verify` failure, never a render with
-  // an empty title: the copy has no second source for its words.
-  if (row.template_record === null) return undefined;
+  // An unbound relationship (or a version row that went missing) is a 404 and a `db:verify`
+  // failure, never a render over the working copy: the words above somebody's answers are the
+  // version they were asked on, and there is no second source for them.
+  if (row.template_version_id === null || row.template_payload === null) return undefined;
   return {
     instance: assessmentInstanceFromRows({
       record: row.record,
@@ -256,11 +276,10 @@ export function screenFromRow(
       parties: row.parties,
       opinions: row.opinions,
     }),
-    template: assessmentTemplateFromRows({
-      record: row.template_record,
-      items: row.template_items,
-      options: row.template_options,
-    }),
+    template: assessmentTemplateFromPayload(
+      row.template_payload,
+      `template version "${row.template_version_id}"`,
+    ),
   };
 }
 
