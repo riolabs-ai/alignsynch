@@ -1003,7 +1003,7 @@ const ancestorCoverage = ancestorCensus(ancestorFiles);
 /* ------------------------------------------------------------------ *
  * E36 — the surface registry is honest about what is wired (#409)
  *
- * `data/surface-registry.ts` is the product's statement about itself: four relationship
+ * `data/surface-registry.ts` is the product's statement about itself: eight relationship
  * surfaces are live, the rest are declared pending with the capability each one is missing.
  * The schema refuses a shape nobody can act on (`strict()`, three statuses) and the const is
  * typed, so a status outside the three literals is already a compile error — this is the half
