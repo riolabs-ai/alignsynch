@@ -15,7 +15,11 @@
  *      prints;
  *   3. the settings that make the socket worth reusing are the ones the pool is built with —
  *      dropping `idleTimeoutMillis` back to the driver's 10 s would silently bring the cold
- *      handshake back on every page view, and no other test would notice.
+ *      handshake back on every page view, and no other test would notice;
+ *   4. the TLS and timeout policy is stated by the pool, not inherited from the URL (#440) —
+ *      `sslmode` is gone before `pg` parses it, verification is explicit, and a statement has
+ *      both a server-side and a client-side budget;
+ *   5. a warm-up that loses the race is visible: the failure is a `warn` carrying the elapsed ms.
  *
  * No `DATABASE_URL`, no `pg`, no clock: this runs inside `pnpm test` with no connection string,
  * exactly like `tests/db-rows.test.ts`.
@@ -50,9 +54,11 @@ vi.mock("pg", () => {
 });
 
 /** A fresh module per case: `lib/db/client.ts` keeps the pool in module scope on purpose. */
-async function client() {
+async function client(
+  url = "postgresql://user:pass@example.invalid:5432/db?sslmode=require&channel_binding=require",
+) {
   vi.resetModules();
-  process.env.DATABASE_URL = "postgresql://user:pass@example.invalid:5432/db";
+  process.env.DATABASE_URL = url;
   return import("@/lib/db/client");
 }
 
@@ -127,20 +133,60 @@ describe("a database that is not answering", () => {
 describe("the pool the app actually builds", () => {
   it("keeps a socket for a minute and cuts off a handshake or a statement that hangs", async () => {
     state.answers = [[{ ok: 1 }]];
-    const { queryRows, IDLE_TIMEOUT_MS, CONNECT_TIMEOUT_MS, QUERY_TIMEOUT_MS } = await client();
+    const {
+      queryRows,
+      IDLE_TIMEOUT_MS,
+      CONNECT_TIMEOUT_MS,
+      STATEMENT_TIMEOUT_MS,
+      QUERY_TIMEOUT_MS,
+      POOL_MAX,
+    } = await client();
 
     await queryRows("select 1");
 
     expect(state.options).toMatchObject({
       idleTimeoutMillis: 60_000,
       connectionTimeoutMillis: 4_000,
+      // Both budgets: the server cancels its own slow statement, and the client stops waiting
+      // for an answer that will never come.
+      statement_timeout: 5_000,
       query_timeout: 5_000,
+      // Verification is the pool's statement, not the URL's.
+      ssl: { rejectUnauthorized: true },
       keepAlive: true,
       max: 5,
     });
+    // `sslmode` was in the URL and is not what `pg` sees (#440): the deprecation warning and
+    // pg 9's weaker libpq meaning both come from that parameter reaching the parser.
+    expect((state.options as { connectionString: string }).connectionString).toBe(
+      "postgresql://user:pass@example.invalid:5432/db?channel_binding=require",
+    );
     // The exported values are the ones the comment argues for, so a change to one is a change
     // to the card's measurement rather than a quiet edit.
-    expect([IDLE_TIMEOUT_MS, CONNECT_TIMEOUT_MS, QUERY_TIMEOUT_MS]).toEqual([60_000, 4_000, 5_000]);
+    expect([
+      IDLE_TIMEOUT_MS,
+      CONNECT_TIMEOUT_MS,
+      STATEMENT_TIMEOUT_MS,
+      QUERY_TIMEOUT_MS,
+      POOL_MAX,
+    ]).toEqual([60_000, 4_000, 5_000, 5_000, 5]);
+  });
+
+  it("deletes only sslmode: the rest of the connection string survives verbatim", async () => {
+    const { tlsPinnedUrl } = await client();
+
+    expect(
+      tlsPinnedUrl("postgresql://u:p@host.example:5432/db?sslmode=require&channel_binding=require"),
+    ).toBe("postgresql://u:p@host.example:5432/db?channel_binding=require");
+    expect(tlsPinnedUrl("postgresql://u:p@host.example:5432/db")).toBe(
+      "postgresql://u:p@host.example:5432/db",
+    );
+  });
+
+  it("hands back a URL it cannot parse, rather than replacing it with nothing", async () => {
+    const { tlsPinnedUrl } = await client();
+
+    expect(tlsPinnedUrl("not a connection string")).toBe("not a connection string");
   });
 
   it("refuses to build a pool with no connection string, by name", async () => {
@@ -154,12 +200,30 @@ describe("the pool the app actually builds", () => {
     process.env.DATABASE_URL = "postgresql://user:pass@example.invalid:5432/db";
     process.env.DATABASE_URL_UNPOOLED = "postgresql://user:pass@direct.invalid:5432/db";
     state.answers = [[{ ok: 1 }]];
-    const { queryRows, getPool } = await client();
+    const { queryRows, getPool } = await client("postgresql://user:pass@example.invalid:5432/db");
 
     await queryRows("select 1");
     expect((state.options as { connectionString: string }).connectionString).toBe(
       "postgresql://user:pass@example.invalid:5432/db",
     );
     expect(getPool()).toBeDefined();
+  });
+});
+
+describe("the boot-time warm-up", () => {
+  it("is a warn with the elapsed ms when it fails, not an info line", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    state.answers = [errorWith("ETIMEDOUT", "Connection terminated due to connection timeout")];
+    const { warmPool } = await client();
+
+    // A cold start that loses the race is not fatal: boot still succeeds and the first render
+    // pays the cost. What changes is that the log says so, at a level and with a number a
+    // reader can act on.
+    await expect(warmPool()).resolves.toBeUndefined();
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/warm-up query failed after \d+ms/);
+    expect(warn.mock.calls[0][1]).toBeInstanceOf(Error);
+    warn.mockRestore();
   });
 });
