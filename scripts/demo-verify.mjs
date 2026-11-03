@@ -463,7 +463,13 @@ async function main() {
     for (const line of tail(seed.output)) console.log(line);
     console.log("");
     console.log(
-      "      A demo branch carrying records this dataset does not author is not the demo",
+      "      Read the failure line before this one: a held seed lock means another `pnpm db:seed`",
+    );
+    console.log(
+      "      is working on this branch right now — re-run when it finishes; that is not this tree.",
+    );
+    console.log(
+      "      Otherwise, a demo branch carrying records this dataset does not author is not the demo",
     );
     console.log(
       "      (another run's flow rows, an e2e's leftovers). `pnpm demo:reset` puts it back.",

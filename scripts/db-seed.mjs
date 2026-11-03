@@ -14,7 +14,10 @@
  * that a clean run leaves only seeded rows behind.
  *
  * Everything runs in one transaction: a seed that fails halfway leaves the previous rows, not
- * a half-copied instance whose parties answer Aspects from two different templates.
+ * a half-copied instance whose parties answer Aspects from two different templates. (The demo
+ * identities are the one exception — their two phases are explained at the `BEGIN` below — and the
+ * whole run is serialised on the branch by an advisory lock, because the demo branch is shared and
+ * two overlapping seeds used to interleave into a `422`; see `scripts/db-seed-lock.mjs`.)
  *
  * **The demo accounts (#183).** With `DEMO_AUTH=1` this script also creates the three demo
  * identities — `initiator@`, `counterparty@` and `admin@demo.alignsynch.test` — and binds the
@@ -56,6 +59,15 @@ import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { Client } from "pg";
 import { syncBillingPlans } from "./billing-plans.mjs";
+import {
+  SEED_LOCK_ID,
+  SEED_LOCK_NAMESPACE,
+  SEED_LOCK_POLL_MS,
+  lockAcquiredNotice,
+  lockTimeoutMessage,
+  lockWaitNotice,
+  waitBudgetMs,
+} from "./db-seed-lock.mjs";
 import { loadEnv, repoRoot, requireVariable, writeDatabaseUrl } from "./load-env.mjs";
 
 /** The auth proof's throwaway account (issue #145 comment, confirmed by Jaden). */
@@ -905,6 +917,82 @@ async function counts(client) {
   return result;
 }
 
+/* ------------------------------------------------------------------ *\
+ * The seed lock — one advisory lock on the branch, across both phases
+ * ------------------------------------------------------------------ */
+
+/**
+ * The backend holding this branch's seed lock, or `null`.
+ *
+ * Read from `pg_locks` joined to `pg_stat_activity`, so the message names the tool (`db:seed`,
+ * `demo:verify`) and the pid an operator can look at, and nothing else — no worktree, no person,
+ * no connection string. A role that cannot see the other session gets `null`, which the message
+ * reports honestly rather than guessing.
+ *
+ * `objsubid = 2` is the two-integer advisory-lock form: `classid` is the first key and `objid` the
+ * second, which is why the pair is passed as the same two integers everywhere.
+ */
+async function seedLockHolder(client) {
+  const { rows } = await client.query(
+    `SELECT a.pid, a.application_name, a.datname, a.state
+       FROM pg_locks l
+       JOIN pg_stat_activity a ON a.pid = l.pid
+      WHERE l.locktype  = 'advisory'
+        AND l.objsubid  = 2
+        AND l.classid   = $1::int::oid
+        AND l.objid     = $2::int::oid
+        AND l.granted
+      ORDER BY a.pid
+      LIMIT 1`,
+    [SEED_LOCK_NAMESPACE, SEED_LOCK_ID],
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Takes the seed lock, waiting for a concurrent seed instead of racing it.
+ *
+ * The demo branch is shared fleet-wide and several cards run `db:seed` / `demo:verify` against it.
+ * Without this, two overlapping runs interleave across the two phases and the loser's sign-up is
+ * told `USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL` — a red run that describes the other process, not
+ * the tree. So the wait is bounded and *announced*: a silent hang is indistinguishable from a
+ * wedged seed, and the operator needs the holder's pid to tell those apart.
+ *
+ * `pg_try_advisory_lock` in a loop rather than a blocking `pg_advisory_lock`, because the blocking
+ * form gives no way to time out: a seed left hanging by a dead-but-open session would hold a card
+ * for as long as the dispatcher allows and then fail with nothing to read.
+ */
+async function acquireSeedLock(client) {
+  const budgetMs = waitBudgetMs();
+  const startedAt = Date.now();
+  const tryLock = async () =>
+    (
+      await client.query("SELECT pg_try_advisory_lock($1::int, $2::int) AS ok", [
+        SEED_LOCK_NAMESPACE,
+        SEED_LOCK_ID,
+      ])
+    ).rows[0].ok === true;
+
+  if (await tryLock()) return;
+
+  console.log(lockWaitNotice({ holder: await seedLockHolder(client), budgetMs }));
+  while (Date.now() - startedAt < budgetMs) {
+    await new Promise((resolve) => setTimeout(resolve, SEED_LOCK_POLL_MS));
+    if (await tryLock()) {
+      console.log(lockAcquiredNotice({ waitedMs: Date.now() - startedAt }));
+      return;
+    }
+  }
+  throw new Error(lockTimeoutMessage({ holder: await seedLockHolder(client), budgetMs }));
+}
+
+/** Release on the way out. `false` (never held) is not an error; a dead connection is not either. */
+async function releaseSeedLock(client) {
+  await client
+    .query("SELECT pg_advisory_unlock($1::int, $2::int)", [SEED_LOCK_NAMESPACE, SEED_LOCK_ID])
+    .catch(() => {});
+}
+
 async function main() {
   loadEnv();
 
@@ -971,7 +1059,20 @@ async function main() {
      * re-creating inside one transaction answers `USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL` on the
      * second run (measured). Two transactions is the shape the two systems require — and the
      * one wart it leaves, an auth user created after a phase-2 rollback, is cleaned up by this
-     * same phase on the next run (it deletes by email, not by remembered id). */
+     * same phase on the next run (it deletes by email, not by remembered id).
+     *
+     * **Two phases means two processes can interleave, so the branch's seed lock is held across
+     * both** (taken above, released in `finally`). It has to be the database's lock: the runs come
+     * from different worktrees with different pids, so a file lock would serialise nothing.
+     *
+     * **What a failed run leaves behind, stated because it is recoverable, not atomic.** If phase 1
+     * commits and phase 2 then aborts — a sign-up the auth server refuses, a count mismatch, a
+     * killed process, another seed's collision before the lock existed — the content rows stay as
+     * they were and the demo identities are gone: measured on the demo branch as `33 records /
+     * 172 items / 0 demo_account / 0 demo profile / 0 bound party / 0 membership`. That is
+     * "half-seeded", and the recovery is the next successful seed, not a manual repair: phase 1
+     * deletes by email *and* by stored id, so it removes whatever the abandoned run left. */
+    await acquireSeedLock(client);
     await client.query("BEGIN");
     let deleted;
     let removed;
@@ -1120,6 +1221,10 @@ async function main() {
     await client.query("ROLLBACK").catch(() => {});
     throw error;
   } finally {
+    // Both the normal path and every failure path release here; a process that is *killed* never
+    // reaches it, and the backend drops a session-level lock when the connection dies — which is
+    // what makes a crash unable to wedge the branch (measured: SIGKILL a seed, the next one runs).
+    await releaseSeedLock(client);
     await client.end();
   }
 }
