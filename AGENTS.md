@@ -62,7 +62,7 @@ merge-queue group; the job name is `typecheck / lint / build`.
 ## The gate: one script, two callers
 
 ```bash
-bash scripts/verify.sh       # THE gate. ~45 s locally, green = shippable
+bash scripts/verify.sh       # THE gate. ~150 s locally (code lane), green = shippable
 ```
 
 It runs, in order, and stops at the first failure (printing the failing step and its exit
@@ -460,8 +460,11 @@ head cannot merge — see `docs/GATE.md` for the evidence and for why the classi
 
 ## Numbers
 
-Baseline and how to re-measure: `docs/GATE.md`. As of 2026-10-29: gate p50 **45 s** locally,
-CI job p50 **55 s**, first-pass yield **81.8 %** (18/22 pushes green on the first run).
+Baseline and how to re-measure: `docs/GATE.md` — that file is the one home for these numbers,
+because a figure copied here has already gone stale once. Measured 2026-11-03 over the
+2026-11-02 CI window: run incl. queue p50 **144 s** / p95 **176 s**, first-pass yield
+**97.4 %** (185/190 head SHAs green on their first run); local full gate **138–152 s** (n=2).
+The 2026-10-29 figures (55 s a job, 81.8 %) are history rows in that file, not today's.
 
 ## Docs
 
