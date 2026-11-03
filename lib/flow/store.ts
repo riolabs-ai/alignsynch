@@ -21,6 +21,11 @@
  * which is the only fact the list's "complete since you last looked" marker needs and the one
  * thing no opinion row carries. It is a single-row UPDATE, not an operation on the flow.
  *
+ * …plus one panel write (#478): `writeStep` records one party's tick or reword of one Step — a
+ * single-row UPDATE behind a seat check, a completeness check and the model's own rules
+ * (`withStepStatus`, `withStepText`). It never derives, closes or inserts: those stay
+ * `acceptSession()`'s, so a person can record progress against the plan but cannot rewrite it.
+ *
  * …plus one read for the notice (#258): `readUnlockFacts` returns the two seats' names and
  * addresses and the instance's title, and reads **no** `opinion` row — the send path is subject to
  * the blind rule too, so there is nothing in its result that a score or a Gap value could be drawn
@@ -70,7 +75,14 @@ import {
   zAlignmentSetting,
   zAssessmentMode,
 } from "@/content/assessment";
-import { closeSteps, deriveSteps, stepsToAdd, type Step } from "@/content/steps";
+import {
+  closeSteps,
+  deriveSteps,
+  stepsToAdd,
+  withStepStatus,
+  withStepText,
+  type Step,
+} from "@/content/steps";
 import { entitlementForAccount } from "@/lib/billing";
 import { instanceGateRefusal } from "@/lib/billing/entitlements";
 import { activeInstanceCount } from "@/lib/db/billing";
@@ -86,7 +98,13 @@ import {
   type PartyRow,
   type RecordRow,
 } from "@/lib/db/rows";
-import { closeStepRows, insertStepRows, readStepsByRelationship } from "@/lib/db/steps";
+import {
+  closeStepRows,
+  insertStepRows,
+  readStepsByRelationship,
+  updateStepStatus,
+  updateStepText,
+} from "@/lib/db/steps";
 import { invitationLink } from "@/lib/flow/email";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
@@ -1469,6 +1487,194 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
 
     await client.query("COMMIT");
     return { ok: true, role, completed: true, stepsAdded, stepsClosed };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/* ------------------------------------------------------------------ *\
+ * Steps: a party's tick and reword (#478)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Why a Step write was refused. The steps route maps each to a status code.
+ *
+ * `incomplete` is the blind rule, one surface over: a Step names the widest Gap on its Aspect, so a
+ * Step visible (or tickable) before both seats have accepted would hand one party the other's
+ * answers by way of the plan. The panel is drawn only in the report state and this refusal is what
+ * keeps a hand-written POST from doing what the screen does not offer.
+ */
+export type StepRefusal =
+  | "no-such-instance"
+  | "no-such-step"
+  | "not-a-party"
+  | "incomplete"
+  | "invalid";
+
+export interface StepWriteInput {
+  /** The session the panel is drawn on — the relationship and the completeness come from it. */
+  readonly instanceRecordId: string;
+  /** The Step's row id, as the panel drew it. */
+  readonly stepId: string;
+  /** The viewer's `flow_party_<id>` cookie, if the browser still holds one. */
+  readonly token: string | undefined;
+  /** The signed-in account — the second answer to "which seat is writing" (#R2). */
+  readonly viewerUserId?: string | null;
+  /**
+   * What to write, and nothing else: a status (`open`/`done` — a party never writes `closed`), or
+   * new words. The union is what keeps "mark done **and** reword" from being expressible.
+   */
+  readonly patch: { readonly status: "open" | "done" } | { readonly text: string };
+}
+
+export type StepWriteResult =
+  | {
+      readonly ok: true;
+      /** The Step after the write, as it will be read back — or unchanged on a no-op. */
+      readonly step: Step;
+      /** `false` when the row already said this: the caller was right and nothing moved. */
+      readonly changed: boolean;
+    }
+  | { readonly ok: false; readonly code: StepRefusal; readonly reason: string };
+
+/**
+ * Record one party's tick or reword of one Step, inside one transaction.
+ *
+ * Six questions, in order, and each one is a refusal rather than a silent success:
+ *
+ *   1. **the session exists** — else `no-such-instance`;
+ *   2. **the seat** — the cookie's token hash first, then the signed-in account (#R2). A coach holds
+ *      a `relationship_member` row and no `party` row, so the same resolver refuses them as a
+ *      stranger: a coach reads the plan, and `not-a-party` is the honest answer to a write;
+ *   3. **the session is complete** — `instanceStatusOf()` over the same counts the screen draws its
+ *      report from; else `incomplete`;
+ *   4. **the Step belongs to this relationship** — read through `readStepsByRelationship()`, which is
+ *      also the read the panel uses, so "the row I drew" and "the row I wrote" are one question;
+ *   5. **the model allows it** — `withStepStatus` / `withStepText` decide closed rows, empty words and
+ *      the same value twice, so this module does not restate a rule `content/steps.ts` already owns;
+ *   6. **the write lands** — `updateStepStatus` / `updateStepText`, scoped by the relationship id as
+ *      well as the row id.
+ *
+ * `changed: false` is a real answer, not a failure: the panel can be posted twice (a reload, a
+ * double click), and the second post finds the row already saying what it asked for. It is returned
+ * rather than refused because the caller's intent was satisfied — the difference the route draws.
+ *
+ * **Nothing here derives, closes or deletes a Step.** Closing is `acceptSession()`'s write, on the
+ * completion that finds a Gap fallen to 0; a party can only record progress against what was agreed.
+ */
+export async function writeStep(input: StepWriteInput): Promise<StepWriteResult> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+
+    const session = await client.query<{ relationship_id: string }>(
+      `SELECT relationship_id FROM session WHERE record_id = $1`,
+      [input.instanceRecordId],
+    );
+    const relationshipId = session.rows[0]?.relationship_id;
+    if (relationshipId === undefined) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "no-such-instance", reason: "no instance has that id" };
+    }
+
+    const role =
+      (input.token === undefined || input.token === ""
+        ? undefined
+        : await partyRoleOf(client, input.instanceRecordId, input.token)) ??
+      (await partyRoleForUser(
+        client,
+        input.instanceRecordId,
+        normalizedUserId(input.viewerUserId),
+      ));
+    if (role === undefined) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "not-a-party",
+        reason: "this browser or account is not a party to the instance",
+      };
+    }
+
+    const items = await client.query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM item WHERE record_id = $1`,
+      [input.instanceRecordId],
+    );
+    const progress = await progressOfClient(
+      client,
+      input.instanceRecordId,
+      items.rows[0]?.count ?? 0,
+    );
+    if (instanceStatusOf(progress) !== "complete") {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "incomplete",
+        reason:
+          "this session is not complete — the Steps open when both seats have accepted, and nothing of the other party's is drawn before that",
+      };
+    }
+
+    const steps = await readStepsByRelationship(relationshipId, client);
+    const held = steps.find((step) => step.id === input.stepId);
+    if (held === undefined) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "no-such-step",
+        reason: `relationship "${relationshipId}" holds no Step "${input.stepId}"`,
+      };
+    }
+
+    // The model decides what a write means; this module only stores its answer. `withStepStatus`
+    // returns the same array for a closed row (history), and `withStepText` for empty words, a
+    // closed row, or the same text — so the refusals below are the model's, not a second copy.
+    if ("status" in input.patch) {
+      const next = withStepStatus(steps, input.stepId, input.patch.status);
+      const step = next.find((candidate) => candidate.id === input.stepId) ?? held;
+      if (held.status === "closed") {
+        await client.query("ROLLBACK");
+        return {
+          ok: false,
+          code: "invalid",
+          reason: "that Step is closed history — it has no Gap left to work on",
+        };
+      }
+      const changed =
+        next !== steps &&
+        (await updateStepStatus(client, {
+          id: input.stepId,
+          relationshipId,
+          status: step.status,
+        }));
+      await client.query("COMMIT");
+      return { ok: true, step, changed };
+    }
+
+    const next = withStepText(steps, input.stepId, input.patch.text);
+    const step = next.find((candidate) => candidate.id === input.stepId) ?? held;
+    if (next === steps && held.text.trim() !== input.patch.text.trim()) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "invalid",
+        reason:
+          held.status === "closed"
+            ? "that Step is closed history — its words are a record, not a plan"
+            : "a Step needs words of its own",
+      };
+    }
+    const changed =
+      next !== steps &&
+      (await updateStepText(client, {
+        id: input.stepId,
+        relationshipId,
+        text: step.text,
+      }));
+    await client.query("COMMIT");
+    return { ok: true, step, changed };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;

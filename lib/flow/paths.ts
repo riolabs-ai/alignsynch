@@ -152,6 +152,17 @@ export function answersPath(instanceRecordId: string): string {
 }
 
 /**
+ * The Steps endpoint — a form post, so a refused tick is a status code and not a banner (#478).
+ *
+ * Plural, like `/answers` and `/accepts`, and for the same mechanical reason: this is a route handler,
+ * not a page, and the panel's two controls (the tick and the reword) both post here with the Step's id
+ * and nothing that identifies a person. A GET of it is a 405, exactly as a GET of `/answers` is.
+ */
+export function stepsPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/steps`;
+}
+
+/**
  * The re-invite endpoint — a POST, so a GET never reissues a token (#275).
  *
  * A child of the instance's own address rather than a sibling: the invitation belongs to that
