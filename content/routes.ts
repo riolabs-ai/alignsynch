@@ -30,6 +30,8 @@ const STATIC_ROUTES = [
   "/admin/instances",
   // #502a — template authoring: the console's authored catalogue and one template's editor.
   "/admin/templates",
+  // #506 — the support inbox: the contact form's queue, one thread, the reply.
+  "/admin/inbox",
   "/affiliate",
   "/assessment",
   "/assessment/instances",
