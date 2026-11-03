@@ -101,6 +101,26 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-relationship",
     budget: 0,
   },
+  // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
+  // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
+  // so the next literal written in `template-registry.tsx` is a red build. Attribution is
+  // reachability, so only the registry joins this row — the editor belongs to the child below.
+  "/admin/templates": {
+    page: "app/(mainlayout)/admin/templates/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-templates",
+    budget: 0,
+  },
+  // The editor: the three tabs, the record's fields, the Aspect row controls, the save band and the
+  // locked panel are `data/pages/admin-template-editor.ts`. The preview reuses the flow's answer
+  // sheet, whose own words belong to `/assessment/instances/[instanceId]/answer` and are passed in
+  // rather than re-authored here.
+  "/admin/templates/[id]": {
+    page: "app/(mainlayout)/admin/templates/[id]/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-template-editor",
+    budget: 0,
+  },
   // #504 — the relationship's Gap report. Budget 0 from the first commit: the verdict band, the
   // per-Aspect rows, the eight kind labels' captions, the export footer, the reissue form, the
   // PII banner and the nine refusal sentences are all `data/pages/admin-report.ts`. Attribution

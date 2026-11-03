@@ -80,6 +80,15 @@ export const ADMIN_ACTIONS = [
    */
   "instance.force-close",
   /**
+   * Author a template from the console (#502a). `admin`: a template is the product's unit of
+   * value — every relationship copies one — so writing one is a product decision, not a courtesy.
+   * The action writes a `record` row and its `item` rows; `status` is `draft` until #502b's
+   * versioned publish.
+   */
+  "template.create",
+  /** Edit a draft template's words and Aspects. Same rung, same target, same transaction. */
+  "template.update",
+  /**
    * Re-derive and reissue a relationship's Gap report (#504). `admin`: the report is the
    * deliverable a customer pays for, so reissuing one is a decision about what a customer is
    * told, not a courtesy — and it is the same rung that accepts a seat on their behalf.
@@ -121,6 +130,9 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "invite.resend": "support",
   "session.void": "admin",
   "instance.force-close": "admin",
+  // #502a — the template authoring pair. `admin`: a template is the product's unit of value.
+  "template.create": "admin",
+  "template.update": "admin",
   // #504 — the two report operations. A read is `support`'s: the epic's PII gate is exactly
   // "support or above, and the read is recorded", so the floor is the gate. A regeneration is
   // `admin`'s, because reissuing the deliverable is the decision, and the two being different

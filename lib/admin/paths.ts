@@ -14,6 +14,21 @@ import { ADMIN_INSTANCES_PATH } from "@/lib/admin/instance-registry";
 /** `/admin/audit` — the log every `act()` write lands in. */
 export const ADMIN_AUDIT_PATH = "/admin/audit";
 
+/** `/admin/templates` — the console's authored-template catalogue (#502a). */
+export const ADMIN_TEMPLATES_PATH = "/admin/templates";
+
+/**
+ * `/admin/templates/<id>` — one template's editor.
+ *
+ * Here rather than beside `lib/admin/templates.ts` (#502a): the editor is a client component and
+ * needs the route to link to, while that module opens a pool. A pure path in a module that
+ * imports `lib/db/**` is the E34 crossing the client graph forbids — the same reason
+ * `adminRelationshipPath` lives here and not in `instance-registry`'s database half.
+ */
+export function adminTemplatePath(templateId: string): string {
+  return `${ADMIN_TEMPLATES_PATH}/${templateId}`;
+}
+
 /** `/admin/instances/<id>` — one relationship, and its five repairs. */
 export function adminRelationshipPath(instanceRecordId: string): string {
   return `${ADMIN_INSTANCES_PATH}/${instanceRecordId}`;

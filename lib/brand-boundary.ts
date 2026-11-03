@@ -85,6 +85,22 @@ export function requireQuizProduct(): void {
   if (!quizProductShipped()) notFound();
 }
 
+/**
+ * The same flag read the other way: a surface the **alignment catalogue** owns, refused on a build
+ * that sells only quizzes.
+ *
+ * Template authoring (#502a) writes the assessment templates — the product AlignSynch sells and
+ * QuizHub does not. `product.admin` is on for both templates (#509), so the console gate alone
+ * would put an assessment-template editor inside a quiz-only build, which is the exact
+ * "fifty-two wrong statements" failure `product.quiz-surfaces` was introduced to stop, one level
+ * down. This is not a second capability with its own switch: it is the one product flag, read from
+ * the side that does not ship the quiz catalogue, so the two answers cannot disagree — a template
+ * cannot be both a quiz build and an alignment one.
+ */
+export function requireAlignmentProduct(): void {
+  if (quizProductShipped()) notFound();
+}
+
 /* ------------------------------------------------------------------ *
  * The admin console, as the second capability (#509)
  * ------------------------------------------------------------------ */
