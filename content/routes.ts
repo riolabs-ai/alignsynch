@@ -67,6 +67,7 @@ const DYNAMIC_ROUTES = [
   "/admin/console/relationships/[id]",
   "/admin/console/templates/[id]",
   "/assessment/[slug]",
+  "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",
   "/assessment/instances/[instanceId]/report",
   // R1-E (#409): the two write screens sit one segment below the instance, beside the
@@ -89,7 +90,6 @@ const DYNAMIC_ROUTES = [
   "/reset/[token]",
   "/support/articles/[slug]",
   "/tournaments/[id]",
-  "/v1/templates/[type]/demo",
 ] as const;
 
 /**

@@ -43,7 +43,11 @@ import {
   relationshipScope,
   relationshipTypeOf,
 } from "@/lib/alignment-home";
-import { TEMPLATE_LIBRARY_PATH, createRelationshipPath } from "@/lib/flow/paths";
+import {
+  TEMPLATE_LIBRARY_PATH,
+  assessmentDemoPath,
+  createRelationshipPath,
+} from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
 
 const model = alignmentHome(
@@ -183,7 +187,8 @@ describe("the catalogue and the two doors beside the library", () => {
       );
       expect(type.href.startsWith("/v1/")).toBe(false);
       if (type.example === undefined) continue;
-      expect(type.example).toBe(`/v1/templates/${type.id}/demo`);
+      expect(type.example).toBe(assessmentDemoPath(type.id));
+      expect(type.example.startsWith("/v1/")).toBe(false);
       expect(demoAnswersByType[type.id]).toBeDefined();
     }
     // The fallback must not be masking a missing record: every card resolves to one.

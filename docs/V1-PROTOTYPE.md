@@ -2,8 +2,9 @@
 
 > **Retired (#478).** The `/v1` customer tree is deleted: 95 items were classified in
 > [`V1-RETIREMENT.md`](V1-RETIREMENT.md) and 93 of them are gone, the console moved to
-> `/admin/console`, and the only `/v1` route still answering is the `release` demo report at
-> `/v1/templates/[type]/demo`. This page is kept as the record of what the prototype was; nothing
+> `/admin/console`, and the `release` demo report moved out of the namespace to
+> `/assessment/demo/[type]`. No `/v1` route answers any more — the group, its gate and the demo
+> page's old address are gone. This page is kept as the record of what the prototype was; nothing
 > below describes the current route table. Live flows are `app/(mainlayout)/**`.
 
 The whole product, clickable, at `/v1/**` — six personas, no authentication, and an

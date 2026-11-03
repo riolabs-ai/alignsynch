@@ -112,7 +112,7 @@ function probe(): string {
     "app/(mainlayout)/assessment/instances/[instanceId]/accept/page.tsx": "export default 1;\n",
     "app/(mainlayout)/instances/page.tsx": "export default 1;\n",
     "app/(mainlayout)/settings/layout.tsx": "export default 1;\n",
-    "app/(prototype)/v1/settings/layout.tsx": "export default 1;\n",
+    "app/(mainlayout)/assessment/demo/layout.tsx": "export default 1;\n",
   };
   for (const [path, body] of Object.entries(files)) {
     mkdirSync(dirname(join(root, path)), { recursive: true });

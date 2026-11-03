@@ -36,7 +36,7 @@ import {
   purchasableRelationshipTypes,
   relationshipType,
 } from "@/data/v1/relationship-types";
-import { createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
+import { createRelationshipPath, assessmentDemoPath, templateDetailPath } from "@/lib/flow/paths";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 
 const { redirect, currentUser, listLibraryTemplates, readLibraryTemplate } = vi.hoisted(() => ({
@@ -245,7 +245,7 @@ describe("the rendered catalogue", () => {
     for (const type of purchasableRelationshipTypes) {
       const card = cardOf(html, type.id);
       if (demoAnswersForType(type.id)) {
-        expect(card).toContain(`href="/v1/templates/${type.id}/demo"`);
+        expect(card).toContain(`href="${assessmentDemoPath(type.id)}"`);
       } else {
         expect(card).not.toContain("/demo");
         expect(wordsOf(card)).not.toContain("example");

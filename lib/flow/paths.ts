@@ -57,6 +57,20 @@ export const NEW_TEMPLATE_PATH = "/assessment/templates/new";
  */
 export const TEMPLATE_LIBRARY_PATH = "/assessment/templates";
 
+/**
+ * `/assessment/demo/[type]` — the worked example's own segment (#478, the `release` demo row).
+ *
+ * Not `/assessment/templates/demo/<type>`: `[templateId]` already owns
+ * `/assessment/templates/<id>`, and Next refuses two dynamic segment names at one level. A
+ * sibling segment keeps the address stable and the manifest's dynamic rows unambiguous.
+ */
+export const ASSESSMENT_DEMO_PATH = "/assessment/demo";
+
+/** One type's finished example report — the only page a stranger may read a report on. */
+export function assessmentDemoPath(typeId: string): string {
+  return `${ASSESSMENT_DEMO_PATH}/${typeId}`;
+}
+
 /** One template, read-only: its Aspects, its instances and whether it is archived. */
 export function templateDetailPath(recordId: string): string {
   return `${TEMPLATE_LIBRARY_PATH}/${recordId}`;

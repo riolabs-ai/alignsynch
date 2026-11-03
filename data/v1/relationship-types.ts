@@ -1542,8 +1542,9 @@ export interface TypeDemoAnswers {
  *
  * Two types carry a demo today: `co-founders`, whose Aspects predate this taxonomy and whose
  * answers still match, and `staff-manager`, the Office exemplar a prospect is walked through
- * first. The rest have no sheet yet, and a type with no sheet renders the demo page's "no
- * example yet" state rather than a fabricated report — absence is the honest answer there.
+ * first. The rest have no sheet yet, and a type with no sheet answers `404` at
+ * `/assessment/demo/[type]` rather than rendering a fabricated report — absence is the honest
+ * answer there, and both catalogue links test `demoAnswersFor` before offering one.
  *
  * **These are authored rows, not a generator.** Every number a demo report prints is one of the
  * numbers below: the report derives its Gaps by subtraction (`content/gaps.ts`), but it never
