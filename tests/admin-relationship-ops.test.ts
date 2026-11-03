@@ -68,6 +68,28 @@ interface Fixture {
   forceCloseUpdateReturnsRow: boolean;
 }
 
+/**
+ * The position of a named column in an `INSERT INTO admin_action (...)` statement.
+ *
+ * The parameter list is positional and `act()` owns it, so a column added there shifts every index
+ * in this file — migration 0024's `actor_role` (#501b) moved `reason` from 4 to 5 and `after` from 6
+ * to 7, and a test that kept counting would have gone on passing against the wrong column if the
+ * two values happened to be interchangeable. Reading the value out by the column the statement says
+ * it writes keeps these assertions about what was stored, and a column this file asks for that the
+ * writer stopped sending fails here with its own name instead of silently reading a neighbour.
+ */
+function auditParamIndex(text: string, column: string): number {
+  const match = /INSERT INTO admin_action \(([^)]+)\)/i.exec(text.replace(/\s+/g, " "));
+  if (match === null) throw new Error("the audit insert names no column list");
+  const columns = match[1].split(",").map((name) => name.trim());
+  const at = columns.indexOf(column);
+  if (at === -1)
+    throw new Error(
+      `the audit insert has no \`${column}\` column — it writes ${columns.join(", ")}`,
+    );
+  return at;
+}
+
 /** A connection that behaves like a transaction, over one fixture. */
 class FakeDb {
   readonly statements: { readonly text: string; readonly values: readonly unknown[] }[] = [];
@@ -135,7 +157,7 @@ class FakeDb {
     }
     if (/^INSERT INTO admin_action/i.test(head)) {
       if (!this.inTransaction) throw new Error("an audit row outside a transaction is a bug");
-      this.pending.push(`admin_action:${String(values[1])}`);
+      this.pending.push(`admin_action:${String(values[auditParamIndex(text, "action")])}`);
       return { rows: [{ id: "audit-1" }] as unknown as readonly R[] };
     }
     if (/^SELECT unlock_seen_at FROM party/i.test(head)) {
@@ -223,6 +245,15 @@ class FakeDb {
     return this.statements.find(({ text }) => /^INSERT INTO admin_action/i.test(text.trimStart()))
       ?.values;
   }
+
+  /** One column of the audit insert, read by name — see `auditParamIndex`. */
+  auditParam(column: string): unknown {
+    const insert = this.statements.find(({ text }) =>
+      /^INSERT INTO admin_action/i.test(text.trimStart()),
+    );
+    if (insert === undefined) throw new Error("no admin_action insert was sent");
+    return insert.values?.[auditParamIndex(insert.text, column)];
+  }
 }
 
 /** A runner over one fake, one connection per call — the pool's shape. */
@@ -257,6 +288,8 @@ describe("unlock — the V11 repair as a button", () => {
 
     expect(db.audit).toEqual([
       ACTOR,
+      // The rung `act()` read in the same transaction (#501b) — the seeded fixture is `admin`.
+      "admin",
       "party.unlock",
       "party",
       `${INSTANCE}:counterparty`,
@@ -310,9 +343,9 @@ describe("resend — a new token, and the old hash dies", () => {
     // The token reaches the caller…
     expect(result.after.token).toMatch(/\S/);
     // …and never the audit row: `after` is instants, the address and a count.
-    const after = JSON.parse(String(db.audit?.[6]));
+    const after = JSON.parse(String(db.auditParam("after")));
     expect(Object.keys(after).sort()).toEqual(["email", "expiresAt", "resentCount"]);
-    expect(String(db.audit?.[6])).not.toContain(result.after.token);
+    expect(String(db.auditParam("after"))).not.toContain(result.after.token);
     expect(after.resentCount).toBe(2);
 
     // The write stores the hash, not the token.
@@ -378,7 +411,7 @@ describe("revoke — the link dies, terminally", () => {
     );
     expect(update?.values).toEqual([INSTANCE, ACTOR]);
     expect(result.after.revokedAt).toBe(REVOKED_INSTANT.toISOString());
-    expect(db.audit?.[4]).toBe(REASON);
+    expect(db.auditParam("reason")).toBe(REASON);
   });
 
   it("refuses an already-revoked invitation", async () => {
@@ -417,6 +450,8 @@ describe("void — terminal, and it deletes nothing", () => {
     expect(result.after.voidedAt).toBe(VOID_INSTANT.toISOString());
     expect(db.audit).toEqual([
       ACTOR,
+      // The rung `act()` read in the same transaction (#501b) — the seeded fixture is `admin`.
+      "admin",
       "session.void",
       "session",
       INSTANCE,
@@ -481,7 +516,7 @@ describe("force-close — an acceptance somebody else took", () => {
       acceptedAt: ACCEPT_INSTANT.toISOString(),
       impersonatedBy: ACTOR,
     });
-    expect(JSON.parse(String(db.audit?.[6]))).toEqual({
+    expect(JSON.parse(String(db.auditParam("after")))).toEqual({
       role: "counterparty",
       acceptedAt: ACCEPT_INSTANT.toISOString(),
       impersonatedBy: ACTOR,
@@ -554,6 +589,6 @@ describe("the reason is a contract, not a form hint", () => {
   it("stores the trimmed reason on the audit row", async () => {
     const db = new FakeDb();
     await unlockParty({ ...request, reason: `   ${REASON}   `, role: "initiator" }, runnerOver(db));
-    expect(db.audit?.[4]).toBe(REASON);
+    expect(db.auditParam("reason")).toBe(REASON);
   });
 });

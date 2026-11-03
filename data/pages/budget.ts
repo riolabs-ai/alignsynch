@@ -54,6 +54,9 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/home",
     budget: 0,
   },
+  // #503 — the audit log. Budget 0: the seven column labels, the dash for the absent side of a
+  // change, the "no profile row" attribution and the two empty/failure panels are
+  // `data/pages/admin-audit.ts`, so the next literal written in `audit-log.tsx` is a red build.
   "/admin/audit": {
     page: "app/(mainlayout)/admin/audit/page.tsx",
     dirs: ["components/admin"],
@@ -86,15 +89,6 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/admin/instances/[id]/page.tsx",
     dirs: ["components/admin"],
     fixture: "data/pages/admin-relationship",
-    budget: 0,
-  },
-  // #503 — the audit log. Budget 0: the seven column labels, the dash for the absent side of a
-  // change, the "no profile row" attribution and the two empty/failure panels are
-  // `data/pages/admin-audit.ts`, so the next literal written in `audit-log.tsx` is a red build.
-  "/admin/audit": {
-    page: "app/(mainlayout)/admin/audit/page.tsx",
-    dirs: ["components/admin"],
-    fixture: "data/pages/admin-audit",
     budget: 0,
   },
   "/battle": {
