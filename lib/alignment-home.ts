@@ -54,7 +54,11 @@ import {
   type RelationshipType,
 } from "@/data/v1/relationship-types";
 import { assessments } from "@/data/assessments";
-import { TEMPLATE_LIBRARY_PATH, createRelationshipPath } from "@/lib/flow/paths";
+import {
+  TEMPLATE_LIBRARY_PATH,
+  assessmentDemoPath,
+  createRelationshipPath,
+} from "@/lib/flow/paths";
 import { brandMark, type BrandMark } from "@/lib/brand-mark";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -693,9 +697,7 @@ export function alignmentHome(
         aspects: fillLabel(aspectsLabel, { count: type.aspects.length }),
         price: formatCurrency(type.price),
         href: recordId === undefined ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(recordId),
-        ...(demoAnswersFor(type.id) === undefined
-          ? {}
-          : { example: `/v1/templates/${type.id}/demo` }),
+        ...(demoAnswersFor(type.id) === undefined ? {} : { example: assessmentDemoPath(type.id) }),
       };
     });
 

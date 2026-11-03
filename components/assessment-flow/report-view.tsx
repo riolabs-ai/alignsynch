@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/v1/report-body.tsx   (variation: a server component over the Postgres projection, not the client store; the locked page replaces the redacted one)
+ * template-ancestor: components/assessment/assessment-report.tsx   (variation: the instance's read through the flow screen, with the locked page replacing a redacted body — the v1 report body it was ported from is deleted with `/v1`)
  *
  * `/assessment/instances/[instanceId]/report` — **the one read surface the app did not have**
  * (#409). This is the surface whose loss cost a whole card to restore: a report that collapses to

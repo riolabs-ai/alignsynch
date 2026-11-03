@@ -46,7 +46,7 @@ import {
   type Realm,
   type RelationshipType,
 } from "@/data/v1/relationship-types";
-import { createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
+import { assessmentDemoPath, createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
 import type { ReactNode } from "react";
 
 /**
@@ -276,7 +276,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
           {copy.viewDetails}
         </a>
         {type !== undefined && demoAnswersFor(type.id) !== undefined ? (
-          <a className={SECONDARY} href={`/v1/templates/${type.id}/demo`}>
+          <a className={SECONDARY} href={assessmentDemoPath(type.id)}>
             {copy.seeExample}
           </a>
         ) : null}

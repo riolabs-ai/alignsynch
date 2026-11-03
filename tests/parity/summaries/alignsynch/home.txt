@@ -55,6 +55,8 @@ links (42 unique, 48 total)
   /#questions                                          2
   /#templates                                          2
   /assessment/avery-rowan                              1
+  /assessment/demo/co-founders                         1
+  /assessment/demo/staff-manager                       1
   /assessment/marco-priya                              1
   /assessment/ruth-sam                                 1
   /assessment/templates/assessment-brother-sister/create 1
@@ -90,8 +92,6 @@ links (42 unique, 48 total)
   /privacy                                             2
   /register                                            2
   /terms                                               1
-  /v1/templates/co-founders/demo                       1
-  /v1/templates/staff-manager/demo                     1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 1
 
 counts

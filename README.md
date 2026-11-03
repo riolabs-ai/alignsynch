@@ -359,8 +359,8 @@ What does not:
   and `data/flags.ts` carries a note per surface saying what would have to exist before it is on.
 - **The `/v1` prototype is retired.** Its 118 items were classified in
   [docs/V1-RETIREMENT.md](docs/V1-RETIREMENT.md) — the operator console moved to `/admin/console`,
-  the 95-item customer half is deleted (#478), and one `release` demo report is the only `/v1`
-  route left standing. Nothing here is pictured from it.
+  the 95-item customer half is deleted (#478), and the one `release` demo report now lives at
+  `/assessment/demo/[type]`. No `/v1` route answers any more. Nothing here is pictured from it.
 - **One template has a server behind it.** The quiz product's create, play and community surfaces are
   fixtures; only the relationship flow, accounts, support and billing touch the database.
 - **No multi-tenancy, no i18n, no course schema.** A brand is a build, not a tenant.

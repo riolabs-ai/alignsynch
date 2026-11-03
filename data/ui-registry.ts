@@ -235,6 +235,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/assessment/demo/[type]",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The worked example: one Relationship Type's finished report, answered by You and Them and labelled Example, rendered through the live report projection and component — the value shown before anyone pays, and launch criterion 5's one readable proof.",
+    notes:
+      "Lands here as `docs/V1-RETIREMENT.md`'s `release` demo row: it was `/v1/templates/[type]/demo`, the last customer route under `/v1`, and it moved out when that namespace was retired (#478). The projection and renderer are `lib/assessment-report.ts` + `components/assessment/assessment-report.tsx` — the v1 report component was deleted with the move, so the app has one report renderer, not two. The example is built from the type's own Aspects and authored demo sheet, never from a stored template record (the staff-manager record predates the taxonomy and carries Aspects its sheet never answered).",
+  },
+  {
+    kind: "route",
     surface: "/assessment/instances",
     status: "db",
     templates: ["alignsynch"],
@@ -694,14 +704,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "The public AlignSynch landing page in its own chrome: what a Gap is, how it works, four opinions and two modes.",
   },
   {
-    kind: "route",
-    surface: "/v1/templates/[type]/demo",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "A real completed-session report rendered from fixture answers for the type, labelled Example with You/Them names, sharing the live report's body component — the value shown before anyone pays.",
-  },
-  {
     kind: "domain",
     surface: "components",
     status: "mock",
@@ -1031,8 +1033,8 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "What is left of the /v1 prototype — the operator console's nine components, the shared primitives they paint with, and the two `release` surfaces the disposition keeps.",
+      "What is left of the /v1 prototype — the operator console's components, the shared primitives they paint with, and the Steps panel the release row ports into the instance view.",
     notes:
-      "The prototype is retired (#478): `docs/V1-RETIREMENT.md` classified 118 `/v1` items and 57 of this domain's 69 components are deleted with their screens, so this entry now covers what survived on purpose. The **nine admin components** — `admin-console-overview`, `admin-relationship-registry`, `admin-relationship-detail`, `admin-template-registry`, `admin-template-detail`, `admin-users-list`, `admin-limits`, `relationship-metadata`, `v1-ui` — are the operator console at `/admin/console`, behind `requireAdmin`, reading the in-browser store (`lib/v1/store.tsx`) seeded from `data/v1/fixtures.ts`; that is why they stay a fixture surface while the product's `/admin/instances` reads Postgres. `v1-ui.tsx` is the one shared atom set (`StageBadge`, `GapPill`, `StatTile`, `EmptyState`, `NotFoundState`, `SectionIntro`, the status tones) the console paints with, and `relationship-metadata.tsx` is the mode/setting editor the console's relationship detail draws. The two **release** survivors wait on their own cohort: `steps-panel.tsx` (one Steps list per Aspect, drawn from the Steps acceptance already stores) ports into the instance view, and `template-demo.tsx` with `report-body.tsx` is the one worked report — `report-body` is a `delete` row that survives only because the `release` `template-demo` imports it, and it dies with the demo's move to `/assessment/demo/[type]`. Everything else in the domain — the shell, the persona bar, the chat, the shop, the review checklist, the settings views, the answer sheet and the template authoring — is deleted.",
+      "The prototype is retired (#478): `docs/V1-RETIREMENT.md` classified 118 `/v1` items and 57 of this domain's 69 components are deleted with their screens, so this entry now covers what survived on purpose. The **nine admin components** — `admin-console-overview`, `admin-relationship-registry`, `admin-relationship-detail`, `admin-template-registry`, `admin-template-detail`, `admin-users-list`, `admin-limits`, `relationship-metadata`, `v1-ui` — are the operator console at `/admin/console`, behind `requireAdmin`, reading the in-browser store (`lib/v1/store.tsx`) seeded from `data/v1/fixtures.ts`; that is why they stay a fixture surface while the product's `/admin/instances` reads Postgres. `v1-ui.tsx` is the one shared atom set (`StageBadge`, `GapPill`, `StatTile`, `EmptyState`, `NotFoundState`, `SectionIntro`, the status tones) the console paints with, and `relationship-metadata.tsx` is the mode/setting editor the console's relationship detail draws. `steps-panel.tsx` (one Steps list per Aspect, drawn from the Steps acceptance already stores) is the one **release** survivor left and still waits on its own cohort to port into the instance view. The demo pair — `template-demo.tsx` with `report-body.tsx` — is gone with its route: `/assessment/demo/[type]` draws `components/assessment/assessment-report.tsx` over `lib/assessment-report.ts`, so the app has one report renderer, not two. Everything else in the domain — the shell, the persona bar, the chat, the shop, the review checklist, the settings views, the answer sheet and the template authoring — is deleted.",
   },
 ]);
