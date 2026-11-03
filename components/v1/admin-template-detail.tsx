@@ -67,7 +67,7 @@ function RelationshipLine({ row }: { row: AdminRelationshipRow }) {
 }
 
 /**
- * `/v1/admin/console/templates/[id]` — one template, its Aspects, and every relationship that
+ * `/admin/console/templates/[id]` — one template, its Aspects, and every relationship that
  * started from it.
  *
  * This is the second half of "see which relationships started from each": the registry counts

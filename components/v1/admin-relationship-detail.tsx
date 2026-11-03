@@ -77,7 +77,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * `/v1/admin/console/relationships/[id]` — one relationship, as an operator sees it.
+ * `/admin/console/relationships/[id]` — one relationship, as an operator sees it.
  *
  * The page is the console's answer to "open one to see its sessions". It draws the seats, the
  * subscription and the session list, and it draws **no answer**: `adminSessionRows()` returns

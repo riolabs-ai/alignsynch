@@ -18,6 +18,10 @@ import { zRouteManifest, type RouteManifest } from "./route-manifest";
 /** Routes without a dynamic segment. Order is irrelevant; `matchRoute` is exact. */
 const STATIC_ROUTES = [
   "/",
+  "/admin/console",
+  "/admin/console/relationships",
+  "/admin/console/templates",
+  "/admin/console/users",
   "/admin/gaps",
   "/admin/instances",
   "/affiliate",
@@ -57,10 +61,6 @@ const STATIC_ROUTES = [
   "/tournaments",
   "/welcome",
   "/v1",
-  "/v1/admin/console",
-  "/v1/admin/console/relationships",
-  "/v1/admin/console/templates",
-  "/v1/admin/console/users",
   "/v1/initiator/templates/new",
   "/v1/pricing",
   "/v1/privacy",
@@ -73,6 +73,8 @@ const STATIC_ROUTES = [
 
 /** Routes with `[param]` segments, as Next spells them. */
 const DYNAMIC_ROUTES = [
+  "/admin/console/relationships/[id]",
+  "/admin/console/templates/[id]",
   "/assessment/[slug]",
   "/assessment/instances/[instanceId]",
   "/assessment/instances/[instanceId]/report",
@@ -106,8 +108,6 @@ const DYNAMIC_ROUTES = [
   "/v1/[persona]/settings",
   "/v1/[persona]/shop",
   "/v1/[persona]/templates",
-  "/v1/admin/console/relationships/[id]",
-  "/v1/admin/console/templates/[id]",
   "/v1/profile/[handle]",
   "/v1/relationships/[id]",
   "/v1/relationships/[id]/accept",

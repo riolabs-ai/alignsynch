@@ -59,7 +59,7 @@ import {
  * ------------------------------------------------------------------ */
 
 /** The console's landing: the overview with the counts. */
-export const ADMIN_CONSOLE_PATH = "/v1/admin/console";
+export const ADMIN_CONSOLE_PATH = "/admin/console";
 /** The relationship registry — every relationship, filtered. */
 export const ADMIN_RELATIONSHIPS_PATH = `${ADMIN_CONSOLE_PATH}/relationships`;
 /** The template registry — every template and who started from it. */

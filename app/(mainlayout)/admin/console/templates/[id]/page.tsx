@@ -2,7 +2,7 @@
 import { AdminTemplateDetail } from "@/components/v1/admin-template-detail";
 
 /**
- * `/v1/admin/console/templates/[id]` — one template: its Aspects, and every relationship that
+ * `/admin/console/templates/[id]` — one template: its Aspects, and every relationship that
  * started from it.
  *
  * `params` is a Promise in Next 16 and is unwrapped here; the template itself is read from the

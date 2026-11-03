@@ -34,7 +34,7 @@ import { ChevronRight, PowerOff, Power } from "lucide-react";
 import Link from "next/link";
 
 /**
- * `/v1/admin/console/templates` — every template in the store, and who started from it.
+ * `/admin/console/templates` — every template in the store, and who started from it.
  *
  * The usage figure is **derived** (`adminTemplateRows` counts the relationship rows by
  * `templateId`), never a stored counter: a template's "3 started" and the three rows on the
