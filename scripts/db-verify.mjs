@@ -66,12 +66,24 @@
  *   V20 the membership's coach (coach card): a relationship has at most one `coach` member. The
  *       unique key already forbids two identical accounts; this pins "one coach per relationship"
  *       on the rows so a second coach invited by hand is named, not assumed.
+ *   V21 a **seeded** instance reads `complete` (#427/R2 follow-up): for every instance
+ *       `data/assessments.ts` authors — the ids read from the fixture, never a list kept in this
+ *       script — `instanceStatusOf()` over one SQL statement's counts (aspect count, both answered
+ *       counts, both accepted counts, and whether a counterparty party row exists at all) answers
+ *       `complete`. `db:seed` writes a seeded instance as a **finished** demo session, stamping
+ *       `party.accepted_at` from the instance's own fixture date, so a seeded instance that reads
+ *       `answering` is either a seed older than #427/R2 or a rule change that moved `complete` —
+ *       the state production sat in for a day on 2026-11-03 while this file stayed green
+ *       (`docs/RELEASING.md` 2a). V11 names the *mark* on a non-complete instance; this names the
+ *       absence of completion itself. Instances the seed does not author are not checked: their
+ *       status is their own.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
 import { Client } from "pg";
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 
 const CONTENT_TABLES = [
@@ -125,6 +137,130 @@ function scanForUpdatePaths() {
     }
   }
   return { files: files.length, violations };
+}
+
+/* ------------------------------------------------------------------ *\
+ * V21 — a seeded instance reads `complete`
+ * ------------------------------------------------------------------ */
+
+/**
+ * The one statement V21 reads — one row per authored instance, carrying exactly the counts
+ * `instanceStatusOf()` asks for.
+ *
+ * `db:seed` writes a seeded instance as a **finished** demo session: every Aspect answered on both
+ * seats, and `party.accepted_at` stamped from the instance's own fixture date (`scripts/db-seed.mjs`,
+ * the `INSERT INTO party (… accepted_at)` in `seedInstance`). Acceptance is half of the `complete`
+ * derivation since #427/R2, so every fixture instance must derive `complete` in a database the seed
+ * has built.
+ *
+ * The `LEFT JOIN party` is what keeps a missing seat from both crashing the check and vanishing
+ * from it: an instance with no party row still comes back (every count 0), so the caller can name
+ * it as drift instead of reading "no row" as "not an instance".
+ */
+const SEEDED_STATUS_SQL = `
+  SELECT ai.record_id,
+         r.slug,
+         (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)::int AS aspect_count,
+         count(*) FILTER (WHERE p.role = 'initiator')::int AS initiators,
+         count(*) FILTER (WHERE p.role = 'counterparty')::int AS counterparties,
+         count(*) FILTER (WHERE p.role = 'initiator' AND p.accepted_at IS NOT NULL)::int
+           AS initiator_accepted,
+         count(*) FILTER (WHERE p.role = 'counterparty' AND p.accepted_at IS NOT NULL)::int
+           AS counterparty_accepted,
+         (SELECT count(*) FROM opinion o
+           WHERE o.session_record_id = ai.record_id AND o.role = 'initiator')::int
+           AS initiator_answered,
+         (SELECT count(*) FROM opinion o
+           WHERE o.session_record_id = ai.record_id AND o.role = 'counterparty')::int
+           AS counterparty_answered
+    FROM session ai
+    JOIN record r ON r.id = ai.record_id
+    LEFT JOIN party p ON p.session_record_id = ai.record_id
+   WHERE ai.record_id = ANY($1::text[])
+   GROUP BY ai.record_id, r.slug
+   ORDER BY r.slug`;
+
+/**
+ * What is missing from an instance that is not `complete`, in the words of the row it is missing.
+ *
+ * `instanceStatusOf()` answers one word; the reader needs the fact under it, because the repair
+ * differs — a NULL `accepted_at` is `docs/RELEASING.md` 2a's stamp, an unanswered Aspect is a
+ * missing `opinion` row, and an absent party row is a seed that never wrote the seat. Named per
+ * seat so a half-written instance does not read as "the seed did not run".
+ */
+function seededStatusDetail(row) {
+  const details = [];
+  if (row.initiators === 0) details.push("it has no initiator party row");
+  if (row.counterparties === 0) details.push("it has no counterparty party row");
+  if (row.aspect_count === 0) {
+    details.push("its copy holds no Aspect");
+  } else {
+    if (row.initiator_answered < row.aspect_count) {
+      details.push(
+        `the initiator answered ${row.initiator_answered} of ${row.aspect_count} Aspect(s)`,
+      );
+    }
+    if (row.counterparty_answered < row.aspect_count) {
+      details.push(
+        `the counterparty answered ${row.counterparty_answered} of ${row.aspect_count} Aspect(s)`,
+      );
+    }
+  }
+  if (row.initiator_accepted === 0) details.push("the initiator's party.accepted_at is NULL");
+  if (row.counterparty_accepted === 0) details.push("the counterparty's party.accepted_at is NULL");
+  return details.join("; ");
+}
+
+/**
+ * V21 over the fixture's own ids — the whole check, and the only part of this script that does not
+ * iterate `listAssessmentInstances()`.
+ *
+ * **Only the instances `data/assessments.ts` authors are checked**, and the ids are read from the
+ * fixture on every run: production also holds instances people created in the app
+ * (`staff-manager-61cca238`, `relationship-basics-copy-94c15cc5` were measured `answering`), and
+ * their status is theirs to be in. The status comes from the product's own `instanceStatusOf()`,
+ * so a rule change that moved `complete` shows up here as a violation rather than as four demo
+ * sessions nobody can open.
+ *
+ * An authored instance this database does not hold **at all** is not a seeded instance reading
+ * wrongly — it is a branch the seed has not built yet, which `docs/DEMO.md` records as a green
+ * state an emptied demo branch is allowed to be in. It is counted as absent and not failed.
+ *
+ * Takes any client-shaped object with `query(text, values)`, so the test can drive every branch
+ * with no database (`tests/db-verify-seeded-complete.test.ts`).
+ */
+export async function seededInstanceStatusProblems(client, authoredInstances) {
+  const problems = [];
+  const authored = authoredInstances.map((instance) => ({ id: instance.id, slug: instance.slug }));
+  if (authored.length === 0) return { problems, complete: 0, authored: 0 };
+
+  const { instanceStatusOf } = await import("@/lib/flow/state.ts");
+  const { rows } = await client.query(SEEDED_STATUS_SQL, [authored.map((instance) => instance.id)]);
+  const rowById = new Map(rows.map((row) => [row.record_id, row]));
+  let complete = 0;
+
+  for (const instance of authored) {
+    const row = rowById.get(instance.id);
+    if (row === undefined) continue;
+    const status = instanceStatusOf({
+      aspectCount: row.aspect_count,
+      hasCounterparty: row.counterparties >= 1,
+      initiatorAnswered: row.initiator_answered,
+      counterpartyAnswered: row.counterparty_answered,
+      initiatorAccepted: row.initiator_accepted,
+      counterpartyAccepted: row.counterparty_accepted,
+    });
+    if (status === "complete") {
+      complete += 1;
+      continue;
+    }
+    problems.push({
+      code: "V21",
+      message: `seeded instance "${row.slug ?? instance.slug}" reads "${status}" — db:seed writes a finished session, and ${seededStatusDetail(row)}`,
+    });
+  }
+
+  return { problems, complete, authored: authored.length };
 }
 
 async function main() {
@@ -610,6 +746,16 @@ async function main() {
       }
     }
 
+    // V21 — the fixture's own instances read `complete` (#427/R2 follow-up). The one check here
+    // that does not iterate `listAssessmentInstances()`: production also holds instances people
+    // created in the app, and an `answering` one of those is a person mid-flow, not drift. The ids
+    // come from `data/assessments.ts` (imported above for V12), so the check follows the fixture
+    // rather than a copy of it. A seeded instance that is not `complete` is either a seed older
+    // than #427/R2's acceptance stamp or a rule change that moved `complete` — on 2026-11-03 all
+    // four sat in `answering` for a day while every other check in this file was green.
+    const seeded = await seededInstanceStatusProblems(client, authoredInstances);
+    problems.push(...seeded.problems);
+
     const { rows: halfPair } = await client.query(
       `SELECT session_record_id, role, item_id FROM opinion
         WHERE (think IS NULL) <> (guess IS NULL) ORDER BY session_record_id, role, item_id`,
@@ -859,7 +1005,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
@@ -876,7 +1022,13 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(`\n✗ db:verify failed: ${error.message}`);
-  process.exitCode = 1;
-});
+// Only when this file is the entry point: `tests/db-verify-seeded-complete.test.ts` imports
+// `seededInstanceStatusProblems()` to drive V21 with no database, and an import must not run the
+// checks (there is no connection, and `loadEnv()` would reach into the checkout's `.env.local`).
+// `release-limits.mjs` guards its own `main` the same way.
+if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(`\n✗ db:verify failed: ${error.message}`);
+    process.exitCode = 1;
+  });
+}

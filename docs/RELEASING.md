@@ -232,8 +232,11 @@ of the `complete` derivation, and `db:seed` stamps it per instance from the fixt
 (`scripts/db-seed.mjs`, the `INSERT INTO party (… accepted_at)` in `seedInstance`). Production's
 seeded rows were written **before** that stamp existed, so all four seeded instances read
 `answering` with every Aspect answered on both seats — their reports and tours locked behind
-`complete`. `db:verify` is green on this: nothing requires a seeded instance to be `complete`, which
-is why it went unnamed for a day.
+`complete`. `db:verify` was green on this: nothing required a seeded instance to be `complete`,
+which is why it went unnamed for a day — V21 is that check (the verdict line's `4 of 4 seeded
+instance(s) complete`), and it names each seeded instance that derives anything else with the
+count under it, so the next rule change to move `complete` is caught on the next run rather than
+by a person opening the demo.
 
 The repair is the acceptance column on the parties the fixture owns, and nothing else — one
 statement per instance, inside one transaction:
