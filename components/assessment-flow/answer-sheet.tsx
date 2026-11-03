@@ -284,7 +284,7 @@ export function AnswerSheet({
             <button
               type="submit"
               aria-describedby="answer-sheet-submit-note"
-              className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action/90"
+              className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
             >
               {itemLabel(sheet, gate.answered > 0 ? "resubmit" : "submit")}
             </button>

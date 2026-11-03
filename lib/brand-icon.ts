@@ -81,6 +81,23 @@ export const MARK_SIZE = 512;
 export const APP_GLYPH_FRACTION = 0.62;
 export const MASKABLE_GLYPH_FRACTION = 0.56;
 
+/**
+ * The canvas fraction a **raster mark** fills on the maskable set: 0.64, the owner's number.
+ *
+ * A mark is not a glyph. The template's book is a 24-unit stroked path, so 0.56 of the canvas is
+ * what keeps *its* farthest corner inside the 80 % safe circle. A raster mark's ink is a rectangle
+ * placed by `markBoxOf`, so how much of the circle it uses depends on its own aspect ratio — the
+ * AS monogram's ink is 1024 × 654, and at 0.64 the box is 327.7 × 209.3 whose half-diagonal is
+ * 194 px, inside the 205 px radius the OS may crop to. That is measured on the shipped raster by
+ * `tests/brand-icon.test.ts` rather than asserted here, because a second mark with a squarer
+ * aspect would need a different number and the test is what would say so.
+ *
+ * The ground is transparent, on the owner's instruction — there is no field to bleed, so the
+ * margin around the ink *is* the safe zone. A maskable icon with no background is not what the
+ * spec recommends and it is what this brand ships, deliberately.
+ */
+export const MASKABLE_MARK_FRACTION = 0.64;
+
 /** The app mark's corner radius as a fraction of the canvas — the `rounded-lg` the chrome draws. */
 export const APP_RADIUS_FRACTION = 0.2;
 
@@ -133,29 +150,13 @@ export const ICON_SUFFIXES = {
    * this URL, and a 404 there is the one icon request a reader never sees answered.
    */
   faviconIco: "-favicon.ico",
-  /** `apple-touch-icon`, 180×180, full bleed, opaque. */
+  /** `apple-touch-icon`, 180×180 — a glyph brand's full bleed and opaque, a mark brand's clear. */
   appleTouchIcon: "-apple-touch-icon.png",
-  /** The PWA 192 icon, full bleed, maskable-safe. */
+  /** The PWA 192 icon — full bleed and opaque for a glyph, a transparent mark at 64 % otherwise. */
   icon192: "-icon-192.png",
-  /** The PWA 512 icon, full bleed, maskable-safe. */
+  /** The PWA 512 icon, same rule as the 192. */
   icon512: "-icon-512.png",
 } as const;
-
-/**
- * The card mark's suffix — beside the surface table rather than inside it, because it is not a
- * browser-fetched icon surface (see `brandCardMarkPath`).
- */
-const CARD_MARK_SUFFIX = "-mark-192.png";
-
-/** The pixel size of the card mark (`-mark-192.png`). */
-export const CARD_MARK_SIZE = 192;
-
-/**
- * How much of the card mark's canvas its ink fills. Not the app icon's `APP_GLYPH_FRACTION`: the
- * card's tile supplies the ground, so the ink is the whole point of the file and only needs a
- * small margin to stay off the raster's edge.
- */
-export const CARD_MARK_FRACTION = 0.94;
 
 export type IconSurface = keyof typeof ICON_SUFFIXES;
 
@@ -173,25 +174,6 @@ export function brandIconPaths(id: string): Record<IconSurface, string> {
     icon192: brandIconPath(id, ICON_SUFFIXES.icon192),
     icon512: brandIconPath(id, ICON_SUFFIXES.icon512),
   };
-}
-
-/**
- * The mark alone, on transparent, at `CARD_MARK_SIZE` — the file the auth card draws.
- *
- * Not the app icon: an icon spends 38–44 % of its canvas on its own ground and padding, and the
- * card already paints that ground (the `bg-action` tile). Composing the two shrank the monogram to
- * a 15 px smudge that read as a generic avatar — measured by compositing candidates into the real
- * 48 px tile: icon at 24 px (what the card drew) is illegible, the mark at 32 px is crisp. So the
- * card gets the mark at `CARD_MARK_FRACTION` of a 192 px transparent square: ≥ 2× the 32 px box it
- * fills, and no ground of its own to double up with the tile.
- *
- * Written only for a brand whose record names a `mark` — a brand without one draws a *glyph* on
- * these screens, so there is no ink to strip a ground from. That is why this is a function beside
- * the surface table rather than a sixth entry in `ICON_SUFFIXES`: no manifest, `<link rel>` or OS
- * asks for this file, only `components/auth/mark-icon.tsx` does.
- */
-export function brandCardMarkPath(id: string): string {
-  return brandIconPath(id, CARD_MARK_SUFFIX);
 }
 
 /** One decimal, trailing `.0` trimmed — `256` reads better than `256.0`. */
@@ -255,16 +237,16 @@ function pt(value: number): string {
  * the image's display box is derived at the ink's own aspect ratio; there is nothing to letterbox.
  *
  * The mark is composited exactly as the file drew it — no recolour, no tint, no `ink` argument.
- * The one thing this function adds is the ground it sits on, which is the brand's own `action`:
- * the source mark is a light-ground asset with a white keyline around the monogram, so on that
- * blue it reads as the brand drew it.
+ * `ground` is normally `null`: the mark carries its own transparency, and the owner's instruction
+ * is that no surface paints a tile behind it. A brand that ever wants a field can pass a colour,
+ * which is why the parameter exists rather than being deleted; nothing in this tree passes one.
  */
 export function rasterMarkSvg(args: {
-  /** `null` paints no ground — the card mark, whose tile is drawn by the page (`brandCardMarkPath`). */
+  /** `null` paints no ground — the shipped case: the mark on a transparent canvas. */
   ground: string | null;
-  /** Corner radius in canvas units — `0` for the full-bleed maskable/apple square. */
+  /** Corner radius in canvas units — only meaningful when a ground is painted. */
   radius: number;
-  /** The mark's canvas fraction (`APP_GLYPH_FRACTION`, `MASKABLE_GLYPH_FRACTION`, `CARD_MARK_FRACTION`). */
+  /** The mark's canvas fraction (`APP_GLYPH_FRACTION`, `MASKABLE_MARK_FRACTION`). */
   fraction: number;
   /** The embedded raster: a data URI, its intrinsic pixel size, and its ink bbox in those pixels. */
   image: { href: string; width: number; height: number; ink: MarkInkBox };

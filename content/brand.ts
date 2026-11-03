@@ -99,6 +99,27 @@ export const zBrandColors = z
     action: zBrandColor,
     actionForeground: zBrandColor,
     navActive: zBrandColor,
+    /**
+     * The hover/pressed shade of an `action` fill — the colour a button goes to, not a fade.
+     *
+     * **Optional on purpose.** A brand that names one gets a solid hover painted from the record;
+     * a brand that names none keeps the sheet's default, which is `hsl(var(--action) / 0.9)` —
+     * exactly the `hover:bg-action/90` the buttons used before this key existed, so QuizHub's
+     * computed hover is the same colour it always was and only the utility name moved.
+     *
+     * It exists because a 90 % fade is a *lighter* button, and "pressed" reads as darker: the
+     * owner's palette names a graphite `action` with a darker `action-hover` (`#37474F` →
+     * `#2A373E`, 9.65:1 → 12.25:1 white), so the state change is a token rather than an opacity.
+     */
+    actionHover: zBrandColor.optional(),
+    /**
+     * The pressed shade of an `accent` fill, on the same rule as `actionHover`.
+     *
+     * `accent` is a **surface** token on AlignSynch — a chip or a chart series — and its ink is
+     * `accentForeground`, never white (white on `#08ADD5` is 2.64:1, forbidden). A pressed accent
+     * surface darkens to this (`#0693B8`, 3.58:1 against white, so it is a surface here too).
+     */
+    accentPress: zBrandColor.optional(),
   })
   .strict();
 
@@ -137,6 +158,35 @@ export const zBrandMarkSource = z
      * with transparent padding, cropped from the monogram half of the brand's own lockup.
      */
     src: zBrandLogoPath,
+  })
+  .strict();
+
+/**
+ * A recorded departure from the palette the logo samples.
+ *
+ * `scripts/sample-brand-colors.mjs` derives a brand's `primary` and `accent` from its logo file,
+ * so a hex typed from memory or copied off a screenshot fails `data:check`. That rule holds while
+ * the palette *is* the logo's palette. It stopped holding for AlignSynch when the owner picked a
+ * rendered sheet instead: the mark's own blue and green were dull at UI sizes, and the shipped
+ * palette is now a graphite and a cyan.
+ *
+ * A departure is therefore a **claim with evidence**, not a bypass. `sampled` must equal what the
+ * logo actually samples — the script measures the file and compares its own numbers with this
+ * block, so it cannot be filled in from memory either — and `reason` says who decided and why.
+ * A record whose colours equal the sample must not carry this block (the script fails a departure
+ * that agrees, which would be a comment pretending to be a difference).
+ */
+export const zBrandPaletteDeparture = z
+  .object({
+    /** What the logo file measures, as `scripts/sample-brand-colors.mjs` reports it. */
+    sampled: z
+      .object({
+        primary: zBrandColor,
+        accent: zBrandColor,
+      })
+      .strict(),
+    /** Who moved the palette off the sample, and why — a sentence, not a label. */
+    reason: z.string().min(1),
   })
   .strict();
 
@@ -204,6 +254,12 @@ export const zBrand = z
      * it, which is the failure this field was added to make impossible to ship quietly.
      */
     mark: zBrandMarkSource.optional(),
+    /**
+     * Set when `colors` deliberately departs from the palette the logo samples — see
+     * `zBrandPaletteDeparture`. Absent means the record *is* the sample, which is the default and
+     * what `scripts/sample-brand-colors.mjs --check` enforces.
+     */
+    paletteDeparture: zBrandPaletteDeparture.optional(),
     colors: zBrandColors,
     supportEmail: z.string().email(),
     affiliateEmail: z.string().email(),

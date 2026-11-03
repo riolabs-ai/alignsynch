@@ -93,13 +93,6 @@ export const media = {
     height: 1024,
     kind: "illustration",
   },
-  "brand.alignsynch-mark-192": {
-    src: "/brand/alignsynch-mark-192.png",
-    alt: "Alignsynch Mark 192",
-    width: 192,
-    height: 192,
-    kind: "illustration",
-  },
   "brand.as2-logo_v2_cl": {
     src: "/brand/as2-logo_v2_cl.png",
     alt: "As2 Logo V2 Cl",

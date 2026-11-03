@@ -99,8 +99,19 @@ describe("decodePng", () => {
     assert.deepEqual(alphaBBox(mark()), { x: 0, y: 185, width: 1024, height: 654 });
   });
 
-  it("is what the generated icon's full bleed looks like — the box is the whole raster", () => {
-    assert.deepEqual(alphaBBox(generated()), { x: 0, y: 0, width: 512, height: 512 });
+  it("has no ground — the shipped icon's canvas is transparent to the corner", () => {
+    // Owner, 2026-11-03: no tile behind the mark on any surface. So the icon's alpha box is its
+    // *ink* (the 64 % maskable box), not the whole raster, and the corner pixel is fully clear.
+    // Measured: 328 × 210 of ink inside 512, centred at (256, 256).
+    const image = generated();
+    const pixel = (x: number, y: number) =>
+      Array.from(image.data.subarray((y * image.width + x) * 4, (y * image.width + x) * 4 + 4));
+    assert.equal(pixel(0, 0)[3], 0, "the top-left corner must be transparent, not a painted tile");
+    assert.equal(pixel(511, 511)[3], 0, "and so must the bottom-right");
+    const ink = alphaBBox(image);
+    assert.ok(ink !== undefined);
+    assert.equal(ink.width, 328);
+    assert.equal(ink.height, 210);
   });
 
   it("writes an ICO whose entries point at their own payloads", () => {

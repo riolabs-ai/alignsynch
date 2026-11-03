@@ -53,7 +53,6 @@ import {
 import { registerCopy } from "@/data/pages/register";
 import { loginCopyFor, registerCopyFor } from "@/lib/auth-copy";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
-import { brandCardMarkPath } from "@/lib/brand-icon";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
 import type { ResetRequestOutcome, ResetSetOutcome } from "@/lib/auth/reset-token";
@@ -173,11 +172,10 @@ describe("every auth screen", () => {
   it("hands each screen the image its own record names", () => {
     // The `brand-mark` id is only ever as good as the path beside it: this is the join between
     // `lib/auth/marks.ts` and `data/brand.ts`, and it is what makes "the auth card wears the brand's
-    // own mark" a fact rather than two strings that happen to match today. The file is the mark
-    // alone on transparent (`brandCardMarkPath`) — not the app icon, whose own ground would sit
-    // inside the card's tile — and a brand that names no mark falls back to its icon.
+    // own mark" a fact rather than two strings that happen to match today. The file is the app icon
+    // itself — the mark on transparency since 2026-11-03 — so the card and the tab cannot drift.
     for (const [id, record] of BRANDS) {
-      const expected = record.mark === undefined ? record.icon : brandCardMarkPath(id);
+      const expected = record.icon;
       expect(AUTH_MARK_SRC_BY_BRAND[id], id).toBe(expected);
       if (AUTH_MARKS_BY_BRAND[id].hero === "brand-mark") {
         expect(record.mark, `${id} draws its own mark but names no file`).toBeDefined();

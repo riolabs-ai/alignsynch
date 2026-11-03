@@ -235,6 +235,29 @@ function recordValues(source) {
   return { primary: field("primary"), accent: field("accent") };
 }
 
+/**
+ * The record's `paletteDeparture`, when it carries one: the sample it says the logo measures, and
+ * why the shipped colours are not that sample.
+ *
+ * Read out of the source text rather than imported, because this file also runs without the
+ * TypeScript loader (`node scripts/sample-brand-colors.mjs` is how a human reads the evidence).
+ * The block is `sampled: { primary: "…", accent: "…" }` inside `paletteDeparture`, and the reason
+ * is ignored here — it is prose for a reader, and the zod schema holds it non-empty.
+ */
+function departureValues(source) {
+  const start = source.indexOf("paletteDeparture:");
+  if (start === -1) return undefined;
+  // To the end of the record's `colors`-sibling block: the next line that closes an object at
+  // the record's own indentation (`  },`) or the end of the file, whichever comes first.
+  const end = source.indexOf("\n  },", start);
+  const block = source.slice(start, end === -1 ? undefined : end);
+  const inner = (name) => {
+    const match = new RegExp(`\\b${name}:\\s*"(#[0-9a-fA-F]{3,8})"`).exec(block);
+    return match ? match[1].toLowerCase() : undefined;
+  };
+  return { primary: inner("primary"), accent: inner("accent") };
+}
+
 /* ------------------------------------------------------------------ *
  * CLI
  * ------------------------------------------------------------------ */
@@ -286,20 +309,50 @@ if (asJson) {
 }
 
 if (check) {
-  const record = recordValues(readFileSync(RECORD, "utf8"));
+  const source = readFileSync(RECORD, "utf8");
+  const record = recordValues(source);
+  const departure = departureValues(source);
   const drift = [
     ["primary", record.primary, blue.hex],
     ["accent", record.accent, green.hex],
   ].filter(([, recorded, sampled]) => recorded !== sampled);
-  if (drift.length > 0) {
-    for (const [name, recorded, sampled] of drift) {
-      console.error(
-        `sample-brand-colors: ${RECORD}: colors.${name} is ${recorded ?? "missing"}, the logo ` +
-          `samples ${sampled} — the record is derived from ${file}, so copy the sampled value ` +
-          `(node scripts/sample-brand-colors.mjs)`,
-      );
+
+  if (departure === undefined) {
+    if (drift.length > 0) {
+      for (const [name, recorded, sampled] of drift) {
+        console.error(
+          `sample-brand-colors: ${RECORD}: colors.${name} is ${recorded ?? "missing"}, the logo ` +
+            `samples ${sampled} — the record is derived from ${file}, so copy the sampled value ` +
+            `(node scripts/sample-brand-colors.mjs) or record a paletteDeparture`,
+        );
+      }
+      process.exit(1);
     }
-    process.exit(1);
+    console.log(`  ${RECORD} matches the sample`);
+  } else {
+    // A departure is a claim with evidence: the block must name the sample the logo really
+    // measures (so it cannot be filled in from memory) and must actually differ from the record
+    // (so it cannot be a comment pretending to be a difference).
+    if (departure.primary !== blue.hex || departure.accent !== green.hex) {
+      console.error(
+        `sample-brand-colors: ${RECORD}: paletteDeparture.sampled is ` +
+          `${departure.primary ?? "missing"}/${departure.accent ?? "missing"}, the logo samples ` +
+          `${blue.hex}/${green.hex} — record the measurement, not a memory of it`,
+      );
+      process.exit(1);
+    }
+    if (drift.length === 0) {
+      console.error(
+        `sample-brand-colors: ${RECORD}: paletteDeparture is set but colors match the sample — ` +
+          `a departure that is not one is a comment pretending to be a difference`,
+      );
+      process.exit(1);
+    }
+    console.log(
+      `  ${RECORD} departs from the sample on purpose — ` +
+        drift
+          .map(([name, recorded, sampled]) => `${name} ${recorded} (sampled ${sampled})`)
+          .join(", "),
+    );
   }
-  console.log(`  ${RECORD} matches the sample`);
 }

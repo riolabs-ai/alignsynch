@@ -11,7 +11,9 @@
  *     defect this card fixed: a white person silhouette on the brand's blue;
  *   - the mark's ink sits inside the 80 % safe circle the OS may crop to, measured on the shipped
  *     raster rather than asserted about the SVG;
- *   - the raster surfaces are opaque full-bleed squares with no transparent corner to double-round;
+ *   - a brand with a mark paints **no ground** on any surface (owner, 2026-11-03): the corner of
+ *     every shipped raster is fully transparent and the ink is the 64 % maskable box, while the
+ *     template's glyph brand stays opaque full bleed, byte for byte;
  *   - the favicon embeds a downscaled copy of the mark (an SVG favicon is downloaded on every page
  *     load) and the `.ico` is a container around the same app mark;
  *   - and the two brands still differ only by their mark and their tokens.
@@ -22,14 +24,14 @@ import { describe, expect, it } from "vitest";
 
 import { quizHubBrand } from "@/data/brand";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
+import { AUTH_MARK_SRC_BY_BRAND } from "@/lib/auth/marks";
 import {
   APP_GLYPH_FRACTION,
   APP_RADIUS_FRACTION,
-  CARD_MARK_FRACTION,
-  CARD_MARK_SIZE,
   MARK_PATHS,
   MARK_SIZE,
   MASKABLE_GLYPH_FRACTION,
+  MASKABLE_MARK_FRACTION,
   markBoxOf,
   markSvg,
 } from "@/lib/brand-icon";
@@ -178,9 +180,9 @@ describe("the generated icon set", () => {
     }
     expect(svg).toContain("<image");
     expect(svg).toContain("data:image/png;base64,");
-    expect(svg).toContain(`fill="${alignSynchBrand.colors.action}"`);
-    // Rounded, like the chrome's box — the app mark, not the full-bleed maskable square.
-    expect(svg).toMatch(/<rect[^>]*rx=/);
+    // And no tile behind it (owner, 2026-11-03): no ground rect, no fill. The mark is the file.
+    expect(svg, "the mark is drawn on a painted ground").not.toContain("<rect");
+    expect(svg).not.toContain("fill=");
   });
 
   it("places the mark's ink at the app fraction, centred, at its own aspect ratio", () => {
@@ -228,42 +230,49 @@ describe("the generated icon set", () => {
     }
   });
 
-  it("is opaque full bleed on the maskable set — no rounded corner, no transparency", () => {
-    for (const { id } of BRANDS) {
-      for (const surface of RASTERS) {
-        const image = decodePng(read(id, surface.file));
-        for (let index = 3; index < image.data.length; index += 4) {
-          if (image.data[index] !== 255) {
-            throw new Error(
-              `${id}${surface.file} has a transparent pixel — the OS double-rounds it`,
-            );
-          }
+  it("paints no ground for a brand with a mark, and an opaque full bleed for the one without", () => {
+    // Two paths, two rules, both deliberate. QuizHub's book is a *stroke*: with no ground it would
+    // be invisible, so its four files stay opaque full bleed — byte for byte what they were.
+    for (const surface of RASTERS) {
+      const image = decodePng(read("quizhub", surface.file));
+      for (let index = 3; index < image.data.length; index += 4) {
+        if (image.data[index] !== 255) {
+          throw new Error(
+            `quizhub${surface.file} has a transparent pixel — the OS double-rounds it`,
+          );
         }
       }
     }
+    // AlignSynch's mark carries its own colours and its own keyline, so the canvas behind it is
+    // clear on every raster (owner, 2026-11-03): no tile, no bleed, the margin is the safe zone.
+    for (const surface of RASTERS) {
+      const image = decodePng(read("alignsynch", surface.file));
+      const alphaAt = (x: number, y: number) => image.data[(y * image.width + x) * 4 + 3];
+      expect(alphaAt(0, 0), `alignsynch${surface.file} paints a tile in its corner`).toBe(0);
+      expect(alphaAt(image.width - 1, image.height - 1)).toBe(0);
+      const ink = alphaBBox(image);
+      if (ink === undefined) throw new Error(`alignsynch${surface.file} is empty`);
+      // The ink is the maskable box: 64 % of the canvas on its longest side, centred.
+      const longest = Math.max(ink.width, ink.height);
+      expect(longest / image.width).toBeCloseTo(MASKABLE_MARK_FRACTION, 1);
+      expect(ink.x * 2 + ink.width).toBeCloseTo(image.width, -1);
+      expect(ink.y * 2 + ink.height).toBeCloseTo(image.height, -1);
+    }
   });
 
-  it("writes the card mark for the brand that has one — mark, not icon, on transparent", () => {
-    // The auth card's tile paints the ground, so its mark is the ink alone (`brandCardMarkPath`).
-    // Drawn from the icon instead, the mark lost 38 % of its canvas to padding and read as a
-    // generic avatar at the 32 px box the card gives it.
-    const card = decodePng(read("alignsynch", "-mark-192.png"));
-    expect({ width: card.width, height: card.height }).toEqual({ width: 192, height: 192 });
-    // Transparent corners: the tile behind it is the ground. An opaque square here would paint a
-    // second, smaller blue square inside the tile.
-    expect(card.data[3], "the card mark's first pixel is opaque — its ground was not removed").toBe(
-      0,
-    );
-    const ink = alphaBBox(card);
-    if (ink === undefined) throw new Error("the card mark is empty");
-    // The ink is the point of this file, so it fills ≥ 90 % of the canvas (resvg's edge
-    // antialiasing makes the measured bbox a pixel or two wider than the geometric fraction) and
-    // never exceeds it — a mark cropped at the edge would lose its keyline.
-    const longest = Math.max(ink.width, ink.height);
-    expect(longest).toBeGreaterThan(0.9 * CARD_MARK_SIZE);
-    expect(longest).toBeLessThanOrEqual(CARD_MARK_SIZE);
-    // A brand with no mark draws a glyph on these screens and ships no card mark.
-    expect(existsSync(join(process.cwd(), "public", "brand", "quizhub-mark-192.png"))).toBe(false);
+  it("draws the card from the app icon — there is no second raster", () => {
+    // The card used to ship `-mark-192.png`: the mark alone, because the icon spent a third of its
+    // canvas on a ground the card's own `bg-action` tile already painted. The icon is now the mark
+    // on transparency, so the card draws `brand.icon` — the same file the tab shows — and a second
+    // raster would be the same pixels under another name.
+    expect(AUTH_MARK_SRC_BY_BRAND.alignsynch).toBe(alignSynchBrand.icon);
+    expect(AUTH_MARK_SRC_BY_BRAND.quizhub).toBe(quizHubBrand.icon);
+    for (const { id } of BRANDS) {
+      expect(
+        existsSync(join(process.cwd(), "public", "brand", `${id}-mark-192.png`)),
+        `${id} still ships a second raster for the card`,
+      ).toBe(false);
+    }
   });
 
   it("keeps the two brands apart by mark and token only — the files differ", () => {
@@ -276,15 +285,17 @@ describe("the generated icon set", () => {
     expect(read("quizhub", "-favicon.ico").equals(read("alignsynch", "-favicon.ico"))).toBe(false);
   });
 
-  it("uses the same fractions and radius for both brands — one shape rule, two marks", () => {
+  it("uses one fraction per mark *kind*, and one radius rule — identity is not a per-brand value", () => {
     // The constants are not per-brand: a mark that changed size between brands would be drift.
-    // The quizhub SVG states them literally, and the alignment mark fills the same fractions.
+    // What differs is the *kind* — a glyph is scaled from a 24-unit path (0.56 on the maskable
+    // set), a raster mark's ink is a rectangle sized to 64 % — and the quizhub SVG still states
+    // the glyph numbers literally.
     const book = text("quizhub", "-icon.svg");
     expect(book).toContain(`rx="${Math.round(APP_RADIUS_FRACTION * MARK_SIZE * 10) / 10}"`);
     const { ink } = markOf("alignsynch");
-    const maskable = markBoxOf(ink, MASKABLE_GLYPH_FRACTION);
+    const maskable = markBoxOf(ink, MASKABLE_MARK_FRACTION);
     expect(Math.max(maskable.width, maskable.height)).toBeCloseTo(
-      MASKABLE_GLYPH_FRACTION * MARK_SIZE,
+      MASKABLE_MARK_FRACTION * MARK_SIZE,
       1,
     );
   });

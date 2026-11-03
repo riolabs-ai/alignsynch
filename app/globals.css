@@ -77,6 +77,15 @@
     --input: 30 16% 84%;
     --ring: 222.2 84% 4.9%;
 
+    /* The hover/pressed step of a brand fill, as a *default* the record may override.
+       `hover:bg-action-hover` resolves to `hsl(var(--action) / 0.9)` for a brand that names no
+       `actionHover` — the same declaration `hover:bg-action/90` produced, which is why QuizHub's
+       buttons look identical while their class name moved to a token. A brand that names one
+       (AlignSynch: `#37474F` -> `#2A373E`) paints an opaque, darker shade inline on `<html>`,
+       which outranks this rule. Same argument for an accent surface's pressed state. */
+    --action-hover: hsl(var(--action) / 0.9);
+    --accent-press: hsl(var(--accent) / 0.9);
+
     /* The chart and sidebar sets, folded in from the `styles/globals.css` this card deleted.
        `tailwind.config.ts` resolves `chart-1..5` and the eight `sidebar-*` colours, and until
        now the only definitions in the tree sat in that un-imported sheet — so

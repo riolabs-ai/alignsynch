@@ -83,7 +83,7 @@ export default async function AssessmentDemoPage({
           <div className="mt-3">
             <Link
               href={demo.startPath}
-              className="inline-flex h-12 items-center justify-center rounded-md bg-action px-6 text-sm font-medium text-action-foreground hover:bg-action/90"
+              className="inline-flex h-12 items-center justify-center rounded-md bg-action px-6 text-sm font-medium text-action-foreground hover:bg-action-hover"
             >
               Start this relationship
             </Link>

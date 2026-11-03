@@ -164,7 +164,7 @@ export function AnswerForm({
 
       <button
         type="submit"
-        className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action/90"
+        className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
       >
         {itemLabel(section, hasAnswers ? "resubmit" : "submit")}
       </button>

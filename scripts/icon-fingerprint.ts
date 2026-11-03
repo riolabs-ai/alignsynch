@@ -36,7 +36,7 @@
  * worth of detail is averaged away while the silhouette survives: a monogram and a book do not
  * average to the same thing, which is the whole claim.
  */
-import { MASKABLE_GLYPH_FRACTION, MARK_SIZE, markBoxOf } from "../lib/brand-icon";
+import { MASKABLE_MARK_FRACTION, MARK_SIZE, markBoxOf } from "../lib/brand-icon";
 import { alphaBBox, type RgbaImage } from "./image-bytes";
 
 /** The grid a fingerprint is reduced to, per side. */
@@ -56,15 +56,18 @@ export const INK_DELTA = 16;
  *
  * Measured on the two sides of the defect this rule exists for, on the 512 surface, over the cells
  * where either side has ink (see `scripts/__tests__/icon-fingerprint.test.ts`, which prints the
- * four numbers as assertions):
+ * numbers as assertions):
  *
- *   the monogram, regenerated from `alignsynch-mark-1024.png`   < 8
- *   the white book glyph, the icon this card replaced            > 60
- *   an icon of the mark at the wrong safe fraction (0.62)        < 15
+ *   the monogram, regenerated from `alignsynch-mark-1024.png`   < 4    (3.46 measured)
+ *   the white book glyph, the icon this card replaced            > 80
+ *   the same mark placed at the app fraction (0.62)              < 12
+ *   the shipped icon compared at the glyph fraction (0.56)       < 30 — why the default below is
+ *                                                                `MASKABLE_MARK_FRACTION`
  *
  * so the threshold sits far above the resampling noise of a legitimate regeneration and far below
  * a different mark. It is a *distance*: smaller is closer, and a rule that accepted anything would
- * have to report 0 for the glyph too.
+ * have to report 0 for the glyph too — which is exactly the mistake the first version made by
+ * comparing mean colours on a ground that both icons shared.
  */
 export const ICON_MARK_MAX_DISTANCE = 30;
 
@@ -149,7 +152,7 @@ export function iconFingerprint(
 export function markFingerprint(
   mark: RgbaImage,
   ground: Rgb,
-  fraction: number = MASKABLE_GLYPH_FRACTION,
+  fraction: number = MASKABLE_MARK_FRACTION,
   size: number = FINGERPRINT_SIZE,
 ): Fingerprint {
   const out = grid(size);
@@ -254,7 +257,7 @@ export interface IconMarkMeasurement {
 export function measureIconAgainstMark(
   icon: RgbaImage,
   mark: RgbaImage,
-  fraction: number = MASKABLE_GLYPH_FRACTION,
+  fraction: number = MASKABLE_MARK_FRACTION,
 ): IconMarkMeasurement {
   const ground = groundOf(icon);
   const a = iconFingerprint(icon, ground);

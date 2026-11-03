@@ -96,11 +96,12 @@ export function MarkGlyph({
  * The box a mark needs inside the 48 px tile these cards draw it in.
  *
  * A glyph's paths reach the edge of the box they are given; a mark *file* is ink floating in a
- * square canvas, so the same box shows a smaller thing. `h-6` (24 px) was right for a lucide glyph
- * and put the AS monogram at ≈23 px of ink, where it read as a generic avatar smudge — composited
- * against the real tile at 24/30/32/40/48 px, 32 px is where it turns crisp and still keeps a safe
- * area. A glyph keeps `h-6`: QuizHub's cards are byte-identical to what they were.
+ * transparent canvas at `APP_GLYPH_FRACTION` (62 %), so the same box shows a smaller thing. `h-6`
+ * (24 px) was right for a lucide glyph and puts the AS monogram at ≈15 px of ink, where it read as
+ * a generic avatar smudge. The box the tile gives a mark is the tile itself — `h-12` (48 px) × 0.62
+ * ≈ 30 px of ink, measured crisp by compositing candidates into the real tile. A glyph keeps
+ * `h-6`: QuizHub's cards are byte-identical to what they were.
  */
 export function tileMarkClass(id: AuthMarkId): string {
-  return id === "brand-mark" ? "h-8 w-8" : "h-6 w-6";
+  return id === "brand-mark" ? "h-12 w-12" : "h-6 w-6";
 }

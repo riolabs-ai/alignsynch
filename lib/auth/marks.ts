@@ -32,7 +32,6 @@
  */
 import type { BrandId } from "@/data/brand";
 import { brands } from "@/data/brand";
-import { brandCardMarkPath } from "@/lib/brand-icon";
 
 /**
  * A glyph these surfaces can draw. Each id is one entry in `MARK_ICONS`
@@ -86,16 +85,16 @@ export const AUTH_MARKS_BY_BRAND: Readonly<Record<BrandId, AuthMarkSet>> = {
  * record's own `icon`, so "the card shows the tab icon" is structural rather than a coincidence
  * of two strings.
  *
+ * **It is the icon itself, not a second raster.** An earlier revision shipped a
+ * `-mark-192.png` because the icon spent a third of its canvas on a painted ground the card's own
+ * tile already supplied. The icon set is now the mark on transparency (owner, 2026-11-03), so
+ * drawing `brand.icon` in the tile *is* the mark at the card's size — 0.62 × 48 px ≈ 30 px of ink,
+ * the size that measured crisp — and a second file would have been the same pixels under a
+ * different name.
+ *
  * Only a brand whose set names `brand-mark` reads it; QuizHub's entry is here for the same reason
  * `Record<BrandId, …>` is the type — a third brand must decide, not inherit.
  */
 export const AUTH_MARK_SRC_BY_BRAND: Readonly<Record<BrandId, string>> = Object.fromEntries(
-  Object.entries(brands).map(([id, brand]) => [
-    id,
-    // The mark alone on transparent, at 192 px — not the app icon, which spends 38 % of its canvas
-    // on a ground the card's own tile already paints (`brandCardMarkPath`). A brand with no `mark`
-    // draws a glyph on these screens and never requests this path, so its entry is its icon: a
-    // value that exists, rather than a path to a file the generator never writes.
-    brand.mark === undefined ? brand.icon : brandCardMarkPath(id),
-  ]),
+  Object.entries(brands).map(([id, brand]) => [id, brand.icon]),
 ) as Record<BrandId, string>;

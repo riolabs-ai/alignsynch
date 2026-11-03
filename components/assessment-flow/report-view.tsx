@@ -62,7 +62,7 @@ const CARD = "rounded-lg border border-border bg-card p-4";
 const MUTED = "text-sm text-muted-foreground";
 const CHIP = "rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground";
 const PRIMARY =
-  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action/90";
+  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 const COLUMN =
   "py-1 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
 
