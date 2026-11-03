@@ -1011,6 +1011,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "domain",
+    surface: "components/tour",
+    status: "live",
+    templates: ["alignsynch"],
+    capability:
+      "The first-run tour: up to six steps spotlighting real console elements, a callout naming what each one is for, and a polite live region that announces every step change to a screen reader.",
+    notes:
+      "One file (`first-run-tour.tsx`), and a variation rather than a new pattern: the ancestor is `components/ui/popover.tsx`'s callout, stated in its `template-ancestor:` header — a panel anchored to an element, drawn by driver.js rather than Radix because the tour owns when it opens and needs the overlay, the step engine and the reduced-motion switch; no trigger, no portal, no Radix primitive. `live` because the domain has a real write path: dismissing or completing the tour `POST`s the viewer's own `tour_seen_at` mark to `/api/tour` (`lib/tour/mark.ts`), which is what makes it first-run rather than a nag — the read is the `/dashboard` route's job (`lib/db/tour.ts`), so no client module value-imports `lib/db/**` and E34 stays clean. The words are `data/pages/tour.ts`, parsed by the page and passed down, so this domain's own import closure reaches no `data/` module; driver.js is a dynamic import inside the effect, so nothing touches `window` during the server render. The six anchors live on the console's own elements and the shell's Support row; a step whose anchor is absent from the page is skipped rather than pointed at nothing, which is what the quiz build sees (its menu has no Support-row anchor for the sixth step) and what a returning account sees (no empty-state card for three of them).",
+  },
+  {
+    kind: "domain",
     surface: "components/tournaments",
     status: "fixture",
     templates: ["quizhub"],
