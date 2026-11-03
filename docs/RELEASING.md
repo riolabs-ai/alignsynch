@@ -225,6 +225,49 @@ every `party` row, so a mark cannot survive it, and `demo:reset` refuses the def
 Do not "repair" a V11 by making the instance complete either — the mark records that somebody read
 the unlock, and nobody did.
 
+### 2a (continued). When seeded instances read `answering`, stamp the seed's own instant — do not reseed
+
+Measured 2026-11-03. `#427/R2` (`90afb55e`, merged 2026-11-02T11:52Z) made `party.accepted_at` half
+of the `complete` derivation, and `db:seed` stamps it per instance from the fixture's own date
+(`scripts/db-seed.mjs`, the `INSERT INTO party (… accepted_at)` in `seedInstance`). Production's
+seeded rows were written **before** that stamp existed, so all four seeded instances read
+`answering` with every Aspect answered on both seats — their reports and tours locked behind
+`complete`. `db:verify` is green on this: nothing requires a seeded instance to be `complete`, which
+is why it went unnamed for a day.
+
+The repair is the acceptance column on the parties the fixture owns, and nothing else — one
+statement per instance, inside one transaction:
+
+```sql
+UPDATE party SET accepted_at = '<the instance record's fixture date>'
+ WHERE session_record_id = '<assessment-instance-slug>'
+   AND accepted_at IS NULL;
+```
+
+On production that was 8 rows (4 instances × 2 seats), 2026-11-03: `avery-rowan` and `ruth-sam`
+`2026-10-28`, `marco-priya` `2026-10-29T08:30Z`, `noor-iris` `2026-10-29T09:45Z` — the same instants
+`db:seed` writes, read from `data/assessments.ts` rather than typed. Afterwards `readFlowScreen`
+answers `complete` with a populated `report` for both demo seats, and `db:verify` still prints 0
+violations.
+
+**`pnpm db:seed` is not the fix on production, and the reason is structural, not caution:**
+
+- it `DELETE`s and re-inserts every `party` row of the instances it owns, which drops their
+  `user_id` bindings (the ones V10 pins) and any `unlock_seen_at` mark;
+- phase 1 always **removes** the three demo auth accounts and, with `DEMO_AUTH=1`, re-creates them
+  through the auth server — a write to `neon_auth`, which a content repair must not touch;
+- on today's production it refuses outright: `record` holds assessment rows the seed does not
+  author (instances and template copies people created in the app), and its "only seeded rows"
+  guard throws instead of deleting a row it did not write. Two of those instances belong to real
+  accounts, so a wipe would have destroyed live user rows.
+
+The rule that follows: `complete` is **derived**, so a rule change is a data event — after one,
+check whether the seeded instances still read `complete`, and if they do not, restore the acceptance
+the seed would have written rather than re-running the writer. Row counts, bindings and the
+`neon_auth` schema stay untouched; a backup of the affected rows precedes the write. This is a
+one-time catch-up, not a routine step: a fixture that needs a new stamp gets it in
+`scripts/db-seed.mjs`, never in a hand-written UPDATE.
+
 ### 3. Create the deployment, naming the commit
 
 For when the merge did not deploy — creation is off, the commit is not `main`'s tip, a deployment
