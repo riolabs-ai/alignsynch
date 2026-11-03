@@ -99,7 +99,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "op-resend",
       heading: "Reissue the invitation",
-      body: "Mints a new token and a new seven-day window. The old link dies the moment this commits, and the new one is shown once, here, for you to send. Available while the invitation is unclaimed.",
+      body: "Mints a new token and a new seven-day window. The old link dies the moment this commits, and the new one is shown once, here, for you to send. Available while the invitation is unclaimed; a withdrawn invitation is terminal and cannot be reissued.",
       items: [
         { id: "button", label: "Issue a new link" },
         { id: "email", label: "Send to a corrected address (optional)" },
@@ -108,7 +108,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "op-revoke",
       heading: "Withdraw the invitation",
-      body: "Kills the link for good. Nothing reopens it except a reissue, which is a new link and its own audit row. This needs an admin.",
+      body: "Kills the link for good. Nothing reopens it — not a claim, not a reissue — so the only way to invite this pair again is a new invitation. This needs an admin.",
       items: [{ id: "button", label: "Withdraw the link" }],
     },
     {

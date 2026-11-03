@@ -354,16 +354,45 @@ describe("resend — a new token, and the old hash dies", () => {
     );
     expect(update).toBeDefined();
     expect(update?.values[1]).not.toBe(result.after.token);
+
+    // The audit row names the invitation and both sides of the change, which is what
+    // `/admin/audit` prints for this action.
+    expect(db.auditParam("action")).toBe("invite.resend");
+    expect(db.auditParam("target_table")).toBe("session_invite");
+    expect(db.auditParam("target_id")).toBe(INSTANCE);
+    expect(JSON.parse(String(db.auditParam("before")))).toEqual({
+      email: "counterparty@example.com",
+      expiresAt: INVITE_EXPIRY.toISOString(),
+      resentCount: 1,
+    });
   });
 
-  it("clears a previous revocation, because a reissue is the operator's later decision", async () => {
+  it("refuses a withdrawn invitation: a revoke is terminal, so there is nothing to reissue", async () => {
     const db = new FakeDb();
     db.fixture.invite = { ...db.fixture.invite!, revoked_at: REVOKED_INSTANT };
+
+    await expect(resendInvite({ ...request, email: null }, runnerOver(db))).rejects.toMatchObject({
+      name: "OpRefused",
+      reason: "already-revoked",
+    });
+
+    // The refusal is inside the transaction and before the write: no token, no audit row, nothing
+    // committed. This is the half of "terminal" the store enforces; `claimInvite()` is the other.
+    expect(db.order).toEqual(["BEGIN", "SELECT role", "SELECT session_invite", "ROLLBACK"]);
+    expect(db.order).not.toContain("UPDATE session_invite.token");
+    expect(db.order).not.toContain("INSERT admin_action");
+    expect(db.committed).toEqual([]);
+  });
+
+  it("never writes `revoked_at = NULL`: only `revokeInvite` may speak about a revocation", async () => {
+    const db = new FakeDb();
     await resendInvite({ ...request, email: null }, runnerOver(db));
     const update = db.statements.find(({ text }) =>
       /^UPDATE session_invite\s+SET token_hash/i.test(text.trimStart()),
     );
-    expect(update?.text).toMatch(/revoked_at = NULL/);
+    expect(update).toBeDefined();
+    expect(update?.text).not.toMatch(/revoked_at/i);
+    expect(update?.text).not.toMatch(/revoked_by/i);
   });
 
   it("refuses a claimed invitation", async () => {
@@ -412,6 +441,20 @@ describe("revoke — the link dies, terminally", () => {
     expect(update?.values).toEqual([INSTANCE, ACTOR]);
     expect(result.after.revokedAt).toBe(REVOKED_INSTANT.toISOString());
     expect(db.auditParam("reason")).toBe(REASON);
+
+    // The audit row names the invite and carries both sides of the change, which is what
+    // `/admin/audit` prints for this action.
+    expect(db.auditParam("action")).toBe("invite.revoke");
+    expect(db.auditParam("target_table")).toBe("session_invite");
+    expect(db.auditParam("target_id")).toBe(INSTANCE);
+    expect(JSON.parse(String(db.auditParam("before")))).toEqual({
+      claimedAt: null,
+      expiresAt: INVITE_EXPIRY.toISOString(),
+      revokedAt: null,
+    });
+    expect(JSON.parse(String(db.auditParam("after")))).toEqual({
+      revokedAt: REVOKED_INSTANT.toISOString(),
+    });
   });
 
   it("refuses an already-revoked invitation", async () => {
