@@ -20,6 +20,7 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { FIXTURE_TEMPLATE_WITHOUT_ADMIN } from "./fixtures/fixture-brand";
 import { type FlagDefinition, flagDefinition, flags, zFlags } from "@/data/flags";
 import {
   bypassesForAdmin,
@@ -127,7 +128,7 @@ describe("the environment value", () => {
 });
 
 describe("the record", () => {
-  it("declares the eight deferred surfaces and the brand boundary, and nothing else", () => {
+  it("declares the eight deferred surfaces and the two product capabilities, and nothing else", () => {
     expect(Object.keys(flags).sort()).toEqual([
       "commerce.affiliate",
       "commerce.pricing",
@@ -137,6 +138,7 @@ describe("the record", () => {
       "community.tournaments",
       "create.editor",
       "create.generator",
+      "product.admin",
       "product.quiz-surfaces",
     ]);
   });
@@ -252,6 +254,32 @@ describe("the nav and the browser", () => {
 
     vi.stubEnv("BRAND", "alignsynch");
     expect([...hiddenNavHrefs()].sort()).toEqual([...QUIZ_SURFACES, ...MOCK_GATES].sort());
+  });
+
+  it("carries the console's entry points on the capability switch, on for both templates today (#509)", () => {
+    const ADMIN_SURFACES = ["/admin/console", "/admin/gaps", "/admin/instances"];
+    for (const href of ADMIN_SURFACES) expect(navSurfaces[href]).toBe("product.admin");
+
+    // Both templates this tree ships claim the capability, so the console is on and nothing is
+    // hidden: the shell renders what it rendered before the flag existed.
+    for (const template of ["quizhub", "alignsynch"]) {
+      vi.stubEnv("BRAND", template);
+      expect(isEnabled("product.admin"), `${template} must ship the console today`).toBe(true);
+      for (const href of ADMIN_SURFACES) expect(hiddenNavHrefs()).not.toContain(href);
+    }
+
+    // The fixture brand: a template id the record does not name. This is the state a derived
+    // product reaches by leaving `templates` — the capability is off, so the nav must not offer a
+    // row that answers 404.
+    vi.stubEnv("BRAND", FIXTURE_TEMPLATE_WITHOUT_ADMIN);
+    expect(isEnabled("product.admin")).toBe(false);
+    for (const href of ADMIN_SURFACES) expect(hiddenNavHrefs()).toContain(href);
+
+    // And the operator's lever closes the same rows on a template that ships the console.
+    vi.stubEnv("BRAND", "alignsynch");
+    vi.stubEnv("FLAG_PRODUCT_ADMIN", "0");
+    expect(isEnabled("product.admin")).toBe(false);
+    for (const href of ADMIN_SURFACES) expect(hiddenNavHrefs()).toContain(href);
   });
 
   it("refuses to resolve in a browser — a flag the client decides enforces nothing", () => {

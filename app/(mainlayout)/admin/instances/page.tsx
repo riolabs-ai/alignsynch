@@ -2,11 +2,13 @@
  * `/admin/instances` — every relationship in the system, for an operator (console-ia §3.5,
  * card 3/5). The first console surface, and the first admin route outside `/demo/admin`.
  *
- * **The gate comes first, before anything is read.** `requireAdmin()` answers one of three ways
- * and never returns for a refusal: a member gets `notFound()` — the same 404 a URL that never
- * existed returns, not a 403 and not a redirect — a signed-out visitor is sent to `/login` with
- * this path as `next`, and only an `admin` session reaches the read below. The order matters:
- * calling it after the read would mean the database work (and any timing difference between
+ * **The gate comes first, before anything is read.** `requireAdminProduct()` (#509) runs ahead of
+ * `requireAdmin()`: the console is a template capability, so a template that does not claim it
+ * answers the 404 an unknown URL gets before a session is consulted. Then `requireAdmin()` answers
+ * one of three ways and never returns for a refusal: a member gets `notFound()` — the same 404 a URL
+ * that never existed returns, not a 403 and not a redirect — a signed-out visitor is sent to
+ * `/login` with this path as `next`, and only an `admin` session reaches the read below. The order
+ * matters: calling it after the read would mean the database work (and any timing difference between
  * "rows exist" and "rows do not") happens for somebody who may not see the result.
  *
  * `next` is passed explicitly so the sign-in round trip returns an admin who followed a
@@ -32,6 +34,7 @@ import { InstanceRegistry } from "@/components/admin/instance-registry";
 import { adminInstancesPageCopy } from "@/data/pages/admin-instances";
 import { ADMIN_INSTANCES_PATH, type AdminInstanceRow } from "@/lib/admin/instance-registry";
 import { requireAdmin } from "@/lib/auth/require-role";
+import { requireAdminProduct } from "@/lib/brand-boundary";
 import { listAdminInstances } from "@/lib/db/admin-instances";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 
@@ -59,6 +62,9 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminInstancesPage() {
+  // The capability before the role (#509): a template that does not claim `product.admin` answers
+  // the 404 an unknown URL gets, with no session read and no database work behind it.
+  requireAdminProduct();
   await requireAdmin({ next: ADMIN_INSTANCES_PATH });
 
   let rows: readonly AdminInstanceRow[] = [];

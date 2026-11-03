@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { requireAdmin } from "@/lib/auth/require-role";
+import { requireAdminProduct } from "@/lib/brand-boundary";
 import { V1StoreProvider } from "@/lib/v1/store";
 
 /**
@@ -36,6 +37,13 @@ import { V1StoreProvider } from "@/lib/v1/store";
 export const dynamic = "force-dynamic";
 
 export default async function AdminConsoleLayout({ children }: { children: ReactNode }) {
+  /**
+   * The capability first (#509), then the role. A template that does not claim `product.admin` has
+   * no console at all, so it answers the 404 an unknown URL gets before any session or profile is
+   * read; a template that claims it falls through to the role gate's three answers. Reversed, a
+   * product without a console would send people to `/login` for a surface it does not sell.
+   */
+  requireAdminProduct();
   await requireAdmin({ next: "/admin/console" });
   return <V1StoreProvider>{children}</V1StoreProvider>;
 }
