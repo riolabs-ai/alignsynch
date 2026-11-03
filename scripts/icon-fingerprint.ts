@@ -22,8 +22,8 @@
  * some channel). A missing mark, a differently-shaped glyph, or ink in the wrong place all land
  * in that set; two renders of the same mark agree in it.
  *
- *   mark   its ink is placed at the surface's safe fraction on a ground, exactly as the generator
- *          places it, then area-averaged into the grid;
+ *   mark   its ink is placed at the surface's safe fraction — on transparency for a mark brand,
+ *          which is what the generator ships — then area-averaged into the grid;
  *   icon   the shipped `-icon-512.png`, area-averaged into the same grid.
  *
  * Nothing here imports the generator or resvg. That is on purpose: if the fingerprint were
@@ -36,7 +36,7 @@
  * worth of detail is averaged away while the silhouette survives: a monogram and a book do not
  * average to the same thing, which is the whole claim.
  */
-import { MASKABLE_GLYPH_FRACTION, MARK_SIZE, markBoxOf } from "../lib/brand-icon";
+import { MASKABLE_MARK_FRACTION, MARK_SIZE, markBoxOf } from "../lib/brand-icon";
 import { alphaBBox, type RgbaImage } from "./image-bytes";
 
 /** The grid a fingerprint is reduced to, per side. */
@@ -56,11 +56,14 @@ export const INK_DELTA = 16;
  *
  * Measured on the two sides of the defect this rule exists for, on the 512 surface, over the cells
  * where either side has ink (see `scripts/__tests__/icon-fingerprint.test.ts`, which prints the
- * four numbers as assertions):
+ * numbers as assertions) — the icon is transparent, so both sides are premultiplied:
  *
- *   the monogram, regenerated from `alignsynch-mark-1024.png`   < 8
- *   the white book glyph, the icon this card replaced            > 60
- *   an icon of the mark at the wrong safe fraction (0.62)        < 15
+ *   the monogram, regenerated from `alignsynch-mark-1024.png`   3.46
+ *   the white book glyph on the brand's blue, the icon this
+ *   card replaced (and every surface it shipped on)             78.82
+ *   the same mark placed at the app fraction (0.62)             11.11
+ *   the shipped icon compared at the glyph fraction (0.56)      29.29 — why the default below is
+ *                                                               `MASKABLE_MARK_FRACTION`
  *
  * so the threshold sits far above the resampling noise of a legitimate regeneration and far below
  * a different mark. It is a *distance*: smaller is closer, and a rule that accepted anything would
@@ -83,7 +86,15 @@ function alphaAt(image: RgbaImage, x: number, y: number): number {
   return image.data[(y * image.width + x) * 4 + 3] / 255;
 }
 
-/** The ground an icon is painted on: the mean of its four corners, which are opaque by contract. */
+/** The ground an icon is painted on: the mean of its four corners.
+ *
+ * An opaque surface (a glyph brand) gives its `action` colour. A **transparent** surface (a mark
+ * brand, owner 2026-11-03) gives the transparent pixel's colour — black — and that is the right
+ * answer rather than a degenerate one: compositing the icon over black yields the icon's
+ * premultiplied colour, and the mark side is premultiplied the same way, so the two grids are
+ * still the same quantity. What the comparison must not do is guess a ground the icon does not
+ * have.
+ */
 export function groundOf(image: RgbaImage): Rgb {
   const corners = [
     pixelAt(image, 0, 0),
@@ -149,7 +160,7 @@ export function iconFingerprint(
 export function markFingerprint(
   mark: RgbaImage,
   ground: Rgb,
-  fraction: number = MASKABLE_GLYPH_FRACTION,
+  fraction: number = MASKABLE_MARK_FRACTION,
   size: number = FINGERPRINT_SIZE,
 ): Fingerprint {
   const out = grid(size);
@@ -249,12 +260,13 @@ export interface IconMarkMeasurement {
 
 /**
  * Measure an icon against a mark. The icon supplies the ground, so a brand whose surface is not
- * its `action` colour is still compared against *its own* composition rather than a guessed hex.
+ * its `action` colour — a transparent mark icon, whose corners read as black — is still compared
+ * against *its own* composition rather than a guessed hex.
  */
 export function measureIconAgainstMark(
   icon: RgbaImage,
   mark: RgbaImage,
-  fraction: number = MASKABLE_GLYPH_FRACTION,
+  fraction: number = MASKABLE_MARK_FRACTION,
 ): IconMarkMeasurement {
   const ground = groundOf(icon);
   const a = iconFingerprint(icon, ground);

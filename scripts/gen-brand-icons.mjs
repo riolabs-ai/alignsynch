@@ -11,26 +11,37 @@
  *
  * So the generator no longer decides what a mark looks like. It reads the record:
  *
- *   brand.mark.src   present  -> that file's ink is rasterised onto each surface's ground
- *                    absent   -> the template's vector book (`lib/brand-icon.ts`)
+ *   brand.mark.src   present  -> that file's ink is rasterised onto a *transparent* canvas
+ *                    absent   -> the template's vector book on `brand.colors.action`
  *
- * and emits, per brand, from `brand.colors.action` as the ground:
+ * and emits, per brand:
  *
  *   public/brand/<id>-icon.svg                  the favicon — `brand.icon`, the app mark
  *   public/brand/<id>-favicon.ico               `/favicon.ico`, 32 + 48 right-hand entries
- *   public/brand/<id>-apple-touch-icon.png      180×180, full bleed, opaque, no transparency
- *   public/brand/<id>-icon-192.png              192×192, full bleed, maskable-safe
- *   public/brand/<id>-icon-512.png              512×512, full bleed, maskable-safe
+ *   public/brand/<id>-apple-touch-icon.png      180×180
+ *   public/brand/<id>-icon-192.png              192×192
+ *   public/brand/<id>-icon-512.png              512×512
+ *
+ * ## No tile behind the mark (owner, 2026-11-03)
+ *
+ * A brand with its own mark gets **no ground**: the mark is full colour with its own white
+ * keyline, and the owner asked for it to sit on transparency on every surface rather than on a
+ * painted square. The maskable PNGs are the case that used to require a ground — the spec wants a
+ * full-bleed field so the OS can crop into it — and a background-free maskable icon is what this
+ * brand ships deliberately: the mark is drawn at 64 % (`MASKABLE_MARK_FRACTION`) and the margin
+ * around it is the safe zone. That is a stated choice, not an oversight; the alternative was a
+ * blue tile the owner has now rejected twice.
  *
  * ## Both brands, one generator, two marks
  *
- * QuizHub keeps its `action` (#6366f1) and the template's book; its four original files are
- * byte-for-byte what they were before the raster path existed, which is measured rather than
- * claimed (the branch's first commit records their sha256). AlignSynch paints its own blue
- * (#156898) and composites `alignsynch-mark-1024.png` — cropped from its lockup — compressing the
- * transparent padding by placing the *ink*, not the canvas (`lib/brand-icon.ts::markBoxOf`).
- * Identical geometry, different mark: the fractions and the radius are constants, not per-brand
- * values, so a mark that changed size between brands would be drift, not a variation.
+ * QuizHub keeps its `action` (#6366f1) and the template's book: a glyph is *ink on a ground*, so
+ * its four original files are byte-for-byte what they were before the raster path existed —
+ * measured, not claimed (`tests/brand-icon.test.ts` pins the fractions and the opacity, and the
+ * branch's first commit records their sha256). AlignSynch composites `alignsynch-mark-1024.png` on
+ * transparency on every surface, compressing the source's transparent padding by placing the
+ * *ink*, not the canvas (`lib/brand-icon.ts::markBoxOf`). The two paths differ in more than the
+ * pixels: a glyph is a shape *painted* on the brand's action colour, and a mark is a file *placed*
+ * on nothing.
  *
  * ## Why the favicon is SVG and the maskable set is PNG
  *
@@ -38,10 +49,11 @@
  * compares byte-for-byte on any box. The apple-touch icon and the PWA 192/512 icons are *rasters*
  * by contract — iOS renders no SVG for a home-screen icon and a manifest declares `image/png` —
  * so those three surfaces are rasterised by `@resvg/resvg-js`, deterministic for a pinned version,
- * and their bytes still compare exactly in `--check`. The favicon is a rounded box; the apple-touch
- * and PWA icons are full squares because iOS and the OS mask the corners themselves, and a
- * pre-rounded corner double-rounds. The mark drops to 56 % so it sits inside the 80 % safe circle
- * the OS is allowed to crop to.
+ * and their bytes still compare exactly in `--check`. A glyph brand's favicon is a rounded box and
+ * its apple-touch/PWA icons are full squares, because iOS and the OS mask the corners themselves
+ * and a pre-rounded corner double-rounds; the book drops to 56 % so it sits inside the 80 % safe
+ * circle. A mark brand paints no square at all, so there is no corner to round and nothing to
+ * double-round.
  *
  * The SVG favicon embeds the mark at `FAVICON_EMBED_SIZE` (64 px), not at 1024: an SVG favicon is
  * downloaded on every page load, and the full source is a 400 KB text file to draw a mark 20 CSS
@@ -63,6 +75,7 @@ import {
   CARD_MARK_FRACTION,
   CARD_MARK_SIZE,
   MASKABLE_GLYPH_FRACTION,
+  MASKABLE_MARK_FRACTION,
   MARK_SIZE,
   brandCardMarkPath,
   brandIconPaths,
@@ -88,8 +101,12 @@ const ICO_SIZES = [32, 48];
 const { brands } = await import("../data/brand.ts");
 
 /**
- * The surfaces one brand emits. `fraction` is the canvas fraction the mark's ink fills on that
- * surface; `radius` is the corner radius in canvas units (0 = full bleed).
+ * The surfaces one brand emits. `glyph` is the canvas fraction a *vector* mark fills on that
+ * surface and `mark` the fraction a *raster* mark fills — two numbers because a glyph's box is
+ * scaled from a 24-unit path while a raster mark's ink is a rectangle, and the safe-circle maths
+ * differs (see `MASKABLE_MARK_FRACTION`). `radius` is the corner radius in canvas units, used only
+ * when a ground is painted (a glyph brand); a mark brand's canvas is transparent and has no tile
+ * to round.
  */
 const SURFACES = [
   {
@@ -97,33 +114,32 @@ const SURFACES = [
     width: 32,
     height: 32,
     radius: APP_RADIUS_FRACTION * MARK_SIZE,
-    fraction: APP_GLYPH_FRACTION,
-    /** The vector path's parameter name for the same quantity. */
     glyph: APP_GLYPH_FRACTION,
+    mark: APP_GLYPH_FRACTION,
   },
   {
     surface: "appleTouchIcon",
     width: 180,
     height: 180,
     radius: 0,
-    fraction: MASKABLE_GLYPH_FRACTION,
     glyph: MASKABLE_GLYPH_FRACTION,
+    mark: MASKABLE_MARK_FRACTION,
   },
   {
     surface: "icon192",
     width: 192,
     height: 192,
     radius: 0,
-    fraction: MASKABLE_GLYPH_FRACTION,
     glyph: MASKABLE_GLYPH_FRACTION,
+    mark: MASKABLE_MARK_FRACTION,
   },
   {
     surface: "icon512",
     width: 512,
     height: 512,
     radius: 0,
-    fraction: MASKABLE_GLYPH_FRACTION,
     glyph: MASKABLE_GLYPH_FRACTION,
+    mark: MASKABLE_MARK_FRACTION,
   },
 ];
 
@@ -181,6 +197,10 @@ function embeddedImage(mark) {
  * A surface's SVG for a brand, from the mark the record names (or the template's vector book when
  * it names none). The favicon embeds the downscaled copy; every other surface embeds the source,
  * because those are rasterised once and never downloaded.
+ *
+ * A brand with a mark gets `ground: null` — no tile on any surface (owner, 2026-11-03). A brand
+ * without one draws the template's book on its own `action`, which is what makes QuizHub's files
+ * byte-identical to what they were.
  */
 function surfaceSvg(brand, surface) {
   if (brand.mark === undefined) {
@@ -196,9 +216,9 @@ function surfaceSvg(brand, surface) {
   }
   const mark = surface.surface === "icon" ? brand.markImage.embedded : brand.markImage;
   return rasterMarkSvg({
-    ground: brand.colors.action,
-    radius: surface.radius,
-    fraction: surface.fraction,
+    ground: null,
+    radius: 0,
+    fraction: surface.mark,
     image: embeddedImage(mark),
     width: surface.width,
     height: surface.height,
@@ -243,9 +263,9 @@ function brandFiles(id, brand) {
     files.push({ file: paths[surface.surface], bytes });
   }
 
-  // The favicon the browser asks for by convention. It is the *app* mark — rounded, 62 % — at two
-  // sizes, because that is the shape a tab shows; transparency in the corners is what makes a
-  // rounded tile look rounded on a light or a dark tab strip.
+  // The favicon the browser asks for by convention. It is the *app* mark at two sizes, because
+  // that is the shape a tab shows: a rounded tile with the glyph on it for a brand without a
+  // mark, the mark on transparency for a brand with one.
   const appSurface = SURFACES[0];
   files.push({
     file: paths.faviconIco,
@@ -326,7 +346,8 @@ for (const [id, record] of Object.entries(brands)) {
   }
   if (!CHECK) {
     const source = brand.mark === undefined ? "the template mark" : brand.mark.src;
-    console.log(`  wrote public/brand/${id}-* (${brand.name}, ${brand.colors.action}, ${source})`);
+    const ground = brand.mark === undefined ? `on ${brand.colors.action}` : "on transparency";
+    console.log(`  wrote public/brand/${id}-* (${brand.name}, ${source} ${ground})`);
   }
 }
 

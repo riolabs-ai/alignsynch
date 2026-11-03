@@ -5,7 +5,8 @@
  * A rule that cannot fail is the thing this project keeps re-learning, so every case here is
  * asserted against a violating input first and against the real tree last:
  *
- *   - the template's book glyph — literally the icon AlignSynch shipped until this card — fails,
+ *   - the template's book glyph — literally the icon AlignSynch shipped until this card, on the
+ *     brand's blue — fails,
  *   - a solid ground with no mark on it fails,
  *   - a *different* mark (QuizHub's book, used as the source) fails,
  *   - the regenerated monogram passes, and passes while the source is re-padded,
@@ -22,7 +23,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import { brands } from "../../data/brand";
-import { MASKABLE_GLYPH_FRACTION } from "../../lib/brand-icon";
+import { MASKABLE_MARK_FRACTION } from "../../lib/brand-icon";
 import { alphaBBox, decodePng, encodeIco, pngSize, type RgbaImage } from "../image-bytes";
 import {
   ICON_MARK_MAX_DISTANCE,
@@ -99,8 +100,10 @@ describe("decodePng", () => {
     assert.deepEqual(alphaBBox(mark()), { x: 0, y: 185, width: 1024, height: 654 });
   });
 
-  it("is what the generated icon's full bleed looks like — the box is the whole raster", () => {
-    assert.deepEqual(alphaBBox(generated()), { x: 0, y: 0, width: 512, height: 512 });
+  it("is what the generated icon's transparent canvas looks like — the box is the mark's", () => {
+    // The icon carries no tile (owner, 2026-11-03), so its ink box is the mark at 64 % of the
+    // canvas, centred — not the whole raster a full-bleed ground would give.
+    assert.deepEqual(alphaBBox(generated()), { x: 92, y: 151, width: 328, height: 210 });
   });
 
   it("writes an ICO whose entries point at their own payloads", () => {
@@ -242,7 +245,7 @@ describe("the shipped icon set", () => {
       if (record.mark === undefined) continue;
       const icon = decodePng(read(`/brand/${id}-icon-512.png`));
       const source = decodePng(read(record.mark.src));
-      const measurement = measureIconAgainstMark(icon, source, MASKABLE_GLYPH_FRACTION);
+      const measurement = measureIconAgainstMark(icon, source, MASKABLE_MARK_FRACTION);
       assert.ok(
         measurement.distance <= measurement.limit,
         `${id}: ${measurement.distance.toFixed(2)} > ${measurement.limit} — ${id}-icon-512.png no longer looks like ${record.mark.src}`,

@@ -70,15 +70,19 @@ const MARK = "/brand/alignsynch-mark-1024.png";
  * Changing a mark is an owner decision with an approved PRD; changing this table is how that
  * decision is recorded. No other edit to the tree can make a new mark pass.
  *
- * The icon and the apple-touch icon moved when the icon set stopped being drawn from a glyph and
- * started being generated from `MARK` — the AS monogram, on the brand's blue, at the sizes
- * `lib/brand-icon.ts` derives. That is the change this table records, not a redraw: the
- * generator reproduces both files byte for byte (`pnpm brand:icons` is a no-op on this tree).
+ * The icon and the apple-touch icon moved twice, and both moves are this table's record of an
+ * owner decision rather than a redraw. First they stopped being drawn from a glyph and started
+ * being generated from `MARK` — the AS monogram, at the sizes `lib/brand-icon.ts` derives. Then
+ * the tile behind the mark came off (owner, 2026-11-03): every surface carries the mark on
+ * **transparency**, so the icon SVG has no ground `<rect>` and the PNG has transparent corners.
+ * Neither change touches a pixel of the mark, the lockup or the typesetting; the generator
+ * reproduces both files byte for byte (`pnpm brand:icons` is a no-op on this tree), and the four
+ * digests below are what `sha256sum` reports on this head.
  */
 const SHA256: Record<string, string> = {
   [LOGO]: "6ddd15a2031cab928cd7a87c6316aee81fe93e6a4f57ac55b9b0be01b3d3e4af",
-  [ICON]: "0321c960d6f56787998cefd43881ceda83613307921889b40ff380bf0bf45ee1",
-  [APPLE]: "ec08d6c95956fbeb559fccc8872642e7fc159c7cd2fccf36f455209292299bcc",
+  [ICON]: "bda9b0a526103ea6b50eb412f4edef2844bf81f72598276a8c26ccbcacc09c9f",
+  [APPLE]: "1edf9fab49e091bf7e3a179ff9dc321b98c2bdb94528fa468a86d6ed847d3a80",
   [MARK]: "7f73c77c2f9c0d7a2029f088f6c567207f7b41b9c901b3cdbb1650a3d95804c3",
 };
 

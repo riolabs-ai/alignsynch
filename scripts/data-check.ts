@@ -1099,13 +1099,15 @@ const brandWordCensus = `${brandWordResult.census.fixtures.length} alignment fix
  * So this is the comparison, at the coarsest useful resolution: a 32×32 fingerprint of the shipped
  * `-icon-512.png` against the mark the record names, composited at the maskable fraction on the
  * icon's own ground, and a distance with a threshold `scripts/icon-fingerprint.ts` documents.
+ * The ground is read off the icon — opaque `action` for a glyph brand, transparent (which reads as
+ * black, both sides premultiplied) for a mark brand, whose icon carries no tile at all.
  * A brand with no `mark` is skipped — QuizHub's book *is* its mark, and the template's brand must
  * stay free to draw it.
  *
  * The rule is deliberately perceptual rather than byte-exact: it passes a re-rendered icon, a
  * different encoder and a mark re-exported with different padding, and it fails a different shape.
  * Its negative cases live in `scripts/__tests__/icon-fingerprint.test.ts`, which asserts the old
- * glyph fails (83.3) and the regenerated monogram passes (3.9) on the same fixture.
+ * glyph fails (78.82) and the regenerated monogram passes (3.46) on the same fixture.
  * ------------------------------------------------------------------ */
 
 const iconMarkMeasurements: string[] = [];

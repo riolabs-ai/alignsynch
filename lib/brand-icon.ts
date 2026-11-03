@@ -17,18 +17,21 @@
  *
  * A brand that ships its own mark (`brand.mark.src`, a raster under `public/`) does **not** get a
  * glyph drawn over its ground: `rasterMarkSvg` places its ink, at the surface's safe fraction, on
- * the same ground. The failure this replaces is not cosmetic — an icon generated from a generic
- * glyph put a white person silhouette on AlignSynch's blue, on the tab, the home screen and the
- * auth card, while the brand's own monogram sat unused in `public/`.
+ * **transparency** — no tile behind the mark on any surface (owner, 2026-11-03). The failure this
+ * replaces is not cosmetic — an icon generated from a generic glyph put a white person silhouette
+ * on AlignSynch's blue, on the tab, the home screen and the auth card, while the brand's own
+ * monogram sat unused in `public/`. The tile that replaced it was the second answer to the same
+ * question, and the owner rejected it too: the mark is full colour with its own keyline, and a
+ * painted square behind it is a second ground the brand did not draw.
  *
  * ## No colour lives here
  *
  * The paths carry no fill and no stroke colour: a path here is a shape, and the colour is a
- * *token* the caller passes in. `scripts/gen-brand-icons.mjs` paints `colors.action` as the
- * ground; `lib/brand-og.tsx` paints the same pair inverted for the badge; the in-app glyph strokes
- * `currentColor` and inherits whatever `text-*` token the box around it sets. So the hex still
- * lives in exactly one home — `data/brand.ts` — and this file holds none. A raster mark is never
- * recoloured: it is composited on the ground exactly as the file drew it.
+ * *token* the caller passes in. `scripts/gen-brand-icons.mjs` paints `colors.action` as the ground
+ * of a **glyph** brand (and nothing else); `lib/brand-og.tsx` paints the same pair for the badge;
+ * the in-app glyph strokes `currentColor` and inherits whatever `text-*` token the box around it
+ * sets. So the hex still lives in exactly one home — `data/brand.ts` — and this file holds none. A
+ * raster mark is never recoloured: it is placed on transparency exactly as the file drew it.
  *
  * ## Why the favicon is SVG and the maskable set is PNG
  *
@@ -40,11 +43,18 @@
  * `@resvg/resvg-js`, which is deterministic for a pinned version and still compares byte-for-byte
  * in `--check`. Either way the file is drawn from this module, never hand-edited.
  *
- *   - the favicon (`-icon.svg`) is the app mark: a rounded box, the mark at 62 % of the canvas.
- *   - the maskable set (`-apple-touch-icon.png`, `-icon-192.png`, `-icon-512.png`) is full
- *     bleed — the background fills the square, no rounded corners, no transparency — because
- *     iOS and the OS mask it themselves, and a pre-rounded corner double-rounds. The mark
- *     drops to 56 % so it sits inside the 80 % safe circle the OS is allowed to crop to.
+ *   - a **glyph** brand (`mark` absent) draws the book on its `action`: the favicon
+ *     (`-icon.svg`) is a rounded box with the book at 62 % of the canvas, and the maskable set
+ *     (`-apple-touch-icon.png`, `-icon-192.png`, `-icon-512.png`) is full bleed — the ground
+ *     fills the square, no rounded corners, no transparency — because iOS and the OS mask it
+ *     themselves, and a pre-rounded corner double-rounds. The book drops to 56 % so it sits
+ *     inside the 80 % safe circle the OS is allowed to crop to.
+ *   - a **mark** brand draws no ground at all: every surface carries the raster's own ink on
+ *     transparency, at 62 % on the favicon and 64 % on the maskable set
+ *     (`MASKABLE_MARK_FRACTION`). A background-free maskable icon is not what the maskable
+ *     spec recommends — it expects a full-bleed field the OS can crop into — and it is this
+ *     brand's explicit choice: there is no field to bleed, so the margin around the ink *is*
+ *     the safe zone.
  *   - the favicon file the browser asks for by convention (`/favicon.ico`, served from the
  *     generated `-favicon.ico`) is the same app mark in a container browsers read as an icon.
  *
@@ -81,6 +91,22 @@ export const MARK_SIZE = 512;
 export const APP_GLYPH_FRACTION = 0.62;
 export const MASKABLE_GLYPH_FRACTION = 0.56;
 
+/**
+ * The canvas fraction a **raster mark** fills on the maskable set: 0.64, the owner's number.
+ *
+ * A mark is not a glyph. The template's book is a 24-unit stroked path, so 0.56 of the canvas is
+ * what keeps *its* farthest corner inside the 80 % safe circle. A raster mark's ink is a rectangle
+ * placed by `markBoxOf`, so how much of the circle it uses depends on its own aspect ratio — the
+ * AS monogram's ink is 1024 × 654, and at 0.64 the box is 327.7 × 209.3 whose half-diagonal is
+ * 194 px, inside the 205 px radius the OS may crop to. That is measured on the shipped raster by
+ * `tests/brand-icon.test.ts` rather than asserted here, because a second mark with a squarer
+ * aspect would need a different number and the test is what would say so.
+ *
+ * A separate constant from `MASKABLE_GLYPH_FRACTION` on purpose: QuizHub draws a glyph, and its
+ * four files must stay byte-for-byte what they were. One number for both marks would move them.
+ */
+export const MASKABLE_MARK_FRACTION = 0.64;
+
 /** The app mark's corner radius as a fraction of the canvas — the `rounded-lg` the chrome draws. */
 export const APP_RADIUS_FRACTION = 0.2;
 
@@ -91,8 +117,10 @@ export const APP_RADIUS_FRACTION = 0.2;
  * The longest side, not the width: a wide mark (AlignSynch's AS monogram is 1024×660 of ink)
  * given 0.56 of the canvas by width would be 0.36 by height and unreadable at a tab size, while
  * a square or tall mark would overflow. One rule for both, and the safe circle still holds: the
- * box's half-diagonal is at most `fraction × canvas / √2`, which at 0.56 is 203 < the 205 px
- * radius the OS may crop to.
+ * box's half-diagonal is at most `fraction × canvas / √2` — 0.64 at the mark's maskable fraction
+ * is 232 in the worst (square) case, so the 205 px radius the OS may crop to is checked against
+ * the *shipped* raster in `tests/brand-icon.test.ts` rather than assumed here; the monogram's own
+ * 1024 × 654 ink puts it at 194 px.
  */
 export interface MarkBox {
   x: number;
@@ -133,11 +161,11 @@ export const ICON_SUFFIXES = {
    * this URL, and a 404 there is the one icon request a reader never sees answered.
    */
   faviconIco: "-favicon.ico",
-  /** `apple-touch-icon`, 180×180, full bleed, opaque. */
+  /** `apple-touch-icon`, 180×180 — a glyph brand's full bleed and opaque, a mark brand's clear. */
   appleTouchIcon: "-apple-touch-icon.png",
-  /** The PWA 192 icon, full bleed, maskable-safe. */
+  /** The PWA 192 icon — full bleed and opaque for a glyph, a transparent mark at 64 % otherwise. */
   icon192: "-icon-192.png",
-  /** The PWA 512 icon, full bleed, maskable-safe. */
+  /** The PWA 512 icon, same rule as the 192. */
   icon512: "-icon-512.png",
 } as const;
 
@@ -255,16 +283,16 @@ function pt(value: number): string {
  * the image's display box is derived at the ink's own aspect ratio; there is nothing to letterbox.
  *
  * The mark is composited exactly as the file drew it — no recolour, no tint, no `ink` argument.
- * The one thing this function adds is the ground it sits on, which is the brand's own `action`:
- * the source mark is a light-ground asset with a white keyline around the monogram, so on that
- * blue it reads as the brand drew it.
+ * `ground` is normally `null`: the mark carries its own transparency, and the owner's instruction
+ * is that no surface paints a tile behind it. A brand that ever wants a field can pass a colour,
+ * which is why the parameter exists rather than being deleted; nothing in this tree passes one.
  */
 export function rasterMarkSvg(args: {
-  /** `null` paints no ground — the card mark, whose tile is drawn by the page (`brandCardMarkPath`). */
+  /** `null` paints no ground — the shipped case: the mark on a transparent canvas. */
   ground: string | null;
-  /** Corner radius in canvas units — `0` for the full-bleed maskable/apple square. */
+  /** Corner radius in canvas units — only meaningful when a ground is painted. */
   radius: number;
-  /** The mark's canvas fraction (`APP_GLYPH_FRACTION`, `MASKABLE_GLYPH_FRACTION`, `CARD_MARK_FRACTION`). */
+  /** The mark's canvas fraction (`APP_GLYPH_FRACTION`, `MASKABLE_MARK_FRACTION`). */
   fraction: number;
   /** The embedded raster: a data URI, its intrinsic pixel size, and its ink bbox in those pixels. */
   image: { href: string; width: number; height: number; ink: MarkInkBox };
