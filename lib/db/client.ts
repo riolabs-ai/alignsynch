@@ -28,14 +28,37 @@
  * was already dead when we wrote to it is retried **once**. The retry only fires on errors that
  * say nothing reached the server, so it can never double-run a statement.
  *
+ * **What #440 pins, and why each one is not left to a default.** Production logged `db: the
+ * warm-up query failed — Connection terminated due to connection timeout` on the first request
+ * after idle, and `pg` printed a security warning about `sslmode=require` on every parse:
+ *
+ *   - the connect timeout, the statement timeout and the pool size are written here as numbers
+ *     with their reasons, not inherited from the driver, so an upgrade cannot change the
+ *     budget a request runs inside;
+ *   - TLS is decided by `ssl: { rejectUnauthorized: true }` below and the `sslmode` parameter
+ *     is deleted from the URL (`tlsPinnedUrl()`), because `sslmode=require` meant "verify the
+ *     certificate" in `pg` 8 but will mean libpq's weaker "encrypt only" in `pg` 9 — and it
+ *     warns about that on every connection today;
+ *   - the warm-up still runs at boot, but a failure names how long it waited (`warn` with the
+ *     elapsed ms) instead of reading like a retried info line.
+ *
  * Nothing here caches a row. A retried read is still a read; a broken database still fails, and
  * it fails with `DatabaseUnavailableError`, whose sentence the screen prints instead of a digest
  * (see `components/assessment/assessment-unreadable.tsx`).
  */
-import { Pool, type QueryResultRow } from "pg";
+import { Pool, type PoolConfig, type QueryResultRow } from "pg";
 
 /**
- * How long a socket may sit idle before the pool closes it.
+ * The most sockets this process opens, no matter how many requests arrive at once.
+ *
+ * 5, because a serverless deployment opens many short-lived instances and Neon's pooler already
+ * fans them out: five connections per instance is generous for this app's one read query per
+ * render, and a larger pool only moves the queue from the pooler to the database.
+ */
+export const POOL_MAX = 5;
+
+/**
+ * How long a socket may sit idle before the pool closes it (`idleTimeoutMillis`).
  *
  * 60 s, not the driver's 10 s: reading one page takes longer than ten seconds, and the whole
  * cost of a new socket here is a 1.2 s handshake. It holds a connection, never a row, so a
@@ -44,15 +67,38 @@ import { Pool, type QueryResultRow } from "pg";
 export const IDLE_TIMEOUT_MS = 60_000;
 
 /**
- * How long we wait for a socket (TCP + TLS + auth) before giving up on this render.
+ * How long we wait for a socket (TCP + TLS + auth) before giving up on this render
+ * (`connectionTimeoutMillis`).
  *
  * 4 s rather than the driver's "wait forever": the cold-render target is 3 s, so a handshake
  * that has not finished in 4 s belongs to a database that is not answering. It is comfortably
- * longer than the ~1.2 s this box needs, so the timeout separates "slow" from "gone".
+ * longer than the ~1.2 s this box needs, so the timeout separates "slow" from "gone" — and the
+ * production line this card is about (`Connection terminated due to connection timeout`) is now
+ * one bounded failure with an elapsed time on it, rather than an unbounded wait inside a 4 s
+ * request.
  */
 export const CONNECT_TIMEOUT_MS = 4_000;
 
-/** How long one statement may take before the client aborts it. */
+/**
+ * How long one statement may run **on the server** before Postgres cancels it
+ * (`statement_timeout`).
+ *
+ * 5 s, the same budget as the client-side `query_timeout` below: agreeing on the number means a
+ * cancelled statement names which layer gave up (server `57014` vs the client's "Query read
+ * timeout"), and neither can outlive the other by long enough to matter. Serverless means a
+ * function that holds a connection open on a slow query is a connection the next request cannot
+ * have.
+ *
+ * **Measured on the demo branch (2026-11-03): Neon's proxy takes `application_name` from the
+ * startup packet but drops the timeout parameters** — `current_setting('statement_timeout')`
+ * reads `0` after connect even with this set, and `options=-c …` is rejected outright. So on
+ * Neon the client-side `query_timeout` is the budget that actually fires (`select pg_sleep(6)`
+ * ends at 5.0 s with "Query read timeout"); this one bounds a plain Postgres. Both stay,
+ * because on some deployment either is the only budget there is.
+ */
+export const STATEMENT_TIMEOUT_MS = 5_000;
+
+/** How long the client waits for one statement's result before aborting it (`query_timeout`). */
 export const QUERY_TIMEOUT_MS = 5_000;
 
 let pool: Pool | undefined;
@@ -82,22 +128,55 @@ export function databaseConfigured(): boolean {
   return url !== undefined && url !== "";
 }
 
+/**
+ * The connection string with `sslmode` deleted, so TLS is decided by this module, not the URL.
+ *
+ * `pg-connection-string` currently reads `sslmode=require` as "verify the certificate" and says
+ * so — with a security warning on every parse — while promising that `pg` 9 will give the same
+ * parameter libpq's weaker "encrypt, do not verify" meaning. Deleting the parameter before `pg`
+ * parses the URL removes the warning and, more importantly, the future change: `ssl` in
+ * `poolConfig()` is then the only statement of what this app requires, so neither a `pg`
+ * upgrade nor a connection string asking for `disable`/`no-verify` can weaken verification
+ * behind the code's back.
+ *
+ * A URL this cannot parse is returned untouched: `pg` names a malformed connection string well,
+ * and rewriting it into an empty one here would trade that error for a worse one.
+ */
+export function tlsPinnedUrl(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  parsed.searchParams.delete("sslmode");
+  return parsed.toString();
+}
+
+/** The options the one pool is built with — named here so a test can read them without a socket. */
+export function poolConfig(): PoolConfig {
+  return {
+    connectionString: tlsPinnedUrl(databaseUrl()),
+    // Certificate verification on, explicitly. `pg`'s URL parser can set `ssl` itself from
+    // `sslmode`, and an explicit value here is what survives when it does not; with the
+    // parameter deleted above, this object is the whole TLS decision.
+    ssl: { rejectUnauthorized: true },
+    application_name: "alignsynch",
+    max: POOL_MAX,
+    idleTimeoutMillis: IDLE_TIMEOUT_MS,
+    connectionTimeoutMillis: CONNECT_TIMEOUT_MS,
+    statement_timeout: STATEMENT_TIMEOUT_MS,
+    query_timeout: QUERY_TIMEOUT_MS,
+    // Notice a dead peer at the TCP level rather than at the next query, which is what makes
+    // the retry below rare instead of the normal path.
+    keepAlive: true,
+  };
+}
+
 /** The one pool. Pooled URL at runtime; `db:migrate` / `db:seed` use the unpooled one. */
 export function getPool(): Pool {
   if (pool === undefined) {
-    pool = new Pool({
-      connectionString: databaseUrl(),
-      // A serverless deployment opens many short-lived instances; five connections each is
-      // already generous against Neon's pooler, and a larger pool only moves the queue.
-      max: 5,
-      application_name: "alignsynch",
-      idleTimeoutMillis: IDLE_TIMEOUT_MS,
-      connectionTimeoutMillis: CONNECT_TIMEOUT_MS,
-      query_timeout: QUERY_TIMEOUT_MS,
-      // Notice a dead peer at the TCP level rather than at the next query, which is what makes
-      // the retry below rare instead of the normal path.
-      keepAlive: true,
-    });
+    pool = new Pool(poolConfig());
     // A pooled client that errors while idle is the pool's to discard, not the process's to die
     // of: without a handler Node turns an idle socket error into an unhandled 'error' event and
     // the whole server exits instead of one request failing honestly.
@@ -233,11 +312,19 @@ export async function queryRows<T extends QueryResultRow>(
  */
 export async function warmPool(): Promise<void> {
   const started = process.hrtime.bigint();
+  const elapsedMs = () => Number(process.hrtime.bigint() - started) / 1e6;
   try {
     await getPool().query("select 1");
-    const ms = Number(process.hrtime.bigint() - started) / 1e6;
-    console.info(`db: pool warmed in ${ms.toFixed(0)}ms`);
+    console.info(`db: pool warmed in ${elapsedMs().toFixed(0)}ms`);
   } catch (error) {
-    console.warn("db: the warm-up query failed — the first assessment render will retry it", error);
+    // `warn`, with the time it spent, so a cold start that lost the race is one visible line
+    // instead of an info line a log filter hides: production's `Connection terminated due to
+    // connection timeout` arrived here after the full connect budget, and a reader needs to see
+    // how long it waited to tell "cold" from "broken". The failure is still not fatal — the
+    // first assessment render retries it and the page says so honestly if it fails too.
+    console.warn(
+      `db: the warm-up query failed after ${elapsedMs().toFixed(0)}ms — the first assessment render will retry it`,
+      error,
+    );
   }
 }
