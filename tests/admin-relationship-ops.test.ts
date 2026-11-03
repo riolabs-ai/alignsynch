@@ -19,18 +19,39 @@
  * The fake is deliberately not a SQL engine: it answers the statements `lib/admin/relationship-ops.ts`
  * sends and records everything else, which is enough to prove the order and is why no database is
  * needed to run the gate.
+ *
+ * **The card's acceptance cases, and where each is pinned.** The list is the review checklist, so a
+ * case that moves has one place to move it to rather than a paragraph to re-read:
+ *
+ *   unlock clears `party.unlock_seen_at` → the V11 state   `describe("unlock …")`
+ *   resend rotates the token, the old hash dies            `describe("resend …")`
+ *   revoke is terminal                                     `describe("revoke …")`, the resend refusal,
+ *                                                          and `tests/flow-invite-revoked.test.ts`
+ *                                                          for the party's own claim
+ *   void is terminal; submit/accept cannot reopen it       `tests/flow-void.test.ts`
+ *   force-close writes `accepted_at` + `impersonated_by`
+ *   and the report says an operator set it                 `describe("force-close …")` and
+ *                                                          `tests/admin-relationship-screen.test.tsx`
+ *   every mutation goes through `act()`                    `describe("every repair is act()'s write …")`
+ *   support may unlock/resend, not void/force-close        `describe("who may repair …")`,
+ *                                                          `tests/admin-roles.test.ts`
+ *   a reason under eight characters is refused             `describe("the reason is a contract …")`
+ *   a throw after `mutate` leaves neither the row nor the
+ *   audit row                                              `describe("a throw after the mutation …")`,
+ *                                                          `tests/admin-act.test.ts`
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { ActRefused, type ActSql, transactionRunner } from "@/lib/admin/act";
+import { ActRefused, type ActTransactionRunner, transactionRunner } from "@/lib/admin/act";
 import {
   forceCloseSeat,
   unlockParty,
-  OpRefused,
   resendInvite,
   revokeInvite,
   voidSession,
 } from "@/lib/admin/relationship-ops";
+import { hashToken } from "@/lib/flow/tokens";
 
 const INSTANCE = "inst-1";
 const ACTOR = "auth-operator";
@@ -41,6 +62,16 @@ const VOID_INSTANT = new Date("2026-11-02T09:30:00.000Z");
 const ACCEPT_INSTANT = new Date("2026-11-02T09:31:00.000Z");
 const INVITE_EXPIRY = new Date("2026-11-09T10:00:00.000Z");
 const REVOKED_INSTANT = new Date("2026-11-02T09:32:00.000Z");
+
+/**
+ * The hash the invitation carried before a resend, and the token whose hash it is.
+ *
+ * A resend is only "the old hash dies" if the row's `token_hash` ends up as the *new* token's hash —
+ * an assertion that the write is not the raw token proves nothing about whether the old link still
+ * names the row. The stale pair is what makes the difference writeable.
+ */
+const STALE_TOKEN = "stale-token-from-the-first-invitation";
+const STALE_HASH = hashToken(STALE_TOKEN);
 
 /** One row's answers, named so a test reads as the state it is describing. */
 interface Fixture {
@@ -53,6 +84,7 @@ interface Fixture {
     expires_at: Date;
     revoked_at: Date | null;
     resent_count: number;
+    token_hash: string;
     voided_at: Date | null;
   } | null;
   inviteUpdateReturnsRow: boolean;
@@ -96,6 +128,10 @@ class FakeDb {
   readonly committed: string[] = [];
   readonly releases: (boolean | undefined)[] = [];
   pending: string[] = [];
+  /** A row-changing statement sent while no `BEGIN` was open. A repair that did that is a bug. */
+  readonly outsideTransaction: string[] = [];
+  /** Injure the audit insert, to prove what a failure *after* the mutation leaves behind. */
+  auditFault: "throws" | "no-id" | null = null;
   private inTransaction = false;
 
   fixture: Fixture;
@@ -111,6 +147,7 @@ class FakeDb {
         expires_at: INVITE_EXPIRY,
         revoked_at: null,
         resent_count: 1,
+        token_hash: STALE_HASH,
         voided_at: null,
       },
       inviteUpdateReturnsRow: true,
@@ -136,6 +173,10 @@ class FakeDb {
     const head = text.trimStart().replace(/\s+/g, " ");
     const f = this.fixture;
 
+    if (!this.inTransaction && /^(UPDATE|INSERT|DELETE)/i.test(head)) {
+      this.outsideTransaction.push(head);
+    }
+
     if (/^BEGIN$/i.test(head)) {
       this.inTransaction = true;
       this.pending = [];
@@ -157,6 +198,10 @@ class FakeDb {
     }
     if (/^INSERT INTO admin_action/i.test(head)) {
       if (!this.inTransaction) throw new Error("an audit row outside a transaction is a bug");
+      // A failure here is the card's "throw immediately after `mutate`": the row's own UPDATE has
+      // already run inside the transaction, and only `ROLLBACK` can take it back.
+      if (this.auditFault === "throws") throw new Error("the audit insert failed");
+      if (this.auditFault === "no-id") return { rows: [] as unknown as readonly R[] };
       this.pending.push(`admin_action:${String(values[auditParamIndex(text, "action")])}`);
       return { rows: [{ id: "audit-1" }] as unknown as readonly R[] };
     }
@@ -299,6 +344,30 @@ describe("unlock — the V11 repair as a button", () => {
     ]);
   });
 
+  it("leaves exactly the V11 state: a null mark, and no other column written", async () => {
+    const db = new FakeDb();
+    const result = await unlockParty({ ...request, role: "initiator" }, runnerOver(db));
+
+    // What `db:verify` V11 wants to read afterwards: `party.unlock_seen_at` NULL. The repair's
+    // answer and the statement both have to say so — a screen that reported "unlocked" over a mark
+    // the UPDATE forgot to clear would pass an order assertion and fail this one.
+    expect(result.after).toEqual({ role: "initiator", unlockSeenAt: null });
+    const update = db.statements.find(({ text }) =>
+      /^UPDATE party SET unlock_seen_at = NULL/i.test(text.trimStart()),
+    );
+    expect(update?.text.replace(/\s+/g, " ")).toMatch(
+      /^UPDATE party SET unlock_seen_at = NULL WHERE session_record_id = \$1 AND role = \$2/,
+    );
+
+    // One column, cleared. A repair that also rewrote a status or deleted the row would be a second
+    // change wearing this one's audit row, and V11 is a statement about the mark alone.
+    const writes = db.statements.filter(({ text }) =>
+      /^UPDATE|^INSERT|^DELETE/i.test(text.trimStart()),
+    );
+    expect(writes).toHaveLength(2); // the repair, then its audit row
+    expect(writes.filter(({ text }) => /^UPDATE/i.test(text.trimStart()))).toHaveLength(1);
+  });
+
   it("admits a support session, because clearing a marker writes nothing a party said", async () => {
     const db = new FakeDb({ role: "support" });
     const result = await unlockParty({ ...request, role: "initiator" }, runnerOver(db));
@@ -348,12 +417,16 @@ describe("resend — a new token, and the old hash dies", () => {
     expect(String(db.auditParam("after"))).not.toContain(result.after.token);
     expect(after.resentCount).toBe(2);
 
-    // The write stores the hash, not the token.
+    // The write stores the hash of the token it just minted, and not the hash it replaced — that is
+    // what "the old link stops naming an invitation" means: one row, one `token_hash`, and the old
+    // token's hash is no longer it (`previewInvite()` answers unknown for a hash no row carries).
     const update = db.statements.find(({ text }) =>
       /^UPDATE session_invite\s+SET token_hash/i.test(text.trimStart()),
     );
     expect(update).toBeDefined();
+    expect(update?.values[1]).toBe(hashToken(result.after.token));
     expect(update?.values[1]).not.toBe(result.after.token);
+    expect(update?.values[1]).not.toBe(STALE_HASH);
 
     // The audit row names the invitation and both sides of the change, which is what
     // `/admin/audit` prints for this action.
@@ -633,5 +706,198 @@ describe("the reason is a contract, not a form hint", () => {
     const db = new FakeDb();
     await unlockParty({ ...request, reason: `   ${REASON}   `, role: "initiator" }, runnerOver(db));
     expect(db.auditParam("reason")).toBe(REASON);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * The boundary: one act() call per repair, and what a failure leaves
+ * ------------------------------------------------------------------ */
+
+/** One repair as the boundary needs it: a name, the write it issues, and how to ask for it. */
+interface Repair {
+  readonly name: string;
+  /** The label `FakeDb.order` gives the statement that changes the row. */
+  readonly write: string;
+  readonly run: (runner: ActTransactionRunner) => Promise<unknown>;
+}
+
+/**
+ * The five, side by side.
+ *
+ * Kept as data because the next three cases are the same question asked five times: a boundary that
+ * holds for four repairs and not the fifth is the defect a hand-written case per operation hides.
+ */
+const REPAIRS: readonly Repair[] = [
+  {
+    name: "unlock",
+    write: "UPDATE party.unlock_seen_at",
+    run: (runner) => unlockParty({ ...request, role: "initiator" }, runner),
+  },
+  {
+    name: "resend",
+    write: "UPDATE session_invite.token",
+    run: (runner) => resendInvite({ ...request, email: null }, runner),
+  },
+  {
+    name: "revoke",
+    write: "UPDATE session_invite.revoked",
+    run: (runner) => revokeInvite(request, runner),
+  },
+  {
+    name: "void",
+    write: "UPDATE session.voided_at",
+    run: (runner) => voidSession(request, runner),
+  },
+  {
+    name: "force-close",
+    write: "UPDATE party.accepted_at",
+    run: (runner) => forceCloseSeat({ ...request, role: "counterparty" }, runner),
+  },
+];
+
+/** The source of a production file with its comments removed, so prose is not read as a call. */
+function codeOf(path: string): string {
+  return readFileSync(path, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+}
+
+describe("every repair is act()'s write — there is no second path", () => {
+  it("sends its writes inside act()'s transaction, with the audit row in the same commit", async () => {
+    for (const repair of REPAIRS) {
+      const db = new FakeDb();
+      await repair.run(runnerOver(db));
+
+      // No UPDATE, INSERT or DELETE outside BEGIN…COMMIT: the row and its audit entry are one
+      // change, so a reader of `admin_action` can never see one without the other.
+      expect(db.outsideTransaction, repair.name).toEqual([]);
+      expect(db.order[0], repair.name).toBe("BEGIN");
+      expect(db.order.at(-1), repair.name).toBe("COMMIT");
+      expect(db.committed, repair.name).toEqual([
+        expect.stringContaining("UPDATE"),
+        expect.stringMatching(/^admin_action:/),
+      ]);
+    }
+  });
+
+  it("writes nothing when act() cannot open its transaction", async () => {
+    for (const repair of REPAIRS) {
+      const db = new FakeDb();
+      const refused = new Error("connect: the database is not there");
+      const noTransaction: ActTransactionRunner = {
+        transaction: async () => {
+          throw refused;
+        },
+      };
+
+      // The mutation is only reachable through the runner's transaction. A repair that opened its
+      // own connection — the direct `db.query` write #503 exists to prevent — would have written
+      // before this error and left a row behind.
+      await expect(repair.run(noTransaction), repair.name).rejects.toBe(refused);
+      expect(db.statements, repair.name).toEqual([]);
+    }
+  });
+
+  it("has no pool, no driver and no query of its own — act() is the only writer it can reach", () => {
+    const source = codeOf("lib/admin/relationship-ops.ts");
+    expect(source).toContain('from "@/lib/admin/act"');
+    expect(source).not.toMatch(/lib\/db\/client/);
+    expect(source).not.toMatch(/from "pg"/);
+    expect(source).not.toMatch(/getPool|\.connect\(|client\.query/);
+  });
+
+  it("is the only write path its caller has: the server action names repairs, not SQL", () => {
+    const source = codeOf("app/(mainlayout)/admin/instances/[id]/actions.ts");
+    expect(source).toMatch(/performRepair/);
+    for (const name of [
+      "unlockParty",
+      "resendInvite",
+      "revokeInvite",
+      "voidSession",
+      "forceCloseSeat",
+    ]) {
+      expect(source, name).toContain(name);
+    }
+    expect(source).not.toMatch(/\.query\(|getPool|from "pg"/);
+  });
+});
+
+describe("who may repair — the rung, not the caller's say-so", () => {
+  it("lets support clear a mark and reissue a link, and refuse it everything that ends one", async () => {
+    const asSupport = () => new FakeDb({ role: "support" });
+
+    const unlocked = asSupport();
+    expect(
+      (await unlockParty({ ...request, role: "initiator" }, runnerOver(unlocked))).actorRole,
+    ).toBe("support");
+    const resent = asSupport();
+    expect((await resendInvite({ ...request, email: null }, runnerOver(resent))).actorRole).toBe(
+      "support",
+    );
+
+    // A revoke kills a live link, a void ends the relationship, and a force-close writes a person's
+    // agreement for them. All three are `admin`, and the refusal costs the role read alone.
+    const higher: readonly Pick<Repair, "name" | "run">[] = [
+      { name: "revoke", run: (runner) => revokeInvite(request, runner) },
+      { name: "void", run: (runner) => voidSession(request, runner) },
+      {
+        name: "force-close",
+        run: (runner) => forceCloseSeat({ ...request, role: "initiator" }, runner),
+      },
+    ];
+    for (const operation of higher) {
+      const db = asSupport();
+      await expect(operation.run(runnerOver(db)), operation.name).rejects.toMatchObject({
+        name: "ActRefused",
+        reason: "role-too-low",
+      });
+      expect(db.order, operation.name).toEqual(["BEGIN", "SELECT role", "ROLLBACK"]);
+      expect(db.committed, operation.name).toEqual([]);
+      expect(db.outsideTransaction, operation.name).toEqual([]);
+    }
+  });
+});
+
+describe("a throw after the mutation leaves neither the change nor the audit row", () => {
+  it("rolls back all five when the audit insert fails after their own update", async () => {
+    for (const repair of REPAIRS) {
+      const db = new FakeDb();
+      db.auditFault = "throws";
+
+      await expect(repair.run(runnerOver(db)), repair.name).rejects.toThrow(
+        "the audit insert failed",
+      );
+
+      // The mutation really ran — the row's UPDATE is in the log — and the failure came after it,
+      // which is the sequence the card asks about: not "a mutation that threw", but "a write that
+      // succeeded and a transaction that did not".
+      expect(db.order, repair.name).toContain(repair.write);
+      expect(db.order, repair.name).not.toContain("COMMIT");
+      expect(db.order.at(-1), repair.name).toBe("ROLLBACK");
+      // Neither the data change nor the audit row reached the table…
+      expect(db.committed, repair.name).toEqual([]);
+      expect(db.pending, repair.name).toEqual([]);
+      // …and the connection went back to the pool rather than being destroyed.
+      expect(db.releases, repair.name).toEqual([false]);
+    }
+  });
+
+  it("rolls back rather than committing an unlinked write when the audit insert answers no id", async () => {
+    const db = new FakeDb();
+    db.auditFault = "no-id";
+
+    await expect(voidSession(request, runnerOver(db))).rejects.toThrow(
+      /audit insert returned no id/,
+    );
+    expect(db.order).toEqual([
+      "BEGIN",
+      "SELECT role",
+      "SELECT session.voided_at",
+      "UPDATE session.voided_at",
+      "INSERT admin_action",
+      "ROLLBACK",
+    ]);
+    expect(db.committed).toEqual([]);
+    expect(db.pending).toEqual([]);
   });
 });
