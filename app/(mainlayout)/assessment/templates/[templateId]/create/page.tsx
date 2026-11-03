@@ -87,6 +87,10 @@ function problemMessage(code: string | undefined): string | null {
   if (code === "record-is-an-instance") return itemLabel(problems, "record-is-an-instance");
   if (code === "template-not-yours") return itemLabel(problems, "template-not-yours");
   if (code === "instance-limit") return itemLabel(problems, "instance-limit");
+  // #505 — the plan's relationship limit. Beside `instance-limit` rather than folded into it: the
+  // two codes name different counts, and an operator reading `?problem=` should be able to tell
+  // which gate answered.
+  if (code === "relationship-limit") return itemLabel(problems, "relationship-limit");
   if (code === "mode-not-entitled") return itemLabel(problems, "mode-not-entitled");
   return null;
 }

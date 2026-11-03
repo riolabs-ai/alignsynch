@@ -28,6 +28,7 @@
  */
 import AffiliatePage from "@/app/(mainlayout)/affiliate/page";
 import AdminAuditPage from "@/app/(mainlayout)/admin/audit/page";
+import AdminBillingPage from "@/app/(mainlayout)/admin/billing/page";
 import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
 import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
 import AdminHealthPage from "@/app/(mainlayout)/admin/health/page";
@@ -189,12 +190,12 @@ export type AdminProductRoute = {
 /**
  * The console's entry points, as `product.admin` sees them (#509).
  *
- * Three, not six: `/admin/console`'s subtree — the overview, relationships, templates and users —
- * is closed by one `requireAdminProduct()` in its layout *and* by the same call in the index page,
- * which is the page a diff can see. `/admin/gaps`, `/admin/health` and `/admin/instances` sit
- * outside that subtree and carry their own. A console page added under `layout.tsx` inherits the
- * subtree gate and needs no line here; a page added outside it does, and the list is where that is
- * visible.
+ * Everything under `/admin/console` — the overview, relationships, templates and users — is closed
+ * by one `requireAdminProduct()` in its layout *and* by the same call in the index page, which is
+ * the page a diff can see; that subtree is listed once, by its index. `/admin/audit`,
+ * `/admin/billing`, `/admin/gaps`, `/admin/health` and `/admin/instances` sit outside it and carry
+ * their own. A console page added under `layout.tsx` inherits the subtree gate and needs no line
+ * here; a page added outside it does, and the list is where that is visible.
  *
  * Nothing here is a snapshot: these routes are not in `routes.ts`, so no hash is committed for
  * them. The claim is a status, and the two it must have are asserted per brand in
@@ -205,6 +206,15 @@ export const adminProductRoutes: readonly AdminProductRoute[] = [
   {
     route: "/admin/audit",
     page: AdminAuditPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    // #505 — billing control. Outside the `/admin/console` subtree, so it carries its own
+    // `requireAdminProduct()`; a page added under `console/layout.tsx` would inherit the subtree
+    // gate and need no line here.
+    route: "/admin/billing",
+    page: AdminBillingPage as unknown as ParityPage,
     params: {},
     open: "render",
   },

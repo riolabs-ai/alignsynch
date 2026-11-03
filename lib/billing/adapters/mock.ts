@@ -80,6 +80,12 @@ export interface MockWebhookBody {
   readonly interval: "month" | "year";
   readonly status: SubscriptionStatus;
   readonly current_period_end: string;
+  /**
+   * The provider's live/test flag (#505). Optional, and only `true` means live: a delivery written
+   * before this field existed is a test delivery, which is the safe direction the column's default
+   * records in `0026`.
+   */
+  readonly livemode?: boolean;
 }
 
 export interface MockAdapterOptions {
@@ -114,6 +120,9 @@ export class MockBillingAdapter implements BillingPort {
       provider: "mock",
       providerSubscriptionId: mockSubscriptionId(request.userId, plan.id, request.interval),
       status: "active",
+      // The mock charges nothing, so it is test mode by construction (#505). `billing_subscription`
+      // records the fact instead of leaving a reader to infer it from the adapter's name.
+      livemode: false,
       currentPeriodEnd: periodEnd(this.now(), request.interval).toISOString(),
     };
 
@@ -177,6 +186,9 @@ export class MockBillingAdapter implements BillingPort {
       provider: "mock",
       providerSubscriptionId: mockSubscriptionId(body.user_id, plan.id, body.interval),
       status: body.status,
+      // A webhook body that says nothing about live mode is a test delivery: the mock's own
+      // signature is the only thing that can have produced this body.
+      livemode: body.livemode === true,
       currentPeriodEnd: new Date(body.current_period_end).toISOString(),
     };
 

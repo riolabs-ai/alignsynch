@@ -23,6 +23,8 @@ const STATIC_ROUTES = [
   "/admin/console/templates",
   "/admin/console/users",
   "/admin/audit",
+  // #505 — billing control: subscription state per relationship, and the owner's comp.
+  "/admin/billing",
   "/admin/gaps",
   "/admin/health",
   "/admin/instances",

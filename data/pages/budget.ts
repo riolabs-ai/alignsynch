@@ -63,6 +63,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-audit",
     budget: 0,
   },
+  // #505 — billing control. Budget 0 from the first commit, like the console's other screens: the
+  // test-mode banner's three states, the six stat captions, the nine column labels, the five
+  // subscription states, the four plan sources, the plan-limit sentences, the comp band's eleven
+  // fields, the seven refusal sentences and the empty/failure panels are all
+  // `data/pages/admin-billing.ts`, so the next literal written in `billing-control.tsx` is a red
+  // build. Attribution is reachability, so this row counts one file.
+  "/admin/billing": {
+    page: "app/(mainlayout)/admin/billing/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-billing",
+    budget: 0,
+  },
   "/admin/gaps": {
     page: "app/(mainlayout)/admin/gaps/page.tsx",
     dirs: ["components/console"],
