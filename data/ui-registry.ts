@@ -131,6 +131,56 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/console",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The admin console — records, relationships, templates and the two seats, read-only for answers.",
+    notes:
+      "Moved out of the `/v1` prototype tree (#478) so the prototype can be deleted without taking it: the six console pages now sit under the app shell at `/admin/console`, and their layout gates the subtree with `requireAdmin()`. The rows are still the in-browser store seeded from `data/v1/fixtures.ts` — the operator's Postgres registry is `/admin/instances`, a different screen — which is why this is `fixture` and not `db`.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/console/relationships",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The relationship registry — every relationship, live or archived, with its template, derived stage, both seat states and its subscription state, filtered by the same links the overview's counts produce; read-only for answers, with a one-click restore on an archived row.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/console/relationships/[id]",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "One relationship as an operator sees it — its seats, subscription and a session list that says scored or open and nothing a party answered — with Archive behind a confirmation and a Restore that is one click.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/console/templates",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The template registry — every template with the number of relationships started from it, and an enable/disable action behind a confirmation that the store can undo.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/console/templates/[id]",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "One template as an operator sees it — the Aspects as authored, and every relationship started from it, live and archived, with the enable/disable pair.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/console/users",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The two seats and the members, with role, account state and last sign-in from the store — no addresses, and no user-management form that would pretend to write to Neon.",
+  },
+  {
+    kind: "route",
     surface: "/admin/gaps",
     status: "db",
     templates: ["alignsynch"],
@@ -739,54 +789,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["alignsynch"],
     capability:
       "A single chat thread for one relationship or Aspect, persona-scoped and blind-safe before scoring.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/admin/console",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The admin console — records, relationships, templates and the two seats, read-only for answers.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/admin/console/relationships",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The relationship registry — every relationship, live or archived, with its template, derived stage, both seat states and its subscription state, filtered by the same links the overview's counts produce; read-only for answers, with a one-click restore on an archived row.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/admin/console/relationships/[id]",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "One relationship as an operator sees it — its seats, subscription and a session list that says scored or open and nothing a party answered — with Archive behind a confirmation and a Restore that is one click.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/admin/console/templates",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The template registry — every template with the number of relationships started from it, and an enable/disable action behind a confirmation that the store can undo.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/admin/console/templates/[id]",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "One template as an operator sees it — the Aspects as authored, and every relationship started from it, live and archived, with the enable/disable pair.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/admin/console/users",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The two seats and the members, with role, account state and last sign-in from the store — no addresses, and no user-management form that would pretend to write to Neon.",
   },
   {
     kind: "route",

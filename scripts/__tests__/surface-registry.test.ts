@@ -59,9 +59,12 @@ describe("the real surface registry", () => {
     assert.deepEqual(surfaceRegistryProblems(surfaceRegistry, inManifest), []);
   });
 
-  it("declares the eight shipped surfaces live, and only those", () => {
+  it("declares the nine live surfaces, and only those", () => {
     const live = surfaceRegistry.filter((row) => row.status === "live").map((row) => row.route);
     assert.deepEqual(live.sort(), [
+      // #478: the console moved out of `/v1` to `/admin/console`, so the index the registry had
+      // declared pending now exists — behind `requireAdmin()`, and rendering the operator's rows.
+      "/admin/console",
       "/assessment/instances",
       "/assessment/instances/[instanceId]",
       // #R2 (#427): the acceptance is recorded now, so the surface that records it is live — the

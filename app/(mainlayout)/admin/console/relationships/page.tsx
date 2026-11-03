@@ -3,7 +3,7 @@ import { AdminRelationshipRegistry } from "@/components/v1/admin-relationship-re
 import { adminRegistryQueryOf } from "@/lib/v1/admin-console";
 
 /**
- * `/v1/admin/console/relationships` — the relationship registry.
+ * `/admin/console/relationships` — the relationship registry.
  *
  * The filter is read from the URL on the server and handed to the client component as a typed
  * query: every overview card links here with a parameter, so the list and the count it came from

@@ -79,7 +79,7 @@ function GroupTable({ rows }: { rows: readonly AdminUserRow[] }) {
 }
 
 /**
- * `/v1/admin/console/users` — the two seats and the members.
+ * `/admin/console/users` — the two seats and the members.
  *
  * The split is the console's own vocabulary, not a permission ladder: the **two seats** are the
  * initiator and the counterparty — the two roles every relationship is built from — and the

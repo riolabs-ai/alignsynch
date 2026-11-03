@@ -82,7 +82,7 @@ function seatLabel(seat: AdminSeat): string {
 }
 
 /**
- * `/v1/admin/console/relationships` — the relationship registry.
+ * `/admin/console/relationships` — the relationship registry.
  *
  * It varies the persona list (`components/v1/relationships-list.tsx` in turn a variation of
  * `components/my-quizzes/my-quizzes.tsx`): the same desktop table collapsing to cards below `md`,
