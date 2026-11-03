@@ -1,5 +1,5 @@
 /**
- * The brand boundary's gate, as a pure decision (#300).
+ * The brand boundary's gate, as a pure decision (#300), and the console's capability beside it (#509).
  *
  * Three claims, in the order the helper makes them:
  *
@@ -11,13 +11,27 @@
  *   3. **the operator can look** — `FLAG_PRODUCT_QUIZ_SURFACES=1` opens every gate on an alignment
  *      build, because the surfaces are gated and not deleted.
  *
+ * The second half asks the same three questions of `product.admin` (#509), where the answer is the
+ * opposite shape today: both templates this tree ships claim the console, and the brand that does
+ * not is the fixture template — a template id the record deliberately does not carry. What that
+ * proves is that the capability can be *off*, which is the whole reason it exists before the
+ * console's screens do.
+ *
  * What this file cannot prove is that each *page* calls the helper; that is the parity suite's
- * boundary block, which walks the route list on both brands.
+ * boundary blocks, which walk both route lists on both brands.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { FIXTURE_TEMPLATE_WITHOUT_ADMIN } from "./fixtures/fixture-brand";
 import { flagDefinition } from "@/data/flags";
-import { QUIZ_PRODUCT_FLAG, quizProductShipped, requireQuizProduct } from "@/lib/brand-boundary";
+import {
+  ADMIN_PRODUCT_FLAG,
+  adminProductShipped,
+  QUIZ_PRODUCT_FLAG,
+  quizProductShipped,
+  requireAdminProduct,
+  requireQuizProduct,
+} from "@/lib/brand-boundary";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -72,5 +86,60 @@ describe("the brand boundary", () => {
 
     expect(quizProductShipped()).toBe(false);
     expect(digestOf(() => requireQuizProduct())).toBe("NEXT_HTTP_ERROR_FALLBACK;404");
+  });
+});
+
+/**
+ * The console's capability (#509) — the same three questions, and a different answer shape today.
+ *
+ * `product.admin` is `default: false` with `templates: ["quizhub", "alignsynch"]`: every template
+ * this tree can build claims the console, and a template the record does not name does not. So the
+ * interesting case is the *closed* one, and it is a fixture rather than a shipped product — the card
+ * was explicit that no existing brand may be flipped to `false` to prove the switch.
+ */
+describe("the admin capability", () => {
+  it("names a flag the record carries, claimed by both templates this tree ships", () => {
+    expect(() => flagDefinition(ADMIN_PRODUCT_FLAG)).not.toThrow();
+    expect(flagDefinition(ADMIN_PRODUCT_FLAG).templates).toEqual(["quizhub", "alignsynch"]);
+    // `default: false` is not a downgrade: a template that never opts in must not inherit an
+    // operator console, which is the "derived product turns it off" half of the card.
+    expect(flagDefinition(ADMIN_PRODUCT_FLAG).default).toBe(false);
+    expect(flagDefinition(ADMIN_PRODUCT_FLAG).templates).not.toContain(
+      FIXTURE_TEMPLATE_WITHOUT_ADMIN,
+    );
+  });
+
+  it("ships the console on both shipped templates: the gate returns and nothing throws", () => {
+    for (const template of ["quizhub", "alignsynch"]) {
+      vi.stubEnv("BRAND", template);
+
+      expect(adminProductShipped(), `${template} must ship the console today`).toBe(true);
+      expect(digestOf(() => requireAdminProduct())).toBeUndefined();
+    }
+  });
+
+  it("closes it on the fixture brand with Next's own not-found digest", () => {
+    vi.stubEnv("BRAND", FIXTURE_TEMPLATE_WITHOUT_ADMIN);
+
+    expect(adminProductShipped()).toBe(false);
+    // The same digest the quiz gate throws: a template without the console is indistinguishable
+    // from a URL that never existed, which is what keeps the refusal from confirming a surface.
+    expect(digestOf(() => requireAdminProduct())).toBe("NEXT_HTTP_ERROR_FALLBACK;404");
+  });
+
+  it("lets the operator close it on a template that ships it", () => {
+    vi.stubEnv("BRAND", "alignsynch");
+    vi.stubEnv("FLAG_PRODUCT_ADMIN", "0");
+
+    expect(adminProductShipped()).toBe(false);
+    expect(digestOf(() => requireAdminProduct())).toBe("NEXT_HTTP_ERROR_FALLBACK;404");
+  });
+
+  it("lets the operator open it on the fixture brand — gated, never deleted", () => {
+    vi.stubEnv("BRAND", FIXTURE_TEMPLATE_WITHOUT_ADMIN);
+    vi.stubEnv("FLAG_PRODUCT_ADMIN", "1");
+
+    expect(adminProductShipped()).toBe(true);
+    expect(digestOf(() => requireAdminProduct())).toBeUndefined();
   });
 });

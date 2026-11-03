@@ -319,8 +319,9 @@ file, not a prototype that was never drawn.
 
 - **Prototype route:** none. **Fixture:** none. **Copy fixture:** none.
 - **What exists instead:** `requireAdmin()` (`lib/auth/require-role.ts`), the `admin-console`
-  capability (`lib/nav.ts`), and the `product.quiz-surfaces` flag (`data/flags.ts`) which is the only
-  per-template on in the tree.
+  capability (`lib/nav.ts`), and the two product capabilities in `data/flags.ts` —
+  `product.quiz-surfaces` and `product.admin` (#509) — which are the only per-template ons in the
+  tree.
 - **Reason verbatim:** same archive line as above.
 - **Before a wiring card could exist:** nothing on this card is a screen. Its subject is a
   caller-aware gate over 25 build-time-constant call sites, with a measured cost — which is a

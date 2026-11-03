@@ -112,7 +112,11 @@ QuizHub identical is `pnpm parity`: seven routes rendered under both brands, has
 harness to make one match ([`tests/parity/README.md`](tests/parity/README.md)). Parity also asserts
 the **brand boundary** (#300): the twenty-two routes the quiz product owns
 (`tests/parity/boundary.ts`) render on `quizhub` and answer `404` on `alignsynch`, where they are
-gated by `product.quiz-surfaces` (`lib/brand-boundary.ts::requireQuizProduct()`).
+gated by `product.quiz-surfaces` (`lib/brand-boundary.ts::requireQuizProduct()`). The same file
+carries the console's three entry points (`/admin/console`, `/admin/gaps`, `/admin/instances`) on
+the second capability, `product.admin` (`requireAdminProduct()`): on for both brands today, `404`
+on a template that does not claim it, and closed by `FLAG_PRODUCT_ADMIN=0` on a build that does
+(#509).
 
 Runtime parity is enforced by the script, not by convention: it refuses to run when the
 shell's Node major disagrees with `.nvmrc` (`24`) or when `pnpm` is not `12.x`.

@@ -249,6 +249,21 @@ export const navSurfaces: Readonly<Record<string, FlagName>> = {
   "/dashboard/user": "product.quiz-surfaces",
   "/my-quizzes": "product.quiz-surfaces",
   "/my-quizzes/[id]": "product.quiz-surfaces",
+  /**
+   * The operator console's entry points, on the **capability** switch (#509).
+   *
+   * Same rule as the quiz rows above: the route is gated by `requireAdminProduct()`, so the nav has
+   * to agree — a product that turned `product.admin` off would otherwise keep offering an admin row
+   * that answers 404. On both templates this tree ships the flag is on, so nothing is hidden today
+   * and the shell renders exactly what it rendered before; the rows exist for the build that turns
+   * the console off (a derived product, or `FLAG_PRODUCT_ADMIN=0`).
+   *
+   * `/admin/console` is listed although no sidebar row draws it: a nav or a footer can, and the
+   * list's job is to answer for an href the shell might print, not only for the two rows that do.
+   */
+  "/admin/console": "product.admin",
+  "/admin/gaps": "product.admin",
+  "/admin/instances": "product.admin",
 };
 
 /** The hrefs the shell must not draw. Empty when every gated surface is on. */
