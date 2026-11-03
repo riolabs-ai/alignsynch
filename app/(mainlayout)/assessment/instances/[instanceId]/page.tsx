@@ -8,7 +8,9 @@ import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { readRelationshipById } from "@/lib/db/assessments";
 import { DatabaseUnavailableError } from "@/lib/db/client";
+import { readStepsByRelationship } from "@/lib/db/steps";
 import type { FlowScreen } from "@/lib/flow/screen";
+import type { Step } from "@/content/steps";
 import { resendRefusalOf } from "@/lib/flow/resend";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
 import { markUnlockSeen } from "@/lib/flow/store";
@@ -136,6 +138,32 @@ async function recordUnlockSeen(screen: FlowScreen): Promise<void> {
   }
 }
 
+/**
+ * The relationship's Steps (#478) — read only once the session is complete.
+ *
+ * Before that there is nothing to read (the acceptance is what derives the rows) and nothing to show:
+ * a Step names the widest Gap on its Aspect, so drawing one early would be the blind rule leaking by
+ * another door. `[]` is the empty state the panel draws.
+ *
+ * A failed read is not a failed screen. The report above it was read successfully, so a dropped
+ * connection between the two statements costs the panel, not the page — logged, and the panel says
+ * there is nothing to show rather than Next answering 500 on a screen that is otherwise drawn. Any
+ * other failure still throws: a row that does not parse is a defect the gate exists to catch.
+ */
+async function readStepsFor(detail: {
+  readonly relationshipId: string;
+  readonly screen: FlowScreen;
+}): Promise<readonly Step[]> {
+  if (detail.screen.report === null) return [];
+  try {
+    return await readStepsByRelationship(detail.relationshipId);
+  } catch (error) {
+    if (!(error instanceof DatabaseUnavailableError)) throw error;
+    console.error("instance screen: the Steps could not be read", error);
+    return [];
+  }
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -178,11 +206,15 @@ export default async function AssessmentInstancePage({
   // which refusal it was is worse than saying nothing.
   const refusedReinvite = resendRefusalOf(resend);
 
+  // #478 — the Steps panel's rows, read after the screen so a dead connection costs the panel only.
+  const steps = await readStepsFor(detail);
+
   return (
     <AssessmentInstanceView
       screen={screen}
       copy={assessmentInstancePageCopy}
       paid={detail.paid}
+      steps={steps}
       {...(inviteNotice === undefined ? {} : { inviteNotice })}
       {...(problemCode === undefined ? {} : { problem: problemCode })}
       {...(refusedReinvite === undefined ? {} : { resendRefusal: refusedReinvite })}

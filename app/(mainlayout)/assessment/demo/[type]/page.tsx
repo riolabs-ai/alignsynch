@@ -22,7 +22,7 @@
  */
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import { formatCurrency } from "@/content/core";
-import { RELATIONSHIP_PRICE_CENTS } from "@/data/v1/relationship-types";
+import { RELATIONSHIP_PRICE_CENTS } from "@/data/relationship-types";
 import { assessmentDemo } from "@/lib/assessment-demo";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import type { Metadata } from "next";

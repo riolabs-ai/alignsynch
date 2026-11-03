@@ -3,18 +3,24 @@
  *
  * `content/steps.ts` is the pure half: it derives, closes and merges Steps from a session's
  * opinions and decides what a Step means. This is the half that touches Postgres, and it holds
- * exactly three statements — one read and the two writes `acceptSession()` performs inside its
- * transaction. There is no fourth: a Step is never deleted, never reworded here and never
- * reopened, because the model's own merge (`stepsToAdd`, `closeSteps`) is what decides those
- * questions and this module only stores their answer.
+ * five statements: one read, the two writes `acceptSession()` performs inside its transaction, and
+ * the two a **party** performs from the panel (#478) — a tick and a reword.
+ *
+ * **The four writes are not the same kind of write.** `insertStepRows` and `closeStepRows` are the
+ * derivation's, called only from the acceptance transaction: they decide what the plan *is*.
+ * `updateStepStatus` and `updateStepText` are a party's, called from `writeStep()` behind a check
+ * that the browser is a party and the session is complete: they record what a person did with the
+ * plan. Neither pair can do the other's job — the derivation never rewords or ticks, and a party can
+ * never insert or close a row.
  *
  * **The write helpers take a `PoolClient` on purpose.** `acceptSession()` derives Steps *on the
  * acceptance transition* and must commit them in the same transaction as the acceptance itself —
  * "the acceptance committed but the Steps didn't" is a state this table exists to make
- * unrepresentable. A helper that opened its own connection could not be part of that transaction,
- * so the two writes take the caller's client and never a pool. The read accepts either: the
- * accept path passes its client (so it sees the rows its own transaction has), and a surface that
- * only draws Steps uses the pool, which is what `queryRows` retries on a dead socket.
+ * unrepresentable, and a tick that commits half a step is the same defect one row down. A helper
+ * that opened its own connection could not be part of that transaction, so every write takes the
+ * caller's client and never a pool. The read accepts either: the accept path passes its client (so
+ * it sees the rows its own transaction has), and a surface that only draws Steps uses the pool,
+ * which is what `queryRows` retries on a dead socket.
  *
  * **`derived_from` is kinds, never values.** A row that named a Gap *number* would be a stored
  * verdict that could only drift from the two Opinions it was subtracted from; the kind is stable
@@ -23,7 +29,7 @@
  * throws with the row named instead of drawing.
  */
 import type { PoolClient } from "pg";
-import { zStep, type Step } from "@/content/steps";
+import { zStep, type Step, type StepStatus } from "@/content/steps";
 import { queryRows } from "@/lib/db/client";
 import { isoInstantOf, parseOrThrow } from "@/lib/db/rows";
 
@@ -139,4 +145,56 @@ export async function closeStepRows(client: PoolClient, ids: readonly string[]):
     [ids],
   );
   return result.rowCount ?? 0;
+}
+
+/**
+ * Move one Step to a party's status — a tick, or the tick taken back (#478).
+ *
+ * `relationship_id` is in the predicate and not only the id: the caller resolved the row from *this*
+ * relationship's Steps, and a statement that could reach another relationship's row would be one
+ * hand-written POST away from editing a plan the browser is not a party to.
+ *
+ * `AND status <> 'closed'` is the model's rule stored: `closed` is history (`withStepStatus` refuses
+ * it), so a tick cannot reopen a Step whose Gap has since fallen to 0. Returns `false` when nothing
+ * moved — a closed row, a row on another relationship, or the same status twice — so the caller can
+ * answer a no-op without pretending it wrote.
+ */
+export async function updateStepStatus(
+  client: PoolClient,
+  args: {
+    readonly id: string;
+    readonly relationshipId: string;
+    readonly status: StepStatus;
+  },
+): Promise<boolean> {
+  const result = await client.query(
+    `UPDATE step SET status = $3
+      WHERE id = $1 AND relationship_id = $2 AND status <> 'closed' AND status <> $3`,
+    [args.id, args.relationshipId, args.status],
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * Reword one Step — the party's own words, with the suggestion left in `suggested_text` (#478).
+ *
+ * The same two predicates as the tick, for the same reasons, plus `status <> 'closed'`: a closed
+ * Step's words are a record of what was agreed, not a plan, so `withStepText` refuses to reword it
+ * and this statement does not either. `text` is trimmed by the caller (`withStepText`), which is
+ * also what refuses an empty one — the column is `CHECK (length(btrim(text)) > 0)`.
+ */
+export async function updateStepText(
+  client: PoolClient,
+  args: {
+    readonly id: string;
+    readonly relationshipId: string;
+    readonly text: string;
+  },
+): Promise<boolean> {
+  const result = await client.query(
+    `UPDATE step SET text = $3
+      WHERE id = $1 AND relationship_id = $2 AND status <> 'closed' AND text <> $3`,
+    [args.id, args.relationshipId, args.text],
+  );
+  return (result.rowCount ?? 0) > 0;
 }

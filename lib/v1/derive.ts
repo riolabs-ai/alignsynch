@@ -14,8 +14,8 @@
  * the report unlock. Every "complete" derivation below reads that hinge, so a submission cannot
  * leak a value.
  */
-import type { AspectGaps, AlignmentVerdict, FlagCounts, GapKinds } from "@/content/gaps";
-import { flagCountsOf, gapKindsIn, gapKindsOf, instanceAlignment } from "@/content/gaps";
+import type { AspectGaps, AlignmentVerdict, GapKinds } from "@/content/gaps";
+import { gapKindsIn, gapKindsOf, instanceAlignment } from "@/content/gaps";
 import { stageOf, type RelationshipStage } from "@/content/stages";
 import type { V1Relationship, V1Session } from "@/data/v1/fixtures";
 
@@ -94,18 +94,6 @@ export function allAspectGaps(rel: V1Relationship): AspectGaps[] {
 export function verdictOf(rel: V1Relationship): AlignmentVerdict | null {
   if (!sessionCompleteOf(rel)) return null;
   return instanceAlignment(allAspectGaps(rel), rel.setting);
-}
-
-/**
- * The flag counts per severity (yellow / orange / pink / red), derived from the Gaps — never
- * stored, never authored. `null` until the session is complete (both submitted **and**
- * accepted): an unscored relationship has no verdict, so it reports no counts, and never four
- * zeroes. The arithmetic is `content/gaps.ts::flagCountsOf`; this is only the relationship
- * gate that decides whether a sheet has been scored.
- */
-export function flagCountsOfRelationship(rel: V1Relationship): FlagCounts | null {
-  if (!sessionCompleteOf(rel)) return null;
-  return flagCountsOf(allAspectGaps(rel));
 }
 
 /**
@@ -319,43 +307,8 @@ export function trendOf(summaries: readonly SessionSummary[]): GapTrend {
 }
 
 /* ------------------------------------------------------------------ *
- * The relationships table's columns — flag counts and invite state
+ * Invite state
  * ------------------------------------------------------------------ */
-
-/** The four flag columns, in the reference mockup's left-to-right order (Yellow first). */
-export const GAP_FLAG_COLUMNS = ["yellow", "orange", "pink", "red"] as const;
-
-export type GapFlagColumn = (typeof GAP_FLAG_COLUMNS)[number];
-
-/** The glossary's own colour word per column — `Yellow/Orange/Pink/Red` for Gaps 1/2/3/4. */
-export const GAP_FLAG_LABELS: Record<GapFlagColumn, string> = {
-  yellow: "Yellow",
-  orange: "Orange",
-  pink: "Pink",
-  red: "Red",
-};
-
-/** The four flag counts: how many Gaps sit at each magnitude, across every Aspect. */
-export interface GapFlagCounts {
-  readonly yellow: number | null;
-  readonly orange: number | null;
-  readonly pink: number | null;
-  readonly red: number | null;
-}
-
-/**
- * The relationships table's four flag counts, derived from the Gaps — never stored, never
- * authored (the same rule the Gap-as-column ban enforces). Each column counts the Gaps at its
- * magnitude: 1 → Yellow, 2 → Orange, 3 → Pink, 4 → Red (`docs/specs/ux-report.md`: "Yellow/
- * Orange/Pink/Red for gaps 1/2/3/4"). A Gap of 0 is In Synch, not a flag, and is never counted.
- *
- * A relationship with no scored session returns `null` for every column: absent is not zero,
- * and a count here would be a path to the other party's answers before acceptance.
- */
-export function gapFlagCountsOf(rel: V1Relationship): GapFlagCounts {
-  const counts = flagCountsOfRelationship(rel);
-  return counts ?? { yellow: null, orange: null, pink: null, red: null };
-}
 
 /** The four invite states a surface shows — stable labels, never a ticking countdown. */
 export type InviteState = "not-sent" | "pending" | "expired" | "accepted";

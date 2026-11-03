@@ -37,7 +37,7 @@
  *
  * **The catalogue is the rest of the type taxonomy, derived and not retyped.** The four
  * records above are the hand-authored ones; the collection a practitioner shops from is
- * `data/v1/relationship-types.ts`, which authors twenty-seven purchasable Relationship
+ * `data/relationship-types.ts`, which authors twenty-seven purchasable Relationship
  * Types across seven realms, each with its own Aspects, its two roles and its price. A
  * **template is what an instance is copied from** (`lib/flow/store.ts` reads a record, not
  * a type), so every purchasable type the set above does not already cover gets one record
@@ -49,7 +49,7 @@
  */
 import type { Assessment, AssessmentInstance } from "../content/assessment";
 import { DEMO_NOW_ISO } from "../content/core";
-import { purchasableRelationshipTypes } from "./v1/relationship-types";
+import { purchasableRelationshipTypes } from "./relationship-types";
 
 /** One assessment template: five Aspects, each with a Left Value and a Right Value. */
 const authoredTemplates: readonly Assessment[] = [

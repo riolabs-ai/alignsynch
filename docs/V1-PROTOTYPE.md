@@ -1,11 +1,13 @@
 # AlignSynch V1 Prototype
 
-> **Retired (#478).** The `/v1` customer tree is deleted: 95 items were classified in
-> [`V1-RETIREMENT.md`](V1-RETIREMENT.md) and 93 of them are gone, the console moved to
-> `/admin/console`, and the `release` demo report moved out of the namespace to
-> `/assessment/demo/[type]`. No `/v1` route answers any more — the group, its gate and the demo
-> page's old address are gone. This page is kept as the record of what the prototype was; nothing
-> below describes the current route table. Live flows are `app/(mainlayout)/**`.
+> **Retired (#478).** The `/v1` tree is deleted: 95 items were classified in
+> [`V1-RETIREMENT.md`](V1-RETIREMENT.md) and every one of them has reached its destination. The
+> console moved to `/admin/console` (behind `requireAdmin`), the worked example moved to
+> `/assessment/demo/[type]` over the app's own report renderer, and the Steps panel now draws on the
+> instance screen. **No `/v1` address exists**: `app/(prototype)` is gone, `content/routes.ts` holds
+> no `/v1` pattern, and a request for one is a 404. This page is kept as the record of what the
+> prototype was; nothing below describes the current route table. Live flows are
+> `app/(mainlayout)/**`.
 
 The whole product, clickable, at `/v1/**` — six personas, no authentication, and an
 in-browser store that keeps every flow working on reload. It is a _prototype_: every mutation is

@@ -54,7 +54,7 @@ import {
   type V1SessionRecord,
   type V1Ticket,
 } from "@/data/v1/fixtures";
-import type { RelationshipType } from "@/data/v1/relationship-types";
+import type { RelationshipType } from "@/data/relationship-types";
 import {
   authoredStepOf,
   closeSteps,

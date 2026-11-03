@@ -11,7 +11,7 @@
  *   1. a header band naming the **type** — the group, the realm, the Relationship Type and the two
  *      roles — then the single `h1`;
  *   2. the descriptor the catalogue authored for that type: **who it is for, and who it is not
- *      for**. Those two sentences are the type's own copy (`data/v1/relationship-types.ts`); a
+ *      for**. Those two sentences are the type's own copy (`data/relationship-types.ts`); a
  *      template whose slug names no catalogue type says so instead, and no descriptor is written
  *      for it here;
  *   3. the Aspects, in authored order, each with **both named ends of the scale** — notch 1 and
@@ -39,7 +39,7 @@ import {
   SETTING_LABELS,
   type AlignmentSetting,
 } from "@/content/assessment";
-import { REALM_GROUP, type RelationshipType } from "@/data/v1/relationship-types";
+import { REALM_GROUP, type RelationshipType } from "@/data/relationship-types";
 import type { LibraryTemplateDetail } from "@/lib/db/template-library";
 import {
   ASSESSMENTS_PATH,

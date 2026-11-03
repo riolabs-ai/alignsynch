@@ -61,7 +61,7 @@ import {
   type Opinions,
 } from "../../content/assessment";
 import { deriveSteps, zStep, type Step } from "../../content/steps";
-import { RELATIONSHIP_PRICE_CENTS } from "./relationship-types";
+import { RELATIONSHIP_PRICE_CENTS } from "../relationship-types";
 
 /* ------------------------------------------------------------------ *
  * Templates — the library the editor and the relationship form read
@@ -1305,7 +1305,7 @@ export interface V1SeedState {
  * replaces it from the fixtures rather than presenting old rows as if they were agreed under the
  * new rule.
  *
- * 11 — the `staff-manager` demo sheet (`data/v1/relationship-types.ts`). This one is **not** a
+ * 11 — the `staff-manager` demo sheet (`data/relationship-types.ts`). This one is **not** a
  * shape change and does not need the bump to be correct: the demo report is rendered from that
  * file on the server, so no persisted store ever holds a copy of it. The bump is deliberate anyway,
  * so a browser that has been walking the demo since before the exemplar existed re-seeds into the

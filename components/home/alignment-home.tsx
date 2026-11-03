@@ -19,7 +19,7 @@ import type { ReactNode } from "react";
  *
  * This file holds no words. Every string it prints arrives in the model
  * (`lib/alignment-home.ts`), which joins `data/pages/home-alignsynch.ts` with
- * `data/assessments.ts` and counts `data/v1/relationship-types.ts`, and every colour arrives as
+ * `data/assessments.ts` and counts `data/relationship-types.ts`, and every colour arrives as
  * a token: `bg-action` / `text-action` / `border-action` are the brand's, painted onto `<html>`
  * by `lib/brand-theme.ts` from `data/brand.ts`. `data:check` E23 counts the leaf literals in
  * `components/home/**` and holds them at 0; a sentence or a label typed here is a red build.

@@ -34,7 +34,7 @@ import {
   demoAnswersFor,
   purchasableRelationshipTypes,
   purchasableRelationshipType,
-} from "@/data/v1/relationship-types";
+} from "@/data/relationship-types";
 import { assessmentDemo } from "@/lib/assessment-demo";
 import { createRelationshipPath } from "@/lib/flow/paths";
 

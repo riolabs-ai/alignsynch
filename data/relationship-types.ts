@@ -1,5 +1,5 @@
 /**
- * data/v1/relationship-types.ts — the /v1 prototype's relationship taxonomy.
+ * data/relationship-types.ts — the relationship taxonomy the product sells.
  *
  * The owner supplied a 29-row catalogue (issue #385, preserved verbatim at
  * `docs/RELATIONSHIP-TYPES-SOURCE.md`). This file is the **normalised** form of it: every row
@@ -40,7 +40,7 @@
  * component and nothing reads a clock at render: no React, no Next, no `lib/db/**`.
  */
 import { z } from "zod";
-import { zAspect, type Aspect, type Opinions } from "../../content/assessment";
+import { zAspect, type Aspect, type Opinions } from "../content/assessment";
 
 /* ------------------------------------------------------------------ *
  * The shape

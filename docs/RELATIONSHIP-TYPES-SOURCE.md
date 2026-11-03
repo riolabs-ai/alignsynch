@@ -2,7 +2,7 @@
 
 This is the **owner's supplied catalogue**, preserved verbatim (typos included) as the
 record of what was asked. It is **not** normalised here — the normalised, typed version
-is `data/v1/relationship-types.ts`, which corrects the three source typos, adds the
+is `data/relationship-types.ts`, which corrects the three source typos, adds the
 `purchasable` field, and carries the Aspects this product ships. The table below is
 issue #385 §0, unedited.
 

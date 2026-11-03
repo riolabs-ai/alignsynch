@@ -52,12 +52,14 @@ import { AssessmentReportView } from "@/components/assessment/assessment-report"
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
 import { InviteLink } from "@/components/assessment-flow/invite-link";
 import { ReinviteForm } from "@/components/assessment-flow/reinvite-form";
+import { StepsPanel } from "@/components/assessment-flow/steps-panel";
 import { MODE_LABELS } from "@/content/assessment";
+import type { Step } from "@/content/steps";
 import { formatDate } from "@/content/core";
 import { STAGE_LABELS } from "@/content/stages";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { answersPath, reinvitePath } from "@/lib/flow/paths";
+import { answersPath, reinvitePath, stepsPath } from "@/lib/flow/paths";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import type { ResendRefusal } from "@/lib/flow/resend";
 import { RESEND_LIFETIME_CAP } from "@/lib/flow/tokens";
@@ -130,6 +132,7 @@ export function AssessmentInstanceView({
   inviteNotice,
   resendRefusal,
   paid = null,
+  steps = [],
 }: {
   screen: FlowScreen;
   copy: PageCopy;
@@ -152,6 +155,15 @@ export function AssessmentInstanceView({
    * component ever sees them.
    */
   paid?: RelationshipPaid | null;
+  /**
+   * The relationship's Steps (#478) — read by the page, drawn only in the report state.
+   *
+   * The default is `[]` so a caller that has not read them draws the panel's empty state rather than
+   * a crash. The list is the relationship's, not the session's: a Step outlives the session that
+   * agreed it, which is the whole point of storing it. A coach is handed it like a party (the plan is
+   * shared) and simply gets no controls.
+   */
+  steps?: readonly Step[];
 }) {
   const waiting = sectionOf(copy, "waiting");
   const reportBand = sectionOf(copy, "report");
@@ -445,6 +457,21 @@ export function AssessmentInstanceView({
             <p className="mt-1">{sectionBody(reportBand)}</p>
           </section>
           <AssessmentReportView report={screen.report} />
+          {/* #478 — the plan the completion derived, drawn on the screen that owns it. A party
+              ticks and rewords; a coach reads. Only in the report state: a Step names the widest Gap
+              on its Aspect, so drawing one before both seats have accepted would hand a party the
+              other's answers by way of the plan. */}
+          <StepsPanel
+            steps={steps}
+            aspects={screen.aspects.map((aspect) => ({
+              itemId: aspect.itemId,
+              prompt: aspect.prompt,
+            }))}
+            action={stepsPath(screen.instanceRecordId)}
+            canMark={!isCoach}
+            aligned={screen.report.verdict.aligned}
+            copy={copy}
+          />
         </>
       )}
     </div>

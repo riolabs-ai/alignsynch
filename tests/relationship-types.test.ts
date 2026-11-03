@@ -19,7 +19,7 @@ import {
   purchasableTypesByRealm,
   relationshipTypes,
   type RelationshipType,
-} from "@/data/v1/relationship-types";
+} from "@/data/relationship-types";
 
 const DATING_IDS = ["girlfriend-boyfriend", "dating", "committed-significant-others"] as const;
 

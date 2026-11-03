@@ -69,7 +69,7 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
        * realm, the group, the Relationship Type and the two **roles** — never a person: a
        * template holds Aspects, and names are instance facts. `who-its-for` / `who-its-not-for`
        * label the descriptor the catalogue already authored for the type
-       * (`data/v1/relationship-types.ts::descriptor`); a template whose slug names no catalogue
+       * (`data/relationship-types.ts::descriptor`); a template whose slug names no catalogue
        * type has no descriptor, and says so instead of having one written for it.
        */
       id: "identity",
