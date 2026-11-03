@@ -45,10 +45,16 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 
 import { freezeClock, normalize, renderRoute } from "./harness";
 import { parityRoutes, type ParityRoute } from "./routes";
-import { quizOnlyRoutes } from "./boundary";
+import AdminConsoleLayout from "@/app/(mainlayout)/admin/console/layout";
+import { adminProductRoutes, FIXTURE_TEMPLATE_WITHOUT_ADMIN, quizOnlyRoutes } from "./boundary";
 import { absentRender, summarize } from "./summary";
-import { QUIZ_PRODUCT_FLAG, quizProductShipped } from "@/lib/brand-boundary";
-import { isEnabled } from "@/lib/flags";
+import {
+  ADMIN_PRODUCT_FLAG,
+  adminProductShipped,
+  QUIZ_PRODUCT_FLAG,
+  quizProductShipped,
+} from "@/lib/brand-boundary";
+import { isEnabled, envNameFor } from "@/lib/flags";
 
 /**
  * The brand this process is. Set by `scripts/parity.mjs`, alongside `BRAND` — which is what
@@ -154,6 +160,43 @@ vi.mock("@/lib/db/assessments", async () => {
 vi.mock("@/lib/db/user-profiles", () => ({
   readUserProfileByHandle: async () => null,
   readUserProfileByUserId: async () => null,
+}));
+
+/**
+ * The console's two database reads, answered with an empty population (#509).
+ *
+ * The admin boundary block below is a claim about the *capability* switch, not about Postgres, and
+ * the gate has no `DATABASE_URL` on purpose — the same reason `/assessment/[slug]` is answered from
+ * a fixture above. With no rows the pages take their ordinary empty paths, so what is measured on
+ * the open side is a render rather than a failure panel.
+ */
+vi.mock("@/lib/db/admin-instances", () => ({
+  listAdminInstances: async () => [],
+}));
+
+vi.mock("@/lib/db/gap-rows", () => ({
+  readGapPopulation: async () => ({ instances: [], excluded: 0, total: 0 }),
+}));
+
+/**
+ * The console's **role** gate, opened for the whole run (#509).
+ *
+ * The admin boundary block asks one question — does `product.admin` close these routes — and the
+ * role gate is a different card's boundary, proven by `tests/require-role.test.ts` and by the
+ * `curl` table the cards that built the console carry. Leaving it in the way would mean the open
+ * side of every admin case answers `NEON_AUTH_BASE_URL is not set` (the documented 500 for a gated
+ * route on a tree with no auth env) and the assertion would pass over a route that never rendered,
+ * which is the shape of test this harness exists to avoid. `openFlags` on `/affiliate` is the same
+ * move for a flag: take the other gate out of the measurement.
+ *
+ * The *capability* gate is untouched, which is the point: a page that forgot `requireAdminProduct()`
+ * still answers a render here and fails the fixture-brand case.
+ */
+vi.mock("@/lib/auth/require-role", async (importOriginal) => ({
+  // Everything else stays real — `currentRole()` in particular, which `/leaderboard` reaches
+  // through `enabledForCaller()` and which answers `null` on a tree with no auth env.
+  ...(await importOriginal<typeof import("@/lib/auth/require-role")>()),
+  requireAdmin: async () => ({ kind: "allow", role: "admin" }),
 }));
 
 const PARITY_ROOT = fileURLToPath(new URL(".", import.meta.url));
@@ -498,6 +541,138 @@ describe("brand parity", () => {
         }
       });
     }
+  });
+
+  /**
+   * The admin console's capability boundary (#509) — the same status question, for a capability
+   * rather than a product.
+   *
+   * `product.admin` is `default: false` with `templates: ["quizhub", "alignsynch"]`, so both brands
+   * this process can be ship the console and a template the record does not name does not. The
+   * block proves all three claims against the real page modules:
+   *
+   *   open        a template that claims the capability gets past `requireAdminProduct()` — a
+   *               document for `/admin/gaps` and `/admin/instances`, and for `/admin/console` a page
+   *               that has at least not answered 404 (its body needs the subtree layout's store
+   *               provider, which this harness does not mount — see `AdminProductRoute.open`).
+   *   fixture     a template id the flag record does **not** carry — the "fixture brand" #509 asks
+   *               for, which is what a derived product that turned the console off *is* — answers
+   *               Next's not-found on every one of them.
+   *   operator    `FLAG_PRODUCT_ADMIN=0` closes the same routes on a template that ships them, so
+   *               the switch is a lever on a live deployment and not only a per-template decision.
+   *
+   * The closed cases are the ones that can fail: drop `requireAdminProduct()` from any page in
+   * `boundary.ts`'s `adminProductRoutes` and exactly that case goes red.
+   */
+  describe("admin product boundary", () => {
+    /** The flag's name as a string: `FlagName` is a key type, and a message needs the word. */
+    const adminFlag = String(ADMIN_PRODUCT_FLAG);
+
+    it(`this brand claims the admin console, through ${adminFlag}`, () => {
+      expect(
+        adminProductShipped(),
+        `${brand} does not ship ${adminFlag} — data/flags.ts's \`templates\` must name both ` +
+          "templates this tree ships (#509); the console's entry points are in " +
+          "tests/parity/boundary.ts and they answer 404 when the capability is off",
+      ).toBe(true);
+    });
+
+    for (const route of adminProductRoutes) {
+      it(`${route.route} — ${brand}`, async () => {
+        freezeClock();
+
+        /**
+         * The capability is on for this template: the page's own gate must open. `render` for a
+         * page with a self-contained tree, and for `/admin/console` the weaker-but-still-real claim
+         * that it did not answer 404 — a `404` here means the page's gate closed on the template
+         * that sells the console, and an `error:` would be reported rather than swallowed.
+         */
+        const open = await answerOf(route);
+        if (route.open === "render") {
+          expect(
+            open,
+            `${brand} ${route.route}: this template claims ${adminFlag}, so the page ` +
+              `must render — got ${open}. A 404 means the gate closed on the wrong template; ` +
+              "anything else is the page failing, not a boundary answer.",
+          ).toBe("render");
+        } else {
+          expect(
+            open,
+            `${brand} ${route.route}: this template claims ${adminFlag}, so the route ` +
+              `must not answer 404 — got ${open}.`,
+          ).not.toBe("404");
+        }
+
+        /**
+         * The fixture brand: a template id `data/flags.ts` does not carry. This is the state the
+         * card asks a derived product to be able to reach — `product.admin: false` — and every
+         * entry point must answer the same 404 an unknown URL gets, not a 403 and not a redirect.
+         */
+        vi.stubEnv("BRAND", FIXTURE_TEMPLATE_WITHOUT_ADMIN);
+        expect(
+          adminProductShipped(),
+          `BRAND=${FIXTURE_TEMPLATE_WITHOUT_ADMIN} resolves ${adminFlag} on — the flag ` +
+            "must not name a template this tree does not ship, or the fixture brand proves nothing",
+        ).toBe(false);
+        const fixture = await answerOf(route);
+        vi.unstubAllEnvs();
+        expect(
+          fixture,
+          `the fixture brand (BRAND=${FIXTURE_TEMPLATE_WITHOUT_ADMIN}) answers ${fixture} on ` +
+            `${route.route} — a template that does not claim ${adminFlag} must answer 404, ` +
+            "which means the page's first statement is `requireAdminProduct()` " +
+            "(lib/brand-boundary.ts) before `requireAdmin()` and before any read",
+        ).toBe("404");
+
+        /**
+         * And the operator's lever on this same build: a deployment that turns the console off gets
+         * the same 404 without a second build, which is the whole reason the capability is a flag.
+         */
+        vi.stubEnv(envNameFor(adminFlag), "0");
+        const lever = await answerOf(route);
+        vi.unstubAllEnvs();
+        expect(
+          lever,
+          `${route.route} answered ${lever} with ${envNameFor(adminFlag)}=0 — the env override ` +
+            "is the first step of the resolver, so the route must be closed on this build too",
+        ).toBe("404");
+      });
+    }
+
+    /**
+     * The console's **subtree** gate, which none of the page modules above can show.
+     *
+     * Five of the six console routes — the overview's siblings under `admin/console/` — carry no
+     * `requireAdminProduct()` of their own: one call in `layout.tsx` closes them all, and that is
+     * the point of putting it there (a seventh page added tomorrow inherits it). The harness renders
+     * page modules, never nested layouts, so this case renders the layout *as* a page — no child, the
+     * provider wrapping nothing — and asks the same status question of it. One file, six routes, and
+     * a render rather than a source grep.
+     */
+    it(`the console's subtree layout closes with the capability — ${brand}`, async () => {
+      freezeClock();
+      const target = {
+        route: "/admin/console",
+        page: AdminConsoleLayout as unknown as import("./routes").ParityPage,
+        params: {},
+      };
+
+      vi.stubEnv("BRAND", FIXTURE_TEMPLATE_WITHOUT_ADMIN);
+      const closed = await answerOf(target);
+      vi.unstubAllEnvs();
+      expect(
+        closed,
+        `the console's subtree layout answered ${closed} on the fixture brand — the five pages ` +
+          "under `admin/console/` have no gate of their own, so this layout's " +
+          "`requireAdminProduct()` is what must answer 404 for all of them",
+      ).toBe("404");
+
+      expect(
+        await answerOf(target),
+        `the console's subtree layout did not render on ${brand}, which claims ${adminFlag} — ` +
+          "an open capability must fall through to `requireAdmin()` and the provider",
+      ).toBe("render");
+    });
   });
 
   /**
