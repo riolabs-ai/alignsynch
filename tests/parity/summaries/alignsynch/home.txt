@@ -92,7 +92,7 @@ links (42 unique, 48 total)
   /v1/templates/staff-manager/demo                     1
   /v1/templates/teacher-student/create                 1
   /v1/templates/team/create                            1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 1
 
 counts
   elements  617

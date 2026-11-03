@@ -1,14 +1,18 @@
 # Deploying
 
-`alignsynch.com` is a Vercel project (`alignsynch`, team `riolabs-ai`) that builds this repository
-on every push to `main`. Two things about that are easy to get wrong, and both have already cost a
-day: **which pushes are allowed to build**, and **whether what is serving is what merged**.
+`alignsynch.com` is a Vercel project (`alignsynch`, team `riolabs-ai`) that builds this repository.
+It does **not** build on every push to `main`: deployment creation from Git is switched off on the
+project (`gitProviderOptions.createDeployments: "disabled"`), so no push — to `main`, to a branch, to a
+tag — creates a deployment, and production moves only when a promotion names a commit to the Vercel
+API. [`RELEASING.md`](RELEASING.md#main--production-promoting-a-release) is that procedure, command by
+command. Two things about deployment are easy to get wrong, and both have already cost a day: **what a
+deployment is allowed to build**, and **whether what is serving is what merged**.
 
 Neither is visible to `bash scripts/verify.sh`. The gate is network-free by contract — it "never
 opens a connection" ([`AGENTS.md`](../AGENTS.md)) — so it cannot see a deployment, and a green gate
 is not a claim about production. It is a claim about the tree.
 
-## 1. Which pushes build: production, plus one branch named in the file
+## 1. What a deployment is allowed to build: production, plus one branch named in the file
 
 The rule lives in [`vercel.json`](../vercel.json), in one `ignoreCommand`:
 
@@ -18,7 +22,7 @@ The rule lives in [`vercel.json`](../vercel.json), in one `ignoreCommand`:
 
 Read it as four rules, in the order they are checked:
 
-- **`production` builds.** A push to `main` carries `VERCEL_ENV=production`, the first test passes
+- **`production` builds.** A deployment created for `main` carries `VERCEL_ENV=production`, the first test passes
   and the command exits `1` — Vercel's "build" answer.
 - **The branch named `demo` builds, in any environment.** The second test,
   `[ "${VERCEL_GIT_COMMIT_REF:-}" = demo ]`, is joined to the first by `||`, so it is consulted for
