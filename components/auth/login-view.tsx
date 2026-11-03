@@ -6,7 +6,7 @@ import { AppVersion } from "@/components/layout/app-version";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
-import { MarkGlyph } from "@/components/auth/mark-icon";
+import { MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -128,6 +128,7 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
 export function LoginView({
   copy,
   marks,
+  markSrc,
   next,
   googleFailure: googleFailureProp,
   demo,
@@ -142,6 +143,13 @@ export function LoginView({
    * was resolved on the server and the glyph table is a plain table of shapes.
    */
   marks: AuthMarkSet;
+  /**
+   * The image the `brand-mark` id draws (`AUTH_MARK_SRC_BY_BRAND`, the brand's generated app
+   * mark). Passed for every brand, read by the one whose set names that id: a view that cannot
+   * learn which brand it is cannot derive a brand path, so the server hands the path down beside
+   * the id exactly as it hands the copy down.
+   */
+  markSrc: string;
   next: string;
   /**
    * Whether this visit came back from a Google finish that failed. Read by the page from the
@@ -312,7 +320,7 @@ export function LoginView({
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="mb-8 max-w-md mx-auto">
             <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
-              <MarkGlyph id={marks.hero} className="w-10 h-10 text-white" />
+              <MarkGlyph id={marks.hero} src={markSrc} className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-4xl font-bold mb-4">{copy.heading}</h2>
             <p className="text-xl text-white/90 leading-relaxed">{copy.subtitle}</p>
@@ -351,7 +359,11 @@ export function LoginView({
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-8">
             <div className="lg:hidden mx-auto mb-4 w-12 h-12 bg-action rounded-lg flex items-center justify-center">
-              <MarkGlyph id={marks.hero} className="w-6 h-6 text-white" />
+              <MarkGlyph
+                id={marks.hero}
+                src={markSrc}
+                className={`${tileMarkClass(marks.hero)} text-white`}
+              />
             </div>
             <CardTitle className="text-3xl font-bold ">{form.heading}</CardTitle>
             <CardDescription>{form.body}</CardDescription>

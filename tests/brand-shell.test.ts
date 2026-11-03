@@ -89,6 +89,8 @@ const alignSynch: Brand = zBrand.parse({
   logo: alignSynchBrand.logo,
   // The tab icon is brand data like the logo (#187 stage 4): read from the record, not restated.
   icon: alignSynchBrand.icon,
+  // The mark the icon set is generated from — read from the record for the same reason.
+  mark: alignSynchBrand.mark,
   colors: alignSynchBrand.colors,
   supportEmail: "support@alignsynch.com",
   affiliateEmail: "hello@alignsynch.com",

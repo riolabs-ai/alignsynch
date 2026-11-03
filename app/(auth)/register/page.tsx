@@ -1,7 +1,7 @@
 import { RegisterView } from "@/components/auth/register-view";
 import { brand, brandIdOf } from "@/data/brand";
 import { registerPageCopy } from "@/data/pages/register";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import { registerCopyFor } from "@/lib/auth-copy";
 import type { Metadata } from "next";
@@ -41,6 +41,7 @@ export default function AuthPage() {
       copy={registerCopyFor(registerPageCopy, brandId)}
       destination={AFTER_SIGN_IN_BY_BRAND[brandId]}
       marks={AUTH_MARKS_BY_BRAND[brandId]}
+      markSrc={AUTH_MARK_SRC_BY_BRAND[brandId]}
     />
   );
 }

@@ -1,18 +1,23 @@
 /**
- * The generated icon set — one geometry across both brands, and the maskable mark inside the
- * safe zone.
+ * The generated icon set — the template's book for a brand that has no mark of its own, and the
+ * brand's own mark for one that does.
  *
- * The shape rule the card states is "identical geometry, different token": QuizHub and AlignSynch
- * may differ only by the two colours they hand `markSvg`, never by the book's size, position or
- * radius. The files are written by `scripts/gen-brand-icons.mjs` and held to the record by
- * `pnpm data:check` (`--check` re-draws every file and compares bytes), so this test pins the
- * claims the generator *cannot* fail on by construction — that a brand cannot grow or shrink the
- * mark, that the maskable mark sits inside the 80 % circle the OS is allowed to crop to, and that
- * the raster surfaces are opaque full-bleed squares with no transparent corner to double-round.
+ * The rule is the same on both sides: the mark fills the surface's safe fraction, centred, on the
+ * brand's own `action`, and the *files* are written by `scripts/gen-brand-icons.mjs` and held to
+ * the record by `pnpm data:check` (`--check` re-draws every file and compares bytes). So this test
+ * pins the claims the generator cannot fail on by construction:
+ *
+ *   - a brand that names a mark draws **that mark** — not a glyph — on every surface, which is the
+ *     defect this card fixed: a white person silhouette on the brand's blue;
+ *   - the mark's ink sits inside the 80 % safe circle the OS may crop to, measured on the shipped
+ *     raster rather than asserted about the SVG;
+ *   - the raster surfaces are opaque full-bleed squares with no transparent corner to double-round;
+ *   - the favicon embeds a downscaled copy of the mark (an SVG favicon is downloaded on every page
+ *     load) and the `.ico` is a container around the same app mark;
+ *   - and the two brands still differ only by their mark and their tokens.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 
 import { quizHubBrand } from "@/data/brand";
@@ -20,172 +25,126 @@ import { alignSynchBrand } from "@/data/brands/alignsynch";
 import {
   APP_GLYPH_FRACTION,
   APP_RADIUS_FRACTION,
+  CARD_MARK_FRACTION,
+  CARD_MARK_SIZE,
+  MARK_PATHS,
   MARK_SIZE,
   MASKABLE_GLYPH_FRACTION,
+  markBoxOf,
   markSvg,
 } from "@/lib/brand-icon";
+import { alphaBBox, decodePng, pngSize } from "@/scripts/image-bytes";
 
 const BRANDS = [
   { id: "quizhub", brand: quizHubBrand },
   { id: "alignsynch", brand: alignSynchBrand },
 ] as const;
 
-/** The four surfaces, with the nominal size each is written at and the composition it uses. */
+/** The four original surfaces, with the nominal size each is written at. */
 const SURFACES = [
-  {
-    file: "-icon.svg",
-    width: 32,
-    height: 32,
-    radius: APP_RADIUS_FRACTION * MARK_SIZE,
-    glyph: APP_GLYPH_FRACTION,
-  },
-  {
-    file: "-apple-touch-icon.png",
-    width: 180,
-    height: 180,
-    radius: 0,
-    glyph: MASKABLE_GLYPH_FRACTION,
-  },
-  { file: "-icon-192.png", width: 192, height: 192, radius: 0, glyph: MASKABLE_GLYPH_FRACTION },
-  { file: "-icon-512.png", width: 512, height: 512, radius: 0, glyph: MASKABLE_GLYPH_FRACTION },
+  { file: "-icon.svg", width: 32, height: 32 },
+  { file: "-apple-touch-icon.png", width: 180, height: 180 },
+  { file: "-icon-192.png", width: 192, height: 192 },
+  { file: "-icon-512.png", width: 512, height: 512 },
 ] as const;
 
-const RASTER_SURFACES = SURFACES.filter((surface) => surface.file.endsWith(".png"));
+const RASTERS = SURFACES.filter((surface) => surface.file.endsWith(".png"));
+
+/** The records, keyed by the id their files are named with. */
+const brandsById = Object.fromEntries(BRANDS.map(({ id, brand }) => [id, brand])) as Record<
+  (typeof BRANDS)[number]["id"],
+  (typeof BRANDS)[number]["brand"]
+>;
 
 function read(id: string, file: string): Buffer {
   return readFileSync(join(process.cwd(), "public", "brand", `${id}${file}`));
 }
 
-function svg(id: string, file: string): string {
-  return read(id, file).toString("utf8");
+const text = (id: string, file: string): string => read(id, file).toString("utf8");
+
+/** `<image x y width height>` out of a raster-mark SVG. */
+function imageBox(svg: string): { x: number; y: number; width: number; height: number } {
+  const match = /<image x="([\d.-]+)" y="([\d.-]+)" width="([\d.-]+)" height="([\d.-]+)"/.exec(svg);
+  if (match === null) throw new Error("the SVG carries no <image> element");
+  return {
+    x: Number(match[1]),
+    y: Number(match[2]),
+    width: Number(match[3]),
+    height: Number(match[4]),
+  };
 }
 
-/** The SVG `markSvg` writes for a brand on a surface, with the two brands' hexes and names normalised. */
-function mark(brand: (typeof BRANDS)[number]["brand"], surface: (typeof SURFACES)[number]): string {
-  const raw = markSvg({
-    ground: brand.colors.action,
-    ink: brand.colors.actionForeground,
-    radius: surface.radius,
-    glyph: surface.glyph,
-    width: surface.width,
-    height: surface.height,
-    title: brand.name,
-  });
-  return raw
-    .replaceAll(quizHubBrand.colors.action, "ACTION")
-    .replaceAll(quizHubBrand.colors.actionForeground, "INK")
-    .replaceAll(alignSynchBrand.colors.action, "ACTION")
-    .replaceAll(alignSynchBrand.colors.actionForeground, "INK")
-    .replaceAll(quizHubBrand.name, "NAME")
-    .replaceAll(alignSynchBrand.name, "NAME");
-}
-
-/** The glyph scale a surface applies, read out of its `<g transform="… scale(N) …">`. */
-function glyphScale(surface: (typeof SURFACES)[number]): number {
-  const match = /scale\(([\d.]+)\)/.exec(mark(quizHubBrand, surface));
-  expect(match).not.toBeNull();
-  if (match === null) throw new Error("mark has no scale transform");
-  return Number(match[1]);
-}
-
-/** The PNG's IHDR width and height (big-endian at bytes 16 and 20). */
-function pngSize(buf: Buffer): { width: number; height: number } {
-  if (buf.toString("latin1", 0, 8) !== "\x89PNG\r\n\x1a\n") throw new Error("not a PNG");
-  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+/** The mark the record names, decoded, with the ink box the generator places. */
+function markOf(id: keyof typeof brandsById) {
+  const src = brandsById[id].mark?.src;
+  if (src === undefined) throw new Error(`${id} names no mark`);
+  const image = decodePng(readFileSync(join(process.cwd(), "public", src.replace(/^\//, ""))));
+  const ink = alphaBBox(image);
+  if (ink === undefined) throw new Error(`${id}'s mark is empty`);
+  return { image, ink };
 }
 
 /**
- * The alpha channel of a non-interlaced PNG, one byte per pixel — decoded with node's zlib so the
- * "opaque" claim is measured on the raster, not assumed from the SVG. A colour type with no alpha
- * channel is opaque by definition and reports 255 everywhere.
+ * The farthest any non-ground pixel of a raster sits from the canvas centre — measured, not
+ * derived: this is what "inside the safe circle" means for the file that ships.
  */
-function alphaChannel(buf: Buffer): number[] {
-  let offset = 8;
-  let width = 0;
-  let height = 0;
-  let colorType = 0;
-  const idat: Buffer[] = [];
-  while (offset < buf.length) {
-    const length = buf.readUInt32BE(offset);
-    const type = buf.toString("latin1", offset + 4, offset + 8);
-    const data = buf.subarray(offset + 8, offset + 8 + length);
-    if (type === "IHDR") {
-      width = data.readUInt32BE(0);
-      height = data.readUInt32BE(4);
-      colorType = data[9];
-    } else if (type === "IDAT") {
-      idat.push(Buffer.from(data));
-    } else if (type === "IEND") {
-      break;
+function inkRadius(image: { width: number; height: number; data: Uint8Array }): number {
+  const ground = [image.data[0], image.data[1], image.data[2]];
+  const centre = image.width / 2;
+  let farthest = 0;
+  for (let y = 0; y < image.height; y++) {
+    for (let x = 0; x < image.width; x++) {
+      const at = (y * image.width + x) * 4;
+      const deviation =
+        Math.abs(image.data[at] - ground[0]) +
+        Math.abs(image.data[at + 1] - ground[1]) +
+        Math.abs(image.data[at + 2] - ground[2]);
+      if (deviation < 24) continue;
+      const distance = Math.hypot(x + 0.5 - centre, y + 0.5 - centre);
+      if (distance > farthest) farthest = distance;
     }
-    offset += 12 + length;
   }
-  const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : colorType === 4 ? 2 : 1;
-  const stride = width * channels;
-  const raw = inflateSync(Buffer.concat(idat));
-  const pixels = Buffer.alloc(height * stride);
-  let previous = Buffer.alloc(stride);
-  for (let y = 0; y < height; y++) {
-    const filter = raw[y * (stride + 1)];
-    const row = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
-    const base = y * stride;
-    for (let x = 0; x < stride; x++) {
-      const left = x >= channels ? pixels[base + x - channels] : 0;
-      const up = previous[x];
-      const upLeft = x >= channels ? previous[x - channels] : 0;
-      let value: number;
-      if (filter === 0) value = row[x];
-      else if (filter === 1) value = row[x] + left;
-      else if (filter === 2) value = row[x] + up;
-      else if (filter === 3) value = row[x] + ((left + up) >> 1);
-      else if (filter === 4) {
-        const p = left + up - upLeft;
-        const pa = Math.abs(p - left);
-        const pb = Math.abs(p - up);
-        const pc = Math.abs(p - upLeft);
-        value = row[x] + (pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft);
-      } else {
-        throw new Error(`unexpected PNG filter ${filter}`);
-      }
-      pixels[base + x] = value & 0xff;
-    }
-    previous = pixels.subarray(base, base + stride);
-  }
-  if (colorType === 6) {
-    return Array.from({ length: width * height }, (_, i) => pixels[i * 4 + 3]);
-  }
-  if (colorType === 4) {
-    return Array.from({ length: width * height }, (_, i) => pixels[i * 2 + 1]);
-  }
-  return Array.from({ length: width * height }, () => 255);
+  return farthest;
+}
+
+/** The ICO's directory, as sizes and payload offsets. */
+function icoEntries(bytes: Buffer): { size: number; length: number; offset: number }[] {
+  expect(bytes.readUInt16LE(0), "reserved").toBe(0);
+  expect(bytes.readUInt16LE(2), "type: icon").toBe(1);
+  const count = bytes.readUInt16LE(4);
+  return Array.from({ length: count }, (_, index) => {
+    const at = 6 + index * 16;
+    return {
+      size: bytes.readUInt8(at) || 256,
+      length: bytes.readUInt32LE(at + 8),
+      offset: bytes.readUInt32LE(at + 12),
+    };
+  });
 }
 
 describe("the generated icon set", () => {
-  it("draws the same geometry for both brands on every surface", () => {
-    for (const surface of SURFACES) {
-      expect(mark(quizHubBrand, surface)).toBe(mark(alignSynchBrand, surface));
-    }
-  });
-
-  it("writes the favicon as SVG text from the one mark", () => {
-    for (const { id, brand } of BRANDS) {
-      expect(svg(id, "-icon.svg")).toBe(
-        markSvg({
-          ground: brand.colors.action,
-          ink: brand.colors.actionForeground,
-          radius: APP_RADIUS_FRACTION * MARK_SIZE,
-          glyph: APP_GLYPH_FRACTION,
-          width: 32,
-          height: 32,
-          title: brand.name,
-        }),
-      );
+  it("writes every surface, and the conventional favicon, for both brands", () => {
+    for (const { id } of BRANDS) {
+      for (const surface of SURFACES) {
+        expect(read(id, surface.file).length, `${id}${surface.file}`).toBeGreaterThan(0);
+      }
+      const ico = read(id, "-favicon.ico");
+      expect(icoEntries(ico).map((entry) => entry.size)).toEqual([32, 48]);
+      for (const entry of icoEntries(ico)) {
+        // Each entry points at its own PNG, in the container's payload region.
+        expect(ico.subarray(entry.offset, entry.offset + 4).toString("latin1"), id).toBe("\x89PNG");
+        expect(entry.offset + entry.length).toBeLessThanOrEqual(ico.length);
+        expect(pngSize(ico.subarray(entry.offset, entry.offset + entry.length))).toEqual({
+          width: entry.size,
+          height: entry.size,
+        });
+      }
     }
   });
 
   it("writes the maskable set as PNG rasters at the declared sizes", () => {
     for (const { id } of BRANDS) {
-      for (const surface of RASTER_SURFACES) {
+      for (const surface of RASTERS) {
         expect(pngSize(read(id, surface.file))).toEqual({
           width: surface.width,
           height: surface.height,
@@ -194,40 +153,139 @@ describe("the generated icon set", () => {
     }
   });
 
-  it("keeps the two brands apart by token only — the rasters differ, the shape does not", () => {
-    for (const surface of RASTER_SURFACES) {
-      expect(read("quizhub", surface.file).equals(read("alignsynch", surface.file))).toBe(false);
+  it("draws the template's book for the brand that names no mark", () => {
+    // QuizHub is the base product and its mark *is* the book: its four files are unchanged by
+    // this card, and the contract is the one `markSvg` states.
+    expect(text("quizhub", "-icon.svg")).toBe(
+      markSvg({
+        ground: quizHubBrand.colors.action,
+        ink: quizHubBrand.colors.actionForeground,
+        radius: APP_RADIUS_FRACTION * MARK_SIZE,
+        glyph: APP_GLYPH_FRACTION,
+        width: 32,
+        height: 32,
+        title: quizHubBrand.name,
+      }),
+    );
+  });
+
+  it("draws the brand's own mark for the brand that names one — never a glyph", () => {
+    // The defect, pinned: the alignment build's icon was a lucide person silhouette on the brand's
+    // blue. A generated icon that carries any of the book's paths is that defect coming back.
+    const svg = text("alignsynch", "-icon.svg");
+    for (const path of MARK_PATHS) {
+      expect(svg, "the alignment icon draws the template's book").not.toContain(path);
+    }
+    expect(svg).toContain("<image");
+    expect(svg).toContain("data:image/png;base64,");
+    expect(svg).toContain(`fill="${alignSynchBrand.colors.action}"`);
+    // Rounded, like the chrome's box — the app mark, not the full-bleed maskable square.
+    expect(svg).toMatch(/<rect[^>]*rx=/);
+  });
+
+  it("places the mark's ink at the app fraction, centred, at its own aspect ratio", () => {
+    const { image, ink } = markOf("alignsynch");
+    const svg = text("alignsynch", "-icon.svg");
+    const placed = imageBox(svg);
+
+    // The SVG embeds a downscaled copy of the mark; its ink is the source ink scaled by that
+    // factor. Recover the ink's *rendered* box from the image's placement and compare it with the
+    // rule `markBoxOf` states — a mark that grew, shrank or drifted fails here.
+    const scale = placed.width / 64; // the favicon embeds 64 px: FAVICON_EMBED_SIZE
+    const embeddedInk = {
+      x: ink.x * (64 / image.width),
+      y: ink.y * (64 / image.width),
+      width: ink.width * (64 / image.width),
+      height: ink.height * (64 / image.width),
+    };
+    const expected = markBoxOf(embeddedInk, APP_GLYPH_FRACTION);
+    const rendered = {
+      x: placed.x + embeddedInk.x * scale,
+      y: placed.y + embeddedInk.y * scale,
+      width: embeddedInk.width * scale,
+      height: embeddedInk.height * scale,
+    };
+    expect(rendered.width).toBeCloseTo(expected.width, 1);
+    expect(rendered.height).toBeCloseTo(expected.height, 1);
+    expect(rendered.x).toBeCloseTo(expected.x, 1);
+    expect(rendered.y).toBeCloseTo(expected.y, 1);
+    // Longest side is the fraction; the other follows the ink's aspect.
+    expect(rendered.width).toBeCloseTo(APP_GLYPH_FRACTION * MARK_SIZE, 1);
+    expect(rendered.width / rendered.height).toBeCloseTo(ink.width / ink.height, 2);
+  });
+
+  it("keeps the mark inside the 80 % safe circle, measured on the shipped raster", () => {
+    // Measured on `-icon-512.png`: the OS may crop a maskable icon to a 40 %-radius circle, and a
+    // mark outside it loses an edge on somebody's home screen.
+    const safeRadius = 0.4 * MARK_SIZE;
+    for (const { id } of BRANDS) {
+      const radius = inkRadius(decodePng(read(id, "-icon-512.png")));
+      expect(
+        radius,
+        `${id}'s icon ink reaches ${radius.toFixed(1)} of ${safeRadius}`,
+      ).toBeLessThanOrEqual(safeRadius);
+      expect(radius, `${id} draws nothing`).toBeGreaterThan(0);
     }
   });
 
   it("is opaque full bleed on the maskable set — no rounded corner, no transparency", () => {
-    for (const surface of RASTER_SURFACES) {
-      const source = mark(quizHubBrand, surface);
-      // The square fills the whole canvas: no `rx`, no opacity, so the raster has no transparent
-      // corner to double-round under the OS mask.
-      expect(source).not.toMatch(/<rect[^>]*rx=/);
-      expect(source).not.toMatch(/opacity|fill-opacity/);
-      expect(source).toContain(`<rect width="${MARK_SIZE}" height="${MARK_SIZE}" fill=`);
-      // Measured on the raster itself, not assumed from the SVG.
-      for (const { id } of BRANDS) {
-        expect(alphaChannel(read(id, surface.file)).every((alpha) => alpha === 255)).toBe(true);
+    for (const { id } of BRANDS) {
+      for (const surface of RASTERS) {
+        const image = decodePng(read(id, surface.file));
+        for (let index = 3; index < image.data.length; index += 4) {
+          if (image.data[index] !== 255) {
+            throw new Error(
+              `${id}${surface.file} has a transparent pixel — the OS double-rounds it`,
+            );
+          }
+        }
       }
     }
   });
 
-  it("keeps the maskable mark inside the 80 % safe circle", () => {
-    // The book's farthest point from its centre is ~14.87 in the 24-unit box (the outline's
-    // corner). Scaled by the maskable fraction, it must stay within the safe radius the OS may
-    // crop to: 40 % of the canvas.
-    const safeRadius = 0.4 * MARK_SIZE;
-    const scale = glyphScale(SURFACES[SURFACES.length - 1]); // the 512 surface
-    expect(scale).toBeCloseTo((MASKABLE_GLYPH_FRACTION * MARK_SIZE) / 24, 1);
-    expect(scale * 14.87).toBeLessThanOrEqual(safeRadius);
+  it("writes the card mark for the brand that has one — mark, not icon, on transparent", () => {
+    // The auth card's tile paints the ground, so its mark is the ink alone (`brandCardMarkPath`).
+    // Drawn from the icon instead, the mark lost 38 % of its canvas to padding and read as a
+    // generic avatar at the 32 px box the card gives it.
+    const card = decodePng(read("alignsynch", "-mark-192.png"));
+    expect({ width: card.width, height: card.height }).toEqual({ width: 192, height: 192 });
+    // Transparent corners: the tile behind it is the ground. An opaque square here would paint a
+    // second, smaller blue square inside the tile.
+    expect(card.data[3], "the card mark's first pixel is opaque — its ground was not removed").toBe(
+      0,
+    );
+    const ink = alphaBBox(card);
+    if (ink === undefined) throw new Error("the card mark is empty");
+    // The ink is the point of this file, so it fills ≥ 90 % of the canvas (resvg's edge
+    // antialiasing makes the measured bbox a pixel or two wider than the geometric fraction) and
+    // never exceeds it — a mark cropped at the edge would lose its keyline.
+    const longest = Math.max(ink.width, ink.height);
+    expect(longest).toBeGreaterThan(0.9 * CARD_MARK_SIZE);
+    expect(longest).toBeLessThanOrEqual(CARD_MARK_SIZE);
+    // A brand with no mark draws a glyph on these screens and ships no card mark.
+    expect(existsSync(join(process.cwd(), "public", "brand", "quizhub-mark-192.png"))).toBe(false);
   });
 
-  it("keeps the app mark rounded, like the chrome's box", () => {
-    for (const { id } of BRANDS) {
-      expect(svg(id, "-icon.svg")).toMatch(/<rect[^>]*rx=/);
+  it("keeps the two brands apart by mark and token only — the files differ", () => {
+    for (const surface of SURFACES) {
+      expect(
+        read("quizhub", surface.file).equals(read("alignsynch", surface.file)),
+        surface.file,
+      ).toBe(false);
     }
+    expect(read("quizhub", "-favicon.ico").equals(read("alignsynch", "-favicon.ico"))).toBe(false);
+  });
+
+  it("uses the same fractions and radius for both brands — one shape rule, two marks", () => {
+    // The constants are not per-brand: a mark that changed size between brands would be drift.
+    // The quizhub SVG states them literally, and the alignment mark fills the same fractions.
+    const book = text("quizhub", "-icon.svg");
+    expect(book).toContain(`rx="${Math.round(APP_RADIUS_FRACTION * MARK_SIZE * 10) / 10}"`);
+    const { ink } = markOf("alignsynch");
+    const maskable = markBoxOf(ink, MASKABLE_GLYPH_FRACTION);
+    expect(Math.max(maskable.width, maskable.height)).toBeCloseTo(
+      MASKABLE_GLYPH_FRACTION * MARK_SIZE,
+      1,
+    );
   });
 });

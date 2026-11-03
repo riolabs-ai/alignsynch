@@ -120,6 +120,27 @@ export const zBrandDomain = z
   );
 
 /**
+ * A brand's own mark, as one file.
+ *
+ * The mark is the *source* the icon set is rasterised from; the generated surfaces never appear
+ * here, because they are derived from it (`lib/brand-icon.ts`). A record that named them would be
+ * a second place for the sizes and the ground colour, and the generator already owns both.
+ *
+ * `src` is held to a `public/` path by `zBrandLogoPath` for the same reason `logo` is: a remote
+ * URL would make a build depend on somebody else's server, and E18 holds the path to a registry
+ * entry so the file cannot be added without being addressable.
+ */
+export const zBrandMarkSource = z
+  .object({
+    /**
+     * The mark at its highest resolution — `public/brand/alignsynch-mark-1024.png` is 1024×1024
+     * with transparent padding, cropped from the monogram half of the brand's own lockup.
+     */
+    src: zBrandLogoPath,
+  })
+  .strict();
+
+/**
  * The origin a referral link is built on: `https://quizhub.com`, never a whole link.
  *
  * The two halves have different owners. The host is brand — an AlignSynch link points at
@@ -166,6 +187,23 @@ export const zBrand = z
      * because they are the one mark at four sizes, not four separate facts.
      */
     icon: zBrandLogoPath,
+    /**
+     * The brand's own mark, when it ships one — the file the icon set is drawn from.
+     *
+     * **Optional on purpose, and absent means "this brand wears the template's mark".** QuizHub
+     * is the base product and its open book *is* its mark, so its record names nothing here and
+     * its four generated files stay byte-for-byte what they were before this field existed.
+     * AlignSynch ships an AS monogram, and an icon generated from a generic glyph put a white
+     * person silhouette on the brand's own blue on every surface a reader meets it — the tab, the
+     * home screen, the auth card. The mark is brand data, so the record names the file and
+     * `scripts/gen-brand-icons.mjs` rasterises *it* instead of drawing a shape.
+     *
+     * The gate that makes this a rule rather than a hope is E38 (`scripts/data:check`): when a
+     * record names a mark, the shipped `-icon-512.png` must *look like* that file — a 32×32
+     * fingerprint of each, compared, with a threshold. Swapping the icon back to a glyph fails
+     * it, which is the failure this field was added to make impossible to ship quietly.
+     */
+    mark: zBrandMarkSource.optional(),
     colors: zBrandColors,
     supportEmail: z.string().email(),
     affiliateEmail: z.string().email(),

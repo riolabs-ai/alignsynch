@@ -64,8 +64,23 @@ export const alignSynchBrand: Brand = zBrand.parse({
     "AlignSynch asks two people the same five questions about their relationship, once for how it is now and once for how each of them wishes it to be, and shows where the answers differ.",
   domain: "alignsynch.com",
   logo: "/brand/as2-logo_v2_cl.png",
-  /** The tab icon (#187 stage 4): the brand's blue ground, not the template's indigo one. */
+  /**
+   * The tab icon (#187 stage 4): the brand's blue ground, not the template's indigo one.
+   *
+   * Drawn from the mark below, not from a glyph — see `mark`.
+   */
   icon: "/brand/alignsynch-icon.svg",
+  /**
+   * The brand's own mark — the AS monogram, cropped from `logo` (x 0–170, the ink bbox
+   * 0,1–165,101, stray baseline rule excluded) and squared with transparent padding.
+   *
+   * It is the source of every generated icon surface. Before this field the icon set was drawn
+   * from a generic glyph, so the favicon, the PWA tile and the auth card all showed a white
+   * person silhouette on the brand's blue — a mark belonging to no brand, on the one surface a
+   * reader sees before any word. `scripts/gen-brand-icons.mjs` rasterises *this file* now, and
+   * `data:check` E38 fails when the shipped icon stops looking like it.
+   */
+  mark: { src: "/brand/alignsynch-mark-1024.png" },
   colors: {
     background: "#ffffff",
     foreground: "#363d49",
