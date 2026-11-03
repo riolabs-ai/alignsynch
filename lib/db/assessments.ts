@@ -454,6 +454,8 @@ interface SessionCountRow {
   /** `party.accepted_at IS NOT NULL` per seat (#R2) — the hinge `instanceStatusOf()` now needs. */
   readonly initiatorAccepted: boolean;
   readonly counterpartyAccepted: boolean;
+  /** `session.voided_at IS NOT NULL` (#503) — a past session an operator ended. */
+  readonly voided: boolean;
 }
 
 interface OpinionJsonRow {
@@ -494,6 +496,8 @@ export interface RelationshipCardRow {
     readonly claimed: boolean;
     readonly expiresAt: string | Date;
   } | null;
+  /** `session.voided_at IS NOT NULL` — the latest session, ended by an operator (#503). */
+  readonly voided: boolean;
   readonly read_at: Date;
 }
 
@@ -521,7 +525,8 @@ const RELATIONSHIP_CARDS_SQL = `
   ),
   latest AS (
     SELECT DISTINCT ON (s.relationship_id)
-           s.relationship_id, s.record_id, s.mode, s.name, r.slug, r.date
+           s.relationship_id, s.record_id, s.mode, s.name, r.slug, r.date,
+           (s.voided_at IS NOT NULL) AS voided
       FROM session s
       JOIN record r ON r.id = s.record_id
      WHERE s.relationship_id IN (SELECT relationship_id FROM mine)
@@ -537,6 +542,7 @@ const RELATIONSHIP_CARDS_SQL = `
     l.mode                      AS mode,
     l.name                      AS session_name,
     l.date                      AS session_date,
+    l.voided                    AS voided,
     COALESCE(vp.role, rm.role)  AS viewer_role,
     vp.unlock_seen_at           AS viewer_unlock_seen_at,
     ip.name                     AS initiator_name,
@@ -573,7 +579,9 @@ const RELATIONSHIP_CARDS_SQL = `
                                           AND p6.role = 'initiator'), false),
         'counterpartyAccepted', COALESCE((SELECT p7.accepted_at IS NOT NULL FROM party p7
                                            WHERE p7.session_record_id = s2.record_id
-                                             AND p7.role = 'counterparty'), false)
+                                             AND p7.role = 'counterparty'), false),
+        -- #503: a voided past session counts as ended, so it never counts as a completion.
+        'voided', (s2.voided_at IS NOT NULL)
       ))
       FROM session s2 WHERE s2.relationship_id = rel.id
     ), '[]'::json)              AS sessions,
@@ -594,6 +602,10 @@ const RELATIONSHIP_CARDS_SQL = `
   LEFT JOIN party vp ON vp.session_record_id = l.record_id AND vp.user_id = $1
   LEFT JOIN party ip ON ip.session_record_id = l.record_id AND ip.role = 'initiator'
   LEFT JOIN party cp ON cp.session_record_id = l.record_id AND cp.role = 'counterparty'
+  -- #503 — a relationship whose latest session an operator voided has no ladder position to draw,
+  -- so it is not a card. The rows are preserved; the console's registry is where an ended session
+  -- is read, and relationshipCardFromRow fails loudly if one ever reaches it.
+  WHERE NOT l.voided
   ORDER BY l.date DESC, l.slug
 `;
 
@@ -661,6 +673,8 @@ function progressOf(
   counterpartyAnswered: number,
   initiatorAccepted: boolean,
   counterpartyAccepted: boolean,
+  /** `session.voided_at IS NOT NULL` (#503) — answered before any count is read. */
+  voided: boolean,
 ): InstanceProgress {
   return {
     aspectCount,
@@ -670,6 +684,7 @@ function progressOf(
     // The hinge (#R2): the count shape, from the row's two booleans.
     initiatorAccepted: initiatorAccepted ? 1 : 0,
     counterpartyAccepted: counterpartyAccepted ? 1 : 0,
+    voided,
   };
 }
 
@@ -707,6 +722,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     row.counterparty_answered,
     row.initiator_accepted,
     row.counterparty_accepted,
+    row.voided,
   );
   const status = instanceStatusOf(progress);
   const complete = status === "complete";
@@ -735,12 +751,24 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
           session.initiatorAnswered,
           session.counterpartyAnswered,
           // A past session completed only if both seats accepted it (#R2): the count follows the
-          // same rule as the latest session, not a weaker one.
+          // same rule as the latest session, not a weaker one. #503: a voided one never counts.
           session.initiatorAccepted,
           session.counterpartyAccepted,
+          session.voided,
         ),
       ) === "complete",
   ).length;
+
+  // #503 — the ladder has no rung for a voided session, so there is no card to draw: an operator
+  // ended it and the party's to-do list is not the place to report that. The read excludes them
+  // (`lib/db/my-instances.ts`), which makes a `null` here drift rather than a state, and drift is
+  // loud in this tree rather than a `?? "connected"` that would draw a relationship still running.
+  const stage = relationshipStage(status);
+  if (stage === null) {
+    throw new Error(
+      `relationship "${row.slug}": its latest session was voided — the card list must not carry it`,
+    );
+  }
 
   return {
     relationshipId: row.relationship_id,
@@ -752,7 +780,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     viewerRole,
     initiatorName: row.initiator_name,
     counterpartyName: row.counterparty_name,
-    stage: relationshipStage(status),
+    stage,
     state,
     unlock: viewerRole === "coach" ? "seen" : unlockMarkOf(state, row.viewer_unlock_seen_at),
     inviteState:

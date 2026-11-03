@@ -606,8 +606,9 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       counterparty_name: string;
       claimed_at: Date | null;
       expires_at: Date;
+      revoked_at: Date | null;
     }>(
-      `SELECT session_record_id, counterparty_name, claimed_at, expires_at
+      `SELECT session_record_id, counterparty_name, claimed_at, expires_at, revoked_at
          FROM session_invite
         WHERE token_hash = $1
           FOR UPDATE`,
@@ -617,6 +618,17 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     if (invite === undefined) {
       await client.query("ROLLBACK");
       return { ok: false, code: "unknown", reason: "no invitation carries that token" };
+    }
+    // #503 — an operator's revocation is terminal until somebody resends. It is asked here, before
+    // the expiry, because "the operator killed this link" is the fact the recipient needs to read;
+    // the date it would have died is not.
+    if (invite.revoked_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "revoked",
+        reason: `an operator revoked that invitation at ${invite.revoked_at.toISOString()}`,
+      };
     }
     if (invite.claimed_at !== null) {
       await client.query("ROLLBACK");
@@ -1012,13 +1024,24 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
-    const locked = await client.query<{ record_id: string; mode: string }>(
-      "SELECT record_id, mode FROM session WHERE record_id = $1 FOR UPDATE",
+    const locked = await client.query<{ record_id: string; mode: string; voided_at: Date | null }>(
+      "SELECT record_id, mode, voided_at FROM session WHERE record_id = $1 FOR UPDATE",
       [input.instanceRecordId],
     );
     if (locked.rows[0] === undefined) {
       await client.query("ROLLBACK");
       return { ok: false, code: "no-such-instance", reason: "no instance has that id" };
+    }
+    // #503 — a voided session is frozen for both seats, checked under the lock that serialises
+    // every writer for this instance. The status derivation says the same thing (`maySubmit`), and
+    // this is where it is enforced against a request that was already open when the void landed.
+    if (locked.rows[0].voided_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "voided",
+        reason: `an operator voided this session at ${locked.rows[0].voided_at.toISOString()}; it accepts no further answers`,
+      };
     }
     // The mode the sheet is judged against is the row's, read under the lock that already
     // protects the freeze — never a field of the form. `zAssessmentMode` cannot reject a
@@ -1193,12 +1216,15 @@ async function progressOfClient(
     role: PartyRole;
     answered: number;
     accepted: boolean;
+    voided: boolean;
   }>(
     `SELECT p.role,
             (SELECT count(*) FROM opinion o
               WHERE o.session_record_id = p.session_record_id
                 AND o.role = p.role)::int AS answered,
-            (p.accepted_at IS NOT NULL) AS accepted
+            (p.accepted_at IS NOT NULL) AS accepted,
+            (SELECT ai.voided_at IS NOT NULL FROM session ai
+              WHERE ai.record_id = p.session_record_id) AS voided
        FROM party p
       WHERE p.session_record_id = $1`,
     [instanceRecordId],
@@ -1213,6 +1239,10 @@ async function progressOfClient(
     counterpartyAnswered: answered("counterparty"),
     initiatorAccepted: accepted("initiator"),
     counterpartyAccepted: accepted("counterparty"),
+    // #503 — one row per seat, so any row's answer is the session's; a session with no party row
+    // at all cannot be voided through the console (the operator has nothing to target), and `false`
+    // is then the honest reading.
+    voided: counts.rows[0]?.voided === true,
   };
 }
 
@@ -1227,7 +1257,13 @@ async function progressOfClient(
  * accepted this party, so "the session is complete" and "you already accepted" are one refusal,
  * and `already-accepted` is the sentence that tells the reader what to do next (nothing).
  */
-export type AcceptRefusal = "no-such-instance" | "not-a-party" | "incomplete" | "already-accepted";
+export type AcceptRefusal =
+  | "no-such-instance"
+  | "not-a-party"
+  | "incomplete"
+  | "already-accepted"
+  /** An operator ended the session (#503): nothing accepts, from either seat. */
+  | "voided";
 
 export interface AcceptInput {
   readonly instanceRecordId: string;
@@ -1305,9 +1341,11 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
       mode: string;
       alignment_setting: string;
       name: string | null;
+      voided_at: Date | null;
       record: RecordRow;
     }>(
       `SELECT ai.relationship_id, ai.template_record_id, ai.mode, ai.alignment_setting, ai.name,
+              ai.voided_at,
               to_jsonb(r) AS record
          FROM session ai
          JOIN record r ON r.id = ai.record_id
@@ -1319,6 +1357,17 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
     if (session === undefined) {
       await client.query("ROLLBACK");
       return { ok: false, code: "no-such-instance", reason: "no instance has that id" };
+    }
+    // #503 — the void is terminal from this side too, read under the same session lock the two
+    // accepts serialise on. Checked before the seat is resolved so a voided session answers the
+    // same way for a party, a coach and a stranger.
+    if (session.voided_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "voided",
+        reason: `an operator voided this session at ${session.voided_at.toISOString()}; there is nothing left to accept`,
+      };
     }
 
     // The seat, out of Postgres: the cookie's token hash first (an invited party keeps the
@@ -1717,8 +1766,17 @@ export interface InstanceBundle {
     readonly resentAt: Date | null;
     /** `resent_count` — lifetime re-invites, the fact `RESEND_LIFETIME_CAP` compares against. */
     readonly resentCount: number;
+    /** `revoked_at IS NOT NULL` — an operator killed this link (#503). */
+    readonly revoked: boolean;
   } | null;
   readonly answerCounts: Readonly<Record<PartyRole, number>>;
+  /**
+   * `session.voided_at IS NOT NULL` (#503) — an operator ended this session.
+   *
+   * On the bundle rather than on the screen's copy of it because it is a fact about the session
+   * row, and `progressOf()` needs it to derive `voided` before it reads a count.
+   */
+  readonly voided: boolean;
 }
 
 /** One instance's rows, minus every opinion — the opinions are read separately, blind. */
@@ -1731,6 +1789,7 @@ export async function readInstanceBundle(
     mode: string;
     alignment_setting: string;
     relationship_id: string;
+    voided: boolean;
     items: ItemRow[];
     options: OptionRow[];
   }>(
@@ -1739,6 +1798,7 @@ export async function readInstanceBundle(
             ai.mode,
             ai.alignment_setting,
             ai.relationship_id,
+            (ai.voided_at IS NOT NULL) AS voided,
             COALESCE((SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id), '[]'::json) AS items,
             COALESCE((SELECT json_agg(to_jsonb(o) ORDER BY o.position) FROM response_option o WHERE o.record_id = r.id), '[]'::json) AS options
        FROM record r
@@ -1759,8 +1819,10 @@ export async function readInstanceBundle(
     expires_at: Date;
     resent_at: Date | null;
     resent_count: number;
+    revoked_at: Date | null;
   }>(
-    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM session_invite WHERE session_record_id = $1`,
+    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count, revoked_at
+       FROM session_invite WHERE session_record_id = $1`,
     [instanceRecordId],
   );
   const counts = await query<{ role: PartyRole; answered: number }>(
@@ -1795,8 +1857,10 @@ export async function readInstanceBundle(
             expiresAt: invite.expires_at,
             resentAt: invite.resent_at,
             resentCount: invite.resent_count,
+            revoked: invite.revoked_at !== null,
           },
     answerCounts: { initiator: answered("initiator"), counterparty: answered("counterparty") },
+    voided: instance.voided === true,
   };
 }
 
@@ -2045,6 +2109,7 @@ export async function readFlowScreen(input: {
     parties: bundle.parties,
     opinions: [],
     answerCounts: bundle.answerCounts,
+    voided: bundle.voided,
   };
   const status = instanceStatusOf(progressOf(answersOnly));
   const roles = visibleRoles(viewerRole, status);
@@ -2063,6 +2128,7 @@ export async function readFlowScreen(input: {
     parties: bundle.parties,
     opinions,
     answerCounts: bundle.answerCounts,
+    voided: bundle.voided,
   };
 
   // #266 — the invitation's state, derived once from the row and the instant of this read.
@@ -2137,7 +2203,7 @@ export async function markUnlockSeen(input: {
   return (result.rowCount ?? 0) > 0;
 }
 
-export type InviteState = "claimable" | "claimed" | "expired" | "unknown";
+export type InviteState = "claimable" | "claimed" | "expired" | "revoked" | "unknown";
 
 export interface InvitePreview {
   readonly state: InviteState;
@@ -2190,10 +2256,12 @@ export async function previewInvite(
     counterparty_name: string;
     claimed_at: Date | null;
     expires_at: Date;
+    revoked_at: Date | null;
     initiator_name: string | null;
     title: string;
   }>(
     `SELECT iv.session_record_id, iv.counterparty_name, iv.claimed_at, iv.expires_at,
+            iv.revoked_at,
             (SELECT p.name FROM party p
               WHERE p.session_record_id = iv.session_record_id AND p.role = 'initiator') AS initiator_name,
             t.title
@@ -2206,10 +2274,11 @@ export async function previewInvite(
   if (row === undefined) return empty;
   // #266 — the one comparison of `expires_at` with a clock on a read path, shared with the
   // Initiator's screen so the two seats cannot disagree about whether an invitation is dead.
-  // `claimable` is this page's own word for `unclaimed`; the recipient's four states (and the
-  // sentences `data/pages/invite.ts` gives them) do not move.
+  // `claimable` is this page's own word for `unclaimed`; the recipient's states (and the
+  // sentences `data/pages/invite.ts` gives them) do not move — #503 added `revoked`, which is the
+  // operator's decision wearing the recipient's vocabulary.
   const derived = inviteStateOf(
-    { claimed: row.claimed_at !== null, expiresAt: row.expires_at },
+    { claimed: row.claimed_at !== null, expiresAt: row.expires_at, revoked: row.revoked_at !== null },
     now,
   );
   const state: InviteState = derived === "unclaimed" ? "claimable" : derived;

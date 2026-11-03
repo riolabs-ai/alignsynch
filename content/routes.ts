@@ -66,6 +66,8 @@ const STATIC_ROUTES = [
 const DYNAMIC_ROUTES = [
   "/admin/console/relationships/[id]",
   "/admin/console/templates/[id]",
+  // #503 — one relationship's repair screen, a child of the registry route above it.
+  "/admin/instances/[id]",
   "/assessment/[slug]",
   "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",

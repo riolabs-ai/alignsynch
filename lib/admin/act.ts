@@ -63,6 +63,12 @@ export const REASON_MIN_LENGTH = 8;
  * "what happened to this row", and a table name that no reader knows is a dead filter. Adding a
  * table is a deliberate edit here, and the list is the migration's table set rather than a copy of
  * `information_schema` — a table this app does not audit is not a target.
+ *
+ * **The names are the tables as 0013 left them.** `0013_relationship_sessions.sql` renamed
+ * `assessment_instance` to `session` and `instance_invite` to `session_invite`, and #503's repairs
+ * write those rows: an entry naming the pre-0013 spelling would refuse every relationship repair
+ * with `unknown-target-table` while type-checking perfectly. The audit log's own vocabulary is the
+ * live table names or it is nothing a reader can join back to.
  */
 export const AUDIT_TARGET_TABLES = [
   "user_profile",
@@ -74,7 +80,8 @@ export const AUDIT_TARGET_TABLES = [
   "response_option",
   "opinion",
   "relationship",
-  "instance_invite",
+  "relationship_member",
+  "session_invite",
   "coach_invite",
 ] as const;
 

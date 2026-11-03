@@ -174,6 +174,11 @@ export interface FlowInstanceRows {
   readonly opinions: readonly OpinionRow[];
   /** Row counts per role — arithmetic on the count, never on the scores. */
   readonly answerCounts: Readonly<Record<PartyRole, number>>;
+  /**
+   * `session.voided_at IS NOT NULL` (#503). Optional so the fixtures written before the console
+   * could act stay valid; absent is `false`, and the production read always supplies it.
+   */
+  readonly voided?: boolean;
 }
 
 export interface ProjectInput {
@@ -203,6 +208,8 @@ export function progressOf(rows: FlowInstanceRows): InstanceProgress {
     // two shapes the same way.
     initiatorAccepted: acceptedCountIn(rows.parties, "initiator"),
     counterpartyAccepted: acceptedCountIn(rows.parties, "counterparty"),
+    // #503 — the one input that is not a count, read from the session row the caller bundled.
+    voided: rows.voided === true,
   };
 }
 

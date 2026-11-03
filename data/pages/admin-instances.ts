@@ -65,9 +65,19 @@ export const adminInstancesPageCopy: PageCopy = zPageCopy.parse({
         { id: "seat", label: "Seat, no account" },
         { id: "invited", label: "Invited" },
         { id: "expired", label: "Expired" },
+        { id: "revoked", label: "Withdrawn" },
         { id: "none", label: "No seat" },
         { id: "unnamed", label: "Unnamed" },
       ],
+    },
+    {
+      /**
+       * #503 — the operator's own end of a session, drawn where the stage would go. The ladder has
+       * four rungs and this is not one of them: a voided session stopped being a relationship in
+       * progress, so the table says so instead of naming the rung it reached.
+       */
+      id: "state",
+      items: [{ id: "voided", label: "Voided" }],
     },
     {
       /**

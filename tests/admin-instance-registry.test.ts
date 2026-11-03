@@ -63,6 +63,8 @@ function facts(overrides: Partial<RegistryFacts> = {}): RegistryFacts {
     // derivation can no longer reach.
     initiatorAccepted: true,
     counterpartyAccepted: true,
+    // #503 — a default row is not voided; a void is an operator's act, never a fixture default.
+    voided: false,
     initiator: { name: "Avery", hasAccount: true },
     counterparty: { name: "Rowan", hasAccount: true },
     invite: null,

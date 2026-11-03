@@ -76,6 +76,7 @@ const SEAT_VARIANT: Record<SeatRow["state"], "success" | "secondary" | "outline"
     seat: "secondary",
     invited: "outline",
     expired: "destructive",
+    revoked: "destructive",
     none: "outline",
   };
 
@@ -132,6 +133,8 @@ export function InstanceRegistry({
   const columns = sectionOf(copy, "columns");
   const seatCopy = sectionOf(copy, "seat");
   const stageCopy = sectionOf(copy, "stage-filter");
+  /** #503 — the words a session's own state adds beside the ladder's four. */
+  const stateCopy = sectionOf(copy, "state");
   const filtersCopy = sectionOf(copy, "filters");
   const listCopy = sectionOf(copy, "list");
 
@@ -293,8 +296,13 @@ export function InstanceRegistry({
                       <TableCell>{REGISTRY_LABELS.mode[row.mode]}</TableCell>
                       <TableCell>{REGISTRY_LABELS.setting[row.setting]}</TableCell>
                       <TableCell>
-                        <Badge variant={STAGE_VARIANT[row.stage]}>
-                          {REGISTRY_LABELS.stage[row.stage]}
+                        {/* #503 — a voided session prints the operator's word, not a rung: the
+                            ladder is where the rows stopped, and saying it here would read as a
+                            relationship still waiting for something. */}
+                        <Badge variant={row.voided ? "destructive" : STAGE_VARIANT[row.stage]}>
+                          {row.voided
+                            ? itemLabel(stateCopy, "voided")
+                            : REGISTRY_LABELS.stage[row.stage]}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">

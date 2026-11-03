@@ -1,7 +1,7 @@
 /**
  * The two-party flow's state — derived from rows, never stored (#146).
  *
- * The instance's status is three values, and every one of them is a function of the rows
+ * The instance's status is four values, and every one of them is a function of the rows
  * that already exist:
  *
  *   awaiting_counterparty   the Initiator exists, the Counterparty has not claimed yet
@@ -9,6 +9,8 @@
  *                           at least one acceptance is still missing
  *   complete                both parties exist, both answered every Aspect, and **both
  *                           accepted** the session (#R2)
+ *   voided                  an operator ended the session (#503) — terminal, and answered
+ *                           before any count is read
  *
  * There is no `status` column anywhere (#145's `session` has two columns, and
  * `0002_two_party_flow.sql` adds none). A stored status would be a second authored copy of
@@ -43,7 +45,13 @@ import {
  * Status
  * ------------------------------------------------------------------ */
 
-export const INSTANCE_STATUSES = ["awaiting_counterparty", "answering", "complete"] as const;
+export const INSTANCE_STATUSES = [
+  "awaiting_counterparty",
+  "answering",
+  "complete",
+  /** An operator ended the session (#503). Terminal: nothing re-opens it. */
+  "voided",
+] as const;
 
 export type InstanceStatus = (typeof INSTANCE_STATUSES)[number];
 
@@ -65,6 +73,21 @@ export interface InstanceProgress {
    */
   readonly initiatorAccepted: number;
   readonly counterpartyAccepted: number;
+  /**
+   * `session.voided_at IS NOT NULL` — an operator ended this session (#503).
+   *
+   * `voided` is the only input here that is not a count, because it
+   * is the only fact about an instance that no `party` or `opinion` row can imply: a person
+   * decided the session is over. It is `true`/`false` and never an instant, for the same reason
+   * the two acceptances are counts — this shape is fed by SQL, and the read that fills it asks
+   * `voided_at IS NOT NULL` in the same statement as the counts.
+   *
+   * **Absent means not voided.** Optional so the fixtures written before this card (and
+   * `tests/*`' `progress()` helpers) stay valid; every production read passes it, and the two
+   * write paths that could re-open a void read the column itself under the row lock rather than
+   * trusting this shape.
+   */
+  readonly voided?: boolean;
 }
 
 /**
@@ -75,10 +98,16 @@ export interface InstanceProgress {
  * any more (#R2): the review window after the second submit is where each party reads their own
  * sheet on the accept page, and a session that unlocked its report there would skip it.
  *
+ * `voided` is answered **first** and outranks every count (#503). An operator ended the session,
+ * and a session's own rows do not become "not voided" by somebody answering another Aspect: the
+ * void is the newest and last decision about it. That ordering is what makes terminality a
+ * property of this function rather than of each screen that reads a status.
+ *
  * A copy with 0 Aspects is never complete: there is nothing to answer, so "both accepted" would
  * unlock a report with no rows.
  */
 export function instanceStatusOf(progress: InstanceProgress): InstanceStatus {
+  if (progress.voided === true) return "voided";
   if (!progress.hasCounterparty) return "awaiting_counterparty";
   if (progress.aspectCount <= 0) return "answering";
   const everyoneAnswered =
@@ -140,17 +169,34 @@ export function visibleRoles(viewer: PartyRole | "coach", status: InstanceStatus
  * accepted implies this one did — and it is stated anyway so a caller holding only the status
  * (and no seat) still gets `false` rather than a write the accept path would then refuse.
  * `false` is a rejection the caller must surface as a 409, never a silent no-op.
+ *
+ * **A voided session is frozen for both seats (#503).** `voided` is not `complete` and not
+ * `answering`: an operator ended it, so there is nothing left to submit. Spelled as an allow-list
+ * of the two statuses that accept a write rather than as a third `!==` — the next status added to
+ * the union must decide here instead of inheriting "yes" by accident.
  */
 export function maySubmit(status: InstanceStatus, viewerAccepted: boolean): boolean {
-  return status !== "complete" && !viewerAccepted;
+  const open = status === "answering" || status === "awaiting_counterparty";
+  return open && !viewerAccepted;
 }
 
 /* ------------------------------------------------------------------ *\
  * Submission
  * ------------------------------------------------------------------ */
 
-/** Why a submission was refused. The screen maps each code to its own copy id (E23). */
-export type SubmissionRejection = "frozen" | "incomplete" | "not-a-party" | "no-such-instance";
+/**
+ * Why a submission was refused. The screen maps each code to its own copy id (E23).
+ *
+ * `voided` (#503) is the operator's terminal state: a request that was open when the void landed
+ * reaches the write path and is refused there, with the code a screen can draw — the same 409 a
+ * frozen sheet gets, and never a silent no-op.
+ */
+export type SubmissionRejection =
+  | "frozen"
+  | "incomplete"
+  | "not-a-party"
+  | "no-such-instance"
+  | "voided";
 
 export interface ParsedAnswers {
   readonly itemId: string;

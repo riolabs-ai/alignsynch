@@ -54,7 +54,7 @@ export const ADMIN_INSTANCES_PATH = "/admin/instances";
  * `seat` is not a defect an operator acts on; it is the honest name for "the fixture owns this
  * seat, not a person". Collapsing it into `claimed` would make the demo dataset look signed up.
  */
-export const SEAT_STATES = ["claimed", "seat", "invited", "expired", "none"] as const;
+export const SEAT_STATES = ["claimed", "seat", "invited", "expired", "revoked", "none"] as const;
 
 export type SeatState = (typeof SEAT_STATES)[number];
 
@@ -86,7 +86,10 @@ export function seatStateOf(
   }
   if (invite === null) return { state: "none", name: null };
   const state = inviteStateOf(invite, now);
-  return { state: state === "expired" ? "expired" : "invited", name: null };
+  // `expired` and `revoked` are both "there is no seat and the invitation will not produce one";
+  // they stay distinct because an operator's next move differs — an expired link is re-sent, a
+  // revoked one was a decision somebody made (#503).
+  return { state: state === "expired" || state === "revoked" ? state : "invited", name: null };
 }
 
 /**
@@ -107,6 +110,14 @@ export interface AdminInstanceRow {
   readonly setting: AlignmentSetting;
   readonly status: InstanceStatus;
   readonly stage: RelationshipStage;
+  /**
+   * `session.voided_at IS NOT NULL` (#503) — an operator ended this session.
+   *
+   * Carried beside `stage` rather than folded into it: the ladder has no "void" rung, and a row
+   * that printed `connected` for a session nobody can answer any more would be the registry lying
+   * about the one thing an operator is looking for.
+   */
+  readonly voided: boolean;
   readonly invite: InviteDisplayState | null;
   readonly stalled: boolean;
   readonly initiator: SeatRow;
@@ -130,6 +141,8 @@ export interface RegistryFacts {
   /** The two acceptances (#R2): `complete` needs both, not just both sheets. */
   readonly initiatorAccepted: boolean;
   readonly counterpartyAccepted: boolean;
+  /** `session.voided_at IS NOT NULL` — an operator ended this session (#503). */
+  readonly voided: boolean;
   readonly initiator: SeatFacts | null;
   readonly counterparty: SeatFacts | null;
   readonly invite: InviteFacts | null;
@@ -158,6 +171,7 @@ export function registryRowOf(
     // the operator's registry and a party's report cannot disagree about what is complete.
     initiatorAccepted: facts.initiatorAccepted ? 1 : 0,
     counterpartyAccepted: facts.counterpartyAccepted ? 1 : 0,
+    voided: facts.voided,
   });
 
   const stage =
@@ -185,8 +199,11 @@ export function registryRowOf(
     setting: facts.setting,
     status,
     stage,
+    voided: facts.voided,
     invite: facts.invite === null ? null : inviteStateOf(facts.invite, now),
-    stalled: counterparty.state === "expired",
+    // "Stalled" is the operator's word for "the other seat will not arrive on its own": an
+    // invitation that expired, and one an operator revoked, are both that (#503).
+    stalled: counterparty.state === "expired" || counterparty.state === "revoked",
     initiator,
     counterparty,
     created: facts.created.toISOString(),
