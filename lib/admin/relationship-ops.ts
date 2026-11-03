@@ -209,9 +209,16 @@ export interface ResentInvite {
  * `OP_REFUSALS` set, not `ResendRefusal`, so a screen cannot show a cooldown sentence that this
  * path never produced.
  *
- * **A resend clears a revocation.** The revocation was a decision about one link; minting a new
- * one is the operator's later decision about the same invitation, and leaving `revoked_at` set
- * would revoke the link the operator just asked for.
+ * **A revocation is terminal, so a withdrawn invitation is refused.** #503 says a revoke kills the
+ * link *for good*, and terminal means the same invitation cannot be brought back by the next
+ * button on the screen: `revokeInvite()` sets `revoked_at`, `claimInvite()` refuses a revoked row,
+ * and this function answers `already-revoked` rather than minting a token the flow would refuse.
+ * The alternative — clearing `revoked_at` here — was the first reading of the card, and it makes
+ * the withdraw band a pause instead of a decision: an operator retries a reissue, the two clicks
+ * conflict, and the audit log records the reversal as if the withdrawal had never mattered. A
+ * relationship that genuinely needs a new link needs a new invitation, which is `invite.create`
+ * and its own audited row. `tests/admin-relationship-ops.test.ts` pins the refusal and the absence
+ * of any `revoked_at = NULL` in this statement.
  */
 export async function resendInvite(
   request: RepairRequest & { readonly email?: string | null },
@@ -267,12 +274,18 @@ export async function resendInvite(
           `that invitation was claimed at ${invite.claimed_at.toISOString()}; the seat is taken`,
         );
       }
+      if (invite.revoked_at !== null) {
+        throw new OpRefused(
+          "already-revoked",
+          `that invitation was revoked at ${invite.revoked_at.toISOString()}; a withdrawal is terminal and this invitation cannot be reissued`,
+        );
+      }
 
       const expiresAt = inviteExpiry(new Date());
       const written = await sql.query<{ expires_at: Date; resent_count: number }>(
         `UPDATE session_invite
             SET token_hash = $2, email = $3, expires_at = $4, resent_at = now(),
-                resent_count = resent_count + 1, revoked_at = NULL, revoked_by = NULL
+                resent_count = resent_count + 1
           WHERE session_record_id = $1
           RETURNING expires_at, resent_count`,
         [
@@ -292,7 +305,6 @@ export async function resendInvite(
           email: invite.email,
           expiresAt: invite.expires_at.toISOString(),
           resentCount: invite.resent_count,
-          revokedAt: invite.revoked_at?.toISOString() ?? null,
         },
         after: {
           email: email ?? invite.email,
