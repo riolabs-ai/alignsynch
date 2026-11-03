@@ -27,25 +27,39 @@
  */
 
 /** The three ways an invitation reads, from the Initiator's seat. */
-export const INVITE_STATES = ["unclaimed", "expired", "claimed"] as const;
+export const INVITE_STATES = ["unclaimed", "expired", "claimed", "revoked"] as const;
 
 export type InviteDisplayState = (typeof INVITE_STATES)[number];
 
-/** The two columns the state is a function of. */
+/** The two columns the state is a function of, plus the one an operator writes (#503). */
 export interface InviteFacts {
   /** `claimed_at IS NOT NULL` — the token was spent. */
   readonly claimed: boolean;
   /** `expires_at` — the instant the invitation stops accepting a claim. */
   readonly expiresAt: Date;
+  /**
+   * `revoked_at IS NOT NULL` — an operator killed the link (#503).
+   *
+   * Optional like `InstanceProgress.voided`: the fixtures and tests written before the console
+   * could act do not carry it, and "absent" is `false`. Every production read selects the column.
+   */
+  readonly revoked?: boolean;
 }
 
 /**
- * `claimed`, else `expired` once the clock has reached `expires_at`, else `unclaimed`.
+ * `claimed`, else `revoked`, else `expired` once the clock has reached `expires_at`, else
+ * `unclaimed`.
  *
  * `<=` and not `<`: the invitation is dead **at** `expires_at`, the same instant the claim path
  * refuses (`claimInvite`), so a screen never presents a link the claim would reject.
+ *
+ * `revoked` outranks `expired` because it names *why* — an operator ended the invitation, and the
+ * date it would have expired is not the fact an operator reading the row needs. It sits **after**
+ * `claimed`: a seat somebody took is not un-taken by a later revocation, and `claimInvite()` refuses
+ * to revoke a claimed invitation in the first place.
  */
 export function inviteStateOf(invite: InviteFacts, now: Date): InviteDisplayState {
   if (invite.claimed) return "claimed";
+  if (invite.revoked === true) return "revoked";
   return invite.expiresAt.getTime() <= now.getTime() ? "expired" : "unclaimed";
 }

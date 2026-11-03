@@ -112,6 +112,16 @@ export interface FlowSeat {
   readonly name: string;
   readonly answered: number;
   readonly acceptedAt: string | null;
+  /**
+   * `party.impersonated_by IS NOT NULL` (#503): an operator recorded this seat's acceptance on the
+   * party's behalf, through `instance.force-close`. A **flag**, not the operator's id — the report
+   * says the acceptance was not the party's own, and who took it is the audit row's business.
+   *
+   * Optional so the screen fixtures written before the console could act stay valid; absent is
+   * `false`, the same shape `FlowInstanceRows.voided` uses, and the production read always
+   * supplies it.
+   */
+  readonly impersonated?: boolean;
 }
 
 export interface FlowScreen {
@@ -174,6 +184,11 @@ export interface FlowInstanceRows {
   readonly opinions: readonly OpinionRow[];
   /** Row counts per role — arithmetic on the count, never on the scores. */
   readonly answerCounts: Readonly<Record<PartyRole, number>>;
+  /**
+   * `session.voided_at IS NOT NULL` (#503). Optional so the fixtures written before the console
+   * could act stay valid; absent is `false`, and the production read always supplies it.
+   */
+  readonly voided?: boolean;
 }
 
 export interface ProjectInput {
@@ -203,6 +218,8 @@ export function progressOf(rows: FlowInstanceRows): InstanceProgress {
     // two shapes the same way.
     initiatorAccepted: acceptedCountIn(rows.parties, "initiator"),
     counterpartyAccepted: acceptedCountIn(rows.parties, "counterparty"),
+    // #503 — the one input that is not a count, read from the session row the caller bundled.
+    voided: rows.voided === true,
   };
 }
 
@@ -302,7 +319,7 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     // The two seats as rows, Initiator first (the glossary's order). A missing Counterparty is
     // simply absent — there is no seat panel for a person who has not claimed the invitation.
     seats: (["initiator", "counterparty"] as const)
-      .map((role) => {
+      .map((role): FlowSeat | undefined => {
         const party = partyIn(rows.parties, role);
         if (party === undefined) return undefined;
         return {
@@ -310,6 +327,9 @@ export function projectScreen(input: ProjectInput): FlowScreen {
           name: party.name,
           answered: rows.answerCounts[role],
           acceptedAt: acceptedAtOf(party),
+          // #503 — an acceptance an operator wrote on this seat's behalf. The row carries the
+          // operator's id; the screen carries only whether the acceptance was the party's own.
+          impersonated: party.impersonated_by != null,
         } satisfies FlowSeat;
       })
       .filter((seat): seat is FlowSeat => seat !== undefined),

@@ -210,14 +210,24 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "Admin-only, and the first caller of `requireAdmin()` outside `/demo/admin`: a member gets the 404 a URL that never existed returns, a signed-out visitor is sent to `/login?next=` this path. The blind rule holds for an admin too — the read selects seats, mode, Setting and the stage, never an opinion, a score, a Gap or an answered count, so there is no column and no prop through which an answer could reach the page. Read-and-filter only: no delete, no force-complete. Every filter is client-side over the one read (`lib/db/admin-instances.ts`).",
   },
   {
-    kind: "domain",
-    surface: "components/admin",
-    status: "mock",
+    kind: "route",
+    surface: "/admin/instances/[id]",
+    status: "db",
     templates: ["alignsynch"],
     capability:
-      "The operator's tables: the relationship registry — a stage tab row, mode and Setting selects and a stalled toggle over one filterable table — and the audit log — a GET filter form, one chip per applied axis, and rows whose before/after values open on a click.",
+      "One relationship, and the five audited repairs an operator may make on it: clear a party's unlock mark, reissue or withdraw the invitation, void the session, or record an acceptance on a seat's behalf.",
     notes:
-      "`mock` in this file's vocabulary — it renders the props it is handed. The rows are read by the page (`lib/db/admin-instances.ts`, `lib/db/admin-audit.ts`) and passed down, because a client component must not reach `pg`; that boundary is why this domain imports no data module and why the route entries above are the ones that claim `db`. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.",
+      "#503 — the first caller of `lib/admin/act.ts`: every repair is one transaction that reads the actor's rung from `user_profile`, runs the mutation and inserts the `admin_action` row before it commits, so a change without its audit entry is not representable. Admin-only (`requireAdmin()`, after `requireAdminProduct()`), while two of the five floors are `support` — the floors are enforced by `act()`, and the support view is #506. The read is `lib/db/admin-relationship.ts`: seats, the invitation's address and answered **counts**, never an opinion or a score. The fresh token a resend mints is returned to the component once and is deliberately absent from the audit row.",
+  },
+  {
+    kind: "domain",
+    surface: "components/admin",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The operator's three screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, and the audit log's filtered table whose before/after values open on a click.",
+    notes:
+      "`db`, and by a different route than it first claimed: every component here renders props the page read (a client component must not reach `pg`), and what pulls the domain into the database graph is the *type* it renders — `relationship-operations.tsx` annotates its props with `AdminRelationshipDetail`, and `import type` from `lib/db/**` still walks to `lib/db/client.ts` in this generator's graph. E34 is the runtime claim and it stays green: no `\"use client\"` module here value-imports a server module, which is why the pages render rather than 500. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.",
   },
   {
     kind: "route",

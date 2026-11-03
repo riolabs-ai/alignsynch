@@ -62,6 +62,23 @@ export const ADMIN_ACTIONS = [
   "instance.delete",
   /** Hand the one owner seat on. `owner` only: an `admin` cannot make themselves an `owner`. */
   "owner.transfer",
+  /**
+   * Clear a party's unlock mark — the V11 repair (#503). `support`'s second write: it changes
+   * nothing a party wrote, and it is the first thing a stuck relationship asks for.
+   */
+  "party.unlock",
+  /** Mint a new invitation token; the old link dies (#503). `support`, like the unlock. */
+  "invite.resend",
+  /**
+   * End a session, terminally (#503). `admin`: nothing a party wrote is deleted, but the pair can
+   * never finish it, which is a decision about somebody's relationship and not a courtesy.
+   */
+  "session.void",
+  /**
+   * Accept a session on one party's behalf, recorded as `impersonated_by` (#503). `admin` for the
+   * same reason as the void — it writes a person's agreement for them.
+   */
+  "instance.force-close",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -81,6 +98,13 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "role.change": "admin",
   "instance.delete": "admin",
   "owner.transfer": "owner",
+  // #503 — the two repairs `support` exists for: neither writes anything a party said. Clearing an
+  // unlock mark changes a marker; reissuing a token changes a link. Everything that ends a
+  // relationship or speaks for a person is `admin`.
+  "party.unlock": "support",
+  "invite.resend": "support",
+  "session.void": "admin",
+  "instance.force-close": "admin",
 };
 
 /** Is this string one of `ADMIN_ACTIONS`? The runtime half of a closed union read from a row. */
@@ -128,6 +152,12 @@ export function atLeast(role: UserRole | null, needed: UserRole): boolean {
  * happened to this row", and a table name no reader knows is a dead filter. Adding a table is a
  * deliberate edit here, and the list is the migration's table set rather than a copy of
  * `information_schema` — a table this app does not audit is not a target.
+ *
+ * **The names are the tables as 0013 left them.** `0013_relationship_sessions.sql` renamed
+ * `assessment_instance` to `session` and `instance_invite` to `session_invite`, and #503's repairs
+ * write those rows: an entry naming the pre-0013 spelling would refuse every relationship repair
+ * with `unknown-target-table` while type-checking perfectly. The audit log's own vocabulary is the
+ * live table names or it is nothing a reader can join back to.
  */
 export const AUDIT_TARGET_TABLES = [
   "user_profile",
@@ -139,7 +169,8 @@ export const AUDIT_TARGET_TABLES = [
   "response_option",
   "opinion",
   "relationship",
-  "instance_invite",
+  "relationship_member",
+  "session_invite",
   "coach_invite",
 ] as const;
 

@@ -143,6 +143,9 @@ export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
         { id: "unclaimed", label: "Not claimed yet" },
         { id: "expired", label: "Expired" },
         { id: "claimed", label: "Accepted" },
+        // #503 — an operator withdrew the link. Its own word, because "Expired" would say the
+        // window closed and this says somebody ended it.
+        { id: "revoked", label: "Withdrawn" },
       ],
     },
     {

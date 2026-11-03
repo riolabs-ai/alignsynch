@@ -106,6 +106,15 @@ export interface PartyRow {
    * this column and the opinion rows together, so `complete` is never a stored status.
    */
   readonly accepted_at?: Date | string | null;
+  /**
+   * The operator who recorded this seat's acceptance on the party's behalf (#503,
+   * `instance.force-close`), or `NULL`/absent when the party accepted it themselves.
+   *
+   * A provenance column, not a permission: nothing in the flow branches on it. The party-facing
+   * report says an acceptance was recorded for somebody; it does not print this id, because the
+   * *who* is the audit row's job and an operator's account id is not a party's business.
+   */
+  readonly impersonated_by?: string | null;
 }
 
 /**

@@ -30,6 +30,8 @@ export const CLAIM_REFUSALS = [
   "unknown",
   "claimed",
   "expired",
+  /** An operator revoked the link (#503). Terminal until somebody resends it. */
+  "revoked",
   "already-a-party",
   "already-bound",
   "unconfirmed",
@@ -41,8 +43,11 @@ export type ClaimRefusal = (typeof CLAIM_REFUSALS)[number];
  * The refusals the invitation's own state already draws — the four bands `previewInvite()`
  * picks between. A `?claim=` naming one of these adds no second sentence: the page's state
  * band is the same fact, and saying it twice is how a refusal starts contradicting itself.
+ *
+ * `revoked` is one of them for the same reason `expired` is: the link nobody can wear is a fact
+ * the page already knows, not a second complaint about the click (#503).
  */
-export const TOKEN_STATE_REFUSALS = ["unknown", "claimed", "expired"] as const;
+export const TOKEN_STATE_REFUSALS = ["unknown", "claimed", "expired", "revoked"] as const;
 
 /** A `?claim=` query value → the refusal it names. Anything else is ignored, not rendered. */
 export function claimRefusalOf(value: string | undefined): ClaimRefusal | undefined {
