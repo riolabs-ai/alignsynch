@@ -2,8 +2,8 @@
  * A pending surface is visibly disabled, and nothing else in the menu moved (issue #409).
  *
  * The nav's greying is a status rule, not a second menu: `NavRow` reads
- * `data/surface-registry.ts` and draws a row whose href is `pending`/`preview` as a **span**
- * with `aria-disabled` — no `<Link>`, no href, no click — while every other row keeps exactly
+ * `data/surface-registry.ts` and draws a row whose href is not `live` as a **<button>** with
+ * `aria-disabled` — no `<Link>`, no href, no click — while every other row keeps exactly
  * the markup it had. That is only worth anything if it is rendered and read, so this file
  * renders it with `renderToStaticMarkup` (the same way `tests/nav-brand.test.ts` reads
  * destinations) and asserts the three things a reader depends on:

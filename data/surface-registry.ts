@@ -1,24 +1,30 @@
 /**
  * The surface registry — one honest status per relationship-product surface (issue #409).
  *
- * R1 ships four **read** surfaces into the app and greys everything else. A missing page and a
- * page that was never built look identical to a reader — a 404 reads as a bug — so the product
- * states the difference instead: every surface is declared here with one of three statuses, the
- * nav disables the ones that are not wired (`components/layout/nav-menus.tsx`), and the one
- * shared panel explains them (`components/shell/pending-surface.tsx`).
+ * R1 shipped the **read** surfaces and greyed everything else. A missing page and a page that was
+ * never built look identical to a reader — a 404 reads as a bug — so the product states the
+ * difference instead: every surface is declared here with one of three statuses, the nav disables
+ * the ones that are not wired (`components/layout/nav-menus.tsx`), and the one shared panel
+ * explains them (`components/shell/pending-surface.tsx`).
  *
  * **`live` is a claim the tree has to keep.** A surface is live only when its route exists,
  * renders real rows, and needs nothing from this file to explain itself. That is why
  * `surfaceRegistryProblems()` refuses `live` for a route `content/routes.ts` does not carry, and
  * why a live row may not carry a `reason` or `needs` — a live surface with an excuse is a
- * pending one with a better story. The five live entries below are `#409`'s reads plus the
- * report R1-C shipped, and they are the only rows that may be called live.
+ * pending one with a better story. The eight `live` entries below are `#409`'s four reads, the
+ * report R1-C shipped, and the three **write** surfaces R2 wired: create
+ * (`POST /assessment/new`), answer (`POST …/answers`) and acceptance (`POST …/accepts`). They are
+ * the only rows that may be called live.
  *
- * **`preview` is a shipped screen whose actions are not wired.** R1 ships create, answer and
- * accept as real layouts with every write control disabled and labelled "Not wired yet"; the
- * route exists and the page renders, so they are neither live (nothing they offer is recorded)
- * nor pending (there is a page, and it is the address they own). `takesClick` treats them like
- * pending on purpose: a preview surface never gains a nav destination it cannot honour.
+ * **`preview` is a shipped screen whose actions are not wired — and no row is one today.** R1
+ * declared create and answer `preview` because both screens rendered with their write controls
+ * disabled and labelled "Not wired yet". #427 shipped both write paths (PRs #428 and #429), and
+ * the cards that proved them drove each POST against the dev database, so the two rows are `live`
+ * now and this status has no occupant. It stays a literal in the schema anyway: a screen that
+ * ships ahead of its write path is a real state the product wants to state, and the two
+ * alternatives are both lies — `pending` claims there is no page, `live` claims the actions work.
+ * What `preview` was **not** is "wired, but poorly linked". Reachability from navigation is a
+ * different claim (`takesClick` below), and no row here is downgraded for lacking a nav row.
  *
  * **`pending` is not a 404 and not a redaction.** It means the surface is declared, its route is
  * the address it will own, and `needs` names the capability that is missing in plain words. The
@@ -49,6 +55,10 @@ export const zSurfaceArea = z.enum(["relationships", "comms", "admin"]);
  * `live`    shipped and reading real rows — nothing missing
  * `preview` reachable but not the shipped surface — a stated partial, never a promise
  * `pending` declared, not wired — the page says so and the nav disables it
+ *
+ * `preview` has no occupant today and stays in the set on purpose: it is the one status that can
+ * say "the screen is here, its actions are not", which is neither of the other two. See the file
+ * header.
  */
 export const zSurfaceStatus = z.enum(["live", "preview", "pending"]);
 
@@ -115,27 +125,33 @@ export const surfaceRegistry: readonly Surface[] = [
     status: "live",
   },
 
-  /* ---- preview: the write surfaces R2 takes — real screens, no write path ----- */
+  /* ---- live: the write surfaces R2 wired — create and answer (#427) ---------- */
   {
     route: "/assessment/templates/[templateId]/create",
     label: "Create a relationship",
     area: "relationships",
-    status: "preview",
-    reason:
-      "Not wired yet — this screen is not connected to the create path, so submitting it cannot create a relationship. Nothing was saved.",
-    needs: ["needs authenticated writes", "needs the store's create rules enforced on the server"],
+    // Live since R2 (#427, PR #429). The form posts `templateRecordId`, both seats, the Mode and
+    // the Setting to `POST /assessment/new`, which copies the template's Aspects into a new
+    // relationship, writes the record, the relationship, the session and the initiating seat in
+    // one transaction, and answers a 303 to the new relationship. Verified against the dev
+    // database by the card that landed it: one row set written, six refusal cases writing none.
+    // The screen is reachable from the template card's own CTA (`template-card.tsx`), so nothing
+    // here is an excuse — hence no `reason`/`needs`.
+    status: "live",
   },
   {
     route: "/assessment/instances/[instanceId]/answer",
     label: "Answer sheet",
     area: "relationships",
-    status: "preview",
-    reason:
-      "Not wired yet — this sheet does not save. Anything you mark here is not recorded, and the submit button stays disabled until the write path ships.",
-    needs: [
-      "needs a write path for a party's opinions",
-      "needs the blind rule enforced server-side, never in a reducer",
-    ],
+    // Live since R2 (#427, PR #428). The sheet posts to `…/answers`, and `submitAnswers()` records
+    // one party's whole sheet — one row per Aspect — under the role the party cookie resolves
+    // inside its transaction; it answers 409 once that party has accepted (403 for a browser that
+    // is not a party, 404 for an unknown instance). What it renders is real rows, not a layout: the
+    // seat comes from Postgres and the prefills are that seat's own `opinion` rows. It is reached
+    // from the acceptance screen's "answer first" band, and the relationship screen draws the same
+    // form inline; the sheet has no nav row of its own, and a nav gap is not a missing write —
+    // acceptance has been live here since #427 with no inbound link at all.
+    status: "live",
   },
   {
     route: "/assessment/instances/[instanceId]/accept",
