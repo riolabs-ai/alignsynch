@@ -108,12 +108,21 @@ not a ritual: the release notes are the only place a reader learns that, say, no
 that a screen reads a fixture. An empty block is how a prototype ships as if it were a product.
 
 Write what is true **on the commit being tagged**, and check it there before writing it. A limit that
-was accurate a week ago is still a false claim in a public document. Nothing re-derives the block
-from the tree — `--limits <file>` takes hand-written prose — so re-derive it yourself against the tag
-you are about to cut: a path or a `path::symbol` the bullet names must exist there, an importer it
-claims does not exist must not, and a rendered consequence it asserts (a greyed nav row, a CTA that is
-not there) must be something the tree can actually produce. `v1.3.0`'s answer-sheet bullet named
-`lib/flow/paths.ts::answerPath`, a symbol that has never existed, and a nav that had no row to grey.
+was accurate a week ago is still a false claim in a public document. Run the candidate block through
+the check before the tag:
+
+```bash
+bash scripts/release.sh --check-limits limits.md
+```
+
+It derives every path the block names from this tree, and every `path::symbol` from that file's
+_exports_ — the half that would have caught `v1.3.0`'s answer-sheet bullet, which named
+`lib/flow/paths.ts::answerPath`, a symbol that has never existed. A name that was wrong is struck
+through rather than deleted or left plain — the strike is what the check skips, and what tells a
+reader the claim is retracted. What the check cannot derive is a _rendered consequence_: a greyed nav
+row, a CTA that is not there, a screen that does not follow — that half is still yours, because it is
+a claim about the running app and not a name in the tree. Route claims are out of scope in this first
+cut, and the mode's usage text says what that would need.
 
 ## The version badge points at the tag
 

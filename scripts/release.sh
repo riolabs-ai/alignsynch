@@ -3,6 +3,9 @@
 #
 #   bash scripts/release.sh --check                 the gate step: the CHANGELOG entry matches
 #                                                  package.json, the commits and has a Known limits block
+#   bash scripts/release.sh --check-limits <file>   the pre-publication step: every path the candidate
+#                                                  Known limits block names exists in this tree, and every
+#                                                  `path::symbol` resolves to a binding in that file
 #   bash scripts/release.sh --dry-run <version>    print the entry it would write; write nothing
 #   bash scripts/release.sh <version>              gate -> entry -> bump -> commit -> tag -> push -> Release
 #   bash scripts/release.sh --tag-only <version>   the version and entry are already on `main`
@@ -10,6 +13,14 @@
 #
 # --limits <file> supplies the Known limits block for a generated entry. Without it a generation
 # refuses to write: the block is public release-note content, so a human writes it.
+#
+# Why --check-limits exists: that block ships verbatim as the GitHub Release body and nothing else
+# re-derives a word of it. v1.3.0 published a bullet naming `lib/flow/paths.ts::answerPath` — the
+# file exists, the binding never did — and a claim about a nav row no row exists for. The first is
+# a name in the tree and is now checked; run this on the candidate block before the tag, not after
+# the release. It is deliberately not part of `--check`: a published entry is fixed text, and a
+# check that can only report it cannot prevent it. Route claims (`/assessment/...`) are out of
+# scope in this first cut — see `scripts/release-limits.mjs` for what that would need.
 #
 # Why --tag-only exists: a cut can be prepared in a pull request, where the version bump and the
 # entry are reviewed like any other change. The tag then belongs on the merge commit, not on a
@@ -36,12 +47,19 @@ cd "$ROOT"
 
 CHANGELOG="CHANGELOG.md"
 VERSION_TOOL="scripts/release-version.mjs"
+LIMITS_TOOL="scripts/release-limits.mjs"
 CONVENTIONAL='^[a-z]+(\([^)]*\))?!?: '
 
 say() { printf '%s\n' "$*"; }
 step() { printf '\n▶ %s\n' "$*"; }
 die() { printf 'release: %s\n' "$*" >&2; exit 1; }
-usage_die() { printf 'release: %s\n\n' "$*" >&2; sed -n '2,31p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+# The usage text is the file's own header comment, read to its first non-comment line: a mode
+# added at the top can never be left out of `--help` by an off-by-one line range.
+usage_die() {
+  printf 'release: %s\n\n' "$*" >&2
+  awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "${BASH_SOURCE[0]}" >&2
+  exit 2
+}
 
 pkg_version() { node -p 'require("./package.json").version'; }
 
@@ -302,6 +320,61 @@ cmd_check() {
   printf '\nrelease: check green — %s entry [%s] matches %s\n' "$CHANGELOG" "$newest" "$pkg"
 }
 
+# --- --check-limits ------------------------------------------------------------
+# The Known limits block is the release body, and `--limits <file>` takes prose no gate ever
+# reads. This mode reads it: `scripts/release-limits.mjs` derives every path the block names from
+# the tree, and every `path::symbol` from that file's *exports* — the half that catches v1.3.0's
+# `lib/flow/paths.ts::answerPath`, where the file existed and the binding did not. What it cannot
+# derive is a rendered consequence ("the nav greys this route"): that is a claim about the running
+# app, not a name in the tree, and the block has to be honest about which kind it is making.
+
+cmd_check_limits() { # <file>
+  local file="$1" stream="" status=0 verdict token detail count=0 bad=0 retracted=0
+
+  [ -n "$file" ] || usage_die "--check-limits needs a file"
+  [ -f "$file" ] || die "--check-limits $file: no such file"
+  [ -s "$file" ] || die "--check-limits $file is empty — an empty block is not a block"
+
+  stream="$(node "$ROOT/$LIMITS_TOOL" check "$file")" || status=$?
+  # 1 means "findings, and the stream below says which". Anything else is the tool not running,
+  # which must never read as a green block.
+  case "$status" in
+    0 | 1) ;;
+    *) die "$LIMITS_TOOL exited $status — the block was not checked" ;;
+  esac
+
+  while IFS=$'\t' read -r verdict token detail; do
+    [ -n "$verdict" ] || continue
+    count=$((count + 1))
+    case "$verdict" in
+      ok) note "$token — $detail" ;;
+      skip)
+        printf '  – %s — %s\n' "$token" "$detail"
+        retracted=$((retracted + 1))
+        ;;
+      bad)
+        complain "$token — $detail"
+        bad=$((bad + 1))
+        ;;
+      *) die "unknown verdict '$verdict' from $LIMITS_TOOL" ;;
+    esac
+  done <<<"$stream"
+
+  [ "$count" -gt 0 ] ||
+    printf '  · %s quotes no path at all — nothing in it can be derived from the tree\n' "$file"
+
+  if [ "$bad" -ne 0 ]; then
+    printf '\nrelease: %s names %d path(s) this tree does not carry. Fix the block, not the check.\n' \
+      "$file" "$bad" >&2
+    printf '  A name that was wrong and is being retracted is struck through, never deleted and\n' >&2
+    printf '  never left plain: `~~lib/flow/nowhere.ts::gone~~`.\n' >&2
+    exit 1
+  fi
+
+  printf '\nrelease: %s agrees with the tree — %d path claim(s): %d resolved, %d retracted\n' \
+    "$file" "$count" "$((count - retracted))" "$retracted"
+}
+
 preflight() { # <version> — everything a cut must be true before a single byte is written
   local version="$1"
   is_version "$version" ||
@@ -484,6 +557,12 @@ MODE="" VERSION="" LIMITS=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --check) MODE="check" ;;
+    --check-limits)
+      [ "$#" -ge 2 ] || usage_die "--check-limits needs a file"
+      MODE="check-limits"
+      LIMITS="$2"
+      shift
+      ;;
     --dry-run) MODE="dry-run" ;;
     --tag-only) MODE="tag-only" ;;
     --limits)
@@ -503,6 +582,7 @@ done
 
 case "$MODE" in
   check) [ -n "$VERSION" ] && usage_die "--check takes no version"; cmd_check ;;
+  check-limits) [ -n "$VERSION" ] && usage_die "--check-limits takes a file, not a version"; cmd_check_limits "$LIMITS" ;;
   dry-run) [ -n "$VERSION" ] || usage_die "--dry-run needs a version"; cmd_dry_run "$VERSION" "$LIMITS" ;;
   tag-only) [ -n "$VERSION" ] || usage_die "--tag-only needs a version"; cmd_tag_only "$VERSION" ;;
   '') [ -n "$VERSION" ] || cmd_usage; cmd_release "$VERSION" "$LIMITS" ;;
