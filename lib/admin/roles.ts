@@ -1,0 +1,111 @@
+/**
+ * The admin ladder and `can(role, action)` — the authorization half of #501, as pure values.
+ *
+ * Two questions live in this file, and they are deliberately different:
+ *
+ *   the ladder      `member` < `support` < `admin` < `owner`. Its order is
+ *                   `content/identity.ts::USER_ROLES`', re-exported here so a caller in
+ *                   `lib/admin/**` imports a role question from one module.
+ *   the action gate `can(role, action)` — may this rung take this named action? Every action names
+ *                   the lowest rung that may take it, and `can()` is one rank comparison against
+ *                   that floor. `lib/admin/act.ts` is the only caller that matters: it asks before
+ *                   it runs a mutation, so a refusal costs no statement.
+ *
+ * **Why a table and not a check at each call site.** #183 gated whole surfaces (`requireRole`) and
+ * that is still how a page is reached. An action is narrower than a page: `/admin/people` is an
+ * `admin` surface, and the one button on it that hands ownership on is `owner`-only. Putting the
+ * floor next to the action's name means the answer is reviewable in one screen, and a new action
+ * that forgot its floor is a type error (`ACTION_REQUIREMENTS` is exhaustive over `AdminAction`).
+ *
+ * **Pure, no I/O, no clock, no session.** The role is an argument, always. That is what lets
+ * `tests/admin-roles.test.ts` drive every rung against every action with no database, and it is
+ * the property that keeps this module out of the browser question entirely: nothing here imports
+ * `pg`, so nothing here needs a server-only marker.
+ *
+ * **A rung cannot be skipped by asking.** `can("support", "role.change")` is false because the
+ * floor is `admin` and support is below it — the comparison is a range check, not an equality, so
+ * an `owner` passes every gate an `admin` passes and no call site enumerates rungs.
+ */
+import { DEFAULT_USER_ROLE, roleRank, USER_ROLES, type UserRole } from "@/content/identity";
+
+/** The ladder, lowest rung first. `content/identity.ts`'s array, named for the admin surface. */
+export const ROLE_LADDER = USER_ROLES;
+
+export { DEFAULT_USER_ROLE, roleRank };
+export type { UserRole };
+
+/* ------------------------------------------------------------------ *
+ * The actions and their floors
+ * ------------------------------------------------------------------ */
+
+/**
+ * Every action an audited write may name, closed at this list.
+ *
+ * The names are `<subject>.<verb>`: the subject is the table the action writes (`member` for
+ * `user_profile`, `invite` for `admin_invite`) and the verb is the change. That is the same shape
+ * `admin_action.action` stores, so an audit row reads as a sentence — `admin changed a role` — and
+ * a filter over the log is a filter over this list.
+ *
+ * Adding an action means adding it here, which means giving it a floor: the record below is typed
+ * `Record<AdminAction, UserRole>`, so a name with no floor does not compile.
+ */
+export const ADMIN_ACTIONS = [
+  /** A support note about an account. The one write `support` exists to make. */
+  "member.note",
+  /** Invite an address into a role below `owner`. */
+  "invite.create",
+  /** Retire an invitation that has not been accepted. */
+  "invite.revoke",
+  /** Move somebody up or down the ladder — the action #501's test refuses `support`. */
+  "role.change",
+  /** Delete an instance and its rows. Destructive, so `admin`, never `support`. */
+  "instance.delete",
+  /** Hand the one owner seat on. `owner` only: an `admin` cannot make themselves an `owner`. */
+  "owner.transfer",
+] as const;
+
+export type AdminAction = (typeof ADMIN_ACTIONS)[number];
+
+/**
+ * The lowest rung each action may be taken by.
+ *
+ * Read the floors as policy, not as mechanics: `support` may annotate, `admin` may change people
+ * and invitations, `owner` alone may hand the crown on. There is no action an `owner` alone may
+ * take other than the transfer, which is what "at most one owner" is for — the seat is a
+ * responsibility, not a bigger admin.
+ */
+export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
+  "member.note": "support",
+  "invite.create": "admin",
+  "invite.revoke": "admin",
+  "role.change": "admin",
+  "instance.delete": "admin",
+  "owner.transfer": "owner",
+};
+
+/** Is this string one of `ADMIN_ACTIONS`? The runtime half of a closed union read from a row. */
+export function isAdminAction(value: string): value is AdminAction {
+  return (ADMIN_ACTIONS as readonly string[]).includes(value);
+}
+
+/** The lowest rung that may take `action`. Throws only for a value the type already excludes. */
+export function requirementFor(action: AdminAction): UserRole {
+  return ACTION_REQUIREMENTS[action];
+}
+
+/**
+ * May `role` take `action`?
+ *
+ * `null` is nobody signed in, or an account with no profile row (a missing row is
+ * `DEFAULT_USER_ROLE`, which `lib/admin/act.ts` applies before it asks) — refused on every action,
+ * because every floor is at least `support`.
+ */
+export function can(role: UserRole | null, action: AdminAction): boolean {
+  if (role === null) return false;
+  return roleRank(role) >= roleRank(requirementFor(action));
+}
+
+/** Is `role` at least `needed`? The ladder comparison on its own, for a caller with no action. */
+export function atLeast(role: UserRole | null, needed: UserRole): boolean {
+  return role !== null && roleRank(role) >= roleRank(needed);
+}

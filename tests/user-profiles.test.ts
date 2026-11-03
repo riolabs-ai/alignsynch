@@ -72,7 +72,8 @@ describe("zUserProfile", () => {
 
   it("carries the role off the row, and rejects a role outside the vocabulary", () => {
     expect(userProfileFromRow({ ...ROW, role: "admin" }).role).toBe("admin");
-    expect(zUserProfile.safeParse({ ...PROFILE, role: "owner" }).success).toBe(false);
+    // `owner` joined the vocabulary in #501, so the case outside it is a name that is not a rung.
+    expect(zUserProfile.safeParse({ ...PROFILE, role: "superuser" }).success).toBe(false);
     // No default in the schema: a row always carries one (the column does), so a profile that
     // lost it is drift rather than a silent member.
     const { role: _dropped, ...withoutRole } = PROFILE;
