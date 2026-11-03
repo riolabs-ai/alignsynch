@@ -193,6 +193,11 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * recharts `stackId` names a stack (`dataKey`'s sibling). Both are markup by the same test as
  * `role` and `dataKey` — a reader never sees either word — so counting them would force a table
  * into a copy fixture to spell `row`.
+ *
+ * `tourAnchor` is the same class again (#455): the prop a nav row or a card is handed so the
+ * element can carry `data-tour`. It is a *handle* — the id `lib/tour/steps.ts` joins a fixture step
+ * to a real element by — not a sentence, and counting it would put a step id in a copy fixture,
+ * which is the one place a handle must not be.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
   "accept",
@@ -232,6 +237,7 @@ const TECHNICAL_ATTRIBUTES = new Set([
   "strokeWidth",
   "target",
   "textAnchor",
+  "tourAnchor",
   "type",
   "unoptimized",
   "value",

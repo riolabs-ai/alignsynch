@@ -40,11 +40,14 @@
  * links to it.
  */
 import { ConsoleOverview } from "@/components/console/overview";
+import { FirstRunTour } from "@/components/tour/first-run-tour";
 import { overviewPageCopy } from "@/data/pages/overview";
+import { tourPageCopy } from "@/data/pages/tour";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { listMyInstances, type MyInstance } from "@/lib/db/my-instances";
+import { readTourState } from "@/lib/db/tour";
 import { OVERVIEW_PATH } from "@/lib/flow/paths";
 import { listPublishedTemplates } from "@/lib/flow/store";
 import type { Metadata } from "next";
@@ -56,6 +59,15 @@ export const metadata: Metadata = {
   title: "Overview",
 };
 
+/**
+ * **The tour is first-run, per person** (#456). `readTourState()` is the mark — `tour_seen_at` NULL
+ * means "has not seen it", any instant means "has" — and the shell opens only on the first. That
+ * column is the rule, not a query parameter: an account that has seen the tour never sees it again,
+ * and `/help`'s replay control (S4) clears the mark rather than forcing the component open. The
+ * mark is written by the component when the tour is completed or dismissed, through
+ * `POST /api/tour`; this page only reads it, because a render may run twice and a write in a render
+ * is not a fact about the reader (#453).
+ */
 export default async function OverviewPage() {
   const user = await currentUser();
   if (user === null) redirect(loginPathFor(OVERVIEW_PATH));
@@ -63,6 +75,12 @@ export default async function OverviewPage() {
   let instances: readonly MyInstance[] = [];
   let templates = 0;
   let unreadable: string | null = null;
+  /**
+   * `true` keeps the tour shut. It defaults to shut so that a read that failed below cannot open a
+   * tour over the failure panel — that panel carries none of the six anchors, and the honest
+   * behaviour for an unreadable console is the panel, not an empty callout on top of it.
+   */
+  let tourSeen = true;
 
   try {
     // Both figures in one guarded block: a console that drew three real counts beside a zero it
@@ -70,6 +88,7 @@ export default async function OverviewPage() {
     // read draws the panel and no figures at all.
     instances = await listMyInstances(user.userId);
     templates = (await listPublishedTemplates()).length;
+    tourSeen = (await readTourState(user.userId)).seen;
   } catch (error) {
     // "The database did not answer" is a state this screen can describe. A row that fails the
     // model is a code defect, and it keeps throwing.
@@ -79,12 +98,20 @@ export default async function OverviewPage() {
   }
 
   return (
-    <ConsoleOverview
-      copy={overviewPageCopy}
-      name={user.name}
-      instances={instances}
-      templates={templates}
-      unreadable={unreadable}
-    />
+    <>
+      <ConsoleOverview
+        copy={overviewPageCopy}
+        name={user.name}
+        instances={instances}
+        templates={templates}
+        unreadable={unreadable}
+      />
+      {/*
+        Mounted by the page, not the component, for the reason `components/legal` records: the
+        fixture is parsed by zod at module load, so the route resolves it and the browser receives
+        a plain object. `components/tour/**` therefore imports no `data/` module and no zod.
+      */}
+      <FirstRunTour copy={tourPageCopy} start={!tourSeen} />
+    </>
   );
 }

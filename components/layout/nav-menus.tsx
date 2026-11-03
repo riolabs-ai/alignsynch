@@ -129,6 +129,13 @@ export type NavRowProps = {
   onNavigate: () => void;
   /** Flagged off: draw nothing (issue #175). See `NavRenderProps.hidden`. */
   hidden?: boolean;
+  /**
+   * The first-run tour's anchor (#455), emitted as `data-tour` on the row's control. A step can
+   * point at a destination the *shell* owns — the rail's Support row is the tour's sixth step —
+   * and the menu stays ignorant of what a tour is: the value is opaque here and read only by
+   * `lib/tour/steps.ts`.
+   */
+  tourAnchor?: string;
 } & NavRowTarget;
 
 /**
@@ -222,6 +229,7 @@ export function NavRow(props: NavRowProps) {
       aria-label={accessibleLabel}
       title={title}
       data-surface-status={surface?.status}
+      data-tour={props.tourAnchor}
       className={className}
     >
       {content}
@@ -232,6 +240,7 @@ export function NavRow(props: NavRowProps) {
       onClick={onNavigate}
       aria-label={accessibleLabel}
       title={title}
+      data-tour={props.tourAnchor}
       className={className}
     >
       {content}
@@ -242,6 +251,7 @@ export function NavRow(props: NavRowProps) {
       onClick={props.onSelect}
       aria-label={accessibleLabel}
       title={title}
+      data-tour={props.tourAnchor}
       className={className}
     >
       {content}
@@ -520,6 +530,7 @@ function AlignSynchMenu({
         collapsed={collapsed}
         labelled={labelled}
         onNavigate={onNavigate}
+        tourAnchor="help"
       />
       {/*
         The console's Gap Analysis row, behind the `admin-console` capability rather than always

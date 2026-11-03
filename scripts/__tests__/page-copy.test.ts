@@ -119,12 +119,30 @@ export default function NotFound() {
 `,
   ),
   file("data/pages/not-found.ts", `export const notFoundPageCopy = {};`),
+  // The tour: the second non-route surface (#455). Mounted by the console page, words in its own
+  // fixture — the same shape as the shell and the 404, which is why the check demands it by name.
+  file(
+    "app/(mainlayout)/tour-mount.tsx",
+    `import { tourPageCopy } from "@/data/pages/tour";
+
+export function Tour() {
+  return <p>{tourPageCopy.heading}</p>;
+}
+`,
+  ),
+  file("data/pages/tour.ts", `export const tourPageCopy = {};`),
 ];
 
 const SHELL = copyOf({ heading: "QuizHub" });
 const NOT_FOUND = copyOf({ heading: "Oops" });
+const TOUR = copyOf({ heading: "A tour" });
 
-const COPIES: PageCopyTable = { "/": HOME, shell: SHELL, "not-found": NOT_FOUND };
+const COPIES: PageCopyTable = {
+  "/": HOME,
+  shell: SHELL,
+  "not-found": NOT_FOUND,
+  tour: TOUR,
+};
 
 const BUDGET: PageCopyBudget = {
   "/": {
@@ -144,6 +162,12 @@ const BUDGET: PageCopyBudget = {
     page: "app/not-found.tsx",
     dirs: [],
     fixture: "data/pages/not-found",
+    budget: 0,
+  },
+  tour: {
+    page: "app/(mainlayout)/tour-mount.tsx",
+    dirs: [],
+    fixture: "data/pages/tour",
     budget: 0,
   },
 };

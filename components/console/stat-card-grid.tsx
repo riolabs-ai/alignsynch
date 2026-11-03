@@ -44,6 +44,12 @@ export interface StatCard {
   readonly href: string;
   /** A lucide icon, sized by the caller (the grid does not resize it). */
   readonly icon: React.ReactNode;
+  /**
+   * The first-run tour's anchor, when this card is the element a step points at (#455). Opaque to
+   * the grid — it is emitted as `data-tour` and nothing here reads it — so a tour step can target
+   * one card without the grid learning what a tour is.
+   */
+  readonly tourAnchor?: string;
 }
 
 /**
@@ -58,6 +64,7 @@ export function StatCardGrid({ cards }: { cards: readonly StatCard[] }) {
           key={card.id}
           href={card.href}
           data-stat-card={card.id}
+          data-tour={card.tourAnchor}
           className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
         >
           <Card className="h-full transition-colors hover:border-action">
