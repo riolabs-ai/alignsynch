@@ -18,3 +18,23 @@ export const ADMIN_AUDIT_PATH = "/admin/audit";
 export function adminRelationshipPath(instanceRecordId: string): string {
   return `${ADMIN_INSTANCES_PATH}/${instanceRecordId}`;
 }
+
+/**
+ * `/admin/instances/<id>/report` — the relationship's Gap report (#504).
+ *
+ * A child of the repair screen rather than a sibling: the report belongs to the row, and the
+ * operator who is repairing it is the one who reissues it.
+ */
+export function adminReportPath(instanceRecordId: string): string {
+  return `${adminRelationshipPath(instanceRecordId)}/report`;
+}
+
+/**
+ * `/admin/instances/<id>/report/export?format=json|pdf` — the audited download (#504).
+ *
+ * One handler, two formats, because the read, the gate and the audit row are identical and only
+ * the bytes differ. A second route would be a second place to forget the gate.
+ */
+export function adminReportExportPath(instanceRecordId: string, format: "json" | "pdf"): string {
+  return `${adminReportPath(instanceRecordId)}/export?format=${format}`;
+}

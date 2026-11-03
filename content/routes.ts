@@ -70,6 +70,8 @@ const DYNAMIC_ROUTES = [
   "/admin/console/templates/[id]",
   // #503 — one relationship's repair screen, a child of the registry route above it.
   "/admin/instances/[id]",
+  // #504 — that relationship's Gap report: the operations screen, and the audited export beneath it.
+  "/admin/instances/[id]/report",
   "/assessment/[slug]",
   "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",

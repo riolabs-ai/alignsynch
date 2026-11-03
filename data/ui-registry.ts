@@ -230,12 +230,22 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "#503 — the first caller of `lib/admin/act.ts`: every repair is one transaction that reads the actor's rung from `user_profile`, runs the mutation and inserts the `admin_action` row before it commits, so a change without its audit entry is not representable. Admin-only (`requireAdmin()`, after `requireAdminProduct()`), while two of the five floors are `support` — the floors are enforced by `act()`, and the support view is #506. The read is `lib/db/admin-relationship.ts`: seats, the invitation's address and answered **counts**, never an opinion or a score. The fresh token a resend mints is returned to the component once and is deliberately absent from the audit row.",
   },
   {
+    kind: "route",
+    surface: "/admin/instances/[id]/report",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "One relationship's Gap report, and the three operations an operator may take on it: export it as JSON or PDF, reissue it with a reason, or read one seat's raw submission behind the PII gate.",
+    notes:
+      "#504 — the deliverable a customer pays for, as an operations screen. The document is `lib/report/document.ts` (pure): the record plus a projection of the Gaps, so the exported JSON round-trips through `zAssessmentInstance` and every number is recomputable from the rows it carries. `read_submission` is the epic's own action name and the audit row for both exports and a seat read; a member's request answers 404 from the route's `roleAnswerFor()` gate and writes no row, which is `act()`'s floor doing the second half. Doubt is a third gap step the model cannot compute (one value per kind, no history, frozen at completion) and it is stated in the document, the page and the PDF rather than omitted. The PDF is written by hand in `lib/report/pdf.ts` — no PDF dependency was added, and the instant it names is the fixture clock.",
+  },
+  {
     kind: "domain",
     surface: "components/admin",
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The operator's three screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, and the audit log's filtered table whose before/after values open on a click.",
+      "The operator's four screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, that relationship's Gap report with its export/reissue/read bands, and the audit log's filtered table whose before/after values open on a click.",
     notes:
       "`db`, and by a different route than it first claimed: every component here renders props the page read (a client component must not reach `pg`), and what pulls the domain into the database graph is the *type* it renders — `relationship-operations.tsx` annotates its props with `AdminRelationshipDetail`, and `import type` from `lib/db/**` still walks to `lib/db/client.ts` in this generator's graph. E34 is the runtime claim and it stays green: no `\"use client\"` module here value-imports a server module, which is why the pages render rather than 500. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.",
   },

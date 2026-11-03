@@ -18,6 +18,7 @@
  */
 import { queryRows } from "@/lib/db/client";
 import { cache } from "react";
+import type { QueryResultRow } from "pg";
 import {
   zAssessmentMode,
   zOpinions,
@@ -140,14 +141,21 @@ interface InstanceQueryRow {
  * the same `NOT EXISTS` definition as `TEMPLATE_BY_ID_SQL`: a template is a record with **no**
  * `session` row, so an instance can never stand in for the template it was copied
  * from.
+ *
+ * **Two keys, one statement (#504).** The party's screen resolves an instance by its slug; the
+ * console's report screen holds the record id it was handed by the registry. Writing the
+ * statement twice would be two statements that can drift about which columns the model needs, so
+ * `screenSql()` takes the predicate and both callers share the rest — including `voided_at`,
+ * which the report reads to answer *is there a report at all* before it derives one.
  */
-const SCREEN_BY_SLUG_SQL = `
+const screenSql = (where: string) => `
   SELECT
     ${RECORD_JSON},
     ai.template_record_id,
     ai.mode,
     ai.alignment_setting,
     ai.name,
+    ai.voided_at,
     ai.relationship_id,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
@@ -185,13 +193,89 @@ const SCREEN_BY_SLUG_SQL = `
     ) AS template_options
   FROM record r
   JOIN session ai ON ai.record_id = r.id
-  WHERE r.slug = $1 AND r.record_type = 'assessment'
+  WHERE ${where} AND r.record_type = 'assessment'
 `;
 
-interface ScreenQueryRow extends InstanceQueryRow {
+/** The party's screen: `/assessment/<slug>` (#145). */
+const SCREEN_BY_SLUG_SQL = screenSql("r.slug = $1");
+
+/** The console's report: the record id the registry hands the route (#504). */
+const SCREEN_BY_RECORD_ID_SQL = screenSql("r.id = $1");
+
+/** One screen row, as the statement above selects it. Exported for the report's reader (#504). */
+export interface ScreenQueryRow extends InstanceQueryRow {
   readonly template_record: RecordRow | null;
   readonly template_items: readonly ItemRow[];
   readonly template_options: readonly OptionRow[];
+  /** `session.voided_at` — an operator ended the session; there is no report to draw. */
+  readonly voided_at: string | Date | null;
+}
+
+/**
+ * The one seam a caller may replace: a parameterised query that answers rows.
+ *
+ * It exists so the console's report write (`lib/admin/report-ops.ts`) can run the **same read**
+ * inside `act()`'s transaction — the report it audits and the report it hashes are then one read
+ * of one snapshot, not a read here and a hash of something else afterwards. Production passes the
+ * pool (`queryRows`); a test passes a fake.
+ */
+export interface ScreenReaders {
+  rowsOf<R extends QueryResultRow>(text: string, values: readonly unknown[]): Promise<readonly R[]>;
+}
+
+export const POOL_SCREEN_READERS: ScreenReaders = {
+  rowsOf: (text, values) => queryRows(text, values),
+};
+
+/**
+ * One screen row as the two records the report is built from, or `undefined` when the row names
+ * no template this build can draw.
+ *
+ * Pure: the mapping is `lib/db/rows.ts`'s, and the "a template that stopped resolving is a 404"
+ * rule is stated once here instead of at each caller.
+ */
+export function screenFromRow(
+  row: ScreenQueryRow,
+): { instance: AssessmentInstance; template: Assessment } | undefined {
+  // A template that stopped resolving is a 404 and a `db:verify` failure, never a render with
+  // an empty title: the copy has no second source for its words.
+  if (row.template_record === null) return undefined;
+  return {
+    instance: assessmentInstanceFromRows({
+      record: row.record,
+      items: row.items,
+      options: row.options,
+      instance: {
+        record_id: row.record.id,
+        template_record_id: row.template_record_id,
+        relationship_id: row.relationship_id,
+        mode: row.mode,
+        setting: row.alignment_setting,
+        name: row.name,
+      },
+      parties: row.parties,
+      opinions: row.opinions,
+    }),
+    template: assessmentTemplateFromRows({
+      record: row.template_record,
+      items: row.template_items,
+      options: row.template_options,
+    }),
+  };
+}
+
+/**
+ * One instance by its own record id, or `undefined`.
+ *
+ * Not memoised: this is the console's read, it runs once per request, and the one caller that
+ * needs it inside a transaction hands its own `ScreenReaders`.
+ */
+export async function readAssessmentScreenByRecordId(
+  recordId: string,
+  readers: ScreenReaders = POOL_SCREEN_READERS,
+): Promise<{ instance: AssessmentInstance; template: Assessment } | undefined> {
+  const [row] = await readers.rowsOf<ScreenQueryRow>(SCREEN_BY_RECORD_ID_SQL, [recordId]);
+  return row === undefined ? undefined : screenFromRow(row);
 }
 
 interface TemplateQueryRow {
@@ -276,32 +360,7 @@ export const readAssessmentScreenBySlug = cache(
     slug: string,
   ): Promise<{ instance: AssessmentInstance; template: Assessment } | undefined> => {
     const [row] = await queryRows<ScreenQueryRow>(SCREEN_BY_SLUG_SQL, [slug]);
-    if (row === undefined) return undefined;
-    // A template that stopped resolving is a 404 and a `db:verify` failure, never a render with
-    // an empty title: the copy has no second source for its words.
-    if (row.template_record === null) return undefined;
-    return {
-      instance: assessmentInstanceFromRows({
-        record: row.record,
-        items: row.items,
-        options: row.options,
-        instance: {
-          record_id: row.record.id,
-          template_record_id: row.template_record_id,
-          relationship_id: row.relationship_id,
-          mode: row.mode,
-          setting: row.alignment_setting,
-          name: row.name,
-        },
-        parties: row.parties,
-        opinions: row.opinions,
-      }),
-      template: assessmentTemplateFromRows({
-        record: row.template_record,
-        items: row.template_items,
-        options: row.template_options,
-      }),
-    };
+    return row === undefined ? undefined : screenFromRow(row);
   },
 );
 
