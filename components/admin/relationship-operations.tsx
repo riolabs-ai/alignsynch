@@ -17,10 +17,11 @@
  *
  * **Which bands are offered comes from the row, which the row itself does not guarantee.** A seat
  * with no unlock mark offers nothing to clear; a claimed or missing invitation offers nothing to
- * reissue; a voided session offers neither an invitation nor an acceptance. Those are *disabled*
- * controls with a sentence, not hidden ones — an operator looking for the button needs to know it
- * exists and why it is unavailable, and the store refuses each of them anyway (`OpRefused`), so the
- * UI's own checks are courtesy twice over.
+ * reissue, and a withdrawn one offers nothing either — a revoke is terminal, so the same
+ * invitation cannot be brought back by the band beside it; a voided session offers neither an
+ * invitation nor an acceptance. Those are *disabled* controls with a sentence, not hidden ones — an
+ * operator looking for the button needs to know it exists and why it is unavailable, and the store
+ * refuses each of them anyway (`OpRefused`), so the UI's own checks are courtesy twice over.
  *
  * **Nothing here decides a permission.** The floors live in `lib/admin/roles.ts` and are enforced by
  * `act()` inside the transaction; this component cannot know the actor's rung, so a repair the actor
@@ -437,13 +438,20 @@ export function RelationshipOperations({
           instanceRecordId={detail.instanceRecordId}
           action={action}
           emailField={invite?.email ?? null}
-          disabled={invite === null || invite.claimedAt !== null || detail.voided}
+          disabled={
+            invite === null ||
+            invite.claimedAt !== null ||
+            invite.revokedAt !== null ||
+            detail.voided
+          }
           disabledReason={
             invite === null
               ? itemLabel(inviteCopy, "none")
               : invite.claimedAt !== null
                 ? itemLabel(inviteCopy, "claimed")
-                : itemLabel(refusals, "instance-voided")
+                : invite.revokedAt !== null
+                  ? itemLabel(inviteCopy, "revoked")
+                  : itemLabel(refusals, "instance-voided")
           }
           onResult={onResult}
         />
