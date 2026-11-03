@@ -69,6 +69,16 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-gaps",
     budget: 0,
   },
+  // The operator's platform health (#508): four measurements, each with its own source line. Budget
+  // 0 from the first commit — the four headings, every stat caption, the two alarm sentences and the
+  // two provenance templates are `data/pages/admin-health.ts`, so the next literal written in the
+  // cards is a red build.
+  "/admin/health": {
+    page: "app/(mainlayout)/admin/health/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-health",
+    budget: 0,
+  },
   // Card 3/5 of the console: the operator's relationship registry. Budget 0 from the first
   // commit, like the flow surfaces — the heading, the nine column labels, the five seat states,
   // the five stage tabs, the two selects' options, the count sentence and the three
