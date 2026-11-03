@@ -1,24 +1,31 @@
 /**
- * `/admin/templates/[id]` — one template, being drafted (#502a).
+ * `/admin/templates/[id]` — one template, being drafted and published (#502a, #502b).
  *
  * The editor is `components/create/quiz-editor.tsx` bound to a template record: tabs over the
  * panels, one accordion row per Aspect, add/remove, and a preview that renders the record as a
  * party sees it. The fixture is the words for all of that:
  *
- *   record      who this is and what state it is in (editable or locked, and why)
+ *   record      who this is and what state it is in (editable or read-only, and why)
  *   details     the record's own fields — title, summary, slug — and the catalogue facts this
  *               record does **not** own (realm, price, roles)
  *   aspects     the Aspect editor: its three fields, and the row controls
  *   preview     the party's sheet, rendered from the draft and never from a saved row
  *   save        the reason field, the button and the two notices
+ *   publish     the version band (#502b): the live state, the live version, publish, unpublish and
+ *               their notices. Unpublishing is a status write — the versions it names stay
  *   refusals    one sentence per code, so a refusal is a sentence and never a driver diagnostic
- *   locked      the panel a published template draws instead of the editor
+ *   read-only   the panel an archived template draws instead of the editor
  *
  * **Realm and price are the catalogue's, and the screen says so.** A template record carries a
  * `slug`, and `data/relationship-types.ts` authors the type that slug names — its realm, its two
  * roles and its price. Those are drawn here, read-only: editing one is editing the taxonomy, which
  * is a fixture (a code change), not a record. A new slug shows "not in the catalogue" and no
  * price, because inventing either would be the second source of truth the model refuses.
+ *
+ * **A published template is editable again (#502b).** It stopped being editable in `502a` because an
+ * in-place edit drifted every relationship that had copied it; now each relationship reads the
+ * version it was created from, so an edit is a private draft until it is published as N+1. The words
+ * below say that, because a form that silently changes what it does is worse than one that refuses.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
@@ -27,7 +34,7 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
   subtitle:
     "Edit the record, its Aspects and its words. Every save carries a reason and lands in the audit log in the same transaction as the change. The preview draws the draft you are editing, not a saved row.",
   items: [
-    { id: "editable", label: "Draft — editable" },
+    { id: "editable", label: "Editable" },
     { id: "locked", label: "Read-only" },
     { id: "tab-details", label: "The record" },
     { id: "tab-aspects", label: "Aspects" },
@@ -86,10 +93,41 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      id: "publish",
+      heading: "Publish",
+      body: "Publishing writes this template's stored words and Aspects as a new immutable version. Every relationship reads the version it was created from, so a live relationship keeps the questions it was asked even after this template changes. Unpublishing withdraws the template from the catalogue and keeps every version.",
+      items: [
+        { id: "state-draft", label: "Not offered" },
+        { id: "state-published", label: "Offered in the catalogue" },
+        { id: "state-archived", label: "Archived" },
+        { id: "live", label: "Live version {version}" },
+        { id: "history", label: "Highest version {version} — not offered" },
+        { id: "never", label: "Never published" },
+        { id: "reason", label: "Why" },
+        { id: "publish", label: "Publish a version" },
+        { id: "unpublish", label: "Unpublish" },
+        { id: "working", label: "Working…" },
+        { id: "published", label: "Published version {version}. Audit action {actionId}." },
+        {
+          id: "unpublished",
+          label:
+            "Unpublished. Version {version} and its history remain in the catalogue of records.",
+        },
+      ],
+    },
+    {
       id: "refusals",
       items: [
         { id: "invalid-draft", label: "The model refused this template." },
-        { id: "not-editable", label: "That template is published." },
+        { id: "not-editable", label: "That template is archived — unarchive it before editing." },
+        {
+          id: "not-published",
+          label: "That template is not published, so there is nothing to withdraw.",
+        },
+        {
+          id: "version-conflict",
+          label: "Another publish took the next version. Reload and try again.",
+        },
         { id: "slug-taken", label: "Another template already uses that slug." },
         { id: "no-such-template", label: "That template is not in this database." },
         { id: "reason-too-short", label: "A reason of at least eight characters is required." },
@@ -100,8 +138,8 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "locked",
-      heading: "This template is published",
-      body: "Editing it in place would rewrite the Aspects every relationship already copied, so the console refuses and this screen says why. Versioning — publish N+1 and leave N for the relationships that started on it — is the next card.",
+      heading: "This template is archived",
+      body: "An archived template is read-only here: unarchive it from the template library before editing it. Archiving is the member's action on a template they own, and it is not unpublishing — a published version is never deleted by either.",
     },
     {
       id: "problems",

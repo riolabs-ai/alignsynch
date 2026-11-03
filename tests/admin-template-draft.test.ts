@@ -13,15 +13,16 @@
  *      against a fake connection that models a transaction the way Postgres does (pending until
  *      `COMMIT`, discarded by `ROLLBACK`): the statements must be
  *      `BEGIN → SELECT role → … → INSERT admin_action → COMMIT`, a refusal must leave no row, and
- *      a published template must be refused as `not-editable` **before** any `UPDATE` is sent —
- *      editing one in place is the drift `data:check` E31 refuses, and versioning is #502b.
+ *      a published template must be edited **without writing a version** (that is a publish, and
+ *      `#502b`'s), an archived one must be refused as `not-editable` **before** any `UPDATE` is
+ *      sent, and a refusal must roll back the whole transaction.
  *
  * No database: `act()` takes its runner as a parameter, which is exactly why this is a unit test.
  */
 import { describe, expect, it } from "vitest";
 
 import { ActRefused, type ActTransactionRunner, transactionRunner } from "@/lib/admin/act";
-import { createTemplateDraft, TemplateRefused, updateTemplateDraft } from "@/lib/admin/templates";
+import { createTemplateDraft, updateTemplateDraft } from "@/lib/admin/templates";
 import {
   aspectIdOf,
   buildTemplateRecord,
@@ -303,9 +304,9 @@ describe("a template save is act()'s write", () => {
     expect(db.committed).toHaveLength(0);
   });
 
-  it("refuses a published template as not-editable, and writes nothing", async () => {
+  it("refuses an archived template as not-editable, and writes nothing", async () => {
     const db = new FakeDb();
-    db.row = { ...recordFor(), record_type: "assessment", status: "published" };
+    db.row = { ...recordFor(), record_type: "assessment", status: "archived" };
     const parsed = validateTemplateRecord(bodyOf());
     if (!parsed.ok) throw new Error("the base record stopped validating");
     await expect(
@@ -313,9 +314,26 @@ describe("a template save is act()'s write", () => {
         { actorUserId: ACTOR, reason: REASON, record: parsed.record },
         runnerFor(db),
       ),
-    ).rejects.toBeInstanceOf(TemplateRefused);
+    ).rejects.toMatchObject({ reason: "not-editable" });
     expect(db.statements.some((statement) => /^UPDATE record/.test(statement.text))).toBe(false);
     expect(db.committed).toHaveLength(0);
+  });
+
+  it("edits a published template without writing a version — that is a publish, not a save", async () => {
+    const db = new FakeDb();
+    db.row = { ...recordFor(), record_type: "assessment", status: "published" };
+    const parsed = validateTemplateRecord(bodyOf());
+    if (!parsed.ok) throw new Error("the base record stopped validating");
+
+    await updateTemplateDraft(
+      { actorUserId: ACTOR, reason: REASON, record: parsed.record },
+      runnerFor(db),
+    );
+    expect(db.committed).toContain("admin_action:template.update");
+    expect(db.committed).toContain("UPDATE record");
+    // #502b — the working copy moves; every relationship keeps reading the version it was
+    // created from, so a save must not write one.
+    expect(db.statements.some((statement) => /template_version/.test(statement.text))).toBe(false);
   });
 
   it("edits a draft: replaces its items and records both sides of the change", async () => {

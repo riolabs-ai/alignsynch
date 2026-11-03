@@ -746,7 +746,8 @@ async function resetContent(connectionString) {
         .present;
 
     // Dependency order: opinion → party → session_invite → session → relationship_member /
-    // coach_invite → relationship → item (cascades response_option) → record.
+    // coach_invite → relationship → template_version (a relationship names a version) → item
+    // (cascades response_option) → record.
     // `session.template_record_id` and `relationship.template_id` have no ON DELETE CASCADE, so
     // the session and relationship rows have to go before the records they name — and the session
     // before the relationship it belongs to (`session.relationship_id` is NOT NULL with an FK).
@@ -759,6 +760,7 @@ async function resetContent(connectionString) {
       ["relationship_member", "public.relationship_member", "DELETE FROM relationship_member"],
       ["coach_invite", "public.coach_invite", "DELETE FROM coach_invite"],
       ["relationship", "public.relationship", "DELETE FROM relationship"],
+      ["template_version", "public.template_version", "DELETE FROM template_version"],
       ["item", "public.item", "DELETE FROM item"],
       ["response_option", "public.response_option", "DELETE FROM response_option"],
       ["record", "public.record", "DELETE FROM record"],

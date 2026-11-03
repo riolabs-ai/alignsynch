@@ -1,7 +1,11 @@
 "use server";
 
 /**
- * Template authoring, as two server actions (#502a).
+ * Template authoring, as four server actions (#502a, #502b).
+ *
+ * Two of them write a **draft** (`createTemplate`, `saveTemplate`); two publish and withdraw it
+ * (`publishTemplateVersion`, `unpublishTemplateVersion`). All four name a reason, all four reach
+ * `act()`, and each of the four lands its own `admin_action` row.
  *
  * The component posts **the record it is editing** — a plain JSON body — plus a reason. This file
  * resolves who is asking, forces the two fields the console does not own (`type`, `status`), and
@@ -9,6 +13,10 @@
  * further down: the schema decides what a template is, `act()` decides whether this actor may
  * write and writes the audit row in the same transaction. This file is the boundary, not the
  * policy.
+ *
+ * A publish is the exception to "the component posts the record": it posts only the id and the
+ * reason, because it snapshots the **stored** rows. Publishing the form would let an unsaved edit
+ * become a version, which is the one thing the immutable row is for.
  *
  * **The body is parsed, not re-assembled.** That is the difference the card asks for: an unknown
  * key a crafted post carries (`opinionKind`, `correctOptionId`, `opinions`) reaches the schema's
@@ -33,11 +41,19 @@
  * visit; a redirect would also swallow the one value a save has to hand back — the new id.
  */
 import { ActRefused } from "@/lib/admin/act";
-import { createTemplateDraft, TemplateRefused, updateTemplateDraft } from "@/lib/admin/templates";
+import {
+  createTemplateDraft,
+  publishTemplate,
+  TemplateRefused,
+  unpublishTemplate,
+  updateTemplateDraft,
+} from "@/lib/admin/templates";
 import {
   slugify,
   type TemplateFormPayload,
   type TemplateSaveOutcome,
+  type TemplateVersionFormPayload,
+  type TemplateVersionOutcome,
   validateTemplateRecord,
 } from "@/lib/admin/template-draft";
 import { ADMIN_TEMPLATES_PATH } from "@/lib/admin/paths";
@@ -110,7 +126,7 @@ export async function createTemplate(payload: TemplateFormPayload): Promise<Temp
   }
 }
 
-/** Edit a draft. A published row is refused as `not-editable` — publishing is #502b. */
+/** Edit a draft or a published template; an archived row is refused. */
 export async function saveTemplate(payload: TemplateFormPayload): Promise<TemplateSaveOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
@@ -132,5 +148,81 @@ export async function saveTemplate(payload: TemplateFormPayload): Promise<Templa
     return { ok: true, id: result.after.id, actionId: result.actionId };
   } catch (error) {
     return refusalOf(error);
+  }
+}
+
+/** One place both version actions map a thrown refusal, so the two cannot answer differently. */
+function versionRefusalOf(error: unknown): TemplateVersionOutcome {
+  if (error instanceof ActRefused) return { ok: false, code: error.reason };
+  if (error instanceof TemplateRefused) {
+    return {
+      ok: false,
+      code: error.reason,
+      ...(error.problems.length > 0 ? { problems: error.problems } : {}),
+    };
+  }
+  throw error;
+}
+
+/**
+ * Publish the **stored** working copy as the next immutable version (#502b).
+ *
+ * The body carries an id and a reason, and no record: publishing writes what is in the database, not
+ * what is in the form. That is the whole difference between a save and a publish — a save is the
+ * author's edit, a publish is a snapshot of it — and it means an operator who typed into the editor
+ * and clicked publish without saving gets the stored version published, not a half-typed one.
+ *
+ * The validator runs inside the transaction over the rows it read (`publishTemplate`), through the
+ * same `validateTemplateRecord()` a save uses, so an invalid row is refused with the field named and
+ * no version row is written.
+ */
+export async function publishTemplateVersion(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+  await requireAdmin({ next: ADMIN_TEMPLATES_PATH });
+
+  const templateId = text(payload.templateId);
+  if (templateId === "") return { ok: false, code: "no-such-template" };
+
+  try {
+    const result = await publishTemplate({
+      actorUserId: user.userId,
+      reason: text(payload.reason),
+      templateId,
+    });
+    return { ok: true, version: result.after.version ?? 0, actionId: result.actionId };
+  } catch (error) {
+    return versionRefusalOf(error);
+  }
+}
+
+/**
+ * Withdraw a published template from the catalogue (#502b) — a status write, no version deleted.
+ *
+ * The same shape as a publish, and for the same reason: the reason is the audit row's sentence and
+ * the id is the only other input. A row that was not published is refused (`not-published`) rather
+ * than silently left alone.
+ */
+export async function unpublishTemplateVersion(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+  await requireAdmin({ next: ADMIN_TEMPLATES_PATH });
+
+  const templateId = text(payload.templateId);
+  if (templateId === "") return { ok: false, code: "no-such-template" };
+
+  try {
+    const result = await unpublishTemplate({
+      actorUserId: user.userId,
+      reason: text(payload.reason),
+      templateId,
+    });
+    return { ok: true, version: result.after.version ?? 0, actionId: result.actionId };
+  } catch (error) {
+    return versionRefusalOf(error);
   }
 }

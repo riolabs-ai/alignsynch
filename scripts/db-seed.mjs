@@ -126,6 +126,67 @@ async function seedTemplate(client, template) {
   await replaceItems(client, template);
 }
 
+/**
+ * #502b — the version a seeded relationship is bound to.
+ *
+ * `relationship.template_version_id` is NOT NULL: a relationship reads its template through the
+ * version it was created from, so a seeded relationship needs a version row to point at. The
+ * statement is the one `db/migrations/0026_template_version.sql` backfills with — a migration
+ * cannot import a module and this script writes rows for a *fresh* database, where the migration
+ * ran before any template existed, so the payload is assembled in SQL in both places. `db:verify`
+ * V23 is what proves the two agree: every relationship bound, every payload parses.
+ *
+ * Only the templates the seeded instances name get a v1, which is the migration's rule too: a
+ * template nobody has used has never been published, and publishing it here would invent a
+ * publication the fixture does not carry. `published_at` is the record's own `date` and
+ * `published_by` is NULL ("before publishing was recorded"), exactly as the backfill writes them.
+ */
+async function seedTemplateVersion(client, templateId) {
+  const { rows } = await client.query(
+    `INSERT INTO template_version
+       (id, template_record_id, version, payload, published_at, published_by, superseded_at)
+     SELECT 'template-version-' || r.id || '-v1',
+            r.id,
+            1,
+            jsonb_build_object(
+              'id', r.id,
+              'slug', r.slug,
+              'type', r.record_type,
+              'status', r.status,
+              'date', r.date,
+              'title', r.title,
+              'summary', r.summary
+            ) || CASE
+                   WHEN r.author_user_id IS NULL THEN '{}'::jsonb
+                   ELSE jsonb_build_object('authorUserId', r.author_user_id)
+                 END
+              || jsonb_build_object(
+                   'items', COALESCE(
+                     (SELECT jsonb_agg(
+                               jsonb_build_object(
+                                 'id', i.item_id,
+                                 'prompt', i.prompt,
+                                 'scale', jsonb_build_object('kind', 'score', 'min', 1, 'max', 5),
+                                 'leftValue', i.left_value,
+                                 'rightValue', i.right_value
+                               ) ORDER BY i.position)
+                        FROM item i WHERE i.record_id = r.id),
+                     '[]'::jsonb)
+                 ),
+            r.date,
+            NULL,
+            NULL
+       FROM record r
+      WHERE r.id = $1
+        AND r.record_type = 'assessment'
+        AND NOT EXISTS (SELECT 1 FROM session s WHERE s.record_id = r.id)
+     ON CONFLICT (template_record_id, version) DO NOTHING
+     RETURNING id`,
+    [templateId],
+  );
+  return rows.length;
+}
+
 async function seedInstance(client, instance) {
   await upsertRecord(client, instance);
   await replaceItems(client, instance);
@@ -137,12 +198,19 @@ async function seedInstance(client, instance) {
   // and nowhere else. `purchased_at` is NULL — no demo relationship records a purchase.
   await client.query(
     `INSERT INTO relationship
-       (id, template_id, initiator_user_id, counterparty_user_id, purchased_at, plan, created_at)
-     VALUES ($1, $2, NULL, NULL, NULL, NULL, $3)
+       (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
+        purchased_at, plan, created_at)
+     VALUES ($1, $2, $3, NULL, NULL, NULL, NULL, $4)
      ON CONFLICT (id) DO UPDATE SET
-       template_id = EXCLUDED.template_id,
-       created_at  = EXCLUDED.created_at`,
-    [`relationship-${instance.id}`, instance.templateId, instance.date],
+       template_id         = EXCLUDED.template_id,
+       template_version_id = EXCLUDED.template_version_id,
+       created_at          = EXCLUDED.created_at`,
+    [
+      `relationship-${instance.id}`,
+      instance.templateId,
+      `template-version-${instance.templateId}-v1`,
+      instance.date,
+    ],
   );
   await client.query(
     `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
@@ -938,6 +1006,13 @@ async function main() {
     await client.query("BEGIN");
 
     for (const template of assessments) await seedTemplate(client, template);
+    // #502b — the versions the seeded relationships bind to, written before the relationships
+    // themselves: `relationship.template_version_id` is NOT NULL and names this row.
+    const seededTemplates = new Set(assessmentInstances.map((instance) => instance.templateId));
+    let seededVersions = 0;
+    for (const templateId of seededTemplates) {
+      seededVersions += await seedTemplateVersion(client, templateId);
+    }
     for (const instance of assessmentInstances) await seedInstance(client, instance);
     // #289 — the plan rows, from the same fixture a pricing surface renders. Seeded here and not
     // in the migration: a migration is DDL and cannot import the fixture, and a price typed into
@@ -1020,6 +1095,7 @@ async function main() {
       console.log(`    ${table.padEnd(20)} ${count}`);
     }
     console.log(`    ${"demo_account".padEnd(20)} ${report.totals.accounts}`);
+    console.log(`    ${"template_version (new)".padEnd(20)} ${seededVersions}`);
     console.log(`    ${"demo admin".padEnd(20)} ${report.totals.admins}`);
     console.log(`    ${"platform admin".padEnd(20)} ${report.totals.platform_admins}`);
     console.log(`    ${"party(user bound)".padEnd(20)} ${report.totals.bound_parties}`);
