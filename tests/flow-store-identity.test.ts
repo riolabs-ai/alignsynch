@@ -72,11 +72,13 @@ const stub = vi.hoisted(() => {
     /** `true` makes the claim's INSERT … ON CONFLICT DO NOTHING report a conflict. */
     seatTaken: boolean;
     /**
-     * The billing gate's two reads (#289): how many active instances the account already holds.
-     * `0` is "nothing open", which is what every pre-#289 case in this file is — and the live
-     * subscription read is answered `null` (no row), i.e. the Free plan.
+     * The billing gate's three reads (#289, #505): how many active instances the account already
+     * holds, how many relationships it has started, and whether any grant is running. `0`, `0` and
+     * "no grant" is "nothing open, nothing bought", which is what every pre-#289 case in this file
+     * is — and the live subscription read is answered `null` (no row), i.e. the Free plan.
      */
     activeInstances: number;
+    activeRelationships: number;
   } = {
     templatePresent: true,
     templateAuthorId: null,
@@ -84,6 +86,7 @@ const stub = vi.hoisted(() => {
     seats: [],
     seatTaken: false,
     activeInstances: 0,
+    activeRelationships: 0,
   };
 
   /** One SQL statement, whitespace collapsed so a stub case reads as one line. */
@@ -97,6 +100,7 @@ const stub = vi.hoisted(() => {
     state.seats = [];
     state.seatTaken = false;
     state.activeInstances = 0;
+    state.activeRelationships = 0;
   }
 
   async function query(text: string, values: readonly unknown[] = []) {
@@ -172,6 +176,12 @@ const stub = vi.hoisted(() => {
     if (sql.includes("FROM party vp") && sql.includes("JOIN session ai")) {
       return [{ n: state.activeInstances }] as T[];
     }
+    // #505 — the plan's own count, and the grants that could raise the tier. No grant here: this
+    // fixture is about identity binding, and an empty grant list is the Free plan's own answer.
+    if (sql.includes("FROM relationship r") && sql.includes("count(*)::int AS n")) {
+      return [{ n: state.activeRelationships }] as T[];
+    }
+    if (sql.includes("FROM plan_grant")) return [] as T[];
     throw new Error(`the stub has no rows for: ${sql.slice(0, 80)}`);
   }
 

@@ -104,6 +104,12 @@ export const ADMIN_ACTIONS = [
    * satisfy a naming convention would make the epic's own sentence the wrong thing to search for.
    */
   "read_submission",
+  /**
+   * Give a relationship a tier for a period, or extend the one it has (#505). The action name is
+   * the card's word — an operator "comps" a plan — and the row it writes is `plan_grant`, not
+   * `billing_subscription`: no money moved, so it must not read as a purchase.
+   */
+  "plan.comp",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -112,9 +118,10 @@ export type AdminAction = (typeof ADMIN_ACTIONS)[number];
  * The lowest rung each action may be taken by.
  *
  * Read the floors as policy, not as mechanics: `support` may annotate, `admin` may change people
- * and invitations, `owner` alone may hand the crown on. There is no action an `owner` alone may
- * take other than the transfer, which is what "at most one owner" is for — the seat is a
- * responsibility, not a bigger admin.
+ * and invitations, and `owner` alone may hand the crown on — or, since #505, give the product away
+ * as a comp. Those are the two ownership decisions in this table: the seat and the money. There is
+ * no third, which is what "at most one owner" is for — the seat is a responsibility, not a bigger
+ * admin.
  */
 export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "member.note": "support",
@@ -139,6 +146,16 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // rungs is what lets support answer "what does the report say" without reissuing one.
   "report.regenerate": "admin",
   read_submission: "support",
+  /**
+   * #505 — **`owner` alone, and the second action in this table that is owner-floored.**
+   *
+   * A comp gives the product away: it moves no money, writes no provider event and creates a
+   * period somebody else would have paid for. `admin` may *read* every billing row and see who is
+   * blocked; deciding that this customer is served for nothing is an ownership decision, the same
+   * kind `owner.transfer` is. The floor is policy and it is enforced by `act()` inside the
+   * transaction, so an `admin` session clicking the band gets `role-too-low` and no row.
+   */
+  "plan.comp": "owner",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.
@@ -221,6 +238,12 @@ export const AUDIT_TARGET_TABLES = [
   "relationship_member",
   "session_invite",
   "coach_invite",
+  /**
+   * #505 — the row a comp writes. It is a target rather than a second `relationship` write because
+   * the audit row then points at the grant it created: `/admin/audit` answers "which grant" with
+   * the same id `plan_grant` carries, and the grant carries its own reason and author beside it.
+   */
+  "plan_grant",
 ] as const;
 
 export type AuditTargetTable = (typeof AUDIT_TARGET_TABLES)[number];

@@ -459,6 +459,10 @@ describe("a delivery is applied to our rows, at most once", () => {
         provider: "stripe",
         providerSubscriptionId: "sub_test_1",
         status: "active",
+        // #505 — the provider's own live/test flag, read off the object. The fixture's subscription
+        // carries no `livemode`, and an absent flag is test mode: a payload that does not say must
+        // never be read as money having moved.
+        livemode: false,
         currentPeriodEnd: new Date((NOW_SECONDS + 30 * 24 * 60 * 60) * 1000).toISOString(),
       },
     ]);

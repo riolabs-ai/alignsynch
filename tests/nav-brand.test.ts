@@ -233,11 +233,14 @@ describe("the console's own rows are a member's, the operator's rows are not", (
       "/admin/instances",
       // #503 — the log the five repairs commit into.
       "/admin/audit",
+      // #505 — billing control, the operator's fifth row.
+      "/admin/billing",
     ]);
     const admin = navHtml("alignsynch", viewerWith("admin-console"));
     expect(admin).toContain(itemLabelOf("console-gaps"));
     expect(admin).toContain(itemLabelOf("admin-instances"));
     expect(admin).toContain(itemLabelOf("admin-audit"));
+    expect(admin).toContain(itemLabelOf("admin-billing"));
   });
 
   it("keeps the member's sidebar a prefix of the admin's — same rows, same order", () => {

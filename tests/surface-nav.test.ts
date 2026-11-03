@@ -115,6 +115,8 @@ describe("the shell's menus", () => {
       "/admin/instances",
       // #503 — the audit log, the operator's third row.
       "/admin/audit",
+      // #505 — billing control, beside the log it writes into.
+      "/admin/billing",
     ]);
   });
 

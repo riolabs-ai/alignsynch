@@ -25,6 +25,8 @@ import { createInstanceFromTemplate, type CreateInstanceInput } from "@/lib/flow
 const gate = vi.hoisted(() => ({
   planId: "free" as "free" | "principal",
   activeInstances: 0,
+  /** #505 — the plan's own count: relationships this account started and has not finished. */
+  activeRelationships: 0,
   poolConnects: 0,
 }));
 
@@ -37,6 +39,7 @@ vi.mock("@/lib/billing", async () => {
 
 vi.mock("@/lib/db/billing", () => ({
   activeInstanceCount: async () => gate.activeInstances,
+  activeRelationshipCount: async () => gate.activeRelationships,
 }));
 
 vi.mock("@/lib/db/client", () => ({
@@ -61,6 +64,7 @@ function createInput(over: Partial<CreateInstanceInput> = {}): CreateInstanceInp
 beforeEach(() => {
   gate.planId = "free";
   gate.activeInstances = 0;
+  gate.activeRelationships = 0;
   gate.poolConnects = 0;
 });
 
@@ -73,6 +77,9 @@ describe("a free account", () => {
   });
 
   it("is refused a second active instance, and the refusal names the plan", async () => {
+    // `activeInstances` is the *session* count (a seat on somebody else's relationship counts);
+    // #505's relationship count is separate and starts at 0 here, so this case still proves the
+    // instance gate answers on its own.
     gate.activeInstances = 1;
 
     await expect(createInstanceFromTemplate(createInput())).rejects.toMatchObject({
@@ -80,6 +87,18 @@ describe("a free account", () => {
       message: expect.stringContaining("The Free plan includes 1 active assessment"),
     });
     // Nothing was opened: no transaction, no rows, no invitation.
+    expect(gate.poolConnects).toBe(0);
+  });
+
+  it("is refused a second relationship, and the refusal names the plan's relationship limit", async () => {
+    // #505 — the plan's own limit, asked first. The sentence names the tier and the number the
+    // pricing page sells ("One active relationship at a time"), not an "assessment instance".
+    gate.activeRelationships = 1;
+
+    await expect(createInstanceFromTemplate(createInput())).rejects.toMatchObject({
+      code: "relationship-limit",
+      message: expect.stringContaining("The Free plan includes 1 active relationship"),
+    });
     expect(gate.poolConnects).toBe(0);
   });
 
@@ -101,6 +120,7 @@ describe("a paid account", () => {
 
   it("is allowed a second, third, tenth instance", async () => {
     gate.activeInstances = 9;
+    gate.activeRelationships = 9;
     await expect(createInstanceFromTemplate(createInput())).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
     );

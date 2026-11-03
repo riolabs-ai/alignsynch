@@ -122,6 +122,14 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "You already hold as many open relationships as your plan allows. Close one before creating another.",
         },
+        // #505 — the plan's own limit, which is the one the pricing page sells. It is a different
+        // sentence from `instance-limit` because it is a different count: relationships this
+        // account started, not sessions it holds a seat on.
+        {
+          id: "relationship-limit",
+          label:
+            "Your plan includes one active relationship at a time, and you already have one. Finish it before starting another, or move to a paid plan for unlimited active relationships.",
+        },
         {
           id: "mode-not-entitled",
           label: "The Mode you chose is not on your plan. Choose Basic, or change your plan.",

@@ -29,6 +29,19 @@ export const FREE_PLAN_ID: BillingPlanId = "free";
 /** The free plan's one active assessment. A named constant, because prose quotes it. */
 export const FREE_ACTIVE_INSTANCE_LIMIT = 1;
 
+/**
+ * The free plan's one active **relationship** (#505).
+ *
+ * The fixture sells it in the reader's words — Free is "For one relationship at a time", its
+ * limitation is "One active relationship at a time", and every paid tier lists "Unlimited active
+ * relationships" — so the number here is the fixture's, not a second opinion. It is a separate
+ * limit from `FREE_ACTIVE_INSTANCE_LIMIT` because the two count different things: an *instance* is
+ * one session on a relationship, and an account may hold a session as the Counterparty on somebody
+ * else's relationship without ever having started one. What a plan sells is the number of
+ * relationships you may **start**; being invited is not a purchase.
+ */
+export const FREE_ACTIVE_RELATIONSHIP_LIMIT = 1;
+
 /** The mode every account may play. */
 export const BASIC_MODE: AssessmentMode = "basic";
 
@@ -78,6 +91,7 @@ export function entitlementForPlan(planId: BillingPlanId): Entitlement {
     planName: plan.name,
     paid,
     maxActiveInstances: paid ? null : FREE_ACTIVE_INSTANCE_LIMIT,
+    maxActiveRelationships: paid ? null : FREE_ACTIVE_RELATIONSHIP_LIMIT,
     advancedMode: paid,
     allowedModes: paid ? [BASIC_MODE, ADVANCED_MODE] : [BASIC_MODE],
   };
@@ -88,13 +102,74 @@ export function entitlementOf(subscription: Subscription | null): Entitlement {
   return entitlementForPlan(entitlingPlanId(subscription));
 }
 
+/**
+ * The highest tier among a set of plan ids — the subscription's, and any live grant's (#505).
+ *
+ * Ranked by `BILLING_PLAN_IDS`, the fixture's own order, which is documented as cheapest first. An
+ * unknown id is ignored rather than ranked: a row naming a tier this build does not sell must not
+ * widen an entitlement, and `db:verify` is what reports the drift. The result is always a tier the
+ * fixture carries, because `free` is the floor.
+ */
+export function highestPlanId(planIds: readonly string[]): BillingPlanId {
+  let best: BillingPlanId = FREE_PLAN_ID;
+  for (const id of planIds) {
+    if (billingPlan(id) === undefined) continue;
+    if (BILLING_PLAN_IDS.indexOf(id as BillingPlanId) > BILLING_PLAN_IDS.indexOf(best)) {
+      best = id as BillingPlanId;
+    }
+  }
+  return best;
+}
+
 /** A refusal the caller must surface. Same shape the flow store's errors carry. */
 export interface GateRefusal {
-  readonly code: "instance-limit" | "mode-not-entitled";
+  readonly code: "instance-limit" | "mode-not-entitled" | "relationship-limit";
   /** One sentence, naming the plan and what would change its answer. */
   readonly message: string;
   readonly planId: BillingPlanId;
   readonly planName: string;
+}
+
+/**
+ * May this account start another relationship? `null` means yes (#505).
+ *
+ * **The plan sells relationships, so this is the question the create form asks.** It is asked
+ * before `instanceGateRefusal` because it is the plan's own limit: an account that has used the one
+ * relationship its tier includes is refused with a sentence about the relationship it holds, not
+ * about an "assessment instance" it never saw named on the pricing page. The two gates are not the
+ * same question — `activeRelationships` counts the relationships this account **started**, and an
+ * account may be the Counterparty on several without initiating one, which the instance count
+ * includes and this one must not.
+ *
+ * `activeRelationships` is `activeRelationshipCount()` — relationships with a session neither
+ * complete nor voided — and `null` limits mean unlimited, exactly as the instance gate reads them.
+ * The sentence is built from the entitlement's own `planName` and numbers for the reason
+ * `instanceGateRefusal` records: a renamed tier cannot leave a sentence pointing at a plan that no
+ * longer exists.
+ */
+export function relationshipGateRefusal(input: {
+  readonly entitlement: Entitlement;
+  /** Relationships this account initiated and still holds open — `activeRelationshipCount()`. */
+  readonly activeRelationships: number;
+}): GateRefusal | null {
+  const { entitlement, activeRelationships } = input;
+  const limit = entitlement.maxActiveRelationships;
+  if (limit === null || activeRelationships < limit) return null;
+
+  const noun = limit === 1 ? "relationship" : "relationships";
+  const held =
+    activeRelationships === 1
+      ? "1 active relationship"
+      : `${activeRelationships} active relationships`;
+  return {
+    code: "relationship-limit",
+    planId: entitlement.planId,
+    planName: entitlement.planName,
+    message:
+      `The ${entitlement.planName} plan includes ${limit} active ${noun}. ` +
+      `This account already has ${held}. ` +
+      "Finish it before starting another, or move to a paid plan for unlimited active relationships.",
+  };
 }
 
 /**
@@ -172,6 +247,7 @@ export function checkoutRefusal(planId: string): string | null {
 export function gateSummary(): readonly {
   readonly plan: string;
   readonly activeInstances: string;
+  readonly relationships: string;
   readonly modes: string;
 }[] {
   return BILLING_PLAN_IDS.map(entitlementForPlan).map((entitlement) => ({
@@ -180,6 +256,11 @@ export function gateSummary(): readonly {
       entitlement.maxActiveInstances === null
         ? "unlimited"
         : String(entitlement.maxActiveInstances),
+    // #505 — what the tier sells in the reader's words. `null` is "unlimited", never "0".
+    relationships:
+      entitlement.maxActiveRelationships === null
+        ? "unlimited"
+        : String(entitlement.maxActiveRelationships),
     modes: entitlement.allowedModes.join(" + "),
   }));
 }

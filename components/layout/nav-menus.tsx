@@ -16,6 +16,7 @@ import {
   BarChart3,
   BookOpen,
   Compass,
+  CreditCard,
   DollarSign,
   FileQuestion,
   Gauge,
@@ -583,6 +584,21 @@ function AlignSynchMenu({
           icon={<ScrollText className="size-5" />}
           label={itemLabel(nav, "admin-audit")}
           active={isActive(pathname, "/admin/audit")}
+          collapsed={collapsed}
+          labelled={labelled}
+          onNavigate={onNavigate}
+        />
+      )}
+      {/* #505 — billing control, beside the audit log it writes into. Same capability and the same
+          reason: the route refuses a member with the 404 a URL that never existed returns, and a
+          `support` session gets the same 404 — the screen is `admin`-only, while its one action is
+          `owner`-floored. */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/billing"
+          icon={<CreditCard className="size-5" />}
+          label={itemLabel(nav, "admin-billing")}
+          active={isActive(pathname, "/admin/billing")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
