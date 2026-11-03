@@ -88,6 +88,22 @@ export const ADMIN_ACTIONS = [
   "template.create",
   /** Edit a draft template's words and Aspects. Same rung, same target, same transaction. */
   "template.update",
+  /**
+   * Re-derive and reissue a relationship's Gap report (#504). `admin`: the report is the
+   * deliverable a customer pays for, so reissuing one is a decision about what a customer is
+   * told, not a courtesy — and it is the same rung that accepts a seat on their behalf.
+   */
+  "report.regenerate",
+  /**
+   * Read one party's raw submission (#504) — **the name the epic fixes**, and the one action in
+   * this list that is not `<subject>.<verb>`.
+   *
+   * The epic's second invariant says the read "records the read", and that a log reader looks for
+   * this string is the point: `/admin/audit` filters on `action`, and an operator asking "did
+   * anybody look at this pair's answers" types one word. Renaming it to `submission.read` to
+   * satisfy a naming convention would make the epic's own sentence the wrong thing to search for.
+   */
+  "read_submission",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -117,6 +133,12 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // #502a — the template authoring pair. `admin`: a template is the product's unit of value.
   "template.create": "admin",
   "template.update": "admin",
+  // #504 — the two report operations. A read is `support`'s: the epic's PII gate is exactly
+  // "support or above, and the read is recorded", so the floor is the gate. A regeneration is
+  // `admin`'s, because reissuing the deliverable is the decision, and the two being different
+  // rungs is what lets support answer "what does the report say" without reissuing one.
+  "report.regenerate": "admin",
+  read_submission: "support",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.

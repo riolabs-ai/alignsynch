@@ -74,6 +74,8 @@ const DYNAMIC_ROUTES = [
   "/admin/instances/[id]",
   // #502a — one template being drafted, a child of `/admin/templates`.
   "/admin/templates/[id]",
+  // #504 — that relationship's Gap report: the operations screen, and the audited export beneath it.
+  "/admin/instances/[id]/report",
   "/assessment/[slug]",
   "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",

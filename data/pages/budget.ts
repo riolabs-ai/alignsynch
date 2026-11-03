@@ -121,6 +121,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-template-editor",
     budget: 0,
   },
+  // #504 — the relationship's Gap report. Budget 0 from the first commit: the verdict band, the
+  // per-Aspect rows, the eight kind labels' captions, the export footer, the reissue form, the
+  // PII banner and the nine refusal sentences are all `data/pages/admin-report.ts`. Attribution
+  // is reachability, so this row counts `components/admin/report-operations.tsx` and the repair
+  // screen above it keeps its own file.
+  "/admin/instances/[id]/report": {
+    page: "app/(mainlayout)/admin/instances/[id]/report/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-report",
+    budget: 0,
+  },
   "/battle": {
     page: "app/(mainlayout)/battle/page.tsx",
     dirs: ["components/battle"],
