@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/v1/template-landing.tsx   (variation: facts from one Postgres template record and the catalogue type its slug names, POST-form CTAs, no price drawn)
+ * template-ancestor: components/marketing/marketing-landing.tsx   (variation: facts from one Postgres template record and the catalogue type its slug names, POST-form CTAs, no price drawn)
  *
  * `/assessment/templates/[templateId]` — one template, read-only, in the v1 landing's shape
  * (#console 5/5, reshaped by #409).

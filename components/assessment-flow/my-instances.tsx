@@ -1,6 +1,8 @@
 /**
  * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: a relationship per card — the same title row with the primary action at the right, the same search field in a filter row, the same stage tabs and the same card grid; the cover block becomes a stage band, the metric row translates Players → sessions `N of M`, Completion → session completion, Average Score → average alignment and `N Questions` → `N Aspects`, and what was paid is drawn on the Initiator's card alone)
- * template-ancestors: components/v1/relationships-list.tsx (the /v1 prototype of the same variation, which this file ports to the real app), components/v1/manage-tab.tsx (the metric row)
+ * The /v1 prototype of the same variation — `relationships-list.tsx` and the metric row in its
+ * Manage tab — is deleted (#478); this file is the port that replaced it, and the ancestor above is
+ * the surface both varied.
  *
  * `/assessment/instances` — the relationship list, server-rendered (#409, #213).
  *

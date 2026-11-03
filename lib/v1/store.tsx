@@ -1,26 +1,30 @@
 "use client";
 
 /**
- * The v1 prototype's in-browser store — the thing that makes `/v1/**` behave like a
- * shipped app instead of a gallery of screens.
+ * The v1 prototype's in-browser store — now the operator console's data source.
  *
  * A React context over `localStorage`, seeded from `data/v1/fixtures.ts` (typed with the
  * real model, so shapes survive wiring). Mutations are local and instant: a template the
- * editor saves is a template the library reads, a relationship the initiator creates is the
- * one the counterparty claims, with no server action and no `lib/db/**` anywhere in this
- * graph — which is also the guarantee E34 (the client→server walk) keeps honest: importing
- * `pg` here would fail the build the moment it was typed.
+ * console disables is a template the registry draws disabled, a relationship an operator
+ * archives is archived on the detail page, with no server action and no `lib/db/**` anywhere
+ * in this graph — which is also the guarantee E34 (the client→server walk) keeps honest:
+ * importing `pg` here would fail the build the moment it was typed.
  *
- * Three slices, three keys:
+ * Four slices, four keys — the customer half of the prototype is gone (#478):
  *
- *   - **templates** (`alignsynch.v1.templates.v1`) — the editor's surface, unchanged from the
- *     card that added it (#343): `saveTemplate` / `deleteTemplate` / `resetTemplates`.
- *   - **relationships** (`alignsynch.v1.relationships.v1`) — the flow the `/v1/**` card adds:
- *     relationships, accounts, tickets. A relationship copies a template's Aspects and holds
- *     each party's answers as a map keyed by Aspect id, so an invitation can sit unclaimed
- *     without violating the real instance schema.
+ *   - **templates** (`alignsynch.v1.templates.v1`) — the console's template registry, unchanged
+ *     from the card that added it (#343): `saveTemplate` / `deleteTemplate` / `resetTemplates`.
+ *   - **relationships** (`alignsynch.v1.relationships.v1`) — relationships, accounts, tickets. A
+ *     relationship copies a template's Aspects and holds each party's answers as a map keyed by
+ *     Aspect id, so an invitation can sit unclaimed without violating the real instance schema.
  *   - **persona** (`v1_persona`) — who the browser is pretending to be, mirrored to a cookie
  *     so the persona survives a reload and is visible to the server if it ever needs it.
+ *   - **admin** (`alignsynch.v1.admin.v1`) — the template ids an operator has disabled.
+ *
+ * The chat, notification, subscription and review slices are deleted with the screens that read
+ * them: `lib/v1/chat.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` and `lib/v1/review.ts`
+ * are `delete` rows in `docs/V1-RETIREMENT.md` §5.3/§5.4, and none of them has a surviving
+ * reader (its hard constraint 2). Nothing the console draws read them.
  *
  * `localStorage` is read only after hydration: the first render seeds from the fixtures,
  * then the persisted copy replaces it, so the server and the client never disagree about
@@ -43,19 +47,13 @@ import {
   v1Templates,
   seedAccounts,
   seedRelationships,
-  seedThreadReadAt,
   seedTickets,
   type Persona,
-  type SubscriptionPlan,
   type V1Account,
-  type V1Payment,
   type V1Relationship,
   type V1SessionRecord,
-  type V1ThreadReadAt,
   type V1Ticket,
 } from "@/data/v1/fixtures";
-import { seedNotifications, type V1Notification } from "@/data/v1/notifications";
-import { subscriptionPlan } from "@/data/v1/plans";
 import type { RelationshipType } from "@/data/v1/relationship-types";
 import {
   authoredStepOf,
@@ -66,9 +64,7 @@ import {
   withStepText,
   type StepStatus,
 } from "@/content/steps";
-import type { ReviewStatus } from "@/lib/v1/review";
 import { unlockedAtOf } from "@/lib/v1/derive";
-import { resolveThreadId, authorRoleOf } from "@/lib/v1/chat";
 import {
   createContext,
   useCallback,
@@ -89,12 +85,6 @@ const FLOW_STORAGE_KEY = "alignsynch.v1.relationships.v1";
 /** The persona's own key — `v1_persona` in localStorage and mirrored to a cookie of that name. */
 const PERSONA_KEY = "v1_persona";
 
-/** The key the review checklist persists under. */
-const REVIEW_STORAGE_KEY = "alignsynch.v1.review.v1";
-
-/** The key the social slice (notifications + chat read watermarks) persists under. */
-const SOCIAL_STORAGE_KEY = "alignsynch.v1.social.v1";
-
 /**
  * The key the admin console's slice persists under — the templates an operator has **disabled**.
  *
@@ -106,12 +96,6 @@ const SOCIAL_STORAGE_KEY = "alignsynch.v1.social.v1";
  * an account a seat may or may not hold.
  */
 const ADMIN_STORAGE_KEY = "alignsynch.v1.admin.v1";
-
-/** One row's mutable state: its approval status and the reviewer's note. */
-export interface ReviewEntry {
-  readonly status: ReviewStatus;
-  readonly note: string;
-}
 
 /* ------------------------------------------------------------------ *
  * Small helpers
@@ -199,34 +183,6 @@ function loadFlow(): {
   }
 }
 
-/** The persisted review checklist, or an empty record when nothing has been decided yet. */
-function loadReviews(): Readonly<Record<string, ReviewEntry>> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(REVIEW_STORAGE_KEY);
-    if (raw === null) return {};
-    const parsed = JSON.parse(raw) as Record<string, ReviewEntry>;
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
-    const next: Record<string, ReviewEntry> = {};
-    for (const [route, entry] of Object.entries(parsed)) {
-      if (
-        entry !== null &&
-        typeof entry === "object" &&
-        (entry.status === "unreviewed" ||
-          entry.status === "changes requested" ||
-          entry.status === "approved") &&
-        typeof entry.note === "string"
-      ) {
-        next[route] = { status: entry.status, note: entry.note };
-      }
-    }
-    return next;
-  } catch (error) {
-    console.warn("v1 store: could not read persisted reviews, re-seeding", error);
-    return {};
-  }
-}
-
 function parsePersona(raw: string | null | undefined): Persona | null {
   if (raw === null || raw === undefined) return null;
   const result = zPersona.safeParse(raw);
@@ -261,37 +217,6 @@ function loadAdmin(): { disabledTemplateIds: readonly string[] } {
   } catch (error) {
     console.warn("v1 store: could not read persisted admin slice, re-seeding", error);
     return { disabledTemplateIds: [] };
-  }
-}
-
-/** The social slice, persisted — notifications (with their read flags) and chat read watermarks. */
-interface PersistedSocial {
-  readonly version: number;
-  readonly notifications: readonly V1Notification[];
-  readonly threadReadAt: V1ThreadReadAt;
-}
-
-/** The persisted social slice, or the seeds when nothing has been written yet. */
-function loadSocial(): {
-  notifications: readonly V1Notification[];
-  threadReadAt: V1ThreadReadAt;
-} {
-  if (typeof window === "undefined") {
-    return { notifications: seedNotifications, threadReadAt: seedThreadReadAt };
-  }
-  try {
-    const raw = window.localStorage.getItem(SOCIAL_STORAGE_KEY);
-    if (raw === null) {
-      return { notifications: seedNotifications, threadReadAt: seedThreadReadAt };
-    }
-    const parsed = JSON.parse(raw) as PersistedSocial;
-    if (parsed.version !== SEED_VERSION) {
-      return { notifications: seedNotifications, threadReadAt: seedThreadReadAt };
-    }
-    return { notifications: parsed.notifications, threadReadAt: parsed.threadReadAt };
-  } catch (error) {
-    console.warn("v1 store: could not read persisted social slice, re-seeding", error);
-    return { notifications: seedNotifications, threadReadAt: seedThreadReadAt };
   }
 }
 
@@ -414,9 +339,6 @@ export interface V1Store {
   readonly relationships: readonly V1Relationship[];
   readonly accounts: readonly V1Account[];
   readonly tickets: readonly V1Ticket[];
-  readonly notifications: readonly V1Notification[];
-  /** `threadId -> lastReadAt` per persona — the chat's read watermarks, persisted. */
-  readonly threadReadAt: V1ThreadReadAt;
 
   readonly setPersona: (persona: Persona) => void;
   readonly createRelationship: (input: RelationshipInput) => V1Relationship;
@@ -529,25 +451,9 @@ export interface V1Store {
   readonly enableTemplate: (templateId: string) => void;
   /** Turn the relationship's Aspects into a reusable library entry (a "my saved set"). */
   readonly saveAspectSetToLibrary: (relationshipId: string) => Assessment;
-  readonly restoreSubscription: (relationshipId: string) => void;
-  /** The shop's checkout: subscribe (or re-subscribe) one relationship to a plan — a mock, no
-   * charge — and record the purchase in that relationship's payment history. */
-  readonly subscribe: (relationshipId: string, plan: SubscriptionPlan) => void;
   readonly addCoachComment: (relationshipId: string, body: string) => void;
   readonly toggleShareWithCoach: (relationshipId: string) => void;
   readonly resolveTicket: (ticketId: string) => void;
-  readonly markThreadRead: (threadId: string, persona: Persona) => void;
-  readonly markNotificationRead: (notificationId: string) => void;
-  readonly markAllNotificationsRead: (persona: Persona) => void;
-  /** Send a chat message as `persona`; returns a refusal sentence, or null on success. */
-  readonly sendChatMessage: (
-    relationshipId: string,
-    threadId: string,
-    body: string,
-    persona: Persona,
-  ) => string | null;
-  readonly reviews: Readonly<Record<string, ReviewEntry>>;
-  readonly setReview: (route: string, patch: Partial<ReviewEntry>) => void;
   readonly resetStore: () => void;
 }
 
@@ -558,10 +464,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
   const [relationships, setRelationships] = useState<readonly V1Relationship[]>(seedRelationships);
   const [accounts, setAccounts] = useState<readonly V1Account[]>(seedAccounts);
   const [tickets, setTickets] = useState<readonly V1Ticket[]>(seedTickets);
-  const [notifications, setNotifications] = useState<readonly V1Notification[]>(seedNotifications);
-  const [threadReadAt, setThreadReadAt] = useState<V1ThreadReadAt>(seedThreadReadAt);
   const [disabledTemplateIds, setDisabledTemplateIds] = useState<readonly string[]>([]);
-  const [reviews, setReviews] = useState<Readonly<Record<string, ReviewEntry>>>({});
   const [persona, setPersonaState] = useState<Persona>("visitor");
   const [hydrated, setHydrated] = useState(false);
   const hydratedRef = useRef(false);
@@ -572,16 +475,12 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     hydratedRef.current = true;
     const nextPersona = parsePersona(window.localStorage.getItem(PERSONA_KEY)) ?? "visitor";
     const flow = loadFlow();
-    const social = loadSocial();
     const admin = loadAdmin();
     setTemplates(loadTemplates());
     setRelationships(flow.relationships);
     setAccounts(flow.accounts);
     setTickets(flow.tickets);
-    setNotifications(social.notifications);
-    setThreadReadAt(social.threadReadAt);
     setDisabledTemplateIds(admin.disabledTemplateIds);
-    setReviews(loadReviews());
     setPersonaState(nextPersona);
     setHydrated(true);
   }, []);
@@ -606,27 +505,6 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       console.warn("v1 store: could not persist flow (private mode?)", error);
     }
   }, [relationships, accounts, tickets, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      window.localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(reviews));
-    } catch (error) {
-      console.warn("v1 store: could not persist reviews (private mode?)", error);
-    }
-  }, [reviews, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      window.localStorage.setItem(
-        SOCIAL_STORAGE_KEY,
-        JSON.stringify({ version: SEED_VERSION, notifications, threadReadAt }),
-      );
-    } catch (error) {
-      console.warn("v1 store: could not persist social slice (private mode?)", error);
-    }
-  }, [notifications, threadReadAt, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -1293,60 +1171,6 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     [relationships, saveTemplate, templates],
   );
 
-  const restoreSubscription = useCallback(
-    (relationshipId: string) => {
-      patchRelationship(relationshipId, (rel) => {
-        if (rel.subscription === null) return rel;
-        const info = subscriptionPlan(rel.subscription.plan);
-        const now = new Date().toISOString();
-        const periodEnd = new Date(Date.now() + info.periodDays * 86_400_000).toISOString();
-        const payment: V1Payment = {
-          id: uid("pay"),
-          plan: rel.subscription.plan,
-          amountCents: info.priceCents,
-          paidAt: now,
-        };
-        return {
-          ...rel,
-          subscription: {
-            ...rel.subscription,
-            status: "active",
-            periodEnd,
-            payments: [...rel.subscription.payments, payment],
-          },
-        };
-      });
-    },
-    [patchRelationship],
-  );
-
-  const subscribe = useCallback(
-    (relationshipId: string, plan: SubscriptionPlan) => {
-      const info = subscriptionPlan(plan);
-      const now = new Date().toISOString();
-      const periodEnd = new Date(Date.now() + info.periodDays * 86_400_000).toISOString();
-      patchRelationship(relationshipId, (rel) => {
-        const payment: V1Payment = {
-          id: uid("pay"),
-          plan,
-          amountCents: info.priceCents,
-          paidAt: now,
-        };
-        return {
-          ...rel,
-          subscription: {
-            plan,
-            status: "active",
-            periodEnd,
-            startedAt: now,
-            payments: [...(rel.subscription?.payments ?? []), payment],
-          },
-        };
-      });
-    },
-    [patchRelationship],
-  );
-
   const addCoachComment = useCallback(
     (relationshipId: string, body: string) => {
       patchRelationship(relationshipId, (rel) => ({
@@ -1378,74 +1202,11 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const markThreadRead = useCallback((threadId: string, persona: Persona) => {
-    setThreadReadAt((previous) => ({
-      ...previous,
-      [persona]: { ...(previous[persona] ?? {}), [threadId]: new Date().toISOString() },
-    }));
-  }, []);
-
-  const markNotificationRead = useCallback((notificationId: string) => {
-    setNotifications((previous) =>
-      previous.map((notification) =>
-        notification.id === notificationId ? { ...notification, read: true } : notification,
-      ),
-    );
-  }, []);
-
-  const markAllNotificationsRead = useCallback((persona: Persona) => {
-    setNotifications((previous) =>
-      previous.map((notification) =>
-        notification.persona === persona ? { ...notification, read: true } : notification,
-      ),
-    );
-  }, []);
-
-  const sendChatMessage = useCallback(
-    (relationshipId: string, threadId: string, body: string, persona: Persona): string | null => {
-      const rel = relationships.find((candidate) => candidate.id === relationshipId);
-      if (rel === undefined) return "This relationship does not exist.";
-      const resolved = resolveThreadId(rel, threadId);
-      if (resolved === null) return "This thread does not exist.";
-      const role = authorRoleOf(persona);
-      if (role === null) return "This persona can read threads but not send messages.";
-      if (role === "coach") {
-        if (resolved.kind !== "relationship") {
-          return "Coach notes go on the relationship thread, not on a single Aspect.";
-        }
-        addCoachComment(relationshipId, body);
-        return null;
-      }
-      if (resolved.kind === "aspect") {
-        addAspectComment(relationshipId, resolved.itemId, role, body);
-        return null;
-      }
-      addComment(relationshipId, role, body);
-      return null;
-    },
-    [relationships, addComment, addAspectComment, addCoachComment],
-  );
-
-  const setReview = useCallback((route: string, patch: Partial<ReviewEntry>) => {
-    setReviews((previous) => {
-      const current: ReviewEntry = previous[route] ?? { status: "unreviewed", note: "" };
-      return {
-        ...previous,
-        [route]: {
-          status: patch.status ?? current.status,
-          note: patch.note ?? current.note,
-        },
-      };
-    });
-  }, []);
-
   const resetStore = useCallback(() => {
     try {
       window.localStorage.removeItem(STORAGE_KEY);
       window.localStorage.removeItem(FLOW_STORAGE_KEY);
       window.localStorage.removeItem(PERSONA_KEY);
-      window.localStorage.removeItem(REVIEW_STORAGE_KEY);
-      window.localStorage.removeItem(SOCIAL_STORAGE_KEY);
       window.localStorage.removeItem(ADMIN_STORAGE_KEY);
     } catch (error) {
       console.warn("v1 store: could not clear the store (private mode?)", error);
@@ -1454,10 +1215,7 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
     setRelationships(seedRelationships);
     setAccounts(seedAccounts);
     setTickets(seedTickets);
-    setNotifications(seedNotifications);
-    setThreadReadAt(seedThreadReadAt);
     setDisabledTemplateIds([]);
-    setReviews({});
     setPersonaState("visitor");
     setHydrated(true);
   }, []);
@@ -1473,8 +1231,6 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       relationships,
       accounts,
       tickets,
-      notifications,
-      threadReadAt,
       setPersona,
       createRelationship,
       createRelationshipFromType,
@@ -1504,17 +1260,9 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       disableTemplate,
       enableTemplate,
       saveAspectSetToLibrary,
-      restoreSubscription,
-      subscribe,
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,
-      markThreadRead,
-      markNotificationRead,
-      markAllNotificationsRead,
-      sendChatMessage,
-      reviews,
-      setReview,
       resetStore,
     }),
     [
@@ -1527,8 +1275,6 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       relationships,
       accounts,
       tickets,
-      notifications,
-      threadReadAt,
       setPersona,
       createRelationship,
       createRelationshipFromType,
@@ -1558,17 +1304,9 @@ export function V1StoreProvider({ children }: { children: ReactNode }) {
       disableTemplate,
       enableTemplate,
       saveAspectSetToLibrary,
-      restoreSubscription,
-      subscribe,
       addCoachComment,
       toggleShareWithCoach,
       resolveTicket,
-      markThreadRead,
-      markNotificationRead,
-      markAllNotificationsRead,
-      sendChatMessage,
-      reviews,
-      setReview,
       resetStore,
     ],
   );

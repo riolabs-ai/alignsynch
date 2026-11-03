@@ -8,8 +8,8 @@ import { formatCurrency } from "@/content/core";
 import { deriveSteps } from "@/content/steps";
 import type { V1Relationship } from "@/data/v1/fixtures";
 import { ReportBody } from "@/components/v1/report-body";
-import { StartRelationshipButton } from "@/components/v1/start-relationship-button";
 import { NotFoundState } from "@/components/v1/v1-ui";
+import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import Link from "next/link";
 
 /**
@@ -77,14 +77,19 @@ function demoRelationship(type: RelationshipType): V1Relationship {
 }
 
 /**
- * `/v1/templates/[type]/demo` — a real report, labelled `Example`, so a person can judge the
- * value before paying.
+ * The last `/v1` route: a real report, labelled `Example`, so a person can judge the value
+ * before paying. `docs/V1-RETIREMENT.md` marks this surface `release` — it is the only worked
+ * example in the tree, and two live modules link to it (`components/assessment-flow/template-card.tsx`
+ * and `lib/alignment-home.ts`) — so it is the one page the deletion cohort leaves in the
+ * prototype group, behind that group's gate, until the release cohort moves it to
+ * `/assessment/demo/[type]` and ports `ReportBody` to the v2 report projection.
  *
  * It renders the completed-session report from fixture answers for the type, with the two
  * parties' names replaced by "You" and "Them". The `Example` label sits above it so no one
  * mistakes a sample for their own; below it are the two exits the owner asked for — back to the
- * template page, and `Start this relationship` (the invite step). No video, no carousel, never a
- * dead end.
+ * template library, and `Start this relationship` (the invite step). No video, no carousel, never
+ * a dead end: both destinations are live app routes, not `/v1` ones, because the `/v1` create
+ * entry and type landing this page used to link to are deleted (#478).
  */
 export function TemplateDemo({ type }: { type: RelationshipType }) {
   if (demoAnswersFor(type.id) === undefined) {
@@ -92,7 +97,7 @@ export function TemplateDemo({ type }: { type: RelationshipType }) {
       <div className="mx-auto max-w-4xl p-4 sm:p-8">
         <NotFoundState
           message={`No example report exists for "${type.name}" yet.`}
-          back="/v1/templates"
+          back={TEMPLATE_LIBRARY_PATH}
         />
       </div>
     );
@@ -113,14 +118,8 @@ export function TemplateDemo({ type }: { type: RelationshipType }) {
           </p>
         </div>
         <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-3 text-xs">
-          <Link href="/v1/templates" className="font-medium text-action hover:underline">
-            ← Relationship types
-          </Link>
-          <Link
-            href={`/v1/templates/${type.id}`}
-            className="font-medium text-action hover:underline"
-          >
-            ← {type.name} template
+          <Link href={TEMPLATE_LIBRARY_PATH} className="font-medium text-action hover:underline">
+            ← {type.name} in the template library
           </Link>
         </nav>
       </div>
@@ -135,7 +134,12 @@ export function TemplateDemo({ type }: { type: RelationshipType }) {
             person joins by link and pays nothing.
           </p>
           <div className="mt-3">
-            <StartRelationshipButton typeId={type.id} />
+            <Link
+              href={TEMPLATE_LIBRARY_PATH}
+              className="inline-flex h-12 items-center justify-center rounded-md bg-action px-6 text-sm font-medium text-action-foreground hover:bg-action/90"
+            >
+              Start this relationship
+            </Link>
           </div>
         </div>
       </div>
