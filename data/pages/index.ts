@@ -16,6 +16,7 @@
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { adminAuditPageCopy } from "./admin-audit";
 import { adminGapsPageCopy } from "./admin-gaps";
+import { adminHealthPageCopy } from "./admin-health";
 import { adminInstancesPageCopy } from "./admin-instances";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
@@ -64,6 +65,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
   "/admin/audit": adminAuditPageCopy,
   "/admin/gaps": adminGapsPageCopy,
+  "/admin/health": adminHealthPageCopy,
   "/admin/instances": adminInstancesPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,

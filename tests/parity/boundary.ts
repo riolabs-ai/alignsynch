@@ -30,6 +30,7 @@ import AffiliatePage from "@/app/(mainlayout)/affiliate/page";
 import AdminAuditPage from "@/app/(mainlayout)/admin/audit/page";
 import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
 import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
+import AdminHealthPage from "@/app/(mainlayout)/admin/health/page";
 import AdminInstancesPage from "@/app/(mainlayout)/admin/instances/page";
 import BattlePage from "@/app/(mainlayout)/battle/page";
 import CategoriesPage from "@/app/(mainlayout)/categories/page";
@@ -190,9 +191,10 @@ export type AdminProductRoute = {
  *
  * Three, not six: `/admin/console`'s subtree — the overview, relationships, templates and users —
  * is closed by one `requireAdminProduct()` in its layout *and* by the same call in the index page,
- * which is the page a diff can see. `/admin/gaps` and `/admin/instances` sit outside that subtree
- * and carry their own. A seventh console page added under `layout.tsx` inherits the subtree gate
- * and needs no line here; a page added outside it does, and the list is where that is visible.
+ * which is the page a diff can see. `/admin/gaps`, `/admin/health` and `/admin/instances` sit
+ * outside that subtree and carry their own. A console page added under `layout.tsx` inherits the
+ * subtree gate and needs no line here; a page added outside it does, and the list is where that is
+ * visible.
  *
  * Nothing here is a snapshot: these routes are not in `routes.ts`, so no hash is committed for
  * them. The claim is a status, and the two it must have are asserted per brand in
@@ -215,6 +217,12 @@ export const adminProductRoutes: readonly AdminProductRoute[] = [
   {
     route: "/admin/gaps",
     page: AdminGapsPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    route: "/admin/health",
+    page: AdminHealthPage as unknown as ParityPage,
     params: {},
     open: "render",
   },

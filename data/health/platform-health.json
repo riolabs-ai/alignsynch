@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-03T19:24:10.143Z",
+  "recorder": "pnpm health:record",
+  "dbVerify": {
+    "command": "pnpm db:verify",
+    "ranAt": "2026-11-03T19:23:00.339Z",
+    "database": "scratch branch platform-health-probe (copy of demo), one instance deliberately broken for the #508 proof",
+    "exitCode": 1,
+    "result": "fail",
+    "summary": "✗ db:verify — 4 violation(s)",
+    "violations": [
+      {
+        "code": "V11",
+        "message": "instance \"avery-rowan\" (answering): the initiator's unlock_seen_at is set, but the instance is not complete — the marker would never show"
+      },
+      {
+        "code": "V6",
+        "message": "instance \"avery-rowan\" (answering): counterparty does not answer Aspect \"aspect-time-together\""
+      },
+      {
+        "code": "V7",
+        "message": "instance \"avery-rowan\" does not satisfy the content model — parties.1.opinions.0.opinions.feel: Required; parties.1.opinions.0.opinions.wish: Required"
+      },
+      {
+        "code": "V21",
+        "message": "seeded instance \"avery-rowan\" reads \"answering\" — db:seed writes a finished session, and the counterparty answered 4 of 5 Aspect(s)"
+      }
+    ]
+  },
+  "gate": {
+    "lane": "code",
+    "seconds": 135.7,
+    "measuredAt": "2026-11-03T19:17:45.784Z",
+    "command": "env -i HOME… PATH… CI=1 bash scripts/verify.sh",
+    "yield": {
+      "window": "2026-11-02",
+      "measuredAt": "2026-11-03T19:20:01.471Z",
+      "command": "python3 docs/gate-baseline.py --window 2026-11-02",
+      "successes": 185,
+      "runs": 190,
+      "percent": 97.4,
+      "runP50Seconds": 144,
+      "runP95Seconds": 176
+    }
+  },
+  "production": {
+    "state": "answering",
+    "version": "1.3.0",
+    "commit": "5f9b77527714da8dd54c8a08bb368f9a716aac41",
+    "status": 200,
+    "measuredAt": "2026-11-03T19:17:45.784Z",
+    "source": "GET https://alignsynch.com/api/version",
+    "behindMain": 0
+  },
+  "tree": {
+    "packageVersion": "1.3.0",
+    "latestTag": "v1.3.0",
+    "headSha": "639d55e96079b82798debd8e288a998517bd5039",
+    "mainSha": "5f9b77527714da8dd54c8a08bb368f9a716aac41",
+    "measuredAt": "2026-11-03T19:17:45.455Z"
+  }
+}
