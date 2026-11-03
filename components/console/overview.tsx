@@ -130,6 +130,12 @@ export function ConsoleOverview({
       detail: itemLabel(counts, "templates-detail"),
       href: ASSESSMENTS_PATH,
       icon: <LayoutTemplate className="h-4 w-4" />,
+      /**
+       * The first-run tour's third step points here (#455): "Start from a template". The card is
+       * the picker, and it is on the page for an account with no relationships and with fifty —
+       * which is why this is the step that survives where the empty-state steps skip.
+       */
+      tourAnchor: "start",
     },
   ];
 
@@ -140,13 +146,13 @@ export function ConsoleOverview({
         <PageHeader title={fillLabel(copy.heading, { name })} description={copy.subtitle} />
       </header>
 
-      <section data-overview-counts="true" className="space-y-3">
+      <section data-overview-counts="true" data-tour="dashboard" className="space-y-3">
         <h2 className="text-lg font-semibold">{counts.heading}</h2>
         <p className="text-sm text-muted-foreground">{sectionBody(counts)}</p>
         <StatCardGrid cards={cards} />
         {counts.cta !== undefined && (
           <p className="text-sm">
-            <Link className="underline" href={counts.cta.href}>
+            <Link className="underline" href={counts.cta.href} data-tour="relationships">
               {counts.cta.label}
             </Link>
           </p>
@@ -158,12 +164,19 @@ export function ConsoleOverview({
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">{empty.heading}</CardTitle>
-              <CardDescription>{sectionBody(empty)}</CardDescription>
+              {/*
+                The blind-rule sentence is the tour's fifth step (#455). It is the one line on this
+                page that states the rule the read itself enforces, so the tour points at the
+                sentence rather than at a callout with the same words.
+              */}
+              <CardDescription data-tour="blind">{sectionBody(empty)}</CardDescription>
             </CardHeader>
             {empty.cta !== undefined && (
               <CardContent>
                 <Button asChild size="sm">
-                  <Link href={empty.cta.href}>{empty.cta.label}</Link>
+                  <Link href={empty.cta.href} data-tour="answer">
+                    {empty.cta.label}
+                  </Link>
                 </Button>
               </CardContent>
             )}

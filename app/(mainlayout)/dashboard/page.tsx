@@ -40,7 +40,9 @@
  * links to it.
  */
 import { ConsoleOverview } from "@/components/console/overview";
+import { FirstRunTour } from "@/components/tour/first-run-tour";
 import { overviewPageCopy } from "@/data/pages/overview";
+import { tourPageCopy } from "@/data/pages/tour";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -56,7 +58,21 @@ export const metadata: Metadata = {
   title: "Overview",
 };
 
-export default async function OverviewPage() {
+/**
+ * `?tour=1` opens the first-run tour (#455).
+ *
+ * The tour is **opt-in by URL in this card**, not yet first-run-only: "show it once per user" is
+ * the `tour_seen_at` column and its two write paths (S2, #456), which does not exist yet. Until it
+ * does, a signed-in person sees the console exactly as before unless they ask for the tour — so
+ * merging this card cannot nag every existing account, and the trigger is the same one S4's replay
+ * control on `/help` can link to. S2 replaces this line with the column read; it does not change
+ * the component.
+ */
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const user = await currentUser();
   if (user === null) redirect(loginPathFor(OVERVIEW_PATH));
 
@@ -78,13 +94,23 @@ export default async function OverviewPage() {
     unreadable = error.reason;
   }
 
+  const { tour } = await searchParams;
+
   return (
-    <ConsoleOverview
-      copy={overviewPageCopy}
-      name={user.name}
-      instances={instances}
-      templates={templates}
-      unreadable={unreadable}
-    />
+    <>
+      <ConsoleOverview
+        copy={overviewPageCopy}
+        name={user.name}
+        instances={instances}
+        templates={templates}
+        unreadable={unreadable}
+      />
+      {/*
+        Mounted by the page, not the component, for the reason `components/legal` records: the
+        fixture is parsed by zod at module load, so the route resolves it and the browser receives
+        a plain object. `components/tour/**` therefore imports no `data/` module and no zod.
+      */}
+      <FirstRunTour copy={tourPageCopy} start={tour === "1"} />
+    </>
   );
 }

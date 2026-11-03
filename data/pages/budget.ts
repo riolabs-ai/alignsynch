@@ -285,6 +285,23 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
+   * `tour` — the first-run tour's callout (#455), the second non-route surface.
+   *
+   * `page` is `/dashboard`'s module because that is what *mounts* the surface: the route resolves
+   * the fixture and hands it to `components/tour/first-run-tour.tsx` as a prop, exactly as
+   * `components/legal` receives its words, and the check's "fixture reachable from the page"
+   * half proves the wiring. `dirs` is the one component directory the tour owns, and budget 0
+   * from the first commit: the six step sentences, the three button labels, the progress line and
+   * the announcement sentence are all `data/pages/tour.ts`, so the next string typed into
+   * `components/tour/**` is a red build rather than a second home for copy.
+   */
+  tour: {
+    page: "app/(mainlayout)/dashboard/page.tsx",
+    dirs: ["components/tour"],
+    fixture: "data/pages/tour",
+    budget: 0,
+  },
+  /**
    * `/search` — the one route whose copy lives in the shell's fixture (issue #156 follow-up).
    *
    * The search field, the four result-group headings and the page's own empty states are one

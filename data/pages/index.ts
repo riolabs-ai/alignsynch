@@ -55,6 +55,7 @@ import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
+import { tourPageCopy } from "./tour";
 import { tournamentDetailPageCopy } from "./tournament-detail";
 import { tournamentsPageCopy } from "./tournaments";
 
@@ -116,4 +117,11 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/welcome": marketingPageCopy,
   shell: shellPageCopy,
   "not-found": notFoundPageCopy,
+  /**
+   * The first-run tour (#455), a declared non-route surface like the shell: its callout renders
+   * over `/dashboard` and points into the rail, and no route owns those words. Registered here so
+   * `data/pages/budget.ts` has a copy to attribute and E23 can hold `components/tour/**` at 0 —
+   * the alternative was a second, unratcheted home for the same sentences.
+   */
+  tour: tourPageCopy,
 });
