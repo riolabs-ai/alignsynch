@@ -1,9 +1,9 @@
 /**
  * The surface registry's negative cases (`data/surface-registry.ts`, issue #409).
  *
- * A registry that cannot fail is decoration: it would say four surfaces are live because four
- * rows were typed, and nothing would notice a fifth, a duplicate, or a pending row that never
- * says what it needs. So every rule below is asserted against a violating input — not against a
+ * A registry that cannot fail is decoration: it would say eight surfaces are live because eight
+ * rows were typed, and nothing would notice a ninth, a duplicate, or a pending row that never says
+ * what it needs. So every rule below is asserted against a violating input — not against a
  * grep — and then against the real tree, which must stay clean.
  *
  * Two halves, matching the two ways the registry can lie:
@@ -59,7 +59,7 @@ describe("the real surface registry", () => {
     assert.deepEqual(surfaceRegistryProblems(surfaceRegistry, inManifest), []);
   });
 
-  it("declares the seven live surfaces, and only those", () => {
+  it("declares the nine live surfaces, and only those", () => {
     const live = surfaceRegistry.filter((row) => row.status === "live").map((row) => row.route);
     assert.deepEqual(live.sort(), [
       // #478: the console moved out of `/v1` to `/admin/console`, so the index the registry had
@@ -70,20 +70,30 @@ describe("the real surface registry", () => {
       // #R2 (#427): the acceptance is recorded now, so the surface that records it is live — the
       // write lands in `party.accepted_at` and the second acceptance completes the session.
       "/assessment/instances/[instanceId]/accept",
+      // #R2 (#427, PR #428): `/answers` writes one party's whole sheet, and the sheet renders the
+      // seat Postgres resolved. It was `preview` while neither was true.
+      "/assessment/instances/[instanceId]/answer",
       "/assessment/instances/[instanceId]/report",
       "/assessment/templates",
       "/assessment/templates/[templateId]",
+      // #R2 (#427, PR #429): the form posts to `POST /assessment/new` and the transaction writes
+      // the record, the relationship, the session and the initiating seat. It was `preview` while
+      // the submit was disabled.
+      "/assessment/templates/[templateId]/create",
     ]);
   });
 
-  it("declares the two shipped-but-unwired screens as preview, never live", () => {
+  it("has no preview row — the last two shipped their write paths in #427", () => {
     const preview = surfaceRegistry
       .filter((row) => row.status === "preview")
       .map((row) => row.route);
-    assert.deepEqual(preview.sort(), [
-      "/assessment/instances/[instanceId]/answer",
-      "/assessment/templates/[templateId]/create",
-    ]);
+    // `preview` is still a status in the schema (a screen here, its actions not), but nothing in
+    // the product is in that state: both screens it used to describe are live above. A row coming
+    // back here must mean a surface that shipped ahead of its write path, not one that is merely
+    // hard to reach — a nav gap is not a reason to downgrade a working write.
+    assert.deepEqual(preview, []);
+    assert.equal(surfaceFor("/assessment/templates/[templateId]/create")?.status, "live");
+    assert.equal(surfaceFor("/assessment/instances/[instanceId]/answer")?.status, "live");
   });
 
   it("gives every surface that is not live a reason and at least one need", () => {

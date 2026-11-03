@@ -312,7 +312,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "Create a relationship from one template: the template and its two seats at the top, the counterparty, then Mode (fixed at creation) and Setting (the one choice a party may change later).",
     notes:
-      "In-progress UI (#409, R1-E). A child of the template's own address, so the template being copied is the route's fact and the form cannot name a different one; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply. The form has no `action` and a disabled submit with the reason beside it: creation is not wired on this screen yet, and a control that cannot work says so rather than failing silently.",
+      "Wired by #427 (R2), and the form is the create path's client end: it posts `templateRecordId`, both seats, the Mode and the Setting to `POST /assessment/new`, which copies the template's Aspects into a new relationship and writes the record, the relationship, the session and the initiating seat in one transaction, then answers a 303 to `/assessment/instances/<id>`. A refusal comes back as a 303 to this path carrying `?problem=<code>`, which the page resolves into the fixture's own sentence — no text anybody typed travels in a URL, and an unrecognised code draws no sentence rather than an invented one. A child of the template's own address, so the template being copied is the route's fact and the hidden `templateRecordId` cannot name a different one; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply.",
   },
   {
     kind: "route",
