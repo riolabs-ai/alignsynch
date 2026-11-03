@@ -14,6 +14,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_WAIT_SECONDS,
+  SEED_LOCK_ID,
+  SEED_LOCK_NAMESPACE,
+  holderDescription,
+  lockAcquiredNotice,
+  lockTimeoutMessage,
+  lockWaitNotice,
+  waitBudgetMs,
+} from "../scripts/db-seed-lock.mjs";
+import {
   BRAND_NAMES,
   brandMismatch,
   endpointMismatch,
@@ -272,5 +282,94 @@ describe("reviseExpectations", () => {
 
   it("ends the file with exactly one newline", () => {
     expect(serializeExpectations(file).endsWith("}\n")).toBe(true);
+  });
+});
+
+/**
+ * The seed lock lives here because `pnpm demo:verify`'s first step *is* `pnpm db:seed`: on the
+ * shared demo branch the two runs used to interleave into `422 USER_ALREADY_EXISTS`, so the
+ * command's own answer depended on a lock it never took. The cases below pin the parts that
+ * decide that answer — the key two worktrees must agree on, the bounded wait, and the two
+ * sentences a waiting or a timed-out seeder prints. `scripts/db-seed.mjs` runs its seed at import
+ * and can never be imported by a test, which is why the rules are their own module.
+ */
+describe("the seed lock", () => {
+  it("is one key, and it never moves", () => {
+    // Two versions of the script run side by side in this fleet (an old worktree, a new one). They
+    // only serialise if they take the same lock, so the key is pinned rather than derived.
+    expect(SEED_LOCK_NAMESPACE).toBe(0x616c676e); // "algn"
+    expect(SEED_LOCK_ID).toBe(1); // 1 = db:seed
+    // `pg_advisory_lock(int, int)` takes two int4 keys; a key outside that range would throw at
+    // the very moment the seed needs the lock, which is worse than not having one.
+    for (const key of [SEED_LOCK_NAMESPACE, SEED_LOCK_ID]) {
+      expect(Number.isInteger(key)).toBe(true);
+      expect(key).toBeGreaterThanOrEqual(0);
+      expect(key).toBeLessThanOrEqual(2_147_483_647);
+    }
+  });
+
+  it("waits five minutes by default, because a seed on this branch takes tens of seconds", () => {
+    expect(DEFAULT_WAIT_SECONDS).toBe(300);
+    expect(waitBudgetMs({})).toBe(300_000);
+  });
+
+  it("reads SEED_LOCK_WAIT_SECONDS, and refuses to read a typo as zero", () => {
+    expect(waitBudgetMs({ SEED_LOCK_WAIT_SECONDS: "30" })).toBe(30_000);
+    expect(waitBudgetMs({ SEED_LOCK_WAIT_SECONDS: " 2.5 " })).toBe(2500);
+    // A typo must not turn "wait for the other seed" into "fail immediately" — that is the race
+    // this lock exists to remove, re-introduced by configuration.
+    for (const raw of ["", "  ", "soon", "-5", "0", "Infinity", undefined]) {
+      expect(waitBudgetMs({ SEED_LOCK_WAIT_SECONDS: raw }), String(raw)).toBe(300_000);
+    }
+  });
+
+  it("names the holder of the lock and how long it will wait", () => {
+    const line = lockWaitNotice({
+      holder: {
+        pid: 4242,
+        application_name: "db:seed",
+        datname: "neondb",
+        state: "active",
+      },
+      budgetMs: 300_000,
+    });
+    expect(line).toContain("algn/1");
+    expect(line).toContain("pid 4242");
+    expect(line).toContain('"db:seed"');
+    expect(line).toContain("neondb");
+    expect(line).toContain("300s");
+    expect(line).toContain("waiting");
+  });
+
+  it("says when the wait paid off, so the delay is not mistaken for slowness", () => {
+    expect(lockAcquiredNotice({ waitedMs: 4200 })).toContain("acquired after 4.2s");
+  });
+
+  it("never sends a timed-out seeder after NEON_AUTH_BASE_URL or the tree", () => {
+    // The defect's whole cost was a message that blamed the auth server for another process's
+    // work. The timeout must name the lock, the holder and the recovery, and nothing else.
+    const message = lockTimeoutMessage({
+      holder: { pid: 99, application_name: "demo:verify", datname: "neondb", state: "idle" },
+      budgetMs: 300_000,
+    });
+    expect(message).toContain("algn/1");
+    expect(message).toContain("pid 99");
+    expect(message).toContain("after 300s");
+    expect(message).toContain("not");
+    expect(message).toContain("credentials problem");
+    expect(message).toContain("Re-run");
+    expect(message).toContain("SEED_LOCK_WAIT_SECONDS");
+    expect(message).not.toContain("NEON_AUTH_BASE_URL");
+    expect(message).not.toContain("USER_ALREADY_EXISTS");
+  });
+
+  it("reports a holder it cannot read as unseen rather than guessing", () => {
+    // A role without `pg_read_all_stats` sees a `pg_locks` row with no matching `pg_stat_activity`
+    // row; the message must still be true.
+    expect(holderDescription(null)).toContain("cannot see");
+    expect(holderDescription({})).toContain("cannot see");
+    expect(holderDescription({ pid: 7, application_name: "", datname: "" })).toBe(
+      "pid 7 (an unnamed session)",
+    );
   });
 });
