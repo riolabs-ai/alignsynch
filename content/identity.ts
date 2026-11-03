@@ -97,16 +97,24 @@ export const zCountryCode = z
 export const zUserId = z.string().min(1).max(128);
 
 /* ------------------------------------------------------------------ *
- * Role — one named boolean (#183)
+ * Role — the ladder (#183, widened to four rungs by #501)
  * ------------------------------------------------------------------ */
 
 /**
- * The vocabulary, closed at two. Not a permission system: `admin` means "may reach the surfaces
- * `lib/auth/require-role.ts` gates", and `member` means everything else — there is no third
- * value, no rank order (a role is compared for equality, never for `>=`), and no per-resource
- * grant. A third role is a new decision, and it arrives with the pages that need it.
+ * The vocabulary, closed at four, **in rank order — lowest rung first**.
+ *
+ *   member    everything a signed-in person may do. The column default, and what a missing row is.
+ *   support   reads the admin surfaces and may act on a person's behalf: a note, a resend.
+ *   admin     manages people and content — invitations, role changes, deletions.
+ *   owner     everything an admin has, plus the one act no admin may take: handing ownership on.
+ *             At most one row holds it (`user_profile_one_owner`, migration 0023).
+ *
+ * #183 shipped two values and said, in this spot, that a third was "a new decision, arriving with
+ * the pages that need it". #501 is that decision and its pages, so the order above is now
+ * load-bearing: `roleAdmits()` compares ranks, and `owner` passes every gate `admin` passes
+ * without any call site naming it.
  */
-export const USER_ROLES = ["member", "admin"] as const;
+export const USER_ROLES = ["member", "support", "admin", "owner"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 
@@ -119,9 +127,24 @@ export const zUserRole = z.enum(USER_ROLES);
  */
 export const DEFAULT_USER_ROLE: UserRole = "member";
 
-/** Is this role allowed on a surface that requires `needed`? Equality, not a rank. */
+/** A role's rung, as its index in `USER_ROLES`. The one place the ladder is read as a number. */
+export function roleRank(role: UserRole): number {
+  return USER_ROLES.indexOf(role);
+}
+
+/**
+ * Is this role at least `needed` on the ladder?
+ *
+ * One comparison, not a table: the ladder is `USER_ROLES`' own order, so a role added between two
+ * rungs needs no edit here. `null` is nobody signed in, and it is below every rung — the same
+ * answer a `member` gets on an admin surface, which is #183's rule kept intact.
+ *
+ * **This is the surface gate, not the action gate.** `lib/admin/roles.ts::can()` is what decides
+ * whether a role may take a named admin action (a role change, an ownership transfer); this
+ * function answers the coarser question a whole page asks (`requireRole("admin")`).
+ */
 export function roleAdmits(needed: UserRole, viewer: UserRole | null): boolean {
-  return viewer !== null && viewer === needed;
+  return viewer !== null && roleRank(viewer) >= roleRank(needed);
 }
 
 /** Both country fields, or neither — the twin of `zOpinions`' think/guess refinement. */
