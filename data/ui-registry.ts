@@ -131,6 +131,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/audit",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The audit log: every audited admin write, newest first — when, who and the rung they held at the moment they acted, the action, the row it touched, the reason and both sides of the change — filterable by actor, action, target table and date range, with the filter in the URL so a view is a link.",
+    notes:
+      "Read-only, and structurally so: it reads `admin_action` through `lib/db/admin-audit.ts`, imports no write path, and `tests/admin-audit-page.test.ts` drives a `support` session at it to prove the 404 and that nothing was read or written. `admin` and `owner` reach it (the ladder is ranked, and the page names only `admin`). Both templates this tree ships claim the `product.admin` capability (#509), which is why the row says both; the console rows beside it say `alignsynch` because those screens carry that product's words. `before`/`after` are drawn as keys and a 48-character truncation with the full value behind a `<details>` click, because the JSONB may hold a party's name. Filters are SQL (`WHERE` clauses built in `lib/admin/audit-log.ts`), not client-side: the log only grows. Migration 0024 adds the `actor_role` column this screen's actor column prints, written by `act()` in the same transaction as the change.",
+  },
+  {
+    kind: "route",
     surface: "/admin/console",
     status: "fixture",
     templates: ["alignsynch"],
@@ -205,9 +215,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "mock",
     templates: ["alignsynch"],
     capability:
-      "The operator's registry table: a stage tab row, mode and Setting selects and a stalled toggle over one filterable table of relationships.",
+      "The operator's tables: the relationship registry — a stage tab row, mode and Setting selects and a stalled toggle over one filterable table — and the audit log — a GET filter form, one chip per applied axis, and rows whose before/after values open on a click.",
     notes:
-      "`mock` in this file's vocabulary — it renders the props it is handed. The rows are read by the page (`lib/db/admin-instances.ts`) and passed down, because a client component must not reach `pg`; that boundary is why this domain imports no data module and why the route entry above is the one that claims `db`.",
+      "`mock` in this file's vocabulary — it renders the props it is handed. The rows are read by the page (`lib/db/admin-instances.ts`, `lib/db/admin-audit.ts`) and passed down, because a client component must not reach `pg`; that boundary is why this domain imports no data module and why the route entries above are the ones that claim `db`. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.",
   },
   {
     kind: "route",

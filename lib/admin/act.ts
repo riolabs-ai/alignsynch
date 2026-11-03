@@ -40,7 +40,14 @@
  * screens that use it are the next card.
  */
 import { DEFAULT_USER_ROLE, zUserRole, type UserRole } from "@/content/identity";
-import { type AdminAction, can, isAdminAction, requirementFor } from "@/lib/admin/roles";
+import {
+  AUDIT_TARGET_TABLES,
+  type AdminAction,
+  type AuditTargetTable,
+  can,
+  isAdminAction,
+  requirementFor,
+} from "@/lib/admin/roles";
 import { getPool } from "@/lib/db/client";
 
 /* ------------------------------------------------------------------ *
@@ -56,29 +63,9 @@ import { getPool } from "@/lib/db/client";
  */
 export const REASON_MIN_LENGTH = 8;
 
-/**
- * The tables an audited write may target.
- *
- * Closed on purpose: `target_table` is read by the audit screen's filter and by anyone asking
- * "what happened to this row", and a table name that no reader knows is a dead filter. Adding a
- * table is a deliberate edit here, and the list is the migration's table set rather than a copy of
- * `information_schema` — a table this app does not audit is not a target.
- */
-export const AUDIT_TARGET_TABLES = [
-  "user_profile",
-  "admin_invite",
-  "record",
-  "session",
-  "party",
-  "item",
-  "response_option",
-  "opinion",
-  "relationship",
-  "instance_invite",
-  "coach_invite",
-] as const;
-
-export type AuditTargetTable = (typeof AUDIT_TARGET_TABLES)[number];
+/** The tables an audited write may target. Defined beside the action names in `lib/admin/roles.ts`. */
+export { AUDIT_TARGET_TABLES } from "@/lib/admin/roles";
+export type { AuditTargetTable } from "@/lib/admin/roles";
 
 /** The row the action is about: which table, and which id in it. */
 export interface ActTarget {
@@ -240,10 +227,15 @@ const ACTOR_ROLE_SQL = "SELECT role FROM user_profile WHERE user_id = $1 FOR SHA
 /**
  * The audit row. Written last, in the same transaction as the change it describes — which is what
  * makes "a rolled-back mutation leaves no entry" true rather than remembered.
+ *
+ * **`actor_role` is the rung this transaction read, not a rung a reader looks up later** (#501b).
+ * The role is already in hand one statement above (`FOR SHARE`), and storing it is what lets
+ * `/admin/audit` say "role at the time" instead of printing today's role beside last week's write.
+ * Migration 0024 adds the column; a row written before it carries NULL, and the screen says so.
  */
 const AUDIT_INSERT_SQL = `
-  INSERT INTO admin_action (actor_user_id, action, target_table, target_id, reason, before, after)
-  VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb)
+  INSERT INTO admin_action (actor_user_id, actor_role, action, target_table, target_id, reason, before, after)
+  VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb)
   RETURNING id::text AS id`;
 
 /** A JSON parameter: `undefined` is NULL, anything else is serialised. Never the string "undefined". */
@@ -299,6 +291,7 @@ export async function act<T>(
 
     const rows = await sql.query<{ id: string }>(AUDIT_INSERT_SQL, [
       request.actorUserId,
+      actorRole,
       request.action,
       targetTable,
       request.target.id,

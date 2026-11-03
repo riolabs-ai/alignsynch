@@ -70,7 +70,9 @@ class FakeConnection {
     if (/^INSERT INTO admin_action/i.test(head)) {
       if (this.failAudit) throw new Error("audit insert failed");
       if (!this.inTransaction) throw new Error("an audit row outside a transaction is a bug");
-      this.pending.push(`admin_action:${String(values[1])}`);
+      // `values[2]` is the action name: index 1 is the actor's rung (#501b), which an order label
+      // in this file should not start depending on.
+      this.pending.push(`admin_action:${String(values[2])}`);
       return { rows: [{ id: "audit-1" }] as unknown as readonly R[] };
     }
     // Anything else is the test's own mutation.
@@ -162,6 +164,9 @@ describe("act() — a successful write", () => {
     const audit = db.statements.find(({ text }) => /insert into admin_action/i.test(text));
     expect(audit?.values).toEqual([
       "auth-actor",
+      // The rung the same transaction read `FOR SHARE`, stored with the row (#501b): `/admin/audit`
+      // prints "role at the time", and a role looked up at render time would be today's.
+      "admin",
       "role.change",
       "user_profile",
       "auth-subject",
@@ -188,8 +193,8 @@ describe("act() — a successful write", () => {
     );
 
     const audit = db.statements.find(({ text }) => /insert into admin_action/i.test(text));
-    expect(audit?.values[6]).toBeNull();
-    expect(audit?.values[6]).not.toBe("undefined");
+    expect(audit?.values[7]).toBeNull();
+    expect(audit?.values[7]).not.toBe("undefined");
   });
 });
 
