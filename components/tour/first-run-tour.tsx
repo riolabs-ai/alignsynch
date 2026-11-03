@@ -12,6 +12,12 @@
  * step whose target is absent** (not in this page, or in it but not rendered) rather than aiming a
  * tooltip at nothing.
  *
+ * **When it opens, and that it opens only once.** The page decides: it reads the viewer's
+ * `tour_seen_at` mark (`lib/db/tour.ts`) and passes `start`. Completing *or dismissing* the tour
+ * writes that mark through `POST /api/tour`, so it does not reappear on the next visit; `/help`'s
+ * replay control (#458) clears the mark. This component never reads the session and never touches
+ * the database — the crossing is one `fetch`, in `lib/tour/mark.ts`.
+ *
  * **Why the engine is imported inside the effect.** `driver.js` reads `document` and `window` on
  * its first call, so a static import would be a module the server render executes — the
  * `window is not defined` failure the issue names. `await import("driver.js")` keeps the library
@@ -46,6 +52,7 @@ import "driver.js/dist/driver.css";
 
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
+import { sendTourMark } from "@/lib/tour/mark";
 import { runnableSteps } from "@/lib/tour/steps";
 import type { Config, Driver } from "driver.js";
 import { useEffect, useRef, useState } from "react";
@@ -134,6 +141,14 @@ export function FirstRunTour({
         },
         onDestroyed: () => {
           setAnnouncement("");
+          /**
+           * Completing **or dismissing** marks the tour seen (#456): done, close, Escape and a
+           * click on the overlay are all "this person has now seen it", and the mark is what stops
+           * a second appearance. `/help`'s replay control clears it again (`seen: false`). The
+           * write is fire-and-forget — a tour the reader dismissed must not fail in their face
+           * because a request did.
+           */
+          void sendTourMark(true);
           // The engine refocuses what was focused when it started; when that was the document
           // body there is nothing to return to, so a caller that opened the tour from a control
           // gets its control back instead of a screen reader restarting at the top.

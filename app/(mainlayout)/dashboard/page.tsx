@@ -47,6 +47,7 @@ import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { listMyInstances, type MyInstance } from "@/lib/db/my-instances";
+import { readTourState } from "@/lib/db/tour";
 import { OVERVIEW_PATH } from "@/lib/flow/paths";
 import { listPublishedTemplates } from "@/lib/flow/store";
 import type { Metadata } from "next";
@@ -59,26 +60,27 @@ export const metadata: Metadata = {
 };
 
 /**
- * `?tour=1` opens the first-run tour (#455).
- *
- * The tour is **opt-in by URL in this card**, not yet first-run-only: "show it once per user" is
- * the `tour_seen_at` column and its two write paths (S2, #456), which does not exist yet. Until it
- * does, a signed-in person sees the console exactly as before unless they ask for the tour — so
- * merging this card cannot nag every existing account, and the trigger is the same one S4's replay
- * control on `/help` can link to. S2 replaces this line with the column read; it does not change
- * the component.
+ * **The tour is first-run, per person** (#456). `readTourState()` is the mark — `tour_seen_at` NULL
+ * means "has not seen it", any instant means "has" — and the shell opens only on the first. That
+ * column is the rule, not a query parameter: an account that has seen the tour never sees it again,
+ * and `/help`'s replay control (S4) clears the mark rather than forcing the component open. The
+ * mark is written by the component when the tour is completed or dismissed, through
+ * `POST /api/tour`; this page only reads it, because a render may run twice and a write in a render
+ * is not a fact about the reader (#453).
  */
-export default async function OverviewPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function OverviewPage() {
   const user = await currentUser();
   if (user === null) redirect(loginPathFor(OVERVIEW_PATH));
 
   let instances: readonly MyInstance[] = [];
   let templates = 0;
   let unreadable: string | null = null;
+  /**
+   * `true` keeps the tour shut. It defaults to shut so that a read that failed below cannot open a
+   * tour over the failure panel — that panel carries none of the six anchors, and the honest
+   * behaviour for an unreadable console is the panel, not an empty callout on top of it.
+   */
+  let tourSeen = true;
 
   try {
     // Both figures in one guarded block: a console that drew three real counts beside a zero it
@@ -86,6 +88,7 @@ export default async function OverviewPage({
     // read draws the panel and no figures at all.
     instances = await listMyInstances(user.userId);
     templates = (await listPublishedTemplates()).length;
+    tourSeen = (await readTourState(user.userId)).seen;
   } catch (error) {
     // "The database did not answer" is a state this screen can describe. A row that fails the
     // model is a code defect, and it keeps throwing.
@@ -93,8 +96,6 @@ export default async function OverviewPage({
     console.error("overview: the console's counts could not be read", error);
     unreadable = error.reason;
   }
-
-  const { tour } = await searchParams;
 
   return (
     <>
@@ -110,7 +111,7 @@ export default async function OverviewPage({
         fixture is parsed by zod at module load, so the route resolves it and the browser receives
         a plain object. `components/tour/**` therefore imports no `data/` module and no zod.
       */}
-      <FirstRunTour copy={tourPageCopy} start={tour === "1"} />
+      <FirstRunTour copy={tourPageCopy} start={!tourSeen} />
     </>
   );
 }
