@@ -84,8 +84,8 @@ import {
   type Step,
 } from "@/content/steps";
 import { entitlementForAccount } from "@/lib/billing";
-import { instanceGateRefusal } from "@/lib/billing/entitlements";
-import { activeInstanceCount } from "@/lib/db/billing";
+import { instanceGateRefusal, relationshipGateRefusal } from "@/lib/billing/entitlements";
+import { activeInstanceCount, activeRelationshipCount } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import {
   assessmentInstanceFromRows,
@@ -163,11 +163,14 @@ export type FlowErrorCode =
   // so this is the second half of the same rule for a caller that posts a record id directly:
   // an authored template belongs to its author, and a signed-out create belongs to nobody.
   | "template-not-yours"
-  // The billing gate's two refusals (#289). They are flow refusals because this store is where an
-  // instance comes into being, and the route that calls it already answers `{error, message}` for
-  // every `FlowError` — a second error type would be a second branch that could be forgotten.
+  // The billing gate's three refusals (#289, #505). They are flow refusals because this store is
+  // where an instance comes into being, and the route that calls it already answers `{error,
+  // message}` for every `FlowError` — a second error type would be a second branch that could be
+  // forgotten. `relationship-limit` is the plan's own limit (#505): a plan sells *relationships*,
+  // and the refusal names that, not an "assessment instance" nobody was sold.
   | "instance-limit"
-  | "mode-not-entitled";
+  | "mode-not-entitled"
+  | "relationship-limit";
 
 /* ------------------------------------------------------------------ *\
  * Create
@@ -328,10 +331,14 @@ export async function createInstanceFromTemplate(
   const now = input.now ?? new Date();
   const initiatorUserId = normalizedUserId(input.viewerUserId);
 
-  // THE BILLING GATE (#289). Before the transaction, because a refusal must cost nothing: no
-  // record, no items, no party row, no invitation. Both questions are asked in one place — the
-  // active count and the mode — because a caller that enforced one and forgot the other is the
-  // exact defect `instanceGateRefusal` exists to make impossible.
+  // THE BILLING GATE (#289, #505). Before the transaction, because a refusal must cost nothing: no
+  // record, no items, no party row, no invitation. Three questions, and the **relationship** limit
+  // is asked first (#505): it is the limit the plan actually sells — "One active relationship at a
+  // time" on Free, "Unlimited active relationships" on every paid tier — so an account that has
+  // used its one relationship is refused with a sentence about a relationship, not about an
+  // "assessment instance" it never saw named. `instanceGateRefusal` still asks the count of open
+  // sessions and the mode; the two counts differ (being a Counterparty is an instance but not a
+  // relationship you started), so neither subsumes the other.
   //
   // A signed-out create is not gated: there is no account to hold a plan, and the anonymous flow
   // is the pre-#213 behaviour the product still supports. That is also why the gate cannot be
@@ -339,6 +346,13 @@ export async function createInstanceFromTemplate(
   // an unbound instance belongs to nobody.
   if (initiatorUserId !== null) {
     const entitlement = await entitlementForAccount(initiatorUserId);
+    const relationshipRefusal = relationshipGateRefusal({
+      entitlement,
+      activeRelationships: await activeRelationshipCount(initiatorUserId),
+    });
+    if (relationshipRefusal !== null) {
+      throw new FlowError(relationshipRefusal.code, relationshipRefusal.message);
+    }
     const refusal = instanceGateRefusal({
       entitlement,
       activeInstances: await activeInstanceCount(initiatorUserId),

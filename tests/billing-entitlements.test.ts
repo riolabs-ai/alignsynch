@@ -46,6 +46,8 @@ function subscription(over: Partial<Subscription> = {}): Subscription {
     provider: "mock",
     providerSubscriptionId: "mock-sub-principal-month-avery",
     status: "active",
+    // Both adapters this build carries are test-mode today (#505); the column records it.
+    livemode: false,
     currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     ...over,
   };
@@ -54,9 +56,19 @@ function subscription(over: Partial<Subscription> = {}): Subscription {
 describe("plan → what the server allows", () => {
   it("is the card's table: Free one instance and Basic only, paid unlimited and Advanced", () => {
     expect(gateSummary()).toEqual([
-      { plan: "Free", activeInstances: "1", modes: "basic" },
-      { plan: "Basic", activeInstances: "unlimited", modes: "basic + advanced" },
-      { plan: "Principal", activeInstances: "unlimited", modes: "basic + advanced" },
+      { plan: "Free", activeInstances: "1", relationships: "1", modes: "basic" },
+      {
+        plan: "Basic",
+        activeInstances: "unlimited",
+        relationships: "unlimited",
+        modes: "basic + advanced",
+      },
+      {
+        plan: "Principal",
+        activeInstances: "unlimited",
+        relationships: "unlimited",
+        modes: "basic + advanced",
+      },
     ]);
   });
 

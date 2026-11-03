@@ -268,6 +268,12 @@ interface StripeSubscriptionObject {
    * delivery is mapped correctly whichever version the account is pinned to.
    */
   readonly current_period_end?: number | null;
+  /**
+   * The provider's own live/test flag (#505). Every Stripe object carries it, and it is the only
+   * honest source for "did this checkout charge real money" — the adapter's key is a config fact,
+   * this is a fact about the object that was actually created.
+   */
+  readonly livemode?: boolean | null;
   readonly metadata?: Record<string, string> | null;
   readonly items?: { readonly data?: readonly StripeSubscriptionItem[] } | null;
 }
@@ -650,6 +656,9 @@ export class StripeBillingAdapter implements BillingPort {
       provider: "stripe",
       providerSubscriptionId: object.id,
       status: subscriptionStatusOf(object.status),
+      // `livemode` is the object's, and an absent flag is test mode: a payload that does not say
+      // must never be read as money having moved (#505).
+      livemode: object.livemode === true,
       currentPeriodEnd: new Date(periodEnd * 1000).toISOString(),
     };
   }
