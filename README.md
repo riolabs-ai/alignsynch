@@ -281,17 +281,18 @@ pnpm ui:registry:check   # what the gate runs: regenerate in memory, compare, ex
 pnpm ui:registry         # rewrite docs/ui-registry.md after a legitimate change
 ```
 
-- **92 routes** — 52 static, 40 dynamic, from `app/**/page.tsx`
-- **39 component domains** — 331 files under `components/`, 325 of them `.tsx`
+- **66 routes** — 43 static, 23 dynamic, from `app/**/page.tsx`
+- **39 component domains** — 275 files under `components/`, 269 of them `.tsx`
 - **16 route handlers** — `app/**/route.ts`, listed in the registry and not counted as UI
-- **131 catalogued surfaces** — 92 routes + 39 domains, each with a `status`
-- **status split** — 7 live, 20 database-backed, 55 fixture-backed, 15 mock, 34 prototype
+- **105 catalogued surfaces** — 66 routes + 39 domains, each with a `status`
+- **status split** — 7 live, 20 database-backed, 61 fixture-backed, 15 mock, 2 prototype
 
 The statuses are wiring claims, not opinions: `db` reaches `lib/db/`, `live` reaches an `/api` write,
 `fixture` reaches a record module under `data/`, and `mock` reaches neither — so a surface whose
-numbers are literals is a stand-in however finished it looks. `prototype` is the `/v1` surface of the
-iteration described in [docs/V1-PROTOTYPE.md](docs/V1-PROTOTYPE.md): it renders, it is not what this
-README illustrates, and it is not the shipped relationship flow.
+numbers are literals is a stand-in however finished it looks. `prototype` is the last of the `/v1`
+iteration — the operator console's in-browser store and the one worked demo report — and the
+iteration itself is retired: see [docs/V1-RETIREMENT.md](docs/V1-RETIREMENT.md) for what was
+classified and what was deleted.
 
 A template that oversells its own completeness is worse than one that says which parts are mocked, so
 the registry also records which template claims each surface. Read that column there rather than
@@ -356,9 +357,10 @@ What does not:
 - **Fifteen surfaces are mocks** — the quiz editor's save, the generator, the leaderboard,
   tournaments, battle and chat among them. Each is named in [docs/ui-registry.md](docs/ui-registry.md),
   and `data/flags.ts` carries a note per surface saying what would have to exist before it is on.
-- **The `/v1` prototype is not the product.** Thirty-four registry surfaces under `/v1` render a
-  separate iteration that is still being rebuilt; they are catalogued there and deliberately not
-  pictured above.
+- **The `/v1` prototype is retired.** Its 118 items were classified in
+  [docs/V1-RETIREMENT.md](docs/V1-RETIREMENT.md) — the operator console moved to `/admin/console`,
+  the 95-item customer half is deleted (#478), and one `release` demo report is the only `/v1`
+  route left standing. Nothing here is pictured from it.
 - **One template has a server behind it.** The quiz product's create, play and community surfaces are
   fixtures; only the relationship flow, accounts, support and billing touch the database.
 - **No multi-tenancy, no i18n, no course schema.** A brand is a build, not a tenant.

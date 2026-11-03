@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/v1/v1-template-library.tsx   (variation: Postgres template records grouped by the type each names, every action a plain POST form)
+ * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: Postgres template records grouped by the type each names, every action a plain POST form)
  *
  * `/assessment/templates` — the template library (#console 5/5, reshaped by #409).
  *

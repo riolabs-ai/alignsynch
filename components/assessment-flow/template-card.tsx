@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/v1/relationship-type-card.tsx   (variation: one Postgres template record per card, the type — realm, roles, price, demo — resolved from the catalogue by slug, and the action row supplied by the surface)
+ * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: one Postgres template record per card, the type — realm, roles, price, demo — resolved from the catalogue by slug, and the action row supplied by the surface)
  *
  * The assessment catalogue's one card, and the grid that draws it (#409, catalogue essentials).
  *

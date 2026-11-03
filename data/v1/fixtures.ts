@@ -1314,36 +1314,6 @@ export interface V1SeedState {
 export const SEED_VERSION = 11;
 
 /**
- * The chat's seeded read watermark — `threadId -> lastReadAt` per persona. A thread with
- * messages after this instant and authored by another party is unread. The seed leaves most
- * threads unlisted, which `unreadCountOf` reads as "already read"; the listed rows are the ones
- * the demo opens on. Every instant is at or before `DEMO_NOW_ISO`, the same as the messages.
- *
- * This is store seed, not fixture truth: the store copies it on first hydrate and persists the
- * mutated copy (opening a thread writes a fresh watermark), so read state survives navigation.
- */
-export type V1ThreadReadAt = Readonly<Record<Persona, Readonly<Record<string, string>>>>;
-
-export const seedThreadReadAt: V1ThreadReadAt = {
-  visitor: {},
-  service: {},
-  initiator: {
-    // Jordan read their own question; Sam's reply at 09:45 is the one unread message.
-    "rel-connected-blind--aspect-priorities": "2026-10-29T09:35:00.000Z",
-  },
-  counterparty: {
-    // Sam read through 10:25; Ruth's replies at 10:35 and 10:40 are unread.
-    "rel-aligned": "2026-10-29T10:25:00.000Z",
-    "rel-aligned--aspect-trust": "2026-10-29T10:20:00.000Z",
-  },
-  coach: {
-    // Riley read Sam's note at 10:20; Ruth's 10:35 reply is the one unread message.
-    "rel-aligned": "2026-10-29T10:30:00.000Z",
-  },
-  admin: {},
-};
-
-/**
  * The prototype's own version, rendered as the `[V1]` tag in the persona notice banner. The
  * `V1` is the prototype's designation — the `/v1` route group, the `v1_*` store keys — so the
  * banner says what the owner is looking at, not the product release `package.json` carries.

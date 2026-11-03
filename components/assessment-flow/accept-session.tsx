@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/v1/accept-session.tsx   (variation: server-rendered from the instance's own rows, and the acceptance is real — each seat reads its own `party.accepted_at`, the control posts to the accept endpoint, and the Aspect columns show the viewer's own answers with the other seat sealed until both accept)
+ * template-ancestor: components/assessment-flow/instance-view.tsx   (variation: server-rendered from the instance's own rows, and the acceptance is real — each seat reads its own `party.accepted_at`, the control posts to the accept endpoint, and the Aspect columns show the viewer's own answers with the other seat sealed until both accept)
  *
  * `AcceptSession` — the acceptance step, live since R2 (#427).
  *

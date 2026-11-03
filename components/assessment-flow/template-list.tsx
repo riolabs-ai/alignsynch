@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/v1/template-catalogue.tsx   (variation: cards over Postgres template records grouped by the type each names, surface-owned action row)
+ * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: cards over Postgres template records grouped by the type each names, surface-owned action row)
  *
  * `/assessment`'s list: the published templates, each card carrying its own create form (#146,
  * #409).

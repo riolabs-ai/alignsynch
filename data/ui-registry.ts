@@ -263,7 +263,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     notes:
       "The read surface the app did not have until #409, ported from the `/v1` prototype's `report-body.tsx` as a server component over `lib/assessment-report.ts` — never a rewiring of the client store (#228, E34). The blind rule is the `screen.report === null` branch, not a redaction: before both parties have submitted, `readFlowScreen` has not read the other party's opinion rows at all and the route draws the locked page, which carries no score, no Gap and no count of the other party's progress. Every number is `gapKindsOf()` over stored rows; an unanswered Opinion prints a dash, never a 0. The viewer is the party cookie's seat (or a coach's membership), so a browser with no role on the relationship gets a 404.",
   },
-
   {
     kind: "route",
     surface: "/assessment/instances/[instanceId]/accept",
@@ -696,224 +695,12 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/v1",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The prototype's persona picker — a stand-in for /login that offers the six personas instead of an email/password form, and lands the chosen persona on their own screen.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The persona-scoped dashboard overview for initiator, counterparty, coach and admin: relationship counts, sessions awaiting, next session and stage — never a revenue figure for anyone but the initiator.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/profile",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The persona's profile — relationship history instead of quiz history, reachable by every dashboard persona.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/profile/[handle]",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The public, read-only profile — the same component as the in-app profile with its actions hidden, resolved from a persona's handle.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/settings",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The persona's settings — account, appearance, notifications, privacy and connected accounts.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/notifications",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The persona's notifications — invite accepted, session scored, new comment, payment failed.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/relationships",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The persona's relationships, status-led: relationship name, type, stage, next session and the session count — an initiator sees theirs, a counterparty the ones they belong to, a coach the ones they coach, an admin all.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/relationships/[id]",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "One relationship the persona can see — a session timeline and its actions, persona-scoped.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/templates",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The template library in the dashboard, with start, clone and edit actions visible only to an initiator or admin.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/shop",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The per-relationship subscription and checkout — initiator only; a counterparty never sees a price.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/chat",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "One thread per relationship, plus per-Aspect threads, with unread state — the BuddyBoss shape.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/[persona]/chat/[id]",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "A single chat thread for one relationship or Aspect, persona-scoped and blind-safe before scoring.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/initiator/templates/new",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The template author — a variation of the quiz editor that writes a template to the in-browser store.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/pricing",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The two per-relationship subscription plans, the same component as the in-app shop — a price the marketing page shows is the price the checkout applies, and nothing is charged in the prototype.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/privacy",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The same draft Privacy Policy the live page renders, shown inside the prototype's chrome.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/review",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The prototype's own review checklist — every /v1 screen with an approval state (unreviewed, changes requested, approved) and a note, persisted in the store so a review survives a reload.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/relationships/[id]",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The one screen every role opens a relationship from — a session timeline, not a record: parties, stage, last session and the subscription header (plan, status, period end) in the header, one primary action that moves answer → accept → next session, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim, the comment threads and the advice thread for the roles that have them.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/relationships/[id]/accept",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The acceptance step: the Initiator and the Counterparty side by side, each party's acceptance and their own submission in view — reviewable and changeable until that party accepts, with the other side sealed — and the session completes only when both have accepted, which is the instant the report unlocks.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/relationships/[id]/answer",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits. Submission alone does not lift the blind rule.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/relationships/[id]/report",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The report — every Gap printed with the two Opinions it compares, named by party, one row per kind under the glossary's headings, with the Setting's verdict on top and unlocked only when both parties accept (never at the second submit).",
-  },
-  {
-    kind: "route",
-    surface: "/v1/service",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The Service user's landing: the support queue of invitations, accounts and stuck relationships, with a resolve action per ticket.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/support",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The help centre stated without the taxonomy the alignment build does not offer, reading the brand record's mailbox for the contact line.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/terms",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The same draft Terms of Service the live page renders, shown inside the prototype's chrome.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/templates",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The catalogue of relationship types grouped by realm — one card each with the name, the two roles, who it is for, its Aspect count, the price, and the actions View and (when a demo exists) See an example. The three dating rows never render.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/templates/[type]",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The template page a person decides on, as a conversion landing: who the type is for and not for in a text-only header band, a sticky left rail carrying Create Relationship, the derived counts (Aspects, Stages, Opinions), the two seats, the Mode/Setting vocabulary and one price with the counterparty paying nothing, and a scrolling column of tabs over the Aspect accordion and the three-step session walkthrough with the blind rule.",
-  },
-  {
-    kind: "route",
-    surface: "/v1/templates/[type]/create",
-    status: "prototype",
-    templates: ["alignsynch"],
-    capability:
-      "The create entry — the template fixed by the route, an optional name, the initiator's display name, an optional name for the counterparty's seat, and the two required choices: Mode (fixed at creation) and Setting (the bar the report is judged against). Submitting creates the relationship in the store and opens it.",
-  },
-  {
-    kind: "route",
     surface: "/v1/templates/[type]/demo",
     status: "prototype",
     templates: ["alignsynch"],
     capability:
       "A real completed-session report rendered from fixture answers for the type, labelled Example with You/Them names, sharing the live report's body component — the value shown before anyone pays.",
   },
-
-  /* ------------------------------------------------------------------ *
-   * Component domains — `components/<domain>/`
-   * ------------------------------------------------------------------ */
   {
     kind: "domain",
     surface: "components",
@@ -1244,8 +1031,8 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "prototype",
     templates: ["alignsynch"],
     capability:
-      "The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.",
+      "What is left of the /v1 prototype — the operator console's nine components, the shared primitives they paint with, and the two `release` surfaces the disposition keeps.",
     notes:
-      "Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The persona-scoped relationships surface is four components over that store: `relationships-list.tsx` varies `components/my-quizzes/my-quizzes.tsx` (the card grid: the ancestor's title row with the primary action, its search field in a filter row and its stage Tabs, three-up on large screens and one-up on a phone — each card's metric row translating Players / Completion / Average Score / `N Questions` to sessions `N of M`, session completion %, average alignment (the mean Gap, `—` until a session is scored) and `N Aspects`, the four Y/O/P/R Gap-flag counts kept as one compact row, and what was paid — plan and period — on the Initiator's card alone); `persona-relationship-detail.tsx` varies `components/my-quizzes/quiz-details.tsx` (header, per-stage primary action, session timeline, Timeline/Aspects/Manage tabs, comments after scoring); `relationship-aspects-editor.tsx` varies `template-editor.tsx` (initiator-only add/rename/reorder, AlertDialog delete and a restorable soft delete); `relationship-library.tsx` varies `components/explore/explore-quiz-list.tsx` (built-in templates vs the initiator's saved sets, stated on the page). The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the onboarding panel (`onboarding-panel.tsx`) varies the same ancestor as a stepped wizard (three beats, one visible at a time, with Next/Back and a Step N of 3 progress line); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — 29 source rows plus the kept co-founders, grouped by realm) drives `template-catalogue.tsx`, the template landing (`template-page.tsx` derives the counts and the seats, `template-landing.tsx` draws the no-photograph header band, the sticky left rail carrying the CTA, derived stat chips, seat strip, Mode/Setting vocabulary and one price, and the tabs over the Aspect accordion) and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.",
+      "The prototype is retired (#478): `docs/V1-RETIREMENT.md` classified 118 `/v1` items and 57 of this domain's 69 components are deleted with their screens, so this entry now covers what survived on purpose. The **nine admin components** — `admin-console-overview`, `admin-relationship-registry`, `admin-relationship-detail`, `admin-template-registry`, `admin-template-detail`, `admin-users-list`, `admin-limits`, `relationship-metadata`, `v1-ui` — are the operator console at `/admin/console`, behind `requireAdmin`, reading the in-browser store (`lib/v1/store.tsx`) seeded from `data/v1/fixtures.ts`; that is why they stay a fixture surface while the product's `/admin/instances` reads Postgres. `v1-ui.tsx` is the one shared atom set (`StageBadge`, `GapPill`, `StatTile`, `EmptyState`, `NotFoundState`, `SectionIntro`, the status tones) the console paints with, and `relationship-metadata.tsx` is the mode/setting editor the console's relationship detail draws. The two **release** survivors wait on their own cohort: `steps-panel.tsx` (one Steps list per Aspect, drawn from the Steps acceptance already stores) ports into the instance view, and `template-demo.tsx` with `report-body.tsx` is the one worked report — `report-body` is a `delete` row that survives only because the `release` `template-demo` imports it, and it dies with the demo's move to `/assessment/demo/[type]`. Everything else in the domain — the shell, the persona bar, the chat, the shop, the review checklist, the settings views, the answer sheet and the template authoring — is deleted.",
   },
 ]);

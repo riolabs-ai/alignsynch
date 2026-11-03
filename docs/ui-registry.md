@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **92** — 52 static, 40 dynamic, from `app/**/page.tsx`
-- component domains: **39** — 332 files under `components/`, 326 of them `.tsx`
+- routes: **66** — 43 static, 23 dynamic, from `app/**/page.tsx`
+- component domains: **39** — 275 files under `components/`, 269 of them `.tsx`
 - route handlers: **16** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 15 · **fixture** 61 · **db** 20 · **live** 7 · **prototype** 28
-- templates: Both templates 28 · AlignSynch 59 · QuizHub 42 · No template yet 2
+- status: **mock** 15 · **fixture** 61 · **db** 20 · **live** 7 · **prototype** 2
+- templates: Both templates 28 · AlignSynch 33 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -152,13 +152,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/legal` — **mock**
   - capability: The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.
   - files (1): `legal-page.tsx`
-  - routes (4): `/privacy`, `/terms`, `/v1/privacy`, `/v1/terms`
+  - routes (2): `/privacy`, `/terms`
   - notes: The copy arrives as a prop from `data/pages/legal` (the two route entries claim it), so this domain reads no data module of its own.
 
 - `components/media` — **mock**
   - capability: The one media resolver: a file, a remote URL or a generated default drawn from a seed, in that order, with a fallback on error and no image file behind the last tier.
   - files (2): `generated-avatar.tsx`, `media.tsx`
-  - routes (31): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/settings`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/profile`, `/v1/[persona]/settings`, `/v1/profile/[handle]`
+  - routes (26): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/settings`, `/tournaments`, `/tournaments/[id]`
 
 - `components/not-found` — **mock**
   - capability: The 404 body: floating glyph decoration and a go-back button.
@@ -168,7 +168,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/profile` — **fixture**
   - capability: The public profile in ten parts: cover, header, stats, achievements, activity, followers, following, quiz history, created quizzes and a message modal.
   - files (11): `message-modal.tsx`, `profile-achievements.tsx`, `profile-activity.tsx`, `profile-cover.tsx`, `profile-created-quizzes.tsx`, `profile-followers.tsx`, `profile-following.tsx`, `profile-header.tsx`, `profile-quiz-history.tsx`, `profile-stats.tsx`, `user-profile.tsx`
-  - routes (3): `/profile/[username]`, `/v1/[persona]/profile`, `/v1/profile/[handle]`
+  - routes (1): `/profile/[username]`
 
 - `components/shell` — **fixture**
   - capability: The shell's own panels: the declared-not-wired surface a pending route renders — its label, the reason it is not live and the capability it needs, read from the surface registry rather than typed into the page.
@@ -184,7 +184,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `calendar.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (66): `/`, `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/help`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/templates`, `/v1/initiator/templates/new`, `/v1/profile/[handle]`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/review`, `/v1/templates/[type]`, `/v1/templates/[type]/create`, `/welcome` — and every other route through `app/layout.tsx`
+  - routes (49): `/`, `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`, `/admin/gaps`, `/admin/instances`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/help`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/welcome` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch
@@ -194,33 +194,33 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/admin/console` — **fixture**
   - capability: The admin console — records, relationships, templates and the two seats, read-only for answers.
   - components: `components/console`, `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
   - notes: Moved out of the `/v1` prototype tree (#478) so the prototype can be deleted without taking it: the six console pages now sit under the app shell at `/admin/console`, and their layout gates the subtree with `requireAdmin()`. The rows are still the in-browser store seeded from `data/v1/fixtures.ts` — the operator's Postgres registry is `/admin/instances`, a different screen — which is why this is `fixture` and not `db`.
 
 - `/admin/console/relationships` — **fixture**
   - capability: The relationship registry — every relationship, live or archived, with its template, derived stage, both seat states and its subscription state, filtered by the same links the overview's counts produce; read-only for answers, with a one-click restore on an archived row.
   - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
 
 - `/admin/console/relationships/[id]` — **fixture**
   - capability: One relationship as an operator sees it — its seats, subscription and a session list that says scored or open and nothing a party answered — with Archive behind a confirmation and a Restore that is one click.
   - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
 
 - `/admin/console/templates` — **fixture**
   - capability: The template registry — every template with the number of relationships started from it, and an enable/disable action behind a confirmation that the store can undo.
   - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
 
 - `/admin/console/templates/[id]` — **fixture**
   - capability: One template as an operator sees it — the Aspects as authored, and every relationship started from it, live and archived, with the enable/disable pair.
   - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
 
 - `/admin/console/users` — **fixture**
   - capability: The two seats and the members, with role, account state and last sign-in from the store — no addresses, and no user-management form that would pretend to write to Neon.
   - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
 
 - `/admin/gaps` — **db**
   - capability: The Gap across a population: the eight kinds the model defines, counted over relationships both parties have finished, read under each relationship's own Setting. Nameless aggregates — no party, no score, no ranking — and a Setting with fewer complete relationships than the floor states that instead of charting.
@@ -327,140 +327,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/assessment-flow`
   - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
-- `/v1` — **prototype**
-  - capability: The prototype's persona picker — a stand-in for /login that offers the six personas instead of an email/password form, and lands the chosen persona on their own screen.
-  - components: `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]` — **prototype**
-  - capability: The persona-scoped dashboard overview for initiator, counterparty, coach and admin: relationship counts, sessions awaiting, next session and stage — never a revenue figure for anyone but the initiator.
-  - components: `components/console`, `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]/chat` — **prototype**
-  - capability: One thread per relationship, plus per-Aspect threads, with unread state — the BuddyBoss shape.
-  - components: `components/media`, `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]/chat/[id]` — **prototype**
-  - capability: A single chat thread for one relationship or Aspect, persona-scoped and blind-safe before scoring.
-  - components: `components/media`, `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]/notifications` — **prototype**
-  - capability: The persona's notifications — invite accepted, session scored, new comment, payment failed.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]/profile` — **prototype**
-  - capability: The persona's profile — relationship history instead of quiz history, reachable by every dashboard persona.
-  - components: `components/media`, `components/profile`, `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]/relationships` — **prototype**
-  - capability: The persona's relationships, status-led: relationship name, type, stage, next session and the session count — an initiator sees theirs, a counterparty the ones they belong to, a coach the ones they coach, an admin all.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]/relationships/[id]` — **prototype**
-  - capability: One relationship the persona can see — a session timeline and its actions, persona-scoped.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]/settings` — **prototype**
-  - capability: The persona's settings — account, appearance, notifications, privacy and connected accounts.
-  - components: `components/media`, `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/[persona]/shop` — **prototype**
-  - capability: The per-relationship subscription and checkout — initiator only; a counterparty never sees a price.
-  - components: `components/v1`
-  - reads: an `/api` path — `components/v1/v1-checkout.tsx`
-
-- `/v1/[persona]/templates` — **prototype**
-  - capability: The template library in the dashboard, with start, clone and edit actions visible only to an initiator or admin.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/initiator/templates/new` — **prototype**
-  - capability: The template author — a variation of the quiz editor that writes a template to the in-browser store.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/pricing` — **prototype**
-  - capability: The two per-relationship subscription plans, the same component as the in-app shop — a price the marketing page shows is the price the checkout applies, and nothing is charged in the prototype.
-  - components: `components/v1`
-  - reads: an `/api` path — `components/v1/v1-checkout.tsx`
-
-- `/v1/privacy` — **prototype**
-  - capability: The same draft Privacy Policy the live page renders, shown inside the prototype's chrome.
-  - components: `components/legal`
-  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
-
-- `/v1/profile/[handle]` — **prototype**
-  - capability: The public, read-only profile — the same component as the in-app profile with its actions hidden, resolved from a persona's handle.
-  - components: `components/media`, `components/profile`, `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/relationships/[id]` — **prototype**
-  - capability: The one screen every role opens a relationship from — a session timeline, not a record: parties, stage, last session and the subscription header (plan, status, period end) in the header, one primary action that moves answer → accept → next session, an open (blind) session on top, a computed trend line, then completed sessions newest-first, each leading into its report; invitation, claim, the comment threads and the advice thread for the roles that have them.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/relationships/[id]/accept` — **prototype**
-  - capability: The acceptance step: the Initiator and the Counterparty side by side, each party's acceptance and their own submission in view — reviewable and changeable until that party accepts, with the other side sealed — and the session completes only when both have accepted, which is the instant the report unlocks.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/relationships/[id]/answer` — **prototype**
-  - capability: The answer sheet — one party answers every Aspect, Feel and Wish (or all four in Advanced Mode), then submits. Submission alone does not lift the blind rule.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/relationships/[id]/report` — **prototype**
-  - capability: The report — every Gap printed with the two Opinions it compares, named by party, one row per kind under the glossary's headings, with the Setting's verdict on top and unlocked only when both parties accept (never at the second submit).
-  - components: `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/review` — **prototype**
-  - capability: The prototype's own review checklist — every /v1 screen with an approval state (unreviewed, changes requested, approved) and a note, persisted in the store so a review survives a reload.
-  - components: `components/ui`, `components/v1`
-  - reads: 5 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/persona-surfaces.ts` (+2 more)
-
-- `/v1/service` — **prototype**
-  - capability: The Service user's landing: the support queue of invitations, accounts and stuck relationships, with a resolve action per ticket.
-  - components: `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/support` — **prototype**
-  - capability: The help centre stated without the taxonomy the alignment build does not offer, reading the brand record's mailbox for the contact line.
-  - components: `components/v1`
-  - reads: literals only
-
-- `/v1/templates` — **prototype**
-  - capability: The catalogue of relationship types grouped by realm — one card each with the name, the two roles, who it is for, its Aspect count, the price, and the actions View and (when a demo exists) See an example. The three dating rows never render.
-  - components: `components/v1`
-  - reads: 1 record fixture — `data/v1/relationship-types.ts`
-
-- `/v1/templates/[type]` — **prototype**
-  - capability: The template page a person decides on, as a conversion landing: who the type is for and not for in a text-only header band, a sticky left rail carrying Create Relationship, the derived counts (Aspects, Stages, Opinions), the two seats, the Mode/Setting vocabulary and one price with the counterparty paying nothing, and a scrolling column of tabs over the Aspect accordion and the three-step session walkthrough with the blind rule.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/templates/[type]/create` — **prototype**
-  - capability: The create entry — the template fixed by the route, an optional name, the initiator's display name, an optional name for the counterparty's seat, and the two required choices: Mode (fixed at creation) and Setting (the bar the report is judged against). Submitting creates the relationship in the store and opens it.
-  - components: `components/ui`, `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
 - `/v1/templates/[type]/demo` — **prototype**
   - capability: A real completed-session report rendered from fixture answers for the type, labelled Example with You/Them names, sharing the live report's body component — the value shown before anyone pays.
   - components: `components/v1`
-  - reads: 4 record fixtures — `data/v1/fixtures.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` (+1 more)
-
-- `/v1/terms` — **prototype**
-  - capability: The same draft Terms of Service the live page renders, shown inside the prototype's chrome.
-  - components: `components/legal`
-  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
+  - reads: 2 record fixtures — `data/v1/fixtures.ts`, `data/v1/relationship-types.ts`
 
 - `/welcome` — **fixture**
   - capability: The public AlignSynch landing page in its own chrome: what a Gap is, how it works, four opinions and two modes.
@@ -490,7 +360,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/console` — **mock**
   - capability: The console's generic shapes: a stat-card grid of linked figures with the Overview built from it (a header naming the viewer, four counts and the honest empty state for an account with no relationships), and the response-analytics surface — a population's numbers as stat cards, one distribution per measure and a comparison axis, taking the aggregate as a prop so the measure is a plugin rather than a component.
   - files (4): `gap-analysis.tsx`, `gap-histogram.tsx`, `overview.tsx`, `stat-card-grid.tsx`
-  - routes (4): `/admin/console`, `/admin/gaps`, `/dashboard`, `/v1/[persona]`
+  - routes (3): `/admin/console`, `/admin/gaps`, `/dashboard`
   - notes: Reads nothing itself: counts and aggregates arrive as props from the route that read Postgres, which is why the domain is `mock` and the `/dashboard` and `/admin/gaps` routes above it are `db` (the same split `components/assessment` records). `stat-card-grid.tsx` is the extracted shape of `components/dashboard/dashboard-overview.tsx` with its metrics removed — `value` is a `number` the caller computed — so the next expression can pass its own rows through the grid without inheriting a wallet balance. Its two callers are `/dashboard` (the viewer's own counts, `lib/flow/overview.ts`) and `/admin/gaps` with AlignSynch's measure (`gapOf` over the eight kinds, `lib/admin/gap-aggregates.ts`); the quiz expression of the analytics surface is the per-question correct rate `components/my-quizzes/quiz-statistics.tsx` mocks. `data/pages/overview.ts` holds every word (E23 budget 0).
 
 - `components/marketing` — **fixture**
@@ -505,10 +375,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: One file (`how-it-works.tsx`), and it is a variation rather than a new pattern: the ancestor is the alignment front page's `#questions` band (`components/home/alignment-home.tsx`), stated in its `template-ancestor:` header. The variation is the sequence — numbered bands instead of a two-up explainer, in the app shell instead of the marketing page. `mock` on the domain and `fixture` on its route for the reason `components/console` is: it renders no data of its own, it takes the route's parsed `PageCopy` as a prop, and the fixture is reached by the page module, not by this domain.
 
 - `components/v1` — **prototype**
-  - capability: The /v1 prototype — the whole AlignSynch product, UI-only, against an in-browser store rather than Postgres.
-  - files (69): `accept-session.tsx`, `account-menu.tsx`, `admin-console-overview.tsx`, `admin-limits.tsx`, `admin-relationship-detail.tsx`, `admin-relationship-registry.tsx`, `admin-template-detail.tsx`, `admin-template-registry.tsx`, `admin-users-list.tsx`, `answer-sheet.tsx`, `comment-thread.tsx`, `create-relationship-form.tsx`, `dashboard-overview.tsx`, `manage-tab.tsx`, `marketing-views.tsx`, `notification-bell.tsx`, `onboarding-panel.tsx`, `opinion-sheet.tsx`, `persona-bar.tsx`, `persona-picker.tsx`, `persona-relationship-detail.tsx`, `profile/achievements.tsx`, `profile/activity.tsx`, `profile/member-profile.tsx`, `relationship-aspects-editor.tsx`, `relationship-detail.tsx`, `relationship-library.tsx`, `relationship-metadata.tsx`, `relationship-type-card.tsx`, `relationships-list.tsx`, `report-body.tsx`, `report-verdict.tsx`, `report-view.tsx`, `reveal.tsx`, `review-chip.tsx`, `review-list.tsx`, `section-stub.tsx`, `service-home.tsx`, `session-timeline.tsx`, `settings/account-settings.tsx`, `settings/appearance-settings.tsx`, `settings/connected-accounts.tsx`, `settings/notification-settings.tsx`, `settings/privacy-settings.tsx`, `settings/settings-view.tsx`, `start-relationship-button.tsx`, `steps-panel.tsx`, `subscription-status.tsx`, `subscription/payer-notifications.tsx`, `subscription/subscription-settings.tsx`, `template-catalogue.tsx`, `template-demo.tsx`, `template-editor.tsx`, `template-landing.tsx`, `template-page.tsx`, `v1-chat-input.tsx`, `v1-chat-message.tsx`, `v1-chat-page.tsx`, `v1-chat-thread-list.tsx`, `v1-chat-thread.tsx`, `v1-checkout.tsx`, `v1-nav-menus.tsx`, `v1-notification-icon.tsx`, `v1-notifications.tsx`, `v1-shell.tsx`, `v1-shop.tsx`, `v1-sidebar.tsx`, `v1-template-library.tsx`, `v1-ui.tsx`
-  - routes (31): `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`, `/v1`, `/v1/[persona]`, `/v1/[persona]/chat`, `/v1/[persona]/chat/[id]`, `/v1/[persona]/notifications`, `/v1/[persona]/profile`, `/v1/[persona]/relationships`, `/v1/[persona]/relationships/[id]`, `/v1/[persona]/settings`, `/v1/[persona]/shop`, `/v1/[persona]/templates`, `/v1/initiator/templates/new`, `/v1/pricing`, `/v1/profile/[handle]`, `/v1/relationships/[id]`, `/v1/relationships/[id]/accept`, `/v1/relationships/[id]/answer`, `/v1/relationships/[id]/report`, `/v1/review`, `/v1/service`, `/v1/support`, `/v1/templates`, `/v1/templates/[type]`, `/v1/templates/[type]/create`, `/v1/templates/[type]/demo`
-  - notes: Guardrail #336, version 1. The whole /v1 prototype: six personas with the persona bar as the auth stand-in, an in-browser store (templates, relationships, accounts, tickets) seeded from `data/v1/fixtures.ts`, and the real gap/stage arithmetic wrapped by `lib/v1/derive.ts`. The persona-scoped relationships surface is four components over that store: `relationships-list.tsx` varies `components/my-quizzes/my-quizzes.tsx` (the card grid: the ancestor's title row with the primary action, its search field in a filter row and its stage Tabs, three-up on large screens and one-up on a phone — each card's metric row translating Players / Completion / Average Score / `N Questions` to sessions `N of M`, session completion %, average alignment (the mean Gap, `—` until a session is scored) and `N Aspects`, the four Y/O/P/R Gap-flag counts kept as one compact row, and what was paid — plan and period — on the Initiator's card alone); `persona-relationship-detail.tsx` varies `components/my-quizzes/quiz-details.tsx` (header, per-stage primary action, session timeline, Timeline/Aspects/Manage tabs, comments after scoring); `relationship-aspects-editor.tsx` varies `template-editor.tsx` (initiator-only add/rename/reorder, AlertDialog delete and a restorable soft delete); `relationship-library.tsx` varies `components/explore/explore-quiz-list.tsx` (built-in templates vs the initiator's saved sets, stated on the page). The template editor (`template-editor.tsx`) varies `components/create/quiz-editor.tsx` (tabbed authoring, per-Aspect accordions, store-backed Save/Publish/Archive/Delete, no preview); the onboarding panel (`onboarding-panel.tsx`) varies the same ancestor as a stepped wizard (three beats, one visible at a time, with Next/Back and a Step N of 3 progress line); the answer sheet, report, lists and the persona picker vary their `components/assessment-flow` / `components/auth` ancestors the same way. The public relationship taxonomy (`data/v1/relationship-types.ts` — 29 source rows plus the kept co-founders, grouped by realm) drives `template-catalogue.tsx`, the template landing (`template-page.tsx` derives the counts and the seats, `template-landing.tsx` draws the no-photograph header band, the sticky left rail carrying the CTA, derived stat chips, seat strip, Mode/Setting vocabulary and one price, and the tabs over the Aspect accordion) and `template-demo.tsx`; the report's body is extracted into `report-body.tsx` so the live report and the demo share one renderer, and `start-relationship-button.tsx` is the prototype's Start CTA. `prototype` until the owner approves it.
+  - capability: What is left of the /v1 prototype — the operator console's nine components, the shared primitives they paint with, and the two `release` surfaces the disposition keeps.
+  - files (12): `admin-console-overview.tsx`, `admin-limits.tsx`, `admin-relationship-detail.tsx`, `admin-relationship-registry.tsx`, `admin-template-detail.tsx`, `admin-template-registry.tsx`, `admin-users-list.tsx`, `relationship-metadata.tsx`, `report-body.tsx`, `steps-panel.tsx`, `template-demo.tsx`, `v1-ui.tsx`
+  - routes (7): `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`, `/v1/templates/[type]/demo`
+  - notes: The prototype is retired (#478): `docs/V1-RETIREMENT.md` classified 118 `/v1` items and 57 of this domain's 69 components are deleted with their screens, so this entry now covers what survived on purpose. The **nine admin components** — `admin-console-overview`, `admin-relationship-registry`, `admin-relationship-detail`, `admin-template-registry`, `admin-template-detail`, `admin-users-list`, `admin-limits`, `relationship-metadata`, `v1-ui` — are the operator console at `/admin/console`, behind `requireAdmin`, reading the in-browser store (`lib/v1/store.tsx`) seeded from `data/v1/fixtures.ts`; that is why they stay a fixture surface while the product's `/admin/instances` reads Postgres. `v1-ui.tsx` is the one shared atom set (`StageBadge`, `GapPill`, `StatTile`, `EmptyState`, `NotFoundState`, `SectionIntro`, the status tones) the console paints with, and `relationship-metadata.tsx` is the mode/setting editor the console's relationship detail draws. The two **release** survivors wait on their own cohort: `steps-panel.tsx` (one Steps list per Aspect, drawn from the Steps acceptance already stores) ports into the instance view, and `template-demo.tsx` with `report-body.tsx` is the one worked report — `report-body` is a `delete` row that survives only because the `release` `template-demo` imports it, and it dies with the demo's move to `/assessment/demo/[type]`. Everything else in the domain — the shell, the persona bar, the chat, the shop, the review checklist, the settings views, the answer sheet and the template authoring — is deleted.
 
 ## QuizHub
 

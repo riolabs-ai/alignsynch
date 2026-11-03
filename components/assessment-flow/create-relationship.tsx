@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/v1/create-relationship-form.tsx   (variation: a server component on the app's own route, posting to the route handler — the layout survives, the disabled submit and its "not wired" note do not)
+ * template-ancestor: components/create/quiz-editor.tsx   (variation: a server component on the app's own route, posting to the route handler — the layout survives, the disabled submit and its "not wired" note do not)
  *
  * `CreateRelationship` — the create step, wired (#427).
  *
