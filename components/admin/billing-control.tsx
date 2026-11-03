@@ -51,6 +51,7 @@ import {
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { formatDate } from "@/content/core";
 import type { UserRole } from "@/content/identity";
+import { billingPlan } from "@/data/billing-plans";
 import type { AdminBillingCounts, AdminBillingRow } from "@/lib/db/admin-billing";
 import type { GrantFormInput, GrantFormResult } from "@/lib/admin/grant-input";
 import { ADMIN_AUDIT_PATH } from "@/lib/admin/paths";
@@ -75,9 +76,12 @@ type Phase =
   | { readonly kind: "done"; readonly result: GrantFormResult };
 
 /** The badge tone a mode gets: live is a fact about money, test is a fact about this build. */
-const MODE_VARIANT: Record<"live" | "test" | "none", "success" | "secondary" | "outline"> = {
+const MODE_VARIANT: Record<"live" | "test" | "none", "success" | "warning" | "outline"> = {
   live: "success",
-  test: "secondary",
+  // `warning` (orange), not `secondary`: the card's first acceptance is that the two rows are
+  // distinguishable at a glance, and a pale neutral chip beside a green one is the fine print this
+  // screen exists to replace.
+  test: "warning",
   none: "outline",
 };
 
@@ -105,6 +109,15 @@ function say(
   values: Record<string, string | number>,
 ): string {
   return fillLabel(itemLabel(section, id), values);
+}
+
+/**
+ * The tier as the fixture names it — `basic` is the row's vocabulary, "Basic" is the reader's.
+ * An id the fixture does not carry is printed unchanged rather than guessed at: `db:verify` V13 is
+ * what reports the drift, and a made-up plan name is the one thing this screen must not do.
+ */
+function planLabel(planId: string): string {
+  return billingPlan(planId)?.name ?? planId;
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
@@ -191,7 +204,9 @@ export function BillingControl({
   const banner = itemOf(modeCopy, bannerId);
   const bannerSentence = fillLabel(banner.label, { test: counts.test, billed });
   const bannerBody = itemBody(modeCopy, bannerId);
-  const accounts = new Set(rows.map((row) => row.initiatorUserId ?? "")).size;
+  const accounts = new Set(
+    rows.map((row) => row.initiatorUserId).filter((id): id is string => id !== null),
+  ).size;
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -291,7 +306,7 @@ export function BillingControl({
                         {row.initiatorName ?? itemLabel(sourceCopy, "none")}
                       </TableCell>
                       <TableCell className="text-sm">
-                        <span className="block font-medium">{row.planId}</span>
+                        <span className="block font-medium">{planLabel(row.planId)}</span>
                         <span className="block text-xs text-muted-foreground">
                           {itemLabel(sourceCopy, row.planSource)}
                         </span>

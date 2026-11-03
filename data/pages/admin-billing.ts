@@ -188,6 +188,19 @@ export const adminBillingPageCopy: PageCopy = zPageCopy.parse({
           id: "reason-too-short",
           label: "A reason of at least {min} characters is required. Nothing was written.",
         },
+        {
+          id: "signed-out",
+          label: "This session ended before the grant was sent. Sign in again and retry.",
+        },
+        {
+          id: "unknown-action",
+          label: "This build does not know the comp action. Nothing was written.",
+        },
+        {
+          id: "unknown-target-table",
+          label:
+            "The audit target this comp names is not one the log records. Nothing was written.",
+        },
         { id: "failed", label: "The grant failed before it wrote anything. The reason is above." },
       ],
     },
