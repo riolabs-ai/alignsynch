@@ -57,7 +57,13 @@
  *       relationship, no session points at a relationship that does not exist.
  *   V18 a scored session is immutable (#340): there is no `UPDATE` path against `session` or
  *       `opinion` anywhere in `lib/`, `scripts/` or `app/` — the rows a score is read from can
- *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten.
+ *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten. **One
+ *       column pair is carved out (#503):** an `UPDATE session` whose SET list is exactly
+ *       `voided_at` and/or `voided_by` is legal, because an operator's void adds an operator-state
+ *       column that no score and no derivation over a score reads — `instanceStatusOf()` answers
+ *       `voided` before it counts anything. The carve-out is a column allowlist, not a table one:
+ *       an `UPDATE session SET mode = …`, `SET alignment_setting = …` or a SET list with the void
+ *       columns plus anything else still fails here.
  *   V19 the membership's initiator (coach card): a relationship that has any member has exactly
  *       one `initiator` member — the backfill (0014) writes one for the bound Initiator, and a
  *       coach invited into a relationship with no initiator member is drift, not a relationship.
@@ -100,13 +106,24 @@ const problems = [];
 const fail = (code, message) => problems.push({ code, message });
 
 /**
+ * The only columns an `UPDATE session` may set (#503): an operator's void, and nothing else.
+ *
+ * The V18 carve-out below is a **column** allowlist, so the rule keeps its teeth on the columns a
+ * score is read from (`mode`, `alignment_setting`, `template_record_id`, `name`). `voided_at` and
+ * `voided_by` are operator state: `instanceStatusOf()` answers `voided` before it counts an answer,
+ * and no derivation over scores reads either column.
+ */
+const VOID_COLUMNS = new Set(["voided_at", "voided_by"]);
+
+/**
  * V18's scan: find every `UPDATE` statement that targets the `session` or `opinion` table in the
  * shipped source (`lib/`, `scripts/`, `app/`). A scored session is immutable, so neither table may
  * be UPDATEd — a score is written once by the gated INSERT in `submitAnswers` and never rewritten.
  *
  * Comments are stripped before matching, so a doc comment that explains *why* there is no such
  * statement (including this one) cannot trip its own check. The return value carries the census
- * (`files` scanned) and every `{ file, line, table }` violation, so the caller can name them.
+ * (`files` scanned), every `{ file, line, table }` violation, and every `{ file, line, columns }`
+ * statement the #503 carve-out admitted, so the caller can name both.
  */
 function scanForUpdatePaths() {
   const roots = ["lib", "scripts", "app"].map((dir) => join(repoRoot, dir));
@@ -128,15 +145,35 @@ function scanForUpdatePaths() {
   // the table name means `session_invite` is not caught — the invitation's own UPDATEs are legal.
   const pattern = /\bUPDATE\s+(?:ONLY\s+)?(?:public\.)?(session|opinion)\b/gi;
   const violations = [];
+  const allowed = [];
   for (const file of files) {
     const source = readFileSync(file, "utf8");
     const stripped = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
     for (const match of stripped.matchAll(pattern)) {
       const line = stripped.slice(0, match.index).split("\n").length;
+      // The statement as written, from the keyword to the end of the literal that holds it — a
+      // template literal or a quoted string closes on its own quote, so the tail cannot run into
+      // the next statement and read a second UPDATE's columns as this one's.
+      const tail = stripped.slice(match.index);
+      const close = tail.slice(1).search(/[`"]/);
+      const statement = (close === -1 ? tail : tail.slice(0, close + 1)).split(/\bWHERE\b/i)[0];
+      const setColumns = [...statement.matchAll(/\b([a-z_][a-z0-9_]*)\s*=/gi)].map((assign) =>
+        assign[1].toLowerCase(),
+      );
+      // #503 — the one legal `UPDATE session`: an operator's void, and nothing else. A SET list
+      // that is not wholly the void pair (or is empty, which no UPDATE is) stays a violation.
+      if (
+        match[1].toLowerCase() === "session" &&
+        setColumns.length > 0 &&
+        setColumns.every((column) => VOID_COLUMNS.has(column))
+      ) {
+        allowed.push({ file, line, columns: setColumns });
+        continue;
+      }
       violations.push({ file, line, table: match[1] });
     }
   }
-  return { files: files.length, violations };
+  return { files: files.length, violations, allowed };
 }
 
 /* ------------------------------------------------------------------ *\
@@ -336,6 +373,13 @@ async function main() {
       fail(
         "V18",
         `${violation.file}:${violation.line} UPDATEs \`${violation.table}\` — a scored session is immutable`,
+      );
+    }
+    // The carve-out is named on every run, so "no UPDATE path" is never claimed while one exists:
+    // the line and the columns are printed beside the census, exactly as V18's zero would be.
+    for (const permitted of updatePaths.allowed) {
+      console.log(
+        `  V18 permitted: ${permitted.file}:${permitted.line} UPDATEs session (${permitted.columns.join(", ")}) — an operator's void (#503)`,
       );
     }
 

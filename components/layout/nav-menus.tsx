@@ -28,6 +28,7 @@ import {
   Medal,
   Newspaper,
   PackagePlus,
+  ScrollText,
   ShieldCheck,
   Sparkles,
   Swords,
@@ -569,6 +570,19 @@ function AlignSynchMenu({
           icon={<ShieldCheck className="size-5" />}
           label={itemLabel(nav, "admin-instances")}
           active={isActive(pathname, "/admin/instances")}
+          collapsed={collapsed}
+          labelled={labelled}
+          onNavigate={onNavigate}
+        />
+      )}
+      {/* #503 — the audit log, beside the registry it records. Same capability, same reason: the
+          route refuses a member with the 404 a URL that never existed returns. */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/audit"
+          icon={<ScrollText className="size-5" />}
+          label={itemLabel(nav, "admin-audit")}
+          active={isActive(pathname, "/admin/audit")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}

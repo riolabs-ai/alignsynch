@@ -123,6 +123,10 @@ const INVITE_TONES: Record<InviteDisplayState, string> = {
     "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
   claimed:
     "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+  // #503 — a withdrawal is news too, and the same red as an expiry: there is nothing the
+  // Initiator can do with this link either.
+  revoked:
+    "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
 };
 
 export function AssessmentInstanceView({
@@ -202,11 +206,17 @@ export function AssessmentInstanceView({
   // sentence that names it. `stageCopyId` picks the expired-invite row from the invitation's
   // own derived state; `connected-unknown` covers the degenerate copy with no names to list, so
   // the sentence can never read "Connected —  still to answer."
+  //
+  // #503 — a voided session is **off the ladder**: `relationshipStage()` answers `null`, so this
+  // screen draws the operator's notice instead of a badge. It is not a fourth stage; it is the
+  // absence of one, which is why the type refuses the value rather than the view filtering it.
   const stage = relationshipStage(screen.status);
   const stageId =
-    stage === "connected" && names.length === 0
-      ? "connected-unknown"
-      : stageCopyId(stage, screen.invite?.state ?? null);
+    stage === null
+      ? "voided"
+      : stage === "connected" && names.length === 0
+        ? "connected-unknown"
+        : stageCopyId(stage, screen.invite?.state ?? null);
   const counterpartyName = screen.invite?.counterpartyName ?? screen.counterpartyName ?? "";
   const stageSentence = fillLabel(itemLabel(stageBand, stageId), {
     counterparty: counterpartyName,
@@ -223,12 +233,13 @@ export function AssessmentInstanceView({
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{screen.title}</h1>
           {/* The ladder's word, drawn beside the title. `data-stage` stays the sentence's own
               attribute — the stage is said once in words and once as a badge, and neither is a
-              progress bar (#274). */}
+              progress bar (#274). A voided session (#503) has no rung to name, so the badge is
+              the operator's own word and the ladder is not drawn at all. */}
           <span
-            data-stage-badge={stage}
+            data-stage-badge={stage ?? "voided"}
             className="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
           >
-            {STAGE_LABELS[stage]}
+            {stage === null ? itemLabel(stageBand, "voided-badge") : STAGE_LABELS[stage]}
           </span>
         </div>
         <p
@@ -248,7 +259,10 @@ export function AssessmentInstanceView({
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>
       </header>
 
-      <p data-stage={stage} className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <p
+        data-stage={stage ?? "voided"}
+        className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100"
+      >
         {stageSentence}
       </p>
 

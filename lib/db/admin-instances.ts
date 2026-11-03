@@ -58,6 +58,8 @@ interface SeatJson {
 interface InviteJson {
   readonly claimed_at: string | null;
   readonly expires_at: string;
+  /** `revoked_at` — an operator's withdrawal (#503); `null` for every other invitation. */
+  readonly revoked_at: string | null;
 }
 
 interface RegistryQueryRow {
@@ -79,6 +81,8 @@ interface RegistryQueryRow {
   readonly initiator: SeatJson | null;
   readonly counterparty: SeatJson | null;
   readonly invite: InviteJson | null;
+  /** `session.voided_at IS NOT NULL` — an operator ended this session (#503). */
+  readonly voided: boolean;
 }
 
 /**
@@ -129,7 +133,9 @@ const ADMIN_INSTANCES_SQL = `
     (SELECT json_build_object('name', p.name, 'has_account', p.user_id IS NOT NULL)
        FROM party p
       WHERE p.session_record_id = r.id AND p.role = 'counterparty') AS counterparty,
-    (SELECT json_build_object('claimed_at', ii.claimed_at, 'expires_at', ii.expires_at)
+    (ai.voided_at IS NOT NULL)      AS voided,
+    (SELECT json_build_object('claimed_at', ii.claimed_at, 'expires_at', ii.expires_at,
+                              'revoked_at', ii.revoked_at)
        FROM session_invite ii
       WHERE ii.session_record_id = r.id) AS invite
   FROM record r
@@ -186,12 +192,13 @@ function seatOf(json: SeatJson | null): SeatFacts | null {
   return { name: json.name, hasAccount: json.has_account };
 }
 
-/** The invitation's two instants, or `null` when this relationship never had one. */
+/** The invitation's instants, or `null` when this relationship never had one. */
 function inviteOf(json: InviteJson | null): InviteFacts | null {
   if (json === null) return null;
   return {
     claimed: json.claimed_at !== null,
     expiresAt: new Date(json.expires_at),
+    revoked: json.revoked_at !== null,
   };
 }
 
@@ -260,6 +267,7 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
         initiator: seatOf(row.initiator),
         counterparty: seatOf(row.counterparty),
         invite: inviteOf(row.invite),
+        voided: row.voided === true,
         created: row.created,
         lastActivity: row.last_activity ?? row.created,
       },

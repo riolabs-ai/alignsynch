@@ -55,6 +55,9 @@ export const adminInstancesPageCopy: PageCopy = zPageCopy.parse({
         { id: "stage", label: "Stage" },
         { id: "created", label: "Created" },
         { id: "last-activity", label: "Last activity" },
+        // #503 — the row's link into its repair screen. A label, not an action: the registry
+        // itself still acts on nothing, and the repairs live behind their own gate and confirmation.
+        { id: "open", label: "Repairs" },
       ],
     },
     {
@@ -65,9 +68,19 @@ export const adminInstancesPageCopy: PageCopy = zPageCopy.parse({
         { id: "seat", label: "Seat, no account" },
         { id: "invited", label: "Invited" },
         { id: "expired", label: "Expired" },
+        { id: "revoked", label: "Withdrawn" },
         { id: "none", label: "No seat" },
         { id: "unnamed", label: "Unnamed" },
       ],
+    },
+    {
+      /**
+       * #503 — the operator's own end of a session, drawn where the stage would go. The ladder has
+       * four rungs and this is not one of them: a voided session stopped being a relationship in
+       * progress, so the table says so instead of naming the rung it reached.
+       */
+      id: "state",
+      items: [{ id: "voided", label: "Voided" }],
     },
     {
       /**
