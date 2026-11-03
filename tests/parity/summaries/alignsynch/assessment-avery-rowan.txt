@@ -39,7 +39,7 @@ links (9 unique, 10 total)
   /how-it-works                                        1
   /settings                                            1
   /support                                             1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 2
 
 counts
   elements  1005

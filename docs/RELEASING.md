@@ -6,10 +6,10 @@ an **annotated tag `v<version>`**, and a **GitHub Release** whose body is that e
 The script is the procedure; this page is why.
 
 The live prototype is <https://alignsynch-amber.vercel.app/>. The script does not deploy and does not
-wait for a deploy: Vercel deploys `main`, and a tag is not a deploy trigger for this repository.
-Whether that deploy actually landed is a separate, out-of-band question — which pushes are allowed
-to build and how to prove the site is serving the merged commit are in
-[`DEPLOYING.md`](DEPLOYING.md).
+wait for a deploy, and **nothing else in this repository deploys either**: a merge to `main` is not a
+deployment, and a tag is not a deploy trigger. Production is promoted deliberately, by naming a
+commit to the Vercel API — [`main → production`](#main--production-promoting-a-release) below is the
+procedure, and [`DEPLOYING.md`](DEPLOYING.md) is why the build policy is shaped the way it is.
 
 ## Prerequisites
 
@@ -120,6 +120,124 @@ is the coupling, not a bug in the badge: a badge that always resolves but never 
 build identifies nothing. `scripts/release.sh` creates the tag and the Release in that order, and
 `--tag-only` is what a prepared bump uses, so the ordinary path already satisfies it.
 
+## main → production: promoting a release
+
+A tag fixes the artefact; production is a separate decision, made by naming a commit rather than by
+pushing a branch. Deployment **creation** from Git is switched off on the project
+(`gitProviderOptions.createDeployments: "disabled"`), so a push to `main` — or to a tag — creates no
+deployment at all, and `vercel.json`'s `ignoreCommand` only ever decides whether a deployment that
+already exists is allowed to build. Promotion is one API call that names the repository, the ref and
+the sha, and it is the only thing that moves production.
+
+Two orderings are not negotiable, and both have already been paid for once:
+
+- **The tag comes first.** The version badge on every build links to `releases/tag/v<version>` (see
+  above), so deploying a commit whose version has no tag ships a badge that answers 404.
+- **The migrations come before the deploy that reads them.** A page selecting a column the database
+  does not have is a 500 at request time, not a missing panel — and the relationship list, the
+  template catalogue and the relationship screen all read at request time. Migrations `0020` and
+  `0021` (`contact_message`) are what this rule is written from: the contact form inserts into a
+  table that must exist before the build posting to it is serving.
+
+### 1. What production serves now
+
+```bash
+export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"
+git switch main && git pull --ff-only
+node scripts/deploy-check.mjs --expect "$(git rev-parse HEAD)"
+curl -s https://alignsynch.com/api/version
+```
+
+`OK` means production already serves the commit named. `STALE` prints what it does serve, and the
+rest of this section is the fix. `UNKNOWN` is never `OK`: the script exits 2 and says why.
+
+### 2. Migrations, against production, before anything reads them
+
+The `db:*` scripts take the **unpooled** connection string, and an exported variable wins over
+`.env.local` and `.env` (`scripts/load-env.mjs`), so the branch is named on the command line rather
+than inherited from whichever file happens to sit in the checkout:
+
+```bash
+read -rsp 'production DATABASE_URL (unpooled): ' PROD_DB_URL && echo
+DATABASE_URL_UNPOOLED="$PROD_DB_URL" pnpm db:migrate   # idempotent; prints applied and skipped
+DATABASE_URL_UNPOOLED="$PROD_DB_URL" pnpm db:verify    # the party rules, read back
+unset PROD_DB_URL
+```
+
+A release with nothing to migrate still runs it, and a run that applies nothing is the expected
+answer — cheaper than discovering the column is missing at request time.
+
+### 3. Create the deployment, naming the commit
+
+```bash
+export VERCEL_TOKEN=...   # a team token; never committed, never in .env
+vercel link --yes --project alignsynch --scope riolabs-ai   # writes .vercel/project.json (gitignored)
+read -r PROJECT_ID TEAM_ID <<<"$(node -p 'const p=require("./.vercel/project.json");`${p.projectId} ${p.orgId}`')"
+```
+
+`PROJECT_ID` and `TEAM_ID` are in `.vercel/project.json` after `vercel link`, and on the project's
+Settings page. The repository id is the one Vercel itself stores for this project, read back rather
+than typed:
+
+```bash
+curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
+  "https://api.vercel.com/v9/projects/$PROJECT_ID?teamId=$TEAM_ID" -o /tmp/vercel-project.json
+REPO_ID=$(node -p 'require("/tmp/vercel-project.json").link.repoId')
+SHA=$(git rev-parse HEAD)
+```
+
+Then one `POST`. `forceNew=1` is deliberate: a re-promotion of a commit Vercel has already built is
+otherwise deduplicated onto the existing deployment record, and the promotion must be a new build.
+
+```bash
+node -e 'const [project, repo, sha] = process.argv.slice(1);
+process.stdout.write(JSON.stringify({
+  name: "alignsynch", project, target: "production",
+  gitSource: { type: "github", repoId: repo, ref: "main", sha },
+}))' "$PROJECT_ID" "$REPO_ID" "$SHA" > /tmp/deploy-request.json
+
+curl -sS -X POST "https://api.vercel.com/v13/deployments?forceNew=1&teamId=$TEAM_ID" \
+  -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json' \
+  --data-binary @/tmp/deploy-request.json -o /tmp/deploy.json
+
+node -p 'const d = require("/tmp/deploy.json"); `${d.id} ${d.url} ${d.readyState}`'
+```
+
+The answer carries `id` (`dpl_…`), `url` and `readyState`. Watch it reach `READY`; `ERROR`, or a
+build that stops at `QUEUED` because the Hobby allowance is spent (100 deployment records per
+rolling 24 h, canceled ones included), is a failed promotion, not a slow one:
+
+```bash
+DEPLOY_ID=$(node -p 'require("/tmp/deploy.json").id')
+for _ in $(seq 1 60); do
+  curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
+    "https://api.vercel.com/v13/deployments/$DEPLOY_ID?teamId=$TEAM_ID" -o /tmp/deploy-state.json
+  STATE=$(node -p 'require("/tmp/deploy-state.json").readyState')
+  echo "readyState=$STATE"
+  case "$STATE" in READY | ERROR | CANCELED) break ;; esac
+  sleep 10
+done
+```
+
+### 4. Prove production is serving it
+
+```bash
+node scripts/deploy-check.mjs --expect "$SHA"
+curl -s https://alignsynch.com/api/version      # {"version":"…","commit":"…"}
+```
+
+Both read `GET /api/version`, which the build answers from the `APP_VERSION` and `APP_COMMIT` values
+`next.config.mjs` bakes in — no token, no inference. A `READY` deployment whose alias still points
+at the previous build answers `STALE`, and the fix is to promote the new deployment rather than to
+build a third one ([`DEPLOYING.md`](DEPLOYING.md), _When the check says `STALE`_).
+
+### 5. When it has to be undone
+
+A deployment is never edited. The previous good deployment is promoted back — the dashboard's
+_Promote_, or `POST /v9/projects/$PROJECT_ID/promote` with its `deploymentId` — and a migration that
+has been applied stays applied: forward is a new migration file, never a rollback of a row
+`schema_migrations` already recorded.
+
 ## The gate runs the check
 
 `scripts/verify.sh` runs `release:check` in **every lane**, next to the glossary step, for the same
@@ -155,3 +273,16 @@ gh release view v1.0.0 --json tagName,isDraft,url # published, not a draft
 
 and when `bash scripts/verify.sh` is green on the tagged commit, and on `main` afterwards — the
 release step is what proves the CHANGELOG still describes the history it was written for.
+
+Production is not one of those four artefacts. A release can be complete and deployed, complete and
+not yet promoted, or promoted without its tag having been cut — and the third of those is the one that
+makes the badge lie. Asking production for the tag's own commit is the question a release page cannot
+answer on its own:
+
+```bash
+VERSION=$(node -p 'require("./package.json").version')
+node scripts/deploy-check.mjs --expect "$(git rev-parse "v$VERSION")"
+```
+
+and [`main → production`](#main--production-promoting-a-release) above is the procedure that closes
+the gap it prints.
