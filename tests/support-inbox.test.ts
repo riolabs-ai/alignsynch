@@ -454,9 +454,7 @@ describe("setMessageStatus", () => {
       { runner: fake.runner() },
     );
     expect(fake.state.status).toBe("closed");
-    expect(fake.audits).toEqual([
-      { action: "message.status", reason: REASON, target: MESSAGE_ID },
-    ]);
+    expect(fake.audits).toEqual([{ action: "message.status", reason: REASON, target: MESSAGE_ID }]);
     expect(result.after.status).toBe("closed");
     expect(result.before).toMatchObject({ status: "new" });
   });
