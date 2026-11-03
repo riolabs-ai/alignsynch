@@ -198,6 +198,33 @@ unset PROD_DB_URL
 A release with nothing to migrate still runs it, and a run that applies nothing is the expected
 answer — cheaper than discovering the column is missing at request time.
 
+### 2a. When `db:verify` names a V11, clear the mark — never the row it sits on
+
+`party.unlock_seen_at` is written only when a party opens a **complete** instance (#252), and
+`complete` is _derived_ from rows: both seats answered every Aspect **and** both accepted
+(#427/R2). So an instance can walk backwards underneath a mark that is already set, and V11 names
+it — a hand-deleted `opinion` row, or a release that changed the rule itself. Both are one check
+apart, and the second has been measured: `avery-rowan` was marked seen at 2026-11-02T08:42Z, three
+hours _before_ the merge that made acceptance the completion hinge, and read as `answering` from
+that merge on until 2026-11-03, when the mark was cleared.
+
+The repair is the row V11 named, and it is the mark, never the instance:
+
+```sql
+UPDATE party SET unlock_seen_at = NULL
+ WHERE session_record_id = '<the record id for the slug V11 named>'
+   AND role = '<the role V11 named>';
+```
+
+Re-run `db:verify` after it; the verdict line should read `0 unlock mark(s) on complete instances
+only`. A rule change that moves several instances at once names several lines — drop the `role`
+predicate to clear one instance's marks, and walk the slugs the check printed.
+
+`db:seed` and `demo:reset` are not the cause and cannot be the fix: the seed deletes and re-inserts
+every `party` row, so a mark cannot survive it, and `demo:reset` refuses the default branch by id.
+Do not "repair" a V11 by making the instance complete either — the mark records that somebody read
+the unlock, and nobody did.
+
 ### 3. Create the deployment, naming the commit
 
 For when the merge did not deploy — creation is off, the commit is not `main`'s tip, a deployment
