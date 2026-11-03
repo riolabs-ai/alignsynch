@@ -354,6 +354,17 @@ describe("resend — a new token, and the old hash dies", () => {
     );
     expect(update).toBeDefined();
     expect(update?.values[1]).not.toBe(result.after.token);
+
+    // The audit row names the invitation and both sides of the change, which is what
+    // `/admin/audit` prints for this action.
+    expect(db.auditParam("action")).toBe("invite.resend");
+    expect(db.auditParam("target_table")).toBe("session_invite");
+    expect(db.auditParam("target_id")).toBe(INSTANCE);
+    expect(JSON.parse(String(db.auditParam("before")))).toEqual({
+      email: "counterparty@example.com",
+      expiresAt: INVITE_EXPIRY.toISOString(),
+      resentCount: 1,
+    });
   });
 
   it("refuses a withdrawn invitation: a revoke is terminal, so there is nothing to reissue", async () => {
