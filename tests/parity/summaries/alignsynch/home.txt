@@ -57,41 +57,41 @@ links (42 unique, 48 total)
   /assessment/avery-rowan                              1
   /assessment/marco-priya                              1
   /assessment/ruth-sam                                 1
+  /assessment/templates/assessment-brother-sister/create 1
+  /assessment/templates/assessment-brothers/create     1
+  /assessment/templates/assessment-business-partners/create 1
+  /assessment/templates/assessment-business-staff-manager/create 1
+  /assessment/templates/assessment-co-founders/create  1
+  /assessment/templates/assessment-colleagues/create   1
+  /assessment/templates/assessment-customer-vendor-product/create 1
+  /assessment/templates/assessment-customer-vendor-services/create 1
+  /assessment/templates/assessment-father-daughter/create 1
+  /assessment/templates/assessment-father-son/create   1
+  /assessment/templates/assessment-friends/create      1
+  /assessment/templates/assessment-gal-friends/create  1
+  /assessment/templates/assessment-guy-friend-gal-friend/create 1
+  /assessment/templates/assessment-guy-friends/create  1
+  /assessment/templates/assessment-hoa-board-owner/create 1
+  /assessment/templates/assessment-investor-entrepreneur/create 1
+  /assessment/templates/assessment-mother-daughter/create 1
+  /assessment/templates/assessment-mother-son/create   1
+  /assessment/templates/assessment-parent-teacher/create 1
+  /assessment/templates/assessment-patient-caregiver/create 1
+  /assessment/templates/assessment-personal-parent-child/create 1
+  /assessment/templates/assessment-project-manager-member/create 1
+  /assessment/templates/assessment-siblings/create     1
+  /assessment/templates/assessment-sisters/create      1
+  /assessment/templates/assessment-spouses/create      1
+  /assessment/templates/assessment-teacher-student/create 1
+  /assessment/templates/assessment-team/create         1
   /help                                                3
   /login                                               1
   /pricing                                             1
   /privacy                                             2
   /register                                            2
   /terms                                               1
-  /v1/templates/brother-sister/create                  1
-  /v1/templates/brothers/create                        1
-  /v1/templates/business-partners/create               1
-  /v1/templates/co-founders/create                     1
   /v1/templates/co-founders/demo                       1
-  /v1/templates/colleagues/create                      1
-  /v1/templates/customer-vendor-product/create         1
-  /v1/templates/customer-vendor-services/create        1
-  /v1/templates/father-daughter/create                 1
-  /v1/templates/father-son/create                      1
-  /v1/templates/friends/create                         1
-  /v1/templates/gal-friends/create                     1
-  /v1/templates/guy-friend-gal-friend/create           1
-  /v1/templates/guy-friends/create                     1
-  /v1/templates/hoa-board-owner/create                 1
-  /v1/templates/investor-entrepreneur/create           1
-  /v1/templates/mother-daughter/create                 1
-  /v1/templates/mother-son/create                      1
-  /v1/templates/parent-child/create                    1
-  /v1/templates/parent-teacher/create                  1
-  /v1/templates/patient-caregiver/create               1
-  /v1/templates/project-manager-member/create          1
-  /v1/templates/siblings/create                        1
-  /v1/templates/sisters/create                         1
-  /v1/templates/spouses/create                         1
-  /v1/templates/staff-manager/create                   1
   /v1/templates/staff-manager/demo                     1
-  /v1/templates/teacher-student/create                 1
-  /v1/templates/team/create                            1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 1
 
 counts

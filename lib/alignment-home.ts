@@ -53,6 +53,8 @@ import {
   purchasableRelationshipTypes,
   type RelationshipType,
 } from "@/data/v1/relationship-types";
+import { assessments } from "@/data/assessments";
+import { TEMPLATE_LIBRARY_PATH, createRelationshipPath } from "@/lib/flow/paths";
 import { brandMark, type BrandMark } from "@/lib/brand-mark";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -104,7 +106,15 @@ export interface AlignmentCatalogueType {
   readonly aspects: string;
   /** `"$9.99"` — the fixture's integer cents, through the tree's one formatter. */
   readonly price: string;
-  /** The create route for this type: `/v1/templates/<id>/create`. */
+  /**
+   * The create entry for this type: `/assessment/templates/<templateId>/create`, resolved through
+   * `lib/flow/paths.ts` and never spelled here.
+   *
+   * The type is a catalogue row, not a template record; `data/assessments.ts` builds one record per
+   * purchasable type with `slug === type.id`, and `db:seed` mirrors that list into Postgres, so the
+   * record this card opens is the record the library shows. A type with no record yet falls back to
+   * the library, because a marketing card must never link a route the app cannot answer.
+   */
   readonly href: string;
   /** The worked example, **only** for a type whose demo sheet exists in the fixture. */
   readonly example?: string;
@@ -661,24 +671,33 @@ export function alignmentHome(
    * `isPurchasable` gate the scope band counts by, so the shelf a reader can click and the
    * number above it cannot disagree. `example` is present only where `demoAnswersByType` holds a
    * sheet — the demo is a real report, so a link to a missing one is a 404 dressed as a door.
+   *
+   * `href` is the live create entry, not the `/v1/templates/<type>/create` prototype form this
+   * card linked until #478 deleted it: the type's own template record is the one
+   * `data/assessments.ts` builds with `slug === type.id`, and the card opens that record's create
+   * path. A type with no record falls back to the library rather than to a dead route.
    */
+  const templateIdBySlug = new Map(assessments.map((template) => [template.slug, template.id]));
   const catalogue: AlignmentCatalogueType[] = relationshipTypes
     .filter(isPurchasable)
-    .map((type) => ({
-      id: type.id,
-      name: type.name,
-      realm: type.realm,
-      roles: fillLabel(rolesLabel, {
-        initiator: type.roles.initiator,
-        counterparty: type.roles.counterparty,
-      }),
-      aspects: fillLabel(aspectsLabel, { count: type.aspects.length }),
-      price: formatCurrency(type.price),
-      href: `/v1/templates/${type.id}/create`,
-      ...(demoAnswersFor(type.id) === undefined
-        ? {}
-        : { example: `/v1/templates/${type.id}/demo` }),
-    }));
+    .map((type) => {
+      const recordId = templateIdBySlug.get(type.id);
+      return {
+        id: type.id,
+        name: type.name,
+        realm: type.realm,
+        roles: fillLabel(rolesLabel, {
+          initiator: type.roles.initiator,
+          counterparty: type.roles.counterparty,
+        }),
+        aspects: fillLabel(aspectsLabel, { count: type.aspects.length }),
+        price: formatCurrency(type.price),
+        href: recordId === undefined ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(recordId),
+        ...(demoAnswersFor(type.id) === undefined
+          ? {}
+          : { example: `/v1/templates/${type.id}/demo` }),
+      };
+    });
 
   const tabs: AlignmentTemplateTab[] = [
     { value: "catalogue", label: pageItemOf(copy, "templates-tab-catalogue").label },

@@ -43,6 +43,7 @@ import {
   relationshipScope,
   relationshipTypeOf,
 } from "@/lib/alignment-home";
+import { TEMPLATE_LIBRARY_PATH, createRelationshipPath } from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
 
 const model = alignmentHome(
@@ -175,11 +176,22 @@ describe("the catalogue and the two doors beside the library", () => {
 
   it("points every card at the create route, and offers an example only where a demo exists", () => {
     for (const type of model.templates.catalogue) {
-      expect(type.href).toBe(`/v1/templates/${type.id}/create`);
+      const record = assessments.find((template) => template.slug === type.id);
+      // The live create entry for the type's own template record — never a `/v1` address (#478).
+      expect(type.href).toBe(
+        record === undefined ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(record.id),
+      );
+      expect(type.href.startsWith("/v1/")).toBe(false);
       if (type.example === undefined) continue;
       expect(type.example).toBe(`/v1/templates/${type.id}/demo`);
       expect(demoAnswersByType[type.id]).toBeDefined();
     }
+    // The fallback must not be masking a missing record: every card resolves to one.
+    expect(
+      model.templates.catalogue.filter(
+        (type) => assessments.find((template) => template.slug === type.id) === undefined,
+      ),
+    ).toEqual([]);
     // Exactly the fixture's demo sheets, and no third claim.
     expect(
       model.templates.catalogue
