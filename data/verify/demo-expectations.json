@@ -2,8 +2,8 @@
   "dataset": "demo-dataset.alignsynch.json",
   "brand": "alignsynch",
   "rows": {
-    "record": 8,
-    "item": 40,
+    "record": 33,
+    "item": 172,
     "response_option": 0,
     "relationship": 4,
     "session": 4,
