@@ -95,7 +95,13 @@ gh issue create|list|view ; gh pr create ; gh project list --owner riolabs-ai
 systemctl --user status project-manager{,-proxy}.service
 systemctl --user start project-manager-refresh.service   # force a repo snapshot refresh
 hermes doctor ; hermes tools list ; hermes cron list
+python3 docs/gate-baseline.py --window 2026-11-02   # gate baseline from CI history (needs gh auth)
 ```
+
+Gate baseline — first-pass yield, CI run p50/p95, per-leg job wall — has **one home**:
+`docs/GATE.md`, measured 2026-11-03 over the 2026-11-02 window; re-derive it with the command
+above rather than quoting a copy. This spec carried no baseline at all until then, which is how
+two documents end up disagreeing about the same hour.
 
 ## 5. Prototype gates (definition of done, per stage)
 

@@ -1,17 +1,19 @@
 # The iteration rhythm: fast loop, cohort boundary
 
-The full gate is **176 s**, and 108 s of that is `next build`. Paying it between two edits to a
-component is what makes an hour of UI work feel like a day — so the gate is not the loop. It is the
-**boundary**.
+The full gate is **138–176 s**, and `next build` is roughly half of it. Paying it between two edits
+to a component is what makes an hour of UI work feel like a day — so the gate is not the loop. It
+is the **boundary**.
 
 ```
 inner loop   ~30 s warm / ~90 s cold   pnpm check:fast   + look at the page
-boundary     ~3 min                    bash scripts/verify.sh   + one push + one CI run + one merge
+boundary     ~2.5–3 min                bash scripts/verify.sh   + one push + one CI run + one merge
 ```
 
-Measured on this tree: `tsc` is 7 s warm and **63 s cold**, `data:check` 15–22 s, the matched tests
-5–10 s. So the honest figure is _30 s once the compiler has run in this checkout, around 90 s on the
-first run after a fresh worktree_ — against 176 s for the full gate, and without the 108 s build.
+Measured 2026-11-03 on an 8-core host: `GATE_LANE=full bash scripts/verify.sh` took **151.7 s**
+(load 0.7, cold `node_modules` and Next cache — `build` 63.8 s, `typecheck` 29.0 s) and **137.6 s**
+(load 6.6, warm — `build` 74.4 s, `typecheck` 6.2 s). The 176 s / 108 s-build / 63 s-cold-`tsc`
+figures this section first carried were measured on 2026-11-02; they sit at the load-dependent top
+of that range rather than being a constant, so re-measure instead of quoting either set.
 
 ## A cohort
 

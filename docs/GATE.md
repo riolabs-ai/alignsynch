@@ -4,8 +4,10 @@ Issue: [#30](https://github.com/riolabs-ai/alignsynch/issues/30) (ORD 0).
 
 Before this change the gate existed only as four `run:` lines in
 `.github/workflows/ci.yml`. Every local check was optional, so the first time anyone learned
-that `lint` or `format:check` failed was after the push. CI is ~55 s; the loop around it was
-30–40 minutes. The cost was never CI speed, it was discovering the failure in the wrong place.
+that `lint` or `format:check` failed was after the push. CI was 55 s a job then (144 s a run
+on 2026-11-02 — the current numbers, dates and method are in [Baseline](#baseline-one-measured-block-and-how-to-re-derive-it));
+the loop around it was 30–40 minutes. The cost was never CI speed, it was discovering the
+failure in the wrong place.
 
 ## What exists now
 
@@ -80,57 +82,140 @@ The fallback is still the floor, not a shortcut. A `push` to `main` proves it: `
 
 and pays the full gate (~70 s). A missing ref or an uncomputable diff lands in the same place.
 
-## Baseline, measured 2026-10-29 (before the gate)
+## Baseline: one measured block, and how to re-derive it
 
-Source: `gh run list --workflow=ci.yml --limit 100` → 22 runs, 22 distinct head SHAs,
-15 branches. Reproduce with `python3 docs/gate-baseline.py` (needs `gh` auth).
+Every number in this section carries **the date it was measured and the window it covers**.
+A yield, a p50 or a p95 without both is a memory, not a baseline — the block that used to sit
+here quoted 2026-10-29 as if it were current until this was fixed on 2026-11-03. That block is
+not deleted: it is [Baseline history](#baseline-history), where it belongs.
 
-| Metric                                                   | Value                                                                 |
-| -------------------------------------------------------- | --------------------------------------------------------------------- |
-| CI job `typecheck / lint / build`, p50 / p95             | **55 s / 64 s** (n=10)                                                |
-| CI run incl. queue, p50 / p95                            | 55 s / 72 s                                                           |
-| First-pass yield (green on the first run for a head SHA) | **18/22 = 81.8 %** (85.7 % excluding the one cancelled run)           |
-| Retries per PR                                           | 0.47 (22 runs over 15 branches)                                       |
-| Failures                                                 | 3 red, 1 cancelled, all on `toolchain/` and `feat/b01-quiz-promotion` |
+### CI, measured 2026-11-03 over the 2026-11-02 window
 
-Reading: 4 of 22 pushes needed a second look, and the failures were toolchain/docs branches —
-the cheapest kind to catch locally. Every one of them was a check that CI ran and the
-developer's shell did not.
+```bash
+python3 docs/gate-baseline.py --window 2026-11-02     # needs `gh` auth, nothing else
+```
 
-## Baseline, measured 2026-10-29 (after the gate)
+The script applies the window server-side —
+`gh api repos/riolabs-ai/alignsynch/actions/workflows/ci.yml/runs?created=2026-11-02T00:00:00Z..2026-11-03T00:00:00Z`,
+paged, with no `--limit` — then fetches `…/actions/runs/<id>/jobs` for every run it found.
+`2026-11-02` is the last complete UTC day at measure time; `--since/--until` takes a longer one,
+and no argument means yesterday. Verbatim output:
 
-Local, Node 24.22.0 / pnpm 12.16.1, 7-core host, warm `node_modules` and warm Next cache:
+```
+window: ci.yml runs created=2026-11-02T00:00:00Z..2026-11-03T00:00:00Z
+runs: 190   head SHAs: 190
+first-run conclusions: {'success': 185, 'cancelled': 4, 'failure': 1}
+first-pass yield: 185/190 = 97.4%
+  excluding cancelled: 185/186 = 99.5%
+CI run incl. queue: p50 144s  p95 176s  (n=190)
+CI job wall, per leg:
+  typecheck / lint / build                     p50 3s  p95 11s  n=190
+  typecheck / lint / build (alignsynch)        p50 124s  p95 149s  n=190
+  typecheck / lint / build (quizhub)           p50 121s  p95 148s  n=190
+runs per branch: 2.84 (190 runs / 67 branches)
+```
 
-| Step                                       | p50                                  |
-| ------------------------------------------ | ------------------------------------ |
-| deps (`pnpm install --frozen-lockfile`)    | 0.0 s                                |
-| typecheck (`next typegen && tsc --noEmit`) | 3.8 s                                |
-| lint (`biome check`)                       | 0.4 s                                |
-| format:check                               | 0.2 s                                |
-| data:check                                 | skipped on `main`                    |
-| test                                       | skipped on `main`                    |
-| build (`next build`)                       | 40.5 s                               |
-| **gate total**                             | **44.8 s** (n=3: 37.5 / 44.8 / 49.6) |
+Reading, in three parts, because the move from 55 s / 81.8 % to 144 s / 97.4 % is not one
+event:
 
-A cold clone (fresh `git clone`, no `node_modules`, no Next cache) runs the same gate green
-in **43 s** — the install is 0.7 s off the shared pnpm store, so "works on my machine" is not
-carrying the result.
+1. **The unit changed, so 144 s and 55 s are not the same measurement.** 55 s was one job on a
+   one-job workflow. #171/#182 (2026-10-30) made CI run the gate once per brand as a matrix plus
+   a `gate` aggregator that publishes the required context, so a run is now the slower of two
+   legs plus ~20 s of queue. The comparable figure per leg is 121–124 s, not 144 s.
+2. **The gate itself got slower, and the step table says where.** The quizhub leg of run
+   `41504961129` (2026-11-02) spent 92.7 s inside `scripts/verify.sh`: `build` 38.6 s, `test`
+   16.8 s, `typecheck` 16.5 s, `data:check` 8.4 s, `parity` 7.1 s. `test`, `data:check` and
+   `parity` were skipped or did not exist on 2026-10-29, when the whole local gate was 44.8 s.
+3. **`pnpm check:fast` (`3a9cd58`, 2026-11-02) cannot explain the duration move.** It adds a
+   local script (`scripts/check-fast.mjs` + a `package.json` entry); no CI step calls it, so no
+   CI number can depend on it. It is a plausible contributor to the _yield_ half, but the window
+   either side of it is 97.1 % (137 runs before) → 98.1 % (53 runs after), which is one extra
+   green run — not a signal at that sample size. The yield trend is 81.8 % (2026-10-29) →
+   95.3 % (2026-11-01) → 97.4 % (2026-11-02): say "it moved across three days", not "one commit
+   moved it".
 
-The `lint` row above is the biome-only step. Since #187 stage 4 the step is
+### Local, measured 2026-11-03 (n=2)
+
+`env -i HOME PATH CI=1 GATE_LANE=full bash scripts/verify.sh`, on this tree, Node 24.22.0 /
+pnpm 12.16.1, 8-core host, `node_modules` cold on run 1 and warm on run 2. Both exit 0.
+
+| Step                                       | run 1 (load 0.7) | run 2 (load 6.6) |
+| ------------------------------------------ | ---------------- | ---------------- |
+| deps (`pnpm install --frozen-lockfile`)    | 0.5 s            | 0.2 s            |
+| glossary / ui-registry / release:check     | 0.8 s            | 0.8 s            |
+| typecheck (`next typegen && tsc --noEmit`) | 29.0 s           | 6.2 s            |
+| lint (`biome check` + brand classes)       | 2.4 s            | 3.3 s            |
+| format:check                               | 0.4 s            | 0.4 s            |
+| data:check                                 | 11.6 s           | 18.3 s           |
+| demo:verify                                | 0.2 s            | 0.3 s            |
+| test                                       | 21.2 s           | 18.4 s           |
+| parity (both brands)                       | 21.2 s           | 14.7 s           |
+| build (`next build`, flock slot)           | 63.8 s           | 74.4 s           |
+| **total**                                  | **151.7 s**      | **137.6 s**      |
+
+Two runs are not a p50 and are not reported as one. The load average belongs to the
+measurement: the same gate was recorded at 145 s under eight-way contention
+(`docs/REPO-LAYERS.md`, 2026-10-29) and at 176 s in `docs/ITERATION.md` (2026-11-02), so expect
+±30 s before reading anything into a single run.
+
+Budget: **CI < 4 min holds** (p95 176 s). **Local p50 < 90 s no longer does** — 138–152 s
+measured above, `build` 64–74 s of it — and that ceiling was written for a 45 s gate
+(2026-10-29, history below). The two honest ceilings are the ones `docs/ITERATION.md` states:
+`pnpm check:fast` for the inner loop and the full gate as the boundary, at ≤ 3 min. Do not make
+a step optional to buy time.
+
+## Baseline history
+
+Kept because it is what the gate cost when it was smaller, and because "55 s / 81.8 %" is
+still quoted in older notes. **Nothing here is current.**
+
+| Date measured | What                                                                    | Value                                                                  |
+| ------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 2026-10-29    | CI job p50 / p95 — one-job workflow, 22 runs, 22 head SHAs, 15 branches | 55 s / 64 s (n=10)                                                     |
+| 2026-10-29    | First-pass yield, same runs                                             | 18/22 = 81.8 % (18/21 = 85.7 % excluding the one cancelled)            |
+| 2026-10-29    | Retries                                                                 | 0.47 (22 runs over 15 branches)                                        |
+| 2026-10-29    | Failures                                                                | 3 red, 1 cancelled — all on `toolchain/` and `feat/b01-quiz-promotion` |
+| 2026-10-29    | Local gate, n=3, 7-core host                                            | 44.8 s total (37.5 / 44.8 / 49.6), `build` 40.5 s                      |
+| 2026-10-30    | CI job wall, one job, measured before the brand matrix landed that day  | 59 s code / 19 s docs                                                  |
+| 2026-11-01    | CI run incl. queue, window 2026-11-01, n=106                            | p50 125 s / p95 138 s                                                  |
+| 2026-11-01    | First-pass yield, same window                                           | 101/106 = 95.3 % (101/103 = 98.1 % excluding cancelled)                |
+
+The 2026-10-29 rows are the gate's first day, and they are why the old yield read 81.8 %: 4 of
+22 pushes needed a second look, and the failures were toolchain/docs branches — the cheapest
+kind to catch locally. Every one of them was a check that CI ran and the developer's shell did
+not.
+
+### 2026-10-29, the local gate before the matrix (n=3)
+
+Node 24.22.0 / pnpm 12.16.1, 7-core host, warm `node_modules` and warm Next cache:
+
+| Step                                       | p50               |
+| ------------------------------------------ | ----------------- |
+| deps (`pnpm install --frozen-lockfile`)    | 0.0 s             |
+| typecheck (`next typegen && tsc --noEmit`) | 3.8 s             |
+| lint (`biome check`)                       | 0.4 s             |
+| format:check                               | 0.2 s             |
+| data:check                                 | skipped on `main` |
+| test                                       | skipped on `main` |
+| build (`next build`)                       | 40.5 s            |
+| **gate total**                             | **44.8 s**        |
+
+A cold clone (fresh `git clone`, no `node_modules`, no Next cache) ran the same gate green in
+**43 s** — the install was 0.7 s off the shared pnpm store.
+
+The `lint` row is the biome-only step. Since #187 stage 4 the step is
 `pnpm lint` = `biome check && node scripts/lint-brand-classes.mjs`, which bans the
 indigo/purple/violet palette steps and `bg-gradient-*` utilities under `components/` and `app/`
 (no allowlist; `scripts/brand-classes.mjs` is the rule, `--self-test` runs in every invocation)
 and measured **1.6–2.6 s** for the pair across three `lane=code` gate runs on 2026-10-30.
 
-CI, same tree: the first post-change run is **1 m 0 s** end to end, of which the script itself
-is **43.6 s** (`data:check` and `test` skipped there too). The extra ~17 s is runner setup; the
-pre-change p50 was 55 s, so the gate bought the parity preflight and the two skip-aware steps
-for about the cost of the runner's checkout.
+CI on that tree: the first post-change run was **1 m 0 s** end to end, of which the script
+itself was **43.6 s** (`data:check` and `test` skipped there too). The extra ~17 s was runner
+setup.
 
-Budget: local p50 < 90 s, CI < 4 min. Both hold; the build is 90 % of the gate, so if it
-ever needs splitting the fast lane is `typecheck+lint+format` (~4.4 s, and it is the lane
-that catches real mistakes) and the slow lane is `build`. Do not make a step optional to buy
-time. The 90 s ceiling is met on a 7-core host; a slower machine is the case to watch.
+This is the table that makes the current one readable: the same steps, 3–15× slower each,
+because `test`, `data:check` and `parity` are now real work and `typecheck` compiles a much
+larger tree.
 
 ## Negative controls (each run against this tree, then reverted)
 
@@ -178,16 +263,33 @@ Re-verify enforcement (needs a repo admin to _change_, but anyone can read it):
 ```bash
 gh api repos/riolabs-ai/alignsynch/rules/branches/main \
   --jq '.[] | select(.type=="required_status_checks") | .parameters.required_status_checks'
-gh api repos/riolabs-ai/alignsynch/rulesets/26115314 --jq '{name,enforcement,conditions}' 
+gh api repos/riolabs-ai/alignsynch/rulesets/26115314 --jq '{name,enforcement,conditions}'
 ```
 
 ## Re-measuring
 
 ```bash
-bash scripts/verify.sh                       # local gate; time it three times, take the median
-gh run list --workflow=ci.yml --limit 100 --json conclusion,headSha,createdAt,updatedAt
+python3 docs/gate-baseline.py --window 2026-11-02   # CI: p50/p95, yield, per-leg, from one window
+python3 docs/gate-baseline.py --since 2026-11-01 --until 2026-11-03   # or a multi-day window
+bash scripts/verify.sh                              # local; time it, and note the load average
 ```
 
-First-pass yield = head SHAs whose **first** run was green ÷ head SHAs that ran. If it drops
-below 70 %, the local gate is missing a step CI has, or the runtimes differ — check the
-parity preflight first, never add a CI step.
+None of these are gate steps: `gate-baseline.py` needs `gh` auth and network, and a gate step
+that can fail for lack of either is not a gate.
+
+Definitions the script implements, so a reader can re-derive any row by hand:
+
+| Term             | Definition                                                                                                                                          |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| run incl. queue  | `updated_at − created_at` per run — what a person waits for                                                                                         |
+| job wall         | `started_at → completed_at` per job; the two brand legs are the work, the third job is the aggregator the ruleset requires                          |
+| first-pass yield | head SHAs whose **first** run (earliest `created_at`) concluded `success` ÷ head SHAs that ran; `cancelled` is not green, and is reported both ways |
+| p50 / p95        | nearest rank on the sorted sample, index ⌈q·n⌉ − 1                                                                                                  |
+
+Rules that keep this file honest:
+
+- A yield, p50 or p95 is written with **its measurement date and its window**, in that order.
+  If a number cannot carry both, it is not written here.
+- The local figure states **n** and the load average. One run is a run, not a p50.
+- If first-pass yield drops below 70 %, the local gate is missing a step CI has, or the
+  runtimes differ — check the parity preflight first, never add a CI step.
