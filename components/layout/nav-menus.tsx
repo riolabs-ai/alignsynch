@@ -10,10 +10,12 @@ import { surfaceFor } from "@/data/surface-registry";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { leavesApp } from "@/lib/marketing-routes";
+import { type NavIconName, menuFor } from "@/lib/nav-menu";
 import { type NavViewer, sees } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
+  Activity,
   Award,
   BarChart3,
   BookOpen,
@@ -24,6 +26,8 @@ import {
   Gauge,
   HeartHandshake,
   Home,
+  Inbox,
+  LayoutDashboard,
   LayoutTemplate,
   Library,
   LifeBuoy,
@@ -41,7 +45,7 @@ import {
   Workflow,
 } from "lucide-react";
 import Link from "next/link";
-import type React from "react";
+import { type ComponentType, Fragment, type ReactNode } from "react";
 
 /**
  * The shell's navigation, as one definition filtered by brand and capability (issue #156).
@@ -58,10 +62,12 @@ import type React from "react";
  *   - **The words come from `data/pages/shell.ts`.** Every label is `itemLabel()` against a
  *     section id (`nav`, `nav-alignsynch`), so renaming a destination is a fixture edit and a
  *     renamed id is a red build (E23) rather than a blank row.
- *   - **The hrefs stay literal JSX attributes, on purpose.** `data:check` E10 extracts
- *     literal `href`s from the tree; a menu held in a `const` array of `{ href }` takes every
- *     route reference out of that gate without failing anything. That is why the two menus are
- *     components and not a fixture table.
+ *   - **Every href in a menu is a route the gate can see.** `data:check` E10 extracts literal
+ *     `href`s from the tree, so a table of `{ href }` records takes every route reference out of
+ *     that gate without failing anything. The quiz menu therefore still spells its rows as JSX
+ *     attributes, and the alignment menu's rows — records in `lib/nav-menu.ts` since #542 phase 2
+ *     — are read by `scripts/ui-refs.ts` as `href:` properties, so both forms are resolved
+ *     against `content/routes.ts`. A new menu shape has to reach the gate, not bypass it.
  *   - **A third brand is a compile error, not an inherited menu.** The `switch` has no
  *     fall-through: its `default` assigns the narrowed union to `never`, so adding a brand to
  *     `data/brand.ts` fails `tsc` here until its menu is chosen deliberately, instead of
@@ -114,20 +120,6 @@ function isActive(pathname: string, path: string): boolean {
 }
 
 /**
- * The Overview row's own match (#542 phase 1) — **exact**, not a prefix.
- *
- * `isActive()` marks a row for its children too, which is right for `/assessment/instances/[id]`
- * sitting under its list. It stopped being right for `/dashboard` when the workspace grew
- * `/dashboard/help`, `/dashboard/library` and `/dashboard/support`: the prefix rule lit two rows
- * at once (Overview and whichever page you were on), and a rail that says you are in two places is
- * worse than one that says you are in none. Overview has no children of its own, so its match is
- * its own address.
- */
-function isOverview(pathname: string): boolean {
-  return pathname === "/dashboard";
-}
-
-/**
  * Where a row goes, or what it does — exactly one of the two (issue #272).
  *
  * A row that would have been a link with nothing behind it is not a link: sign-out revokes a
@@ -138,7 +130,7 @@ type NavRowTarget =
   | { onSelect: () => void; href?: undefined };
 
 export type NavRowProps = {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   active?: boolean;
   /** Explicit icon-only markup. Defaults to false: the row's width is a class (see `NavRow`). */
@@ -465,38 +457,59 @@ function QuizHubMenu({
 }
 
 /**
- * The alignment product's menu: the console's own destinations in the order the owner's review
- * set, then the one front-page band it still links, then Support, then the operator's rows when
- * the viewer carries `admin-console`.
+ * The glyph per icon name in `lib/nav-menu.ts` — the one place a row's picture is chosen.
  *
- * **The rail opens on Dashboard and there is exactly one row for `/dashboard`.** The old menu had
- * "Home" at `/` and a separate "Overview" at `/dashboard`: two words, one console. They are one
- * row now — Dashboard, at `/dashboard` — so the label names the page it opens and no destination
- * appears twice.
+ * The descriptor names an icon (`"dashboard"`, `"audit"`) because it holds no JSX; this table is
+ * the rail's answer. Two of them carry a decision rather than an illustration:
  *
- * **The icon is `Gauge`, deliberately.** A dashboard's job is the state of things at a glance, and
- * `Gauge` is the instrument-panel mark for that. `LayoutDashboard` was the removed Overview row's
- * glyph and is a floorplan of a page; carrying it onto the merged row would have kept the look of
- * the duplicate that was deleted, and the review asked for a new mark. `Home` was a building, and
- * the row no longer goes to the front page, so keeping it would be the word and the picture
- * disagreeing with the href.
+ *   - **Dashboard is `Gauge`.** A dashboard's job is the state of things at a glance, and `Gauge`
+ *     is the instrument-panel mark for that. `LayoutDashboard` was the removed Overview row's
+ *     glyph and is a floorplan of a page, so it went to the console hub instead.
+ *   - **My Relationships is `HeartHandshake`, not `Users`.** Two people in agreement is this
+ *     product's subject; `Users` is the quiz menu's affiliate glyph and `ShieldCheck` is the
+ *     operator registry's, so either would read as a second meaning for one picture.
+ */
+const NAV_ICONS: Record<NavIconName, ComponentType<{ className?: string }>> = {
+  dashboard: Gauge,
+  relationships: HeartHandshake,
+  templates: LayoutTemplate,
+  library: Library,
+  help: Workflow,
+  support: LifeBuoy,
+  console: LayoutDashboard,
+  instances: ShieldCheck,
+  gaps: BarChart3,
+  inbox: Inbox,
+  health: Activity,
+  billing: CreditCard,
+  broadcast: Megaphone,
+  audit: ScrollText,
+};
+
+/**
+ * The alignment product's menu — **rendered from `lib/nav-menu.ts`, never written here.**
  *
- * **My Relationships carries `HeartHandshake`, not `Users`.** Two people in agreement is this
- * product's subject; `Users` is the quiz menu's affiliate glyph and `ShieldCheck` is the operator
- * registry's, so either would read as a second meaning for one picture.
+ * The rows, their order, their groups and the rung each one needs are data (#542 phase 2). This
+ * function is the surface: it resolves the fixture label each row names, picks the glyph the row's
+ * icon name maps to, and decides which row is *current*. Adding a destination is one record in the
+ * descriptor; a destination the viewer's rung cannot use is never in the array, so it is not
+ * rendered at all — not hidden by a class, not `aria-hidden`, not disabled.
  *
- * **My Relationships and Library are adjacent, and Templates sits one row above Support.** The two
- * console lists read as a pair (what you own, what you build from), and the marketing bands end
- * the menu instead of interrupting it.
+ * **Why the words and the glyphs are still resolved here.** `lib/nav-menu.ts` holds no JSX and no
+ * React, which is what lets a node test drive every rung of it (`tests/nav-menu.test.ts`) and lets
+ * the link gate read its hrefs. Copy stays in `data/pages/shell.ts` (E23 holds this file at zero
+ * literals), and the icon is a *name* in the descriptor that `NAV_ICONS` below resolves to a lucide
+ * component — a picture is not a fact about the menu, it is how this rail draws one.
  *
- * **Why this menu cannot reach the quiz build.** These rows live in `AlignSynchMenu`, which
- * `AppNav`'s `switch` renders only for `BRAND=alignsynch`; the quiz brand renders `QuizHubMenu`
- * and nothing else. So `/assessment/instances` and `/assessment/templates` — routes the brand
- * boundary answers `404` for on the quiz build — are structurally absent there rather than hidden
- * by a check. The only capability consulted below is the operator's,
- * `sees(viewer, "admin-console")`: every console row here answers a signed-out request with
- * `redirect(/login?next=…)`, which is a working destination, unlike `/admin/*`, which answers a
- * signed-in *member* with a 404 and therefore must not be advertised.
+ * **The active row keeps the two match rules the old markup had.** Most rows mark their children
+ * (`/dashboard/relationships/[id]` keeps My Relationships lit); the Overview row is `exact`,
+ * because a prefix rule lit it beside whichever `/dashboard/*` page the reader was on (#542
+ * phase 1's defect). That is `item.exact` in the descriptor, not a special case here.
+ *
+ * **Why this menu cannot reach the quiz build.** `AppNav`'s `switch` renders this only for
+ * `BRAND=alignsynch`; the quiz brand renders `QuizHubMenu` and nothing else. The quiz product's menu
+ * is untouched by this card and still has no rungs — it is one product's own destinations, shown in
+ * full to the brand that ships it.
  */
 function AlignSynchMenu({
   copy,
@@ -505,156 +518,37 @@ function AlignSynchMenu({
   pathname,
   onNavigate,
   viewer,
+  hidden,
 }: NavRenderProps & { viewer: NavViewer }) {
   const nav = sectionOf(copy, "nav-alignsynch");
-  /**
-   * Two groups, admin first (#539 item 10).
-   *
-   * The operator's five rows used to sit *after* the member's own links, so an admin opened a
-   * rail whose first six rows were product navigation and whose real job — the console — was
-   * below the fold on a laptop. The fix is the order the owner asked for, stated as two labelled
-   * groups rather than as a re-sort: **Administration** (the console's rows, drawn only for a
-   * viewer carrying `admin-console`) and then **Workspace** (the member's own destinations).
-   *
-   * Nothing is added or removed: the same eight rows in a different order, plus the two group
-   * labels — which resolve from `data/pages/shell.ts` like every other word here (E23 holds this
-   * file at zero literals). The labels are `hidden lg:block` so the 64px icon rail between `md`
-   * and `lg` keeps its 40px squares and no 15-character heading is asked to fit in it; the
-   * drawer (`labelled`) and the 250px rail show them.
-   */
-  const admin = sees(viewer, "admin-console");
   return (
     <>
-      {admin && (
-        <NavGroup label={itemLabel(nav, "group-admin")} labelled={labelled}>
-          <NavRow
-            href="/admin/gaps"
-            icon={<BarChart3 className="size-5" />}
-            label={itemLabel(nav, "console-gaps")}
-            active={isActive(pathname, "/admin/gaps")}
-            collapsed={collapsed}
-            labelled={labelled}
-            onNavigate={onNavigate}
-          />
-          <NavRow
-            href="/admin/instances"
-            icon={<ShieldCheck className="size-5" />}
-            label={itemLabel(nav, "admin-instances")}
-            active={isActive(pathname, "/admin/instances")}
-            collapsed={collapsed}
-            labelled={labelled}
-            onNavigate={onNavigate}
-          />
-          <NavRow
-            href="/admin/audit"
-            icon={<ScrollText className="size-5" />}
-            label={itemLabel(nav, "admin-audit")}
-            active={isActive(pathname, "/admin/audit")}
-            collapsed={collapsed}
-            labelled={labelled}
-            onNavigate={onNavigate}
-          />
-          <NavRow
-            href="/admin/billing"
-            icon={<CreditCard className="size-5" />}
-            label={itemLabel(nav, "admin-billing")}
-            active={isActive(pathname, "/admin/billing")}
-            collapsed={collapsed}
-            labelled={labelled}
-            onNavigate={onNavigate}
-          />
-          <NavRow
-            href="/admin/broadcast"
-            icon={<Megaphone className="size-5" />}
-            label={itemLabel(nav, "admin-broadcast")}
-            active={isActive(pathname, "/admin/broadcast")}
-            collapsed={collapsed}
-            labelled={labelled}
-            onNavigate={onNavigate}
-          />
-        </NavGroup>
-      )}
-
-      <NavGroup label={itemLabel(nav, "group-app")} labelled={labelled}>
-        <NavRow
-          href="/dashboard"
-          icon={<Gauge className="size-5" />}
-          label={itemLabel(nav, "dashboard")}
-          active={isOverview(pathname)}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-        {/*
-          How It Works and Support are pages this build serves (#542): `/dashboard/help` and
-          `/dashboard/support`. The rail used to send a signed-in member to `/how-it-works` and
-          `/support` — the marketing site — to read the product they had already bought, and a
-          departure from the shell is not a destination. `components/tour/replay-tour.tsx` lives
-          on the help page, so the tour is replayable from inside the app.
-        */}
-        <NavRow
-          href="/dashboard/help"
-          icon={<Workflow className="size-5" />}
-          label={itemLabel(nav, "how-it-works")}
-          active={isActive(pathname, "/dashboard/help")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-        <NavRow
-          href="/assessment/instances"
-          icon={<HeartHandshake className="size-5" />}
-          label={itemLabel(nav, "my-relationships")}
-          active={isActive(pathname, "/assessment/instances")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-        {/*
-          Library is the member's own shelf — what they saved and own — and it is
-          `/dashboard/library` since #542. It used to be the public catalogue, which is the same
-          departure as the two rows above: a catalogue is not a library when the reader is signed
-          in and the page cannot know what they own.
-        */}
-        <NavRow
-          href="/dashboard/library"
-          icon={<Library className="size-5" />}
-          label={itemLabel(nav, "template-library")}
-          active={isActive(pathname, "/dashboard/library")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-        {/*
-          Templates is the catalogue a member starts from, and it is `/assessment/templates` — the
-          page this build serves. #544 made `/templates` a real public catalogue, and the rail
-          briefly pointed there; a workspace row into the marketing site is the same departure
-          #542 removed, so the row stays in-app. The public page is still reachable from the
-          public header, which is where a non-user belongs.
-
-          It sits in Workspace, not Administration: it is a member-facing catalogue, and
-          #539 item 10's split is admin functions first, then the reader's own links.
-        */}
-        <NavRow
-          href="/assessment/templates"
-          icon={<LayoutTemplate className="size-5" />}
-          label={itemLabel(nav, "templates")}
-          active={isActive(pathname, "/assessment/templates")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-        <NavRow
-          href="/dashboard/support"
-          icon={<LifeBuoy className="size-5" />}
-          label={itemLabel(nav, "support")}
-          active={isActive(pathname, "/dashboard/support")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-          tourAnchor="help"
-        />
-      </NavGroup>
+      {menuFor(viewer.role).map((group) => (
+        <Fragment key={group.label}>
+          <NavGroup label={itemLabel(nav, group.label)} labelled={labelled}>
+            {group.items.map((item) => {
+              const Icon = NAV_ICONS[item.icon];
+              return (
+                <Fragment key={item.href}>
+                  <NavRow
+                    href={item.href}
+                    icon={<Icon className="size-5" />}
+                    label={itemLabel(nav, item.id)}
+                    active={
+                      item.exact === true ? pathname === item.href : isActive(pathname, item.href)
+                    }
+                    collapsed={collapsed}
+                    labelled={labelled}
+                    onNavigate={onNavigate}
+                    tourAnchor={item.tourAnchor}
+                    hidden={hidden?.includes(item.href)}
+                  />
+                </Fragment>
+              );
+            })}
+          </NavGroup>
+        </Fragment>
+      ))}
     </>
   );
 }
@@ -673,7 +567,7 @@ function NavGroup({
   label,
   labelled,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   label: string;
   labelled: boolean;
 }) {

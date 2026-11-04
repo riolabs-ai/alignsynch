@@ -6,6 +6,8 @@ import { brandMark } from "@/lib/brand-mark";
 import { shellSession } from "@/lib/auth/shell-account";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { navViewer } from "@/lib/nav";
+import { RAIL_COOKIE, railIsCollapsed } from "@/lib/shell/rail-preference";
+import { cookies } from "next/headers";
 import type React from "react";
 
 /**
@@ -42,6 +44,15 @@ export default async function Layout({
   const brandId = brandIdOf(brand);
   const { account, role } = await shellSession();
   const viewer = navViewer(role);
+  /**
+   * The rail's width for **this request** (#542 phase 2).
+   *
+   * Read here, on the server, from the cookie the rail's own toggle writes
+   * (`app/(mainlayout)/rail-actions.ts`). The shell is a client component, so a preference the
+   * browser kept would only be honoured after hydration — the flash the removed `localStorage`
+   * toggle produced. One cookie read, one prop, no second source.
+   */
+  const railCookie = (await cookies()).get(RAIL_COOKIE)?.value;
   return (
     <MainLayout
       copy={shellPageCopy}
@@ -49,6 +60,7 @@ export default async function Layout({
       brandId={brandId}
       viewer={viewer}
       account={account}
+      railCollapsed={railIsCollapsed(railCookie)}
       searchIndex={searchIndexFor(brandId, viewer)}
       hiddenNav={hiddenNavHrefs()}
     >

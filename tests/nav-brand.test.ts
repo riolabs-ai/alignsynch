@@ -42,7 +42,13 @@ import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndex, searchIndexFor } from "@/data/searchdata";
 import { alignmentHome } from "@/lib/alignment-home";
-import { ALIGNMENT_ROUTES, type NavViewer, PLATFORM_VIEWER, viewerWith } from "@/lib/nav";
+import {
+  ALIGNMENT_ROUTES,
+  type NavViewer,
+  navViewer,
+  PLATFORM_VIEWER,
+  viewerWith,
+} from "@/lib/nav";
 import { itemLabel } from "@/lib/page-copy";
 import { searchSectionFor } from "@/lib/shell-copy";
 
@@ -114,25 +120,44 @@ const QUIZ_MENU = [
 const QUIZ_ONLY = ["/leaderboard", "/tournaments", "/battle", "/categories", "/explore"];
 
 /**
- * The alignment rail's six destinations, in order (#542 phase 1).
+ * The alignment rail's six member destinations, in order (#542 phase 2).
  *
  * **Every one is a route this build serves inside the dashboard.** Support, the onboarding page and
  * the library were the three rows that sent a signed-in member out to the marketing site — to a
  * page written for somebody who had not bought the product. They are `/dashboard/support`,
- * `/dashboard/help` and `/dashboard/library` now, and the fourth row that left (`/#templates`, the
- * catalogue's band on the front page) reads the catalogue the console already serves at
- * `/assessment/templates`.
+ * `/dashboard/help` and `/dashboard/library` now, and #542 phase 2 moved the two lists to the pages
+ * #533 phase 2 shipped: **My Relationships** is `/dashboard/relationships` (the relationships this
+ * member started) and **My Templates** is `/dashboard/templates` (the ones they own). The two
+ * `/assessment/*` rows the rail used to carry are still reachable — the Overview's own cards open
+ * the party-side list, and My Templates' clone band is the catalogue — but neither is this
+ * reader's *own work*, which is what the Workspace group says.
  *
  * It is one constant rather than six literals per case because three cases assert the same six
  * rows; a second copy is how a menu edit lands in one expectation and not the others.
  */
 const ALIGNMENT_MENU = [
   "/dashboard",
-  "/dashboard/help",
-  "/assessment/instances",
+  "/dashboard/relationships",
+  "/dashboard/templates",
   "/dashboard/library",
-  "/assessment/templates",
+  "/dashboard/help",
   "/dashboard/support",
+];
+
+/**
+ * The operator's group, in order (#542 phase 2): the console hub first — the row that had no home
+ * anywhere in the UI before this card — then the five the rail already carried, then the two staff
+ * surfaces that were also unreachable, and the audit log last.
+ */
+const ADMIN_MENU = [
+  "/admin/console",
+  "/admin/instances",
+  "/admin/gaps",
+  "/admin/inbox",
+  "/admin/health",
+  "/admin/billing",
+  "/admin/broadcast",
+  "/admin/audit",
 ];
 
 describe("the quiz brand renders the menu it shipped", () => {
@@ -223,17 +248,17 @@ describe("the quiz product is filtered, not deleted", () => {
 });
 
 describe("the console's own rows are a member's, the operator's rows are not", () => {
-  // `navViewer(null)` and `navViewer("member")` both answer PLATFORM_VIEWER — one line in
-  // `lib/nav.ts` — so this viewer *is* the member's sidebar, and the admin's is the one a role
-  // model hands back. Asserting both sides is what keeps "a member does not see /admin/*" from
-  // passing because the rows were deleted for everybody.
+  // `navViewer(null)` and `navViewer("member")` both answer the member menu — one line in
+  // `lib/nav.ts` — so this viewer *is* the member's sidebar, and the admin's is what the role
+  // hands back (#542 phase 2: the rung, not a capability, decides the rows).
   const memberHrefs = navHrefs("alignsynch");
-  const adminHrefs = navHrefs("alignsynch", viewerWith("admin-console"));
+  const adminHrefs = navHrefs("alignsynch", navViewer("admin"));
 
-  it("draws every console destination for a member", () => {
+  it("draws every workspace destination for a member", () => {
     expect(memberHrefs).toContain("/dashboard");
-    expect(memberHrefs).toContain("/assessment/instances");
-    expect(memberHrefs).toContain("/assessment/templates");
+    expect(memberHrefs).toContain("/dashboard/relationships");
+    expect(memberHrefs).toContain("/dashboard/templates");
+    expect(memberHrefs).toContain("/dashboard/library");
   });
 
   it("draws no /admin row for a member, and never merely hides one", () => {
@@ -242,60 +267,61 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     // The labels too: a row rendered `hidden` would still be in the markup, and the refusal is
     // that the member does not learn the surface exists — not that it is invisible.
     expect(member).not.toContain(itemLabelOf("console-gaps"));
+    expect(member).not.toContain(itemLabelOf("console"));
     // Delimited, because this row's label ("Relationships") is a substring of the member's own
     // "My Relationships" row: the refusal is about the operator's row, not about the words.
     expect(member).not.toContain(`>${itemLabelOf("admin-instances")}<`);
     expect(member).toContain(`>${itemLabelOf("my-relationships")}<`);
   });
 
-  it("draws every operator row for an admin, first, in their own group", () => {
+  it("draws every operator row for an admin, in one group, after the member's rows", () => {
     /**
-     * #539 item 10 moved the operator's five rows **above** the member's: an admin's rail used
-     * to open on six product destinations and reach its own console below the fold. The set is
-     * unchanged — this is an order, not a filter — and the two group labels frame it.
+     * #542 phase 2 replaced #539 item 10's order — operator group first — with the card's own:
+     * the reader's work, then help, then the staff group. What did not change is that the rows
+     * are one labelled group, and that the console hub leads it.
      */
-    expect(adminHrefs).toEqual([
-      "/admin/gaps",
-      "/admin/instances",
-      // #503 — the log the five repairs commit into.
-      "/admin/audit",
-      // #505 — billing control, the operator's fifth row.
-      "/admin/billing",
-      // #507 — the broadcast, the console's sixth row.
-      "/admin/broadcast",
-      ...ALIGNMENT_MENU,
-    ]);
-    const admin = navHtml("alignsynch", viewerWith("admin-console"));
-    expect(admin).toContain(itemLabelOf("console-gaps"));
-    expect(admin).toContain(itemLabelOf("admin-instances"));
-    expect(admin).toContain(itemLabelOf("admin-audit"));
-    expect(admin).toContain(itemLabelOf("admin-billing"));
-    expect(admin).toContain(itemLabelOf("admin-broadcast"));
-    // The two group labels, from the fixture, in order: administration, then the workspace.
-    expect(admin.indexOf(itemLabelOf("group-admin"))).toBeLessThan(
-      admin.indexOf(itemLabelOf("group-app")),
-    );
-    expect(admin).toContain(itemLabelOf("group-admin"));
-    expect(admin).toContain(itemLabelOf("group-app"));
+    expect(adminHrefs).toEqual([...ALIGNMENT_MENU, ...ADMIN_MENU]);
+    const admin = navHtml("alignsynch", navViewer("admin"));
+    for (const href of ADMIN_MENU) {
+      expect(admin).toContain(`href="${href}"`);
+    }
+    // The three group labels, from the fixture, in order: workspace, support, admin.
+    const workspace = admin.indexOf(itemLabelOf("group-app"));
+    const support = admin.indexOf(itemLabelOf("group-support"));
+    const staff = admin.indexOf(itemLabelOf("group-admin"));
+    expect(workspace).toBeGreaterThan(-1);
+    expect(workspace).toBeLessThan(support);
+    expect(support).toBeLessThan(staff);
   });
 
-  it("keeps the member's rows a suffix of the admin's — same rows, same order", () => {
-    // The admin's rail is the operator's group and then the member's, unchanged: the group is
-    // additive, so the member's six rows keep their relative order at the end of the admin's.
-    expect(adminHrefs.slice(adminHrefs.length - memberHrefs.length)).toEqual(memberHrefs);
+  it("keeps the member's rows a prefix of the admin's — same rows, same order", () => {
+    // The staff group is additive and comes last, so the member's six rows keep their place at
+    // the front of the admin's rail — the difference is the group, not a re-sort.
+    expect(adminHrefs.slice(0, memberHrefs.length)).toEqual(memberHrefs);
+  });
+
+  it("draws the console hub for an owner too — above an admin is not outside it", () => {
+    // `owner` outranks `admin` on the ladder, so every console page opens for it
+    // (`requireRole("admin")` is a rank comparison). A menu that keyed on `role === "admin"`
+    // would have hidden the whole group from the one person who can reach all of it.
+    expect(navHrefs("alignsynch", navViewer("owner"))).toContain("/admin/console");
+  });
+
+  it("gives a support seat the one staff row it works, and no page it would be refused", () => {
+    const supportHrefs = navHrefs("alignsynch", navViewer("support"));
+    expect(supportHrefs.filter((href) => href.startsWith("/admin"))).toEqual(["/admin/inbox"]);
   });
 });
 
 /**
- * The owner's four sidebar notes on `:3002/settings`, as assertions.
+ * The order the Workspace group states: the reader's work first, then the duplicate-free rule.
  *
- * The order *is* the request — a rail that gains the right rows in the wrong sequence is not the
- * change that was asked for — and the duplicate is what it removes: one row for `/dashboard`, and
- * no AlignSynch console destination on the quiz brand, whose boundary answers those routes with a
- * 404. The rows are brand-conditional by construction (`AppNav` renders one menu or the other),
- * which is why the last case asserts absence rather than a hidden row.
+ * The duplicate is what the first case removes: one row for `/dashboard`, and no AlignSynch console
+ * destination on the quiz brand, whose boundary answers those routes with a 404. The rows are
+ * brand-conditional by construction (`AppNav` renders one menu or the other), which is why the last
+ * case asserts absence rather than a hidden row.
  */
-describe("the console rail reads Dashboard, My Relationships, Library, Templates, Support", () => {
+describe("the workspace group reads Dashboard, My Relationships, My Templates, Library", () => {
   const memberHrefs = navHrefs("alignsynch");
 
   it("opens on /dashboard and draws that destination exactly once", () => {
@@ -303,16 +329,17 @@ describe("the console rail reads Dashboard, My Relationships, Library, Templates
     expect(memberHrefs.filter((href) => href === "/dashboard")).toEqual(["/dashboard"]);
   });
 
-  it("puts Library directly below My Relationships", () => {
-    expect(memberHrefs.indexOf("/dashboard/library")).toBe(
-      memberHrefs.indexOf("/assessment/instances") + 1,
-    );
+  it("puts the two owned lists under Overview, relationships then templates, then the library", () => {
+    const at = (href: string) => memberHrefs.indexOf(href);
+    expect(at("/dashboard/relationships")).toBe(at("/dashboard") + 1);
+    expect(at("/dashboard/templates")).toBe(at("/dashboard/relationships") + 1);
+    expect(at("/dashboard/library")).toBe(at("/dashboard/templates") + 1);
   });
 
-  it("puts Templates directly above Support", () => {
-    expect(memberHrefs.indexOf("/dashboard/support")).toBe(
-      memberHrefs.indexOf("/assessment/templates") + 1,
-    );
+  it("puts the support pair after the workspace rows, Help first", () => {
+    const at = (href: string) => memberHrefs.indexOf(href);
+    expect(at("/dashboard/help")).toBe(at("/dashboard/library") + 1);
+    expect(at("/dashboard/support")).toBe(at("/dashboard/help") + 1);
   });
 
   it("keeps the console's rows and their routes off the quiz brand", () => {
