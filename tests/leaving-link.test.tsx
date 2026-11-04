@@ -66,12 +66,25 @@ describe("the rail", () => {
 
       it("opens every public destination in a new tab, announced", () => {
         const leaving = anchors.filter((anchor) => leavesApp(anchor.href));
-        expect(leaving.length).toBeGreaterThan(0);
         for (const anchor of leaving) {
           expect(anchor.target, `${anchor.href} target`).toBe("_blank");
           expect(anchor.rel, `${anchor.href} rel`).toBe("noopener noreferrer");
           expect(anchor.label, `${anchor.href} name`).toMatch(/opens in a new tab$/);
         }
+      });
+
+      /**
+       * The guard on the rule above, per brand.
+       *
+       * The quiz rail still carries public rows (`/`, `/pricing`, `/support`), so the marking rule
+       * is exercised on something. The alignment rail carries **none** since #542 phase 1 moved
+       * Support, Help and the library to `/dashboard/*` and the catalogue's `#templates` anchor to
+       * `/assessment/templates` — so an empty list is that brand's claim, not a missing row.
+       */
+      it("draws the public rows this brand has, and no others", () => {
+        const leaving = anchors.filter((anchor) => leavesApp(anchor.href));
+        if (brandId === "quizhub") expect(leaving.length).toBeGreaterThan(0);
+        else expect(leaving).toEqual([]);
       });
 
       it("keeps every in-app destination in this tab", () => {

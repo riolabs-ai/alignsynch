@@ -6,7 +6,12 @@ import { AppVersion } from "@/components/layout/app-version";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
-import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
+import {
+  markBoxClass,
+  markGroundClass,
+  markTileClass,
+  MarkGlyph,
+} from "@/components/auth/mark-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -328,8 +333,14 @@ export function LoginView({
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="mb-8 max-w-md mx-auto">
-            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
-              <MarkGlyph id={marks.hero} src={markSrc} className="w-10 h-10 text-white" />
+            <div
+              className={`${markTileClass(marks.hero, "w-20 h-20")} bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm`}
+            >
+              <MarkGlyph
+                id={marks.hero}
+                src={markSrc}
+                className={`${markBoxClass(marks.hero, "w-10 h-10")} text-white`}
+              />
             </div>
             <h2 className="text-4xl font-bold mb-4">{copy.heading}</h2>
             <p className="text-xl text-white/90 leading-relaxed">{copy.subtitle}</p>
@@ -368,12 +379,12 @@ export function LoginView({
         <FormSurface className="w-full max-w-md">
           <CardHeader className="text-center pb-8">
             <div
-              className={`lg:hidden mx-auto mb-4 w-12 h-12 ${markGroundClass(marks.hero)} rounded-lg flex items-center justify-center`}
+              className={`lg:hidden mx-auto mb-4 ${markTileClass(marks.hero, "w-12 h-12")} ${markGroundClass(marks.hero)} rounded-lg flex items-center justify-center`}
             >
               <MarkGlyph
                 id={marks.hero}
                 src={markSrc}
-                className={`${tileMarkClass(marks.hero)} text-white`}
+                className={`${markBoxClass(marks.hero)} text-white`}
               />
             </div>
             <CardTitle className="text-3xl font-bold ">{form.heading}</CardTitle>

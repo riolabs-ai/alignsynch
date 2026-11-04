@@ -35,15 +35,15 @@ links (9 unique, 10 total)
   /assessment/instances                                1
   /assessment/templates                                1
   /dashboard                                           1
-  /how-it-works                                        1
+  /dashboard/help                                      1
+  /dashboard/library                                   1
+  /dashboard/support                                   1
   /settings                                            1
-  /support                                             1
-  /templates                                           1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 2
 
 counts
-  elements  1015
+  elements  1011
   images    2
   buttons   8
   inputs    1
-  classes   244 (sha ba3bce0528ac)
+  classes   243 (sha 2f0f19fb54d2)

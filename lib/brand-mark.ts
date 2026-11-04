@@ -46,30 +46,3 @@ export function brandMark(logo: string): BrandMark | undefined {
   if (!entry || !isFileMedia(entry) || entry.kind === "fallback") return undefined;
   return { src: entry.src, width: entry.width, height: entry.height };
 }
-
-/**
- * `brand.mark` -> the square icon the chrome draws at icon sizes (#539 items 1 and 5).
- *
- * The lockup and the mark are two different files with two different jobs. The lockup is the
- * full `AS`-monogram-plus-wordmark export, 818×127, whose monogram is ~43×32 at the 32px height
- * the chrome used to draw it — measured in a browser, and the owner's report is that this icon
- * is 2–2.5× too small. The mark is the monogram alone, squared (1024×1024, ink 1024×660), and it
- * is the file the icon set is already rasterised from.
- *
- * So the chrome draws the *icon* rather than a scaled-down copy of the lockup: the monogram at a
- * square box the owner's factor asks for, with the name set in type beside it — which is also
- * how the wordmark stops being the 206px block item 5 calls too large. The lockup is still what
- * `brandMark()` resolves for the rail, where it is drawn whole; this function exists so the
- * header and footer can ask for the other asset without a second registry lookup each.
- *
- * A brand that names no mark (QuizHub) gets `undefined` and keeps the glyph-and-type path it has
- * always drawn — this is not a fallback chain, it is a second answer to a second question.
- */
-export function brandIconMark(mark: { readonly src: string } | undefined): BrandMark | undefined {
-  if (mark === undefined) return undefined;
-  const entry = Object.values(media).find(
-    (candidate) => isFileMedia(candidate) && candidate.src === mark.src,
-  );
-  if (!entry || !isFileMedia(entry)) return undefined;
-  return { src: entry.src, width: entry.width, height: entry.height };
-}

@@ -528,6 +528,46 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/dashboard/help",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The onboarding sequence (the same six moves `/how-it-works` draws, from `components/onboarding`) and the tour's replay control: one button that clears the seen mark and returns to the console, where the tour opens on arrival.",
+    notes:
+      "Reuses `data/pages/how-it-works.ts` and `data/pages/tour.ts` rather than authoring a third copy of either — the page's job is the route, not the words. `/how-it-works` still answers for a bookmarked link; the rail points here since #542 phase 1. The only write is `POST /api/tour { seen: false }` through `lib/tour/mark.ts`, and a refusal shows the fixture's failure sentence instead of navigating.",
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/library",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "What this member has saved: every template they own plus the ones their relationships were built from, each with its Aspect count and how many of their relationships use it. The empty state names the two moves that put a row here.",
+    notes:
+      "`lib/member/library.ts` is the read: `owner_user_id = $1` OR a `relationship.template_id` whose `initiator_user_id`/`counterparty_user_id` is the viewer, and `NOT EXISTS (session)` for the template definition. Distinct from `/dashboard/templates` (authoring: create, clone, edit) and `/assessment/templates` (the catalogue you start from) — three screens, three questions.",
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/support",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "Support inside the shell: the knowledge-base list (`components/support/knowledge-base.tsx`, the same component `/help` renders, with its links rewritten to this route's article path), one article at `/dashboard/support/articles/[slug]`, and a contact form whose submit stores a `contact_message` row before mailing.",
+    notes:
+      "The form is a server action, not the public `POST /api/contact` — that route answers a 303 to `/help`, which would throw a signed-in reader out of the workspace. It hands the same fields to `lib/contact/submit.ts`, so the ordering (spam, validation, throttle, store, mail) is one implementation. The confirmation is derived: the action returns the inserted id and the page re-reads that row by id *and* by the session's address (`readOwnContactMessage`).",
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/support/articles/[slug]",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One knowledge-base article, drawn by the same `components/support/article-detail.tsx` the public page uses, with `backHref` and `articleHrefBase` pointed at the dashboard so the breadcrumbs and related entries stay in the shell.",
+    notes:
+      "A slug that is not a published `kb` article is a 404 before the component mounts, exactly as the public route decides it. The component takes both paths as props because it renders in two trees: a marketing `href` spelled inside it would be a dashboard departure E39 refuses.",
+  },
+  {
+    kind: "route",
     surface: "/dashboard/templates",
     status: "db",
     templates: ["quizhub", "alignsynch"],

@@ -36,18 +36,18 @@ links (12 unique, 13 total)
   /assessment/instances                                1
   /assessment/templates                                1
   /dashboard                                           1
-  /how-it-works                                        1
+  /dashboard/help                                      1
+  /dashboard/library                                   1
+  /dashboard/support                                   1
   /news/new-quiz-analytics-features                    1
   /news/quiz-accessibility-guidelines                  1
   /news/quiz-monetization-strategies-2025              1
   /settings                                            1
-  /support                                             1
-  /templates                                           1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 2
 
 counts
-  elements  366
+  elements  362
   images    4
   buttons   25
   inputs    3
-  classes   254 (sha 670ce2845a09)
+  classes   253 (sha 3fcc5d9dfcc0)

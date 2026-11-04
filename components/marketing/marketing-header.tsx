@@ -80,26 +80,34 @@ export function MarketingHeader({
         <span className="flex min-w-0 items-center gap-3">
           {mark ? (
             /**
-             * The brand's **icon**, at the owner's factor (#539 items 1 and 5).
+             * The brand's **lockup**, whole — mark *and* wordmark (#539 item 1, corrected).
              *
-             * Measured before this card, in a 1440 browser: the lockup drew 206×32 and the
-             * monogram inside it ~43×32. The owner's report is that this icon is 2–2.5× too
-             * small and that the 206px wordmark block beside it is too large, which are the
-             * same complaint about one element. So the header draws the square mark
-             * (`brandIconMark`, the monogram the icon set is generated from) at a 96px box —
-             * its ink is 1024×660 of a 1024 square, so the visible monogram is 96×62, i.e.
-             * 2.2× the old width and 1.94× its height — and the name is set in type rather
-             * than shipped inside a 206px PNG.
+             * The polish cohort read "2–2.5× larger" as an instruction about the icon and swapped
+             * this slot to the square mark at a 96px box with the name set in type beside it. The
+             * owner's correction: *"resize existing full logo brand image — you replaced the logo
+             * with an icon, off brand."* The lockup is the signature on the chrome that identifies
+             * the product; the square mark belongs on the surfaces that need an icon (the tab,
+             * the home-screen tile, the avatar). So this is the 818×127 export again, and the only
+             * thing that changed is its size.
              *
-             * No crop, no window, no `max-w-none`: the whole file is placed in a square box and
-             * the browser keeps its ratio — what #470 fixed stays fixed. There is simply no
-             * lockup wordmark to clip, because the name is type. The box is taller than the
-             * 80px bar by design; the *ink* clears it with 9px above and below, and the header
-             * sets no `overflow`, so nothing is cut.
+             * **Sized by height, width follows.** `h-*` with `w-auto`, plus the intrinsic
+             * `width`/`height` `next/image` is handed, so the 818:127 ratio is the browser's
+             * arithmetic and not a class someone can get wrong. No square box, no `object-cover`,
+             * no window: the whole file is placed, which is what #470 fixed the first time.
+             *
+             * **Measured, at three widths.** The header row is `h-20` (80px) and this image must
+             * never make it taller, so every size here is below 80px. The row's own arithmetic
+             * decides the number: at 1440 the brand slot has 376.8px before the menu starts
+             * (24px gap included), at 768 — where `PublicNav` reappears — only 193px, and at 390
+             * 171.7px before the account pair. Hence 24px tall / 155px wide at 390, 180px wide
+             * from `sm`, and 56px tall / 361px wide from `lg`, where the menu has room again.
+             * The 56px is 1.75× the 32px the chrome drew before the polish, and the monogram
+             * inside it is ~65px tall against ~25px: the "2–2.5× the icon" the owner asked for,
+             * delivered by resizing the lockup rather than by replacing it.
              */
             <Image
               alt={brand.name}
-              className="h-24 w-24 shrink-0"
+              className="h-6 w-auto shrink-0 sm:h-7 lg:h-14"
               height={mark.height}
               priority
               src={mark.src}
@@ -108,21 +116,6 @@ export function MarketingHeader({
           ) : (
             <span className="text-lg font-semibold text-primary tracking-tight">{brand.name}</span>
           )}
-          {mark ? (
-            /**
-             * The wordmark as type, one line, sized by the bar rather than by the export:
-             * 20px against the 32px-tall letterforms the lockup drew, and `truncate` so the
-             * name can never push the menu. Hidden below `sm` — at 390 the bar carries the
-             * icon and the two auth actions, and a name that has to shrink to fit is worse
-             * than the mark alone, which is the brand's own.
-             */
-            <span
-              aria-hidden="true"
-              className="hidden truncate text-xl font-bold tracking-tight text-primary sm:inline"
-            >
-              {brand.name}
-            </span>
-          ) : null}
         </span>
         <PublicNav brandId={brandId} copy={copy} />
         <PublicAccountSlot account={account} copy={copy} />
