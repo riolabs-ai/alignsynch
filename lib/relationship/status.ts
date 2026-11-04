@@ -34,9 +34,22 @@
  *                 acceptance, the subscription's `trialing` period ending, a payment failing.
  *                 `lib/relationship/trial.ts` is what tells it a trial lapsed.
  *
- * **Terminal means terminal.** `complete`, `void` and `expired` have no outgoing edge, so a lapsed
- * or closed relationship cannot be reopened by a transition — resuming one is a new relationship,
- * or an operator's explicit repair, and neither is a silent status write.
+ * **Terminal means terminal — with one deliberate exception, argued below.** `complete` and `void`
+ * have no outgoing edge, so a closed relationship cannot be reopened by a transition: resuming one
+ * is a new relationship, or an operator's explicit repair, and neither is a silent status write.
+ *
+ * The exception is `expired`, and #533 phase 3 is what forced it. Phase 1 listed `expired` beside
+ * `complete` and `void` because a lapsed relationship looks finished from the outside. It is not:
+ * it is **unpaid**, and the card is explicit that "a successful subscription
+ * (`checkout.session.completed` / a later `invoice.paid`) moves `expired → active`". A table that
+ * refused that edge would make paying a customer unable to recover the relationship they are
+ * paying for, and the only way around it would be a second write path — which #533 also forbids.
+ * So `expired` gains two `system` edges and stops being terminal; the two edges are named for what
+ * actually differs about the two origins (a pair that was already answering, and an invitation that
+ * never was claimed) rather than collapsing both into `active`. `complete` and `void` remain
+ * terminal: those are decisions, and money does not undo a decision. The pair of words is
+ * `CLOSED_RELATIONSHIP_STATUSES` now — `expired` is *lapsed*, not closed — and
+ * `isClosedRelationshipStatus()` is the predicate every \"nothing more can happen\" screen asks.
  *
  * Pure: no `pg`, no `process.env`, no clock, no `content/` import. `tests/relationship-status.test.ts`
  * drives every edge, every actor and the refusals without a database.
@@ -55,10 +68,14 @@ export const RELATIONSHIP_STATUSES = [
 
 export type RelationshipStatus = (typeof RELATIONSHIP_STATUSES)[number];
 
-/** The statuses nothing moves out of. */
-export const TERMINAL_RELATIONSHIP_STATUSES = ["complete", "void", "expired"] as const;
+/**
+ * The statuses nothing moves out of. **`expired` is not one of them** — see the module docstring:
+ * a lapse is unpaid, not decided, and phase 3's payment edge revives it. `complete` and `void` are
+ * decisions, and money does not undo a decision.
+ */
+export const CLOSED_RELATIONSHIP_STATUSES = ["complete", "void"] as const;
 
-export type TerminalRelationshipStatus = (typeof TERMINAL_RELATIONSHIP_STATUSES)[number];
+export type ClosedRelationshipStatus = (typeof CLOSED_RELATIONSHIP_STATUSES)[number];
 
 /** Who may make a move. See the module docstring for each actor's authority. */
 export const RELATIONSHIP_ACTORS = ["initiator", "counterparty", "admin", "system"] as const;
@@ -162,12 +179,33 @@ export const RELATIONSHIP_TRANSITIONS: readonly RelationshipTransition[] = [
     actors: ["admin"],
     why: "support voids a live relationship with a reason (#533's day-14 escape hatch)",
   },
+  /**
+   * #533 phase 3 — the two payment edges. Both are `system`: a provider event is what lands, and a
+   * person clicking "pay" reaches it only through that event (`invoice.paid`,
+   * `checkout.session.completed`). The two are separate because the origins are:
+   * `expired → active` is a pair that was already answering and can carry on answering, and
+   * `expired → published` is a relationship whose invitation never got claimed — it goes back to
+   * the invitation, because a `published` link is the only thing that can create a pair at all.
+   * `lib/relationship/membership.ts::reactivationStatusOf()` decides which, from the `party` rows.
+   */
+  {
+    from: "expired",
+    to: "active",
+    actors: ["system"],
+    why: "a payment landed after the membership lapsed; both seats are bound and answer again",
+  },
+  {
+    from: "expired",
+    to: "published",
+    actors: ["system"],
+    why: "a payment landed after the membership lapsed before the counterparty joined; the invitation works again",
+  },
 ];
 
 /** The members of a closed vocabulary, as a set for the type guards below. */
 const STATUS_SET: ReadonlySet<string> = new Set(RELATIONSHIP_STATUSES);
 const ACTOR_SET: ReadonlySet<string> = new Set(RELATIONSHIP_ACTORS);
-const TERMINAL_SET: ReadonlySet<string> = new Set(TERMINAL_RELATIONSHIP_STATUSES);
+const CLOSED_SET: ReadonlySet<string> = new Set(CLOSED_RELATIONSHIP_STATUSES);
 
 /** Is this string one of the seven? A row read from the database is still checked. */
 export function isRelationshipStatus(value: string): value is RelationshipStatus {
@@ -179,14 +217,14 @@ export function isRelationshipActor(value: string): value is RelationshipActor {
   return ACTOR_SET.has(value);
 }
 
-/** `complete`, `void` or `expired` — nothing moves out of these. */
-export function isTerminalRelationshipStatus(
+/** `complete` or `void` — nothing moves out of these. `expired` is lapsed, not closed. */
+export function isClosedRelationshipStatus(
   status: RelationshipStatus,
-): status is TerminalRelationshipStatus {
-  return TERMINAL_SET.has(status);
+): status is ClosedRelationshipStatus {
+  return CLOSED_SET.has(status);
 }
 
-/** Every legal edge out of `status`, whatever the actor. Empty for a terminal status. */
+/** Every legal edge out of `status`, whatever the actor. Empty for a closed status. */
 export function transitionsFrom(status: RelationshipStatus): readonly RelationshipTransition[] {
   return RELATIONSHIP_TRANSITIONS.filter((transition) => transition.from === status);
 }

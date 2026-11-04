@@ -196,7 +196,13 @@ export type SubmissionRejection =
   | "incomplete"
   | "not-a-party"
   | "no-such-instance"
-  | "voided";
+  | "voided"
+  /**
+   * #533 phase 3 — the membership paying for this relationship ended. A write refusal like
+   * `voided`, and deliberately its own code: a voided session was ended by an operator and a
+   * lapsed one by the money, and the two sentences send the reader to different places.
+   */
+  | "lapsed";
 
 export interface ParsedAnswers {
   readonly itemId: string;

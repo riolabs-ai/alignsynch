@@ -236,7 +236,24 @@ export function RelationshipDetail({
             <Badge variant="outline" data-relationship-invite={relationship.view}>
               {viewSentence(relationship.view)}
             </Badge>
+            {/* #533 phase 3 — the derived membership, beside the stored status. */}
+            {relationship.membership.state === "lapsed" ? (
+              <Badge variant="outline" data-membership-state="lapsed">
+                {pageItemOf(copy, "read-only").label}
+              </Badge>
+            ) : null}
           </div>
+          {/* #533 phase 3 — the sentence both parties read. It names the initiator's membership
+              and the instant it ended, from the row, so a lapse is never mistaken for a failure of
+              the person reading it. */}
+          {relationship.lapseSentence === null ? null : (
+            <p
+              data-membership-sentence="lapsed"
+              className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+            >
+              {relationship.lapseSentence}
+            </p>
+          )}
           <dl className="grid gap-2 text-sm sm:grid-cols-2">
             <div className="flex gap-2">
               <dt className="text-muted-foreground">{pageItemOf(copy, "started").label}</dt>

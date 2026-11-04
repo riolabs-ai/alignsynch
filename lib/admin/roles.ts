@@ -185,6 +185,18 @@ export const ADMIN_ACTIONS = [
   "relationship.publish",
   /** Re-mint a lapsed invitation on a published relationship — one click, no Aspects re-entered. */
   "relationship.republish",
+  /**
+   * #533 phase 3 — the two operator overrides on a relationship's membership, and the third is
+   * #505's `plan.comp` (a comp is a grant, not a subscription edit).
+   *
+   * `void` ends a live relationship with a reason: support's force-close, one level up from
+   * `session.void`. `extend` pushes a running trial out and revives a lapsed relationship with it.
+   * Both are `admin` for the same reason `session.void` is — they end or continue somebody's
+   * purchase — and both go through `act()` so each leaves exactly one reason-bearing audit row.
+   * Neither can reopen `complete`/`void`: those are decisions, and the mutations refuse them.
+   */
+  "relationship.void",
+  "relationship.extend",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -271,6 +283,9 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "relationship.aspects": "member",
   "relationship.publish": "member",
   "relationship.republish": "member",
+  // #533 phase 3 — the two operator overrides, floored where `session.void` is: `admin`.
+  "relationship.void": "admin",
+  "relationship.extend": "admin",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.

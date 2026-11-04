@@ -61,6 +61,9 @@ export function InviteView({
     initiator: preview.initiatorName ?? "",
     counterparty: preview.counterpartyName ?? "",
     template: preview.templateTitle ?? "",
+    // #533 phase 3 — the stored instant, printed as-is. The sentence is a fixture line and the
+    // date is the row's, so neither a render nor a locale decides when the membership ended.
+    endedAt: preview.membership?.endedAt?.toISOString() ?? "",
   };
   const viewerName =
     viewerRole === "initiator" ? values.initiator : viewerRole === null ? "" : values.counterparty;
@@ -130,9 +133,18 @@ export function InviteView({
           </form>
         </>
       ) : claimable ? null : (
-        <p className="mt-4 text-sm text-gray-700 dark:text-gray-200">
-          {fillLabel(sectionBody(sectionOf(copy, preview.state)), values)}
-        </p>
+        <>
+          <p className="mt-4 text-sm text-gray-700 dark:text-gray-200">
+            {fillLabel(sectionBody(sectionOf(copy, preview.state)), values)}
+          </p>
+          {/* #533 phase 3 — the lapsed band names the instant, from the row. Only `lapsed` has an
+              item here: the other terminal bands say everything in one sentence. */}
+          {preview.state === "lapsed" && preview.membership?.endedAt != null ? (
+            <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+              {fillLabel(itemLabel(sectionOf(copy, "lapsed"), "ended"), values)}
+            </p>
+          ) : null}
+        </>
       )}
     </div>
   );

@@ -82,6 +82,23 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * #533 phase 3 — the membership ended, so both sheets are read-only. Separate from `frozen`
+       * because the cause is different and the remedy is different: nobody accepted this, the
+       * initiator's trial or subscription ended, and the party reading it did not fail at anything.
+       */
+      id: "lapsed",
+      heading: "This relationship is read-only",
+      body: "The membership that paid for it has ended, so neither of you can change an answer. What you marked is below, exactly as it was stored, and it stays readable.",
+      items: [
+        {
+          id: "lapsed-note",
+          label:
+            "This is the initiator's membership, not yours: the trial or the subscription behind the relationship ended. It becomes writable again if a payment lands.",
+        },
+      ],
+    },
+    {
       id: "coach",
       heading: "You are reading as a coach",
       body: "A coach reads the relationship and its report. Answering is the two parties' own act, so there is no sheet for a coach to fill in.",

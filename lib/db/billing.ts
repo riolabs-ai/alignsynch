@@ -27,6 +27,7 @@
 import type { PoolClient } from "pg";
 import { type BillingInterval, type BillingPlanId, BILLING_INTERVALS } from "@/data/billing-plans";
 import { getPool, queryRows } from "@/lib/db/client";
+import { syncRelationshipsWithSubscription } from "@/lib/relationship/enforcement";
 import {
   type BillingProvider,
   type Plan,
@@ -213,6 +214,16 @@ export async function applyBillingEventOnce(
       return { applied: false, subscription: null };
     }
     const subscription = await work(client);
+    // #533 phase 3 — the subscription's consequence on the relationships it pays for, in **this**
+    // transaction. A payment that commits without its consequence would be a customer who paid and
+    // a relationship that stayed read-only; a consequence that commits without its payment would be
+    // the reverse. `syncRelationshipsWithSubscription()` is a `system` transition (the same class as
+    // the claim's `published → active`), which is why it is not an `act()`-audited write: an
+    // operator did not decide anything, the provider did. A `work` that returns `null` (an event
+    // that changed no subscription) has no consequence to apply.
+    if (subscription !== null) {
+      await syncRelationshipsWithSubscription(client, subscription);
+    }
     await client.query("COMMIT");
     return { applied: true, subscription };
   } catch (error) {

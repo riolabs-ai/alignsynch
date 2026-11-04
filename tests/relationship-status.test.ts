@@ -7,8 +7,10 @@
  *   1. **The table is the state machine.** Every edge it lists is allowed for exactly the actors it
  *      names, and refused for every other actor — so a new actor cannot acquire authority by being
  *      added to a union type somewhere else.
- *   2. **A terminal status is terminal.** `complete`, `void` and `expired` have no outgoing edge,
- *      which is what makes "complete → active" a refusal rather than a repair.
+ *   2. **A closed status is closed.** `complete` and `void` have no outgoing edge, which is what
+ *      makes "complete → active" a refusal rather than a repair. `expired` is *lapsed*, not closed
+ *      (#533 phase 3): its only two outgoing edges are the system's payment moves, and they are
+ *      asserted by name.
  *   3. **The counterparty holds no lifecycle authority.** Publishing, voiding and completing are the
  *      initiator's, support's or a consequence's act; the invited member's act is acceptance, which
  *      lives on `party.accepted_at` (0016).
@@ -24,13 +26,13 @@ import { describe, expect, it } from "vitest";
 import {
   actorsFor,
   canTransition,
+  CLOSED_RELATIONSHIP_STATUSES,
+  isClosedRelationshipStatus,
   isRelationshipActor,
   isRelationshipStatus,
-  isTerminalRelationshipStatus,
   RELATIONSHIP_ACTORS,
   RELATIONSHIP_STATUSES,
   RELATIONSHIP_TRANSITIONS,
-  TERMINAL_RELATIONSHIP_STATUSES,
   targetsFrom,
   transitionsBy,
   transitionsFrom,
@@ -122,15 +124,35 @@ describe("the transition table", () => {
     }
   });
 
-  it("gives the three terminal statuses no way out", () => {
-    for (const status of TERMINAL_RELATIONSHIP_STATUSES) {
+  it("gives the two closed statuses no way out, and refuses money as a way back", () => {
+    for (const status of CLOSED_RELATIONSHIP_STATUSES) {
       expect(transitionsFrom(status), `${status} has an outgoing edge`).toEqual([]);
     }
     for (const status of RELATIONSHIP_STATUSES) {
-      expect(isTerminalRelationshipStatus(status)).toBe(
-        (TERMINAL_RELATIONSHIP_STATUSES as readonly string[]).includes(status),
+      expect(isClosedRelationshipStatus(status)).toBe(
+        (CLOSED_RELATIONSHIP_STATUSES as readonly string[]).includes(status),
       );
     }
+    // #533 phase 3: `complete` and `void` are decisions and no payment event reopens them. The
+    // table has no edge from either, whatever the actor, so the reactivation path cannot reach a
+    // relationship a person ended.
+    for (const actor of RELATIONSHIP_ACTORS) {
+      for (const to of RELATIONSHIP_STATUSES) {
+        expect(canTransition("complete", to, actor)).toBe(false);
+        expect(canTransition("void", to, actor)).toBe(false);
+      }
+    }
+  });
+
+  it("revives an expired relationship only through the system, and only two ways", () => {
+    // #533 phase 3 reversed phase 1's "expired is terminal": a lapse is *unpaid*, not decided, so
+    // a payment lands and the relationship comes back. The two targets are the two origins.
+    expect(targetsFrom("expired", "system")).toEqual(["active", "published"]);
+    expect(targetsFrom("expired", "initiator")).toEqual([]);
+    expect(targetsFrom("expired", "counterparty")).toEqual([]);
+    expect(targetsFrom("expired", "admin")).toEqual([]);
+    expect(actorsFor("expired", "active")).toEqual(["system"]);
+    expect(actorsFor("expired", "published")).toEqual(["system"]);
   });
 
   it("reaches every non-terminal status from draft", () => {

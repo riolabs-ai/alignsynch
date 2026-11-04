@@ -109,6 +109,15 @@ import {
 import { invitationLink } from "@/lib/flow/email";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
+import {
+  lapseIfDue,
+  readMembershipForRelationship,
+  readMembershipForSession,
+  recordLapseIfDue,
+  type MembershipReading,
+  type Sql,
+} from "@/lib/relationship/enforcement";
+import { membershipSentence, type Membership } from "@/lib/relationship/membership";
 import { relationshipRoleOf } from "@/lib/flow/membership";
 import { emailLooksDeliverable, resendRefusal, type ResendRefusal } from "@/lib/flow/resend";
 import {
@@ -701,6 +710,26 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       };
     }
 
+    // #533 phase 3 — the membership that paid for this invitation, asked **before** the seat is
+    // bound. A relationship whose trial or subscription lapsed is read-only for both parties, and
+    // the invitation is the first thing that has to stop working: the link is the only way a
+    // stranger can reach the pair. The refusal is a `ROLLBACK` — a refused claim writes nothing —
+    // so `recordLapseIfDue()` then writes the `expired` status in its own commit; the attempt is
+    // what records the lapse, and the row is corrected even though the claim was refused.
+    const { relationshipId } = await sessionRelationshipOf(client, invite.session_record_id);
+    if (relationshipId !== null) {
+      const reading = await lapseIfDue(client, relationshipId, now);
+      if (reading !== undefined && reading.membership.state === "lapsed") {
+        await client.query("ROLLBACK");
+        await recordLapseIfDue(relationshipId, now);
+        return {
+          ok: false,
+          code: "lapsed",
+          reason: membershipSentence(reading.membership),
+        };
+      }
+    }
+
     // The caller's own binding, read before anything is written: a claim is for a party
     // that is not already bound, and the Initiator opening their own link is a refusal
     // rather than a seat swap. The session keeps answering as whoever it already is.
@@ -758,6 +787,18 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       invite.session_record_id,
       now.toISOString(),
     ]);
+    // #533 phase 3 — the seat is taken, so the relationship is `active` (`published → active`,
+    // actor `system`; `lib/relationship/status.ts`). Until this write, nothing moved the status
+    // after a publish, so a paid pair read as `published` for ever and #533's `active → expired`
+    // lapse had no state to leave. Guarded on `published` so a re-claim of a reactivated
+    // relationship (`expired → active` already applied by the payment event) is a no-op rather
+    // than a write that hides which path got here first.
+    if (relationshipId !== null) {
+      await client.query(
+        "UPDATE relationship SET status = 'active' WHERE id = $1 AND status = 'published'",
+        [relationshipId],
+      );
+    }
     // #coach — the Counterparty is a member of the relationship they just joined, so the
     // relationship's membership mirrors its parties. A signed-out claim has no account and so
     // no membership row, the same NULL the party row just stored.
@@ -1097,6 +1138,25 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
         reason: `an operator voided this session at ${locked.rows[0].voided_at.toISOString()}; it accepts no further answers`,
       };
     }
+    // #533 phase 3 — a lapsed membership freezes both sheets exactly as a void does, and it is
+    // asked here, under the same session lock, because a party may have opened the form before
+    // the money stopped. The refusal rolls this transaction back, so the lapse itself is recorded
+    // afterwards by `recordLapseIfDue()` in its own commit: the row that explains the refusal is
+    // not lost with the refused write.
+    const membership = await membershipForInstance(
+      client,
+      input.instanceRecordId,
+      input.now ?? new Date(),
+    );
+    if (membership !== undefined && membership.membership.state === "lapsed") {
+      await client.query("ROLLBACK");
+      await recordLapseIfDue(membership.relationshipId, input.now ?? new Date());
+      return {
+        ok: false,
+        code: "lapsed",
+        reason: membershipSentence(membership.membership),
+      };
+    }
     // The mode the sheet is judged against is the row's, read under the lock that already
     // protects the freeze — never a field of the form. `zAssessmentMode` cannot reject a
     // value the column's CHECK allows, so a failure here is drift on a hand-edited row.
@@ -1211,6 +1271,47 @@ async function partyRoleOf(
 }
 
 /**
+ * The relationship a session's assessment round belongs to — the id every #533 phase 3 check needs.
+ *
+ * `session.relationship_id` is nullable in the schema (0013) and non-null for every round the
+ * publish flow mints; a session that names none is an assessment outside a relationship (the
+ * pre-#340 shape, still reachable by an admin-authored session), and the membership rule has
+ * nothing to say about it. `null` is that answer, and the callers treat it as "no membership to
+ * check" rather than as a lapse.
+ */
+async function sessionRelationshipOf(
+  client: PoolClient,
+  sessionRecordId: string,
+): Promise<{ relationshipId: string | null }> {
+  const found = await client.query<{ relationship_id: string | null }>(
+    "SELECT relationship_id FROM session WHERE record_id = $1",
+    [sessionRecordId],
+  );
+  return { relationshipId: found.rows[0]?.relationship_id ?? null };
+}
+
+/**
+ * The membership of the relationship a session belongs to, **with the lapse recorded** when the
+ * derived answer says it has ended.
+ *
+ * One helper for the three flow writes (submit, accept, claim), so "may this pair still write"
+ * is one statement in one place rather than three that could disagree. `undefined` means the
+ * session names no relationship, which is the pre-#340 shape and not a lapse.
+ *
+ * The `now` is the caller's — every one of those writes already takes an injectable clock, and a
+ * refusal that names an instant has to name the same instant the test pinned.
+ */
+async function membershipForInstance(
+  client: PoolClient,
+  instanceRecordId: string,
+  now: Date,
+): Promise<MembershipReading | undefined> {
+  const { relationshipId } = await sessionRelationshipOf(client, instanceRecordId);
+  if (relationshipId === null) return undefined;
+  return lapseIfDue(client, relationshipId, now);
+}
+
+/**
  * The party any of a browser's cookies already answers as on one instance (#202).
  *
  * `partyTokensFrom()` hands in every `flow_party_*` value the request carries; the cookie's
@@ -1317,7 +1418,9 @@ export type AcceptRefusal =
   | "incomplete"
   | "already-accepted"
   /** An operator ended the session (#503): nothing accepts, from either seat. */
-  | "voided";
+  | "voided"
+  /** #533 phase 3 — the membership ended: the pair is read-only, so nobody accepts anything. */
+  | "lapsed";
 
 export interface AcceptInput {
   readonly instanceRecordId: string;
@@ -1421,6 +1524,20 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
         ok: false,
         code: "voided",
         reason: `an operator voided this session at ${session.voided_at.toISOString()}; there is nothing left to accept`,
+      };
+    }
+    // #533 phase 3 — acceptance is a write, so a lapsed membership refuses it like a void does.
+    // Asked after the void and before the seat, so a session an operator ended answers `voided`
+    // even when the money also stopped: the operator's act is the more specific fact. The refusal
+    // rolls back; the lapse is then recorded in its own commit.
+    const membership = await membershipForInstance(client, input.instanceRecordId, now);
+    if (membership !== undefined && membership.membership.state === "lapsed") {
+      await client.query("ROLLBACK");
+      await recordLapseIfDue(membership.relationshipId, now);
+      return {
+        ok: false,
+        code: "lapsed",
+        reason: membershipSentence(membership.membership),
       };
     }
 
@@ -2190,6 +2307,15 @@ export async function readFlowScreen(input: {
 
   // #266 — the invitation's state, derived once from the row and the instant of this read.
   const now = input.now ?? new Date();
+  // #533 phase 3 — the membership, derived at the same instant and **not written**: a render may
+  // not write a row, so the read draws the derived answer and the next write path records it.
+  // `readMembershipForRelationship` is the same function the claim uses before it refuses, which
+  // is what keeps the screen and the refusal from disagreeing about whether the pair may write.
+  const membership = await readMembershipForRelationship(
+    poolSql,
+    bundle.instance.relationship_id,
+    now,
+  );
   const invite =
     bundle.invite === null
       ? null
@@ -2208,6 +2334,7 @@ export async function readFlowScreen(input: {
     rows,
     template,
     viewerRole,
+    membership: membership?.membership ?? null,
     invite:
       invite === null
         ? null
@@ -2260,7 +2387,19 @@ export async function markUnlockSeen(input: {
   return (result.rowCount ?? 0) > 0;
 }
 
-export type InviteState = "claimable" | "claimed" | "expired" | "revoked" | "unknown";
+export type InviteState =
+  | "claimable"
+  | "claimed"
+  | "expired"
+  | "revoked"
+  /**
+   * #533 phase 3 — the membership that paid for this relationship ended. Distinct from `expired`
+   * (the link ran out its seven days, ask for a new one) and from `revoked` (an operator killed it):
+   * here the link is fine and the *product* is not being paid for, so a new link would not help.
+   * The page explains rather than 404s, because the visitor followed a link somebody really sent.
+   */
+  | "lapsed"
+  | "unknown";
 
 export interface InvitePreview {
   readonly state: InviteState;
@@ -2274,6 +2413,12 @@ export interface InvitePreview {
    * party to it.
    */
   readonly viewerRole: PartyRole | null;
+  /**
+   * #533 phase 3 — the membership facts, so the page can print *when* it ended and *why* rather
+   * than a bare band. `null` for an invitation whose session names no relationship, and absent in
+   * the `unknown` preview (there is nothing to derive it from).
+   */
+  readonly membership?: Membership | null;
 }
 
 /**
@@ -2310,6 +2455,7 @@ export async function previewInvite(
   if (!tokenIsWellFormed(token)) return empty;
   const [row] = await query<{
     session_record_id: string;
+    relationship_id: string | null;
     counterparty_name: string;
     claimed_at: Date | null;
     expires_at: Date;
@@ -2317,8 +2463,8 @@ export async function previewInvite(
     initiator_name: string | null;
     title: string;
   }>(
-    `SELECT iv.session_record_id, iv.counterparty_name, iv.claimed_at, iv.expires_at,
-            iv.revoked_at,
+    `SELECT iv.session_record_id, ai.relationship_id, iv.counterparty_name, iv.claimed_at,
+            iv.expires_at, iv.revoked_at,
             (SELECT p.name FROM party p
               WHERE p.session_record_id = iv.session_record_id AND p.role = 'initiator') AS initiator_name,
             t.title
@@ -2342,7 +2488,16 @@ export async function previewInvite(
     },
     now,
   );
-  const state: InviteState = derived === "unclaimed" ? "claimable" : derived;
+  // #533 phase 3 — the membership outranks the invitation's own state, and the order is the
+  // news: a link inside its seven days that no longer buys anything reports the lapse, while a
+  // link that was already spent keeps saying `claimed` (the seat exists; the report is a
+  // read the pair still has). Read, never written — this is a GET.
+  const membership =
+    row.relationship_id === null
+      ? null
+      : await readMembershipForRelationship(poolSql, row.relationship_id, now);
+  const lapsed = membership?.membership.state === "lapsed" && derived !== "claimed";
+  const state: InviteState = lapsed ? "lapsed" : derived === "unclaimed" ? "claimable" : derived;
   const viewerRole =
     (await viewerRoleOf(row.session_record_id, options.viewerTokens ?? [])) ??
     (await roleForUser(row.session_record_id, options.viewerUserId));
@@ -2352,6 +2507,7 @@ export async function previewInvite(
     counterpartyName: row.counterparty_name,
     templateTitle: row.title,
     viewerRole: viewerRole ?? null,
+    membership: membership?.membership ?? null,
   };
 }
 
@@ -2633,3 +2789,18 @@ async function query<T>(text: string, values: readonly unknown[]): Promise<T[]> 
   const result = await getPool().query(text, values as unknown[]);
   return result.rows as T[];
 }
+
+/**
+ * The pool, in the shape `lib/relationship/enforcement.ts` reads through.
+ *
+ * The read paths in this module already have a `query()` that unwraps `rows`; the membership
+ * helpers want the `{ rows }` result so the same function can take a `PoolClient` inside a
+ * transaction and a `Pool` outside one. This literal is that adapter, in one place, so a read does
+ * not have to open a client of its own and a write does not have to remember to release one.
+ */
+const poolSql: Sql = {
+  query: async <R = Record<string, unknown>>(text: string, values?: readonly unknown[]) => {
+    const result = await getPool().query(text, values as unknown[] | undefined);
+    return { rows: result.rows as R[] };
+  },
+};

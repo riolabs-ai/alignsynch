@@ -103,6 +103,9 @@ export default async function AnswerSheetPage({
     status: screen.status,
     viewerAccepted: screen.viewerAccepted,
     aspects: screen.aspects,
+    // #533 phase 3 — the membership the screen derived, so a lapsed relationship draws a band
+    // instead of a form even while the session itself is still `answering`.
+    membership: screen.membership ?? null,
   });
 
   return (

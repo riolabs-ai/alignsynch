@@ -60,6 +60,26 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
+       * #533 phase 3 — the membership ended. A fourth fact, and a different sentence from
+       * `expired` (the link's own seven days) and `revoked` (an operator's decision): the link is
+       * fine, the *product* is not being paid for, and a new link would not help. The last sentence
+       * is load-bearing — the person reading this was invited, they bought nothing, and the card
+       * says they must not read the lapse as their own failure.
+       */
+      id: "lapsed",
+      heading: "This invitation is no longer active",
+      body: "It was sent by {initiator} for {template}. That membership has ended, so the relationship is read-only for both of them and this invitation cannot be accepted. Nothing you did ended it.",
+      items: [
+        /**
+         * The instant, from the row (`relationship.expired_at` or the subscription's period end).
+         * Its own item rather than a clause in the body because a relationship whose lapse no row
+         * dates still has to read as a sentence — the band is drawn either way.
+         */
+        { id: "ended", label: "The membership ended on {endedAt}." },
+      ],
+    },
+    {
+      /**
        * #503 — an operator withdrew the link. A different sentence from `expired` because it is a
        * different fact: nothing ran out, somebody decided, and "ask for a new one" is a request to
        * the team rather than to the other party.
@@ -90,6 +110,15 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
           id: "unconfirmed",
           label:
             "Nothing was claimed: the claim did not confirm joining as {counterparty}. Tick the box below and send it again.",
+        },
+        /**
+         * #533 phase 3 — the link is fine, the membership is not. Its own sentence because the
+         * advice differs: a new link cannot help, and the person who can fix it is the initiator.
+         */
+        {
+          id: "lapsed",
+          label:
+            "Nothing was claimed: the initiator's membership ended, so this relationship is read-only for both of them and the invitation cannot be accepted. Ask {initiator} to get in touch once their subscription is running again.",
         },
       ],
     },

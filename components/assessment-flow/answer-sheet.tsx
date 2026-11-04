@@ -101,6 +101,7 @@ export function AnswerSheet({
   const sheet = sectionOf(copy, "sheet");
   const rules = sectionOf(copy, "rules");
   const frozen = sectionOf(copy, "frozen");
+  const lapsed = sectionOf(copy, "lapsed");
   const coach = sectionOf(copy, "coach");
   const backLabel = pageItemOf(copy, "back").label;
   const kinds = opinionKindsFor(mode);
@@ -295,15 +296,36 @@ export function AnswerSheet({
         </form>
       ) : (
         <div className="space-y-6">
-          <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
-            <h2 className="text-xl font-semibold text-amber-900 dark:text-amber-200">
-              {frozen.heading}
-            </h2>
-            <p className="mt-1 text-sm text-amber-900 dark:text-amber-200">{sectionBody(frozen)}</p>
-            <p className="mt-3 text-sm font-medium text-amber-900 dark:text-amber-200">
-              {itemLabel(frozen, "frozen-note")}
-            </p>
-          </section>
+          {gate.state === "lapsed" ? (
+            /**
+             * #533 phase 3 — the membership ended. A different band from `frozen`: the answers are
+             * not sealed because both parties accepted, they are frozen because nobody is paying.
+             * The sentence names the initiator's membership and the instant, from the row.
+             */
+            <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
+              <h2 className="text-xl font-semibold text-amber-900 dark:text-amber-200">
+                {lapsed.heading}
+              </h2>
+              <p className="mt-1 text-sm text-amber-900 dark:text-amber-200">
+                {sectionBody(lapsed)}
+              </p>
+              <p className="mt-3 text-sm font-medium text-amber-900 dark:text-amber-200">
+                {itemLabel(lapsed, "lapsed-note")}
+              </p>
+            </section>
+          ) : (
+            <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
+              <h2 className="text-xl font-semibold text-amber-900 dark:text-amber-200">
+                {frozen.heading}
+              </h2>
+              <p className="mt-1 text-sm text-amber-900 dark:text-amber-200">
+                {sectionBody(frozen)}
+              </p>
+              <p className="mt-3 text-sm font-medium text-amber-900 dark:text-amber-200">
+                {itemLabel(frozen, "frozen-note")}
+              </p>
+            </section>
+          )}
           <fieldset disabled className="space-y-6 opacity-80">
             {fields}
           </fieldset>

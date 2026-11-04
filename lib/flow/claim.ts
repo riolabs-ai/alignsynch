@@ -32,6 +32,13 @@ export const CLAIM_REFUSALS = [
   "expired",
   /** An operator revoked the link (#503). Terminal until somebody resends it. */
   "revoked",
+  /**
+   * #533 phase 3 — the membership that paid for this relationship ended (trial at day 14, a failed
+   * payment, a cancellation). The link is not out of date and nobody revoked it: the product is not
+   * being paid for, so the pair is read-only and the invitation stops claiming. A distinct code
+   * because it needs a distinct sentence — "ask for a new link" is wrong advice here.
+   */
+  "lapsed",
   "already-a-party",
   "already-bound",
   "unconfirmed",
