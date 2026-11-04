@@ -210,3 +210,59 @@ after a merge, or from a scheduled job.
 3. If it `ERROR`ed, read the build log and fix the tree; the next merge to `main` deploys again.
 4. If it is `READY` and `STALE` persists, the alias is pointing at an older deployment — promote
    the newest one in the dashboard rather than re-deploying.
+
+## 3. Environment variables: the file is the source of truth, `pnpm env:sync` pushes it
+
+Vercel's environment is written from a local env file by
+[`scripts/env-sync.mjs`](../scripts/env-sync.mjs) (`pnpm env:sync`), not by hand in the dashboard.
+The file is the source of truth and `.env*` is gitignored, so the script is the only thing that
+talks to Vercel and the only way to say what a target holds. It prints **key names only** — never a
+value, never a prefix of one — on every path, including errors, so its output can be pasted into a
+ticket or a card without a redaction pass.
+
+```bash
+pnpm env:sync --from .env.demo --target preview --branch demo                       # dry run: the default
+pnpm env:sync --from .env.demo --target preview --branch demo --diff               # drift, writes nothing
+pnpm env:sync --from .env.demo --target preview --branch demo --apply              # create missing keys
+pnpm env:sync --from .env.production --target production --diff
+pnpm env:sync --from .env.production --target production --apply --confirm-production
+```
+
+Each run prints one decision per key — `create`, `replace`, `keep`, `drop`, `extra` — and the flags
+exist because each of them is a mistake with a cheap guard:
+
+- **Nothing is written without `--apply`.** The write is a second, explicit invocation; a dry run
+  ends with `re-run with --apply to write these` and exits 0.
+- **`--apply --target production` is refused without `--confirm-production`.** Rewriting the live
+  project's environment is the one mistake a typo can make expensive, and the flag is checked
+  before the token is even read, so a refusal cannot half-run. The refusal prints
+  `add --confirm-production to mean it` and exits 1.
+- **`--target preview` is refused without `--branch`.** The branch is what scopes a preview
+  variable to one preview; with no branch the key would land on every preview of the project.
+  There is no default branch, deliberately — the guard used to be unreachable behind one.
+- **`--force` overwrites keys that already exist.** Without it an existing key is `keep`, so the
+  file never silently rewrites a value somebody set on purpose.
+- **`--diff` reports drift and never writes.** It is the audit, not the sync: it lists keys in the
+  file that the target does not hold (`missing`, what `--apply` would create) and keys the target
+  holds that the file does not (`extra`, which `--apply` leaves alone). **Presence and type only** —
+  Vercel stores values encrypted or sensitive and never returns one, so a value that changed
+  underneath is invisible here. The output says exactly that rather than implying a comparison. A
+  type row appears only where the file and the target both hold the key, and it is informational:
+  `--apply` sends a value, not a type. It also refuses `--apply` and `--force`, so the mode is never
+  ambiguous about whether something is being written.
+
+The two policy lists in the script are release policy, which is why the script is versioned here
+rather than living in an operator's home directory. `NEVER_PREVIEW` names the keys that must never
+reach a demo target (`ADMIN_EMAILS`: the console operator allowlist, which a demo login must not
+inherit); `NEVER_AT_ALL` names the keys that are not app configuration at any target
+(`VERCEL_OIDC_TOKEN`, `BWS_ACCESS_TOKEN`, `STRIPE_TEST_WEBHOOK_URL`, and the `client_id` /
+`client_secret` / `scope` / `grant_type` fields a pasted curl leaves behind). The reason for each key
+sits beside the rule and is printed with the decision.
+
+The token is the Vercel CLI's own — `~/.local/share/com.vercel.cli/auth.json`, written by
+`vercel login`. The script holds no secret of its own and takes no `--token`.
+
+This is not a gate step. `scripts/env-sync.mjs` is a `scripts/**` change, so `pnpm lint`,
+`pnpm format:check` and `pnpm typecheck` keep it honest, but `scripts/verify.sh` and CI never run
+it: the gate is network-free and has no credentials, by contract. A write is also not a deploy —
+the run ends with `a new deployment is required on <target> for these to take effect`.
