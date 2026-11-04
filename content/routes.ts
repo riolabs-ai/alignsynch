@@ -51,13 +51,12 @@ const STATIC_ROUTES = [
   "/dashboard/help",
   "/dashboard/library",
   "/dashboard/support",
-  "/dashboard/support/articles/[slug]",
   // #533 phase 2 — the initiator's own CRUD: their private templates and the relationships they
-  // started. Both detail routes exist so a link out of a list is a manifest route, not a 404.
+  // started. Both *lists* are static routes; their detail pages are in `DYNAMIC_ROUTES` below,
+  // because a `[id]` segment filed as a static route matches only its own literal spelling and
+  // every real `/dashboard/relationships/<id>` link would read as a 404 to `data:check` E10.
   "/dashboard/relationships",
-  "/dashboard/relationships/[id]",
   "/dashboard/templates",
-  "/dashboard/templates/[id]",
   "/dashboard/user",
   "/demo",
   "/demo/admin",
@@ -107,6 +106,12 @@ const DYNAMIC_ROUTES = [
   "/assessment/instances/[instanceId]/accept",
   "/assessment/templates/[templateId]",
   "/assessment/templates/[templateId]/create",
+  // #542 phase 2 — the member's own CRUD detail pages, moved here from `STATIC_ROUTES` where
+  // #533 phase 2 had filed them: a `[id]` pattern in the static list matches one literal string
+  // and nothing else, so the list's own links were invisible to the route matcher.
+  "/dashboard/relationships/[id]",
+  "/dashboard/support/articles/[slug]",
+  "/dashboard/templates/[id]",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/invite/[token]",

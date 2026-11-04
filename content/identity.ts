@@ -49,6 +49,7 @@
 import { z } from "zod";
 
 import { zIsoDateTime } from "./core";
+import { USER_ROLES } from "./role-ladder";
 
 /* ------------------------------------------------------------------ *
  * Closed vocabularies and field shapes
@@ -113,39 +114,21 @@ export const zUserId = z.string().min(1).max(128);
  * the pages that need it". #501 is that decision and its pages, so the order above is now
  * load-bearing: `roleAdmits()` compares ranks, and `owner` passes every gate `admin` passes
  * without any call site naming it.
+ *
+ * **The values themselves live in `content/role-ladder.ts` and are re-exported here.** The ladder
+ * is read by the shell's navigation (`lib/nav.ts`, `lib/nav-menu.ts`), which is browser code, and
+ * this module carries zod; keeping the two apart is what lets the rail compare rungs without
+ * pulling the profile schema into every page's bundle. One definition, two import paths, no drift.
  */
-export const USER_ROLES = ["member", "support", "admin", "owner"] as const;
-
-export type UserRole = (typeof USER_ROLES)[number];
+export {
+  DEFAULT_USER_ROLE,
+  roleAdmits,
+  roleRank,
+  USER_ROLES,
+  type UserRole,
+} from "./role-ladder";
 
 export const zUserRole = z.enum(USER_ROLES);
-
-/**
- * What a person is when nobody said otherwise — the same value the column's `DEFAULT` carries,
- * named here so a missing row and a defaulted row answer alike: no `user_profile` row is not a
- * reason to be an admin, and "the profile write does not mention role" is not either.
- */
-export const DEFAULT_USER_ROLE: UserRole = "member";
-
-/** A role's rung, as its index in `USER_ROLES`. The one place the ladder is read as a number. */
-export function roleRank(role: UserRole): number {
-  return USER_ROLES.indexOf(role);
-}
-
-/**
- * Is this role at least `needed` on the ladder?
- *
- * One comparison, not a table: the ladder is `USER_ROLES`' own order, so a role added between two
- * rungs needs no edit here. `null` is nobody signed in, and it is below every rung — the same
- * answer a `member` gets on an admin surface, which is #183's rule kept intact.
- *
- * **This is the surface gate, not the action gate.** `lib/admin/roles.ts::can()` is what decides
- * whether a role may take a named admin action (a role change, an ownership transfer); this
- * function answers the coarser question a whole page asks (`requireRole("admin")`).
- */
-export function roleAdmits(needed: UserRole, viewer: UserRole | null): boolean {
-  return viewer !== null && roleRank(viewer) >= roleRank(needed);
-}
 
 /** Both country fields, or neither — the twin of `zOpinions`' think/guess refinement. */
 export function countryPairProblem(value: {

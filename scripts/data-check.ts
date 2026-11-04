@@ -831,8 +831,28 @@ const uiSources = UI_ROOTS.flatMap((root) => {
   return walkSources(root);
 });
 
+/**
+ * Files outside `components/` and `app/` that emit destinations, named one by one.
+ *
+ * `lib/nav-menu.ts` is the alignment rail's descriptor (#542 phase 2): the rows are records with
+ * an `href` property rather than JSX attributes, and a menu is exactly the kind of file that must
+ * not leave the gate. Naming the file (rather than walking all of `lib/`) keeps this a link scan:
+ * `lib/` also holds paths built from constants and database modules, and widening E10 to them
+ * would report `lib/`'s own relative imports as dead links.
+ */
+const LINK_ONLY_SOURCES = ["lib/nav-menu.ts"];
+
+const linkOnlySources: SourceFile[] = LINK_ONLY_SOURCES.flatMap((path) => {
+  const full = join(process.cwd(), path);
+  if (!existsSync(full)) {
+    err("E10", `${path} is missing: the menu descriptor's hrefs are no longer scanned`);
+    return [];
+  }
+  return [{ path, source: readFileSync(full, "utf8") }];
+});
+
 const deadLinkRefs = findDeadLinks(
-  uiSources,
+  [...uiSources, ...linkOnlySources],
   (route) => matchRoute(routeManifest, route) !== undefined,
 );
 for (const dead of deadLinkRefs) {
