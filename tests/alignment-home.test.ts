@@ -274,14 +274,17 @@ describe("the page is six bands, in the order the argument runs", () => {
     expect(card.mode).toBe("Answered in Basic mode");
   });
 
-  it("leads with the hero the practice framing asks for", () => {
-    expect(model.hero.heading).toBe("Turn one assessment into a practice you can charge for.");
+  it("leads with the hero the leadership framing asks for", () => {
+    expect(model.hero.eyebrow).toBe("Relationship alignment · for leaders and teams");
+    expect(model.hero.heading).toBe("Know what your team will not say out loud.");
     expect(model.hero.reassurance).toBe("Free to start · no card");
     /**
-     * The fineprint is **one sentence** carrying the three facts a buyer needs, and the heading's
-     * money word appears once on the page rather than three times: the old footnote said "bought
-     * once", "yours to run" and the subtitle said "paid to run" underneath a heading that already
-     * said "charge for". A second full stop here is a regression, which is what the split counts.
+     * The fineprint is **one sentence** carrying the purchase facts, and since the heading states
+     * an outcome instead of a sale it is the only place on the page that says what buying a
+     * relationship gets you. The old footnote said "bought once", "yours to run" and the subtitle
+     * said "paid to run" underneath a heading about billing — the sale was the promise three times
+     * over, in a page pitched at practitioners rather than at the leader who owns the
+     * relationship. A second full stop here is a regression, which is what the split counts.
      */
     expect(model.hero.fineprint).toContain("One relationship is bought once");
     expect(model.hero.fineprint).toContain("named as its coach");

@@ -8,7 +8,7 @@
 #
 # route | brand | sha256
 / | quizhub | b3dff9bc7f527eed72a11e586d00dabdeb26bac37ea4020a4a8a857df46b53fb
-/ | alignsynch | 67fa70e3e62a0c65e2117072baba4e88a34658406079d40316621d9a869beae2
+/ | alignsynch | 579cd54b99408f758e26f5f818ef97870b19dd5d67d7f36aac335043365af8bb
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
 /news | quizhub | 522d03d637bbc9324528256dc4097d9aff96bf346ea33923fae764d197abdeb1
