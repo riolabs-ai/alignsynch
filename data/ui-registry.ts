@@ -508,6 +508,46 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/dashboard/relationships",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The relationships this member started: a table of their own initiator rows with the stored status on each, and the create band that copies one of their templates into a new relationship's own record.",
+    notes:
+      "Reads `relationship.initiator_user_id = $1` and nothing else, so the list cannot show a counterparty's row. The status column is the stored `relationship.status` (0029/0030) — never derived from the parties — because phase 3's expiry sweep needs one column to move. Create is the only write on the page; Aspects belong to the detail screen.",
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/relationships/[id]",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One relationship the member initiated: its status, its Aspects editor while `draft`/`pending`, save-as-pending, publish through a trial or a checkout, and the one-click re-publish that replaces an expired invite link.",
+    notes:
+      'Reuses `components/admin/template-editor.tsx` in its `band="private"` shape for Aspects (`template-ancestor:` on the header), so there is one editor and not two. Every write is a server action over `act()`; the ownership refusal (`not-yours`) is decided in the action, not by hiding the form — the counterparty reaching this URL gets the same refusal a crafted POST gets.',
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/templates",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The private templates this member wrote: each row opens its editor, a blank one starts from nothing, and a public catalogue template can be cloned into a private copy the member owns.",
+    notes:
+      "`record.owner_user_id` is the member and `record.visibility` is always `private` on every write here — a member can never mint a public template, because public listing is admin-curated (#533). Distinct from `/assessment/templates`, which is the library a member can *use* (built-ins plus their own, archive/duplicate); this page is only what they *wrote*.",
+  },
+  {
+    kind: "route",
+    surface: "/dashboard/templates/[id]",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One private template's editor: the catalogue editor's questions and Aspects shape, writing `owner_user_id` = the actor and `visibility` = `private`, with no publish or unpublish control.",
+    notes:
+      '`band="private"` on the reused `components/admin/template-editor.tsx`; `onPublish`/`onUnpublish` are simply not passed, which is why the member cannot reach the catalogue writer through this screen. The ownership check is in the server action (`not-yours`), so the editor\'s props are a convenience and not the gate.',
+  },
+  {
+    kind: "route",
     surface: "/dashboard/user",
     status: "db",
     templates: ["quizhub", "alignsynch"],

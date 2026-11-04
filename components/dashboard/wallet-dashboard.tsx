@@ -35,7 +35,7 @@ import {
   Download,
   Wallet,
 } from "lucide-react";
-import { Dispatch, SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 
 /**
  * The bar tone per earnings source. Presentation, so it stays in the component: the fixture

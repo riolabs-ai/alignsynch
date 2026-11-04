@@ -7,7 +7,7 @@ import { quizCategoryLabel } from "@/content/categories";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import { Calendar, CheckCircle, Clock, HelpCircle, Target, Trophy, Users } from "lucide-react";
-import { Tournament } from "./tournament-detail";
+import type { Tournament } from "./tournament-detail";
 
 /**
  * The subjects a tournament spans. Slugs, not labels: `quizCategories` owns the text,

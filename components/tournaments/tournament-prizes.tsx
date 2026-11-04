@@ -8,7 +8,7 @@ import type { PageCopySection } from "@/content/pages";
 import { metric } from "@/data/metrics";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Award, Clock, Gift, Medal, Sparkles, Star, Target, Trophy, Zap } from "lucide-react";
-import { Tournament } from "./tournament-detail";
+import type { Tournament } from "./tournament-detail";
 
 interface TournamentPrizesProps {
   tournament: Tournament;

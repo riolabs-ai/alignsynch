@@ -13,7 +13,7 @@ import { formatCount } from "@/content/metrics";
 import type { PageCopySection } from "@/content/pages";
 import { metric } from "@/data/metrics";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
-import { Tournament } from "./tournament-detail";
+import type { Tournament } from "./tournament-detail";
 
 /**
  * The six accordion groups, in render order: the fixture owns the words of every

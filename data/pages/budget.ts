@@ -211,6 +211,36 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/overview",
     budget: 0,
   },
+  // #533 phase 2 — the initiator's own CRUD, budget 0 from the first commit. The two lists, the
+  // private template editor (which renders `components/admin/template-editor.tsx` in its
+  // `band: "private"` variation — a component with no literals of its own) and one relationship's
+  // detail: every label, every refusal sentence and every notice is a fixture string, because a
+  // member's screen is where "the trial is running and no invitation is live" has to be said in
+  // words rather than inferred from two badges.
+  "/dashboard/templates": {
+    page: "app/(mainlayout)/dashboard/templates/page.tsx",
+    dirs: ["components/dashboard"],
+    fixture: "data/pages/dashboard-templates",
+    budget: 0,
+  },
+  "/dashboard/templates/[id]": {
+    page: "app/(mainlayout)/dashboard/templates/[id]/page.tsx",
+    dirs: ["components/dashboard", "components/admin"],
+    fixture: "data/pages/dashboard-template-editor",
+    budget: 0,
+  },
+  "/dashboard/relationships": {
+    page: "app/(mainlayout)/dashboard/relationships/page.tsx",
+    dirs: ["components/dashboard"],
+    fixture: "data/pages/dashboard-relationships",
+    budget: 0,
+  },
+  "/dashboard/relationships/[id]": {
+    page: "app/(mainlayout)/dashboard/relationships/[id]/page.tsx",
+    dirs: ["components/dashboard"],
+    fixture: "data/pages/dashboard-relationship-detail",
+    budget: 0,
+  },
   "/explore": {
     page: "app/(mainlayout)/explore/page.tsx",
     dirs: ["components/explore"],

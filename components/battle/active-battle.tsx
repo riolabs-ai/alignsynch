@@ -11,7 +11,7 @@ import type { PageCopySection } from "@/content/pages";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { AlertCircle, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useEffect, useReducer } from "react";
-import { BattleState } from "./battle-page";
+import type { BattleState } from "./battle-page";
 
 interface ActiveBattleProps {
   copy: PageCopySection;

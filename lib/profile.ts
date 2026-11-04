@@ -28,7 +28,7 @@
  *     it counts; the list wins.
  */
 import { players } from "@/data/players";
-import { type Player } from "@/content/people";
+import type { Player } from "@/content/people";
 import { users, type User } from "@/lib/data/users";
 import { leaderboardEntries } from "@/lib/players";
 
