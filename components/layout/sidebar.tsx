@@ -16,6 +16,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BrandGlyph } from "@/components/layout/brand-glyph";
+import { LeavingLink } from "@/components/layout/leaving-link";
 
 /**
  * The sidebar: the brand's mark, the brand's menu, and the sign-out row.
@@ -261,10 +262,11 @@ export function AppSidebar({
         className={railClassName(open)}
       >
         <div className="flex h-16 items-center justify-between gap-2 border-b px-3 md:justify-center md:px-2 lg:justify-start lg:px-4">
-          <Link
+          <LeavingLink
             href="/"
-            aria-label={mark ? copy.heading : undefined}
+            label={copy.heading}
             className="flex justify-center items-center gap-2"
+            iconClassName={open ? undefined : "hidden lg:inline"}
           >
             {mark ? (
               /**
@@ -335,7 +337,7 @@ export function AppSidebar({
                 {copy.heading}
               </span>
             )}
-          </Link>
+          </LeavingLink>
 
           {/* The drawer's own close control. `md:hidden`: a column needs no dismiss. */}
           <button

@@ -5,6 +5,7 @@ import { quizCategories } from "@/content/categories";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
 import { brandMark } from "@/lib/brand-mark";
+import { leavesApp } from "@/lib/marketing-routes";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
@@ -14,6 +15,7 @@ import Link from "next/link";
 import type React from "react";
 import { AppVersion } from "@/components/layout/app-version";
 import { BrandGlyph } from "@/components/layout/brand-glyph";
+import { LeavingLink } from "@/components/layout/leaving-link";
 import { NewsSignup } from "@/components/layout/news-signup";
 
 /**
@@ -59,6 +61,7 @@ export function Footer({
   viewer = navViewer(),
   brandId = brandIdOf(brand),
   hiddenNav,
+  leaving = false,
 }: {
   copy: PageCopy;
   viewer?: NavViewer;
@@ -75,6 +78,19 @@ export function Footer({
    * for a new one.
    */
   hiddenNav: readonly string[];
+  /**
+   * This mount is **inside the app** — set by every dashboard mount, never by the marketing
+   * layout. It is the one thing the footer cannot answer alone: the same band renders on
+   * `app/(marketing)` and inside the shell (`/tournaments/[id]`, `/affiliate`, the creator tips),
+   * so its public destinations — `/pricing`, `/help`, `/privacy`, `/terms` and the front page's
+   * two anchors — open in a new tab on the app side and stay in the tab on the public side. The
+   * other direction is the point of `leaving`: a reader on `/pricing` who follows "Pricing" in
+   * the footer must not get a second tab of the page they are already on.
+   *
+   * `scripts/leaving-links.ts` (E39) fails a dashboard mount that forgets it, because a default
+   * would make the marketing behaviour the silent answer everywhere.
+   */
+  leaving?: boolean;
 }) {
   /**
    * The footer's brand-selected sections (issue #188, stage S3). The line under the wordmark and
@@ -106,6 +122,7 @@ export function Footer({
     alignLinks,
     categories,
     hiddenNav,
+    leaving,
   });
   /**
    * The product mark, resolved from the brand record (#187).
@@ -226,7 +243,17 @@ export function Footer({
                 )}
                 {contact.cta !== undefined && (
                   <Button asChild variant={"action"}>
-                    <Link href={contact.cta.href}>{contact.cta.label}</Link>
+                    {/*
+                      The fixture's destination, so the rule cannot read it: `/help` is the public
+                      form and a dashboard reader who presses "Contact us" is leaving the app
+                      (E39, `leaving` above). Read at runtime through `leavesApp`, the same table
+                      `NavRow` uses, so the footer's own marketing mount stays in one tab.
+                    */}
+                    {leaving && leavesApp(contact.cta.href) ? (
+                      <LeavingLink href={contact.cta.href} label={contact.cta.label} />
+                    ) : (
+                      <Link href={contact.cta.href}>{contact.cta.label}</Link>
+                    )}
                   </Button>
                 )}
               </div>
@@ -249,27 +276,9 @@ export function Footer({
               © {new Date().getFullYear()} {itemLabel(legal, "copyright")}
             </p>
             <div className="flex flex-wrap justify-center gap-6 mt-4 md:mt-0">
-              <Link
-                href="/privacy"
-                className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
-              >
-                <span>{itemLabel(legal, "privacy")}</span>
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-              <Link
-                href="/terms"
-                className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
-              >
-                <span>{itemLabel(legal, "terms")}</span>
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-              <Link
-                href="/privacy"
-                className="text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1"
-              >
-                <span>{itemLabel(legal, "cookies")}</span>
-                <ExternalLink className="h-3 w-3" />
-              </Link>
+              <LegalRowLink href="/privacy" label={itemLabel(legal, "privacy")} leaving={leaving} />
+              <LegalRowLink href="/terms" label={itemLabel(legal, "terms")} leaving={leaving} />
+              <LegalRowLink href="/privacy" label={itemLabel(legal, "cookies")} leaving={leaving} />
             </div>
           </div>
         </div>
@@ -296,6 +305,7 @@ function footerLinkColumns({
   alignLinks,
   categories,
   hiddenNav,
+  leaving,
 }: {
   brandId: BrandId;
   viewer: NavViewer;
@@ -303,16 +313,29 @@ function footerLinkColumns({
   alignLinks: PageCopySection;
   categories: PageCopySection;
   hiddenNav: readonly string[];
+  leaving: boolean;
 }) {
   switch (brandId) {
     case "quizhub":
-      return <QuizHubLinkColumns links={links} categories={categories} hiddenNav={hiddenNav} />;
+      return (
+        <QuizHubLinkColumns
+          links={links}
+          categories={categories}
+          hiddenNav={hiddenNav}
+          leaving={leaving}
+        />
+      );
     case "alignsynch":
       return (
         <>
-          <AlignSynchLinkColumn links={alignLinks} />
+          <AlignSynchLinkColumn links={alignLinks} leaving={leaving} />
           {sees(viewer, "quiz-surfaces") && (
-            <QuizHubLinkColumns links={links} categories={categories} hiddenNav={hiddenNav} />
+            <QuizHubLinkColumns
+              links={links}
+              categories={categories}
+              hiddenNav={hiddenNav}
+              leaving={leaving}
+            />
           )}
         </>
       );
@@ -325,17 +348,57 @@ function footerLinkColumns({
 }
 
 /** One row of a footer column: the bullet, the `Link`, the label. */
-function FooterLinkRow({ href, label }: { href: string; label: string }) {
+function FooterLinkRow({
+  href,
+  label,
+  leaving = false,
+}: {
+  href: string;
+  label: string;
+  /** This row points at the public site and the mount is inside the app — see `Footer.leaving`. */
+  leaving?: boolean;
+}) {
+  const row = (
+    <>
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-action transition-colors"></span>
+      {label}
+    </>
+  );
   return (
     <li>
-      <Link
-        href={href}
-        className="text-slate-600 dark:text-slate-400 hover:text-action transition-colors flex items-center group"
-      >
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-action transition-colors"></span>
-        {label}
-      </Link>
+      {leaving ? (
+        <LeavingLink href={href} label={label} className={FOOTER_ROW_CLASS}>
+          {row}
+        </LeavingLink>
+      ) : (
+        <Link href={href} className={FOOTER_ROW_CLASS}>
+          {row}
+        </Link>
+      )}
     </li>
+  );
+}
+
+/** The row's class string — one definition, so the two branches above cannot drift apart. */
+const FOOTER_ROW_CLASS =
+  "text-slate-600 dark:text-slate-400 hover:text-action transition-colors flex items-center group";
+
+/**
+ * One row of the legal band. The same question as `FooterLinkRow` at a quieter type scale — the
+ * band already carried an `ExternalLink` marker when every one of these routes was a document,
+ * so the leaving branch adds only the `target`/`rel`/name that was missing.
+ */
+function LegalRowLink({ href, label, leaving }: { href: string; label: string; leaving: boolean }) {
+  const className =
+    "text-slate-500 dark:text-slate-400 hover:text-action transition-colors flex items-center gap-1";
+  if (leaving) {
+    return <LeavingLink href={href} label={label} className={className} iconClassName="h-3 w-3" />;
+  }
+  return (
+    <Link href={href} className={className}>
+      <span>{label}</span>
+      <ExternalLink className="h-3 w-3" aria-hidden="true" />
+    </Link>
   );
 }
 
@@ -366,10 +429,12 @@ function QuizHubLinkColumns({
   links,
   categories,
   hiddenNav,
+  leaving = false,
 }: {
   links: PageCopySection;
   categories: PageCopySection;
   hiddenNav: readonly string[];
+  leaving?: boolean;
 }) {
   return (
     <>
@@ -384,7 +449,7 @@ function QuizHubLinkColumns({
           {!hiddenNav.includes("/affiliate") && (
             <FooterLinkRow href="/affiliate" label={itemLabel(links, "affiliate")} />
           )}
-          <FooterLinkRow href="/pricing" label={itemLabel(links, "pricing")} />
+          <FooterLinkRow href="/pricing" label={itemLabel(links, "pricing")} leaving={leaving} />
         </ul>
       </div>
 
@@ -414,14 +479,24 @@ function QuizHubLinkColumns({
  * sees a `href="…"` attribute, and `/`'s two anchor bands are the only honest targets for
  * Templates and How it works until a listing route ships.
  */
-function AlignSynchLinkColumn({ links }: { links: PageCopySection }) {
+function AlignSynchLinkColumn({
+  links,
+  leaving = false,
+}: {
+  links: PageCopySection;
+  leaving?: boolean;
+}) {
   return (
     <div className="space-y-5">
       <FooterColumnHeading>{links.heading}</FooterColumnHeading>
       <ul className="space-y-3">
-        <FooterLinkRow href="/#templates" label={itemLabel(links, "templates")} />
-        <FooterLinkRow href="/#questions" label={itemLabel(links, "how-it-works")} />
-        <FooterLinkRow href="/help" label={itemLabel(links, "help")} />
+        <FooterLinkRow href="/#templates" label={itemLabel(links, "templates")} leaving={leaving} />
+        <FooterLinkRow
+          href="/#questions"
+          label={itemLabel(links, "how-it-works")}
+          leaving={leaving}
+        />
+        <FooterLinkRow href="/help" label={itemLabel(links, "help")} leaving={leaving} />
       </ul>
     </div>
   );

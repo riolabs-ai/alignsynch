@@ -24,7 +24,8 @@
  */
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { type DemoGateAction, DEMO_PIN_FIELD, INITIAL_DEMO_FORM_STATE } from "@/lib/auth/demo-form";
@@ -37,7 +38,7 @@ export function DemoGate({ action }: { action: DemoGateAction }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-8 bg-action">
-      <Card className="w-full max-w-md shadow-xl border-0">
+      <FormSurface className="w-full max-w-md">
         <CardHeader className="text-center pb-6">
           <div className="mx-auto mb-4 w-12 h-12 bg-amber-500 rounded-lg flex items-center justify-center">
             <FlaskConical className="w-6 h-6 text-white" />
@@ -97,7 +98,7 @@ export function DemoGate({ action }: { action: DemoGateAction }) {
             </Link>
           </p>
         </CardContent>
-      </Card>
+      </FormSurface>
     </div>
   );
 }

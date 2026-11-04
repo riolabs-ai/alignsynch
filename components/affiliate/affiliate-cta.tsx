@@ -1,10 +1,10 @@
 // template-ancestor: components/ui/button.tsx   (variation: a centred close band — a heading, one line and one primary button, no title band)
 
 import { Button } from "@/components/ui/button";
+import { LeavingLink } from "@/components/layout/leaving-link";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
 
 export function AffiliateCta({ copy }: { copy: PageCopySection }) {
   return (
@@ -30,9 +30,11 @@ export function AffiliateCta({ copy }: { copy: PageCopySection }) {
           </div>
           <p className="mt-8 text-sm text-action-foreground/70">
             {itemLabel(copy, "contact-prompt")}
-            <Link href="/help" className="underline hover:text-white">
-              {itemLabel(copy, "contact-email")}
-            </Link>
+            <LeavingLink
+              href="/help"
+              label={itemLabel(copy, "contact-email")}
+              className="underline hover:text-white"
+            />
           </p>
         </div>
       </div>

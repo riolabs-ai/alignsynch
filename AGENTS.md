@@ -279,6 +279,18 @@ process bug.
   a campaign names a slot that `data/quiz-catalogue.ts` renders (E17), and a generated quiz is in
   no shelf, so a generated one could never run — `data:check` E26 rejects a
   `data/generated/promotions.ts` and `pnpm gen` deletes a leftover.
+- **A link out of the dashboard opens a new tab; a form surface carries no shadow.** Two rules with
+  one home each, checked instead of corrected screen by screen. `components/layout/leaving-link.tsx`
+  is the only markup that leaves the app — `target="_blank"`, `rel="noopener noreferrer"`, the
+  external marker and an accessible name ending "opens in a new tab" — `lib/marketing-routes.ts` is
+  the runtime table of public routes (`data:check` **E39** holds it equal to the pages under
+  `app/(marketing)`), and E39 fails a dashboard literal `href` to a public page that does not carry
+  the pair, plus a dashboard mount of a shared surface (`Footer`) that forgets `leaving`. A form is
+  `components/ui/form-surface.tsx`: border + background contrast, **no shadow**, because the auth
+  screens drew `shadow-xl border-0` while the dashboard and marketing forms drew a flat card.
+  `scripts/brand-classes.mjs` (inside `pnpm lint`) fails a `shadow-*` on a form surface and a bare
+  `Card` under `components/auth/**`; `Card`'s own `shadow-sm` default is untouched — this is about
+  forms, not every raised element.
 
 ### The template doctrine — one core, many expressions
 

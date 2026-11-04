@@ -2,12 +2,14 @@
 
 // template-ancestor: components/ui/navigation-menu.tsx   (variation: the nav definition hand-rolled as rows — role-filtered, brand-keyed groups, no navigation-menu primitive)
 
+import { LeavingLink } from "@/components/layout/leaving-link";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
 import { surfaceFor } from "@/data/surface-registry";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
+import { leavesApp } from "@/lib/marketing-routes";
 import { type NavViewer, sees } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -169,6 +171,15 @@ export function NavRow(props: NavRowProps) {
   const surface = props.href === undefined ? undefined : surfaceFor(props.href);
   const pending = surface !== undefined && surface.status !== "live";
   const statusWord = surface?.status === "preview" ? "Preview" : "Pending";
+  /**
+   * A row that points at the public site leaves the app, and every `NavRow` in the tree is inside
+   * the dashboard shell (the marketing header draws its own links from `PublicNav`), so this is
+   * not a prop: `/` and `/pricing` in the rail are public pages, and following one in this tab
+   * would throw away whatever the reader was doing. `leavesApp` is the runtime half of E39
+   * (`lib/marketing-routes.ts`); the accessible name and the marker below are the announcement
+   * the rule asks for.
+   */
+  const leaving = !pending && props.href !== undefined && leavesApp(props.href);
 
   const tone = pending
     ? "cursor-not-allowed text-muted-foreground opacity-70"
@@ -238,16 +249,30 @@ export function NavRow(props: NavRowProps) {
       {content}
     </button>
   ) : props.onSelect === undefined ? (
-    <Link
-      href={props.href}
-      onClick={onNavigate}
-      aria-label={accessibleLabel}
-      title={title}
-      data-tour={props.tourAnchor}
-      className={className}
-    >
-      {content}
-    </Link>
+    leaving ? (
+      <LeavingLink
+        href={props.href}
+        label={accessibleLabel}
+        title={title}
+        onClick={onNavigate}
+        tourAnchor={props.tourAnchor}
+        className={className}
+        iconClassName={collapsed ? "hidden" : labelled ? "ml-auto" : "ml-auto hidden lg:inline"}
+      >
+        {content}
+      </LeavingLink>
+    ) : (
+      <Link
+        href={props.href}
+        onClick={onNavigate}
+        aria-label={accessibleLabel}
+        title={title}
+        data-tour={props.tourAnchor}
+        className={className}
+      >
+        {content}
+      </Link>
+    )
   ) : (
     <button
       type="button"

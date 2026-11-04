@@ -82,7 +82,7 @@ export default function AffiliatePage() {
       <AffiliateFAQ copy={sectionOf(affiliatePageCopy, "affiliate-faq")} />
       <SuccessStories copy={sectionOf(affiliatePageCopy, "success-stories")} />
       <AffiliateCta copy={sectionOf(affiliatePageCopy, "affiliate-cta")} />
-      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
+      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} leaving />
     </div>
   );
 }
