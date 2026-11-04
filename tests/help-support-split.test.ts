@@ -57,11 +57,14 @@ vi.mock("@/lib/auth/session", () => ({
 
 import HelpPage from "@/app/(marketing)/help/page";
 import SupportPage from "@/app/(mainlayout)/support/page";
+import { ContactSection } from "@/components/contact/contact-section";
+import { HelpPage as HelpCentre } from "@/components/support/help-page";
 import { KnowledgeBase } from "@/components/support/knowledge-base";
 import { isValidRoute } from "@/content/route-manifest";
 import { routeManifest } from "@/content/routes";
 import { helpPageCopy } from "@/data/pages/help";
 import { supportPageCopy } from "@/data/pages/support";
+import { supportCategories } from "@/data/support-categories";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** One page module's markup, awaited because a page may be an async server component. */
@@ -136,6 +139,67 @@ describe("the public help centre", () => {
     for (const href of articleLinks) {
       expect(isValidRoute(routeManifest, href)).toBe(true);
     }
+  });
+});
+
+describe("the two-column intent holds in the markup", () => {
+  /**
+   * The owner's report (2026-11-04) is a *collapsed* two-column page: clicking a category changed
+   * an answer far below the click. The mechanism was `md:col-span-3` inside a grid that declares
+   * two tracks — a span wider than the track count creates implicit columns, so the panel was
+   * pushed to a second row under the rail. These cases pin the two claims a render can see: the
+   * filter exists in both shapes from one list, and the answers are a sibling of the filter rather
+   * than a row under it (`col-span` appears nowhere in the help centre).
+   */
+  it("offers every filter in both shapes — the rail and the narrow chip row", async () => {
+    const html = await htmlOf(() => HelpPage({ searchParams: Promise.resolve({}) }));
+    /**
+     * The fixture names every category a build *may* offer; `data/support-categories.ts` is what a
+     * build actually offers, so the loop is the intersection — AlignSynch has no "Quiz Creation".
+     * Without this the case would only pass on the quiz brand, which is the shape of a test that
+     * pins one brand's menu instead of the layout.
+     */
+    const offered = new Set<string>(supportCategories);
+    const labels = (sectionOf(helpPageCopy, "help-categories").items ?? []).filter((item) =>
+      offered.has(item.id),
+    );
+    expect(labels.length).toBeGreaterThan(3);
+
+    // One row per shape, and the two shapes are the two responsive halves of one control.
+    expect(html).toContain("sticky top-20");
+    expect(html).toContain("hidden md:block");
+    for (const item of labels) {
+      // `>label</span>` is the leaf both shapes render, so a label counted twice is a label in
+      // both; once would mean a shape lost a filter, three times a third copy.
+      expect(html.split(`>${item.label}</span>`).length - 1, item.label).toBe(2);
+    }
+
+    // No span may outlive the track count again — that is the defect this card fixes.
+    const helpCentre = renderToStaticMarkup(createElement(HelpCentre, { copy: helpPageCopy }));
+    expect(helpCentre).not.toMatch(/col-span/);
+  });
+
+  it("keeps the need-a-person band in the contact row, beside the form", async () => {
+    const human = sectionOf(helpPageCopy, "human");
+    const heading = human.heading ?? "Need a person?";
+    const page = await htmlOf(() => HelpPage({ searchParams: Promise.resolve({}) }));
+    const contact = renderToStaticMarkup(
+      createElement(ContactSection, { copy: helpPageCopy, startedAt: 1_700_000_000_000 }),
+    );
+
+    // The row is a grid of two columns at `md`, and the band is its second column — the same
+    // `md:grid-cols-[…]` grammar the answers above use, not a `md:flex` strip in a stack.
+    expect(contact).toContain("md:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]");
+    expect(contact).toContain("<form");
+    expect(contact).toContain("<aside");
+    expect(contact).toContain(heading);
+
+    // And it is not the help centre's: the band moved out of the answers, so a reader meets the
+    // alternative to the form on the form's own row.
+    expect(page).toContain(heading);
+    expect(renderToStaticMarkup(createElement(HelpCentre, { copy: helpPageCopy }))).not.toContain(
+      heading,
+    );
   });
 });
 
