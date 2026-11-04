@@ -177,6 +177,71 @@ export function invitePath(token: string): string {
   return `/invite/${token}`;
 }
 
+/**
+ * One step of the counterparty's onboarding wizard: `/invite/<token>?step=2`.
+ *
+ * The token stays **in the path** on every step, so every step's URL is the exact URL a sign-in
+ * round-trip has to return to: the token is the invitation, and a wizard that carried it in a
+ * query or a cookie would have a second copy that can drift from the link the person was sent.
+ * Step 1 carries no query, so the address a fresh invite lands on is the one in the email.
+ */
+export function inviteStepPath(token: string, step: InviteWizardStep): string {
+  return step === 1 ? invitePath(token) : `${invitePath(token)}?step=${step}`;
+}
+
+/** The wizard's three steps, in order, as **numbers**: the copy labels them, not this module. */
+export const INVITE_WIZARD_STEPS = [1, 2, 3] as const;
+
+export type InviteWizardStep = (typeof INVITE_WIZARD_STEPS)[number];
+
+/**
+ * A `?step=` value → the step it names, or step 1. Unknown, empty and repeated values land on the
+ * first step rather than 404ing: the step is a reader's position, not an address that can be wrong.
+ */
+export function inviteWizardStepOf(
+  value: string | readonly string[] | undefined,
+): InviteWizardStep {
+  const raw = typeof value === "string" ? value : value?.[0];
+  const parsed = raw === undefined ? Number.NaN : Number(raw);
+  return INVITE_WIZARD_STEPS.find((step) => step === parsed) ?? 1;
+}
+
+/**
+ * Where a step-3 visitor goes to sign in or to create the account the claim will bind.
+ *
+ * `next` is the **same step URL**, so the round trip returns to step 3 with the token intact —
+ * `safeNextPath` keeps it (a same-site path) and `signInDestination` keeps it (this build ships
+ * `/invite/[token]`). The two extra parameters are what let the auth screen say *why* someone is
+ * there: `intent=invite` and the inviter's name, which `lib/auth/invite-prompt.ts` turns into one
+ * sentence from the login fixture.
+ */
+export function inviteAuthPath(
+  kind: "login" | "register",
+  token: string,
+  step: InviteWizardStep,
+  initiatorName: string,
+): string {
+  const next = encodeURIComponent(inviteStepPath(token, step));
+  const inviter = encodeURIComponent(initiatorName.trim().slice(0, 80));
+  return `/${kind}?next=${next}&intent=${INVITE_INTENT_VALUE}&inviter=${inviter}`;
+}
+
+/** The `intent` value the auth screens read; a word, not a sentence — the sentence is copy. */
+export const INVITE_INTENT_VALUE = "invite";
+
+/**
+ * The confirmation a submit lands on: the instance screen in its `submitted` state.
+ *
+ * A query rather than a route of its own: this is the same read (the viewer's own instance) with
+ * one band added, and a second page module would be a second `readFlowScreen()` for the same rows.
+ */
+export function submittedPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}?submitted=1`;
+}
+
+/** The `submitted` value `submittedPath()` writes, and the only one the screen reads. */
+export const SUBMITTED_QUERY_VALUE = "1";
+
 /** The claim endpoint — a POST, so a GET never spends the single-use token. */
 export function claimPath(token: string): string {
   return `${invitePath(token)}/claim`;

@@ -15,6 +15,7 @@ import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import type { AuthMarkSet } from "@/lib/auth/marks";
+import { loginPathFor } from "@/lib/auth/paths";
 import { markGroundClass, MARK_ICONS, MarkGlyph } from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -416,7 +417,7 @@ export function RegisterView({
               )}
 
               <div className="flex justify-between pt-6">
-                <Button variant="outline" onClick={() => router.push("/login")}>
+                <Button variant="outline" onClick={() => router.push(loginPathFor(destination))}>
                   <ArrowLeft className="w-4 h-4" />
                   <span>
                     {currentStep === 1

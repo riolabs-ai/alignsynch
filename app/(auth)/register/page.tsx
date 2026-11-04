@@ -2,6 +2,7 @@ import { RegisterView } from "@/components/auth/register-view";
 import { brand, brandIdOf } from "@/data/brand";
 import { registerPageCopy } from "@/data/pages/register";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { signInDestination } from "@/lib/auth/next-path";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import { registerCopyFor } from "@/lib/auth-copy";
 import type { Metadata } from "next";
@@ -34,12 +35,27 @@ export const metadata: Metadata = {
  * here because the view is a client module: the table is `lib/auth/marks.ts` (ids, no zod, no
  * components), but the choice belongs to the server half.
  */
-export default function AuthPage() {
+export default async function AuthPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const { next } = await searchParams;
+  const raw = Array.isArray(next) ? next[0] : next;
   const brandId = brandIdOf(brand);
+  const destination = signInDestination(raw, AFTER_SIGN_IN_BY_BRAND[brandId]);
   return (
     <RegisterView
       copy={registerCopyFor(registerPageCopy, brandId)}
-      destination={AFTER_SIGN_IN_BY_BRAND[brandId]}
+      /**
+       * `?next=` is honoured here for the same reason `/login` honours it, and since #t_0aa81144
+       * for one concrete caller: the Counterparty's onboarding wizard sends a visitor who has no
+       * account yet to `/register?next=<step 3>`, and a sign-up that landed on the console
+       * instead would drop the invitation. `signInDestination` is the same two-question
+       * validation the login page runs, so an unsafe or unshipped path still falls back to the
+       * brand's own destination.
+       */
+      destination={destination}
       marks={AUTH_MARKS_BY_BRAND[brandId]}
       markSrc={AUTH_MARK_SRC_BY_BRAND[brandId]}
     />

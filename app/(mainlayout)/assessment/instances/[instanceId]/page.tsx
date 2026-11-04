@@ -12,6 +12,7 @@ import { readStepsByRelationship } from "@/lib/db/steps";
 import type { FlowScreen } from "@/lib/flow/screen";
 import type { Step } from "@/content/steps";
 import { resendRefusalOf } from "@/lib/flow/resend";
+import { SUBMITTED_QUERY_VALUE } from "@/lib/flow/paths";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
 import { markUnlockSeen } from "@/lib/flow/store";
 import { cookies, headers } from "next/headers";
@@ -179,10 +180,10 @@ export default async function AssessmentInstancePage({
   searchParams,
 }: {
   params: Promise<{ instanceId: string }>;
-  searchParams: Promise<{ problem?: string; invite?: string; resend?: string }>;
+  searchParams: Promise<{ problem?: string; invite?: string; resend?: string; submitted?: string }>;
 }) {
   const { instanceId } = await params;
-  const { problem, invite, resend } = await searchParams;
+  const { problem, invite, resend, submitted } = await searchParams;
 
   const detail = await detailFor(instanceId);
   if (detail === undefined) notFound();
@@ -215,6 +216,7 @@ export default async function AssessmentInstancePage({
       copy={assessmentInstancePageCopy}
       paid={detail.paid}
       steps={steps}
+      submitted={submitted === SUBMITTED_QUERY_VALUE}
       {...(inviteNotice === undefined ? {} : { inviteNotice })}
       {...(problemCode === undefined ? {} : { problem: problemCode })}
       {...(refusedReinvite === undefined ? {} : { resendRefusal: refusedReinvite })}

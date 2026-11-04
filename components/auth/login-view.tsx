@@ -131,6 +131,7 @@ export function LoginView({
   marks,
   markSrc,
   next,
+  prompt = null,
   googleFailure: googleFailureProp,
   demo,
   providerHint,
@@ -152,6 +153,13 @@ export function LoginView({
    */
   markSrc: string;
   next: string;
+  /**
+   * The one sentence for a visitor who was accepting an invitation (#t_0aa81144), or `null` for
+   * every other visit — the words are the login fixture's (`lib/auth/invite-prompt.ts` decides
+   * which), and this view only places them above the form so the page says why the person is
+   * being asked to sign in instead of greeting them as if they had just arrived.
+   */
+  prompt?: string | null;
   /**
    * Whether this visit came back from a Google finish that failed. Read by the page from the
    * `?google=failed` query the finish route appends, so a failed attempt is not indistinguishable
@@ -370,6 +378,14 @@ export function LoginView({
             </div>
             <CardTitle className="text-3xl font-bold ">{form.heading}</CardTitle>
             <CardDescription>{form.body}</CardDescription>
+            {prompt === null ? null : (
+              <p
+                data-invite-prompt=""
+                className="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              >
+                {prompt}
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-6">
             {/*
