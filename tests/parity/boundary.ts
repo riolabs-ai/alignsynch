@@ -29,6 +29,7 @@
 import AffiliatePage from "@/app/(mainlayout)/affiliate/page";
 import AdminAuditPage from "@/app/(mainlayout)/admin/audit/page";
 import AdminBillingPage from "@/app/(mainlayout)/admin/billing/page";
+import AdminBroadcastPage from "@/app/(mainlayout)/admin/broadcast/page";
 import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
 import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
 import AdminHealthPage from "@/app/(mainlayout)/admin/health/page";
@@ -206,6 +207,15 @@ export const adminProductRoutes: readonly AdminProductRoute[] = [
   {
     route: "/admin/audit",
     page: AdminAuditPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    // #507 — the broadcast. Outside the `/admin/console` subtree, so it carries its own
+    // `requireAdminProduct()`; the read is answered with an empty list by `parity.check.ts`, so what
+    // the open side measures is the render rather than a failure panel.
+    route: "/admin/broadcast",
+    page: AdminBroadcastPage as unknown as ParityPage,
     params: {},
     open: "render",
   },

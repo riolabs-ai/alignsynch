@@ -27,6 +27,7 @@ import {
   LifeBuoy,
   Lightbulb,
   Medal,
+  Megaphone,
   Newspaper,
   PackagePlus,
   ScrollText,
@@ -599,6 +600,21 @@ function AlignSynchMenu({
           icon={<CreditCard className="size-5" />}
           label={itemLabel(nav, "admin-billing")}
           active={isActive(pathname, "/admin/billing")}
+          collapsed={collapsed}
+          labelled={labelled}
+          onNavigate={onNavigate}
+        />
+      )}
+      {/* #507 — the broadcast, the epic's last console row. `admin`-only for the same reason and by
+          the same mechanism: the page's `requireAdmin()` answers a member (and a `support` session)
+          with the 404 an unknown URL gets, so a row every viewer could see would be a row that 404s
+          for most of them. */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/broadcast"
+          icon={<Megaphone className="size-5" />}
+          label={itemLabel(nav, "admin-broadcast")}
+          active={isActive(pathname, "/admin/broadcast")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}

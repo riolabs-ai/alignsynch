@@ -123,6 +123,16 @@ export const ADMIN_ACTIONS = [
    */
   "plan.comp",
   /**
+   * Send a one-off notice to the news list (#507, the last child of the epic).
+   *
+   * `admin`: a broadcast speaks to every person who has given the product an address, which is the
+   * widest audience any action in this table reaches and a decision about what the product tells
+   * them. `support` answers support requests; it does not address the list. The row it writes is
+   * `broadcast_send` — one per send, carrying the body's hash and the recipient count — and the
+   * per-address cooldown rows beside it, in the same transaction.
+   */
+  "broadcast.send",
+  /**
    * Answer a contact message through the mail provider (#506). **`support`**, and the action
    * this rung exists for: the inbox is the queue a support seat works, and answering a person is
    * the courtesy the role is named after.
@@ -193,6 +203,13 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
    * transaction, so an `admin` session clicking the band gets `role-too-low` and no row.
    */
   "plan.comp": "owner",
+  /**
+   * #507 — the broadcast. `admin`, and the widest audience in this table: it addresses every
+   * consented address on the news list. `support` is refused by `act()` inside the transaction
+   * (`role-too-low`), not by a hidden button, and the floor is asserted in
+   * `tests/admin-broadcast.test.ts`.
+   */
+  "broadcast.send": "admin",
   /**
    * #506 — **the support inbox's three names, all floor `support`.**
    *
@@ -294,6 +311,13 @@ export const AUDIT_TARGET_TABLES = [
    * the same id `plan_grant` carries, and the grant carries its own reason and author beside it.
    */
   "plan_grant",
+  /**
+   * #507 — the row one broadcast writes. It is the target rather than `news_signup` because the
+   * audit question is "which send", and the send row carries the body hash, the count and the
+   * segment beside the entry. An audit row pointing at the news list would answer nothing about a
+   * particular send.
+   */
+  "broadcast_send",
   /**
    * #506 — the inbox's two rows. `contact_message` is what a triage transition and a send outcome
    * both change (status, assignment, `sent_at`); `contact_reply` is the row a reply creates, and

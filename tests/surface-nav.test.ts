@@ -117,6 +117,8 @@ describe("the shell's menus", () => {
       "/admin/audit",
       // #505 — billing control, beside the log it writes into.
       "/admin/billing",
+      // #507 — the broadcast, the console's last row.
+      "/admin/broadcast",
     ]);
   });
 
