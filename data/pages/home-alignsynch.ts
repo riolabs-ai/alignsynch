@@ -58,20 +58,19 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const ALIGN_SYNCH_FEATURED_SLUG = "avery-rowan";
 
 /**
- * The `/` document title for this build — `"<brand> — Turn one relationship into a practice"`.
+ * The `/` document title for this build — `"<brand> — Relationship alignment for leaders and teams"`.
  *
  * A function of the brand, like `homeTitle`: the page names the product itself, and the
- * alignment page's tagline is the practice the product makes possible rather than the quiz
- * template's "Play, Share, Earn". Neither word is spelled in a `.tsx`.
+ * alignment page's tagline is the register the page speaks in — leadership, not a practitioner's
+ * practice — rather than the quiz template's "Play, Share, Earn". Neither word is spelled in a
+ * `.tsx`.
  *
- * The title still carries the practice word after the hero stopped carrying it. That is
- * deliberate, not drift: the title is a positioning decision of its own (it is what a search
- * result and a browser tab say), and it is not one of the three hero strings the leadership
- * card names. Moving it is a one-line change here plus a parity summary, to be taken as its
- * own decision by the owner.
+ * The title and the hero share that register: who the page is for, and what the product is.
+ * Neither makes a claim the page does not make. Moving it is a one-line change here plus a
+ * parity summary, because the title is what a search result and a browser tab say.
  */
 export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
-  return `${brand.name} — Turn one relationship into a practice`;
+  return `${brand.name} — Relationship alignment for leaders and teams`;
 }
 
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
@@ -105,7 +104,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
      * because `cardsOf()` reads every item of `practice` and `seats` as a titled card — an
      * eyebrow in those arrays would be a card with no paragraph, and the projection refuses it.
      */
-    { id: "eyebrow-practice", label: "How the practice works" },
+    { id: "eyebrow-practice", label: "How the work works" },
     { id: "eyebrow-questions", label: "The mechanism" },
     { id: "eyebrow-templates", label: "The catalogue" },
     { id: "eyebrow-families", label: "Scope" },
@@ -195,7 +194,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
   sections: [
     {
       id: "practice",
-      heading: "Create once. Run it with every client.",
+      heading: "One approach. Used with every relationship.",
       items: [
         {
           id: "practice-create",
@@ -210,7 +209,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
         {
           id: "practice-session",
           label: "Run the session",
-          body: "The report names every Gap by kind and size, and the Steps that follow from it. That's your agenda, and the reason the next session is billable.",
+          body: "The report names every Gap by kind and size, and the Steps that follow from it. That's your agenda, and why the next conversation has somewhere to go.",
         },
       ],
     },
@@ -268,7 +267,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     {
       id: "boundary",
       heading: "What this page does not claim.",
-      body: "No pay figures, no client counts, no logos. The product model is real and priced per relationship; what a practice brings in depends on what it charges and how many clients it runs.",
+      body: "No pay figures, no client counts, no logos. The product model is real and priced per relationship.",
     },
   ],
 });
