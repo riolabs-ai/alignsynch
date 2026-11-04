@@ -142,26 +142,16 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     /** The bars' accessible name: two numbers and who gave them. */
     { id: "worked-example-scores", label: "{you} {yours}, {them} {theirs}" },
     /**
-     * The templates band's three views. The values are markup (`catalogue`/`library`/`mine`);
-     * the words are here, because a tab is a label a reader reads.
+     * The templates band's one call to action. The band is capped at six cards (the shelf in
+     * `data/template-shelf.ts`) and this link is the whole navigation: the catalogue itself is
+     * the public `/templates` page, which lists every template by realm.
      */
-    { id: "templates-tab-catalogue", label: "Relationship templates" },
-    { id: "templates-tab-library", label: "Library templates" },
-    { id: "templates-tab-mine", label: "My relationships" },
+    { id: "templates-view-all", label: "View all relationship templates" },
     /** The two card actions, and the frame the two roles are joined by. */
-    { id: "template-use", label: "Use this template" },
-    { id: "template-example", label: "Read the example" },
+    { id: "template-use", label: "Start with this template" },
+    { id: "template-example", label: "See a worked example" },
     { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
-    /**
-     * The third view, as a door: `/` is public, so it names no relationship and renders none.
-     * `value` is the route the door opens — `/assessment/instances` decides who may walk in.
-     */
-    {
-      id: "templates-mine",
-      label: "Open my relationships",
-      value: "/assessment/instances",
-      body: "Your relationships live behind your session, in the console — not on this page, which anyone can read. Sign in and the list is one click away.",
-    },
+    { id: "template-price", label: "{price} per relationship" },
     /**
      * Under the hero CTA: the two facts that make the button safe to press — one relationship is
      * bought once and every session after it is the reader's, and the reader's seat is the coach's
@@ -244,8 +234,8 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "templates",
-      heading: "Start from a type, a template, or your own list.",
-      body: "The catalogue is every relationship type this product sells; the library is what this deployment has already built. A type is only offered if a template backs it, so nothing here is for sale that the product can't run.",
+      heading: "Start from the relationship you have.",
+      body: "A shelf of the catalogue's templates, one per realm a practice meets first: what each one asks, who it is between, and what it costs. Every template in the catalogue is one the product can run, so nothing here is for sale that it cannot.",
     },
     {
       id: "families",

@@ -101,7 +101,7 @@ describe("the shell's menus", () => {
       "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
-      "/#templates",
+      "/templates",
       "/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
@@ -109,7 +109,7 @@ describe("the shell's menus", () => {
       "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
-      "/#templates",
+      "/templates",
       "/support",
       "/admin/gaps",
       "/admin/instances",
