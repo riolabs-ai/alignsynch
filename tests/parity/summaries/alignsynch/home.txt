@@ -3,7 +3,7 @@ brand  alignsynch
 
 headings (42)
   h1  "Know what your team will not say out loud."
-  h2  "Create once. Run it with every client."
+  h2  "One approach. Used with every relationship."
   h3  "Create"
   h3  "Invite both sides"
   h3  "Run the session"
