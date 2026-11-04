@@ -42,25 +42,24 @@
  */
 import type { Assessment, AssessmentInstance, Party } from "@/content/assessment";
 import type { Brand } from "@/content/brand";
-import { formatCurrency } from "@/content/core";
 import { GAP_KIND_LABELS } from "@/content/gaps";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { gapOf } from "@/content/record";
 import {
   REALMS,
-  demoAnswersFor,
   isPurchasable,
   purchasableRelationshipTypes,
   type RelationshipType,
 } from "@/data/relationship-types";
-import { assessments } from "@/data/assessments";
-import {
-  TEMPLATE_LIBRARY_PATH,
-  assessmentDemoPath,
-  createRelationshipPath,
-} from "@/lib/flow/paths";
+import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
 import { brandMark, type BrandMark } from "@/lib/brand-mark";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import {
+  CATALOGUE_PATH,
+  featuredTemplateTypes,
+  templateCards,
+  type TemplateCard,
+} from "@/lib/template-catalogue";
 
 /** The item id of the coach seat. The one seat this page is sold on, painted with the accent. */
 const COACH_SEAT = "seat-coach";
@@ -75,14 +74,16 @@ export interface AlignmentQuestion {
 /**
  * One template, as a row: what it is called, how many Aspects it asks, the Relationship Type
  * its summary names, and either the relationship to read or why there is none.
+ *
+ * The scope band's families band lists these; there is no `create` route here on purpose — a
+ * public page must not hand a signed-out reader the entry to a form behind a session, so the
+ * one place a template is started from is the catalogue card's `/register` (`lib/template-catalogue.ts`).
  */
 export interface AlignmentTemplate {
   readonly id: string;
   readonly slug: string;
   readonly title: string;
   readonly aspects: string;
-  /** The create route — `/assessment/templates/<id>/create`. Always present. */
-  readonly create: string;
   /** The family this template's Relationship Type names — absent when it names none. */
   readonly family?: string;
   /** The descriptor inside that family (`Parent / Child`) — absent with the family. */
@@ -91,43 +92,6 @@ export interface AlignmentTemplate {
   readonly link?: { readonly href: string; readonly label: string };
   /** Present instead of `link`: the template nobody answered, and what that means. */
   readonly note?: { readonly label: string; readonly body: string };
-}
-
-/**
- * One card of the catalogue view: a purchasable Relationship Type, projected for a public page.
- *
- * It is a projection and not the record itself because the card needs five derived strings
- * (`roles`, `aspects`, `price`, and the two hrefs) and nothing else — the Aspects and the
- * descriptor belong to the type's own page, not to a band that lists twenty-six of them.
- */
-export interface AlignmentCatalogueType {
-  readonly id: string;
-  readonly name: string;
-  readonly realm: string;
-  /** `"Staff ↔ Manager"` — the two ends, joined by a fixture-owned frame. */
-  readonly roles: string;
-  /** `"6 Aspects"` — counted, never typed. */
-  readonly aspects: string;
-  /** `"$9.99"` — the fixture's integer cents, through the tree's one formatter. */
-  readonly price: string;
-  /**
-   * The create entry for this type: `/assessment/templates/<templateId>/create`, resolved through
-   * `lib/flow/paths.ts` and never spelled here.
-   *
-   * The type is a catalogue row, not a template record; `data/assessments.ts` builds one record per
-   * purchasable type with `slug === type.id`, and `db:seed` mirrors that list into Postgres, so the
-   * record this card opens is the record the library shows. A type with no record yet falls back to
-   * the library, because a marketing card must never link a route the app cannot answer.
-   */
-  readonly href: string;
-  /** The worked example, **only** for a type whose demo sheet exists in the fixture. */
-  readonly example?: string;
-}
-
-/** One tab of the templates band: the value the toggle holds, and the words on its trigger. */
-export interface AlignmentTemplateTab {
-  readonly value: "catalogue" | "library" | "mine";
-  readonly label: string;
 }
 
 /** One family, with the Relationship Types of the templates that name it. */
@@ -250,24 +214,18 @@ export interface AlignmentHomeModel {
     readonly eyebrow?: string;
     readonly heading?: string;
     readonly body?: string;
-    /** The three views, in toggle order. The catalogue is the one that opens. */
-    readonly tabs: readonly AlignmentTemplateTab[];
-    /** The words on the two card actions — fixture-owned, never typed in a card. */
-    readonly actions: { readonly use: string; readonly example: string };
-    /** Every purchasable Relationship Type, projected — the shop's shelf. */
-    readonly catalogue: readonly AlignmentCatalogueType[];
-    /** The templates this deployment has built — `data/assessments.ts`. */
-    readonly library: readonly AlignmentTemplate[];
     /**
-     * The third view, and it is a door rather than a list. `/` is a public page: a signed-in
-     * visitor's relationships are not rendered here, not serialised into the payload, and not
-     * reachable without a session. This band says where they are and links to the route that
-     * decides who may see them.
+     * The six cards the band draws — capped, curated and derived
+     * (`FEATURED_TEMPLATE_TYPE_IDS` in `data/template-shelf.ts`, resolved against the
+     * taxonomy). The band is a signpost: the catalogue itself is `/templates`.
      */
-    readonly mine: {
-      readonly body: string;
-      readonly link: { readonly label: string; readonly href: string };
-    };
+    readonly featured: readonly TemplateCard[];
+    /**
+     * The band's **one** call to action, and its whole point: the public catalogue page.
+     * There is no second one, because six cards each carrying a link would be six competing
+     * destinations on a band whose job is to send the reader to the page that lists them all.
+     */
+    readonly viewAll: { readonly label: string; readonly href: string };
   };
   readonly families: {
     readonly eyebrow?: string;
@@ -603,17 +561,6 @@ export function alignmentHome(
   }));
 
   const readLabel = pageItemOf(copy, "template-read").label;
-  const useLabel = pageItemOf(copy, "template-use").label;
-  const exampleLabel = pageItemOf(copy, "template-example").label;
-  const rolesLabel = pageItemOf(copy, "template-roles").label;
-  const mineItem = pageItemOf(copy, "templates-mine");
-  const mineBody = mineItem.body;
-  const mineHref = mineItem.value;
-  if (mineBody === undefined || mineHref === undefined) {
-    throw new Error(
-      'alignmentHome: page item "templates-mine" needs a body and the route it links to — the third view is a door, and a door with no handle renders blank',
-    );
-  }
   const unplayed = pageItemOf(copy, "template-unplayed");
   if (unplayed.body === undefined) {
     throw new Error(
@@ -633,7 +580,6 @@ export function alignmentHome(
       slug: template.slug,
       title: template.title,
       aspects: fillLabel(aspectsLabel, { count: template.items.length }),
-      create: `/assessment/templates/${template.id}/create`,
       ...(type === undefined ? {} : { family: type.family, type: type.type }),
       ...(answered === undefined
         ? {
@@ -671,41 +617,22 @@ export function alignmentHome(
   }
 
   /**
-   * The catalogue view: every purchasable Relationship Type, projected for the card. The same
-   * `isPurchasable` gate the scope band counts by, so the shelf a reader can click and the
-   * number above it cannot disagree. `example` is present only where `demoAnswersByType` holds a
-   * sheet — the demo is a real report, so a link to a missing one is a 404 dressed as a door.
+   * The band's shelf: the six curated cards, resolved against the same taxonomy the scope band
+   * counts and through the same public projection `/templates` draws. A card the taxonomy does
+   * not hold — or one the shop will not sell — throws here, while `/` is prerendered, instead of
+   * rendering five cards and a gap.
    *
-   * `href` is the live create entry, not the `/v1/templates/<type>/create` prototype form this
-   * card linked until #478 deleted it: the type's own template record is the one
-   * `data/assessments.ts` builds with `slug === type.id`, and the card opens that record's create
-   * path. A type with no record falls back to the library rather than to a dead route.
+   * `viewAll` is the band's one action. The label is the fixture's, the href is the catalogue
+   * route's (`CATALOGUE_PATH`), so neither the words nor the destination are typed in a component.
    */
-  const templateIdBySlug = new Map(assessments.map((template) => [template.slug, template.id]));
-  const catalogue: AlignmentCatalogueType[] = relationshipTypes
-    .filter(isPurchasable)
-    .map((type) => {
-      const recordId = templateIdBySlug.get(type.id);
-      return {
-        id: type.id,
-        name: type.name,
-        realm: type.realm,
-        roles: fillLabel(rolesLabel, {
-          initiator: type.roles.initiator,
-          counterparty: type.roles.counterparty,
-        }),
-        aspects: fillLabel(aspectsLabel, { count: type.aspects.length }),
-        price: formatCurrency(type.price),
-        href: recordId === undefined ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(recordId),
-        ...(demoAnswersFor(type.id) === undefined ? {} : { example: assessmentDemoPath(type.id) }),
-      };
-    });
-
-  const tabs: AlignmentTemplateTab[] = [
-    { value: "catalogue", label: pageItemOf(copy, "templates-tab-catalogue").label },
-    { value: "library", label: pageItemOf(copy, "templates-tab-library").label },
-    { value: "mine", label: pageItemOf(copy, "templates-tab-mine").label },
-  ];
+  const featuredCards = templateCards(
+    copy,
+    featuredTemplateTypes(FEATURED_TEMPLATE_TYPE_IDS, relationshipTypes),
+  );
+  const viewAll = {
+    label: pageItemOf(copy, "templates-view-all").label,
+    href: CATALOGUE_PATH,
+  };
 
   return {
     brand: {
@@ -756,11 +683,8 @@ export function alignmentHome(
         : { eyebrow: eyebrowOf(copy, "eyebrow-templates") }),
       ...(templatesSection.heading === undefined ? {} : { heading: templatesSection.heading }),
       body: sectionBody(templatesSection),
-      tabs,
-      actions: { use: useLabel, example: exampleLabel },
-      catalogue,
-      library: rows,
-      mine: { body: mineBody, link: { label: mineItem.label, href: mineHref } },
+      featured: featuredCards,
+      viewAll,
     },
     families: {
       ...(eyebrowOf(copy, "eyebrow-families") === undefined

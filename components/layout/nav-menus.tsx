@@ -532,20 +532,22 @@ function AlignSynchMenu({
         onNavigate={onNavigate}
       />
       {/*
-        Templates is the front page's `#templates` band, the one marketing anchor the console
-        still carries: the four record templates the brand ships are drawn there, and the rail
-        names them with the page that shows them. **How it works is not an anchor any more** — it
-        is `/how-it-works`, an in-app onboarding page
+        Templates is the public catalogue, `/templates` — a real product page since the
+        `#templates` card, not the front page's band. The band is still there (and still has
+        `id="templates"`), but a nav row that scrolls a marketing page to a section is not a
+        destination; the page that lists every template is.
+
+        **How it works is not an anchor** — it is `/how-it-works`, an in-app onboarding page
         (`app/(mainlayout)/how-it-works/page.tsx`) — because the owner's review of the console
         said a signed-in member must not be sent to the public site to be told how the product
         works. `tests/nav-brand.test.ts` holds every remaining `/#…` href to an `id` the rendered
         front page emits; this comment is the record of why there is only one left.
       */}
       <NavRow
-        href="/#templates"
+        href="/templates"
         icon={<LayoutTemplate className="size-5" />}
         label={itemLabel(nav, "templates")}
-        active={false}
+        active={isActive(pathname, "/templates")}
         collapsed={collapsed}
         labelled={labelled}
         onNavigate={onNavigate}
@@ -735,9 +737,12 @@ const PUBLIC_ROW_CLASS =
  * The alignment brand's public menu: the four front-page destinations the sidebar's own
  * `nav-alignsynch` section names, plus `/pricing` and the public help centre.
  *
- * Templates and How it works are the front page's own bands (`/#templates`, `/#questions`), the
- * same anchors the sidebar and the footer already point at — a public route for either does not
- * exist yet, and a link to a route that does not exist is the defect this menu removes.
+ * **Templates is `/templates`, not `/#templates`.** The front page's `#templates` band is still
+ * where a reader lands from in-page links, but the header row is a product destination now: a
+ * menu row that scrolls the marketing page you are already on to a section is furniture, and the
+ * owner asked for a catalogue. `How it works` is still the front page's `#questions` band,
+ * because no public route for it exists — a link to a route that does not exist is the defect
+ * this menu removes.
  *
  * **The last row is `/help`, not `/support`.** The Help/Support split put the answers in public
  * (`/help`) and the contact form behind the app's session (`/support`), so a menu drawn on
@@ -752,7 +757,7 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/">
         {itemLabel(nav, "home")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/#templates">
+      <Link className={PUBLIC_ROW_CLASS} href="/templates">
         {itemLabel(nav, "templates")}
       </Link>
       <Link className={PUBLIC_ROW_CLASS} href="/#questions">

@@ -403,6 +403,21 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/legal",
     budget: 0,
   },
+  /**
+   * `/templates` — the public Relationship Templates catalogue.
+   *
+   * Budget 0 from the first commit, like every surface this tree adds: the hero, the three bands'
+   * chrome, the five strings a card repeats and the counted catalogue sentence are all
+   * `data/pages/templates.ts`, so the next literal written in `components/templates/**` or in the
+   * page module is a red build. The cards themselves are `lib/template-catalogue.ts` over
+   * `data/relationship-types.ts` — records, not words.
+   */
+  "/templates": {
+    page: "app/(marketing)/templates/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/templates",
+    budget: 0,
+  },
   shell: {
     page: "app/(mainlayout)/layout.tsx",
     mounts: ["components/layout/footer.tsx"],

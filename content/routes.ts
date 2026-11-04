@@ -74,6 +74,9 @@ const STATIC_ROUTES = [
   "/settings",
   "/support",
   "/terms",
+  // The public Relationship Templates catalogue — the header's `Templates` row and the front
+  // page band's one call to action. Added with the page (#templates card).
+  "/templates",
   "/tournaments",
   "/welcome",
 ] as const;
@@ -135,6 +138,9 @@ const INDEXABLE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
   { path: "/affiliate", title: "Affiliate Page" },
   { path: "/help", title: "Help" },
   { path: "/pricing", title: "Pricing Plan" },
+  // The public catalogue. Indexable because it is the page a reader looking for a template is
+  // actually looking for; the route is in `(marketing)` and needs no session.
+  { path: "/templates", title: "Relationship Templates" },
 ];
 
 export const routeManifest: RouteManifest = zRouteManifest.parse({

@@ -43,11 +43,9 @@ import {
   relationshipScope,
   relationshipTypeOf,
 } from "@/lib/alignment-home";
-import {
-  TEMPLATE_LIBRARY_PATH,
-  assessmentDemoPath,
-  createRelationshipPath,
-} from "@/lib/flow/paths";
+import { assessmentDemoPath } from "@/lib/flow/paths";
+import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
+import { CATALOGUE_PATH } from "@/lib/template-catalogue";
 import { leafLiterals } from "@/scripts/copy-refs";
 
 const model = alignmentHome(
@@ -59,9 +57,6 @@ const model = alignmentHome(
 );
 
 const html = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
-
-/** The four records the page is allowed to list — never a fifth, never a subset. */
-const templateTitles = assessments.map((template) => template.title);
 
 /**
  * The purchasable types, counted here a second way — `purchasable && !EXCLUDED_TYPE_IDS` — so
@@ -116,32 +111,15 @@ describe("relationship types are read from the templates, not invented", () => {
   });
 });
 
-describe("the library view: the four templates, and the one nobody answered", () => {
-  it("lists exactly the four records, in the fixture's order", () => {
-    expect(model.templates.library.map((template) => template.title)).toEqual(templateTitles);
-  });
-
-  it("gives every template a create route, and a relationship link only where one answered it", () => {
-    const bySlug = new Map(model.templates.library.map((template) => [template.slug, template]));
-
-    const basics = bySlug.get("relationship-basics");
-    expect(basics?.link?.href).toBe("/assessment/avery-rowan");
-    expect(basics?.note).toBeUndefined();
-    expect(basics?.create).toBe("/assessment/templates/assessment-relationship-basics/create");
-
-    const blank = bySlug.get("blank-template");
-    expect(blank?.link).toBeUndefined();
-    expect(blank?.note?.body).toContain("Nobody has answered this template yet");
-    expect(blank?.create).toBe("/assessment/templates/assessment-blank-template/create");
-
-    // Every link the page draws names a slug the route can prerender.
-    for (const template of model.templates.library) {
-      if (template.link === undefined) continue;
-      const slug = template.link.href.replace("/assessment/", "");
-      expect(assessmentInstances.some((instance) => instance.slug === slug)).toBe(true);
-    }
-  });
-
+/**
+ * The hero's two promises, and the band that used to be three tabs.
+ *
+ * The templates band is now a **shelf**: six curated cards and one call to action, pointing at
+ * `/templates`. What it must never be again is what it was — a tablist whose third view was a
+ * signed-in reader's own list, rendered on a page anyone can open. So the assertions here are
+ * about a cap, a curation, a single action, and the absence of the two user-owned views.
+ */
+describe("the templates band: a capped shelf, one call to action", () => {
   it("says which relationship it leads with, and says it from the record", () => {
     const featured = assessmentInstances.find(
       (instance) => instance.slug === ALIGN_SYNCH_FEATURED_SLUG,
@@ -157,63 +135,76 @@ describe("the library view: the four templates, and the one nobody answered", ()
     expect(model.workedExample.title).toBe(`Worked example · ${featured.title}`);
     expect(model.workedExample.note).toContain("the Gap");
   });
-});
 
-describe("the catalogue and the two doors beside the library", () => {
-  it("projects every purchasable type, and only those", () => {
-    expect(model.templates.catalogue.map((type) => type.id)).toEqual(
-      relationshipTypes
-        .filter((type) => type.purchasable && !EXCLUDED_TYPE_IDS.includes(type.id))
-        .map((type) => type.id),
-    );
-    // The three dating rows are excluded by the product decision, so the shelf is smaller.
-    expect(model.templates.catalogue.length).toBeLessThan(relationshipTypes.length);
+  it("draws the curated shelf, in the order the shelf names the types", () => {
+    expect(model.templates.featured.map((card) => card.id)).toEqual(FEATURED_TEMPLATE_TYPE_IDS);
+  });
+
+  it("caps the band at six, and every card is one the shop sells", () => {
+    expect(model.templates.featured.length).toBeGreaterThanOrEqual(4);
+    expect(model.templates.featured.length).toBeLessThanOrEqual(6);
+    for (const card of model.templates.featured) {
+      const record = relationshipTypes.find((type) => type.id === card.id);
+      expect(record, `"${card.id}" is not a relationship type`).toBeDefined();
+      expect(record?.purchasable).toBe(true);
+      expect(EXCLUDED_TYPE_IDS).not.toContain(card.id);
+    }
   });
 
   it("counts aspects and formats the price instead of typing either", () => {
-    const staffManager = model.templates.catalogue.find((type) => type.id === "staff-manager");
+    const staffManager = model.templates.featured.find((card) => card.id === "staff-manager");
     const record = relationshipTypes.find((type) => type.id === "staff-manager");
     expect(staffManager?.aspects).toBe(`${record?.aspects.length} Aspects`);
     expect(staffManager?.price).toBe("$9.99");
+    expect(staffManager?.priceNote).toBe("$9.99 per relationship");
     expect(staffManager?.realm).toBe("Office");
+    expect(staffManager?.roles).toBe("Staff ↔ Manager");
   });
 
-  it("points every card at the create route, and offers an example only where a demo exists", () => {
-    for (const type of model.templates.catalogue) {
-      const record = assessments.find((template) => template.slug === type.id);
-      // The live create entry for the type's own template record — never a `/v1` address (#478).
-      expect(type.href).toBe(
-        record === undefined ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(record.id),
-      );
-      expect(type.href.startsWith("/v1/")).toBe(false);
-      if (type.example === undefined) continue;
-      expect(type.example).toBe(assessmentDemoPath(type.id));
-      expect(type.example.startsWith("/v1/")).toBe(false);
-      expect(demoAnswersByType[type.id]).toBeDefined();
+  it("points every card at a public destination, and offers an example only where one exists", () => {
+    for (const card of model.templates.featured) {
+      // `/register` makes the account that buys the relationship. Never a create form behind a
+      // session — that is the sign-in wall this page exists to remove.
+      expect(card.start).toBe("/register");
+      if (card.example === undefined) continue;
+      expect(card.example).toBe(assessmentDemoPath(card.id));
+      expect(demoAnswersByType[card.id]).toBeDefined();
     }
-    // The fallback must not be masking a missing record: every card resolves to one.
+    // Exactly the fixture's demo sheets among the six, and no third claim.
     expect(
-      model.templates.catalogue.filter(
-        (type) => assessments.find((template) => template.slug === type.id) === undefined,
-      ),
-    ).toEqual([]);
-    // Exactly the fixture's demo sheets, and no third claim.
-    expect(
-      model.templates.catalogue
-        .filter((type) => type.example !== undefined)
-        .map((type) => type.id)
+      model.templates.featured
+        .filter((card) => card.example !== undefined)
+        .map((card) => card.id)
         .sort(),
     ).toEqual(Object.keys(demoAnswersByType).sort());
   });
 
-  it("opens on the catalogue, and the third view is a door rather than a list", () => {
-    expect(model.templates.tabs.map((tab) => tab.value)).toEqual(["catalogue", "library", "mine"]);
-    expect(model.templates.tabs[0]?.label).toBe("Relationship templates");
-    expect(model.templates.mine.link.href).toBe("/assessment/instances");
-    // No relationship of the console's is rendered on a public page: the panel carries words
-    // and a link, and the page body carries no row marker of the sort a list would emit.
-    expect(html).not.toContain("data-relationship=");
-    expect(html).not.toContain("data-relationship-row");
+  it("has one call to action, and it is the catalogue page", () => {
+    expect(model.templates.viewAll.href).toBe(CATALOGUE_PATH);
+    expect(model.templates.viewAll.label).toBe("View all relationship templates");
+    // The action is in the served markup, and it is the only link the shelf draws: the cards are
+    // not linked, so the band offers one destination instead of seven.
+    expect(html).toContain('data-templates-view-all=""');
+    expect(html).toContain('href="/templates"');
+    expect(html).not.toContain(model.templates.featured[0]?.useLabel ?? "\u0000");
+  });
+
+  it("carries none of the user-owned views on a public page", () => {
+    // The two tabs that were removed, by the words they carried and by the control that held them.
+    expect(html).not.toContain("My relationships");
+    expect(html).not.toContain("My templates");
+    expect(html).not.toContain('role="tablist"');
+    // And the console's list is not reachable from the band: no link into the app's own lists.
+    expect(html).not.toContain('href="/assessment/instances"');
+    expect(html).not.toContain('href="/assessment/templates');
+  });
+
+  it("draws every featured card, joined back to the taxonomy by its own id", () => {
+    for (const card of model.templates.featured) {
+      const escaped = card.name.replace(/&/g, "&amp;");
+      expect(html).toContain(escaped);
+      expect(html).toContain(`data-template-card="${card.id}"`);
+    }
   });
 });
 
@@ -358,7 +349,9 @@ describe("the scope band counts the fixture", () => {
       assessments,
       assessmentInstances,
       ALIGN_SYNCH_FEATURED_SLUG,
-      purchasableRelationshipTypes.slice(1),
+      // A type the shelf does not name: the shelf's ids are checked against this list, so
+      // dropping one of the six is a different claim (the shelf would refuse, by design).
+      purchasableRelationshipTypes.filter((type) => type.id !== "colleagues"),
     );
     expect(fewer.families.scope.types).toBe(model.families.scope.types - 1);
     expect(fewer.families.heading).toContain(
@@ -368,19 +361,20 @@ describe("the scope band counts the fixture", () => {
   });
 
   it("follows a changed fixture: losing a realm changes the realm count too", () => {
-    const withoutSocial = alignmentHome(
+    const withoutProperty = alignmentHome(
       alignSynchBrand,
       alignSynchHomeCopy,
       assessments,
       assessmentInstances,
       ALIGN_SYNCH_FEATURED_SLUG,
-      purchasableRelationshipTypes.filter((type) => type.realm !== "Social"),
+      // The realm no curated card names — see the comment above on why that matters here.
+      purchasableRelationshipTypes.filter((type) => type.realm !== "Property"),
     );
-    expect(withoutSocial.families.scope.realms).toBe(model.families.scope.realms - 1);
-    expect(withoutSocial.families.scope.byRealm.map((group) => group.realm)).not.toContain(
-      "Social",
+    expect(withoutProperty.families.scope.realms).toBe(model.families.scope.realms - 1);
+    expect(withoutProperty.families.scope.byRealm.map((group) => group.realm)).not.toContain(
+      "Property",
     );
-    expect(withoutSocial.families.heading).toContain(
+    expect(withoutProperty.families.heading).toContain(
       `across ${countWord(model.families.scope.realms - 1)} realms.`,
     );
   });
@@ -421,18 +415,14 @@ describe("the scope band counts the fixture", () => {
 });
 
 describe("the render", () => {
-  it("carries the catalogue in the served markup, and the library behind its tab", () => {
-    // The band opens on the catalogue, so every purchasable type is in the served HTML.
-    for (const type of model.templates.catalogue) {
-      const escaped = type.name.replace(/&/g, "&amp;");
+  it("carries the shelf and the catalogue link in the served markup", () => {
+    for (const card of model.templates.featured) {
+      const escaped = card.name.replace(/&/g, "&amp;");
       expect(html).toContain(escaped);
-      expect(html).toContain(`data-catalogue-type="${type.id}"`);
+      expect(html).toContain(`data-template-card="${card.id}"`);
     }
-    // The library is the second view: its four records are the model's, and the toggle — not a
-    // second page — is what reveals them. An inactive `TabsContent` is not in the served markup,
-    // which is why the titles are asserted on the model and the trigger on the render.
-    expect(model.templates.library.map((template) => template.title)).toEqual(templateTitles);
-    expect(html).toContain('data-template-tab="library"');
+    // The one action, and the proof link the hero still carries.
+    expect(html).toContain('href="/templates"');
     expect(html).toContain("/assessment/avery-rowan");
   });
 
@@ -474,8 +464,8 @@ describe("the render", () => {
    */
   it("prints money only as the catalogue's own price", () => {
     const printed = [...html.matchAll(/\$[\d.,]+/g)].map((match) => match[0]);
-    const prices = new Set(model.templates.catalogue.map((type) => type.price));
-    expect(printed.length).toBe(model.templates.catalogue.length);
+    const prices = new Set(model.templates.featured.map((card) => card.price));
+    expect(printed.length).toBe(model.templates.featured.length);
     for (const price of printed) expect(prices.has(price)).toBe(true);
   });
 
