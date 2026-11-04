@@ -32,15 +32,22 @@ export interface GapHistogramSeries {
 }
 
 /**
- * The five sizes, in order: the stack's data key is the Gap itself, and the fill is one token at
- * five opacities so the ramp says "bigger difference, more ink" without a second palette.
+ * The five sizes, in order: the stack's data key is the Gap itself, and the fill is the Gap
+ * scale — one solid step per size, graphite at 0 through the green family at 4 (#539 item 2).
+ *
+ * The steps are the token layer's (`app/globals.css`, `--gap-0..4`), not five literals here, for
+ * the reason that header gives: a ramp typed into a component is a palette the brand record does
+ * not own. Measured on white before this card chose them: 9.65 / 6.94 / 5.56 / 4.34 / 3.17, so
+ * every step clears the 3:1 non-text floor — the old ramp was one colour at 0.22 alpha for the
+ * smallest step, which is 1.4:1 and reads as a smudge. The numbers themselves are still printed
+ * in the table beside the chart, which is the second channel 1.4.1 asks for.
  */
 const SIZES = [
-  { gap: "0", fill: "hsl(var(--chart-1) / 0.22)" },
-  { gap: "1", fill: "hsl(var(--chart-1) / 0.42)" },
-  { gap: "2", fill: "hsl(var(--chart-1) / 0.62)" },
-  { gap: "3", fill: "hsl(var(--chart-1) / 0.82)" },
-  { gap: "4", fill: "hsl(var(--chart-1))" },
+  { gap: "0", fill: "hsl(var(--gap-0))" },
+  { gap: "1", fill: "hsl(var(--gap-1))" },
+  { gap: "2", fill: "hsl(var(--gap-2))" },
+  { gap: "3", fill: "hsl(var(--gap-3))" },
+  { gap: "4", fill: "hsl(var(--gap-4))" },
 ] as const;
 
 /** A row of the chart: one kind, flattened to five keys the stacks can name. */

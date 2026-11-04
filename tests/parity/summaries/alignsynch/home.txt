@@ -20,9 +20,9 @@ headings (21)
   h3  "Personal"
   h2  "You&#x27;re the coach on the relationship — a role, not a third answer."
   h2  "What this page does not claim."
+  h3  "Product news"
   h3  "Quick Links"
   h3  "Contact"
-  h3  "Product news"
 
 landmarks (3)
   banner         1
@@ -45,8 +45,8 @@ links (13 unique, 20 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 1
 
 counts
-  elements  367
+  elements  371
   images    2
   buttons   1
   inputs    2
-  classes   298 (sha c4b1dd628858)
+  classes   299 (sha 06b7adfdbc09)

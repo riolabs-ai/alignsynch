@@ -76,23 +76,30 @@ export function MarketingHeader({
 }) {
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-6">
-        <span className="flex items-center gap-2">
+      <div className="marketing-container flex h-20 items-center justify-between gap-6">
+        <span className="flex min-w-0 items-center gap-3">
           {mark ? (
             /**
-             * The official lockup, whole — and never squeezed.
+             * The brand's **icon**, at the owner's factor (#539 items 1 and 5).
              *
-             * `max-h-8 w-auto` rather than `h-8 w-auto`: a fixed height with a shrinkable width
-             * lets the flex row *compress* the mark instead of scaling it, which is exactly what
-             * happened at 390 — the logo rendered 190×32 where its own 818×127 ratio asks for
-             * 206×32, an 8 % squash in the one place the brand is most looked at. With both
-             * dimensions auto and only max constraints, the browser scales the file down when the
-             * row is narrow and keeps its aspect ratio (owner's rule: place the asset, correct
-             * aspect ratio, clear space).
+             * Measured before this card, in a 1440 browser: the lockup drew 206×32 and the
+             * monogram inside it ~43×32. The owner's report is that this icon is 2–2.5× too
+             * small and that the 206px wordmark block beside it is too large, which are the
+             * same complaint about one element. So the header draws the square mark
+             * (`brandIconMark`, the monogram the icon set is generated from) at a 96px box —
+             * its ink is 1024×660 of a 1024 square, so the visible monogram is 96×62, i.e.
+             * 2.2× the old width and 1.94× its height — and the name is set in type rather
+             * than shipped inside a 206px PNG.
+             *
+             * No crop, no window, no `max-w-none`: the whole file is placed in a square box and
+             * the browser keeps its ratio — what #470 fixed stays fixed. There is simply no
+             * lockup wordmark to clip, because the name is type. The box is taller than the
+             * 80px bar by design; the *ink* clears it with 9px above and below, and the header
+             * sets no `overflow`, so nothing is cut.
              */
             <Image
               alt={brand.name}
-              className="max-h-8 w-auto"
+              className="h-24 w-24 shrink-0"
               height={mark.height}
               priority
               src={mark.src}
@@ -101,6 +108,21 @@ export function MarketingHeader({
           ) : (
             <span className="text-lg font-semibold text-primary tracking-tight">{brand.name}</span>
           )}
+          {mark ? (
+            /**
+             * The wordmark as type, one line, sized by the bar rather than by the export:
+             * 20px against the 32px-tall letterforms the lockup drew, and `truncate` so the
+             * name can never push the menu. Hidden below `sm` — at 390 the bar carries the
+             * icon and the two auth actions, and a name that has to shrink to fit is worse
+             * than the mark alone, which is the brand's own.
+             */
+            <span
+              aria-hidden="true"
+              className="hidden truncate text-xl font-bold tracking-tight text-primary sm:inline"
+            >
+              {brand.name}
+            </span>
+          ) : null}
         </span>
         <PublicNav brandId={brandId} copy={copy} />
         <PublicAccountSlot account={account} copy={copy} />

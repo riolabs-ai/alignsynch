@@ -39,10 +39,10 @@ export function HelpPage({ copy }: HelpPageProps) {
   const humanCta = human.cta;
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="marketing-container py-8">
       <HelpHeader activeTab={activeTab} setActiveTab={setActiveTab} copy={copy} />
 
-      <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-4">
+      <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[200px_minmax(0,1fr)] lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="md:col-span-1">
           <SupportCategories
             selectedCategory={selectedCategory}

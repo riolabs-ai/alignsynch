@@ -31,6 +31,32 @@
  * headings hold the 16px they used to inherit, which is the clear jump the old sheet
  * lacked — see the second `@layer base` block.
  *
+ * ## v1.x polish (#539, items 2, 4, 8)
+ *
+ *   --radius         0.375rem -> 0.3125rem (6px -> 5px). `rounded-lg` is the token, `rounded-md`
+ *                    three pixels less and `rounded-sm` five, so every box on the tree loses
+ *                    1px of corner: the outline style stays, the corners read crisper at the
+ *                    sizes this app draws (a 6px corner on a 40px button was the last soft
+ *                    edge in an otherwise square frame). Checked at 390 first — a 1px
+ *                    reduction cannot overflow anything, and it does not: `scrollWidth`
+ *                    equals `innerWidth` on every route in `docs/qa-v1x-ui-cohort`.
+ *   body font-size   0.875rem -> 0.8125rem (14px -> 13px). Unclassed prose is the only thing
+ *                    that moves: `text-*` utilities are rem-based and the root stays 16px.
+ *   --container-marketing  72rem (1152px), the one marketing measure. `.marketing-container`
+ *                    below is its only reader, and it centres with `margin-inline: auto` —
+ *                    the centring rule is that a full-bleed band is a *ground* (the section's
+ *                    own background) while its content always sits in this measure, so two
+ *                    pages cannot disagree about where the page is.
+ *   --gap-0..4       the Gap scale (item 2): graphite `#37474F` at the left end, the green
+ *                    family `#83994E` at the right, five solid steps between them. Measured on
+ *                    white: 9.65 / 6.94 / 5.56 / 4.34 / 3.17 — every step clears the 3:1
+ *                    non-text floor (1.4.11), so no step is a ghost. The right end is
+ *                    `#93A85B` one step darker: the owner's swatch is 2.63:1 on white, which
+ *                    would have made "aligned" the faintest thing in the chart. Adjacent steps
+ *                    sit at 1.25–1.39:1 on purpose — the scale is ordinal, and the table
+ *                    beside the histogram prints all five counts (1.4.1's second channel), so
+ *                    nothing depends on telling two neighbours apart.
+ *
  * **The second sheet is gone.** `styles/globals.css` was a hundred-line token layer nothing
  * imported, with a different `--radius` (0.5rem), a different `--muted-foreground`, Arial and
  * an `h1` at `text-4xl lg:text-5xl` — and it held the only `--chart-1..5` and `--sidebar-*`
@@ -108,7 +134,18 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --radius: 0.375rem;
+    --radius: 0.3125rem;
+
+    /* The one marketing measure (#539 item 8) — see `.marketing-container` below. */
+    --container-marketing: 72rem;
+
+    /* The Gap scale (#539 item 2): graphite at 0, the green family at 4. The five steps and
+       their measured contrast on white are in this file's header. */
+    --gap-0: 200 17.9% 26.3%;
+    --gap-1: 169.4 21.5% 31%;
+    --gap-2: 138.8 25.2% 35.8%;
+    --gap-3: 108.2 28.8% 40.5%;
+    --gap-4: 77.6 32.5% 45.3%;
   }
 
   .dark {
@@ -169,8 +206,13 @@
        `text-sm` (525 `text-muted-foreground`, the default size on every card description),
        so unclassed prose was the only text still at the old 16px. 14px x 1.5 = 21px of
        line box against 24px, and `text-*` utilities are rem-based, so a component that
-       names its size keeps it. Inter is untouched: `app/layout.tsx` owns the family. */
-    font-size: 0.875rem;
+       names its size keeps it. Inter is untouched: `app/layout.tsx` owns the family.
+
+       #539 item 4 takes it one more step: 14px -> 13px (`0.8125rem`). Same argument one
+       notch tighter — the narrowest breakpoint was checked first (390: every route in
+       `docs/qa-v1x-ui-cohort` reports `scrollWidth === innerWidth`, so nothing new wraps
+       or overruns), and `text-*` callers are untouched because the root stays 16px. */
+    font-size: 0.8125rem;
     line-height: 1.5;
   }
   /* The headings hold the size they used to inherit from `body`. That is the jump: an
@@ -189,18 +231,50 @@
 }
 
 /*
+ * The marketing measure (#539 item 8) — one container, applied to every public band.
+ *
+ * Before this, `/welcome`'s bands were `max-w-6xl` (1152px) and `/pricing`'s were Tailwind's
+ * `container` (full width under 1536px), so at 1440 the same page family drew two different
+ * left edges: measured 1152px against 1376px, a 224px disagreement on one screen. This class is
+ * the only definition of the measure; `--container-marketing` is the token.
+ *
+ * **The centring rule, stated so a new band cannot invent another one:** a band's *ground* may
+ * be full-bleed (its background, its borders and its tint run edge to edge), and its *content*
+ * always sits in `.marketing-container`. So `mx-auto` + `max-width` live here and never on a
+ * section, and a page that wants a tinted band wraps the section around this div rather than
+ * adding a width of its own. A narrower reading measure (legal prose at `max-w-3xl`) goes
+ * *inside* this container, never instead of it.
+ */
+@layer components {
+  .marketing-container {
+    margin-inline: auto;
+    width: 100%;
+    max-width: var(--container-marketing);
+    padding-inline: 1.5rem;
+  }
+}
+
+/*
  * The marketing hero's ground (#143, home v2). A gradient is a palette decision, so it lives
  * here in the token layer and not in a component: `scripts/brand-classes.mjs` bans a
  * `bg-gradient-*` utility on purpose, because two stops typed into a component are two colours
  * the brand record does not own. These stops are the brand's own roles at low alpha — the
  * accent's green and the action's blue — over the brand ground, so the tint follows the skin.
  * `hsl(var(--token) / <alpha>)` reads the triples `lib/brand-theme.ts` paints onto `<html>`.
+ *
+ * #539 item 2 makes the ground read like the Gap scale itself: the left stop is `--gap-0`
+ * (graphite `#37474F`) and the right stop is `--gap-4` (the green), so the tint two rounds of
+ * review called "the gradient" now starts where the scale starts. It was `--action` / `--accent`
+ * before, which on this brand is graphite / **cyan** `#08ADD5` — a cool blue wash on the right,
+ * not the green the owner asked for. Both stops are Gap tokens and both are theme-painted
+ * triples, so nothing new is typed here; the scale is the product's (a Gap 0–4 exists on both
+ * build legs), which is why this file does not fork it per brand.
  */
 .home-hero-ground {
   background-image:
-    radial-gradient(1100px 340px at 14% -14%, hsl(var(--accent) / 0.24), transparent 64%),
-    radial-gradient(900px 280px at 88% -20%, hsl(var(--action) / 0.12), transparent 62%),
-    linear-gradient(180deg, hsl(var(--action) / 0.05), hsl(var(--background) / 0));
+    radial-gradient(1200px 460px at 6% -8%, hsl(var(--gap-0) / 0.26), transparent 70%),
+    radial-gradient(1000px 420px at 94% -10%, hsl(var(--gap-4) / 0.34), transparent 68%),
+    linear-gradient(180deg, hsl(var(--gap-0) / 0.05), hsl(var(--background) / 0));
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

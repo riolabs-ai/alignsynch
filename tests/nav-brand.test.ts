@@ -230,14 +230,13 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     expect(member).toContain(`>${itemLabelOf("my-relationships")}<`);
   });
 
-  it("draws every operator row for an admin, appended after the console's", () => {
+  it("draws every operator row for an admin, first, in their own group", () => {
+    /**
+     * #539 item 10 moved the operator's five rows **above** the member's: an admin's rail used
+     * to open on six product destinations and reach its own console below the fold. The set is
+     * unchanged — this is an order, not a filter — and the two group labels frame it.
+     */
     expect(adminHrefs).toEqual([
-      "/dashboard",
-      "/how-it-works",
-      "/assessment/instances",
-      "/assessment/templates",
-      "/templates",
-      "/support",
       "/admin/gaps",
       "/admin/instances",
       // #503 — the log the five repairs commit into.
@@ -246,6 +245,12 @@ describe("the console's own rows are a member's, the operator's rows are not", (
       "/admin/billing",
       // #507 — the broadcast, the console's sixth row.
       "/admin/broadcast",
+      "/dashboard",
+      "/how-it-works",
+      "/assessment/instances",
+      "/assessment/templates",
+      "/templates",
+      "/support",
     ]);
     const admin = navHtml("alignsynch", viewerWith("admin-console"));
     expect(admin).toContain(itemLabelOf("console-gaps"));
@@ -253,10 +258,18 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     expect(admin).toContain(itemLabelOf("admin-audit"));
     expect(admin).toContain(itemLabelOf("admin-billing"));
     expect(admin).toContain(itemLabelOf("admin-broadcast"));
+    // The two group labels, from the fixture, in order: administration, then the workspace.
+    expect(admin.indexOf(itemLabelOf("group-admin"))).toBeLessThan(
+      admin.indexOf(itemLabelOf("group-app")),
+    );
+    expect(admin).toContain(itemLabelOf("group-admin"));
+    expect(admin).toContain(itemLabelOf("group-app"));
   });
 
-  it("keeps the member's sidebar a prefix of the admin's — same rows, same order", () => {
-    expect(adminHrefs.slice(0, memberHrefs.length)).toEqual(memberHrefs);
+  it("keeps the member's rows a suffix of the admin's — same rows, same order", () => {
+    // The admin's rail is the operator's group and then the member's, unchanged: the group is
+    // additive, so the member's six rows keep their relative order at the end of the admin's.
+    expect(adminHrefs.slice(adminHrefs.length - memberHrefs.length)).toEqual(memberHrefs);
   });
 });
 
