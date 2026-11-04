@@ -27,6 +27,8 @@
  * reason (the port promises it; this module keeps the promise).
  */
 import { BillingRefusal, type BillingPort } from "./port";
+import { entitlementForPlan, highestPlanId } from "./entitlements";
+import { livePlanGrantIds } from "@/lib/db/billing";
 import {
   BILLING_PROVIDERS,
   type BillingProvider,
@@ -122,9 +124,33 @@ export function resetBillingAdapter(): void {
   cached = undefined;
 }
 
-/** What the server allows this account — the gate. */
+/**
+ * What the server allows this account — the gate.
+ *
+ * **The subscription's tier, raised by any grant still running (#505).** A comp is written as a
+ * `plan_grant` for one period by an operator (`lib/admin/billing-control.ts`), and it has to change
+ * what the account may *do* — a comp that only changed a label would be the decorative version of
+ * this console. So the tier is the higher of the two, and `highestPlanId()` ignores a id this build
+ * does not sell rather than letting a stray row widen anything.
+ *
+ * A grant read that fails answers the **subscription's** entitlement, which is the narrower one:
+ * a database blip must never grant more than the account bought. The failure is logged rather than
+ * swallowed, and it is the same fail-closed direction `entitlingPlanId()` takes for a bad row.
+ */
 export async function entitlementForAccount(userId: string): Promise<Entitlement> {
-  return (await billing()).entitlementFor(userId);
+  const base = await (await billing()).entitlementFor(userId);
+  let grantIds: string[] = [];
+  try {
+    grantIds = await livePlanGrantIds(userId, new Date());
+  } catch (error) {
+    console.error(
+      "billing: plan_grant could not be read — the entitlement is the subscription's alone",
+      error instanceof Error ? error.message : String(error),
+    );
+    return base;
+  }
+  const best = highestPlanId([base.planId, ...grantIds]);
+  return best === base.planId ? base : entitlementForPlan(best);
 }
 
 /** Where to send the browser to buy a tier. */

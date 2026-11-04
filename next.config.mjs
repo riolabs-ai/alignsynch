@@ -97,6 +97,18 @@ const nextConfig = {
      */
     APP_COMMIT,
   },
+  /**
+   * The health screen's recorded artifact, carried into the deployment (#508).
+   *
+   * `/admin/health` reads `data/health/platform-health.json` at request time — deliberately, so a
+   * recorder run changes the page without a rebuild — and Next's output tracing only follows a
+   * *statically visible* `fs` path. The path here is a constant in another module, which the
+   * tracer cannot resolve, so the file is named: without this a deployment renders the screen's
+   * honest "the record could not be read" panel instead of its numbers.
+   */
+  outputFileTracingIncludes: {
+    "/admin/health": ["./data/health/**"],
+  },
   // typescript: {
   //   ignoreBuildErrors: true,
   // },

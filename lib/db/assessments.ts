@@ -18,6 +18,7 @@
  */
 import { queryRows } from "@/lib/db/client";
 import { cache } from "react";
+import type { QueryResultRow } from "pg";
 import {
   zAssessmentMode,
   zOpinions,
@@ -39,6 +40,7 @@ import {
 } from "@/lib/flow/state";
 import {
   assessmentInstanceFromRows,
+  assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
   itemIdsOf,
   type AssessmentInstanceRows,
@@ -128,6 +130,29 @@ interface InstanceQueryRow {
 }
 
 /**
+ * The template's rows through any statement surface — a pool read, or the connection a publish
+ * transaction is already holding.
+ *
+ * The console's publish reads the working copy **inside** `act()`'s transaction, and it must be the
+ * same SQL every other reader uses: two statements that each decided what a template's rows are
+ * would be two definitions of the record it snapshots.
+ */
+export async function readTemplateRowsWithin(
+  sql: {
+    query<R = Record<string, unknown>>(
+      text: string,
+      values?: readonly unknown[],
+    ): Promise<{ readonly rows: readonly R[] }>;
+  },
+  recordId: string,
+): Promise<AssessmentTemplateRows | undefined> {
+  const result = await sql.query<TemplateQueryRow>(TEMPLATE_BY_ID_SQL, [recordId]);
+  const row = result.rows[0];
+  if (row === undefined) return undefined;
+  return { record: row.record, items: row.items, options: row.options };
+}
+
+/**
  * The whole screen in one statement: the instance's six row sets **and** the template it names.
  *
  * The template is four subselects on `ai.template_record_id` rather than a second call, because
@@ -135,19 +160,29 @@ interface InstanceQueryRow {
  * measured 160–200 ms, and the screen used to pay four of them (instance, template, then both
  * again for `generateMetadata`).
  *
- * `template_record` is `NULL` when the copy's `templateId` no longer resolves — the state the
- * page turns into `notFound()` and `db:verify` reports as drift. The template subselect keeps
- * the same `NOT EXISTS` definition as `TEMPLATE_BY_ID_SQL`: a template is a record with **no**
- * `session` row, so an instance can never stand in for the template it was copied
- * from.
+ * **Two keys, one statement (#504).** The party's screen resolves an instance by its slug; the
+ * console's report screen holds the record id it was handed by the registry. Writing the
+ * statement twice would be two statements that can drift about which columns the model needs, so
+ * `screenSql()` takes the predicate and both callers share the rest — including `voided_at`,
+ * which the report reads to answer *is there a report at all* before it derives one.
+ *
+ * **The template is read through the relationship's binding (#502b).** `relationship
+ * .template_version_id` names the immutable version this relationship was created from, and
+ * `tv.payload` is that version's whole template. The join is not a convenience: reading the live
+ * `record`/`item` rows here is what made editing a published template able to change the title and
+ * summary above somebody's answers, and the payload is the only source that cannot move. `NULL` —
+ * an unbound relationship, which `0026_template_version.sql` makes impossible and `db:verify` V23
+ * names — is a 404 here, never a fallback to the working copy, and the same `NULL` is what
+ * `db:verify` reports as drift.
  */
-const SCREEN_BY_SLUG_SQL = `
+const screenSql = (where: string) => `
   SELECT
     ${RECORD_JSON},
     ai.template_record_id,
     ai.mode,
     ai.alignment_setting,
     ai.name,
+    ai.voided_at,
     ai.relationship_id,
     COALESCE(
       (SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id),
@@ -168,30 +203,98 @@ const SCREEN_BY_SLUG_SQL = `
          FROM opinion WHERE opinion.session_record_id = r.id),
       '[]'::json
     ) AS opinions,
-    (SELECT to_jsonb(t) FROM record t
-      WHERE t.id = ai.template_record_id
-        AND t.record_type = 'assessment'
-        AND NOT EXISTS (SELECT 1 FROM session ti WHERE ti.record_id = t.id)
-    ) AS template_record,
-    COALESCE(
-      (SELECT json_agg(to_jsonb(ti) ORDER BY ti.position)
-         FROM item ti WHERE ti.record_id = ai.template_record_id),
-      '[]'::json
-    ) AS template_items,
-    COALESCE(
-      (SELECT json_agg(to_jsonb(to2) ORDER BY to2.position)
-         FROM response_option to2 WHERE to2.record_id = ai.template_record_id),
-      '[]'::json
-    ) AS template_options
+    tv.id      AS template_version_id,
+    tv.version AS template_version,
+    tv.payload AS template_payload
   FROM record r
   JOIN session ai ON ai.record_id = r.id
-  WHERE r.slug = $1 AND r.record_type = 'assessment'
+  LEFT JOIN relationship rel ON rel.id = ai.relationship_id
+  LEFT JOIN template_version tv ON tv.id = rel.template_version_id
+  WHERE ${where} AND r.record_type = 'assessment'
 `;
 
-interface ScreenQueryRow extends InstanceQueryRow {
-  readonly template_record: RecordRow | null;
-  readonly template_items: readonly ItemRow[];
-  readonly template_options: readonly OptionRow[];
+/** The party's screen: `/assessment/<slug>` (#145). */
+const SCREEN_BY_SLUG_SQL = screenSql("r.slug = $1");
+
+/** The console's report: the record id the registry hands the route (#504). */
+const SCREEN_BY_RECORD_ID_SQL = screenSql("r.id = $1");
+
+/** One screen row, as the statement above selects it. Exported for the report's reader (#504). */
+export interface ScreenQueryRow extends InstanceQueryRow {
+  /** The version this relationship was created from — NULL is drift, and a 404. */
+  readonly template_version_id: string | null;
+  readonly template_version: number | null;
+  /** The version's whole validated template — `assessmentTemplateFromPayload()` parses it. */
+  readonly template_payload: unknown;
+  /** `session.voided_at` — an operator ended the session; there is no report to draw. */
+  readonly voided_at: string | Date | null;
+}
+
+/**
+ * The one seam a caller may replace: a parameterised query that answers rows.
+ *
+ * It exists so the console's report write (`lib/admin/report-ops.ts`) can run the **same read**
+ * inside `act()`'s transaction — the report it audits and the report it hashes are then one read
+ * of one snapshot, not a read here and a hash of something else afterwards. Production passes the
+ * pool (`queryRows`); a test passes a fake.
+ */
+export interface ScreenReaders {
+  rowsOf<R extends QueryResultRow>(text: string, values: readonly unknown[]): Promise<readonly R[]>;
+}
+
+export const POOL_SCREEN_READERS: ScreenReaders = {
+  rowsOf: (text, values) => queryRows(text, values),
+};
+
+/**
+ * One screen row as the two records the report is built from, or `undefined` when the row names
+ * no template this build can draw.
+ *
+ * Pure: the mapping is `lib/db/rows.ts`'s, and the "a template that stopped resolving is a 404"
+ * rule is stated once here instead of at each caller.
+ */
+export function screenFromRow(
+  row: ScreenQueryRow,
+): { instance: AssessmentInstance; template: Assessment } | undefined {
+  // An unbound relationship (or a version row that went missing) is a 404 and a `db:verify`
+  // failure, never a render over the working copy: the words above somebody's answers are the
+  // version they were asked on, and there is no second source for them.
+  if (row.template_version_id === null || row.template_payload === null) return undefined;
+  return {
+    instance: assessmentInstanceFromRows({
+      record: row.record,
+      items: row.items,
+      options: row.options,
+      instance: {
+        record_id: row.record.id,
+        template_record_id: row.template_record_id,
+        relationship_id: row.relationship_id,
+        mode: row.mode,
+        setting: row.alignment_setting,
+        name: row.name,
+      },
+      parties: row.parties,
+      opinions: row.opinions,
+    }),
+    template: assessmentTemplateFromPayload(
+      row.template_payload,
+      `template version "${row.template_version_id}"`,
+    ),
+  };
+}
+
+/**
+ * One instance by its own record id, or `undefined`.
+ *
+ * Not memoised: this is the console's read, it runs once per request, and the one caller that
+ * needs it inside a transaction hands its own `ScreenReaders`.
+ */
+export async function readAssessmentScreenByRecordId(
+  recordId: string,
+  readers: ScreenReaders = POOL_SCREEN_READERS,
+): Promise<{ instance: AssessmentInstance; template: Assessment } | undefined> {
+  const [row] = await readers.rowsOf<ScreenQueryRow>(SCREEN_BY_RECORD_ID_SQL, [recordId]);
+  return row === undefined ? undefined : screenFromRow(row);
 }
 
 interface TemplateQueryRow {
@@ -276,32 +379,7 @@ export const readAssessmentScreenBySlug = cache(
     slug: string,
   ): Promise<{ instance: AssessmentInstance; template: Assessment } | undefined> => {
     const [row] = await queryRows<ScreenQueryRow>(SCREEN_BY_SLUG_SQL, [slug]);
-    if (row === undefined) return undefined;
-    // A template that stopped resolving is a 404 and a `db:verify` failure, never a render with
-    // an empty title: the copy has no second source for its words.
-    if (row.template_record === null) return undefined;
-    return {
-      instance: assessmentInstanceFromRows({
-        record: row.record,
-        items: row.items,
-        options: row.options,
-        instance: {
-          record_id: row.record.id,
-          template_record_id: row.template_record_id,
-          relationship_id: row.relationship_id,
-          mode: row.mode,
-          setting: row.alignment_setting,
-          name: row.name,
-        },
-        parties: row.parties,
-        opinions: row.opinions,
-      }),
-      template: assessmentTemplateFromRows({
-        record: row.template_record,
-        items: row.template_items,
-        options: row.template_options,
-      }),
-    };
+    return row === undefined ? undefined : screenFromRow(row);
   },
 );
 
@@ -454,6 +532,8 @@ interface SessionCountRow {
   /** `party.accepted_at IS NOT NULL` per seat (#R2) — the hinge `instanceStatusOf()` now needs. */
   readonly initiatorAccepted: boolean;
   readonly counterpartyAccepted: boolean;
+  /** `session.voided_at IS NOT NULL` (#503) — a past session an operator ended. */
+  readonly voided: boolean;
 }
 
 interface OpinionJsonRow {
@@ -494,6 +574,8 @@ export interface RelationshipCardRow {
     readonly claimed: boolean;
     readonly expiresAt: string | Date;
   } | null;
+  /** `session.voided_at IS NOT NULL` — the latest session, ended by an operator (#503). */
+  readonly voided: boolean;
   readonly read_at: Date;
 }
 
@@ -521,7 +603,8 @@ const RELATIONSHIP_CARDS_SQL = `
   ),
   latest AS (
     SELECT DISTINCT ON (s.relationship_id)
-           s.relationship_id, s.record_id, s.mode, s.name, r.slug, r.date
+           s.relationship_id, s.record_id, s.mode, s.name, r.slug, r.date,
+           (s.voided_at IS NOT NULL) AS voided
       FROM session s
       JOIN record r ON r.id = s.record_id
      WHERE s.relationship_id IN (SELECT relationship_id FROM mine)
@@ -537,6 +620,7 @@ const RELATIONSHIP_CARDS_SQL = `
     l.mode                      AS mode,
     l.name                      AS session_name,
     l.date                      AS session_date,
+    l.voided                    AS voided,
     COALESCE(vp.role, rm.role)  AS viewer_role,
     vp.unlock_seen_at           AS viewer_unlock_seen_at,
     ip.name                     AS initiator_name,
@@ -573,7 +657,9 @@ const RELATIONSHIP_CARDS_SQL = `
                                           AND p6.role = 'initiator'), false),
         'counterpartyAccepted', COALESCE((SELECT p7.accepted_at IS NOT NULL FROM party p7
                                            WHERE p7.session_record_id = s2.record_id
-                                             AND p7.role = 'counterparty'), false)
+                                             AND p7.role = 'counterparty'), false),
+        -- #503: a voided past session counts as ended, so it never counts as a completion.
+        'voided', (s2.voided_at IS NOT NULL)
       ))
       FROM session s2 WHERE s2.relationship_id = rel.id
     ), '[]'::json)              AS sessions,
@@ -594,6 +680,10 @@ const RELATIONSHIP_CARDS_SQL = `
   LEFT JOIN party vp ON vp.session_record_id = l.record_id AND vp.user_id = $1
   LEFT JOIN party ip ON ip.session_record_id = l.record_id AND ip.role = 'initiator'
   LEFT JOIN party cp ON cp.session_record_id = l.record_id AND cp.role = 'counterparty'
+  -- #503 — a relationship whose latest session an operator voided has no ladder position to draw,
+  -- so it is not a card. The rows are preserved; the console's registry is where an ended session
+  -- is read, and relationshipCardFromRow fails loudly if one ever reaches it.
+  WHERE NOT l.voided
   ORDER BY l.date DESC, l.slug
 `;
 
@@ -661,6 +751,8 @@ function progressOf(
   counterpartyAnswered: number,
   initiatorAccepted: boolean,
   counterpartyAccepted: boolean,
+  /** `session.voided_at IS NOT NULL` (#503) — answered before any count is read. */
+  voided: boolean,
 ): InstanceProgress {
   return {
     aspectCount,
@@ -670,6 +762,7 @@ function progressOf(
     // The hinge (#R2): the count shape, from the row's two booleans.
     initiatorAccepted: initiatorAccepted ? 1 : 0,
     counterpartyAccepted: counterpartyAccepted ? 1 : 0,
+    voided,
   };
 }
 
@@ -707,6 +800,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     row.counterparty_answered,
     row.initiator_accepted,
     row.counterparty_accepted,
+    row.voided,
   );
   const status = instanceStatusOf(progress);
   const complete = status === "complete";
@@ -735,12 +829,24 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
           session.initiatorAnswered,
           session.counterpartyAnswered,
           // A past session completed only if both seats accepted it (#R2): the count follows the
-          // same rule as the latest session, not a weaker one.
+          // same rule as the latest session, not a weaker one. #503: a voided one never counts.
           session.initiatorAccepted,
           session.counterpartyAccepted,
+          session.voided,
         ),
       ) === "complete",
   ).length;
+
+  // #503 — the ladder has no rung for a voided session, so there is no card to draw: an operator
+  // ended it and the party's to-do list is not the place to report that. The read excludes them
+  // (`lib/db/my-instances.ts`), which makes a `null` here drift rather than a state, and drift is
+  // loud in this tree rather than a `?? "connected"` that would draw a relationship still running.
+  const stage = relationshipStage(status);
+  if (stage === null) {
+    throw new Error(
+      `relationship "${row.slug}": its latest session was voided — the card list must not carry it`,
+    );
+  }
 
   return {
     relationshipId: row.relationship_id,
@@ -752,7 +858,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     viewerRole,
     initiatorName: row.initiator_name,
     counterpartyName: row.counterparty_name,
-    stage: relationshipStage(status),
+    stage,
     state,
     unlock: viewerRole === "coach" ? "seen" : unlockMarkOf(state, row.viewer_unlock_seen_at),
     inviteState:

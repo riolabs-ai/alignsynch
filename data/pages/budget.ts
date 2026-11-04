@@ -54,10 +54,52 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/home",
     budget: 0,
   },
+  // #503 — the audit log. Budget 0: the seven column labels, the dash for the absent side of a
+  // change, the "no profile row" attribution and the two empty/failure panels are
+  // `data/pages/admin-audit.ts`, so the next literal written in `audit-log.tsx` is a red build.
+  "/admin/audit": {
+    page: "app/(mainlayout)/admin/audit/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-audit",
+    budget: 0,
+  },
+  // #507 — the broadcast. Budget 0 from the first commit, like the console's other screens: the four
+  // mail-key banners, the compose band's fourteen fields, the four dry-run counts, the six list
+  // captions, the send table's six columns and the fourteen refusal sentences are all
+  // `data/pages/admin-broadcast.ts`, so the next literal written in `broadcast-composer.tsx` is a
+  // red build. Attribution is reachability, so this row counts one component.
+  "/admin/broadcast": {
+    page: "app/(mainlayout)/admin/broadcast/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-broadcast",
+    budget: 0,
+  },
+  // #505 — billing control. Budget 0 from the first commit, like the console's other screens: the
+  // test-mode banner's three states, the six stat captions, the nine column labels, the five
+  // subscription states, the four plan sources, the plan-limit sentences, the comp band's eleven
+  // fields, the seven refusal sentences and the empty/failure panels are all
+  // `data/pages/admin-billing.ts`, so the next literal written in `billing-control.tsx` is a red
+  // build. Attribution is reachability, so this row counts one file.
+  "/admin/billing": {
+    page: "app/(mainlayout)/admin/billing/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-billing",
+    budget: 0,
+  },
   "/admin/gaps": {
     page: "app/(mainlayout)/admin/gaps/page.tsx",
     dirs: ["components/console"],
     fixture: "data/pages/admin-gaps",
+    budget: 0,
+  },
+  // The operator's platform health (#508): four measurements, each with its own source line. Budget
+  // 0 from the first commit — the four headings, every stat caption, the two alarm sentences and the
+  // two provenance templates are `data/pages/admin-health.ts`, so the next literal written in the
+  // cards is a red build.
+  "/admin/health": {
+    page: "app/(mainlayout)/admin/health/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-health",
     budget: 0,
   },
   // Card 3/5 of the console: the operator's relationship registry. Budget 0 from the first
@@ -69,6 +111,60 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/admin/instances/page.tsx",
     dirs: ["components/admin"],
     fixture: "data/pages/admin-instances",
+    budget: 0,
+  },
+  // #503 — one relationship's repair screen, the registry's child. Budget 0 from the first
+  // commit: the five bands, their buttons, the two seat pickers, the eleven refusal sentences and
+  // the one-time-link notice are all `data/pages/admin-relationship.ts`. Attribution is
+  // reachability, so only `components/admin/relationship-operations.tsx` joins this row's count —
+  // the registry belongs to `/admin/instances` above it and the log to `/admin/audit` below.
+  "/admin/instances/[id]": {
+    page: "app/(mainlayout)/admin/instances/[id]/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-relationship",
+    budget: 0,
+  },
+  // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
+  // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
+  // so the next literal written in `template-registry.tsx` is a red build. Attribution is
+  // reachability, so only the registry joins this row — the editor belongs to the child below.
+  "/admin/templates": {
+    page: "app/(mainlayout)/admin/templates/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-templates",
+    budget: 0,
+  },
+  // The editor: the three tabs, the record's fields, the Aspect row controls, the save band and the
+  // locked panel are `data/pages/admin-template-editor.ts`. The preview reuses the flow's answer
+  // sheet, whose own words belong to `/assessment/instances/[instanceId]/answer` and are passed in
+  // rather than re-authored here.
+  "/admin/templates/[id]": {
+    page: "app/(mainlayout)/admin/templates/[id]/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-template-editor",
+    budget: 0,
+  },
+  // #504 — the relationship's Gap report. Budget 0 from the first commit: the verdict band, the
+  // per-Aspect rows, the eight kind labels' captions, the export footer, the reissue form, the
+  // PII banner and the nine refusal sentences are all `data/pages/admin-report.ts`. Attribution
+  // is reachability, so this row counts `components/admin/report-operations.tsx` and the repair
+  // screen above it keeps its own file.
+  "/admin/instances/[id]/report": {
+    page: "app/(mainlayout)/admin/instances/[id]/report/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-report",
+    budget: 0,
+  },
+  // #506 — the support inbox. Budget 0 from the first commit: the queue's five column labels, the
+  // four status words, the delivery band's four states, the throttle's two sentences, the thread's
+  // receipts, three forms and the ten refusal sentences are all `data/pages/admin-inbox.ts`, so the
+  // next literal written in either component is a red build. Attribution is reachability, so this
+  // row counts `components/admin/support-inbox.tsx` and `support-thread.tsx` — and nothing else in
+  // the directory, because no other page imports them.
+  "/admin/inbox": {
+    page: "app/(mainlayout)/admin/inbox/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-inbox",
     budget: 0,
   },
   "/battle": {
@@ -282,6 +378,23 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     mounts: ["components/layout/footer.tsx"],
     dirs: ["components/layout", "components/header"],
     fixture: "data/pages/shell",
+    budget: 0,
+  },
+  /**
+   * `tour` — the first-run tour's callout (#455), the second non-route surface.
+   *
+   * `page` is `/dashboard`'s module because that is what *mounts* the surface: the route resolves
+   * the fixture and hands it to `components/tour/first-run-tour.tsx` as a prop, exactly as
+   * `components/legal` receives its words, and the check's "fixture reachable from the page"
+   * half proves the wiring. `dirs` is the one component directory the tour owns, and budget 0
+   * from the first commit: the six step sentences, the three button labels, the progress line and
+   * the announcement sentence are all `data/pages/tour.ts`, so the next string typed into
+   * `components/tour/**` is a red build rather than a second home for copy.
+   */
+  tour: {
+    page: "app/(mainlayout)/dashboard/page.tsx",
+    dirs: ["components/tour"],
+    fixture: "data/pages/tour",
     budget: 0,
   },
   /**

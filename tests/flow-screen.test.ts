@@ -471,7 +471,15 @@ describe("an Advanced instance", () => {
     // (`seats[].answered` is the same count the R1 accept page has always drawn for both seats; it
     // says how far along somebody is, never what they said.)
     for (const seat of screen.seats) {
-      expect(Object.keys(seat).sort()).toEqual(["acceptedAt", "answered", "name", "role"]);
+      // #503 adds `impersonated`: whether an operator recorded the acceptance, which is a fact
+      // about the seat and not about what it answered.
+      expect(Object.keys(seat).sort()).toEqual([
+        "acceptedAt",
+        "answered",
+        "impersonated",
+        "name",
+        "role",
+      ]);
     }
     expect(serialized).not.toContain('"feel":5');
   });

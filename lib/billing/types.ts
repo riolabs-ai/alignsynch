@@ -69,6 +69,19 @@ export interface Subscription {
   /** The provider's own id — the `provider_subscription_id` column, and its idempotency key. */
   readonly providerSubscriptionId: string;
   readonly status: SubscriptionStatus;
+  /**
+   * Did this subscription's checkout run on **live** provider keys? (#505)
+   *
+   * The provider's own fact, stored as it reported it (`billing_subscription.livemode`, 0026) and
+   * never inferred from `provider`: both adapters this build carries are test-mode today, and the
+   * screen has to say so out loud rather than leave it to a reader who knows that. `false` is test
+   * mode, and it is also what a row written outside the adapters claims, because nothing may look
+   * like a real charge until the provider says it is one.
+   *
+   * It is a **state**, not card data: no number, no instrument and no customer object crosses this
+   * port, and the console's read selects an id, a status and this boolean.
+   */
+  readonly livemode: boolean;
   /** ISO-8601. When the paid period ends; the row stays until an event changes it. */
   readonly currentPeriodEnd: string;
 }
@@ -117,10 +130,20 @@ export interface WebhookRequest {
  * `duplicate` is the whole point of `billing_event`: a provider retries, and the retry must apply
  * nothing. It is a distinct outcome from `ignored` (an event this build does not act on), because
  * "we already did this" and "we do not handle that type" are different facts in a log.
+ *
+ * `foreign` is the third, and it exists because both hosts share one provider sandbox: the event
+ * carried no host claim, or one that names the other deployment. It is acknowledged (200) and
+ * applied to nothing — no subscription row and no `billing_event` row — and the `detail` sentence
+ * names the claim beside this deployment's own value. A caller must not treat it as a failure: the
+ * delivery was handled correctly, which is precisely by not writing.
  */
 export type WebhookOutcome =
   | { readonly applied: true; readonly kind: string; readonly subscription: Subscription }
-  | { readonly applied: false; readonly kind: "duplicate" | "ignored"; readonly detail: string };
+  | {
+      readonly applied: false;
+      readonly kind: "duplicate" | "ignored" | "foreign";
+      readonly detail: string;
+    };
 
 /** What the server allows an account — computed from its plan, never stored as a column. */
 export interface Entitlement {
@@ -135,6 +158,16 @@ export interface Entitlement {
    * sentence has to say *how many* are allowed.
    */
   readonly maxActiveInstances: number | null;
+  /**
+   * How many relationships this account may have **open at once**. `null` is unlimited (#505).
+   *
+   * The tier's own number, from the fixture's words ("One active relationship at a time" for Free,
+   * "Unlimited active relationships" for every paid tier). It counts relationships the account
+   * **started**; being the Counterparty on somebody else's relationship is not a purchase and does
+   * not consume one. `relationshipGateRefusal()` is the question; `activeRelationshipCount()` is
+   * the count.
+   */
+  readonly maxActiveRelationships: number | null;
   /** Whether Advanced Mode (Think and Guess) may be played. Free: no. Paid: yes. */
   readonly advancedMode: boolean;
   /** The modes this plan may create, in the order a form offers them. */

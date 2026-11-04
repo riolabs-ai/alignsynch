@@ -131,6 +131,36 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/audit",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The audit log: every audited admin write, newest first — when, who and the rung they held at the moment they acted, the action, the row it touched, the reason and both sides of the change — filterable by actor, action, target table and date range, with the filter in the URL so a view is a link.",
+    notes:
+      "Read-only, and structurally so: it reads `admin_action` through `lib/db/admin-audit.ts`, imports no write path, and `tests/admin-audit-page.test.ts` drives a `support` session at it to prove the 404 and that nothing was read or written. `admin` and `owner` reach it (the ladder is ranked, and the page names only `admin`). Both templates this tree ships claim the `product.admin` capability (#509), which is why the row says both; the console rows beside it say `alignsynch` because those screens carry that product's words. `before`/`after` are drawn as keys and a 48-character truncation with the full value behind a `<details>` click, because the JSONB may hold a party's name. Filters are SQL (`WHERE` clauses built in `lib/admin/audit-log.ts`), not client-side: the log only grows. Migration 0024 adds the `actor_role` column this screen's actor column prints, written by `act()` in the same transaction as the change.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/broadcast",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "A one-off notice to the news list — compose a subject and a text body, read it as the recipient will, run a dry run that reports how many addresses it would reach, and send it to everyone who has consented or only to those who joined since a date, with the audience, the exclusions and the count all decided in the server.",
+    notes:
+      "#507 — the epic's last child, and the first surface that writes to `news_signup`'s list. **Consent is applied in the query, not to a rendered list**: `lib/db/news-signups.ts::broadcastAudience()` excludes an address only when `unsubscribed_at`, `bounced_at` or `complained_at` is set (0027's marks, plus the unsubscribe mark 0028 adds), and the dry run and the send call that one function, so the reported count and the sent count cannot drift. **No address reaches a client component**: the screen receives six counts and the newest twenty sends, and the send action answers `sent`/`failed` numbers. The send is one `act()` transaction (`broadcast.send`, floor `admin` — a `support` session gets `role-too-low` inside the transaction, not a hidden button) that writes `broadcast_send` and one `broadcast_recipient` row per address, and the audit row carries `bodyHash` and `recipientCount` rather than the body or the list. The per-address cooldown is 24 h and the cap is 200; over the cap refuses rather than truncating. `lib/email/key-mode.ts` resolves the deployment's key mode and a test key is refused by the action while the same answer is drawn as the banner — a banner is not the enforcement, the action is. The 0028 migration's `unsubscribed_at` contradicts 0019's \"unsubscribe is a delete\" on purpose, and the migration says why: a deleted row cannot be seeded, cannot be told from a signup that never happened, and cannot be re-marked.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/billing",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Subscription state per relationship — plan, the period it is covered for, the provider id and state, and whether the checkout ran on live or test keys, as a badge on every row and a banner over the list — plus the plan's relationship limit and one audited action: an owner comps or extends a tier for a period.",
+    notes:
+      "#505 — the first console screen that reads `billing_subscription`, and the first that writes `plan_grant`. **No card data, ever**: `lib/db/admin-billing.ts` names its columns and they are a provider id, a provider state, a period and a boolean; a payload that grew a `last4` could not reach a render without a column added in a diff. The mode is a banner and a per-row badge because both adapters this build carries are test-mode today (`0026` stores the provider's own `livemode`, defaulting to test). The comp goes through `act()` (`plan.comp`, floor `owner` in `lib/admin/roles.ts` — `admin` reads, `owner` gives), writes `plan_grant` rather than `billing_subscription` so a gift is never mistaken for a payment, and is idempotent by **period**: a second grant with the same `period_start` is refused by `plan_grant_period_key` inside the transaction, leaving neither a grant nor an audit row. The limit the tier sells is enforced in the server, on the create that mints an invitation (`lib/flow/store.ts` asks `relationshipGateRefusal()`), and a refusal names the plan and the number.",
+  },
+  {
+    kind: "route",
     surface: "/admin/console",
     status: "fixture",
     templates: ["alignsynch"],
@@ -191,6 +221,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/health",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The platform's own health, for an operator: what the last db:verify run said (its failing rule codes exactly as the script prints them), the last gate lane and its CI first-pass yield, whether the tag, package.json and production are one release, and how far production trails main — every number labelled with the command or the recorded instant it came from.",
+    notes:
+      "Read-only and read-only structurally: it imports no write path, renders no form and reads `data/health/platform-health.json` (written by `pnpm health:record`), `package.json` and three `git` answers. Live where a checkout exists (the tag, `origin/main`, the commit distance) and recorded where a deployment has no `.git`, which is why every value carries its own source line — a number with no source is a defect, not a rounding. Both templates claim `product.admin` (#509); `support` gets the 404 through `requireAdmin()`. Nothing here executes `db:verify` or calls the CI API during a render: the record is the artifact, and the recorder is the only writer.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/inbox",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The support inbox: every contact message with its triage status and assigned seat, one message's thread under the queue, the mail provider's verdict on the address, the contact form's throttle for that address, and three audited operations — reply through the site's own sending identity, move the status, assign the seat.",
+    notes:
+      "#506 — **the first `support` surface of the console**, and the reason the rung exists: `requireAdminProduct()`, then `requireRole(\"support\")`, so a `member` gets the 404 a URL that never existed returns and a signed-out visitor is sent to `/login?next=/admin/inbox`. Every write is `act()`'s (`message.reply`, `message.assign`, `message.status`, all floor `support`), and the reply is deliberately **two audited transactions with the send between them**: the reply row is stored and the message moved to `waiting` before the provider is called, and `sent_at` lands only in the second transaction, under `0028`'s `contact_reply_sent_has_instant` CHECK — a 4xx leaves the message `waiting` with the provider's refusal stored on the reply and rendered under it. A hard bounce or a spam complaint (`email_event`, joined by recipient, hardness read through `lib/email/inbound.ts::bounceIsHard`) refuses the send in the screen *and* in the server, with the sentence saying which. The throttle is derived rather than recorded — the 429 path writes nothing on purpose — from the messages the form did keep inside its window. No address is rendered anywhere a visitor can reach: the inbox is gated at `support` and no public page links to it.",
+  },
+  {
+    kind: "route",
     surface: "/admin/instances",
     status: "db",
     templates: ["alignsynch"],
@@ -200,14 +250,54 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "Admin-only, and the first caller of `requireAdmin()` outside `/demo/admin`: a member gets the 404 a URL that never existed returns, a signed-out visitor is sent to `/login?next=` this path. The blind rule holds for an admin too — the read selects seats, mode, Setting and the stage, never an opinion, a score, a Gap or an answered count, so there is no column and no prop through which an answer could reach the page. Read-and-filter only: no delete, no force-complete. Every filter is client-side over the one read (`lib/db/admin-instances.ts`).",
   },
   {
-    kind: "domain",
-    surface: "components/admin",
-    status: "mock",
+    kind: "route",
+    surface: "/admin/instances/[id]",
+    status: "db",
     templates: ["alignsynch"],
     capability:
-      "The operator's registry table: a stage tab row, mode and Setting selects and a stalled toggle over one filterable table of relationships.",
+      "One relationship, and the five audited repairs an operator may make on it: clear a party's unlock mark, reissue or withdraw the invitation, void the session, or record an acceptance on a seat's behalf.",
     notes:
-      "`mock` in this file's vocabulary — it renders the props it is handed. The rows are read by the page (`lib/db/admin-instances.ts`) and passed down, because a client component must not reach `pg`; that boundary is why this domain imports no data module and why the route entry above is the one that claims `db`.",
+      "#503 — the first caller of `lib/admin/act.ts`: every repair is one transaction that reads the actor's rung from `user_profile`, runs the mutation and inserts the `admin_action` row before it commits, so a change without its audit entry is not representable. Admin-only (`requireAdmin()`, after `requireAdminProduct()`), while two of the five floors are `support` — the floors are enforced by `act()`, and the support view is #506. The read is `lib/db/admin-relationship.ts`: seats, the invitation's address and answered **counts**, never an opinion or a score. The fresh token a resend mints is returned to the component once and is deliberately absent from the audit row.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/templates",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The authored template catalogue, drafts first — every assessment template record with its slug, publication state, Aspect count and how many relationships already copy it, and the band that starts a new draft from a title, a summary and one Aspect.",
+    notes:
+      "#502a — the first console screen that writes a template, and the first surface gated on the alignment product as well as the console: `requireAdminProduct()`, then `requireAlignmentProduct()` (the same `product.quiz-surfaces` flag read from the side that does not sell quizzes, so `BRAND=quizhub` answers 404 on both routes), then `requireAdmin()` — a `support` session gets the 404 and nothing is read. The write is `act()` (`template.create`, floor `admin`), and the draft is validated by `zAssessment` inside the transaction, so the console cannot accept a template a fixture could not. Drafts only: a published template is read-only here and the row says so, because editing it in place would drift every session's copied Aspects (E31) — versioning is #502b.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/templates/[id]",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "One template being drafted: its title, summary and slug, its Aspects as an accordion of prompt/Left Value/Right Value rows with add, remove and reorder, a live preview of the party's answer sheet, and a save that carries a reason.",
+    notes:
+      "#502a — varies `components/create/quiz-editor.tsx` (tabs, per-item accordion, add/remove) and reuses `components/assessment-flow/answer-form.tsx` for the preview, which is built from the in-progress draft and wrapped in a disabled fieldset so it can never post an answer. `lib/admin/template-draft.ts` assembles the record and hands it to `zAssessment`; the save is `act()`'s (`template.update`) and lands in `admin_action` in the same transaction. Realm and price are drawn read-only from `data/relationship-types.ts` by slug, because they are the type's fields and the record has none — a slug outside the catalogue says so rather than inventing a price.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/instances/[id]/report",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "One relationship's Gap report, and the three operations an operator may take on it: export it as JSON or PDF, reissue it with a reason, or read one seat's raw submission behind the PII gate.",
+    notes:
+      "#504 — the deliverable a customer pays for, as an operations screen. The document is `lib/report/document.ts` (pure): the record plus a projection of the Gaps, so the exported JSON round-trips through `zAssessmentInstance` and every number is recomputable from the rows it carries. `read_submission` is the epic's own action name and the audit row for both exports and a seat read; a member's request answers 404 from the route's `roleAnswerFor()` gate and writes no row, which is `act()`'s floor doing the second half. Doubt is a third gap step the model cannot compute (one value per kind, no history, frozen at completion) and it is stated in the document, the page and the PDF rather than omitted. The PDF is written by hand in `lib/report/pdf.ts` — no PDF dependency was added, and the instant it names is the fixture clock.",
+  },
+  {
+    kind: "domain",
+    surface: "components/admin",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The operator's five screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, that relationship's Gap report with its export/reissue/read bands, the audit log's filtered table whose before/after values open on a click, and the support inbox — the contact queue with one message's thread, the provider's verdict and throttle on that address, and the reply, triage and assignment bands.",
+    notes:
+      "`db`, and by a different route than it first claimed: every component here renders props the page read (a client component must not reach `pg`), and what pulls the domain into the database graph is the *type* it renders — `relationship-operations.tsx` annotates its props with `AdminRelationshipDetail`, and `import type` from `lib/db/**` still walks to `lib/db/client.ts` in this generator's graph. E34 is the runtime claim and it stays green: no `\"use client\"` module here value-imports a server module, which is why the pages render rather than 500. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.",
   },
   {
     kind: "route",
@@ -1008,6 +1098,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["quizhub", "alignsynch"],
     capability:
       "The help panels shared by the two halves of the split — the two-tab help header, help categories, FAQ and knowledge base — plus the account page's contact form and its article reader.",
+  },
+  {
+    kind: "domain",
+    surface: "components/tour",
+    status: "live",
+    templates: ["alignsynch"],
+    capability:
+      "The first-run tour: up to six steps spotlighting real console elements, a callout naming what each one is for, and a polite live region that announces every step change to a screen reader.",
+    notes:
+      "One file (`first-run-tour.tsx`), and a variation rather than a new pattern: the ancestor is `components/ui/popover.tsx`'s callout, stated in its `template-ancestor:` header — a panel anchored to an element, drawn by driver.js rather than Radix because the tour owns when it opens and needs the overlay, the step engine and the reduced-motion switch; no trigger, no portal, no Radix primitive. `live` because the domain has a real write path: dismissing or completing the tour `POST`s the viewer's own `tour_seen_at` mark to `/api/tour` (`lib/tour/mark.ts`), which is what makes it first-run rather than a nag — the read is the `/dashboard` route's job (`lib/db/tour.ts`), so no client module value-imports `lib/db/**` and E34 stays clean. The words are `data/pages/tour.ts`, parsed by the page and passed down, so this domain's own import closure reaches no `data/` module; driver.js is a dynamic import inside the effect, so nothing touches `window` during the server render. The six anchors live on the console's own elements and the shell's Support row; a step whose anchor is absent from the page is skipped rather than pointed at nothing, which is what the quiz build sees (its menu has no Support-row anchor for the sixth step) and what a returning account sees (no empty-state card for three of them).",
   },
   {
     kind: "domain",

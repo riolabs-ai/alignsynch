@@ -106,6 +106,15 @@ export interface PartyRow {
    * this column and the opinion rows together, so `complete` is never a stored status.
    */
   readonly accepted_at?: Date | string | null;
+  /**
+   * The operator who recorded this seat's acceptance on the party's behalf (#503,
+   * `instance.force-close`), or `NULL`/absent when the party accepted it themselves.
+   *
+   * A provenance column, not a permission: nothing in the flow branches on it. The party-facing
+   * report says an acceptance was recorded for somebody; it does not print this id, because the
+   * *who* is the audit row's job and an operator's account id is not a party's business.
+   */
+  readonly impersonated_by?: string | null;
 }
 
 /**
@@ -324,18 +333,40 @@ export function parseOrThrow<T>(schema: z.ZodType<T>, candidate: unknown, contex
   throw new Error(`${context} does not satisfy the content model — ${problems}`);
 }
 
+/**
+ * One template's rows as the plain object `zAssessment` judges — the **unvalidated** candidate.
+ *
+ * Exported for the same reason `itemCandidates` is: the console's publish validates the working
+ * copy with `validateTemplateRecord()` (the validator a save uses) so a refusal names the field, and
+ * it must judge exactly the object this mapper would. A second builder would be a second answer to
+ * "what is a template's record".
+ */
+export function templateCandidateOf(rows: AssessmentTemplateRows): Record<string, unknown> {
+  return {
+    ...recordFields(rows.record),
+    items: itemCandidates(rows.items, rows.options),
+  };
+}
+
 /** One template's rows → `zAssessment`. */
 export function assessmentTemplateFromRows(
   rows: AssessmentTemplateRows,
 ): z.infer<typeof zAssessment> {
-  return parseOrThrow(
-    zAssessment,
-    {
-      ...recordFields(rows.record),
-      items: itemCandidates(rows.items, rows.options),
-    },
-    `record "${rows.record.slug}"`,
-  );
+  return parseOrThrow(zAssessment, templateCandidateOf(rows), `record "${rows.record.slug}"`);
+}
+
+/**
+ * A published version's payload → `zAssessment` (#502b).
+ *
+ * A version stores the whole template as JSONB, so the parse is the check that the stored words
+ * are still the model's. `context` names the row (a version id), because the failure a reader
+ * needs is "which version", not "some payload".
+ */
+export function assessmentTemplateFromPayload(
+  payload: unknown,
+  context: string,
+): z.infer<typeof zAssessment> {
+  return parseOrThrow(zAssessment, payload, context);
 }
 
 /**

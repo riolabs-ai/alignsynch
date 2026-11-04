@@ -1,7 +1,7 @@
 import { ResetPasswordView } from "@/components/auth/reset-password-view";
 import { brand, brandIdOf } from "@/data/brand";
 import { resetFormPageCopy } from "@/data/pages/password-reset";
-import { AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { readResetToken } from "@/lib/auth/reset-set";
 import type { ResetTokenState } from "@/lib/auth/reset-token";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -68,6 +68,7 @@ export default async function ResetPasswordPage({
          * device that has never seen the product.
          */
         mark={AUTH_MARKS_BY_BRAND[brandIdOf(brand)].hero}
+        markSrc={AUTH_MARK_SRC_BY_BRAND[brandIdOf(brand)]}
       />
     </main>
   );

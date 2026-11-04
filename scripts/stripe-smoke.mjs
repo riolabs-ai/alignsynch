@@ -130,6 +130,20 @@ async function main() {
     const value = process.env[name]?.trim() ?? "";
     console.log(`  ${name.padEnd(28)} ${value === "" ? "unset" : `${value.length} characters`}`);
   }
+  // Not a secret, and the one variable whose value the delivery depends on: the checkout stamps it
+  // as `metadata.host`, and the app being delivered to must claim the same one or it answers
+  // "foreign" and applies nothing.
+  const host = process.env.BILLING_HOST?.trim() ?? "";
+  console.log(`  ${"BILLING_HOST".padEnd(28)} ${host === "" ? "unset" : host}`);
+  if (host === "") {
+    fail(
+      "BILLING_HOST names this deployment",
+      "it is unset — the adapter refuses to create a session without a host claim; the app must " +
+        "run with the same value",
+    );
+    process.exitCode = 1;
+    return;
+  }
 
   const balance = await api("/balance");
   const testMode = balance?.livemode === false;

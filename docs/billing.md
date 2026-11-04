@@ -15,6 +15,7 @@ lib/billing/port.ts             the interface — startCheckout, readSubscriptio
                                 entitlementFor. No provider import, no database import.
 lib/billing/adapters/mock.ts    offline + deterministic: checkout writes a row, webhook applies once
 lib/billing/adapters/stripe.ts  hosted, test mode: Checkout Session + signed webhook
+lib/billing/host.ts             which deployment this is (BILLING_HOST), and the metadata.host claim
 lib/billing/entitlements.ts     plan → what the server allows; the refusal sentences
 lib/billing/index.ts            the composition root: which adapter answers (BILLING_PROVIDER)
 lib/db/billing.ts              the SQL: plans, one live subscription, webhook idempotency, counts
@@ -119,14 +120,15 @@ belong to the request: which rows `billing_plan` holds, and which plan the viewe
 the branch that selects it. With the variable unset the module is never resolved, so the demo, the
 tests and the gate run keyless.
 
-The credential surface is four variables, and the environment names are the contract:
+The credential surface is five variables, and the environment names are the contract:
 
-| variable                      | scope           | secret |
-| ----------------------------- | --------------- | ------ |
-| `BILLING_PROVIDER`            | `mock`/`stripe` | no     |
-| `STRIPE_TEST_SECRET_KEY`      | server          | yes    |
-| `STRIPE_TEST_PUBLISHABLE_KEY` | server          | no     |
-| `STRIPE_TEST_WEBHOOK_SECRET`  | server          | yes    |
+| variable                      | scope               | secret |
+| ----------------------------- | ------------------- | ------ |
+| `BILLING_PROVIDER`            | `mock`/`stripe`     | no     |
+| `BILLING_HOST`                | `alignsynch`/`demo` | no     |
+| `STRIPE_TEST_SECRET_KEY`      | server              | yes    |
+| `STRIPE_TEST_PUBLISHABLE_KEY` | server              | no     |
+| `STRIPE_TEST_WEBHOOK_SECRET`  | server              | yes    |
 
 The `_TEST_` segment is deliberate and the adapter enforces it: a secret key whose prefix is not the
 test-mode one is refused with `not-configured`, and there is no branch, flag or fallback that reaches
@@ -153,9 +155,34 @@ subscribed to three events:
 - `customer.subscription.deleted`
 
 Anything else is acknowledged with a 200 and recorded nowhere — a 4xx on an unsubscribed type makes
-the provider retry it for days. Status codes: 200 applied/duplicate/ignored, 400 bad signature or
-unparseable body, 503 this deployment has no credentials, 502 the provider's API could not be
-reached.
+the provider retry it for days. Status codes: 200 applied/duplicate/ignored/foreign, 400 bad
+signature or unparseable body, 503 this deployment has no credentials, 502 the provider's API could
+not be reached.
+
+### One sandbox, two hosts — the `metadata.host` claim
+
+Both hosts run **test** keys, so the provider's sandbox is shared: every test event is delivered to
+_production's_ endpoint and to _demo's_. Without a claim on the session, a demo purchase would attempt
+a grant against the production database and vice versa. So the checkout stamps `metadata.host` with
+this deployment's own identity — `lib/billing/host.ts`, from `BILLING_HOST` (`alignsynch` or `demo`) —
+on the session **and** on the subscription it creates. The second copy is what makes a later
+`customer.subscription.*` delivery filterable, because that event's subject is the subscription, not
+the session.
+
+`BILLING_HOST` has no default, on purpose: a default is the failure it looks like a fix for, because
+every deployment would claim the same host. Unset (or a value this build does not know) is a
+`not-configured` refusal, which both routes already answer 503 with a sentence naming the variable.
+
+After the signature is verified, an event this build would act on is judged on its claim: **absent or
+different → 200 with no write**, logged as the event id, the type and the two host values — never the
+body. Not a 4xx: a 4xx makes the provider retry forever and buries a real failure. `kind: "foreign"`
+is the outcome, distinct from `ignored` (a type we do not subscribe to) and `duplicate` (already
+applied). A foreign event reaches neither the mapping nor `billing_event`, so it leaves no row
+anywhere.
+
+The mock adapter is deliberately outside this: it has no hosted page and no cross-host delivery path
+(`mockSignature` is a SHA-256 the smoke script computes itself), so a keyless demo never needs
+`BILLING_HOST`.
 
 The signature is checked before the body is parsed as JSON, with the provider's own algorithm —
 HMAC-SHA256 over `${t}.${body}`, any `v1` entry matching, a 300-second tolerance, a constant-time

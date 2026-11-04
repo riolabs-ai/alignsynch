@@ -84,11 +84,12 @@ import {
   type Step,
 } from "@/content/steps";
 import { entitlementForAccount } from "@/lib/billing";
-import { instanceGateRefusal } from "@/lib/billing/entitlements";
-import { activeInstanceCount } from "@/lib/db/billing";
+import { instanceGateRefusal, relationshipGateRefusal } from "@/lib/billing/entitlements";
+import { activeInstanceCount, activeRelationshipCount } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import {
   assessmentInstanceFromRows,
+  assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
   type AssessmentInstanceRows,
   type InstanceRow,
@@ -163,11 +164,14 @@ export type FlowErrorCode =
   // so this is the second half of the same rule for a caller that posts a record id directly:
   // an authored template belongs to its author, and a signed-out create belongs to nobody.
   | "template-not-yours"
-  // The billing gate's two refusals (#289). They are flow refusals because this store is where an
-  // instance comes into being, and the route that calls it already answers `{error, message}` for
-  // every `FlowError` — a second error type would be a second branch that could be forgotten.
+  // The billing gate's three refusals (#289, #505). They are flow refusals because this store is
+  // where an instance comes into being, and the route that calls it already answers `{error,
+  // message}` for every `FlowError` — a second error type would be a second branch that could be
+  // forgotten. `relationship-limit` is the plan's own limit (#505): a plan sells *relationships*,
+  // and the refusal names that, not an "assessment instance" nobody was sold.
   | "instance-limit"
-  | "mode-not-entitled";
+  | "mode-not-entitled"
+  | "relationship-limit";
 
 /* ------------------------------------------------------------------ *\
  * Create
@@ -328,10 +332,14 @@ export async function createInstanceFromTemplate(
   const now = input.now ?? new Date();
   const initiatorUserId = normalizedUserId(input.viewerUserId);
 
-  // THE BILLING GATE (#289). Before the transaction, because a refusal must cost nothing: no
-  // record, no items, no party row, no invitation. Both questions are asked in one place — the
-  // active count and the mode — because a caller that enforced one and forgot the other is the
-  // exact defect `instanceGateRefusal` exists to make impossible.
+  // THE BILLING GATE (#289, #505). Before the transaction, because a refusal must cost nothing: no
+  // record, no items, no party row, no invitation. Three questions, and the **relationship** limit
+  // is asked first (#505): it is the limit the plan actually sells — "One active relationship at a
+  // time" on Free, "Unlimited active relationships" on every paid tier — so an account that has
+  // used its one relationship is refused with a sentence about a relationship, not about an
+  // "assessment instance" it never saw named. `instanceGateRefusal` still asks the count of open
+  // sessions and the mode; the two counts differ (being a Counterparty is an instance but not a
+  // relationship you started), so neither subsumes the other.
   //
   // A signed-out create is not gated: there is no account to hold a plan, and the anonymous flow
   // is the pre-#213 behaviour the product still supports. That is also why the gate cannot be
@@ -339,6 +347,13 @@ export async function createInstanceFromTemplate(
   // an unbound instance belongs to nobody.
   if (initiatorUserId !== null) {
     const entitlement = await entitlementForAccount(initiatorUserId);
+    const relationshipRefusal = relationshipGateRefusal({
+      entitlement,
+      activeRelationships: await activeRelationshipCount(initiatorUserId),
+    });
+    if (relationshipRefusal !== null) {
+      throw new FlowError(relationshipRefusal.code, relationshipRefusal.message);
+    }
     const refusal = instanceGateRefusal({
       entitlement,
       activeInstances: await activeInstanceCount(initiatorUserId),
@@ -409,6 +424,37 @@ export async function createInstanceFromTemplate(
       throw new FlowError("template-has-no-aspects", `template "${found.slug}" has no Aspects`);
     }
 
+    /**
+     * **The version, not the working copy (#502b).** A relationship is created from the version the
+     * template currently offers, and it is bound to that row for its whole life: the copy's Aspects
+     * come from the version's payload, `relationship.template_version_id` names it, and every later
+     * read draws it. A template with no version has never been published, so there is nothing to
+     * copy — `template-not-published` is the same refusal the status check above gives.
+     */
+    const liveVersion = await client.query<{
+      id: string;
+      version: number;
+      payload: unknown;
+    }>(
+      `SELECT id, version, payload
+         FROM template_version
+        WHERE template_record_id = $1
+        ORDER BY version DESC
+        LIMIT 1`,
+      [found.id],
+    );
+    const version = liveVersion.rows[0];
+    if (version === undefined) {
+      throw new FlowError(
+        "template-not-published",
+        `template "${found.slug}" is ${found.status} with no published version — publish it before a relationship can copy it`,
+      );
+    }
+    const offered = assessmentTemplateFromPayload(
+      version.payload,
+      `template version "${version.id}"`,
+    );
+
     const slug = `${found.slug}-${instanceRecordId.slice(0, 8)}`;
 
     // The instance record. `draft` on purpose: a template is the published thing, an
@@ -421,27 +467,33 @@ export async function createInstanceFromTemplate(
         instanceRecordId,
         slug,
         now.toISOString(),
-        found.title,
-        `${found.title}, answered by ${initiatorName} and ${counterpartyName}.`,
+        offered.title,
+        `${offered.title}, answered by ${initiatorName} and ${counterpartyName}.`,
       ],
     );
 
-    // THE COPY. Rows owned by the instance, taken from the template at this instant and
-    // never joined back — `position` travels with them, because order is part of what a
-    // party answers.
+    // THE COPY. Rows owned by the instance, taken from the **version** at this instant and never
+    // joined back — `position` travels with them, because order is part of what a party answers.
+    //
+    // The source is the version's parsed payload and not the template's `item` rows: an edit saved
+    // against the template after its last publish is not what this relationship agreed to, and a
+    // copy taken from it would fail `db:verify` V4 against the version the relationship is bound
+    // to. No `response_option` copy: a version is `zAssessment`, whose every item's scale is the
+    // fixed 1..5 band, so there is no option row for it to carry.
+    const copyIds = offered.items.map((item) => item.id);
     await client.query(
       `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
-       SELECT $1, item_id, position, prompt, scale_kind, left_value, right_value
-         FROM item
-        WHERE record_id = $2`,
-      [instanceRecordId, found.id],
-    );
-    await client.query(
-      `INSERT INTO response_option (record_id, item_id, option_id, position, text)
-       SELECT $1, item_id, option_id, position, text
-         FROM response_option
-        WHERE record_id = $2`,
-      [instanceRecordId, found.id],
+       SELECT $1, t.item_id, t.position, t.prompt, 'score', t.left_value, t.right_value
+         FROM unnest($2::text[], $3::int[], $4::text[], $5::text[], $6::text[])
+              AS t(item_id, position, prompt, left_value, right_value)`,
+      [
+        instanceRecordId,
+        copyIds,
+        offered.items.map((_, position) => position),
+        offered.items.map((item) => item.prompt),
+        offered.items.map((item) => item.leftValue),
+        offered.items.map((item) => item.rightValue),
+      ],
     );
 
     // #340 — the relationship the session belongs to. Bought once, persists: one row here, and
@@ -453,9 +505,10 @@ export async function createInstanceFromTemplate(
     const relationshipId = cryptoRandomId();
     await client.query(
       `INSERT INTO relationship
-         (id, template_id, initiator_user_id, counterparty_user_id, purchased_at, plan, created_at)
-       VALUES ($1, $2, $3, NULL, $4, NULL, $4)`,
-      [relationshipId, found.id, initiatorUserId, now.toISOString()],
+         (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
+          purchased_at, plan, created_at)
+       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5)`,
+      [relationshipId, found.id, version.id, initiatorUserId, now.toISOString()],
     );
 
     await client.query(
@@ -606,8 +659,9 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       counterparty_name: string;
       claimed_at: Date | null;
       expires_at: Date;
+      revoked_at: Date | null;
     }>(
-      `SELECT session_record_id, counterparty_name, claimed_at, expires_at
+      `SELECT session_record_id, counterparty_name, claimed_at, expires_at, revoked_at
          FROM session_invite
         WHERE token_hash = $1
           FOR UPDATE`,
@@ -617,6 +671,18 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     if (invite === undefined) {
       await client.query("ROLLBACK");
       return { ok: false, code: "unknown", reason: "no invitation carries that token" };
+    }
+    // #503 — an operator's revocation is terminal until somebody resends. It is asked here, before
+    // the expiry, because "the operator killed this link" is the fact the recipient needs to read;
+    // the date it would have died is not. `!= null` rather than `!== null`: a row read through a
+    // caller that does not select the column is "not revoked", never a crash on an absent instant.
+    if (invite.revoked_at != null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "revoked",
+        reason: `an operator revoked that invitation at ${invite.revoked_at.toISOString()}`,
+      };
     }
     if (invite.claimed_at !== null) {
       await client.query("ROLLBACK");
@@ -1012,13 +1078,24 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
-    const locked = await client.query<{ record_id: string; mode: string }>(
-      "SELECT record_id, mode FROM session WHERE record_id = $1 FOR UPDATE",
+    const locked = await client.query<{ record_id: string; mode: string; voided_at: Date | null }>(
+      "SELECT record_id, mode, voided_at FROM session WHERE record_id = $1 FOR UPDATE",
       [input.instanceRecordId],
     );
     if (locked.rows[0] === undefined) {
       await client.query("ROLLBACK");
       return { ok: false, code: "no-such-instance", reason: "no instance has that id" };
+    }
+    // #503 — a voided session is frozen for both seats, checked under the lock that serialises
+    // every writer for this instance. The status derivation says the same thing (`maySubmit`), and
+    // this is where it is enforced against a request that was already open when the void landed.
+    if (locked.rows[0].voided_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "voided",
+        reason: `an operator voided this session at ${locked.rows[0].voided_at.toISOString()}; it accepts no further answers`,
+      };
     }
     // The mode the sheet is judged against is the row's, read under the lock that already
     // protects the freeze — never a field of the form. `zAssessmentMode` cannot reject a
@@ -1193,12 +1270,15 @@ async function progressOfClient(
     role: PartyRole;
     answered: number;
     accepted: boolean;
+    voided: boolean;
   }>(
     `SELECT p.role,
             (SELECT count(*) FROM opinion o
               WHERE o.session_record_id = p.session_record_id
                 AND o.role = p.role)::int AS answered,
-            (p.accepted_at IS NOT NULL) AS accepted
+            (p.accepted_at IS NOT NULL) AS accepted,
+            (SELECT ai.voided_at IS NOT NULL FROM session ai
+              WHERE ai.record_id = p.session_record_id) AS voided
        FROM party p
       WHERE p.session_record_id = $1`,
     [instanceRecordId],
@@ -1213,6 +1293,10 @@ async function progressOfClient(
     counterpartyAnswered: answered("counterparty"),
     initiatorAccepted: accepted("initiator"),
     counterpartyAccepted: accepted("counterparty"),
+    // #503 — one row per seat, so any row's answer is the session's; a session with no party row
+    // at all cannot be voided through the console (the operator has nothing to target), and `false`
+    // is then the honest reading.
+    voided: counts.rows[0]?.voided === true,
   };
 }
 
@@ -1227,7 +1311,13 @@ async function progressOfClient(
  * accepted this party, so "the session is complete" and "you already accepted" are one refusal,
  * and `already-accepted` is the sentence that tells the reader what to do next (nothing).
  */
-export type AcceptRefusal = "no-such-instance" | "not-a-party" | "incomplete" | "already-accepted";
+export type AcceptRefusal =
+  | "no-such-instance"
+  | "not-a-party"
+  | "incomplete"
+  | "already-accepted"
+  /** An operator ended the session (#503): nothing accepts, from either seat. */
+  | "voided";
 
 export interface AcceptInput {
   readonly instanceRecordId: string;
@@ -1305,9 +1395,11 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
       mode: string;
       alignment_setting: string;
       name: string | null;
+      voided_at: Date | null;
       record: RecordRow;
     }>(
       `SELECT ai.relationship_id, ai.template_record_id, ai.mode, ai.alignment_setting, ai.name,
+              ai.voided_at,
               to_jsonb(r) AS record
          FROM session ai
          JOIN record r ON r.id = ai.record_id
@@ -1319,6 +1411,17 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
     if (session === undefined) {
       await client.query("ROLLBACK");
       return { ok: false, code: "no-such-instance", reason: "no instance has that id" };
+    }
+    // #503 — the void is terminal from this side too, read under the same session lock the two
+    // accepts serialise on. Checked before the seat is resolved so a voided session answers the
+    // same way for a party, a coach and a stranger.
+    if (session.voided_at !== null) {
+      await client.query("ROLLBACK");
+      return {
+        ok: false,
+        code: "voided",
+        reason: `an operator voided this session at ${session.voided_at.toISOString()}; there is nothing left to accept`,
+      };
     }
 
     // The seat, out of Postgres: the cookie's token hash first (an invited party keeps the
@@ -1717,8 +1820,17 @@ export interface InstanceBundle {
     readonly resentAt: Date | null;
     /** `resent_count` — lifetime re-invites, the fact `RESEND_LIFETIME_CAP` compares against. */
     readonly resentCount: number;
+    /** `revoked_at IS NOT NULL` — an operator killed this link (#503). */
+    readonly revoked: boolean;
   } | null;
   readonly answerCounts: Readonly<Record<PartyRole, number>>;
+  /**
+   * `session.voided_at IS NOT NULL` (#503) — an operator ended this session.
+   *
+   * On the bundle rather than on the screen's copy of it because it is a fact about the session
+   * row, and `progressOf()` needs it to derive `voided` before it reads a count.
+   */
+  readonly voided: boolean;
 }
 
 /** One instance's rows, minus every opinion — the opinions are read separately, blind. */
@@ -1731,6 +1843,7 @@ export async function readInstanceBundle(
     mode: string;
     alignment_setting: string;
     relationship_id: string;
+    voided: boolean;
     items: ItemRow[];
     options: OptionRow[];
   }>(
@@ -1739,6 +1852,7 @@ export async function readInstanceBundle(
             ai.mode,
             ai.alignment_setting,
             ai.relationship_id,
+            (ai.voided_at IS NOT NULL) AS voided,
             COALESCE((SELECT json_agg(to_jsonb(i) ORDER BY i.position) FROM item i WHERE i.record_id = r.id), '[]'::json) AS items,
             COALESCE((SELECT json_agg(to_jsonb(o) ORDER BY o.position) FROM response_option o WHERE o.record_id = r.id), '[]'::json) AS options
        FROM record r
@@ -1749,7 +1863,10 @@ export async function readInstanceBundle(
   if (instance === undefined) return undefined;
 
   const parties = await query<PartyRow>(
-    "SELECT session_record_id, role, name, submitted_at, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
+    // `impersonated_by` (#503) — the operator who accepted on a seat's behalf. The report says so
+    // where the acceptance is drawn; nothing reads it for a permission, and it is never a party's
+    // score.
+    "SELECT session_record_id, role, name, submitted_at, accepted_at, impersonated_by FROM party WHERE session_record_id = $1 ORDER BY role",
     [instanceRecordId],
   );
   const [invite] = await query<{
@@ -1759,8 +1876,10 @@ export async function readInstanceBundle(
     expires_at: Date;
     resent_at: Date | null;
     resent_count: number;
+    revoked_at: Date | null;
   }>(
-    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count FROM session_invite WHERE session_record_id = $1`,
+    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count, revoked_at
+       FROM session_invite WHERE session_record_id = $1`,
     [instanceRecordId],
   );
   const counts = await query<{ role: PartyRole; answered: number }>(
@@ -1795,8 +1914,10 @@ export async function readInstanceBundle(
             expiresAt: invite.expires_at,
             resentAt: invite.resent_at,
             resentCount: invite.resent_count,
+            revoked: invite.revoked_at != null,
           },
     answerCounts: { initiator: answered("initiator"), counterparty: answered("counterparty") },
+    voided: instance.voided === true,
   };
 }
 
@@ -2045,6 +2166,7 @@ export async function readFlowScreen(input: {
     parties: bundle.parties,
     opinions: [],
     answerCounts: bundle.answerCounts,
+    voided: bundle.voided,
   };
   const status = instanceStatusOf(progressOf(answersOnly));
   const roles = visibleRoles(viewerRole, status);
@@ -2063,6 +2185,7 @@ export async function readFlowScreen(input: {
     parties: bundle.parties,
     opinions,
     answerCounts: bundle.answerCounts,
+    voided: bundle.voided,
   };
 
   // #266 — the invitation's state, derived once from the row and the instant of this read.
@@ -2137,7 +2260,7 @@ export async function markUnlockSeen(input: {
   return (result.rowCount ?? 0) > 0;
 }
 
-export type InviteState = "claimable" | "claimed" | "expired" | "unknown";
+export type InviteState = "claimable" | "claimed" | "expired" | "revoked" | "unknown";
 
 export interface InvitePreview {
   readonly state: InviteState;
@@ -2190,10 +2313,12 @@ export async function previewInvite(
     counterparty_name: string;
     claimed_at: Date | null;
     expires_at: Date;
+    revoked_at: Date | null;
     initiator_name: string | null;
     title: string;
   }>(
     `SELECT iv.session_record_id, iv.counterparty_name, iv.claimed_at, iv.expires_at,
+            iv.revoked_at,
             (SELECT p.name FROM party p
               WHERE p.session_record_id = iv.session_record_id AND p.role = 'initiator') AS initiator_name,
             t.title
@@ -2206,10 +2331,15 @@ export async function previewInvite(
   if (row === undefined) return empty;
   // #266 — the one comparison of `expires_at` with a clock on a read path, shared with the
   // Initiator's screen so the two seats cannot disagree about whether an invitation is dead.
-  // `claimable` is this page's own word for `unclaimed`; the recipient's four states (and the
-  // sentences `data/pages/invite.ts` gives them) do not move.
+  // `claimable` is this page's own word for `unclaimed`; the recipient's states (and the
+  // sentences `data/pages/invite.ts` gives them) do not move — #503 added `revoked`, which is the
+  // operator's decision wearing the recipient's vocabulary.
   const derived = inviteStateOf(
-    { claimed: row.claimed_at !== null, expiresAt: row.expires_at },
+    {
+      claimed: row.claimed_at !== null,
+      expiresAt: row.expires_at,
+      revoked: row.revoked_at != null,
+    },
     now,
   );
   const state: InviteState = derived === "unclaimed" ? "claimable" : derived;

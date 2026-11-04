@@ -254,6 +254,13 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "help", label: "Help" },
           { id: "console-gaps", label: "Gap Analysis" },
           { id: "admin-instances", label: "Relationships" },
+          // #503 — the log the five repairs commit into. An operator's row, beside the registry
+          // it audits, drawn only for `admin-console`.
+          { id: "admin-audit", label: "Audit log" },
+          // #505 — billing control: the plan each relationship carries, and the owner's comp.
+          { id: "admin-billing", label: "Billing" },
+          // #507 — the broadcast: a one-off notice to the news list.
+          { id: "admin-broadcast", label: "Broadcast" },
           { id: "quiz-tools", label: "Quiz tools" },
         ],
       },

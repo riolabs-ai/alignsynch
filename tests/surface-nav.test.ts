@@ -113,6 +113,12 @@ describe("the shell's menus", () => {
       "/support",
       "/admin/gaps",
       "/admin/instances",
+      // #503 — the audit log, the operator's third row.
+      "/admin/audit",
+      // #505 — billing control, beside the log it writes into.
+      "/admin/billing",
+      // #507 — the broadcast, the console's last row.
+      "/admin/broadcast",
     ]);
   });
 

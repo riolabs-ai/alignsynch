@@ -36,10 +36,16 @@ A brand-visible change — a re-pointed token, a renamed product, a new mark —
 
    ```
    public/brand/<id>-icon.svg                  favicon (the recorded `brand.icon`)
-   public/brand/<id>-apple-touch-icon.png       180×180, full bleed, opaque
-   public/brand/<id>-icon-192.png               192×192, full bleed, maskable-safe
-   public/brand/<id>-icon-512.png               512×512, full bleed, maskable-safe
+   public/brand/<id>-apple-touch-icon.png       180×180
+   public/brand/<id>-icon-192.png               192×192
+   public/brand/<id>-icon-512.png               512×512
    ```
+
+   A brand that names **no** `mark` (QuizHub) draws the template's book on its `action`, and the
+   three PNGs are full bleed and opaque. A brand that names one (AlignSynch) paints **no tile**:
+   every surface carries the mark on transparency, at 64 % of the maskable canvas, and the margin
+   around the ink is the safe zone (owner, 2026-11-03 — a background-free maskable icon is a
+   deliberate departure from the maskable guidance, not an omission).
 
    `pnpm data:check` re-runs it with `--check` in every non-docs lane, so a record edit that
    leaves the files stale is a red gate. Never hand-edit an icon file in `public/` — regenerate.
@@ -52,9 +58,11 @@ A brand-visible change — a re-pointed token, a renamed product, a new mark —
    build. There is no committed `public/brand/*-og.png`, for the byte-comparability reason
    `lib/brand-og.tsx` documents.
 
-4. **`pnpm parity:update --reason "…"`** — see below. The icon set changes the document head
-   (the apple-touch link, the manifest link), so the parity hashes move; rewriting the manifest
-   is the last step, not the first.
+4. **`pnpm parity:update --reason "…"`** — see below. Only when a **path** in the document head
+   moves (a renamed icon, a new mark file) or a rendered string changes. Re-drawing the bytes of
+   files whose `href` is unchanged — the transparent-ground change (owner, 2026-11-03) is exactly
+   this — moves no hash, and the parity step passes with no rewrite. Run `pnpm parity` first and
+   let it say which it is; rewriting the manifest is the last step, not the first.
 
 ## What parity asserts
 

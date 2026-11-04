@@ -84,10 +84,11 @@ export const metadata: Metadata = {
    * `<link rel="icon">` tags would leave the choice of which brand a reader sees to the
    * browser's tie-break rules.
    *
-   * The apple-touch icon is the same mark at 180×180, full bleed, from the same generator; the
-   * path is derived in `lib/brand-icon.ts` (never a literal here — E17). The PWA 192/512 and
-   * maskable set live in `app/manifest.ts`, which is the file convention that injects the
-   * `<link rel="manifest">` for the same brand.
+   * The apple-touch icon is the same mark at 180×180, from the same generator — full bleed for
+   * the template's glyph, the brand's mark on transparency for a brand that has one (owner,
+   * 2026-11-03); the path is derived in `lib/brand-icon.ts` (never a literal here — E17). The PWA
+   * 192/512 and maskable set live in `app/manifest.ts`, which is the file convention that injects
+   * the `<link rel="manifest">` for the same brand.
    *
    * `type` is stated because Next only infers it for its own generated icons: the favicon is an
    * SVG and the apple-touch icon is a PNG, and a reader (and a few crawlers) needs the type to

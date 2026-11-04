@@ -6,8 +6,16 @@
  *
  *   `startCheckout`      create a Checkout Session and hand the browser its URL
  *   `readSubscription`   our row — the one the webhook wrote (see the note on that method)
- *   `handleWebhook`      verify the signature, then map the event onto `billing_subscription`
+ *   `handleWebhook`      verify the signature, check the host claim, map the event onto
+ *                        `billing_subscription`
  *   `entitlementFor`     `entitlements.ts` applied to that row
+ *
+ * **The host claim.** Both hosts run **test** keys, so the provider's sandbox is shared and every
+ * test event reaches both deployments' billing webhook endpoints. The session therefore carries
+ * `metadata.host` (`lib/billing/host.ts`, from `BILLING_HOST`), stamped on the session *and* on the
+ * subscription it creates — the second one is what makes a later `customer.subscription.*` delivery
+ * filterable, because that event's subject is the subscription. The receiver acts only on an event
+ * claiming its own value; anything else is acknowledged and dropped, never mapped.
  *
  * **Test mode only, and structurally so.** The credential is `sk_test_…`, the adapter refuses
  * anything without that prefix, and there is no branch, flag or fallback that could reach a live
@@ -37,6 +45,12 @@ import {
   planPriceCents,
 } from "@/data/billing-plans";
 import { checkoutRefusal, entitlementOf } from "@/lib/billing/entitlements";
+import {
+  billingHostFromEnv,
+  foreignHostDetail,
+  hostClaimOf,
+  type BillingHost,
+} from "@/lib/billing/host";
 import { BillingRefusal, type BillingPort } from "@/lib/billing/port";
 import type {
   CheckoutRequest,
@@ -268,6 +282,12 @@ interface StripeSubscriptionObject {
    * delivery is mapped correctly whichever version the account is pinned to.
    */
   readonly current_period_end?: number | null;
+  /**
+   * The provider's own live/test flag (#505). Every Stripe object carries it, and it is the only
+   * honest source for "did this checkout charge real money" — the adapter's key is a config fact,
+   * this is a fact about the object that was actually created.
+   */
+  readonly livemode?: boolean | null;
   readonly metadata?: Record<string, string> | null;
   readonly items?: { readonly data?: readonly StripeSubscriptionItem[] } | null;
 }
@@ -347,11 +367,15 @@ export class StripeBillingAdapter implements BillingPort {
   readonly provider = "stripe" as const;
 
   private readonly credentials: StripeCredentials;
+  private readonly host: BillingHost;
   private readonly now: () => Date;
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: StripeAdapterOptions = {}) {
     this.credentials = stripeCredentialsFromEnv(options.env ?? process.env);
+    // Read here, beside the credentials, so a deployment that cannot name itself fails at
+    // construction with one sentence instead of minting sessions that the other host would own.
+    this.host = billingHostFromEnv(options.env ?? process.env);
     this.now = options.now ?? (() => new Date());
     this.fetchImpl = options.fetch ?? fetch;
   }
@@ -367,6 +391,12 @@ export class StripeBillingAdapter implements BillingPort {
    * Our own vocabulary rides along in metadata, on both the session and the subscription it
    * creates. That is what makes every later `customer.subscription.*` delivery mappable without a
    * customer→account table: the subscription carries the account it belongs to.
+   *
+   * `metadata.host` rides on **both** objects for the same reason, and it is not decoration: the
+   * provider's test sandbox is shared between the two hosts, so a session that did not say whose it
+   * was would be grantable on either database. `handleWebhook` refuses an event that does not claim
+   * this deployment, and `customer.subscription.*` events carry only the *subscription's* metadata —
+   * so stamping the session alone would leave every later status change unclaimable.
    */
   async startCheckout(request: CheckoutRequest): Promise<CheckoutSession> {
     const plan = billingPlan(request.planId);
@@ -407,9 +437,11 @@ export class StripeBillingAdapter implements BillingPort {
       "metadata[user_id]": request.userId,
       "metadata[plan_id]": plan.id,
       "metadata[interval]": interval,
+      "metadata[host]": this.host,
       "subscription_data[metadata][user_id]": request.userId,
       "subscription_data[metadata][plan_id]": plan.id,
       "subscription_data[metadata][interval]": interval,
+      "subscription_data[metadata][host]": this.host,
     });
     if (request.email !== undefined && request.email !== "") {
       form.set("customer_email", request.email);
@@ -446,12 +478,19 @@ export class StripeBillingAdapter implements BillingPort {
   }
 
   /**
-   * Verify, map and apply one delivery — at most once.
+   * Verify, map and apply one delivery — at most once, and only if it is this deployment's.
    *
    * The signature is checked before the body is parsed as JSON: an unsigned body is not data, it is
-   * an attacker's claim. Idempotency is `billing_event`'s, through `applyBillingEventOnce()`, which
-   * writes the event row in the same transaction as the subscription — so a retry either finds the
-   * event recorded (and applies nothing) or finds neither.
+   * an attacker's claim. The **host claim** is checked next, for every event type this build would
+   * act on and before any mapping — because both hosts share one test sandbox, the other host's
+   * events arrive here too, and mapping one would write a subscription on the wrong database. A
+   * foreign event is acknowledged (`applied: false`, `kind: "foreign"`), never refused with a 4xx:
+   * the provider would retry a 4xx for days, and the failure is not the sender's.
+   *
+   * Idempotency is `billing_event`'s, through `applyBillingEventOnce()`, which writes the event row
+   * in the same transaction as the subscription — so a retry either finds the event recorded (and
+   * applies nothing) or finds neither. A foreign event never reaches that function, so it leaves no
+   * `billing_event` row either.
    */
   async handleWebhook(request: WebhookRequest): Promise<WebhookOutcome> {
     verifyStripeSignature({
@@ -472,6 +511,15 @@ export class StripeBillingAdapter implements BillingPort {
         kind: "ignored",
         detail: `"${event.type}" is not one of ${STRIPE_WEBHOOK_EVENTS.join(", ")}`,
       };
+    }
+
+    // The host claim, on every event this build would otherwise act on — and before any mapping, so
+    // a sibling deployment's delivery cannot even be read.
+    const foreign = this.foreignHostRefusalOf(event);
+    if (foreign !== null) {
+      // The event id and type, plus which host claim disagreed — never the body.
+      console.info(`billing: refused stripe event ${event.id} ${event.type} — ${foreign}`);
+      return { applied: false, kind: "foreign", detail: foreign };
     }
 
     const mapped = await this.subscriptionForEvent(event);
@@ -513,6 +561,21 @@ export class StripeBillingAdapter implements BillingPort {
   }
 
   /* --- internals ----------------------------------------------------------------------------- */
+
+  /**
+   * The sentence for an event that is not this deployment's, or `null` when it is ours.
+   *
+   * The claim is the **subject's own** `metadata.host`: a `checkout.session.completed` names the
+   * session, a `customer.subscription.*` the subscription — which is why the checkout stamps both.
+   * An event with no `data.object` is not judged here: it cannot be mapped either, and
+   * `subscriptionForEvent()` names that failure more precisely than "no host claim" would.
+   */
+  private foreignHostRefusalOf(event: StripeEvent): string | null {
+    const object = event.data?.object;
+    if (object === null || object === undefined || typeof object !== "object") return null;
+    const metadata = (object as { readonly metadata?: Record<string, string> | null }).metadata;
+    return foreignHostDetail(this.host, hostClaimOf(metadata));
+  }
 
   /** The parsed event, or a refusal — a verified body that is not an event is still a bad body. */
   private parseEvent(rawBody: string): StripeEvent {
@@ -650,6 +713,9 @@ export class StripeBillingAdapter implements BillingPort {
       provider: "stripe",
       providerSubscriptionId: object.id,
       status: subscriptionStatusOf(object.status),
+      // `livemode` is the object's, and an absent flag is test mode: a payload that does not say
+      // must never be read as money having moved (#505).
+      livemode: object.livemode === true,
       currentPeriodEnd: new Date(periodEnd * 1000).toISOString(),
     };
   }

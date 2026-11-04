@@ -14,8 +14,17 @@
  * never the component itself.
  */
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
+import { adminAuditPageCopy } from "./admin-audit";
+import { adminBillingPageCopy } from "./admin-billing";
+import { adminBroadcastPageCopy } from "./admin-broadcast";
 import { adminGapsPageCopy } from "./admin-gaps";
+import { adminHealthPageCopy } from "./admin-health";
+import { adminInboxPageCopy } from "./admin-inbox";
 import { adminInstancesPageCopy } from "./admin-instances";
+import { adminRelationshipPageCopy } from "./admin-relationship";
+import { adminTemplateEditorPageCopy } from "./admin-template-editor";
+import { adminTemplatesPageCopy } from "./admin-templates";
+import { adminReportPageCopy } from "./admin-report";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
 import { assessmentInstancePageCopy } from "./assessment-instance";
@@ -55,13 +64,26 @@ import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
+import { tourPageCopy } from "./tour";
 import { tournamentDetailPageCopy } from "./tournament-detail";
 import { tournamentsPageCopy } from "./tournaments";
 
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
+  "/admin/audit": adminAuditPageCopy,
+  // #507 — the broadcast: compose, dry run, send, and the sends already made.
+  "/admin/broadcast": adminBroadcastPageCopy,
+  // #505 — the billing control screen: one row per relationship, and the owner's comp.
+  "/admin/billing": adminBillingPageCopy,
   "/admin/gaps": adminGapsPageCopy,
+  "/admin/health": adminHealthPageCopy,
   "/admin/instances": adminInstancesPageCopy,
+  "/admin/instances/[id]": adminRelationshipPageCopy,
+  "/admin/templates": adminTemplatesPageCopy,
+  "/admin/templates/[id]": adminTemplateEditorPageCopy,
+  "/admin/instances/[id]/report": adminReportPageCopy,
+  // #506 — the support inbox: the contact form's queue, one thread, the reply.
+  "/admin/inbox": adminInboxPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   "/assessment/instances": myInstancesPageCopy,
@@ -116,4 +138,11 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/welcome": marketingPageCopy,
   shell: shellPageCopy,
   "not-found": notFoundPageCopy,
+  /**
+   * The first-run tour (#455), a declared non-route surface like the shell: its callout renders
+   * over `/dashboard` and points into the rail, and no route owns those words. Registered here so
+   * `data/pages/budget.ts` has a copy to attribute and E23 can hold `components/tour/**` at 0 —
+   * the alternative was a second, unratcheted home for the same sentences.
+   */
+  tour: tourPageCopy,
 });

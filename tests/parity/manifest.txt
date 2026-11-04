@@ -7,17 +7,17 @@
 # half of the same render; the full HTML is only ever written to tests/parity/artifacts/.
 #
 # route | brand | sha256
-/ | quizhub | 28d835bbd51abc0083c2bf3e558c4ff55ac6ee7a02c29cca4c05cd024f328b4b
-/ | alignsynch | 82e4ced462e9a599d818c27f31e0bc7892ec68aadb3e1f569ffcef3efd26f283
+/ | quizhub | b3dff9bc7f527eed72a11e586d00dabdeb26bac37ea4020a4a8a857df46b53fb
+/ | alignsynch | 67fa70e3e62a0c65e2117072baba4e88a34658406079d40316621d9a869beae2
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
 /news | quizhub | ee60ed434816d5fe231ce85dc4b8dfa59336235edb6e7d0e07b58e5412ccf106
-/news | alignsynch | c28fe8eb936f56254ff9f598296f861780b5062d1afb5b7b7bd3a2811060de5f
-/news/[slug] | quizhub | bc04f4b55201c99506be1caf3b8f88d3d25705a4758ebb7171d3b8a03625317a
-/news/[slug] | alignsynch | 35f1786042267fb0ee70e88846c4735ba136e9280b18357d772f945ff36cfee4
-/quiz/[id] | quizhub | efe1e573b1e59623cba79a02dd50eddaa7c132a8d974baf0f868f0da82c5bcf4
+/news | alignsynch | af958d124bcee4cac97417c372ffab728ef9aa54a705ded060f5947b89e7df1a
+/news/[slug] | quizhub | 714d449b8cb5e7b54b60ef14b92214585824fbca51dc01daf51e8792a1387364
+/news/[slug] | alignsynch | e8106e51ae042c23bdd289e9a88ac28266a5019d23b5c7c1dbe62479ccb3de51
+/quiz/[id] | quizhub | 35b93b0ef67c9bcad419908197fc925f36704c9f852204dae3013296c05c841a
 /quiz/[id] | alignsynch | 5f540b18f7e8b10a95d5a597cdbcad605987e5f78e4d8b67b5d90ce4c78a71ac
 /assessment/avery-rowan | quizhub | ded2ea72af8b7908c99a7db4445558af64af7fca08103f7db570c042ed63a981
-/assessment/avery-rowan | alignsynch | aae457668507b3dbdca765d8ecd779a48178798bca9a929f4cb4f7fdddd6399d
-/profile/[username] | quizhub | 143356feaebf69b17d406f9d4427a86eeaba7c78a220a19e2bcced5593894b56
-/profile/[username] | alignsynch | 229136b327a276fc3c9165d42d44583312fae40018667b92c2324054c91f19c6
+/assessment/avery-rowan | alignsynch | 6daaff753a38cacd8830710a7cb38a98bf7bece051581147ed7bd3f53adede26
+/profile/[username] | quizhub | 698c64919dad773c025e33f2da61c22fe62fb0cacc67cc306427d8cac8c901ac
+/profile/[username] | alignsynch | 5c41c576c0876efe43f60b0331320d1c23d142a7341cd38164971d36538ee805

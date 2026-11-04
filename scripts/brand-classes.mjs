@@ -7,7 +7,7 @@
  * A component that types a palette step instead paints QuizHub's indigo on an AlignSynch
  * page — which is exactly what this tree did in 90 places before issue #187.
  *
- * Two rules, no allowlist:
+ * Three rules, no allowlist:
  *
  *   1. `indigo-*` / `purple-*` / `violet-*` — a brand-hue class literal anywhere under
  *      `components/` and `app/`. These three families are the leaked palette: the template
@@ -18,6 +18,11 @@
  *      palette leaks hardest: `from-purple-600 to-indigo-600` is two colours and a claim about
  *      how they blend, and neither half is addressed by a token. The token layer may still
  *      own a gradient; a component may not compose one.
+ *   3. `text-accent` — the accent as an *ink*. This is not a taste rule: the shipped AlignSynch
+ *      accent is a cyan that measures 2.64:1 on white, so a link or a body sentence painted with
+ *      it is unreadable, and `accent` is a surface token (badges, chips, chart series) by
+ *      decision. `text-accent-foreground` — the ink *on* an accent fill — stays legal, as do
+ *      `bg-accent` and `border-accent`.
  *
  * Not banned, deliberately: `blue-*`, `amber-*`, `green-*`, `red-*`, `slate-*` and friends.
  * Those are *status* hues — "warning", "trending", "success" — and they mean the same thing
@@ -37,11 +42,20 @@ export const RULES = {
     "palette step — the brand record is the only home for a brand hue (use bg-action / text-action / border-action)",
   gradient:
     "gradient utility — gradients belong to the token layer (app/globals.css), not to a component",
+  accentInk:
+    "text-accent — `accent` is a surface token (2.64:1 on white on the AlignSynch cyan); use text-accent-foreground on an accent fill, or text-action for a link",
 };
 
 const PALETTE = /(?:indigo|purple|violet)-/;
 const GRADIENT = /\bbg-gradient-to-/;
 const ARBITRARY_GRADIENT = /bg-\[[^\]]*gradient\(/;
+/**
+ * `text-accent` as an *ink*, which the AlignSynch palette makes unreadable: the cyan measures
+ * 2.64:1 on white, below every floor. The lookahead keeps `text-accent-foreground` legal — that
+ * is the ink *on* an accent fill, which is the one way the accent carries text at all — and
+ * `bg-accent` / `border-accent` are surfaces and stay legal too.
+ */
+const ACCENT_INK = /\btext-accent(?![\w-])/;
 
 /**
  * The string-ish literal text of a node: quoted strings, no-substitution templates, and the
@@ -87,6 +101,7 @@ export function scanSource(file, source) {
         [PALETTE, "palette"],
         [GRADIENT, "gradient"],
         [ARBITRARY_GRADIENT, "gradient"],
+        [ACCENT_INK, "accentInk"],
       ]) {
         const match = pattern.exec(text);
         if (!match) continue;

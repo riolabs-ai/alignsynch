@@ -11,7 +11,9 @@
  *   V1  the six content tables exist
  *   V2  no column anywhere in `public` is named like a Gap
  *   V3  every instance's `template_record_id` resolves to a template record
- *   V4  an instance's copy holds the template's Aspects, in the template's order (E31)
+ *   V4  an instance's copy holds the Aspects of the **version its relationship is bound to**, in
+ *       that version's order (E31, #502b) — not the template's working copy, which an edit may have
+ *       moved and which no relationship reads
  *   V5  exactly one initiator and one counterparty per instance — a **flow** instance may
  *       have no counterparty until its invitation is claimed (#146), and must have one after
  *   V6  every party answers every Aspect exactly once, and think comes with guess — checked
@@ -57,7 +59,13 @@
  *       relationship, no session points at a relationship that does not exist.
  *   V18 a scored session is immutable (#340): there is no `UPDATE` path against `session` or
  *       `opinion` anywhere in `lib/`, `scripts/` or `app/` — the rows a score is read from can
- *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten.
+ *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten. **One
+ *       column pair is carved out (#503):** an `UPDATE session` whose SET list is exactly
+ *       `voided_at` and/or `voided_by` is legal, because an operator's void adds an operator-state
+ *       column that no score and no derivation over a score reads — `instanceStatusOf()` answers
+ *       `voided` before it counts anything. The carve-out is a column allowlist, not a table one:
+ *       an `UPDATE session SET mode = …`, `SET alignment_setting = …` or a SET list with the void
+ *       columns plus anything else still fails here.
  *   V19 the membership's initiator (coach card): a relationship that has any member has exactly
  *       one `initiator` member — the backfill (0014) writes one for the bound Initiator, and a
  *       coach invited into a relationship with no initiator member is drift, not a relationship.
@@ -66,12 +74,47 @@
  *   V20 the membership's coach (coach card): a relationship has at most one `coach` member. The
  *       unique key already forbids two identical accounts; this pins "one coach per relationship"
  *       on the rows so a second coach invited by hand is named, not assumed.
+ *   V21 a **seeded** instance reads `complete` (#427/R2 follow-up): for every instance
+ *       `data/assessments.ts` authors — the ids read from the fixture, never a list kept in this
+ *       script — `instanceStatusOf()` over one SQL statement's counts (aspect count, both answered
+ *       counts, both accepted counts, and whether a counterparty party row exists at all) answers
+ *       `complete`. `db:seed` writes a seeded instance as a **finished** demo session, stamping
+ *       `party.accepted_at` from the instance's own fixture date, so a seeded instance that reads
+ *       `answering` is either a seed older than #427/R2 or a rule change that moved `complete` —
+ *       the state production sat in for a day on 2026-11-03 while this file stayed green
+ *       (`docs/RELEASING.md` 2a). V11 names the *mark* on a non-complete instance; this names the
+ *       absence of completion itself. Instances the seed does not author are not checked: their
+ *       status is their own.
+ *   V22 `template_version` exists and carries its immutability trigger (#502b): a published version
+ *       is a snapshot, so the guard is what makes "editing a template never mutates N" a property of
+ *       the database rather than of the one write path that happens to be careful.
+ *   V23 every relationship is bound to a version of **its own** template, and every version payload
+ *       parses as `zAssessment` (#502b). The binding is what a party-facing read goes through, so an
+ *       unbound row is a relationship whose template nobody can draw — the read answers 404 for it,
+ *       which is correct and would otherwise be silent.
+ *   V24 the inbound mail record (#439b): `email_event` exists with the `UNIQUE (provider_event_id)`
+ *       constraint that makes a provider redelivery idempotent, its `payload` is `jsonb`, and
+ *       `news_signup` carries the two marks (`bounced_at`, `complained_at`) a hard bounce and a
+ *       complaint write. The marks are the column #507 reads before it sends, so a database
+ *       migrated without `0027` is a request-time 500 on the first bounce; this names it instead.
+ *
+ *   V25 the support inbox (#506): `contact_message.status` exists, is `NOT NULL` and defaults to
+ *       `new`, its four-word vocabulary CHECK is on the table, and `contact_reply` exists with the
+ *       constraint that refuses a `sent` reply with no instant. A database migrated without `0028`
+ *       is a request-time 500 on the first visit to `/admin/inbox`; a reply marked sent without a
+ *       `sent_at` is the one thing the card forbids, so it is also checked row by row.
+ *   V26 the broadcast's record (#507): `news_signup.unsubscribed_at` exists (the third consent
+ *       mark), `broadcast_send` and `broadcast_recipient` exist, the recipient table carries the
+ *       `PRIMARY KEY (broadcast_id, email)` that makes one address one row per send, and its
+ *       `(email, created_at DESC)` index exists because the cooldown read is an existence test per
+ *       candidate address. Numbered after #506's V25, which landed on `main` first.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
 import { Client } from "pg";
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 
 const CONTENT_TABLES = [
@@ -88,13 +131,24 @@ const problems = [];
 const fail = (code, message) => problems.push({ code, message });
 
 /**
+ * The only columns an `UPDATE session` may set (#503): an operator's void, and nothing else.
+ *
+ * The V18 carve-out below is a **column** allowlist, so the rule keeps its teeth on the columns a
+ * score is read from (`mode`, `alignment_setting`, `template_record_id`, `name`). `voided_at` and
+ * `voided_by` are operator state: `instanceStatusOf()` answers `voided` before it counts an answer,
+ * and no derivation over scores reads either column.
+ */
+const VOID_COLUMNS = new Set(["voided_at", "voided_by"]);
+
+/**
  * V18's scan: find every `UPDATE` statement that targets the `session` or `opinion` table in the
  * shipped source (`lib/`, `scripts/`, `app/`). A scored session is immutable, so neither table may
  * be UPDATEd — a score is written once by the gated INSERT in `submitAnswers` and never rewritten.
  *
  * Comments are stripped before matching, so a doc comment that explains *why* there is no such
  * statement (including this one) cannot trip its own check. The return value carries the census
- * (`files` scanned) and every `{ file, line, table }` violation, so the caller can name them.
+ * (`files` scanned), every `{ file, line, table }` violation, and every `{ file, line, columns }`
+ * statement the #503 carve-out admitted, so the caller can name both.
  */
 function scanForUpdatePaths() {
   const roots = ["lib", "scripts", "app"].map((dir) => join(repoRoot, dir));
@@ -116,15 +170,159 @@ function scanForUpdatePaths() {
   // the table name means `session_invite` is not caught — the invitation's own UPDATEs are legal.
   const pattern = /\bUPDATE\s+(?:ONLY\s+)?(?:public\.)?(session|opinion)\b/gi;
   const violations = [];
+  const allowed = [];
   for (const file of files) {
     const source = readFileSync(file, "utf8");
     const stripped = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
     for (const match of stripped.matchAll(pattern)) {
       const line = stripped.slice(0, match.index).split("\n").length;
+      // The statement as written, from the keyword to the end of the literal that holds it — a
+      // template literal or a quoted string closes on its own quote, so the tail cannot run into
+      // the next statement and read a second UPDATE's columns as this one's.
+      const tail = stripped.slice(match.index);
+      const close = tail.slice(1).search(/[`"]/);
+      const statement = (close === -1 ? tail : tail.slice(0, close + 1)).split(/\bWHERE\b/i)[0];
+      const setColumns = [...statement.matchAll(/\b([a-z_][a-z0-9_]*)\s*=/gi)].map((assign) =>
+        assign[1].toLowerCase(),
+      );
+      // #503 — the one legal `UPDATE session`: an operator's void, and nothing else. A SET list
+      // that is not wholly the void pair (or is empty, which no UPDATE is) stays a violation.
+      if (
+        match[1].toLowerCase() === "session" &&
+        setColumns.length > 0 &&
+        setColumns.every((column) => VOID_COLUMNS.has(column))
+      ) {
+        allowed.push({ file, line, columns: setColumns });
+        continue;
+      }
       violations.push({ file, line, table: match[1] });
     }
   }
-  return { files: files.length, violations };
+  return { files: files.length, violations, allowed };
+}
+
+/* ------------------------------------------------------------------ *\
+ * V21 — a seeded instance reads `complete`
+ * ------------------------------------------------------------------ */
+
+/**
+ * The one statement V21 reads — one row per authored instance, carrying exactly the counts
+ * `instanceStatusOf()` asks for.
+ *
+ * `db:seed` writes a seeded instance as a **finished** demo session: every Aspect answered on both
+ * seats, and `party.accepted_at` stamped from the instance's own fixture date (`scripts/db-seed.mjs`,
+ * the `INSERT INTO party (… accepted_at)` in `seedInstance`). Acceptance is half of the `complete`
+ * derivation since #427/R2, so every fixture instance must derive `complete` in a database the seed
+ * has built.
+ *
+ * The `LEFT JOIN party` is what keeps a missing seat from both crashing the check and vanishing
+ * from it: an instance with no party row still comes back (every count 0), so the caller can name
+ * it as drift instead of reading "no row" as "not an instance".
+ */
+const SEEDED_STATUS_SQL = `
+  SELECT ai.record_id,
+         r.slug,
+         (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)::int AS aspect_count,
+         count(*) FILTER (WHERE p.role = 'initiator')::int AS initiators,
+         count(*) FILTER (WHERE p.role = 'counterparty')::int AS counterparties,
+         count(*) FILTER (WHERE p.role = 'initiator' AND p.accepted_at IS NOT NULL)::int
+           AS initiator_accepted,
+         count(*) FILTER (WHERE p.role = 'counterparty' AND p.accepted_at IS NOT NULL)::int
+           AS counterparty_accepted,
+         (SELECT count(*) FROM opinion o
+           WHERE o.session_record_id = ai.record_id AND o.role = 'initiator')::int
+           AS initiator_answered,
+         (SELECT count(*) FROM opinion o
+           WHERE o.session_record_id = ai.record_id AND o.role = 'counterparty')::int
+           AS counterparty_answered
+    FROM session ai
+    JOIN record r ON r.id = ai.record_id
+    LEFT JOIN party p ON p.session_record_id = ai.record_id
+   WHERE ai.record_id = ANY($1::text[])
+   GROUP BY ai.record_id, r.slug
+   ORDER BY r.slug`;
+
+/**
+ * What is missing from an instance that is not `complete`, in the words of the row it is missing.
+ *
+ * `instanceStatusOf()` answers one word; the reader needs the fact under it, because the repair
+ * differs — a NULL `accepted_at` is `docs/RELEASING.md` 2a's stamp, an unanswered Aspect is a
+ * missing `opinion` row, and an absent party row is a seed that never wrote the seat. Named per
+ * seat so a half-written instance does not read as "the seed did not run".
+ */
+function seededStatusDetail(row) {
+  const details = [];
+  if (row.initiators === 0) details.push("it has no initiator party row");
+  if (row.counterparties === 0) details.push("it has no counterparty party row");
+  if (row.aspect_count === 0) {
+    details.push("its copy holds no Aspect");
+  } else {
+    if (row.initiator_answered < row.aspect_count) {
+      details.push(
+        `the initiator answered ${row.initiator_answered} of ${row.aspect_count} Aspect(s)`,
+      );
+    }
+    if (row.counterparty_answered < row.aspect_count) {
+      details.push(
+        `the counterparty answered ${row.counterparty_answered} of ${row.aspect_count} Aspect(s)`,
+      );
+    }
+  }
+  if (row.initiator_accepted === 0) details.push("the initiator's party.accepted_at is NULL");
+  if (row.counterparty_accepted === 0) details.push("the counterparty's party.accepted_at is NULL");
+  return details.join("; ");
+}
+
+/**
+ * V21 over the fixture's own ids — the whole check, and the only part of this script that does not
+ * iterate `listAssessmentInstances()`.
+ *
+ * **Only the instances `data/assessments.ts` authors are checked**, and the ids are read from the
+ * fixture on every run: production also holds instances people created in the app
+ * (`staff-manager-61cca238`, `relationship-basics-copy-94c15cc5` were measured `answering`), and
+ * their status is theirs to be in. The status comes from the product's own `instanceStatusOf()`,
+ * so a rule change that moved `complete` shows up here as a violation rather than as four demo
+ * sessions nobody can open.
+ *
+ * An authored instance this database does not hold **at all** is not a seeded instance reading
+ * wrongly — it is a branch the seed has not built yet, which `docs/DEMO.md` records as a green
+ * state an emptied demo branch is allowed to be in. It is counted as absent and not failed.
+ *
+ * Takes any client-shaped object with `query(text, values)`, so the test can drive every branch
+ * with no database (`tests/db-verify-seeded-complete.test.ts`).
+ */
+export async function seededInstanceStatusProblems(client, authoredInstances) {
+  const problems = [];
+  const authored = authoredInstances.map((instance) => ({ id: instance.id, slug: instance.slug }));
+  if (authored.length === 0) return { problems, complete: 0, authored: 0 };
+
+  const { instanceStatusOf } = await import("@/lib/flow/state.ts");
+  const { rows } = await client.query(SEEDED_STATUS_SQL, [authored.map((instance) => instance.id)]);
+  const rowById = new Map(rows.map((row) => [row.record_id, row]));
+  let complete = 0;
+
+  for (const instance of authored) {
+    const row = rowById.get(instance.id);
+    if (row === undefined) continue;
+    const status = instanceStatusOf({
+      aspectCount: row.aspect_count,
+      hasCounterparty: row.counterparties >= 1,
+      initiatorAnswered: row.initiator_answered,
+      counterpartyAnswered: row.counterparty_answered,
+      initiatorAccepted: row.initiator_accepted,
+      counterpartyAccepted: row.counterparty_accepted,
+    });
+    if (status === "complete") {
+      complete += 1;
+      continue;
+    }
+    problems.push({
+      code: "V21",
+      message: `seeded instance "${row.slug ?? instance.slug}" reads "${status}" — db:seed writes a finished session, and ${seededStatusDetail(row)}`,
+    });
+  }
+
+  return { problems, complete, authored: authored.length };
 }
 
 async function main() {
@@ -134,8 +332,13 @@ async function main() {
     readAssessmentInstanceRowsBySlug,
     readAssessmentTemplateRowsById,
   } = await import("@/lib/db/assessments.ts");
-  const { assessmentInstanceFromRows, assessmentTemplateFromRows, copyDriftProblems, itemIdsOf } =
-    await import("@/lib/db/rows.ts");
+  const {
+    assessmentInstanceFromRows,
+    assessmentTemplateFromPayload,
+    assessmentTemplateFromRows,
+    copyDriftProblems,
+    itemIdsOf,
+  } = await import("@/lib/db/rows.ts");
   const { instanceStatusOf } = await import("@/lib/flow/state.ts");
 
   // The SQL checks run on the unpooled URL, like the writes; the data-layer reads use the
@@ -200,6 +403,13 @@ async function main() {
       fail(
         "V18",
         `${violation.file}:${violation.line} UPDATEs \`${violation.table}\` — a scored session is immutable`,
+      );
+    }
+    // The carve-out is named on every run, so "no UPDATE path" is never claimed while one exists:
+    // the line and the columns are printed beside the census, exactly as V18's zero would be.
+    for (const permitted of updatePaths.allowed) {
+      console.log(
+        `  V18 permitted: ${permitted.file}:${permitted.line} UPDATEs session (${permitted.columns.join(", ")}) — an operator's void (#503)`,
       );
     }
 
@@ -395,18 +605,58 @@ async function main() {
         );
       } else {
         templatesChecked += 1;
-        for (const problem of copyDriftProblems({
-          instanceId: listed.recordId,
-          templateId: listed.templateRecordId,
-          copyIds: itemIdsOf(rows.items),
-          templateIds: itemIdsOf(templateRows.items),
-        })) {
-          fail("V4", problem);
-        }
+        // The working copy must still be a template the model accepts — an edit that broke it is
+        // drift whether or not it was ever published.
         try {
           assessmentTemplateFromRows(templateRows);
         } catch (error) {
           fail("V7", error.message);
+        }
+      }
+
+      /* V4 — the copy equals the version the relationship is bound to (#502b).
+       *
+       * Not the template's `item` rows: an edit to a published template writes the working copy and
+       * touches no version, so comparing a copy to the working copy would report every such edit as
+       * drift — which is exactly the false alarm that made #502a refuse to edit at all. The version
+       * is what the page reads (`lib/db/assessments.ts::SCREEN_BY_SLUG_SQL`), so it is what the
+       * copy must equal.
+       */
+      const { rows: binding } = await client.query(
+        `SELECT rel.template_version_id, tv.template_record_id, tv.payload
+           FROM session ai
+           JOIN relationship rel ON rel.id = ai.relationship_id
+           LEFT JOIN template_version tv ON tv.id = rel.template_version_id
+          WHERE ai.record_id = $1`,
+        [listed.recordId],
+      );
+      const bound = binding[0];
+      if (bound === undefined || bound.template_version_id === null) {
+        fail(
+          "V23",
+          `instance "${listed.slug}" belongs to a relationship with no template_version_id — there is no version to compare its copy with`,
+        );
+      } else if (bound.template_record_id !== listed.templateRecordId) {
+        fail(
+          "V23",
+          `instance "${listed.slug}" is bound to a version of "${bound.template_record_id}", not of the template it names ("${listed.templateRecordId}")`,
+        );
+      } else {
+        try {
+          const offered = assessmentTemplateFromPayload(
+            bound.payload,
+            `template version "${bound.template_version_id}"`,
+          );
+          for (const problem of copyDriftProblems({
+            instanceId: listed.recordId,
+            templateId: bound.template_version_id,
+            copyIds: itemIdsOf(rows.items),
+            templateIds: offered.items.map((item) => item.id),
+          })) {
+            fail("V4", problem);
+          }
+        } catch (error) {
+          fail("V23", error.message);
         }
       }
 
@@ -610,6 +860,16 @@ async function main() {
       }
     }
 
+    // V21 — the fixture's own instances read `complete` (#427/R2 follow-up). The one check here
+    // that does not iterate `listAssessmentInstances()`: production also holds instances people
+    // created in the app, and an `answering` one of those is a person mid-flow, not drift. The ids
+    // come from `data/assessments.ts` (imported above for V12), so the check follows the fixture
+    // rather than a copy of it. A seeded instance that is not `complete` is either a seed older
+    // than #427/R2's acceptance stamp or a rule change that moved `complete` — on 2026-11-03 all
+    // four sat in `answering` for a day while every other check in this file was green.
+    const seeded = await seededInstanceStatusProblems(client, authoredInstances);
+    problems.push(...seeded.problems);
+
     const { rows: halfPair } = await client.query(
       `SELECT session_record_id, role, item_id FROM opinion
         WHERE (think IS NULL) <> (guess IS NULL) ORDER BY session_record_id, role, item_id`,
@@ -772,6 +1032,76 @@ async function main() {
       fail("V3", `session "${row.record_id}" is attached to a record that is not an assessment`);
     }
 
+    /* V22 — the published-version table and its guard (#502b).
+     *
+     * Two facts, checked together because either alone is a false green: a `template_version` table
+     * without the trigger lets a publish rewrite a version a relationship is reading, and a trigger
+     * without the table names nothing. The trigger is looked up by name on the right table, in
+     * `pg_trigger`, not by "some trigger exists".
+     */
+    const { rows: versionTable } = await client.query(
+      "SELECT to_regclass('public.template_version') IS NOT NULL AS present",
+    );
+    if (versionTable[0]?.present !== true) {
+      fail("V22", "public.template_version does not exist — run `pnpm db:migrate`");
+    } else {
+      const { rows: guard } = await client.query(
+        `SELECT t.tgname FROM pg_trigger t
+          WHERE t.tgrelid = 'public.template_version'::regclass
+            AND t.tgname = 'template_version_immutable_guard'
+            AND NOT t.tgisinternal`,
+      );
+      if (guard.length === 0) {
+        fail(
+          "V22",
+          "public.template_version has no template_version_immutable_guard trigger — a published version could be rewritten",
+        );
+      }
+    }
+
+    /* V23 — every relationship is bound to a version of its own template (#502b).
+     *
+     * The binding is what a party-facing read goes through, so an unbound row is not a nicety
+     * missing: it is a relationship whose template nobody can draw (`/assessment/[slug]` answers
+     * 404 for it). The version must belong to the template the relationship names, and every
+     * payload must parse as `zAssessment` — a version that does not parse is a template no report
+     * can draw.
+     */
+    const { rows: unboundRelationships } = await client.query(
+      "SELECT id FROM relationship WHERE template_version_id IS NULL ORDER BY id",
+    );
+    for (const row of unboundRelationships) {
+      fail(
+        "V23",
+        `relationship "${row.id}" has no template_version_id — it cannot read its template`,
+      );
+    }
+    const { rows: mismatchedVersions } = await client.query(
+      `SELECT rel.id, rel.template_id, tv.template_record_id
+         FROM relationship rel
+         JOIN template_version tv ON tv.id = rel.template_version_id
+        WHERE tv.template_record_id <> rel.template_id
+        ORDER BY rel.id`,
+    );
+    for (const row of mismatchedVersions) {
+      fail(
+        "V23",
+        `relationship "${row.id}" names template "${row.template_id}" but is bound to a version of "${row.template_record_id}"`,
+      );
+    }
+    const { rows: versionPayloads } = await client.query(
+      "SELECT id, payload FROM template_version ORDER BY template_record_id, version",
+    );
+    let versionsParsed = 0;
+    for (const row of versionPayloads) {
+      try {
+        assessmentTemplateFromPayload(row.payload, `template version "${row.id}"`);
+        versionsParsed += 1;
+      } catch (error) {
+        fail("V23", error.message);
+      }
+    }
+
     const { rows: unlockMarks } = hasUnlockColumn
       ? await client.query("SELECT count(*)::int AS n FROM party WHERE unlock_seen_at IS NOT NULL")
       : [{ n: 0 }];
@@ -844,6 +1174,230 @@ async function main() {
       liveSubscriptions = live[0]?.n ?? 0;
     }
 
+    /* V24 — the inbound mail record (#439b).
+     *
+     * Three facts, checked together because any one of them alone is a false green: the table, the
+     * constraint that makes a redelivery idempotent, and the two columns the suppression write
+     * targets. A `UNIQUE` index is looked up by its definition, not by "an index exists" — a plain
+     * index on `provider_event_id` would be a table that accepts a second row for one delivery, and
+     * that is precisely the bug the card's replay acceptance is about.
+     */
+    const { rows: emailTable } = await client.query(
+      "SELECT to_regclass('public.email_event') IS NOT NULL AS present",
+    );
+    let emailEvents = 0;
+    let suppressedAddresses = 0;
+    if (emailTable[0]?.present !== true) {
+      fail("V24", "public.email_event does not exist — run `pnpm db:migrate`");
+    } else {
+      const { rows: uniqueDelivery } = await client.query(
+        `SELECT c.conname FROM pg_constraint c
+          WHERE c.conrelid = 'public.email_event'::regclass
+            AND c.contype = 'u'
+            AND pg_get_constraintdef(c.oid) = 'UNIQUE (provider_event_id)'`,
+      );
+      if (uniqueDelivery.length === 0) {
+        fail(
+          "V24",
+          "public.email_event has no UNIQUE (provider_event_id) — a provider redelivery would write a second row",
+        );
+      }
+      const { rows: payloadColumn } = await client.query(
+        `SELECT data_type FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'email_event'
+            AND column_name = 'payload'`,
+      );
+      if (payloadColumn[0]?.data_type !== "jsonb") {
+        fail(
+          "V24",
+          "public.email_event.payload is not jsonb — the provider's own envelope is stored as parsed JSON",
+        );
+      }
+      const { rows: counts } = await client.query(
+        `SELECT (SELECT count(*)::int FROM email_event) AS events,
+                (SELECT count(*)::int FROM news_signup
+                  WHERE bounced_at IS NOT NULL OR complained_at IS NOT NULL) AS suppressed`,
+      );
+      emailEvents = counts[0]?.events ?? 0;
+      suppressedAddresses = counts[0]?.suppressed ?? 0;
+    }
+    const { rows: signupMarks } = await client.query(
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'news_signup'
+          AND column_name IN ('bounced_at', 'complained_at')`,
+    );
+    for (const column of ["bounced_at", "complained_at"]) {
+      if (!signupMarks.some((row) => row.column_name === column)) {
+        fail(
+          "V24",
+          `public.news_signup.${column} does not exist — a bounce has nowhere to be recorded (run \`pnpm db:migrate\`)`,
+        );
+      }
+    }
+
+    /* V25 — the support inbox (#506).
+     *
+     * Three facts, checked together because a database missing any one of them is a request-time
+     * 500 on `/admin/inbox` rather than a caught bug: `contact_message.status` exists with the
+     * column's own `new` default (so a row the public route writes lands in the queue without the
+     * route knowing the screen exists), the four-word vocabulary constraint is on the table, and
+     * `contact_reply` exists with the CHECK that makes "sent only after the provider accepted" a
+     * property of the row. A CHECK is looked up by name and its definition read, because an index
+     * that merely exists is the false green `0027`'s V24 warns about.
+     */
+    let inboxMessages = 0;
+    let inboxReplies = 0;
+    const { rows: statusColumn } = await client.query(
+      `SELECT is_nullable, column_default FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'contact_message' AND column_name = 'status'`,
+    );
+    if (statusColumn.length === 0) {
+      fail("V25", "public.contact_message.status does not exist — run `pnpm db:migrate`");
+    } else {
+      if (statusColumn[0]?.is_nullable !== "NO") {
+        fail(
+          "V25",
+          "public.contact_message.status is nullable — a message with no triage state is not a queue row",
+        );
+      }
+      if (!String(statusColumn[0]?.column_default ?? "").includes("'new'")) {
+        fail(
+          "V25",
+          "public.contact_message.status does not default to 'new' — a stored message would arrive with no status",
+        );
+      }
+      const { rows: vocabulary } = await client.query(
+        `SELECT pg_get_constraintdef(c.oid) AS def FROM pg_constraint c
+          WHERE c.conrelid = 'public.contact_message'::regclass
+            AND c.conname = 'contact_message_status_vocabulary'`,
+      );
+      const definition = String(vocabulary[0]?.def ?? "");
+      for (const status of ["new", "open", "waiting", "closed"]) {
+        if (!definition.includes(`'${status}'`)) {
+          fail(
+            "V25",
+            `public.contact_message.status has no '${status}' in its CHECK — the four-word vocabulary the screen renders is the column's own`,
+          );
+        }
+      }
+    }
+
+    const { rows: replyTable } = await client.query(
+      "SELECT to_regclass('public.contact_reply') IS NOT NULL AS present",
+    );
+    if (replyTable[0]?.present !== true) {
+      fail(
+        "V25",
+        "public.contact_reply does not exist — a reply has nowhere to be stored (run `pnpm db:migrate`)",
+      );
+    } else {
+      const { rows: replyChecks } = await client.query(
+        `SELECT c.conname, pg_get_constraintdef(c.oid) AS def FROM pg_constraint c
+          WHERE c.conrelid = 'public.contact_reply'::regclass`,
+      );
+      const named = new Map(replyChecks.map((row) => [row.conname, String(row.def ?? "")]));
+      for (const name of [
+        "contact_reply_state_vocabulary",
+        "contact_reply_sent_has_instant",
+        "contact_reply_failed_has_error",
+      ]) {
+        if (!named.has(name)) {
+          fail(
+            "V25",
+            `public.contact_reply has no ${name} constraint — the reply's state would be a convention, not a rule`,
+          );
+        }
+      }
+      const { rows: counts } = await client.query(
+        `SELECT (SELECT count(*)::int FROM contact_message) AS messages,
+                (SELECT count(*)::int FROM contact_reply) AS replies,
+                (SELECT count(*)::int FROM contact_reply WHERE state = 'sent' AND sent_at IS NULL) AS sent_without_instant`,
+      );
+      inboxMessages = counts[0]?.messages ?? 0;
+      inboxReplies = counts[0]?.replies ?? 0;
+      if ((counts[0]?.sent_without_instant ?? 0) > 0) {
+        fail(
+          "V25",
+          `${counts[0].sent_without_instant} reply row(s) are 'sent' with no sent_at — a send that the provider never accepted`,
+        );
+      }
+    }
+
+    /* V26 — the broadcast's record (#507).
+     *
+     * Four facts, checked together because the console's send depends on all of them and each one
+     * failing alone is a request-time 500 on the screen rather than a caught bug:
+     *
+     *   the consent mark    `news_signup.unsubscribed_at` exists, so the audience predicate has a
+     *                       column to read;
+     *   the send row        `broadcast_send` exists, so a send is auditable without the body;
+     *   the cooldown row    `broadcast_recipient` exists **with the primary key that makes one
+     *                       address one row per send** — a plain table would accept a duplicate and
+     *                       a second send inside the window would look like the first;
+     *   the cooldown's read `(email, created_at DESC)` is indexed, because the audience query is an
+     *                       existence test per candidate address.
+     *
+     * The counts are printed with the rest of the census: how many sends exist and how many
+     * addresses they have recorded is the answer to "has anything been broadcast from this database".
+     *
+     * Numbered V26, not V25: #506's inbox rule landed on `main` first and holds V25, and two rules
+     * sharing a code would make a failure line ambiguous. The invariant is unchanged, only its
+     * number.
+     */
+    let broadcasts = 0;
+    let broadcastRecipients = 0;
+    const { rows: consentColumn } = await client.query(
+      `SELECT 1 AS present FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'news_signup'
+          AND column_name = 'unsubscribed_at'`,
+    );
+    if (consentColumn.length === 0) {
+      fail(
+        "V26",
+        "public.news_signup.unsubscribed_at does not exist — a broadcast cannot exclude an unsubscribed address (run `pnpm db:migrate`)",
+      );
+    }
+    const { rows: broadcastTables } = await client.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name IN ('broadcast_send', 'broadcast_recipient')`,
+    );
+    for (const table of ["broadcast_send", "broadcast_recipient"]) {
+      if (!broadcastTables.some((row) => row.table_name === table)) {
+        fail("V26", `public.${table} does not exist — a send would have nowhere to be recorded`);
+      }
+    }
+    if (broadcastTables.length === 2) {
+      const { rows: recipientKey } = await client.query(
+        `SELECT c.conname FROM pg_constraint c
+          WHERE c.conrelid = 'public.broadcast_recipient'::regclass
+            AND c.contype = 'p'
+            AND pg_get_constraintdef(c.oid) = 'PRIMARY KEY (broadcast_id, email)'`,
+      );
+      if (recipientKey.length === 0) {
+        fail(
+          "V26",
+          "public.broadcast_recipient has no PRIMARY KEY (broadcast_id, email) — one address could be recorded twice in one send",
+        );
+      }
+      const { rows: cooldownIndex } = await client.query(
+        `SELECT indexname FROM pg_indexes
+          WHERE schemaname = 'public' AND tablename = 'broadcast_recipient'
+            AND indexdef LIKE '%(email, created_at DESC)%'`,
+      );
+      if (cooldownIndex.length === 0) {
+        fail(
+          "V26",
+          "public.broadcast_recipient has no (email, created_at DESC) index — the cooldown read is a scan",
+        );
+      }
+      const { rows: broadcastCounts } = await client.query(
+        `SELECT (SELECT count(*)::int FROM broadcast_send) AS sends,
+                (SELECT count(*)::int FROM broadcast_recipient) AS recipients`,
+      );
+      broadcasts = broadcastCounts[0]?.sends ?? 0;
+      broadcastRecipients = broadcastCounts[0]?.recipients ?? 0;
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -859,7 +1413,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
@@ -876,7 +1430,13 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(`\n✗ db:verify failed: ${error.message}`);
-  process.exitCode = 1;
-});
+// Only when this file is the entry point: `tests/db-verify-seeded-complete.test.ts` imports
+// `seededInstanceStatusProblems()` to drive V21 with no database, and an import must not run the
+// checks (there is no connection, and `loadEnv()` would reach into the checkout's `.env.local`).
+// `release-limits.mjs` guards its own `main` the same way.
+if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(`\n✗ db:verify failed: ${error.message}`);
+    process.exitCode = 1;
+  });
+}

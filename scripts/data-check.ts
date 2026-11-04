@@ -142,6 +142,10 @@ import {
   type SourceFile,
 } from "./ui-refs";
 import { findTaxonomyLiterals, taxonomyEntries, taxonomyVocabulary } from "./taxonomy-refs";
+import { brands } from "../data/brand";
+import { brandIconPaths } from "../lib/brand-icon";
+import { decodePng } from "./image-bytes";
+import { measureIconAgainstMark } from "./icon-fingerprint";
 
 type Severity = "error" | "warn";
 interface Diagnostic {
@@ -1082,6 +1086,63 @@ for (const problem of brandWordResult.problems) err(problem.rule, problem.messag
 
 const brandWordCensus = `${brandWordResult.census.fixtures.length} alignment fixtures, ${brandWordResult.census.strings} reader-visible strings, ${brandWordResult.census.gated} gated pages, ${brandWordResult.census.allowances} allowance${brandWordResult.census.allowances === 1 ? "" : "s"}`;
 
+/* ------------------------------------------------------------------ *
+ * E38 — a brand that names its own mark draws its icon set from it
+ *
+ * The icon generator is deterministic, and `--check` re-draws every file and compares bytes, so
+ * an icon set that disagrees with the generator is impossible to ship. What that could not see is
+ * *what the generator draws*: AlignSynch's record pointed at a set built from a generic glyph, so
+ * the tab, the home-screen tile and the auth card showed a white person silhouette on the brand's
+ * blue while the AS monogram sat unused in `public/`. Every gate was green, because the one thing
+ * nobody compared was the icon and the mark.
+ *
+ * So this is the comparison, at the coarsest useful resolution: a 32×32 fingerprint of the shipped
+ * `-icon-512.png` against the mark the record names, composited at the maskable fraction on the
+ * icon's own ground, and a distance with a threshold `scripts/icon-fingerprint.ts` documents.
+ * A brand with no `mark` is skipped — QuizHub's book *is* its mark, and the template's brand must
+ * stay free to draw it.
+ *
+ * The rule is deliberately perceptual rather than byte-exact: it passes a re-rendered icon, a
+ * different encoder and a mark re-exported with different padding, and it fails a different shape.
+ * Its negative cases live in `scripts/__tests__/icon-fingerprint.test.ts`, which asserts the old
+ * glyph fails (78.8) and the regenerated monogram passes (3.5) on the same fixture.
+ * ------------------------------------------------------------------ */
+
+const iconMarkMeasurements: string[] = [];
+for (const [id, record] of Object.entries(brands)) {
+  if (record.mark === undefined) continue;
+  const paths = brandIconPaths(id);
+  const markPath = join(process.cwd(), "public", record.mark.src.replace(/^\//, ""));
+  const iconPath = join(process.cwd(), "public", paths.icon512.replace(/^\//, ""));
+  if (!existsSync(markPath)) {
+    err("E38", `${record.name}: the mark ${record.mark.src} does not exist under public/`);
+    continue;
+  }
+  if (!existsSync(iconPath)) {
+    err(
+      "E38",
+      `${record.name}: ${paths.icon512} does not exist — run \`pnpm brand:icons\` (the icon set is generated from the mark)`,
+    );
+    continue;
+  }
+  const measurement = measureIconAgainstMark(
+    decodePng(readFileSync(iconPath)),
+    decodePng(readFileSync(markPath)),
+  );
+  iconMarkMeasurements.push(
+    `${id} ${measurement.distance.toFixed(1)}/${measurement.limit} over ${measurement.cells} ink cells`,
+  );
+  if (measurement.distance > measurement.limit) {
+    err(
+      "E38",
+      `${record.name}: ${paths.icon512} does not look like its mark ${record.mark.src} — ` +
+        `fingerprint distance ${measurement.distance.toFixed(1)} exceeds ${measurement.limit}. ` +
+        `The icon set must be generated from the mark (\`pnpm brand:icons\`); an icon drawn from a ` +
+        `glyph is a mark belonging to no brand on the one surface a reader sees first.`,
+    );
+  }
+}
+
 const imageTags = nextImageTags(imageSources);
 const imageMeasured = imageCensus(imageTags);
 
@@ -1800,6 +1861,9 @@ console.log(
 );
 console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
 console.log(`      ${brandWordCensus} (E37)`);
+console.log(
+  `      ${iconMarkMeasurements.length} icon set(s) drawn from the brand's own mark (E38${iconMarkMeasurements.length > 0 ? `: ${iconMarkMeasurements.join(", ")}` : " — no record names a mark"})`,
+);
 console.log(
   `      ${searchChatIslands.length} module-scope record arrays on the search/chat surfaces + ${ownedCopies.length} fixture rows copied into a search/chat component`,
 );

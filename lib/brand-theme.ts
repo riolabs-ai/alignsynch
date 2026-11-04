@@ -72,6 +72,20 @@ const NO_THEME_DEFAULT: readonly (readonly [keyof BrandColors, string])[] = [
   ["navActive", "nav-active"],
 ];
 
+/**
+ * State shades a brand *may* own: the sheet has a default, so only a named value is painted.
+ *
+ * `--action-hover` and `--accent-press` default to `hsl(var(--action) / 0.9)` and
+ * `hsl(var(--accent) / 0.9)` in `app/globals.css` — exactly the `hover:bg-action/90` step the
+ * buttons painted before these keys existed, so a brand that names none (QuizHub) computes the
+ * same hover it always did. A brand that names one (AlignSynch's graphite darkens to `#2A373E`)
+ * gets a solid, darker press instead of a fade, which is the whole reason the key exists.
+ */
+const NAMED_STATES: readonly (readonly [keyof BrandColors, string])[] = [
+  ["actionHover", "action-hover"],
+  ["accentPress", "accent-press"],
+];
+
 /** `#156898` -> `"202 75.7% 33.9%"`, which is what `hsl(var(--primary))` expects. */
 export function hslTriple(color: string): string {
   const text = color.trim().toLowerCase();
@@ -124,12 +138,21 @@ function percent(value: string): string {
 export function brandThemeVars(brand: Brand): Record<string, string> {
   const vars: Record<string, string> = {};
   for (const [key, token] of PAINTED) {
-    if (brand.colors[key] === quizHubBrand.colors[key]) continue;
-    vars[`--${token}`] = hslTriple(brand.colors[key]);
+    const value = brand.colors[key];
+    if (value === undefined || value === quizHubBrand.colors[key]) continue;
+    vars[`--${token}`] = hslTriple(value);
   }
   // No default underneath, so no override to compare against: always painted (rule 3).
   for (const [key, token] of NO_THEME_DEFAULT) {
-    vars[`--${token}`] = hslTriple(brand.colors[key]);
+    const value = brand.colors[key];
+    // Required keys, but the indexed type is a union with the optional state shades.
+    if (value !== undefined) vars[`--${token}`] = hslTriple(value);
+  }
+  // A state shade is an override of a sheet default, so it is painted only when the record names
+  // one — `undefined` is "keep the sheet's 90 % step", not "paint nothing readable".
+  for (const [key, token] of NAMED_STATES) {
+    const value = brand.colors[key];
+    if (value !== undefined) vars[`--${token}`] = hslTriple(value);
   }
   return vars;
 }

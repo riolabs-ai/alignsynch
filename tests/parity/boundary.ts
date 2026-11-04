@@ -27,6 +27,13 @@
  * breaks the typecheck before any status is compared.
  */
 import AffiliatePage from "@/app/(mainlayout)/affiliate/page";
+import AdminAuditPage from "@/app/(mainlayout)/admin/audit/page";
+import AdminBillingPage from "@/app/(mainlayout)/admin/billing/page";
+import AdminBroadcastPage from "@/app/(mainlayout)/admin/broadcast/page";
+import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
+import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
+import AdminHealthPage from "@/app/(mainlayout)/admin/health/page";
+import AdminInstancesPage from "@/app/(mainlayout)/admin/instances/page";
 import BattlePage from "@/app/(mainlayout)/battle/page";
 import CategoriesPage from "@/app/(mainlayout)/categories/page";
 import CategoryPage from "@/app/(mainlayout)/categories/[slug]/page";
@@ -149,3 +156,120 @@ export const QUIZ_ONLY_PATTERNS: readonly string[] = quizOnlyRoutes.map((route) 
 export function isQuizOnly(route: string): boolean {
   return QUIZ_ONLY_PATTERNS.includes(route);
 }
+
+/* ------------------------------------------------------------------ *
+ * The admin console's capability boundary (#509)
+ * ------------------------------------------------------------------ */
+
+/**
+ * One route the operator console owns, and the page module the router resolves for it.
+ *
+ * `QuizOnlyRoute`'s shape minus `openFlags`, because the two lists answer different questions:
+ * `quizOnlyRoutes` is *which product a brand sells*, and this one is *whether a template claims a
+ * capability at all*. Same harness, same status assertion — a route is open or it answers 404 —
+ * which is why they live in one file rather than two halves that could disagree about a route.
+ */
+export type AdminProductRoute = {
+  /** The route pattern, as `content/routes.ts` spells it. */
+  route: string;
+  /** The page module the router would resolve. */
+  page: ParityPage;
+  /** The concrete URL this route is exercised with; empty for a static route. */
+  params: Record<string, string>;
+  /**
+   * What the harness should see past the capability gate on a template that claims the console.
+   *
+   * `render` — the page's own tree is self-contained, so an open gate produces a document.
+   * `gate-only` — the page hands its body to a client screen that needs a provider the *subtree
+   * layout* mounts (`/admin/console`'s overview reads `useV1Store`), so a request renders it and a
+   * harness that renders page modules cannot: what it can prove is that the page got past
+   * `requireAdminProduct()` instead of answering 404.
+   */
+  open: "render" | "gate-only";
+};
+
+/**
+ * The console's entry points, as `product.admin` sees them (#509).
+ *
+ * Everything under `/admin/console` — the overview, relationships, templates and users — is closed
+ * by one `requireAdminProduct()` in its layout *and* by the same call in the index page, which is
+ * the page a diff can see; that subtree is listed once, by its index. `/admin/audit`,
+ * `/admin/billing`, `/admin/gaps`, `/admin/health` and `/admin/instances` sit outside it and carry
+ * their own. A console page added under `layout.tsx` inherits the subtree gate and needs no line
+ * here; a page added outside it does, and the list is where that is visible.
+ *
+ * Nothing here is a snapshot: these routes are not in `routes.ts`, so no hash is committed for
+ * them. The claim is a status, and the two it must have are asserted per brand in
+ * `parity.check.ts` — open on a template that claims the console (both this tree ships, today) and
+ * Next's not-found on one that does not.
+ */
+export const adminProductRoutes: readonly AdminProductRoute[] = [
+  {
+    route: "/admin/audit",
+    page: AdminAuditPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    // #507 — the broadcast. Outside the `/admin/console` subtree, so it carries its own
+    // `requireAdminProduct()`; the read is answered with an empty list by `parity.check.ts`, so what
+    // the open side measures is the render rather than a failure panel.
+    route: "/admin/broadcast",
+    page: AdminBroadcastPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    // #505 — billing control. Outside the `/admin/console` subtree, so it carries its own
+    // `requireAdminProduct()`; a page added under `console/layout.tsx` would inherit the subtree
+    // gate and need no line here.
+    route: "/admin/billing",
+    page: AdminBillingPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    route: "/admin/console",
+    page: AdminConsolePage as unknown as ParityPage,
+    params: {},
+    open: "gate-only",
+  },
+  {
+    route: "/admin/gaps",
+    page: AdminGapsPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    route: "/admin/health",
+    page: AdminHealthPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    route: "/admin/instances",
+    page: AdminInstancesPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+];
+
+/** The patterns alone — what a reviewer (or a second list) matches a route against. */
+export const ADMIN_PRODUCT_PATTERNS: readonly string[] = adminProductRoutes.map(
+  (route) => route.route,
+);
+
+/**
+ * The fixture brand, and the whole of it: a **template id the flag record does not carry**.
+ *
+ * `product.admin` is `default: false` with `templates: ["quizhub", "alignsynch"]`, so a template an
+ * operator invents is a product that never claimed the console — which *is* the state #509 asks a
+ * brand to be able to reach (`product.admin: false`). It is deliberately not a `Brand` record: see
+ * `tests/fixtures/fixture-brand.ts`, which holds the id and the reason, and is a leaf module so a
+ * test that only needs the string does not import three page modules for it.
+ *
+ * `tests/parity/parity.check.ts` stubs `BRAND` to it and asserts all three routes answer 404;
+ * `tests/brand-boundary.test.ts` and `tests/flags.test.ts` prove the resolver's answer without a
+ * render.
+ */
+export { FIXTURE_TEMPLATE_WITHOUT_ADMIN } from "../fixtures/fixture-brand";

@@ -31,6 +31,15 @@ export type NewsStoreOutcome = "stored" | "duplicate" | "unavailable";
  *
  * `now` is an argument so a test can pin the instant, and so the row's `created_at` is the
  * instant the caller decided on rather than one the database invented a few milliseconds later.
+ *
+ * **A resubmit clears an unsubscribe mark (#507).** `unsubscribed_at` (0028) is the consent mark a
+ * broadcast reads, and a person who unsubscribed and then submits the footer form again is asking
+ * for the list back. `DO NOTHING` would leave them marked and the form would answer `duplicate` —
+ * "you are already subscribed" — to somebody the list would never mail, which is the one lie this
+ * function must not tell. The `DO UPDATE` is guarded by `WHERE unsubscribed_at IS NOT NULL`, so the
+ * ordinary duplicate path still returns zero rows and still answers `duplicate`, and a resubmit
+ * after unsubscribing returns a row and answers `stored` (the confirmation email goes out, which is
+ * what a returning subscriber needs).
  */
 export async function storeNewsSignup(
   email: string,
@@ -41,7 +50,9 @@ export async function storeNewsSignup(
     const result = await getPool().query(
       `INSERT INTO news_signup (email, source, created_at)
        VALUES ($1, $2, $3)
-       ON CONFLICT (email) DO NOTHING
+       ON CONFLICT (email) DO UPDATE
+         SET unsubscribed_at = NULL, source = EXCLUDED.source
+         WHERE news_signup.unsubscribed_at IS NOT NULL
        RETURNING email`,
       [email, source, now.toISOString()],
     );

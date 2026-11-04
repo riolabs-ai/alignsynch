@@ -54,10 +54,28 @@ export const RESEND_ENDPOINT = "https://api.resend.com/emails";
  * `docs/TWO-PARTY-FLOW.md`'s "no real send was performed" claim was made. Nothing sets it in
  * production, and pointing it somewhere else is only ever another HTTP endpoint speaking the
  * same request shape; there is still one transport, one provider and no dependency.
+ *
+ * The `env` argument (#507) exists because the broadcast's key-mode banner has to answer "is this
+ * a capture deployment?" from a record rather than from the ambient process, so the same question
+ * can be asked in a test without touching `process.env`.
  */
-export function mailEndpoint(): string {
-  const configured = process.env.RESEND_ENDPOINT?.trim();
+export function mailEndpoint(env: MailEnv = process.env): string {
+  const configured = env.RESEND_ENDPOINT?.trim();
   return configured === undefined || configured === "" ? RESEND_ENDPOINT : configured;
+}
+
+/** The env record this module reads: `process.env`, or a plain object in a test. */
+export type MailEnv = Record<string, string | undefined>;
+
+/**
+ * Is this deployment pointed somewhere other than Resend's itself?
+ *
+ * Compared after trimming and dropping a trailing slash, so `RESEND_ENDPOINT=https://api.resend.com/emails/`
+ * is still the real provider — a trailing slash is a URL spelling, not a different destination.
+ */
+export function mailEndpointIsCapture(env: MailEnv = process.env): boolean {
+  const endpoint = mailEndpoint(env).replace(/\/+$/, "");
+  return endpoint !== RESEND_ENDPOINT.replace(/\/+$/, "");
 }
 
 /** Resend's documented development sender, used only when `RESEND_FROM` is unset. */
@@ -203,7 +221,7 @@ export interface MailMessage {
 }
 
 /** Which of this flow's messages is being sent — the log prefix, and the sentence's noun. */
-export type MailSender = "invite" | "unlock" | "reset" | "news";
+export type MailSender = "invite" | "unlock" | "reset" | "news" | "broadcast";
 
 /**
  * The two senders' log sentences, in one table because they must stay parallel: the label
@@ -234,6 +252,15 @@ const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: str
   news: {
     noun: "news confirmation",
     unsent: "the address is stored and is subscribed; no confirmation was sent",
+  },
+  /**
+   * The console's broadcast (#507). One line per address that did not go out, and the noun says
+   * so: a broadcast is many messages, so the operator's grep has to be able to count the ones the
+   * provider refused separately from the ones it took.
+   */
+  broadcast: {
+    noun: "broadcast",
+    unsent: "this recipient did not receive the notice",
   },
 };
 

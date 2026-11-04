@@ -21,7 +21,7 @@ import * as React from "react";
  * `pnpm lint` now rejects (`scripts/lint-brand-classes.mjs`) — keeping a named utility that
  * only exists to paint one would leave the rule with a hole it cannot see.
  */
-const actionFill = "bg-action text-action-foreground hover:bg-action/90";
+const actionFill = "bg-action text-action-foreground hover:bg-action-hover";
 
 const buttonVariants = cva(
   "inline-flex items-center duration-300 justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",

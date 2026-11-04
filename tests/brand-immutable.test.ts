@@ -54,15 +54,34 @@ const ICON = "/brand/alignsynch-icon.svg";
 const APPLE = "/brand/alignsynch-apple-touch-icon.png";
 
 /**
+ * The mark the icon set is generated **from** — the cropped AS monogram, and the one file whose
+ * bytes every generated surface is a function of.
+ *
+ * It is in this table because it is the source of the other two: an icon is only as immutable as
+ * the mark behind it, and a replaced mark would regenerate a different icon from the same code
+ * with every other assertion here still green. `data:check` E38 holds the icon to this file's
+ * pixels; this holds the file to the bytes the owner signed off.
+ */
+const MARK = "/brand/alignsynch-mark-1024.png";
+
+/**
  * The committed bytes, measured with `sha256sum` on the card's branch.
  *
  * Changing a mark is an owner decision with an approved PRD; changing this table is how that
  * decision is recorded. No other edit to the tree can make a new mark pass.
+ *
+ * The icon and the apple-touch icon moved when the icon set stopped being drawn from a glyph and
+ * started being generated from `MARK` — the AS monogram, at the sizes `lib/brand-icon.ts` derives.
+ * They moved **again** when the owner removed the tile behind the mark (2026-11-03): the ground is
+ * now transparent on every surface, so both bytes are a different file and the same decision. That
+ * is what this table records, not a redraw — the generator reproduces both files byte for byte
+ * (`pnpm brand:icons` is a no-op on this tree), and `MARK` and `LOGO` are untouched.
  */
 const SHA256: Record<string, string> = {
   [LOGO]: "6ddd15a2031cab928cd7a87c6316aee81fe93e6a4f57ac55b9b0be01b3d3e4af",
-  [ICON]: "99a1e9634ddb81a02cc82bb1d256891131a56b3a06fd2fa5d985e066a879d06e",
-  [APPLE]: "bf6992c0ad4f9b8ea4114014f0f728b15c4759e819c7b16fc6b8d9b01c51cc3b",
+  [ICON]: "bda9b0a526103ea6b50eb412f4edef2844bf81f72598276a8c26ccbcacc09c9f",
+  [APPLE]: "1edf9fab49e091bf7e3a179ff9dc321b98c2bdb94528fa468a86d6ed847d3a80",
+  [MARK]: "7f73c77c2f9c0d7a2029f088f6c567207f7b41b9c901b3cdbb1650a3d95804c3",
 };
 
 /** A `public/` path as a repo-relative file. */
@@ -108,6 +127,9 @@ describe("the brand's three fixed assets", () => {
     expect(alignSynchBrand.logo).toBe(LOGO);
     expect(alignSynchBrand.icon).toBe(ICON);
     expect(brandIconPaths("alignsynch").appleTouchIcon).toBe(APPLE);
+    // The mark the icon set is generated from, and the file every generated surface is a
+    // function of: substituting it would regenerate a different icon with the code unchanged.
+    expect(alignSynchBrand.mark?.src).toBe(MARK);
   });
 
   it("are the bytes that were committed — not a redraw, a crop or a re-tint", () => {

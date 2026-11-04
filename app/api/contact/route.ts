@@ -66,7 +66,7 @@ function answer(request: Request, state: ContactState): NextResponse {
  * back to the form. Its words come from `data/pages/help.ts` like every other sentence this route
  * can cause a reader to see, so the 429 and `?contact=throttled` cannot say different things.
  */
-function refused(request: Request): NextResponse {
+function refused(): NextResponse {
   const band = sectionOf(helpPageCopy, "states");
   const item = itemOf(band, "throttled");
   const heading = item?.label ?? band.heading ?? "";
@@ -147,7 +147,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
   if (state === "throttled") {
     console.warn("[contact] one throttle bucket was over budget; nothing was stored");
-    return refused(request);
+    return refused();
   }
   return answer(request, state);
 }

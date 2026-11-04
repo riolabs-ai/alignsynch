@@ -137,7 +137,12 @@ describe("POST /api/news/subscribe", () => {
     expect(stub.query).toHaveBeenCalledTimes(1);
     const [sql] = stub.query.mock.calls[0] as [string];
     expect(sql).toContain("INSERT INTO news_signup");
-    expect(sql).toContain("ON CONFLICT (email) DO NOTHING");
+    // #507 — the conflict clause clears an unsubscribe mark and writes nothing otherwise, so the
+    // ordinary duplicate path still answers `duplicate` (the next case) and a person who
+    // unsubscribed and came back is subscribed again.
+    expect(sql).toContain("ON CONFLICT (email) DO UPDATE");
+    expect(sql).toContain("SET unsubscribed_at = NULL");
+    expect(sql).toContain("WHERE news_signup.unsubscribed_at IS NOT NULL");
     expect(insertArgs(0)).toMatchObject({ email: NORMALISED, source: SOURCE });
 
     // One send, to that address, from the configured sender, through the app's endpoint.

@@ -121,6 +121,11 @@ const MY_INSTANCES_SQL = `
   LEFT JOIN party op        ON op.session_record_id = r.id AND op.role <> vp.role
   LEFT JOIN session_invite ii ON ii.session_record_id = r.id
   WHERE vp.user_id = $1
+    -- #503 — a voided session is not on the party's list any more. The operator ended it; what the
+    -- two people wrote is preserved and the report rows are untouched, but a to-do row that can
+    -- never be answered is noise, and the marker it would draw ("complete since you last looked")
+    -- would be about a session nobody can open.
+    AND ai.voided_at IS NULL
   ORDER BY r.date DESC, r.slug
 `;
 

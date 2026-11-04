@@ -89,6 +89,11 @@ const alignSynch: Brand = zBrand.parse({
   logo: alignSynchBrand.logo,
   // The tab icon is brand data like the logo (#187 stage 4): read from the record, not restated.
   icon: alignSynchBrand.icon,
+  // The mark the icon set is generated from — read from the record for the same reason.
+  mark: alignSynchBrand.mark,
+  // The palette is the owner's, and the record says so: the sample it departs from is part of
+  // the record, so the fixture carries it rather than only the resulting hexes.
+  paletteDeparture: alignSynchBrand.paletteDeparture,
   colors: alignSynchBrand.colors,
   supportEmail: "support@alignsynch.com",
   affiliateEmail: "hello@alignsynch.com",
@@ -359,15 +364,21 @@ describe("one build flag, one brand", () => {
     expect(alignSynchBrand.description).not.toMatch(/\bquiz/i);
   });
 
-  it("owns its palette and its mark, sampled from its own logo", () => {
-    // The skin stopped borrowing the template's: the two accents are the logo's, and the
-    // mark is a real file. The *values* are pinned against the PNG by
-    // `scripts/sample-brand-colors.mjs --check`, so this only asserts the relationship.
+  it("owns its palette and its mark, off the sample but never off the record", () => {
+    // The skin stopped borrowing the template's: the two accents are its own, and the mark is a
+    // real file. The palette is *no longer* the logo's sample — the owner picked it off a rendered
+    // sheet — so the relationship this asserts is the one that still holds: the record's colours
+    // differ from the template's, the logo samples something else, and the record says which
+    // sample it left and why (`paletteDeparture`). `scripts/sample-brand-colors.mjs --check` holds
+    // the block to the PNG's real modal shades, so the reason cannot be a placeholder.
     expect(alignSynchBrand.colors.primary).not.toBe(quizHubBrand.colors.primary);
     expect(alignSynchBrand.colors.accent).not.toBe(quizHubBrand.colors.accent);
     expect(alignSynchBrand.logo).not.toBe(quizHubBrand.logo);
     expect(alignSynchBrand.colors.primary).toMatch(/^#[0-9a-f]{6}$/);
     expect(alignSynchBrand.colors.accent).toMatch(/^#[0-9a-f]{6}$/);
+    expect(alignSynchBrand.paletteDeparture?.sampled.primary).toBe("#156898");
+    expect(alignSynchBrand.paletteDeparture?.sampled.accent).toBe("#8dc63f");
+    expect(alignSynchBrand.paletteDeparture?.reason.length).toBeGreaterThan(20);
     // The card's decisions, which are not samples: the ground is white because the mark is
     // black ink on white (#157), the ink is the marketing slate, and the type stays Inter
     // (there is no font field to check).

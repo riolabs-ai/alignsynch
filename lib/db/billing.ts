@@ -45,6 +45,7 @@ export interface BillingSubscriptionRow {
   readonly provider: string;
   readonly provider_subscription_id: string;
   readonly status: string;
+  readonly livemode: boolean;
   readonly current_period_end: Date | string;
 }
 
@@ -69,6 +70,9 @@ export function subscriptionFromRow(row: BillingSubscriptionRow): Subscription {
     provider: row.provider as BillingProvider,
     providerSubscriptionId: row.provider_subscription_id,
     status,
+    // A row that does not answer `true` is test mode — the column's own default and the safe
+    // direction (#505). `undefined` from a database migrated before 0026 reads as test too.
+    livemode: row.livemode === true,
     currentPeriodEnd:
       row.current_period_end instanceof Date
         ? row.current_period_end.toISOString()
@@ -77,7 +81,7 @@ export function subscriptionFromRow(row: BillingSubscriptionRow): Subscription {
 }
 
 const SUBSCRIPTION_COLUMNS = `user_id, plan_id, interval, provider, provider_subscription_id,
-                               status, current_period_end`;
+                               status, livemode, current_period_end`;
 
 /**
  * The account's live subscription, or `null`.
@@ -147,12 +151,13 @@ export async function writeSubscription(
 
   const { rows } = await client.query<BillingSubscriptionRow>(
     `INSERT INTO billing_subscription
-       (user_id, plan_id, interval, provider, provider_subscription_id, status, current_period_end)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (user_id, plan_id, interval, provider, provider_subscription_id, status, livemode, current_period_end)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      ON CONFLICT (provider_subscription_id) DO UPDATE SET
        plan_id            = EXCLUDED.plan_id,
        interval           = EXCLUDED.interval,
        status             = EXCLUDED.status,
+       livemode           = EXCLUDED.livemode,
        current_period_end = EXCLUDED.current_period_end,
        updated_at         = now()
      RETURNING ${SUBSCRIPTION_COLUMNS}`,
@@ -163,6 +168,7 @@ export async function writeSubscription(
       subscription.provider,
       subscription.providerSubscriptionId,
       subscription.status,
+      subscription.livemode,
       subscription.currentPeriodEnd,
     ],
   );
@@ -289,6 +295,71 @@ export async function activeInstanceCount(userId: string): Promise<number> {
           (SELECT count(*) FROM opinion o
             WHERE o.session_record_id = ai.record_id AND o.role = 'counterparty')
             < (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)
+        )`,
+    [userId],
+  );
+  return rows[0]?.n ?? 0;
+}
+
+/**
+ * The tier this account is entitled to, raised by any grant that is still running (#505).
+ *
+ * A comp is a real entitlement, not a receipt: `plan_grant` is written by an operator for one
+ * relationship for one period, and while that period is running the account may do what the tier
+ * allows — otherwise the console's comp would change a label and nothing else, which is the
+ * decorative version of this card. `period_end > $2` is the whole test; an expired grant simply
+ * stops being returned, so nothing has to be swept.
+ *
+ * Reads `plan_id` only. A grant is a tier and a period, and this is the query that decides what an
+ * account may do — it has no business loading reasons or authors.
+ */
+export async function livePlanGrantIds(userId: string, now: Date): Promise<string[]> {
+  const rows = await queryRows<{ plan_id: string }>(
+    `SELECT pg.plan_id
+       FROM plan_grant pg
+       JOIN relationship r ON r.id = pg.relationship_id
+      WHERE r.initiator_user_id = $1
+        AND pg.period_end > $2`,
+    [userId, now],
+  );
+  return rows.map((row) => row.plan_id);
+}
+
+/**
+ * How many relationships this account has **started** and not finished (#505).
+ *
+ * The plan's own count, and the one `relationshipGateRefusal()` is asked with. "Active" is the same
+ * predicate `activeInstanceCount()` uses, one level up: a relationship counts while it holds a
+ * session that is voided nowhere and still has an Aspect one of the parties has not answered. A
+ * relationship both parties have finished stops holding a slot, which is what makes the free plan
+ * usable for ever rather than once.
+ *
+ * **It counts what the account initiated**, not every relationship it appears on: being the
+ * Counterparty on five relationships is not five purchases, and `initiator_user_id` is the column
+ * 0013 records for "the thing bought once by the Initiator". A relationship with no initiator
+ * account (a seeded one, or one started signed out) belongs to nobody and is counted for nobody —
+ * the same rule `activeInstanceCount` states for an unbound party.
+ */
+export async function activeRelationshipCount(userId: string): Promise<number> {
+  const rows = await queryRows<{ n: number }>(
+    `SELECT count(*)::int AS n
+       FROM relationship r
+      WHERE r.initiator_user_id = $1
+        AND EXISTS (
+          SELECT 1
+            FROM session ai
+           WHERE ai.relationship_id = r.id
+             AND ai.voided_at IS NULL
+             AND (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id) > 0
+             AND (
+               (SELECT count(*) FROM opinion o
+                 WHERE o.session_record_id = ai.record_id AND o.role = 'initiator')
+                 < (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)
+               OR
+               (SELECT count(*) FROM opinion o
+                 WHERE o.session_record_id = ai.record_id AND o.role = 'counterparty')
+                 < (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)
+             )
         )`,
     [userId],
   );

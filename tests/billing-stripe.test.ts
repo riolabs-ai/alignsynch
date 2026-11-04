@@ -12,7 +12,9 @@
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { POST as checkoutRoute } from "@/app/api/billing/checkout/route";
+import { POST as webhookRoute } from "@/app/api/billing/webhook/route";
 import {
   STRIPE_API_BASE,
   STRIPE_WEBHOOK_EVENTS,
@@ -23,6 +25,7 @@ import {
   verifyStripeSignature,
 } from "@/lib/billing/adapters/stripe";
 import { billing, CARRIED_BILLING_PROVIDERS, resetBillingAdapter } from "@/lib/billing";
+import { billingHostFromEnv, foreignHostDetail, hostClaimOf } from "@/lib/billing/host";
 import { BillingRefusal } from "@/lib/billing/port";
 import type { Subscription } from "@/lib/billing/types";
 
@@ -72,6 +75,11 @@ vi.mock("@/lib/db/billing", () => ({
   ENTITLING_STATUSES: ["active", "trialing", "past_due"],
 }));
 
+/** The checkout route resolves the account from the session; here the session is the test's. */
+const auth = vi.hoisted(() => ({ currentUser: vi.fn() }));
+
+vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: auth.currentUser }));
+
 const NOW = new Date("2026-10-31T12:00:00.000Z");
 const NOW_SECONDS = Math.floor(NOW.getTime() / 1000);
 
@@ -80,6 +88,9 @@ const ENV = {
   STRIPE_TEST_SECRET_KEY: "sk_test_fixture",
   STRIPE_TEST_WEBHOOK_SECRET: "whsec_fixture",
   STRIPE_TEST_PUBLISHABLE_KEY: "pk_test_fixture",
+  // The deployment's own identity. Required with the keys: a session that does not say which host
+  // it belongs to is grantable on either database, so there is no default.
+  BILLING_HOST: "alignsynch",
 } as const;
 
 /** A signature the way the provider mints one: `t=<seconds>,v1=HMAC_SHA256(secret, "t.body")`. */
@@ -141,7 +152,13 @@ function checkoutSession(over: Record<string, unknown> = {}) {
     subscription: "sub_test_1",
     customer: "cus_test_1",
     client_reference_id: "account-avery",
-    metadata: { user_id: "account-avery", plan_id: "principal", interval: "month" },
+    metadata: {
+      user_id: "account-avery",
+      plan_id: "principal",
+      interval: "month",
+      // The claim the checkout stamped: without it this deployment refuses the event.
+      host: "alignsynch",
+    },
     ...over,
   };
 }
@@ -153,7 +170,12 @@ function subscriptionObject(over: Record<string, unknown> = {}) {
     object: "subscription",
     status: "active",
     current_period_end: NOW_SECONDS + 30 * 24 * 60 * 60,
-    metadata: { user_id: "account-avery", plan_id: "principal", interval: "month" },
+    metadata: {
+      user_id: "account-avery",
+      plan_id: "principal",
+      interval: "month",
+      host: "alignsynch",
+    },
     items: {
       data: [{ price: { id: "price_1", unit_amount: 1695, recurring: { interval: "month" } } }],
     },
@@ -171,6 +193,14 @@ function event(
 
 beforeEach(() => {
   db.reset();
+  resetBillingAdapter();
+});
+
+afterEach(() => {
+  // The route cases set the process environment and the global transport; leaving either behind
+  // would make the next case's adapter look at a different deployment.
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   resetBillingAdapter();
 });
 
@@ -372,6 +402,11 @@ describe("a checkout session is created from the fixture's price", () => {
     expect(form.get("subscription_data[metadata][user_id]")).toBe("account-avery");
     expect(form.get("subscription_data[metadata][plan_id]")).toBe("principal");
     expect(form.get("subscription_data[metadata][interval]")).toBe("month");
+    // The host claim, on the session *and* on the subscription it creates: the subscription's copy
+    // is what makes a later `customer.subscription.*` delivery filterable, because that event's
+    // subject carries only the subscription's metadata.
+    expect(form.get("metadata[host]")).toBe("alignsynch");
+    expect(form.get("subscription_data[metadata][host]")).toBe("alignsynch");
   });
 
   it("charges the yearly amount once at the year interval", async () => {
@@ -441,6 +476,103 @@ describe("a checkout session is created from the fixture's price", () => {
   });
 });
 
+describe("the deployment's host is claimed, never defaulted", () => {
+  it("refuses to build without BILLING_HOST, naming the variable", () => {
+    const withoutHost = {
+      STRIPE_TEST_SECRET_KEY: ENV.STRIPE_TEST_SECRET_KEY,
+      STRIPE_TEST_WEBHOOK_SECRET: ENV.STRIPE_TEST_WEBHOOK_SECRET,
+      STRIPE_TEST_PUBLISHABLE_KEY: ENV.STRIPE_TEST_PUBLISHABLE_KEY,
+    };
+    expect(() => billingHostFromEnv({})).toThrowError(/BILLING_HOST is not set/);
+    expect(() => new StripeBillingAdapter({ env: withoutHost })).toThrowError(
+      /BILLING_HOST is not set/,
+    );
+    expect(() => new StripeBillingAdapter({ env: withoutHost })).toThrowError(
+      expect.objectContaining({ code: "not-configured" }) as Error,
+    );
+    // The composed port is what the route calls, so this is the refusal a click receives: no
+    // session is created and nothing is stamped with a default.
+    return expect(billing({ BILLING_PROVIDER: "stripe", ...withoutHost })).rejects.toThrowError(
+      /BILLING_HOST is not set/,
+    );
+  });
+
+  it("refuses a host this build does not know, and lists the ones it does", () => {
+    expect(() => billingHostFromEnv({ BILLING_HOST: "staging" })).toThrowError(
+      /not a host this build knows \(alignsynch, demo\)/,
+    );
+    // Case is an operator's habit, not an identity: the stamped value is always the canonical one.
+    expect(billingHostFromEnv({ BILLING_HOST: "  AlignSynch " })).toBe("alignsynch");
+  });
+
+  it("stamps the value this deployment answered with, not a literal", async () => {
+    const { impl, calls } = fakeFetch({
+      id: "cs_demo_1",
+      url: "https://checkout.example.test/cs_demo_1",
+    });
+    const demo = new StripeBillingAdapter({
+      env: { ...ENV, BILLING_HOST: "demo" },
+      now: () => NOW,
+      fetch: impl,
+    });
+    await demo.startCheckout({
+      userId: "account-avery",
+      planId: "principal",
+      interval: "month",
+      successUrl: "https://demo.example.test/ok",
+      cancelUrl: "https://demo.example.test/no",
+    });
+    const form = new URLSearchParams(calls[0]?.body);
+    expect(form.get("metadata[host]")).toBe("demo");
+    expect(form.get("subscription_data[metadata][host]")).toBe("demo");
+  });
+
+  /**
+   * The route's half of the same rule, which is what a person clicking a plan card meets: the
+   * refusal is a 503 with a sentence, and no session is created. The second half of the case is the
+   * control — the same request under the same environment, with only `BILLING_HOST` added, creates
+   * one — so the refusal cannot be blamed on the keys or the tier.
+   */
+  it("answers 503 through the checkout route when the deployment has no host claim", async () => {
+    auth.currentUser.mockResolvedValue({ userId: "account-avery", email: "avery@example.test" });
+    vi.stubEnv("BILLING_PROVIDER", "stripe");
+    vi.stubEnv("STRIPE_TEST_SECRET_KEY", ENV.STRIPE_TEST_SECRET_KEY);
+    vi.stubEnv("STRIPE_TEST_WEBHOOK_SECRET", ENV.STRIPE_TEST_WEBHOOK_SECRET);
+    vi.stubEnv("BILLING_HOST", "");
+    resetBillingAdapter();
+
+    const post = () =>
+      checkoutRoute(
+        new Request("https://alignsynch.test/api/billing/checkout", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ planId: "principal", interval: "month" }),
+        }),
+      );
+
+    const refused = await post();
+    expect(refused.status).toBe(503);
+    const body = await refused.json();
+    expect(body).toMatchObject({ error: "not-configured" });
+    expect(String(body.message)).toContain("BILLING_HOST is not set");
+
+    // The control: one variable, and the same request now creates the session.
+    vi.stubEnv("BILLING_HOST", ENV.BILLING_HOST);
+    const { impl, calls } = fakeFetch({
+      id: "cs_test_created",
+      url: "https://checkout.example.test/cs_test_created",
+    });
+    vi.stubGlobal("fetch", impl);
+    const created = await post();
+    expect(created.status).toBe(200);
+    expect(await created.json()).toMatchObject({
+      url: "https://checkout.example.test/cs_test_created",
+    });
+    const form = new URLSearchParams(calls[0]?.body);
+    expect(form.get("metadata[host]")).toBe("alignsynch");
+  });
+});
+
 describe("a delivery is applied to our rows, at most once", () => {
   it("maps checkout.session.completed onto the account that bought the tier", async () => {
     const { impl, calls } = fakeFetch(subscriptionObject());
@@ -459,6 +591,10 @@ describe("a delivery is applied to our rows, at most once", () => {
         provider: "stripe",
         providerSubscriptionId: "sub_test_1",
         status: "active",
+        // #505 — the provider's own live/test flag, read off the object. The fixture's subscription
+        // carries no `livemode`, and an absent flag is test mode: a payload that does not say must
+        // never be read as money having moved.
+        livemode: false,
         currentPeriodEnd: new Date((NOW_SECONDS + 30 * 24 * 60 * 60) * 1000).toISOString(),
       },
     ]);
@@ -497,7 +633,7 @@ describe("a delivery is applied to our rows, at most once", () => {
     const basil = {
       id: "sub_test_9",
       status: "past_due",
-      metadata: { user_id: "account-avery", plan_id: "basic" },
+      metadata: { user_id: "account-avery", plan_id: "basic", host: "alignsynch" },
       items: {
         data: [
           {
@@ -549,7 +685,9 @@ describe("a delivery is applied to our rows, at most once", () => {
 
   it("ignores a subscription this product did not create, naming the missing field", async () => {
     const { impl } = fakeFetch({});
-    const orphan = subscriptionObject({ metadata: { order: "made in the dashboard" } });
+    const orphan = subscriptionObject({
+      metadata: { order: "made in the dashboard", host: "alignsynch" },
+    });
     const outcome = await adapter(impl).handleWebhook(
       delivery(event("customer.subscription.updated", orphan)),
     );
@@ -564,7 +702,9 @@ describe("a delivery is applied to our rows, at most once", () => {
       delivery(
         event(
           "customer.subscription.updated",
-          subscriptionObject({ metadata: { user_id: "a", plan_id: "platinum" } }),
+          subscriptionObject({
+            metadata: { user_id: "a", plan_id: "platinum", host: "alignsynch" },
+          }),
         ),
       ),
     );
@@ -578,6 +718,146 @@ describe("a delivery is applied to our rows, at most once", () => {
       "customer.subscription.updated",
       "customer.subscription.deleted",
     ]);
+  });
+});
+
+describe("an event that is not this deployment's is acknowledged and applies nothing", () => {
+  /** A metadata record shaped the way the delivery carries it, with the host claim overridden. */
+  function claimed(host: string | undefined) {
+    return {
+      user_id: "account-avery",
+      plan_id: "principal",
+      interval: "month",
+      ...(host === undefined ? {} : { host }),
+    };
+  }
+
+  it("refuses a session that claims the other host, without reading its subscription", async () => {
+    const { impl, calls } = fakeFetch(subscriptionObject());
+    const outcome = await adapter(impl).handleWebhook(
+      delivery(event("checkout.session.completed", checkoutSession({ metadata: claimed("demo") }))),
+    );
+
+    expect(outcome).toMatchObject({ applied: false, kind: "foreign" });
+    expect((outcome as { detail: string }).detail).toContain('claims host "demo"');
+    expect((outcome as { detail: string }).detail).toContain('this deployment is "alignsynch"');
+    // Zero writes, and no read either: the event is judged before anything is mapped or fetched.
+    expect(db.state.written).toHaveLength(0);
+    expect(db.state.events).toHaveLength(0);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("refuses a delivery that carries no host claim at all", async () => {
+    const { impl } = fakeFetch({});
+    const outcome = await adapter(impl).handleWebhook(
+      delivery(
+        event("checkout.session.completed", checkoutSession({ metadata: claimed(undefined) })),
+      ),
+    );
+
+    expect(outcome).toMatchObject({ applied: false, kind: "foreign" });
+    expect((outcome as { detail: string }).detail).toContain("no metadata.host");
+    expect(db.state.written).toHaveLength(0);
+    expect(db.state.events).toHaveLength(0);
+  });
+
+  it("refuses a subscription event from the other host, so a status change cannot land", async () => {
+    const { impl } = fakeFetch({});
+    const outcome = await adapter(impl).handleWebhook(
+      delivery(
+        event("customer.subscription.updated", subscriptionObject({ metadata: claimed("demo") })),
+      ),
+    );
+
+    expect(outcome).toMatchObject({ applied: false, kind: "foreign" });
+    expect(db.state.written).toHaveLength(0);
+  });
+
+  it("applies the same event when the claim matches — the pair the card asks for", async () => {
+    const { impl } = fakeFetch(subscriptionObject());
+    const ours = checkoutSession({ metadata: claimed("alignsynch") });
+    const outcome = await adapter(impl).handleWebhook(
+      delivery(event("checkout.session.completed", ours)),
+    );
+
+    expect(outcome.applied).toBe(true);
+    expect(db.state.written).toHaveLength(1);
+    expect(db.state.written[0]).toMatchObject({ planId: "principal", status: "active" });
+  });
+
+  it("answers 200 through the route for the sibling host's delivery, and writes nothing", async () => {
+    vi.stubEnv("BILLING_PROVIDER", "stripe");
+    vi.stubEnv("STRIPE_TEST_SECRET_KEY", ENV.STRIPE_TEST_SECRET_KEY);
+    vi.stubEnv("STRIPE_TEST_WEBHOOK_SECRET", ENV.STRIPE_TEST_WEBHOOK_SECRET);
+    vi.stubEnv("BILLING_HOST", ENV.BILLING_HOST);
+    resetBillingAdapter();
+
+    const rawBody = JSON.stringify(
+      event("checkout.session.completed", checkoutSession({ metadata: claimed("demo") })),
+    );
+    // The route does not take the adapter's test clock, so this signature is minted at the real
+    // now — the same tolerance window a real delivery gets.
+    const response = await webhookRoute(
+      new Request("https://alignsynch.test/api/billing/webhook", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "stripe-signature": signatureFor(rawBody, Math.floor(Date.now() / 1000)),
+        },
+        body: rawBody,
+      }),
+    );
+
+    // 200, not 400: a 4xx makes the provider retry forever and buries a real failure.
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      received: true,
+      applied: false,
+      kind: "foreign",
+    });
+    expect(db.state.written).toHaveLength(0);
+    expect(db.state.events).toHaveLength(0);
+  });
+
+  it("answers 200 through the route for the matching host, and the grant applies", async () => {
+    vi.stubEnv("BILLING_PROVIDER", "stripe");
+    vi.stubEnv("STRIPE_TEST_SECRET_KEY", ENV.STRIPE_TEST_SECRET_KEY);
+    vi.stubEnv("STRIPE_TEST_WEBHOOK_SECRET", ENV.STRIPE_TEST_WEBHOOK_SECRET);
+    vi.stubEnv("BILLING_HOST", ENV.BILLING_HOST);
+    resetBillingAdapter();
+    // The one event that reads a sibling object: `checkout.session.completed` names its
+    // subscription by id, so the read is stubbed at the transport.
+    vi.stubGlobal("fetch", fakeFetch(subscriptionObject()).impl);
+
+    const rawBody = JSON.stringify(
+      event("checkout.session.completed", checkoutSession({ metadata: claimed("alignsynch") })),
+    );
+    const response = await webhookRoute(
+      new Request("https://alignsynch.test/api/billing/webhook", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "stripe-signature": signatureFor(rawBody, Math.floor(Date.now() / 1000)),
+        },
+        body: rawBody,
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ received: true, applied: true });
+    expect(db.state.written).toHaveLength(1);
+    expect(db.state.written[0]).toMatchObject({ userId: "account-avery", planId: "principal" });
+  });
+
+  it("the claim is read leniently in shape and strictly in value", () => {
+    expect(hostClaimOf({ host: " demo " })).toBe("demo");
+    expect(hostClaimOf({ host: 7 })).toBe("");
+    expect(hostClaimOf(null)).toBe("");
+    expect(hostClaimOf({})).toBe("");
+    expect(foreignHostDetail("alignsynch", "alignsynch")).toBeNull();
+    expect(foreignHostDetail("demo", "")).toBe(
+      'the event carries no metadata.host and this deployment is "demo"',
+    );
   });
 });
 

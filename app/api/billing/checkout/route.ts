@@ -15,8 +15,10 @@
  *        `BillingRefusal`'s own sentence, which names the tier ("the Enterprise plan is arranged
  *        with us directly…"). A card that cannot be bought should not have rendered a button; this
  *        is the server refusing in case it did.
- *   503  `not-configured`: this deployment selected an adapter it has no credentials for. Our
- *        fault, and an operator's to fix.
+ *   503  `not-configured`: this deployment selected an adapter it has no credentials for, or it
+ *        cannot say which host it is (`BILLING_HOST` unset — a checkout is refused rather than
+ *        stamped with a default that would claim the other host's events). Our fault, and an
+ *        operator's to fix.
  *   502  anything else: the provider or the database failed. The person sees "try again", and the
  *        log carries the cause.
  *

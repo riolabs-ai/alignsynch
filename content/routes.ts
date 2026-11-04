@@ -22,8 +22,18 @@ const STATIC_ROUTES = [
   "/admin/console/relationships",
   "/admin/console/templates",
   "/admin/console/users",
+  "/admin/audit",
+  // #507 — the broadcast: compose, dry run, send, and the sends already made.
+  "/admin/broadcast",
+  // #505 — billing control: subscription state per relationship, and the owner's comp.
+  "/admin/billing",
   "/admin/gaps",
+  "/admin/health",
   "/admin/instances",
+  // #502a — template authoring: the console's authored catalogue and one template's editor.
+  "/admin/templates",
+  // #506 — the support inbox: the contact form's queue, one thread, the reply.
+  "/admin/inbox",
   "/affiliate",
   "/assessment",
   "/assessment/instances",
@@ -66,6 +76,12 @@ const STATIC_ROUTES = [
 const DYNAMIC_ROUTES = [
   "/admin/console/relationships/[id]",
   "/admin/console/templates/[id]",
+  // #503 — one relationship's repair screen, a child of the registry route above it.
+  "/admin/instances/[id]",
+  // #502a — one template being drafted, a child of `/admin/templates`.
+  "/admin/templates/[id]",
+  // #504 — that relationship's Gap report: the operations screen, and the audited export beneath it.
+  "/admin/instances/[id]/report",
   "/assessment/[slug]",
   "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",

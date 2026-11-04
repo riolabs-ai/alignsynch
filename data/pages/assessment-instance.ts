@@ -59,6 +59,17 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
           label: "Connected — you both have a seat; the answers are not both in yet.",
         },
         { id: "sharing", label: "Sharing — the report is open to both of you." },
+        /**
+         * #503 — a session an operator ended. The badge and the sentence are two items because
+         * the badge sits beside the title where a stage name would go, and there is no stage name
+         * to put there.
+         */
+        { id: "voided-badge", label: "Voided" },
+        {
+          id: "voided",
+          label:
+            "Voided — an operator ended this session, so it takes no more answers. What you both wrote is kept and the report is unchanged.",
+        },
       ],
     },
     {

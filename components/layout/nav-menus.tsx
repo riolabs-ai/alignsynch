@@ -16,6 +16,7 @@ import {
   BarChart3,
   BookOpen,
   Compass,
+  CreditCard,
   DollarSign,
   FileQuestion,
   Gauge,
@@ -26,8 +27,10 @@ import {
   LifeBuoy,
   Lightbulb,
   Medal,
+  Megaphone,
   Newspaper,
   PackagePlus,
+  ScrollText,
   ShieldCheck,
   Sparkles,
   Swords,
@@ -129,6 +132,13 @@ export type NavRowProps = {
   onNavigate: () => void;
   /** Flagged off: draw nothing (issue #175). See `NavRenderProps.hidden`. */
   hidden?: boolean;
+  /**
+   * The first-run tour's anchor (#455), emitted as `data-tour` on the row's control. A step can
+   * point at a destination the *shell* owns — the rail's Support row is the tour's sixth step —
+   * and the menu stays ignorant of what a tour is: the value is opaque here and read only by
+   * `lib/tour/steps.ts`.
+   */
+  tourAnchor?: string;
 } & NavRowTarget;
 
 /**
@@ -222,6 +232,7 @@ export function NavRow(props: NavRowProps) {
       aria-label={accessibleLabel}
       title={title}
       data-surface-status={surface?.status}
+      data-tour={props.tourAnchor}
       className={className}
     >
       {content}
@@ -232,6 +243,7 @@ export function NavRow(props: NavRowProps) {
       onClick={onNavigate}
       aria-label={accessibleLabel}
       title={title}
+      data-tour={props.tourAnchor}
       className={className}
     >
       {content}
@@ -242,6 +254,7 @@ export function NavRow(props: NavRowProps) {
       onClick={props.onSelect}
       aria-label={accessibleLabel}
       title={title}
+      data-tour={props.tourAnchor}
       className={className}
     >
       {content}
@@ -520,6 +533,7 @@ function AlignSynchMenu({
         collapsed={collapsed}
         labelled={labelled}
         onNavigate={onNavigate}
+        tourAnchor="help"
       />
       {/*
         The console's Gap Analysis row, behind the `admin-console` capability rather than always
@@ -558,6 +572,49 @@ function AlignSynchMenu({
           icon={<ShieldCheck className="size-5" />}
           label={itemLabel(nav, "admin-instances")}
           active={isActive(pathname, "/admin/instances")}
+          collapsed={collapsed}
+          labelled={labelled}
+          onNavigate={onNavigate}
+        />
+      )}
+      {/* #503 — the audit log, beside the registry it records. Same capability, same reason: the
+          route refuses a member with the 404 a URL that never existed returns. */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/audit"
+          icon={<ScrollText className="size-5" />}
+          label={itemLabel(nav, "admin-audit")}
+          active={isActive(pathname, "/admin/audit")}
+          collapsed={collapsed}
+          labelled={labelled}
+          onNavigate={onNavigate}
+        />
+      )}
+      {/* #505 — billing control, beside the audit log it writes into. Same capability and the same
+          reason: the route refuses a member with the 404 a URL that never existed returns, and a
+          `support` session gets the same 404 — the screen is `admin`-only, while its one action is
+          `owner`-floored. */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/billing"
+          icon={<CreditCard className="size-5" />}
+          label={itemLabel(nav, "admin-billing")}
+          active={isActive(pathname, "/admin/billing")}
+          collapsed={collapsed}
+          labelled={labelled}
+          onNavigate={onNavigate}
+        />
+      )}
+      {/* #507 — the broadcast, the epic's last console row. `admin`-only for the same reason and by
+          the same mechanism: the page's `requireAdmin()` answers a member (and a `support` session)
+          with the 404 an unknown URL gets, so a row every viewer could see would be a row that 404s
+          for most of them. */}
+      {sees(viewer, "admin-console") && (
+        <NavRow
+          href="/admin/broadcast"
+          icon={<Megaphone className="size-5" />}
+          label={itemLabel(nav, "admin-broadcast")}
+          active={isActive(pathname, "/admin/broadcast")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
