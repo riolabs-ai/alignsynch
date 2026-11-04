@@ -2,6 +2,7 @@
 // template-ancestor: components/layout/nav-menus.tsx   (variation: the top bar — search, the message and notification drawers' triggers and the account menu, over the same nav data as the rail)
 
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
+import { BrandGlyph } from "@/components/layout/brand-glyph";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,11 +23,13 @@ import { querySearchIndex } from "@/content/search";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import { endSession } from "@/lib/auth/sign-out";
 import type { ShellAccount } from "@/lib/auth/shell-account";
+import type { BrandMark } from "@/lib/brand-mark";
 import { type NavViewer, seesQuizProduct } from "@/lib/nav";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { searchSectionFor } from "@/lib/shell-copy";
 import {
   Bell,
+  ChevronLeft,
   FileQuestion,
   FileText,
   LogOut,
@@ -42,6 +45,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import ChatDrawer from "../header/ChatDrawer";
@@ -76,6 +80,7 @@ function SignedOutAvatar({ label, size }: { label: string; size: number }) {
 
 export function Header({
   copy,
+  mark,
   brandId,
   viewer,
   account,
@@ -83,8 +88,16 @@ export function Header({
   hiddenNav,
   navigationOpen,
   onOpenNavigation,
+  focusFlow,
 }: {
   copy: PageCopy;
+  /**
+   * The brand's lockup, resolved on the server (`lib/brand-mark.ts`) and drawn here only in a
+   * focused flow (#542 phase 2) — the one time this bar has to carry the wordmark, because the
+   * rail that normally draws it is not rendered. `undefined` for a brand whose logo is the
+   * placeholder, in which case the title in type stands in, exactly as the rail falls back.
+   */
+  mark?: BrandMark;
   brandId: BrandId;
   /**
    * What the person looking at the header may see (`lib/nav.ts`, issue #156). The header is
@@ -129,6 +142,22 @@ export function Header({
   navigationOpen: boolean;
   /** Open the drawer. Stable identity: the drawer's focus effect keys on the matching close. */
   onOpenNavigation: () => void;
+  /**
+   * The focused flow's chrome (#542 phase 2), or `undefined` on every ordinary route.
+   *
+   * `components/layout/main-layout.tsx` decides it, from the path and `lib/shell/focus-flow.ts`;
+   * this bar only draws it. When it is present the left-hand group is the **wordmark and one
+   * explicit way back** instead of the drawer trigger and the search field: a rail is not rendered
+   * in a focused flow, so the trigger would open nothing, and the palette is a way out of the flow
+   * by another name. The account row on the right is untouched — the person, their notifications
+   * and their menu stay, which is what makes the flow a screen and not a trap.
+   */
+  focusFlow?: {
+    /** Where the exit goes (`/dashboard` — the workspace, not the marketing site). */
+    readonly backHref: string;
+    /** Its label, from `data/pages/shell.ts`'s `focus` section. */
+    readonly backLabel: string;
+  };
 }) {
   // The shell's copy, resolved here rather than in each band: `data/pages/shell.ts`
   // owns the words, this file owns which ids it renders. A renamed id is a red build
@@ -279,222 +308,279 @@ export function Header({
     <>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
         <div className="flex items-center gap-4">
-          {/*
+          {/**
+           * The focused flow's own left-hand chrome (#542 phase 2): the wordmark, and one explicit
+           * way back.
+           *
+           * In a focused flow the rail is not rendered (`components/layout/main-layout.tsx`), so
+           * the shell's wordmark would otherwise leave the screen entirely and the page would open
+           * on a bar whose only content is the account row. The mark is drawn here in one form —
+           * the lockup at its own aspect ratio, as the 250px rail draws it — rather than with the
+           * rail's three-width rule, because this bar has one width. With no lockup asset the
+           * title in type is the wordmark, exactly as the rail falls back.
+           *
+           * It is **not a link**: the one control the flow offers is the exit below, and two
+           * anchors to two destinations on a screen whose point is "finish this one thing" is
+           * the choice this bar removes.
+           */}
+          {focusFlow !== undefined && (
+            <>
+              <span className="flex shrink-0 items-center gap-2">
+                {mark !== undefined ? (
+                  <Image
+                    src={mark.src}
+                    alt={copy.heading}
+                    width={mark.width}
+                    height={mark.height}
+                    className="h-7 w-auto"
+                    priority
+                  />
+                ) : (
+                  <>
+                    <BrandGlyph className="h-6 w-6 text-primary" />
+                    <span className="text-lg font-bold">{copy.heading}</span>
+                  </>
+                )}
+              </span>
+              {/**
+               * **The way out, and the reason this bar exists.** A flow that hid the navigation
+               * and offered no exit would be a dead end — the failure the card names — so the
+               * link is the first thing in the bar, not a control in a menu: the label says where
+               * it goes, and it goes to the workspace rather than to the marketing site.
+               */}
+              <Link
+                href={focusFlow.backHref}
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <ChevronLeft className="size-4" aria-hidden="true" />
+                {focusFlow.backLabel}
+              </Link>
+            </>
+          )}
+          {focusFlow === undefined && (
+            <>
+              {/*
             The drawer trigger — the one control in the shell that opens navigation, and the only
             width that has anything to open. Below `md` the rail is an overlay
             (`components/layout/sidebar.tsx`); from `md` it is a sticky column, so this is
             `md:hidden` and the button cannot become a toggle for something always on screen.
           */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={onOpenNavigation}
-            aria-label={navigationOpen ? itemLabel(railCopy, "close") : itemLabel(railCopy, "open")}
-            aria-expanded={navigationOpen}
-            aria-controls="app-sidebar"
-          >
-            <Menu className="size-5" aria-hidden="true" />
-          </Button>
-
-          <div className="relative w-full md:w-64 lg:w-80 xl:w-96 max-md:hidden">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              type="search"
-              placeholder={itemLabel(searchCopy, "placeholder")}
-              className="w-full rounded-md border-0 bg-muted pl-8 focus-visible:ring-0 focus-visible:ring-offset-0"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-            />
-
-            {/* Search Results Dropdown */}
-            {isSearchFocused && (
-              <div
-                ref={searchResultsRef}
-                className="absolute top-full left-0 w-full mt-1 p-2 bg-background rounded-md border shadow-lg z-50 max-h-[80vh] overflow-auto"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={onOpenNavigation}
+                aria-label={
+                  navigationOpen ? itemLabel(railCopy, "close") : itemLabel(railCopy, "open")
+                }
+                aria-expanded={navigationOpen}
+                aria-controls="app-sidebar"
               >
-                {!searchQuery.trim() ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>{itemLabel(searchCopy, "hint")}</p>
-                  </div>
-                ) : (
-                  <>
-                    {Object.entries(searchResults).every(([_, items]) => items.length === 0) ? (
+                <Menu className="size-5" aria-hidden="true" />
+              </Button>
+
+              <div className="relative w-full md:w-64 lg:w-80 xl:w-96 max-md:hidden">
+                <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  type="search"
+                  placeholder={itemLabel(searchCopy, "placeholder")}
+                  className="w-full rounded-md border-0 bg-muted pl-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                />
+
+                {/* Search Results Dropdown */}
+                {isSearchFocused && (
+                  <div
+                    ref={searchResultsRef}
+                    className="absolute top-full left-0 w-full mt-1 p-2 bg-background rounded-md border shadow-lg z-50 max-h-[80vh] overflow-auto"
+                  >
+                    {!searchQuery.trim() ? (
                       <div className="p-4 text-center text-muted-foreground">
                         <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>
-                          {fillLabel(itemLabel(searchCopy, "empty-title"), {
-                            query: searchQuery,
-                          })}
-                        </p>
-                        <p className="text-sm mt-1">{itemLabel(searchCopy, "empty-hint")}</p>
+                        <p>{itemLabel(searchCopy, "hint")}</p>
                       </div>
                     ) : (
                       <>
-                        {/* Quizzes */}
-                        {searchResults.quizzes.length > 0 && (
-                          <div className="mb-4">
-                            <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
-                              <FileQuestion className="h-4 w-4" />
-                              <span>{itemLabel(searchCopy, "group-quizzes")}</span>
-                            </div>
-                            <div className="mt-1">
-                              {searchResults.quizzes.map((quiz) => (
-                                <Link
-                                  key={quiz.id}
-                                  href={quiz.path}
-                                  className="flex items-start gap-3 p-2 hover:bg-muted rounded-md transition-colors"
-                                  onClick={() => {
-                                    setIsSearchFocused(false);
-                                    setSearchQuery("");
-                                  }}
-                                >
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
-                                    <FileQuestion className="h-4 w-4 text-primary" />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium line-clamp-1">{quiz.title}</p>
-                                    <div className="flex items-center gap-2 mt-1">
+                        {Object.entries(searchResults).every(([_, items]) => items.length === 0) ? (
+                          <div className="p-4 text-center text-muted-foreground">
+                            <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p>
+                              {fillLabel(itemLabel(searchCopy, "empty-title"), {
+                                query: searchQuery,
+                              })}
+                            </p>
+                            <p className="text-sm mt-1">{itemLabel(searchCopy, "empty-hint")}</p>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Quizzes */}
+                            {searchResults.quizzes.length > 0 && (
+                              <div className="mb-4">
+                                <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
+                                  <FileQuestion className="h-4 w-4" />
+                                  <span>{itemLabel(searchCopy, "group-quizzes")}</span>
+                                </div>
+                                <div className="mt-1">
+                                  {searchResults.quizzes.map((quiz) => (
+                                    <Link
+                                      key={quiz.id}
+                                      href={quiz.path}
+                                      className="flex items-start gap-3 p-2 hover:bg-muted rounded-md transition-colors"
+                                      onClick={() => {
+                                        setIsSearchFocused(false);
+                                        setSearchQuery("");
+                                      }}
+                                    >
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+                                        <FileQuestion className="h-4 w-4 text-primary" />
+                                      </div>
+                                      <div>
+                                        <p className="font-medium line-clamp-1">{quiz.title}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <Badge variant="outline" className="text-xs font-normal">
+                                            {quiz.categoryNames[0]}
+                                          </Badge>
+                                          <Badge variant="outline" className="text-xs font-normal">
+                                            {quiz.difficulty}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Categories */}
+                            {searchResults.categories.length > 0 && (
+                              <div className="mb-4">
+                                <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
+                                  <Tag className="h-4 w-4" />
+                                  <span>{itemLabel(searchCopy, "group-categories")}</span>
+                                </div>
+                                <div className="mt-1">
+                                  {searchResults.categories.map((category) => (
+                                    <Link
+                                      key={category.id}
+                                      href={category.path}
+                                      className="flex items-center gap-3 p-2 hover:bg-muted rounded-md transition-colors"
+                                      onClick={() => {
+                                        setIsSearchFocused(false);
+                                        setSearchQuery("");
+                                      }}
+                                    >
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
+                                        <Tag className="h-4 w-4 text-blue-600" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="font-medium">{category.name}</p>
+                                      </div>
                                       <Badge variant="outline" className="text-xs font-normal">
-                                        {quiz.categoryNames[0]}
+                                        {fillLabel(itemLabel(searchCopy, "count-quizzes"), {
+                                          count: category.count,
+                                        })}
                                       </Badge>
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Creators */}
+                            {searchResults.creators.length > 0 && (
+                              <div className="mb-4">
+                                <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
+                                  <Users className="h-4 w-4" />
+                                  <span>{itemLabel(searchCopy, "group-creators")}</span>
+                                </div>
+                                <div className="mt-1">
+                                  {searchResults.creators.map((creator) => (
+                                    <Link
+                                      key={creator.id}
+                                      href={`/profile/${creator.username}`}
+                                      className="flex items-center gap-3 p-2 hover:bg-muted rounded-md transition-colors"
+                                      onClick={() => {
+                                        setIsSearchFocused(false);
+                                        setSearchQuery("");
+                                      }}
+                                    >
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-green-100">
+                                        <User className="h-4 w-4 text-green-600" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="font-medium">{creator.name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          @{creator.username}
+                                        </p>
+                                      </div>
                                       <Badge variant="outline" className="text-xs font-normal">
-                                        {quiz.difficulty}
+                                        {fillLabel(itemLabel(searchCopy, "count-quizzes"), {
+                                          count: creator.quizCount,
+                                        })}
                                       </Badge>
-                                    </div>
-                                  </div>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
-                        {/* Categories */}
-                        {searchResults.categories.length > 0 && (
-                          <div className="mb-4">
-                            <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
-                              <Tag className="h-4 w-4" />
-                              <span>{itemLabel(searchCopy, "group-categories")}</span>
-                            </div>
-                            <div className="mt-1">
-                              {searchResults.categories.map((category) => (
-                                <Link
-                                  key={category.id}
-                                  href={category.path}
-                                  className="flex items-center gap-3 p-2 hover:bg-muted rounded-md transition-colors"
-                                  onClick={() => {
-                                    setIsSearchFocused(false);
-                                    setSearchQuery("");
-                                  }}
-                                >
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
-                                    <Tag className="h-4 w-4 text-blue-600" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="font-medium">{category.name}</p>
-                                  </div>
-                                  <Badge variant="outline" className="text-xs font-normal">
-                                    {fillLabel(itemLabel(searchCopy, "count-quizzes"), {
-                                      count: category.count,
-                                    })}
-                                  </Badge>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                            {/* Pages */}
+                            {searchResults.pages.length > 0 && (
+                              <div className="mb-2">
+                                <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
+                                  <FileText className="h-4 w-4" />
+                                  <span>{itemLabel(searchCopy, "group-pages")}</span>
+                                </div>
+                                <div className="mt-1">
+                                  {searchResults.pages.map((page) => (
+                                    <Link
+                                      key={page.id}
+                                      href={page.path}
+                                      className="flex items-center gap-3 p-2 hover:bg-muted rounded-md transition-colors"
+                                      onClick={() => {
+                                        setIsSearchFocused(false);
+                                        setSearchQuery("");
+                                      }}
+                                    >
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+                                        <FileText className="h-4 w-4 text-action" />
+                                      </div>
+                                      <p className="font-medium">{page.title}</p>
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
-                        {/* Creators */}
-                        {searchResults.creators.length > 0 && (
-                          <div className="mb-4">
-                            <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
-                              <Users className="h-4 w-4" />
-                              <span>{itemLabel(searchCopy, "group-creators")}</span>
+                            {/* View All Results Button */}
+                            <div className="mt-2 pt-2 border-t">
+                              <Button
+                                variant="outline"
+                                className="w-full justify-center"
+                                onClick={() => {
+                                  router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+                                  setIsSearchFocused(false);
+                                  setSearchQuery("");
+                                }}
+                              >
+                                <Search className="h-4 w-4 mr-2" />
+                                {fillLabel(itemLabel(searchCopy, "view-all"), {
+                                  query: searchQuery,
+                                })}
+                              </Button>
                             </div>
-                            <div className="mt-1">
-                              {searchResults.creators.map((creator) => (
-                                <Link
-                                  key={creator.id}
-                                  href={`/profile/${creator.username}`}
-                                  className="flex items-center gap-3 p-2 hover:bg-muted rounded-md transition-colors"
-                                  onClick={() => {
-                                    setIsSearchFocused(false);
-                                    setSearchQuery("");
-                                  }}
-                                >
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-green-100">
-                                    <User className="h-4 w-4 text-green-600" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="font-medium">{creator.name}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      @{creator.username}
-                                    </p>
-                                  </div>
-                                  <Badge variant="outline" className="text-xs font-normal">
-                                    {fillLabel(itemLabel(searchCopy, "count-quizzes"), {
-                                      count: creator.quizCount,
-                                    })}
-                                  </Badge>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
+                          </>
                         )}
-
-                        {/* Pages */}
-                        {searchResults.pages.length > 0 && (
-                          <div className="mb-2">
-                            <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground">
-                              <FileText className="h-4 w-4" />
-                              <span>{itemLabel(searchCopy, "group-pages")}</span>
-                            </div>
-                            <div className="mt-1">
-                              {searchResults.pages.map((page) => (
-                                <Link
-                                  key={page.id}
-                                  href={page.path}
-                                  className="flex items-center gap-3 p-2 hover:bg-muted rounded-md transition-colors"
-                                  onClick={() => {
-                                    setIsSearchFocused(false);
-                                    setSearchQuery("");
-                                  }}
-                                >
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
-                                    <FileText className="h-4 w-4 text-action" />
-                                  </div>
-                                  <p className="font-medium">{page.title}</p>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* View All Results Button */}
-                        <div className="mt-2 pt-2 border-t">
-                          <Button
-                            variant="outline"
-                            className="w-full justify-center"
-                            onClick={() => {
-                              router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-                              setIsSearchFocused(false);
-                              setSearchQuery("");
-                            }}
-                          >
-                            <Search className="h-4 w-4 mr-2" />
-                            {fillLabel(itemLabel(searchCopy, "view-all"), { query: searchQuery })}
-                          </Button>
-                        </div>
                       </>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-4">

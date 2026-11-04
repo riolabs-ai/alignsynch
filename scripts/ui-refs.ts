@@ -32,6 +32,15 @@ const HREF_ATTR = /href=(?:"([^"]*)"|\{\s*"([^"]*)"\s*\})/g;
 /** Client-side navigation to a literal: `router.push("/x")`, `redirect("/x")`. */
 const NAV_CALL = /\b(?:router\.(?:push|replace)|redirect)\(\s*"([^"]*)"\s*\)/g;
 
+/**
+ * `href: "/x"` — the **property** form, for a destination held as data rather than as JSX (#542
+ * phase 2). `components/layout/nav-menus.tsx` warns, correctly, that a menu moved into a table of
+ * records takes every route reference out of E10 without failing anything; the answer is not to
+ * keep the rows in JSX, it is to teach the gate the second spelling. The lookbehind keeps
+ * `data-href: "…"` and `xhref:` out, so only a real `href` property matches.
+ */
+const HREF_PROP = /(?<![\w$-])href:\s*"([^"]*)"/g;
+
 /** Any quoted literal — used only to hunt for `public/` asset paths. */
 const STRING_LITERAL = /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'/g;
 
@@ -87,10 +96,11 @@ function collect(
   return found;
 }
 
-/** Every literal the UI navigates to: `href` attributes plus `router.push`/`redirect`. */
+/** Every literal the UI navigates to: `href` attributes, `href:` properties, and nav calls. */
 export function navigationReferences(files: SourceFile[]): UiReference[] {
   return [
     ...hrefLiterals(files).map(({ at: _at, ...reference }) => reference),
+    ...collect(files, HREF_PROP, (match) => match[1]),
     ...collect(files, NAV_CALL, (match) => match[1]),
   ];
 }

@@ -39,16 +39,30 @@
  * type-only and erased at build time.
  */
 import type { BrandId } from "@/data/brand";
-import type { UserRole } from "@/content/identity";
+import { roleAdmits, type UserRole } from "../content/role-ladder";
 
 /** One destination family a viewer may or may not be shown. */
 export const NAV_CAPABILITIES = ["quiz-surfaces", "admin-console"] as const;
 
 export type NavCapability = (typeof NAV_CAPABILITIES)[number];
 
-/** A viewer, as the navigation sees one: a set of capabilities, no identity. */
+/**
+ * A viewer, as the navigation sees one: a set of capabilities, and the rung they hold.
+ *
+ * **Two vocabularies, because the chrome asks two kinds of question.** A capability answers "is
+ * this *product* yours to see" (`quiz-surfaces` is the quiz product's chrome on the alignment
+ * brand); the rung answers "how far up the staff ladder is this person", which is what a
+ * role-constrained rail row needs (#542 phase 2). The rung is `null` for nobody signed in and for
+ * any viewer constructed from capabilities alone, which is the member menu — never a staff one.
+ *
+ * The rung is not a secret being leaked to the browser: it is this request's own `user_profile.role`,
+ * resolved on the server (`app/(mainlayout)/layout.tsx`), and it decides nothing but which rows are
+ * drawn. Every route re-reads the role it needs (`lib/auth/require-role.ts`) and every audited
+ * write re-asks its floor inside the transaction (`lib/admin/act.ts`).
+ */
 export interface NavViewer {
   readonly capabilities: ReadonlySet<NavCapability>;
+  readonly role: UserRole | null;
 }
 
 /**
@@ -59,16 +73,16 @@ export interface NavViewer {
  * byte for byte. On `BRAND=alignsynch` the same viewer sees the alignment menu — the bug
  * this issue fixes — and no quiz destination.
  */
-export const PLATFORM_VIEWER: NavViewer = { capabilities: new Set<NavCapability>() };
+export const PLATFORM_VIEWER: NavViewer = { capabilities: new Set<NavCapability>(), role: null };
 
 /** Does this viewer carry the capability? */
 export function sees(viewer: NavViewer, capability: NavCapability): boolean {
   return viewer.capabilities.has(capability);
 }
 
-/** The viewer with everything — the admin the role model will hand back once it exists. */
+/** The viewer with everything — for a caller that is asking about capabilities, not about a person. */
 export function viewerWith(...capabilities: NavCapability[]): NavViewer {
-  return { capabilities: new Set(capabilities) };
+  return { capabilities: new Set(capabilities), role: null };
 }
 
 /**
@@ -89,22 +103,31 @@ export const ALIGNMENT_ROUTES: readonly string[] = ["/", "/settings", "/help"];
 /**
  * The viewer the shell renders for, from the role the **server** resolved for this request.
  *
- * `admin` carries `admin-console`: the operator's destinations (`/admin/instances` today, and the
- * gap analysis beside it) are rows a member must not see, because a row that leads to a 404 is a
- * row that advertises a surface. Everybody else — a member, a signed-out visitor, a deployment
- * with no session — carries the empty set, exactly as this function answered before the console
- * existed.
+ * `admin` **and everything above it** carry `admin-console`: the operator's destinations are rows a
+ * member must not see, because a row that leads to a 404 is a row that advertises a surface. The
+ * comparison is the ladder's (`atLeast`) rather than `role === "admin"`, which is the bug this
+ * card's menu work surfaced: `owner` sits above `admin`, `requireRole("admin")` admits it (one
+ * rank comparison, `content/identity.ts::roleAdmits`), and an equality test here would have drawn
+ * an owner no console row while every console page opened for them.
+ *
+ * Everybody else — a member, a `support` seat, a signed-out visitor, a deployment with no session —
+ * carries the capability set they had before, and the rung itself. The rail's role-constrained rows
+ * read `role` (`lib/nav-menu.ts`); `support` gets the one staff row it may work (the inbox) without
+ * `admin-console`, which stays the "has the operator's console" answer.
  *
  * The role is an argument rather than a session read for the reason this module has always given:
- * a capability set is a pure value a node test can render either way, and the request's own
- * session is read in `app/(mainlayout)/layout.tsx` (a server component) through
+ * a viewer is a pure value a node test can render either way, and the request's own session is read
+ * in `app/(mainlayout)/layout.tsx` (a server component) through
  * `lib/auth/shell-account.ts::shellSession()`, which is the one place the session and the profile
  * row are resolved for the chrome. `quiz-surfaces` is still granted to nobody: the branding work
  * (#156) will decide whether an admin gets the quiz menu, and this function is where that
  * decision lands when it is made.
  */
 export function navViewer(role: UserRole | null = null): NavViewer {
-  return role === "admin" ? viewerWith("admin-console") : PLATFORM_VIEWER;
+  return {
+    capabilities: roleAdmits("admin", role) ? new Set<NavCapability>(["admin-console"]) : new Set(),
+    role,
+  };
 }
 
 /**

@@ -147,7 +147,27 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "open", label: "Open navigation" },
           { id: "close", label: "Close navigation" },
           { id: "label", label: "Main navigation" },
+          /**
+           * The rail's width control (#542 phase 2). The desktop rail narrows to its icon column
+           * on the reader's say-so, and the choice is a cookie read on the server
+           * (`lib/layout/rail-preference.ts`), so the first paint is already the right width.
+           * Two words, because the control's name is the action it performs, not its state.
+           */
+          { id: "collapse", label: "Collapse the rail" },
+          { id: "expand", label: "Expand the rail" },
         ],
+      },
+      /**
+       * The focused flow's chrome (#542 phase 2).
+       *
+       * While a member is creating, editing or publishing, the rail is out of the way and the one
+       * word the page needs is the way back — a flow that hides its navigation and offers no exit
+       * is a dead end, which is the failure this row exists to prevent. `back` is the explicit
+       * control; the account header beside it is the shell's own, from `account` below.
+       */
+      {
+        id: "focus",
+        items: [{ id: "back", label: "Back to dashboard" }],
       },
       /**
        * The AlignSynch navigation (issue #156) — the alignment product's own destinations.
@@ -235,6 +255,14 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "dashboard", label: "Dashboard" },
           { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
+          /**
+           * #542 phase 2 — the member's own templates, beside their own relationships. Two rows
+           * that used to read "Templates" (the public catalogue at `/assessment/templates`) and
+           * "Library" now name the three different shelves honestly: `my-templates` is the set a
+           * member owns (`/dashboard/templates`), `templates` is what the catalogue offers, and
+           * `template-library` is the library the console has always had.
+           */
+          { id: "my-templates", label: "My Templates" },
           { id: "template-library", label: "Library" },
           { id: "templates", label: "Templates" },
           /**
@@ -255,6 +283,19 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "help", label: "Help" },
           { id: "console-gaps", label: "Gap Analysis" },
           { id: "admin-instances", label: "Relationships" },
+          /**
+           * #542 phase 2 — the console hub, first in the operator group. `/admin/console` is where
+           * the console's own subtree (users, templates, relationships) hangs off, and until this
+           * card it had **no row anywhere in the UI**: the only way in was typing the URL.
+           */
+          { id: "console", label: "Console" },
+          /**
+           * The two staff surfaces that were also unreachable from the rail: the support inbox
+           * (a `support` row, the one queue that rung works) and platform health. The hub page
+           * links neither, so a rail row is the only way to them short of the address bar.
+           */
+          { id: "admin-inbox", label: "Inbox" },
+          { id: "admin-health", label: "Platform health" },
           // #503 — the log the five repairs commit into. An operator's row, beside the registry
           // it audits, drawn only for `admin-console`.
           { id: "admin-audit", label: "Audit log" },
@@ -263,14 +304,19 @@ export function shellCopy(brand: Brand): PageCopy {
           // #507 — the broadcast: a one-off notice to the news list.
           { id: "admin-broadcast", label: "Broadcast" },
           /**
-           * The two rail group labels (#539 item 10). The rail draws the operator's rows first
-           * under `group-admin` and the member's destinations under `group-app`, so "admin
-           * functions first, then your own app links" is a structure rather than a sort order
-           * that the next person can undo by adding a row. The words live here with every other
-           * label: a heading typed in `nav-menus.tsx` would be a literal E23 cannot see.
+           * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
+           * the member's own work under `group-app`, the help/contact pair under
+           * `group-support`, and the operator's rows under `group-admin` — "the reader's work,
+           * then help, then the staff group" as a structure rather than a sort order the next
+           * person can undo by adding a row. The words live here with every other label: a
+           * heading typed in `nav-menus.tsx` would be a literal E23 cannot see.
+           *
+           * `group-admin` reads "Admin" (it was "Administration" under #539): the group is the
+           * staff group, and #542 phase 2 names it that way.
            */
-          { id: "group-admin", label: "Administration" },
           { id: "group-app", label: "Workspace" },
+          { id: "group-support", label: "Support" },
+          { id: "group-admin", label: "Admin" },
           { id: "quiz-tools", label: "Quiz tools" },
         ],
       },

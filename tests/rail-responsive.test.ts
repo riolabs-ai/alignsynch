@@ -428,22 +428,36 @@ describe("the drawer below 768: the hamburger, and what pressing it does", () =>
   });
 });
 
-describe("the shell's rail carries no width control", () => {
+describe("the shell's rail remembers its width on the server", () => {
   /**
-   * The card's acceptance grep, kept as a test — but for the *control*, not for the letters.
-   * `grep -ci "collapse\|pin"` on this file counts prose ("keeping", "cropping"); what a re-added
-   * width control actually needs is the store and the setter, which is what this asserts. It is
-   * not fussiness: a control that narrowed this column was removed once, then the phone's way in
-   * was removed with it, and a source that cannot grow the control back without failing first is
-   * the point.
+   * This tree removed a desktop width toggle once, and `components/layout/sidebar.tsx` records why:
+   * it stored the choice in `localStorage`, so the server could only draw the expanded rail and the
+   * browser corrected it after hydration. #542 phase 2 asks for the control again, in the form that
+   * works — a cookie read in `app/(mainlayout)/layout.tsx` before any HTML exists.
+   *
+   * So the assertion moves rather than disappears: **no browser storage, no client state, and one
+   * control whose value is a prop.** The stored-width claim is now pinned from the other side by
+   * `tests/rail-preference.test.ts` (the pure state machine and the wiring); what is checked here is
+   * the shape of the file that draws it.
    */
-  it("has no stored width, no setter, and exactly the drawer's two buttons", async () => {
+  it("has no browser storage and no client state for the width", async () => {
     const { readFile } = await import("node:fs/promises");
     const source = await readFile("components/layout/sidebar.tsx", "utf8");
-    expect(source).not.toMatch(/localStorage|sessionStorage/);
-    expect(source).not.toMatch(/setCollapsed|toggleCollapsed|onToggle|widthToggle/);
-    // Two: the scrim and the panel's own close. A third would be a control nobody asked for.
-    expect(source.match(/<button/g)).toHaveLength(2);
+    // Comments are stripped: the file explains the removed `localStorage` toggle, which is the
+    // lesson, not the offence.
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    expect(code).not.toMatch(/localStorage|sessionStorage/);
+    expect(code).not.toMatch(/setCollapsed|toggleCollapsed|onToggle|widthToggle/);
+    // The width arrives as a prop from the server, and the component only reads it.
+    expect(code).toContain("collapsed = false");
+  });
+
+  it("draws exactly three buttons: the scrim, the drawer's close, and the width toggle", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const source = await readFile("components/layout/sidebar.tsx", "utf8");
+    expect(source.match(/<button/g)).toHaveLength(3);
+    // The toggle is a form posting to a server action — not a click handler in the browser.
+    expect(source).toContain("action={toggleRail}");
   });
 
   it("keeps the drawer wired to one trigger and one panel id", async () => {
