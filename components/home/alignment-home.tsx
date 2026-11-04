@@ -227,7 +227,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         belongs to the token layer (`app/globals.css`) rather than to this file.
       */}
       <section className="home-hero-ground border-b border-border">
-        <div className="mx-auto w-full max-w-6xl px-6 py-14 md:py-16 lg:py-20">
+        <div className="marketing-container py-14 md:py-16 lg:py-20">
           {/* Vertically centred against the card, not top-aligned: the proof is the taller
               column, and a text stack pinned to its top leaves a dead band of ground under the
               fineprint that reads as a page still being filled in. */}
@@ -291,7 +291,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-background py-16 md:py-20"
         id="practice"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {model.practice.eyebrow && <Eyebrow>{model.practice.eyebrow}</Eyebrow>}
           {model.practice.heading && <BandHeading>{model.practice.heading}</BandHeading>}
           {model.practice.body && <BandBody>{model.practice.body}</BandBody>}
@@ -308,7 +308,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-muted py-16 md:py-20"
         id="questions"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {model.questions.eyebrow && <Eyebrow>{model.questions.eyebrow}</Eyebrow>}
           {model.questions.heading && <BandHeading>{model.questions.heading}</BandHeading>}
           {model.questions.body && <BandBody>{model.questions.body}</BandBody>}
@@ -367,7 +367,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-background py-16 md:py-24"
         id="templates"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {model.templates.eyebrow && <Eyebrow>{model.templates.eyebrow}</Eyebrow>}
           {model.templates.heading && <BandHeading>{model.templates.heading}</BandHeading>}
           {model.templates.body && <BandBody>{model.templates.body}</BandBody>}
@@ -384,7 +384,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-muted/70 py-16 md:py-20"
         id="families"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {/*
             Two columns, not a three-across grid with an empty third slot: the realm ledger on the
             left and the two families it is made of on the right. The counts are the fixture's own
@@ -461,7 +461,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-background py-14 md:py-20"
         id="seats"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {model.seats.eyebrow && <Eyebrow>{model.seats.eyebrow}</Eyebrow>}
           {model.seats.heading && <BandHeading>{model.seats.heading}</BandHeading>}
           {model.seats.body && <BandBody>{model.seats.body}</BandBody>}
@@ -495,7 +495,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         full-bleed strip with an empty half.
       */}
       <section className="scroll-mt-24 bg-muted py-12 md:py-14" id="boundary">
-        <div className="mx-auto grid w-full max-w-6xl gap-4 px-6 lg:grid-cols-[minmax(0,0.36fr)_minmax(0,0.64fr)] lg:items-baseline lg:gap-12">
+        <div className="marketing-container grid gap-4 lg:grid-cols-[minmax(0,0.36fr)_minmax(0,0.64fr)] lg:items-baseline lg:gap-12">
           {model.boundary.heading && (
             <h2 className="text-[17px] font-bold tracking-tight text-foreground">
               {model.boundary.heading}

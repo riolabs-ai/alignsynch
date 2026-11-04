@@ -66,7 +66,7 @@ export function MarketingLanding({ copy }: { copy: PageCopy }) {
   return (
     <main>
       {/* Band 1 — the hero. */}
-      <section className="mx-auto w-full max-w-6xl px-6 pt-16 pb-20 md:pt-24 md:pb-28">
+      <section className="marketing-container pt-16 pb-20 md:pt-24 md:pb-28">
         <div className="max-w-3xl space-y-6">
           <h1 className="text-4xl font-semibold tracking-tight text-balance text-primary md:text-5xl xl:text-6xl">
             {copy.heading}
@@ -137,7 +137,7 @@ export function MarketingLanding({ copy }: { copy: PageCopy }) {
 
       {/* Band 5 — what a Gap is, in one paragraph. */}
       <section className="border-y border-slate-200 bg-slate-50" id={gap.id}>
-        <div className="mx-auto w-full max-w-6xl px-6 py-16">
+        <div className="marketing-container py-16">
           <div className="max-w-3xl space-y-4 border-l-4 border-accent pl-6">
             <h2 className="text-2xl font-semibold tracking-tight text-primary md:text-3xl">
               {gap.heading}
@@ -167,7 +167,7 @@ export function MarketingLanding({ copy }: { copy: PageCopy }) {
 
       {/* Band 7 — the one action, repeated. */}
       <section className="mt-4 bg-primary text-primary-foreground" id={closing.id}>
-        <div className="mx-auto w-full max-w-6xl px-6 py-16">
+        <div className="marketing-container py-16">
           <h2 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
             {closing.heading}
           </h2>
@@ -200,7 +200,7 @@ function Band({
       className={`border-t border-slate-200 ${tinted ? "bg-slate-50" : "bg-white"}`}
       id={section.id}
     >
-      <div className="mx-auto w-full max-w-6xl px-6 py-16">
+      <div className="marketing-container py-16">
         <div className="max-w-3xl space-y-3">
           <h2 className="text-2xl font-semibold tracking-tight text-balance text-primary md:text-3xl">
             {section.heading}

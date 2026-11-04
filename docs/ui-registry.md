@@ -102,7 +102,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The public help centre: the help categories, the FAQ and the knowledge base in the marketing chrome, and — under the answers — the one public contact form: a name, a reply address, a message and one submit, posted as plain HTML to `/api/contact` with no captcha and no third-party widget.
   - components: `components/contact`, `components/support`, `components/ui`
   - reads: an `/api` path — `app/(marketing)/help/page.tsx`, `components/contact/contact-form.tsx`, `components/contact/contact-section.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/help.ts`
-  - notes: The public half of the Help/Support split (owner's review). A variation of the old `/support` hub with its Contact tab removed rather than left empty: the answers are public, and the band at the foot of the page says where a person is. It renders the same panels the account page links back to (`components/support/**`), so the two surfaces cannot tell a reader different things about one product.
+  - notes: The public half of the Help/Support split (owner's review). A variation of the old `/support` hub with its Contact tab removed rather than left empty: the answers are public, and the band at the foot of the page says where a person is. It renders the same panels the account page links back to (`components/support/**`), so the two surfaces cannot tell a reader different things about one product. **The category rail's selected row is the tree's tinted-panel treatment (#539 item 3):** `bg-action/10` with an inset `ring-action/20` and `text-action` — the soft ground QuizHub's own active rows use — instead of the solid `bg-action` fill the row drew before, and its labels wrap inside the rail (`whitespace-normal`, `min-w-0`) rather than painting past it at 768 (#539 item 9). Both are the same control, so the registry lists them here rather than as a second surface.
 
 - `/login` — **live**
   - capability: Sign in with a real Neon Managed Auth session, with pending, invalid-credentials, Google-only and network states.
@@ -472,7 +472,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/affiliate` — **fixture**
   - capability: The affiliate programme: how to start earning, the profit calculator, programme features, success stories, FAQ and a closing CTA. Not freely available: `commerce.affiliate` ships it off on every template, and the route answers 404 while it is off (#291).
   - components: `components/affiliate`, `components/layout`, `components/media`, `components/ui`
-  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
+  - reads: an `/api` path — `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/battle` — **fixture**
   - capability: A head-to-head quiz battle: choose a mode, join a lobby, play the same question set live and land on a results screen.
@@ -482,7 +482,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/categories` — **fixture**
   - capability: Every quiz category as a tile generated from its slug, with a how-it-works block and a closing CTA.
   - components: `components/categories`, `components/layout`, `components/media`, `components/ui`
-  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
+  - reads: an `/api` path — `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/categories/[slug]` — **fixture**
   - capability: One category's quizzes, under the tile generated for that category.
@@ -503,12 +503,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/creator-tips` — **fixture**
   - capability: Editorial tips for quiz creators, browsable by category with featured and latest grids.
   - components: `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
+  - reads: an `/api` path — `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/creator-tips/[slug]` — **fixture**
   - capability: One creator-tip article, with its related tips.
   - components: `components/content`, `components/creator-tips`, `components/layout`, `components/media`, `components/ui`
-  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
+  - reads: an `/api` path — `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/daily-challenge` — **fixture**
   - capability: One quiz a day: today's quiz, your challenge stats, a daily leaderboard, badge progress and your history.
@@ -590,7 +590,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/tournaments` — **fixture**
   - capability: Quiz tournaments: the featured championship, the full list, categories, how it works and a CTA.
   - components: `components/layout`, `components/media`, `components/tournaments`, `components/ui`
-  - reads: an `/api` path — `components/layout/footer.tsx`, `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
+  - reads: an `/api` path — `components/layout/news-signup.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `data/pages/shell.ts`
 
 - `/tournaments/[id]` — **fixture**
   - capability: One tournament: overview, key dates, stats, categories, rules, prizes and its leaderboard.

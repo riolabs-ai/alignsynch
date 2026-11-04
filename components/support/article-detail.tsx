@@ -45,7 +45,7 @@ export function ArticleDetail({ article, relatedArticles, copy }: ArticleDetailP
   const relatedCopy = sectionOf(copy, "related-articles");
 
   return (
-    <div className="container max-w-4xl mx-auto py-4 ">
+    <div className="marketing-container max-w-4xl py-4">
       {/* Breadcrumb */}
       <div className="flex items-center text-sm mb-6">
         <Link
