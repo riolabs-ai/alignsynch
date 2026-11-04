@@ -13,7 +13,10 @@
  * Status codes, and why each one is a different sentence to an operator:
  *
  *   200  applied, or a replay of an event already applied, or an event type this build does not
- *        act on. A 4xx on an unsubscribed type would make the provider retry it for days.
+ *        act on, or an event that belongs to **the other host** (`kind: "foreign"`: both hosts run
+ *        the provider's test keys, so this endpoint receives the sibling deployment's deliveries
+ *        too). All four write nothing except the first. A 4xx on an unsubscribed or foreign event
+ *        would make the provider retry it for days and bury a real failure in noise.
  *   400  a bad signature or an unparseable body — `BillingRefusal("invalid-request")`. Pasted from
  *        the response body when the acceptance asks for the forged-body error.
  *   503  `not-configured`: this deployment has no credentials for the adapter it selected. That is
