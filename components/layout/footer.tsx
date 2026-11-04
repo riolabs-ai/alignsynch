@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { quizCategories } from "@/content/categories";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
-import { brandIconMark, brandMark } from "@/lib/brand-mark";
+import { brandMark } from "@/lib/brand-mark";
 import { leavesApp } from "@/lib/marketing-routes";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
@@ -125,17 +125,22 @@ export function Footer({
     leaving,
   });
   /**
-   * The product mark, resolved from the brand record (#187).
+   * The product mark, resolved from the brand record (#187), **lockup first** (#539 corrected).
    *
-   * `brandMark` is the same call `components/layout/sidebar.tsx` makes: `undefined` for
-   * `brand.logo` when the registry marks the file a `fallback`, so the template build keeps the
-   * book mark it has always drawn (`BrandGlyph`, the open book the icon set is drawn from) and
-   * gains no markup, and the real size and `src` of an exported lockup otherwise. A footer that
-   * hardcoded its own glyph was drawing "a generic quiz icon" on an AlignSynch page — the exact
-   * sentence in issue #187 — so the mark is read from the record here for the same reason the
-   * sidebar reads it.
+   * The polish cohort drew the square monogram here at a 96px box, and the owner's correction is
+   * the same one the header carries: *"resize existing full logo brand image — you replaced the
+   * logo with an icon, off brand."* A footer identifies the product, so it draws the 818×127 lockup
+   * whole. The icon is for the surfaces that need one (the tab, the PWA tile, the avatar), not for
+   * the chrome.
+   *
+   * `brandMark` is the same call `components/layout/sidebar.tsx` makes and it answers `undefined`
+   * for `brand.logo` when the registry marks the file a `fallback`, so the template build keeps the
+   * book mark it has always drawn (`BrandGlyph`, the open book the icon set is drawn from) and gains
+   * no markup. A footer that hardcoded its own glyph was drawing "a generic quiz icon" on an
+   * AlignSynch page — the exact sentence in issue #187 — so the mark is read from the record here
+   * for the same reason the sidebar reads it.
    */
-  const mark = brandIconMark(brand.mark) ?? brandMark(brand.logo);
+  const mark = brandMark(brand.logo);
 
   /**
    * The footer's news band.
@@ -183,29 +188,35 @@ export function Footer({
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-12">
             {/* Company info */}
             <div className="lg:col-span-4 space-y-6">
-              <div className="flex items-center gap-3">
+              <div className={mark ? "flex h-24 items-center gap-3" : "flex items-center gap-3"}>
                 {mark ? (
                   /**
-                   * The brand's icon, at the same factor as the header (#539 items 1 and 5).
+                   * The brand's **lockup**, whole (#539 item 1, corrected) — mark *and* wordmark.
                    *
-                   * Measured before this card: the footer drew the 818×127 lockup at 206×32, so
-                   * its monogram was ~43×32, inside the `h-8 w-auto` slot #470 left behind. The
-                   * square mark at a 96px box draws the visible monogram at 96×62 — 2.2× the
-                   * width and 1.94× the height — and the wordmark is set in type beside it
-                   * instead of shipped inside a 206px PNG. That is one change answering both
-                   * owner reports: the icon was too small, and the lockup block was too large.
+                   * Before the polish this slot drew the same 818×127 file at 206×32 (`h-8
+                   * w-auto`); the cohort replaced it with the square monogram at a 96px box, and
+                   * the owner's correction is that the chrome identifies the product, so it draws
+                   * the signature, not an icon. Sized by height with `w-auto` so the 818:127 ratio
+                   * is the browser's: no square box, no crop, nothing #470 fixed is reintroduced.
+                   *
+                   * **The row does not move.** `h-24` on the row is the height the 96px mark gave
+                   * this row before this card, so the footer's brand block keeps its exact
+                   * rhythm — brand row 96px, gap 24px, blurb 63.4px at 1440 — and only the thing
+                   * inside the row changes. The 48px lockup (309×48 at 1440) is as tall as the
+                   * 336px `lg:col-span-4` column allows: 336 × 127/818 = 52.2px is the ceiling,
+                   * and the blurb it sits above is 320px wide, so the image stays inside the
+                   * paragraph's own block instead of becoming the block.
                    *
                    * `alt={brand.name}` because the image *is* the brand's name for a screen
-                   * reader, and the type beside it is `aria-hidden` so the name is announced
-                   * once. The whole file is placed — no window, no crop, nothing `#470` fixed is
-                   * reintroduced.
+                   * reader. There is no typed wordmark beside it any more — the lockup carries
+                   * one, and a second would set the name twice.
                    */
                   <Image
                     src={mark.src}
                     alt={brand.name}
                     width={mark.width}
                     height={mark.height}
-                    className="h-24 w-24 shrink-0"
+                    className="h-12 w-auto shrink-0"
                   />
                 ) : (
                   <div className="bg-action p-2 rounded-lg">
@@ -216,11 +227,7 @@ export function Footer({
                   placeholder logo resolves to no mark, and its footer has always been the
                   glyph plus the word. A fallback mark and a typed wordmark together would set
                   the brand's name twice. */}
-                {mark ? (
-                  <span aria-hidden="true" className="text-xl font-bold tracking-tight text-action">
-                    {brand.name}
-                  </span>
-                ) : (
+                {mark ? null : (
                   <span className="text-2xl font-bold text-action">{copy.heading}</span>
                 )}
               </div>

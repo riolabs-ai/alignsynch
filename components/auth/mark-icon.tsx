@@ -93,17 +93,38 @@ export function MarkGlyph({
 }
 
 /**
- * The box a mark needs inside the 48 px tile these cards draw it in.
+ * The box a mark needs inside the tile these cards draw it in — the mark's own size.
  *
  * A glyph's paths reach the edge of the box they are given; a mark *file* is ink floating in a
  * transparent canvas at `APP_GLYPH_FRACTION` (62 %), so the same box shows a smaller thing. `h-6`
  * (24 px) was right for a lucide glyph and puts the AS monogram at ≈15 px of ink, where it read as
- * a generic avatar smudge. The box the tile gives a mark is the tile itself — `h-12` (48 px) × 0.62
- * ≈ 30 px of ink, measured crisp by compositing candidates into the real tile. A glyph keeps
- * `h-6`: QuizHub's cards are byte-identical to what they were.
+ * a generic avatar smudge. The box the tile gives a mark is the tile itself — `h-10` (40 px) × 0.62
+ * ≈ 25 px of ink, measured crisp by compositing candidates into the 64 px tile `markTileClass`
+ * gives it. The card is ~400 px wide, so the mark is a seal beside the heading rather than a hero
+ * image (owner, 2026-11-04: the 96 px tile the register screen drew was oversized).
+ *
+ * `glyphBox` is the caller's box for a glyph id, and it defaults to `h-6 w-6` — the size the 48 px
+ * tiles have always given a glyph — so the five auth cards render the class strings they always
+ * have on QuizHub. A surface that draws its glyph larger (the register panel's 48 px, the login
+ * panel's 40) passes its own and keeps it.
  */
-export function tileMarkClass(id: AuthMarkId): string {
-  return id === "brand-mark" ? "h-12 w-12" : "h-6 w-6";
+export function markBoxClass(id: AuthMarkId, glyphBox = "h-6 w-6"): string {
+  return id === "brand-mark" ? "h-10 w-10" : glyphBox;
+}
+
+/**
+ * The tile the mark is centred in, per kind — the box `markBoxClass` is measured against.
+ *
+ * A glyph and a mark file need different tiles, and the owner's correction on `/register` is that
+ * the mark's tile had become a hero: 96 px on a card ~400 px wide, with the mark itself at 48. The
+ * fix is one size for the whole auth family — a 64 px tile holding the 40 px mark, so the mark
+ * reads as a seal beside the heading rather than as the page's subject — and `brand-mark` is the
+ * only id that changes. A glyph keeps the literal `glyphTile` its surface passes: QuizHub's five
+ * cards render the class strings they always have, byte for byte, which is why this takes the
+ * caller's box instead of owning a second table.
+ */
+export function markTileClass(id: AuthMarkId, glyphTile: string): string {
+  return id === "brand-mark" ? "h-16 w-16" : glyphTile;
 }
 
 /**

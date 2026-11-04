@@ -16,7 +16,13 @@ import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import type { AuthMarkSet } from "@/lib/auth/marks";
 import { loginPathFor } from "@/lib/auth/paths";
-import { markGroundClass, MARK_ICONS, MarkGlyph } from "@/components/auth/mark-icon";
+import {
+  markBoxClass,
+  markGroundClass,
+  MARK_ICONS,
+  markTileClass,
+  MarkGlyph,
+} from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -192,8 +198,14 @@ export function RegisterView({
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative mx-auto z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="text-center mb-8">
-            <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto">
-              <MarkGlyph id={marks.hero} src={markSrc} className="w-12 h-12 text-white" />
+            <div
+              className={`${markTileClass(marks.hero, "w-24 h-24")} bg-white/20 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto`}
+            >
+              <MarkGlyph
+                id={marks.hero}
+                src={markSrc}
+                className={`${markBoxClass(marks.hero, "w-12 h-12")} text-white`}
+              />
             </div>
             <h1 className="text-4xl font-bold mb-4">{copy.heading}</h1>
             <p className="text-xl text-white/90 leading-relaxed mb-8">{copy.subtitle}</p>
@@ -243,7 +255,11 @@ export function RegisterView({
             <div
               className={`mx-auto mb-4 w-16 h-16 ${markGroundClass(marks.hero)} rounded-xl flex items-center justify-center`}
             >
-              <MarkGlyph id={marks.hero} src={markSrc} className="w-8 h-8 text-white" />
+              <MarkGlyph
+                id={marks.hero}
+                src={markSrc}
+                className={`${markBoxClass(marks.hero, "w-8 h-8")} text-white`}
+              />
             </div>
             <h1 className="text-3xl font-bold  mb-2">{mobile.heading}</h1>
             <p>{mobile.body}</p>
