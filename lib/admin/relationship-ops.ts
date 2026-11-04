@@ -724,10 +724,9 @@ export async function extendTrial(
           id: string;
           status: string;
           initiator_user_id: string | null;
-        }>(
-          `SELECT id, status, initiator_user_id FROM relationship WHERE id = $1 FOR UPDATE`,
-          [request.relationshipId],
-        );
+        }>(`SELECT id, status, initiator_user_id FROM relationship WHERE id = $1 FOR UPDATE`, [
+          request.relationshipId,
+        ]);
         const rel = locked.rows[0];
         if (rel === undefined) {
           throw new OpRefused(
@@ -794,10 +793,10 @@ export async function extendTrial(
             [rel.id],
           );
           reactivated = seat.rows[0]?.present === true ? "active" : "published";
-          await sql.query("UPDATE relationship SET status = $2 WHERE id = $1 AND status = 'expired'", [
-            rel.id,
-            reactivated,
-          ]);
+          await sql.query(
+            "UPDATE relationship SET status = $2 WHERE id = $1 AND status = 'expired'",
+            [rel.id, reactivated],
+          );
         }
 
         return {

@@ -264,9 +264,10 @@ const REASON_CLAUSE: Readonly<Record<LapseReason, string>> = {
  * sentence says "the initiator" — the same fact, one noun less specific.
  */
 export function membershipSentence(membership: Membership, initiatorName?: string | null): string {
-  const who = initiatorName === undefined || initiatorName === null || initiatorName.trim() === ""
-    ? "the initiator"
-    : initiatorName.trim();
+  const who =
+    initiatorName === undefined || initiatorName === null || initiatorName.trim() === ""
+      ? "the initiator"
+      : initiatorName.trim();
 
   if (membership.state === "open") {
     return "the initiator's membership is live";
@@ -275,8 +276,7 @@ export function membershipSentence(membership: Membership, initiatorName?: strin
     return "this relationship is closed";
   }
 
-  const endedAt =
-    membership.endedAt === null ? "" : ` on ${membership.endedAt.toISOString()}`;
+  const endedAt = membership.endedAt === null ? "" : ` on ${membership.endedAt.toISOString()}`;
   const clause =
     membership.reason === null
       ? "the membership that paid for it ended"

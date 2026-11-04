@@ -35,6 +35,7 @@
  * module. `data:check` E34 walks the `"use client"` graph and would fail on a crossing.
  */
 import type { SubscriptionStatus } from "@/lib/billing/types";
+import { getPool } from "@/lib/db/client";
 import {
   LAPSE_REASONS,
   lapseReasonOf,
@@ -245,18 +246,60 @@ export async function lapseIfDue(
   }
 
   const reason: LapseReason = reading.membership.reason ?? lapseReasonOf(subscription, now);
+  /**
+   * The instant the row records is the **derived** one, not this request's clock: a trial that ran
+   * out on the 1st ended on the 1st, whatever day the member next opens the page. Storing `now`
+   * would make the row and `membershipSentence()` disagree with the read that produced them, and
+   * `membershipOf` reads `expired_at` back on the next request.
+   */
+  const endedAt = reading.membership.endedAt ?? now;
   await sql.query(
     `UPDATE relationship
         SET status = 'expired', expired_at = $2, lapse_reason = $3
       WHERE id = $1 AND status = ANY($4::text[])`,
-    [row.id, now.toISOString(), reason, LAPSABLE_STATUSES],
+    [row.id, endedAt.toISOString(), reason, LAPSABLE_STATUSES],
   );
 
   return {
     ...reading,
     status: "expired",
-    membership: { ...reading.membership, state: "lapsed", reason, endedAt: now, writable: false },
+    membership: { ...reading.membership, state: "lapsed", reason, endedAt, writable: false },
   };
+}
+
+/**
+ * Record a due lapse **on its own connection**, and let it commit.
+ *
+ * The write paths that refuse a lapsed pair do so by rolling their own transaction back — a
+ * refused claim writes nothing, which is the point of a refusal. But the *lapse itself* is not the
+ * caller's write: it is a fact the money already decided, and `#533` asks for the state to move to
+ * `expired`, not for it to move only if somebody happens to write successfully (a lapsed pair can
+ * never write successfully, so that would be never).
+ *
+ * So a refusal path calls this **after** its own `ROLLBACK`, in a transaction of its own that
+ * commits. The correction is the same `lapseIfDue`, guarded by the same derived answer and the same
+ * `status = ANY('published','active')` predicate, so a repeated refusal is a no-op and a
+ * `complete`/`void` relationship is never touched. A failure here must not turn a refusal into a
+ * 500: the caller has an answer for the person either way, so a correction that cannot be written
+ * is swallowed and the request still answers `lapsed` (the derived read is the truth; the column is
+ * the record of it).
+ */
+export async function recordLapseIfDue(
+  relationshipId: string,
+  now: Date,
+): Promise<MembershipReading | undefined> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const reading = await lapseIfDue(client, relationshipId, now);
+    await client.query("COMMIT");
+    return reading;
+  } catch {
+    await client.query("ROLLBACK").catch(() => undefined);
+    return undefined;
+  } finally {
+    client.release();
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -336,8 +379,7 @@ export async function syncRelationshipsWithSubscription(
    * as "ended tomorrow" to the party looking at it).
    */
   const periodEnd = periodEndOf(subscription);
-  const endedAt =
-    periodEnd !== null && periodEnd.getTime() < now.getTime() ? periodEnd : now;
+  const endedAt = periodEnd !== null && periodEnd.getTime() < now.getTime() ? periodEnd : now;
 
   const lapsed = await sql.query<{ id: string }>(
     `UPDATE relationship
@@ -347,7 +389,12 @@ export async function syncRelationshipsWithSubscription(
       WHERE initiator_user_id = $1
         AND status = ANY($4::text[])
       RETURNING id`,
-    [subscription.userId, endedAt.toISOString(), lapseReasonOf(subscription, now), LAPSABLE_STATUSES],
+    [
+      subscription.userId,
+      endedAt.toISOString(),
+      lapseReasonOf(subscription, now),
+      LAPSABLE_STATUSES,
+    ],
   );
   return { entitled: false, reactivated: 0, lapsed: lapsed.rows.length };
 }
@@ -413,9 +460,10 @@ export async function trialHolderOf(sql: Sql, userId: string): Promise<TrialHold
     return {
       relationshipId: row.relationship_id,
       title: row.title,
-      endsAt: row.current_period_end instanceof Date
-        ? row.current_period_end
-        : new Date(row.current_period_end),
+      endsAt:
+        row.current_period_end instanceof Date
+          ? row.current_period_end
+          : new Date(row.current_period_end),
     };
   }
 
@@ -435,9 +483,10 @@ export async function trialHolderOf(sql: Sql, userId: string): Promise<TrialHold
   return {
     relationshipId: held?.relationship_id ?? null,
     title: held?.title ?? null,
-    endsAt: row.current_period_end instanceof Date
-      ? row.current_period_end
-      : new Date(row.current_period_end),
+    endsAt:
+      row.current_period_end instanceof Date
+        ? row.current_period_end
+        : new Date(row.current_period_end),
   };
 }
 

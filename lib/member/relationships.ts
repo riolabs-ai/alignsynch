@@ -70,7 +70,12 @@ import { hashToken, mintToken } from "@/lib/flow/tokens";
 import { freeSlug } from "@/lib/member/templates";
 import type { Subscription } from "@/lib/billing/types";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
-import { lapseIfDue, trialHolderOf, type Sql } from "@/lib/relationship/enforcement";
+import {
+  lapseIfDue,
+  recordLapseIfDue,
+  trialHolderOf,
+  type Sql,
+} from "@/lib/relationship/enforcement";
 import { membershipOf, membershipSentence, type Membership } from "@/lib/relationship/membership";
 import { trialStateOf, type TrialFacts, type TrialState } from "@/lib/relationship/trial";
 import {
@@ -1219,120 +1224,131 @@ export async function republishRelationship(
   const expiresAt = inviteExpiresAt(now);
   const invite = { token: inviteToken, link: invitationLink(inviteToken), expiresAt };
 
-  const result = await act<RepublishedAudit>(
-    {
-      actorUserId: request.actorUserId,
-      action: "relationship.republish" satisfies AdminAction,
-      target: { table: "relationship", id: request.relationshipId },
-      reason: request.reason,
-      mutate: async (sql) => {
-        const locked = await sql.query<{
-          id: string;
-          status: string;
-          initiator_user_id: string | null;
-        }>(`SELECT id, status, initiator_user_id FROM relationship WHERE id = $1 FOR UPDATE`, [
-          request.relationshipId,
-        ]);
-        const rel = locked.rows[0];
-        if (rel === undefined) {
-          throw new MemberRefused(
-            "no-such-relationship",
-            `no relationship holds the id "${request.relationshipId}"`,
-          );
-        }
-        if (rel.initiator_user_id !== request.actorUserId) {
-          throw new MemberRefused(
-            "not-yours",
-            `relationship "${rel.id}" was started by another account — only its initiator may reissue the invitation`,
-          );
-        }
-        if ((rel.status as RelationshipStatus) !== "published") {
-          throw new MemberRefused(
-            "not-publishable",
-            `relationship "${rel.id}" is ${rel.status}: only a published relationship has an invitation to reissue`,
-          );
-        }
+  // `act()` rolls the transaction back on every refusal, which is right for the invitation (nothing
+  // is minted) but would also discard the `expired` correction `lapseIfDue()` made. A lapsed pair
+  // can never write successfully, so "correct it on the next write" would be never: the refusal
+  // itself records the lapse, in its own transaction, after the rollback.
+  try {
+    const result = await act<RepublishedAudit>(
+      {
+        actorUserId: request.actorUserId,
+        action: "relationship.republish" satisfies AdminAction,
+        target: { table: "relationship", id: request.relationshipId },
+        reason: request.reason,
+        mutate: async (sql) => {
+          const locked = await sql.query<{
+            id: string;
+            status: string;
+            initiator_user_id: string | null;
+          }>(`SELECT id, status, initiator_user_id FROM relationship WHERE id = $1 FOR UPDATE`, [
+            request.relationshipId,
+          ]);
+          const rel = locked.rows[0];
+          if (rel === undefined) {
+            throw new MemberRefused(
+              "no-such-relationship",
+              `no relationship holds the id "${request.relationshipId}"`,
+            );
+          }
+          if (rel.initiator_user_id !== request.actorUserId) {
+            throw new MemberRefused(
+              "not-yours",
+              `relationship "${rel.id}" was started by another account — only its initiator may reissue the invitation`,
+            );
+          }
+          // #533 phase 3 — a lapsed membership is not a broken link. Re-minting a token would hand
+          // out a link to a relationship nobody can write to, so the answer names the lapse instead
+          // of the invitation. Asked **before** the status guard: a row the last refusal already
+          // corrected to `expired` must still answer with the lapse sentence, which is the one that
+          // says what happened, rather than with "only a published relationship has an invitation".
+          const reading = await lapseIfDue(sql, rel.id, now);
+          if (reading !== undefined && reading.membership.state === "lapsed") {
+            throw new MemberRefused("lapsed", membershipSentence(reading.membership));
+          }
+          if ((rel.status as RelationshipStatus) !== "published") {
+            throw new MemberRefused(
+              "not-publishable",
+              `relationship "${rel.id}" is ${rel.status}: only a published relationship has an invitation to reissue`,
+            );
+          }
 
-        // #533 phase 3 — a lapsed membership is not a broken link. Re-minting a token would hand
-        // out a link to a relationship nobody can write to, so the answer names the lapse instead
-        // of the invitation. `lapseIfDue` writes the `expired` status in this transaction, so the
-        // refusal and the row it is explained by land together.
-        const reading = await lapseIfDue(sql, rel.id, now);
-        if (reading !== undefined && reading.membership.state === "lapsed") {
-          throw new MemberRefused("lapsed", membershipSentence(reading.membership));
-        }
-
-        const found = await sql.query<{
-          session_record_id: string;
-          expires_at: Date;
-          claimed_at: Date | null;
-          revoked_at: Date | null;
-        }>(
-          `SELECT inv.session_record_id, inv.expires_at, inv.claimed_at, inv.revoked_at
+          const found = await sql.query<{
+            session_record_id: string;
+            expires_at: Date;
+            claimed_at: Date | null;
+            revoked_at: Date | null;
+          }>(
+            `SELECT inv.session_record_id, inv.expires_at, inv.claimed_at, inv.revoked_at
              FROM session s
              JOIN session_invite inv ON inv.session_record_id = s.record_id
             WHERE s.relationship_id = $1
             ORDER BY s.round DESC
             LIMIT 1
             FOR UPDATE OF inv`,
-          [rel.id],
-        );
-        const invite = found.rows[0];
-        if (invite === undefined) {
-          throw new MemberRefused(
-            "no-invite",
-            `relationship "${rel.id}" is published and has no invitation row — that is a repair, not a re-publish`,
+            [rel.id],
           );
-        }
+          const invite = found.rows[0];
+          if (invite === undefined) {
+            throw new MemberRefused(
+              "no-invite",
+              `relationship "${rel.id}" is published and has no invitation row — that is a repair, not a re-publish`,
+            );
+          }
 
-        const view = publishViewOf({
-          status: "published",
-          invite: {
-            claimed: invite.claimed_at !== null,
-            revoked: invite.revoked_at !== null,
-            expiresAt: invite.expires_at,
-          },
-          now,
-        });
-        if (!republishable(view)) {
-          throw new MemberRefused(
-            view === "invite-live" ? "invite-live" : "not-publishable",
-            view === "invite-live"
-              ? `the invitation on "${rel.id}" is still live until ${invite.expires_at.toISOString()} — there is nothing to reissue yet`
-              : `the invitation on "${rel.id}" is ${view}: a seat somebody took is not reissued`,
-          );
-        }
+          const view = publishViewOf({
+            status: "published",
+            invite: {
+              claimed: invite.claimed_at !== null,
+              revoked: invite.revoked_at !== null,
+              expiresAt: invite.expires_at,
+            },
+            now,
+          });
+          if (!republishable(view)) {
+            throw new MemberRefused(
+              view === "invite-live" ? "invite-live" : "not-publishable",
+              view === "invite-live"
+                ? `the invitation on "${rel.id}" is still live until ${invite.expires_at.toISOString()} — there is nothing to reissue yet`
+                : `the invitation on "${rel.id}" is ${view}: a seat somebody took is not reissued`,
+            );
+          }
 
-        await sql.query(
-          `UPDATE session_invite
+          await sql.query(
+            `UPDATE session_invite
               SET token_hash = $2,
                   expires_at = $3,
                   revoked_at = NULL,
                   revoked_by = NULL
             WHERE session_record_id = $1`,
-          [invite.session_record_id, hashToken(inviteToken), expiresAt.toISOString()],
-        );
+            [invite.session_record_id, hashToken(inviteToken), expiresAt.toISOString()],
+          );
 
-        return {
-          before: {
-            sessionRecordId: invite.session_record_id,
-            expiresAt: invite.expires_at.toISOString(),
-            claimed: invite.claimed_at !== null,
-            revoked: invite.revoked_at !== null,
-            state: view,
-          },
-          after: {
-            relationshipId: rel.id,
-            inviteExpiresAt: expiresAt.toISOString(),
-            replaced: view,
-          },
-        };
+          return {
+            before: {
+              sessionRecordId: invite.session_record_id,
+              expiresAt: invite.expires_at.toISOString(),
+              claimed: invite.claimed_at !== null,
+              revoked: invite.revoked_at !== null,
+              state: view,
+            },
+            after: {
+              relationshipId: rel.id,
+              inviteExpiresAt: expiresAt.toISOString(),
+              replaced: view,
+            },
+          };
+        },
       },
-    },
-    runner,
-  );
+      runner,
+    );
 
-  return { ...result, after: { ...result.after, inviteToken, inviteLink: invite.link } };
+    return { ...result, after: { ...result.after, inviteToken, inviteLink: invite.link } };
+  } catch (error) {
+    if (error instanceof MemberRefused && error.reason === "lapsed") {
+      await recordLapseIfDue(request.relationshipId, now);
+    }
+    throw error;
+  }
 }
 
 /* ------------------------------------------------------------------ *

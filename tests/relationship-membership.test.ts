@@ -22,13 +22,20 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { MEMBERSHIP_ENTITLING_STATUSES, membershipOf, membershipSentence } from "@/lib/relationship/membership";
+import {
+  MEMBERSHIP_ENTITLING_STATUSES,
+  membershipOf,
+  membershipSentence,
+} from "@/lib/relationship/membership";
 import { TRIAL_DAYS } from "@/lib/relationship/trial";
 
 const NOW = new Date("2026-11-04T12:00:00.000Z");
 const TRIAL_ENDS = new Date("2026-11-18T09:59:05.789Z");
 
-const trial = (status: "trialing" | "active" | "past_due" | "canceled" | "incomplete", ends = TRIAL_ENDS) => ({
+const trial = (
+  status: "trialing" | "active" | "past_due" | "canceled" | "incomplete",
+  ends = TRIAL_ENDS,
+) => ({
   status,
   currentPeriodEnd: ends,
 });
@@ -36,11 +43,15 @@ const trial = (status: "trialing" | "active" | "past_due" | "canceled" | "incomp
 describe("membershipOf — the three states", () => {
   it("keeps a running trial open, at millisecond resolution either side of the boundary", () => {
     const before = new Date(TRIAL_ENDS.getTime() - 1);
-    expect(membershipOf({ status: "published", subscription: trial("trialing"), now: before })).toMatchObject({
+    expect(
+      membershipOf({ status: "published", subscription: trial("trialing"), now: before }),
+    ).toMatchObject({
       state: "open",
       writable: true,
     });
-    expect(membershipOf({ status: "published", subscription: trial("trialing"), now: TRIAL_ENDS })).toMatchObject({
+    expect(
+      membershipOf({ status: "published", subscription: trial("trialing"), now: TRIAL_ENDS }),
+    ).toMatchObject({
       state: "lapsed",
       writable: false,
       reason: "trial-ended",
@@ -73,7 +84,9 @@ describe("membershipOf — the three states", () => {
   });
 
   it("keeps past_due entitled, because dunning is a grace period", () => {
-    expect(membershipOf({ status: "active", subscription: trial("past_due"), now: NOW })).toMatchObject({
+    expect(
+      membershipOf({ status: "active", subscription: trial("past_due"), now: NOW }),
+    ).toMatchObject({
       state: "open",
       writable: true,
     });
@@ -151,7 +164,9 @@ describe("the sentence both seats read", () => {
 
   it("says nothing about a lapse for the two other states", () => {
     expect(
-      membershipSentence(membershipOf({ status: "active", subscription: trial("active"), now: NOW })),
+      membershipSentence(
+        membershipOf({ status: "active", subscription: trial("active"), now: NOW }),
+      ),
     ).toBe("the initiator's membership is live");
     expect(membershipSentence(membershipOf({ status: "void", subscription: null, now: NOW }))).toBe(
       "this relationship is closed",
@@ -161,12 +176,12 @@ describe("the sentence both seats read", () => {
 
 describe("the vocabulary agrees with the modules it mirrors", () => {
   it("carries the same entitling statuses as lib/billing/entitlements.ts", () => {
-    const source = readFileSync(
-      new URL("../lib/billing/entitlements.ts", import.meta.url),
-      "utf8",
-    );
+    const source = readFileSync(new URL("../lib/billing/entitlements.ts", import.meta.url), "utf8");
     const match = /PAID_STATUSES[^=]*=\s*new Set\(\[([^\]]+)\]\)/.exec(source);
-    expect(match, "entitlements.ts no longer declares PAID_STATUSES as a literal set").not.toBeNull();
+    expect(
+      match,
+      "entitlements.ts no longer declares PAID_STATUSES as a literal set",
+    ).not.toBeNull();
     const listed = (match?.[1] ?? "")
       .split(",")
       .map((word) => word.trim().replace(/^"|"$/g, ""))
@@ -179,7 +194,10 @@ describe("the vocabulary agrees with the modules it mirrors", () => {
   });
 
   it("reads no clock of its own", () => {
-    const source = readFileSync(new URL("../lib/relationship/membership.ts", import.meta.url), "utf8");
+    const source = readFileSync(
+      new URL("../lib/relationship/membership.ts", import.meta.url),
+      "utf8",
+    );
     expect(source).not.toMatch(/new Date\(\s*\)/);
     expect(source).not.toMatch(/Date\.now\(/);
   });

@@ -113,6 +113,7 @@ import {
   lapseIfDue,
   readMembershipForRelationship,
   readMembershipForSession,
+  recordLapseIfDue,
   type MembershipReading,
   type Sql,
 } from "@/lib/relationship/enforcement";
@@ -712,13 +713,15 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
     // #533 phase 3 — the membership that paid for this invitation, asked **before** the seat is
     // bound. A relationship whose trial or subscription lapsed is read-only for both parties, and
     // the invitation is the first thing that has to stop working: the link is the only way a
-    // stranger can reach the pair. `lapseIfDue` also corrects the stored status inside this
-    // transaction, so the attempt that is refused is the write that records the lapse.
+    // stranger can reach the pair. The refusal is a `ROLLBACK` — a refused claim writes nothing —
+    // so `recordLapseIfDue()` then writes the `expired` status in its own commit; the attempt is
+    // what records the lapse, and the row is corrected even though the claim was refused.
     const { relationshipId } = await sessionRelationshipOf(client, invite.session_record_id);
     if (relationshipId !== null) {
       const reading = await lapseIfDue(client, relationshipId, now);
       if (reading !== undefined && reading.membership.state === "lapsed") {
         await client.query("ROLLBACK");
+        await recordLapseIfDue(relationshipId, now);
         return {
           ok: false,
           code: "lapsed",
@@ -1137,11 +1140,17 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
     }
     // #533 phase 3 — a lapsed membership freezes both sheets exactly as a void does, and it is
     // asked here, under the same session lock, because a party may have opened the form before
-    // the money stopped. `lapseIfDue` writes the `expired` status in this transaction, so the
-    // refusal and the row that explains it are the same commit.
-    const membership = await membershipForInstance(client, input.instanceRecordId, input.now ?? new Date());
+    // the money stopped. The refusal rolls this transaction back, so the lapse itself is recorded
+    // afterwards by `recordLapseIfDue()` in its own commit: the row that explains the refusal is
+    // not lost with the refused write.
+    const membership = await membershipForInstance(
+      client,
+      input.instanceRecordId,
+      input.now ?? new Date(),
+    );
     if (membership !== undefined && membership.membership.state === "lapsed") {
       await client.query("ROLLBACK");
+      await recordLapseIfDue(membership.relationshipId, input.now ?? new Date());
       return {
         ok: false,
         code: "lapsed",
@@ -1519,10 +1528,12 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
     }
     // #533 phase 3 — acceptance is a write, so a lapsed membership refuses it like a void does.
     // Asked after the void and before the seat, so a session an operator ended answers `voided`
-    // even when the money also stopped: the operator's act is the more specific fact.
+    // even when the money also stopped: the operator's act is the more specific fact. The refusal
+    // rolls back; the lapse is then recorded in its own commit.
     const membership = await membershipForInstance(client, input.instanceRecordId, now);
     if (membership !== undefined && membership.membership.state === "lapsed") {
       await client.query("ROLLBACK");
+      await recordLapseIfDue(membership.relationshipId, now);
       return {
         ok: false,
         code: "lapsed",
@@ -2486,11 +2497,7 @@ export async function previewInvite(
       ? null
       : await readMembershipForRelationship(poolSql, row.relationship_id, now);
   const lapsed = membership?.membership.state === "lapsed" && derived !== "claimed";
-  const state: InviteState = lapsed
-    ? "lapsed"
-    : derived === "unclaimed"
-      ? "claimable"
-      : derived;
+  const state: InviteState = lapsed ? "lapsed" : derived === "unclaimed" ? "claimable" : derived;
   const viewerRole =
     (await viewerRoleOf(row.session_record_id, options.viewerTokens ?? [])) ??
     (await roleForUser(row.session_record_id, options.viewerUserId));
