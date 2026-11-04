@@ -130,10 +130,20 @@ export interface WebhookRequest {
  * `duplicate` is the whole point of `billing_event`: a provider retries, and the retry must apply
  * nothing. It is a distinct outcome from `ignored` (an event this build does not act on), because
  * "we already did this" and "we do not handle that type" are different facts in a log.
+ *
+ * `foreign` is the third, and it exists because both hosts share one provider sandbox: the event
+ * carried no host claim, or one that names the other deployment. It is acknowledged (200) and
+ * applied to nothing — no subscription row and no `billing_event` row — and the `detail` sentence
+ * names the claim beside this deployment's own value. A caller must not treat it as a failure: the
+ * delivery was handled correctly, which is precisely by not writing.
  */
 export type WebhookOutcome =
   | { readonly applied: true; readonly kind: string; readonly subscription: Subscription }
-  | { readonly applied: false; readonly kind: "duplicate" | "ignored"; readonly detail: string };
+  | {
+      readonly applied: false;
+      readonly kind: "duplicate" | "ignored" | "foreign";
+      readonly detail: string;
+    };
 
 /** What the server allows an account — computed from its plan, never stored as a column. */
 export interface Entitlement {
