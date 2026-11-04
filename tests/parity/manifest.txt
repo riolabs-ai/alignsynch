@@ -12,12 +12,12 @@
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
 /news | quizhub | 522d03d637bbc9324528256dc4097d9aff96bf346ea33923fae764d197abdeb1
-/news | alignsynch | 3f3e555e06f48f1a045c5daaab1d4fa6efe1aff299e934e23d89dd63bb4c4d40
+/news | alignsynch | 7cdc2fb7fe0799de5b082932cb1f6e35093f8f8e72f3137fa142343668320ac3
 /news/[slug] | quizhub | 8eaaeb016cb388dc0c72c135de6ed86e868b0d7bfa0836bdd704d989dc34b1ac
-/news/[slug] | alignsynch | 0c75fb9c803d3d775e1ffbb1d26e617afda85834b0939baaaf548453531b221e
+/news/[slug] | alignsynch | 5e724df6c24a0609f5bde9281b51ea4c1e0cc40ea5515e505bef99099180eee0
 /quiz/[id] | quizhub | 8f7686f6bc18f288560b7d3211e2e36a19a4f606e98085dfad52d3b60a7e1254
 /quiz/[id] | alignsynch | 5f540b18f7e8b10a95d5a597cdbcad605987e5f78e4d8b67b5d90ce4c78a71ac
 /assessment/avery-rowan | quizhub | 64c55ec5d9b08426c6210d87a9f0e5a06906aa7c3e7b5349b79762de7f0de3f8
-/assessment/avery-rowan | alignsynch | c7d4d2843030bffcce929fbc1c1616058f7dd004c013dd3affeacfbce8e3f25d
+/assessment/avery-rowan | alignsynch | 96d956e6ccf9079832b77b9dcb59a6a660f94e54450f74aabc7bdeab0344466e
 /profile/[username] | quizhub | 52a4b39f05d4b7d922b5188814503ab4bc0a6fd4440945bc1cc8db46e492e497
-/profile/[username] | alignsynch | 92b6e67064c3b707a5a263257ad5ad7503057e06f871646683bbf407941106d1
+/profile/[username] | alignsynch | fd5375b32f938bfd81ed6551ab735662d1ca84542405b6b20022a9310ab1d0dd
