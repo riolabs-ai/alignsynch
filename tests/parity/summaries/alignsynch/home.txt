@@ -2,7 +2,7 @@ route  /
 brand  alignsynch
 
 headings (42)
-  h1  "Turn one assessment into a practice you can charge for."
+  h1  "Know what your team will not say out loud."
   h2  "Create once. Run it with every client."
   h3  "Create"
   h3  "Invite both sides"
