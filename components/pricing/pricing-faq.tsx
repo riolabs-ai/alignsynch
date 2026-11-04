@@ -129,7 +129,7 @@ export function PricingFaq({ copy }: { copy: PageCopySection }) {
 
   return (
     <section className="py-20 bg-slate-50 dark:bg-slate-900/50">
-      <div className="container px-4 mx-auto">
+      <div className="marketing-container">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">{copy.heading}</h2>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">

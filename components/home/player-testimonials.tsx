@@ -85,7 +85,7 @@ export function PlayerTestimonials({ copy }: { copy: PageCopySection }) {
 
   return (
     <section className="py-10 xl:py-16  bg-muted dark:bg-slate-900">
-      <div className="container mx-auto px-4">
+      <div className="marketing-container">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-4">
             {copy.heading}

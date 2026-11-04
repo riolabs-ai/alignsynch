@@ -493,157 +493,188 @@ function AlignSynchMenu({
   viewer,
 }: NavRenderProps & { viewer: NavViewer }) {
   const nav = sectionOf(copy, "nav-alignsynch");
+  /**
+   * Two groups, admin first (#539 item 10).
+   *
+   * The operator's five rows used to sit *after* the member's own links, so an admin opened a
+   * rail whose first six rows were product navigation and whose real job — the console — was
+   * below the fold on a laptop. The fix is the order the owner asked for, stated as two labelled
+   * groups rather than as a re-sort: **Administration** (the console's rows, drawn only for a
+   * viewer carrying `admin-console`) and then **Workspace** (the member's own destinations).
+   *
+   * Nothing is added or removed: the same eight rows in a different order, plus the two group
+   * labels — which resolve from `data/pages/shell.ts` like every other word here (E23 holds this
+   * file at zero literals). The labels are `hidden lg:block` so the 64px icon rail between `md`
+   * and `lg` keeps its 40px squares and no 15-character heading is asked to fit in it; the
+   * drawer (`labelled`) and the 250px rail show them.
+   */
+  const admin = sees(viewer, "admin-console");
   return (
     <>
-      <NavRow
-        href="/dashboard"
-        icon={<Gauge className="size-5" />}
-        label={itemLabel(nav, "dashboard")}
-        active={isActive(pathname, "/dashboard")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/dashboard/help"
-        icon={<Workflow className="size-5" />}
-        label={itemLabel(nav, "how-it-works")}
-        active={isActive(pathname, "/dashboard/help")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/assessment/instances"
-        icon={<HeartHandshake className="size-5" />}
-        label={itemLabel(nav, "my-relationships")}
-        active={isActive(pathname, "/assessment/instances")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/dashboard/library"
-        icon={<Library className="size-5" />}
-        label={itemLabel(nav, "template-library")}
-        active={isActive(pathname, "/dashboard/library")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      {/*
-        Templates is the catalogue a member starts from, and it is `/assessment/templates` now.
-        It used to be the front page's `#templates` band — the one marketing anchor the console
-        still carried — which is exactly the departure #542 removed: a signed-in member sent out
-        to the public site to look at the thing they were about to use. The row's label is
-        unchanged; the destination is a page this build serves. `How it works` moved the same way,
-        to `/dashboard/help`, so no rail row leaves the workspace.
-      */}
-      <NavRow
-        href="/assessment/templates"
-        icon={<LayoutTemplate className="size-5" />}
-        label={itemLabel(nav, "templates")}
-        active={isActive(pathname, "/assessment/templates")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/dashboard/support"
-        icon={<LifeBuoy className="size-5" />}
-        label={itemLabel(nav, "support")}
-        active={isActive(pathname, "/dashboard/support")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-        tourAnchor="help"
-      />
-      {/*
-        The console's Gap Analysis row, behind the `admin-console` capability rather than always
-        drawn (the same rule the quiz rows follow). `/admin/gaps` answers a member with the 404 a
-        URL that never existed returns (`lib/auth/require-role.ts`), so a row every viewer could
-        see would be a row that 404s for most of them — "an entry that is only visually gone is
-        still in the tab order and still announced" (this file's own note on hidden rows).
+      {admin && (
+        <NavGroup label={itemLabel(nav, "group-admin")} labelled={labelled}>
+          <NavRow
+            href="/admin/gaps"
+            icon={<BarChart3 className="size-5" />}
+            label={itemLabel(nav, "console-gaps")}
+            active={isActive(pathname, "/admin/gaps")}
+            collapsed={collapsed}
+            labelled={labelled}
+            onNavigate={onNavigate}
+          />
+          <NavRow
+            href="/admin/instances"
+            icon={<ShieldCheck className="size-5" />}
+            label={itemLabel(nav, "admin-instances")}
+            active={isActive(pathname, "/admin/instances")}
+            collapsed={collapsed}
+            labelled={labelled}
+            onNavigate={onNavigate}
+          />
+          <NavRow
+            href="/admin/audit"
+            icon={<ScrollText className="size-5" />}
+            label={itemLabel(nav, "admin-audit")}
+            active={isActive(pathname, "/admin/audit")}
+            collapsed={collapsed}
+            labelled={labelled}
+            onNavigate={onNavigate}
+          />
+          <NavRow
+            href="/admin/billing"
+            icon={<CreditCard className="size-5" />}
+            label={itemLabel(nav, "admin-billing")}
+            active={isActive(pathname, "/admin/billing")}
+            collapsed={collapsed}
+            labelled={labelled}
+            onNavigate={onNavigate}
+          />
+          <NavRow
+            href="/admin/broadcast"
+            icon={<Megaphone className="size-5" />}
+            label={itemLabel(nav, "admin-broadcast")}
+            active={isActive(pathname, "/admin/broadcast")}
+            collapsed={collapsed}
+            labelled={labelled}
+            onNavigate={onNavigate}
+          />
+        </NavGroup>
+      )}
 
-        `navViewer()` grants no capability today, so this row renders for nobody yet: the
-        role → capability mapping is one function (`lib/nav.ts::navViewer`), and until it reads
-        `user_profile.role` an operator reaches the screen by URL, exactly as #156 recorded for
-        every gated surface. The row exists so the mapping is a capability, not a second menu.
-      */}
-      {sees(viewer, "admin-console") && (
+      <NavGroup label={itemLabel(nav, "group-app")} labelled={labelled}>
         <NavRow
-          href="/admin/gaps"
-          icon={<BarChart3 className="size-5" />}
-          label={itemLabel(nav, "console-gaps")}
-          active={isActive(pathname, "/admin/gaps")}
+          href="/dashboard"
+          icon={<Gauge className="size-5" />}
+          label={itemLabel(nav, "dashboard")}
+          active={isActive(pathname, "/dashboard")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
         />
-      )}
-      {/*
-        The console's Relationships registry (card 3/5, `/admin/instances`), behind the same
-        `admin-console` capability and for the same reason: the route refuses a member with the 404
-        a URL that never existed returns, so a row every viewer could see would be a row that 404s
-        for most of them. `navViewer(role)` in `lib/nav.ts` is what grants the capability — to an
-        `admin` session and to nobody else — and `lib/auth/require-role.ts` re-decides it from the
-        same request on the page itself.
-      */}
-      {sees(viewer, "admin-console") && (
+        {/*
+          How It Works and Support are pages this build serves (#542): `/dashboard/help` and
+          `/dashboard/support`. The rail used to send a signed-in member to `/how-it-works` and
+          `/support` — the marketing site — to read the product they had already bought, and a
+          departure from the shell is not a destination. `components/tour/replay-tour.tsx` lives
+          on the help page, so the tour is replayable from inside the app.
+        */}
         <NavRow
-          href="/admin/instances"
-          icon={<ShieldCheck className="size-5" />}
-          label={itemLabel(nav, "admin-instances")}
-          active={isActive(pathname, "/admin/instances")}
+          href="/dashboard/help"
+          icon={<Workflow className="size-5" />}
+          label={itemLabel(nav, "how-it-works")}
+          active={isActive(pathname, "/dashboard/help")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
         />
-      )}
-      {/* #503 — the audit log, beside the registry it records. Same capability, same reason: the
-          route refuses a member with the 404 a URL that never existed returns. */}
-      {sees(viewer, "admin-console") && (
         <NavRow
-          href="/admin/audit"
-          icon={<ScrollText className="size-5" />}
-          label={itemLabel(nav, "admin-audit")}
-          active={isActive(pathname, "/admin/audit")}
+          href="/assessment/instances"
+          icon={<HeartHandshake className="size-5" />}
+          label={itemLabel(nav, "my-relationships")}
+          active={isActive(pathname, "/assessment/instances")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
         />
-      )}
-      {/* #505 — billing control, beside the audit log it writes into. Same capability and the same
-          reason: the route refuses a member with the 404 a URL that never existed returns, and a
-          `support` session gets the same 404 — the screen is `admin`-only, while its one action is
-          `owner`-floored. */}
-      {sees(viewer, "admin-console") && (
+        {/*
+          Library is the member's own shelf — what they saved and own — and it is
+          `/dashboard/library` since #542. It used to be the public catalogue, which is the same
+          departure as the two rows above: a catalogue is not a library when the reader is signed
+          in and the page cannot know what they own.
+        */}
         <NavRow
-          href="/admin/billing"
-          icon={<CreditCard className="size-5" />}
-          label={itemLabel(nav, "admin-billing")}
-          active={isActive(pathname, "/admin/billing")}
+          href="/dashboard/library"
+          icon={<Library className="size-5" />}
+          label={itemLabel(nav, "template-library")}
+          active={isActive(pathname, "/dashboard/library")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
         />
-      )}
-      {/* #507 — the broadcast, the epic's last console row. `admin`-only for the same reason and by
-          the same mechanism: the page's `requireAdmin()` answers a member (and a `support` session)
-          with the 404 an unknown URL gets, so a row every viewer could see would be a row that 404s
-          for most of them. */}
-      {sees(viewer, "admin-console") && (
+        {/*
+          Templates is the catalogue a member starts from, and it is `/assessment/templates` — the
+          page this build serves. #544 made `/templates` a real public catalogue, and the rail
+          briefly pointed there; a workspace row into the marketing site is the same departure
+          #542 removed, so the row stays in-app. The public page is still reachable from the
+          public header, which is where a non-user belongs.
+
+          It sits in Workspace, not Administration: it is a member-facing catalogue, and
+          #539 item 10's split is admin functions first, then the reader's own links.
+        */}
         <NavRow
-          href="/admin/broadcast"
-          icon={<Megaphone className="size-5" />}
-          label={itemLabel(nav, "admin-broadcast")}
-          active={isActive(pathname, "/admin/broadcast")}
+          href="/assessment/templates"
+          icon={<LayoutTemplate className="size-5" />}
+          label={itemLabel(nav, "templates")}
+          active={isActive(pathname, "/assessment/templates")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
         />
-      )}
+        <NavRow
+          href="/dashboard/support"
+          icon={<LifeBuoy className="size-5" />}
+          label={itemLabel(nav, "support")}
+          active={isActive(pathname, "/dashboard/support")}
+          collapsed={collapsed}
+          labelled={labelled}
+          onNavigate={onNavigate}
+          tourAnchor="help"
+        />
+      </NavGroup>
     </>
+  );
+}
+
+/**
+ * One labelled group of rail rows (#539 item 10) — a heading and its rows, nothing else.
+ *
+ * The heading is a label for the group, not a destination: no anchor, no focus stop, and the
+ * `lg`-only visibility is what keeps the icon rail a column of icons. `aria-hidden` would hide
+ * the name from the one reader who needs it (a screen reader in the drawer), so it stays in the
+ * tree at every width and is only visually collapsed between `md` and `lg` — `display: none`
+ * takes it out of the accessibility tree there, which is correct for a rail that is icon-only.
+ */
+function NavGroup({
+  children,
+  label,
+  labelled,
+}: {
+  children: React.ReactNode;
+  label: string;
+  labelled: boolean;
+}) {
+  return (
+    <div className="grid gap-1" data-nav-group={label}>
+      <p
+        className={cn(
+          "px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+          labelled ? "block" : "hidden lg:block",
+        )}
+      >
+        {label}
+      </p>
+      {children}
+    </div>
   );
 }
 
@@ -733,9 +764,12 @@ const PUBLIC_ROW_CLASS =
  * The alignment brand's public menu: the four front-page destinations the sidebar's own
  * `nav-alignsynch` section names, plus `/pricing` and the public help centre.
  *
- * Templates and How it works are the front page's own bands (`/#templates`, `/#questions`), the
- * same anchors the sidebar and the footer already point at — a public route for either does not
- * exist yet, and a link to a route that does not exist is the defect this menu removes.
+ * **Templates is `/templates`, not `/#templates`.** The front page's `#templates` band is still
+ * where a reader lands from in-page links, but the header row is a product destination now: a
+ * menu row that scrolls the marketing page you are already on to a section is furniture, and the
+ * owner asked for a catalogue. `How it works` is still the front page's `#questions` band,
+ * because no public route for it exists — a link to a route that does not exist is the defect
+ * this menu removes.
  *
  * **The last row is `/help`, not `/support`.** The Help/Support split put the answers in public
  * (`/help`) and the contact form behind the app's session (`/support`), so a menu drawn on
@@ -750,7 +784,7 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/">
         {itemLabel(nav, "home")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/#templates">
+      <Link className={PUBLIC_ROW_CLASS} href="/templates">
         {itemLabel(nav, "templates")}
       </Link>
       <Link className={PUBLIC_ROW_CLASS} href="/#questions">
@@ -827,12 +861,23 @@ export function PublicAccountSlot({
 
   if (account === null) {
     return (
-      <div className="flex items-center gap-2">
-        <Link className={PUBLIC_ROW_CLASS} href="/login">
+      /**
+       * Sign in / Sign up, with a real gap between them (#539 item 5).
+       *
+       * `gap-2` was 8px between a text link and a filled button — measured in a 1440 browser,
+       * the two read as one control with a label. `gap-4` is 16px, the same step the shell's
+       * account row uses between its chips. `whitespace-nowrap` and `shrink-0` are the second
+       * half of the fix: at 390 the row used to compress both labels until "Sign In" wrapped
+       * to two lines inside a 24px-high link, which is what made the pair look crowded at the
+       * narrow end. Neither word may break, and the pair may not shrink — the header's own
+       * mark is what gives way (`min-w-0` on the left group).
+       */
+      <div className="flex shrink-0 items-center gap-4">
+        <Link className={cn(PUBLIC_ROW_CLASS, "whitespace-nowrap")} href="/login">
           {itemLabel(accountCopy, "signed-out")}
         </Link>
         <Link
-          className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          className="inline-flex items-center whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
           href="/register"
         >
           {itemLabel(accountCopy, "sign-up")}

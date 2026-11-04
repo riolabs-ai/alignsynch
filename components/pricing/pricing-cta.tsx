@@ -21,7 +21,7 @@ const PERKS = ["perk-free", "perk-billing"] as const;
 export function PricingCta({ copy }: { copy: PageCopySection }) {
   return (
     <section className="py-20">
-      <div className="container px-4 mx-auto">
+      <div className="marketing-container">
         <div className="max-w-4xl mx-auto bg-action rounded-2xl overflow-hidden shadow-xl">
           <div className="grid md:grid-cols-2">
             <div className="p-8 md:p-12">

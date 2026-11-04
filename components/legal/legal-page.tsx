@@ -49,7 +49,7 @@ export function LegalPage({ copy }: { copy: PageCopy }) {
       : undefined;
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-16">
+    <div className="marketing-container max-w-3xl py-16">
       <header className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           {copy.heading}

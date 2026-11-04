@@ -105,12 +105,7 @@ describe("the shell's menus", () => {
       "/dashboard/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
-      "/dashboard",
-      "/dashboard/help",
-      "/assessment/instances",
-      "/dashboard/library",
-      "/assessment/templates",
-      "/dashboard/support",
+      // #539 item 10: the operator's group comes first, then the member's own rows.
       "/admin/gaps",
       "/admin/instances",
       // #503 — the audit log, the operator's third row.
@@ -119,6 +114,12 @@ describe("the shell's menus", () => {
       "/admin/billing",
       // #507 — the broadcast, the console's last row.
       "/admin/broadcast",
+      "/dashboard",
+      "/dashboard/help",
+      "/assessment/instances",
+      "/dashboard/library",
+      "/assessment/templates",
+      "/dashboard/support",
     ]);
   });
 

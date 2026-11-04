@@ -375,6 +375,7 @@ describe("the real tree", () => {
       "/pricing",
       "/privacy",
       "/support/articles/[slug]",
+      "/templates",
       "/terms",
       "/welcome",
     ]);

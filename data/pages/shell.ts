@@ -168,7 +168,8 @@ export function shellCopy(brand: Brand): PageCopy {
        *                                             Postgres; not the browser-local `/v1/` prototype
        *   Library        `/assessment/templates`  the template catalogue: built-ins plus this
        *                                             account's
-       *   Templates      the `#templates` band of `/` — the four records' own heading
+       *   Templates      `/templates`              the public Relationship Templates catalogue:
+       *                                             every type the shop will sell, by realm
        *   Pricing        `/pricing`               the public price page (the marketing header's
        *                                             fourth row)
        *   Support        `/support`               the shell's existing support route,
@@ -261,6 +262,15 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "admin-billing", label: "Billing" },
           // #507 — the broadcast: a one-off notice to the news list.
           { id: "admin-broadcast", label: "Broadcast" },
+          /**
+           * The two rail group labels (#539 item 10). The rail draws the operator's rows first
+           * under `group-admin` and the member's destinations under `group-app`, so "admin
+           * functions first, then your own app links" is a structure rather than a sort order
+           * that the next person can undo by adding a row. The words live here with every other
+           * label: a heading typed in `nav-menus.tsx` would be a literal E23 cannot see.
+           */
+          { id: "group-admin", label: "Administration" },
+          { id: "group-app", label: "Workspace" },
           { id: "quiz-tools", label: "Quiz tools" },
         ],
       },

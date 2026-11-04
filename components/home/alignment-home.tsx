@@ -1,13 +1,11 @@
 // template-ancestor: components/ui/card.tsx   (variation: full-bleed marketing bands — a tinted hero over a two-up proof card, then hairline-separated bands on alternating ground — over the alignment brand's own record, no quiz shelves and no shadcn Card, because every band's words arrive pre-joined from one model)
 
-import { TemplateToggle, type TemplateView } from "@/components/home/alignment-templates";
+import { TemplateShelf } from "@/components/home/template-shelf";
 import type {
   AlignmentAspectScore,
   AlignmentCard,
-  AlignmentCatalogueType,
   AlignmentHomeModel,
   AlignmentTemplate,
-  AlignmentTemplateTab,
   AlignmentWorkedExample,
 } from "@/lib/alignment-home";
 import { cn } from "@/lib/utils";
@@ -42,9 +40,11 @@ import type { ReactNode } from "react";
  *
  * The six anchor ids on the bands (`practice`, `questions`, `templates`, `families`, `seats`,
  * `boundary`) are the one thing this file does name, because an anchor target is markup rather
- * than copy (E23's `TECHNICAL_ATTRIBUTES`): the shell's AlignSynch menu links to `/#templates`
- * and `/#questions` (issue #156), and `tests/nav-brand.test.ts` holds every `/#…` href to an `id`
- * this page emits, so a band cannot be renamed out from under a link.
+ * than copy (E23's `TECHNICAL_ATTRIBUTES`): the footer's AlignSynch column links to `/#questions`
+ * (issue #156), and `tests/nav-brand.test.ts` holds every `/#…` href to an `id`
+ * this page emits, so a band cannot be renamed out from under a link. The `Templates` row itself
+ * no longer aims at the `#templates` band — it names the public catalogue page, `/templates` —
+ * but the band keeps its id, because that is the link inside this page.
  *
  * The order is the argument. The page leads with the practice — the cycle of Create, Invite,
  * Run — because that is what a practitioner buys; the two questions, the templates and the
@@ -227,7 +227,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         belongs to the token layer (`app/globals.css`) rather than to this file.
       */}
       <section className="home-hero-ground border-b border-border">
-        <div className="mx-auto w-full max-w-6xl px-6 py-14 md:py-16 lg:py-20">
+        <div className="marketing-container py-14 md:py-16 lg:py-20">
           {/* Vertically centred against the card, not top-aligned: the proof is the taller
               column, and a text stack pinned to its top leaves a dead band of ground under the
               fineprint that reads as a page still being filled in. */}
@@ -291,7 +291,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-background py-16 md:py-20"
         id="practice"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {model.practice.eyebrow && <Eyebrow>{model.practice.eyebrow}</Eyebrow>}
           {model.practice.heading && <BandHeading>{model.practice.heading}</BandHeading>}
           {model.practice.body && <BandBody>{model.practice.body}</BandBody>}
@@ -308,7 +308,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-muted py-16 md:py-20"
         id="questions"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {model.questions.eyebrow && <Eyebrow>{model.questions.eyebrow}</Eyebrow>}
           {model.questions.heading && <BandHeading>{model.questions.heading}</BandHeading>}
           {model.questions.body && <BandBody>{model.questions.body}</BandBody>}
@@ -362,16 +362,16 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         </div>
       </section>
 
-      {/* The `#templates` band: "Templates" in the shell's nav points here. */}
+      {/* The `#templates` band: six cards and one View-all, to the public catalogue page. */}
       <section
         className="scroll-mt-24 border-b border-border bg-background py-16 md:py-24"
         id="templates"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {model.templates.eyebrow && <Eyebrow>{model.templates.eyebrow}</Eyebrow>}
           {model.templates.heading && <BandHeading>{model.templates.heading}</BandHeading>}
           {model.templates.body && <BandBody>{model.templates.body}</BandBody>}
-          <TemplateToggle views={templateViews(model)} />
+          <TemplateShelf shelf={model.templates} />
         </div>
       </section>
 
@@ -384,7 +384,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-muted/70 py-16 md:py-20"
         id="families"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {/*
             Two columns, not a three-across grid with an empty third slot: the realm ledger on the
             left and the two families it is made of on the right. The counts are the fixture's own
@@ -461,7 +461,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         className="scroll-mt-24 border-b border-border bg-background py-14 md:py-20"
         id="seats"
       >
-        <div className="mx-auto w-full max-w-6xl px-6">
+        <div className="marketing-container">
           {model.seats.eyebrow && <Eyebrow>{model.seats.eyebrow}</Eyebrow>}
           {model.seats.heading && <BandHeading>{model.seats.heading}</BandHeading>}
           {model.seats.body && <BandBody>{model.seats.body}</BandBody>}
@@ -495,7 +495,7 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
         full-bleed strip with an empty half.
       */}
       <section className="scroll-mt-24 bg-muted py-12 md:py-14" id="boundary">
-        <div className="mx-auto grid w-full max-w-6xl gap-4 px-6 lg:grid-cols-[minmax(0,0.36fr)_minmax(0,0.64fr)] lg:items-baseline lg:gap-12">
+        <div className="marketing-container grid gap-4 lg:grid-cols-[minmax(0,0.36fr)_minmax(0,0.64fr)] lg:items-baseline lg:gap-12">
           {model.boundary.heading && (
             <h2 className="text-[17px] font-bold tracking-tight text-foreground">
               {model.boundary.heading}
@@ -510,179 +510,6 @@ export function AlignmentHomeView({ model }: { model: AlignmentHomeModel }) {
       </section>
     </div>
   );
-}
-
-/**
- * One template of the library view: its title, the Relationship Type it carries, how many
- * Aspects it asks, the create route, and — when a relationship has answered it — the instance
- * that holds the answers. A template nobody answered carries the note instead of the link.
- */
-function TemplateCard({ template, useLabel }: { template: AlignmentTemplate; useLabel: string }) {
-  return (
-    <li
-      className="flex flex-col rounded-xl border border-border bg-card p-5"
-      data-template={template.slug}
-    >
-      <div>
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-[17px] font-bold text-foreground">{template.title}</h3>
-          {template.type && (
-            <span className="shrink-0 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.04em] text-accent-foreground">
-              {template.type}
-            </span>
-          )}
-        </div>
-        <p className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
-          {template.aspects}
-        </p>
-      </div>
-      <div className="mt-5 space-y-2">
-        <Link
-          className="inline-flex text-[13px] font-semibold text-action hover:underline"
-          href={template.create}
-        >
-          {useLabel}
-        </Link>
-        {template.link ? (
-          <p>
-            <Link
-              className="text-[13px] font-medium text-muted-foreground hover:text-action"
-              href={template.link.href}
-            >
-              {template.link.label}
-            </Link>
-          </p>
-        ) : (
-          template.note && (
-            <div>
-              <p className="text-[13px] font-semibold text-muted-foreground">
-                {template.note.label}
-              </p>
-              <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-                {template.note.body}
-              </p>
-            </div>
-          )
-        )}
-      </div>
-    </li>
-  );
-}
-
-/**
- * The catalogue view: one card per purchasable Relationship Type.
- *
- * The card is a projection of `components/v1/relationship-type-card.tsx` — the same name, the
- * same two roles, the same "how many Aspects, what it costs" pair — with two variations this
- * surface needs and that one must not grow: a **realm** line (the catalogue groups by it) and an
- * action row of exactly two public links, because a visitor on `/` cannot start a relationship
- * from a button that needs a session.
- */
-function CatalogueGrid({
-  items,
-  actions,
-}: {
-  items: readonly AlignmentCatalogueType[];
-  actions: { readonly use: string; readonly example: string };
-}) {
-  return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((type) => (
-        <article
-          className="flex flex-col rounded-xl border border-border bg-card p-5"
-          data-catalogue-type={type.id}
-          key={type.id}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="text-[15px] font-bold text-foreground">{type.name}</h3>
-            <span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">
-              {type.realm}
-            </span>
-          </div>
-          <p className="mt-1 text-[12px] font-medium text-muted-foreground">{type.roles}</p>
-          <p className="mt-3 flex items-center gap-2 text-[12px] text-muted-foreground">
-            <span>{type.aspects}</span>
-            <span aria-hidden className="h-1 w-1 rounded-full bg-border" />
-            <span className="font-semibold text-foreground">{type.price}</span>
-          </p>
-          <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-4">
-            <Link
-              className="text-[13px] font-semibold text-action hover:underline"
-              href={type.href}
-            >
-              {actions.use}
-            </Link>
-            {type.example && (
-              <Link
-                className="text-[13px] font-medium text-muted-foreground hover:text-action"
-                href={type.example}
-              >
-                {actions.example}
-              </Link>
-            )}
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-/** The library view: the templates this deployment has already built. */
-function LibraryGrid({
-  items,
-  actions,
-}: {
-  items: readonly AlignmentTemplate[];
-  actions: { readonly use: string; readonly example: string };
-}) {
-  return (
-    <ul className="grid gap-5 md:grid-cols-2">
-      {items.map((template) => (
-        <TemplateCard key={template.id} template={template} useLabel={actions.use} />
-      ))}
-    </ul>
-  );
-}
-
-/**
- * The third view, and it is a door rather than a list.
- *
- * `/` is a public page: it is prerendered, it is served to anyone, and a relationship belongs to
- * the person who bought it. So this panel renders a sentence and one link — the console route
- * that decides who may see the list — and never a row, a name, or a count. The alternative
- * (reading the database here) would put `lib/db/**` in a public route's graph for a list the
- * majority of visitors may not read; `data:check` E34 exists for exactly that crossing.
- */
-function MinePanel({ mine }: { mine: AlignmentHomeModel["templates"]["mine"] }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6" data-template-mine="">
-      <p className="max-w-2xl text-[14px] leading-relaxed text-muted-foreground">{mine.body}</p>
-      <Link
-        className="mt-5 inline-flex items-center rounded-lg border border-border px-4 py-2.5 text-[14px] font-semibold text-action transition-colors hover:bg-muted"
-        href={mine.link.href}
-      >
-        {mine.link.label}
-      </Link>
-    </div>
-  );
-}
-
-/**
- * The three views in the fixture's tab order, with every panel built here — on the server.
- *
- * The toggle owns the state and the labels; this function owns the content. That is why the
- * browser receives markup it can switch between rather than a fixture to draw cards from: the
- * catalogue, the library and the door are rendered once, in this process, and the only thing
- * that crosses into the client bundle is the tabs primitive.
- */
-function templateViews(model: AlignmentHomeModel): TemplateView[] {
-  const { tabs, actions, catalogue, library, mine } = model.templates;
-  const panels: Record<AlignmentTemplateTab["value"], ReactNode> = {
-    catalogue: <CatalogueGrid actions={actions} items={catalogue} />,
-    library: <LibraryGrid actions={actions} items={library} />,
-    mine: <MinePanel mine={mine} />,
-  };
-  return tabs.map((tab) => ({ value: tab.value, label: tab.label, panel: panels[tab.value] }));
 }
 
 export default AlignmentHomeView;

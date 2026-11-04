@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { quizCategories } from "@/content/categories";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
-import { brandMark } from "@/lib/brand-mark";
+import { brandIconMark, brandMark } from "@/lib/brand-mark";
 import { leavesApp } from "@/lib/marketing-routes";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
@@ -135,7 +135,7 @@ export function Footer({
    * sentence in issue #187 — so the mark is read from the record here for the same reason the
    * sidebar reads it.
    */
-  const mark = brandMark(brand.logo);
+  const mark = brandIconMark(brand.mark) ?? brandMark(brand.logo);
 
   /**
    * The footer's news band.
@@ -153,147 +153,180 @@ export function Footer({
   const news = sectionOf(copy, "footer-news");
 
   return (
-    <footer className="relative overflow-hidden bg-muted pt-16 pb-8 sm:px-4 xl:px-8">
-      {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-action"></div>
-      <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-muted blur-3xl opacity-70"></div>
-      <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-muted blur-3xl opacity-70"></div>
+    <>
+      {/**
+       * The signup band (#539 item 7), above the base footer rather than inside it.
+       *
+       * It used to sit between the link columns and the legal row — inside the footer's own
+       * grid. A newsletter is a different job from navigation: it is an ask, not a link, so it
+       * gets its own band at the top of the footer with its own ground and its own measure, and
+       * the base footer below it keeps one job (where things are). The words still come from
+       * `data/pages/shell.ts`'s `footer-news`, and the form is still `NewsSignup` — this moves
+       * where it stands, not what it says.
+       */}
+      <section
+        aria-label={news.heading}
+        className="border-t border-border bg-background"
+        data-footer-news=""
+      >
+        <div className="marketing-container py-10">{<NewsSignup section={news} />}</div>
+      </section>
 
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Main footer content */}
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-12">
-          {/* Company info */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="flex items-center space-x-2">
-              {mark ? (
-                /**
-                 * The brand's mark, at the size the record exports it.
-                 *
-                 * `alt=""` because the mark *is* the name — the lockup sets "AlignSynch"
-                 * itself — so a description here would have a screen reader say the brand
-                 * twice, and the type beside it (below) is not drawn when a lockup is.
-                 *
-                 * **No window, no crop (owner, brand marks).** This slot used to render the
-                 * 818×127 file inside a 44×32 `overflow-hidden` span, which showed the AS
-                 * monogram and clipped the wordmark off at the right edge. That is a crop of a
-                 * fixed asset, which the owner's rule forbids beside redraw and re-tint
-                 * (`tests/brand-immutable.test.ts` records it), and it was never load-bearing:
-                 * the footer's brand column is 380 px at 1440 and the full column at 390, so
-                 * the 206 px lockup has always had room. `h-8 w-auto` is the whole file at its
-                 * natural aspect ratio; `max-w-none` is gone with the window that needed it.
-                 */
-                <Image
-                  src={mark.src}
-                  alt=""
-                  width={mark.width}
-                  height={mark.height}
-                  className="h-8 w-auto"
-                />
-              ) : (
-                <div className="bg-action p-2 rounded-lg">
-                  <BrandGlyph className="h-6 w-6 text-action-foreground" />
-                </div>
-              )}
-              {/* The name in type only when there is no lockup to say it — the template's
+      <footer className="relative overflow-hidden bg-muted pt-16 pb-8">
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-action"></div>
+        <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-muted blur-3xl opacity-70"></div>
+        <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-muted blur-3xl opacity-70"></div>
+
+        <div className="marketing-container relative z-10">
+          {/* Main footer content */}
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-12">
+            {/* Company info */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="flex items-center gap-3">
+                {mark ? (
+                  /**
+                   * The brand's icon, at the same factor as the header (#539 items 1 and 5).
+                   *
+                   * Measured before this card: the footer drew the 818×127 lockup at 206×32, so
+                   * its monogram was ~43×32, inside the `h-8 w-auto` slot #470 left behind. The
+                   * square mark at a 96px box draws the visible monogram at 96×62 — 2.2× the
+                   * width and 1.94× the height — and the wordmark is set in type beside it
+                   * instead of shipped inside a 206px PNG. That is one change answering both
+                   * owner reports: the icon was too small, and the lockup block was too large.
+                   *
+                   * `alt={brand.name}` because the image *is* the brand's name for a screen
+                   * reader, and the type beside it is `aria-hidden` so the name is announced
+                   * once. The whole file is placed — no window, no crop, nothing `#470` fixed is
+                   * reintroduced.
+                   */
+                  <Image
+                    src={mark.src}
+                    alt={brand.name}
+                    width={mark.width}
+                    height={mark.height}
+                    className="h-24 w-24 shrink-0"
+                  />
+                ) : (
+                  <div className="bg-action p-2 rounded-lg">
+                    <BrandGlyph className="h-6 w-6 text-action-foreground" />
+                  </div>
+                )}
+                {/* The name in type only when there is no lockup to say it — the template's
                   placeholder logo resolves to no mark, and its footer has always been the
                   glyph plus the word. A fallback mark and a typed wordmark together would set
                   the brand's name twice. */}
-              {!mark && <span className="text-2xl font-bold text-action">{copy.heading}</span>}
-            </div>
-            <p className="text-slate-600 dark:text-slate-400 max-w-xs leading-relaxed">
-              {sectionBody(brandBlurb)}
-            </p>
-
-            {/*
-             * No social row (issue #272). It drew four icons — Facebook, Twitter, Instagram and
-             * YouTube — and every one pointed at a bare `#`: a claim of social presence on every page,
-             * reachable by tab and announced as a link, that went nowhere. Nothing in this repo
-             * names an account behind any of them, and an icon for an account nobody can reach is
-             * fabricated presence rather than an empty state. If those accounts ever exist the row
-             * comes back with the real URLs and a verified status code; until then its absence is
-             * the honest render.
-             */}
-          </div>
-
-          {/* Links Sections */}
-          <div className="lg:col-span-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-              {linkColumns}
-
-              {/* Contact */}
-              <div className="space-y-5">
-                <h3 className="text-base font-bold relative inline-block">
-                  {contact.heading}
-                  <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-action"></span>
-                </h3>
-                {/*
-                 * One sentence and one link (owner, 2026-11-02). The row that stood here printed
-                 * `brand.supportEmail` — an address on every public page of both builds, and a
-                 * mail link is not a contact path a visitor without a mail client can use. The
-                 * destination is now the form on `/help`, where a message is stored before it is
-                 * mailed, so nothing is lost when the sender has no mail app.
-                 *
-                 * The fixture carries no address at all (`footer-contact` / its alignment twin),
-                 * and `contact.cta.href` is E23's to check against the route manifest.
-                 */}
-                {contact.body !== undefined && (
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                    {sectionBody(contact)}
-                  </p>
+                {mark ? (
+                  <span aria-hidden="true" className="text-xl font-bold tracking-tight text-action">
+                    {brand.name}
+                  </span>
+                ) : (
+                  <span className="text-2xl font-bold text-action">{copy.heading}</span>
                 )}
-                {contact.cta !== undefined && (
-                  <Button asChild variant={"action"}>
-                    {/*
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 max-w-xs leading-relaxed">
+                {sectionBody(brandBlurb)}
+              </p>
+
+              {/*
+               * No social row (issue #272). It drew four icons — Facebook, Twitter, Instagram and
+               * YouTube — and every one pointed at a bare `#`: a claim of social presence on every page,
+               * reachable by tab and announced as a link, that went nowhere. Nothing in this repo
+               * names an account behind any of them, and an icon for an account nobody can reach is
+               * fabricated presence rather than an empty state. If those accounts ever exist the row
+               * comes back with the real URLs and a verified status code; until then its absence is
+               * the honest render.
+               */}
+            </div>
+
+            {/* Links Sections */}
+            <div className="lg:col-span-8">
+              {/* Two link groups, two columns (#539 item 6). `md:grid-cols-3` was a third column
+                with nothing in it, which at 768 left both groups bunched at the left edge and
+                ~240px of dead space to their right — the "left-weighted middle" the owner
+                called broken. The footer has exactly two groups (Quick links, Contact), so the
+                grid is two wide from `sm` up and one below it. */}
+              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+                {linkColumns}
+
+                {/* Contact */}
+                <div className="space-y-5">
+                  <h3 className="text-base font-bold relative inline-block">
+                    {contact.heading}
+                    <span className="absolute -bottom-1 left-0 w-12 h-0.5 bg-action"></span>
+                  </h3>
+                  {/*
+                   * One sentence and one link (owner, 2026-11-02). The row that stood here printed
+                   * `brand.supportEmail` — an address on every public page of both builds, and a
+                   * mail link is not a contact path a visitor without a mail client can use. The
+                   * destination is now the form on `/help`, where a message is stored before it is
+                   * mailed, so nothing is lost when the sender has no mail app.
+                   *
+                   * The fixture carries no address at all (`footer-contact` / its alignment twin),
+                   * and `contact.cta.href` is E23's to check against the route manifest.
+                   */}
+                  {contact.body !== undefined && (
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {sectionBody(contact)}
+                    </p>
+                  )}
+                  {contact.cta !== undefined && (
+                    <Button asChild variant={"action"}>
+                      {/*
                       The fixture's destination, so the rule cannot read it: `/help` is the public
                       form and a dashboard reader who presses "Contact us" is leaving the app
                       (E39, `leaving` above). Read at runtime through `leavesApp`, the same table
                       `NavRow` uses, so the footer's own marketing mount stays in one tab.
                     */}
-                    {leaving && leavesApp(contact.cta.href) ? (
-                      <LeavingLink href={contact.cta.href} label={contact.cta.label} />
-                    ) : (
-                      <Link href={contact.cta.href}>{contact.cta.label}</Link>
-                    )}
-                  </Button>
-                )}
+                      {leaving && leavesApp(contact.cta.href) ? (
+                        <LeavingLink href={contact.cta.href} label={contact.cta.label} />
+                      ) : (
+                        <Link href={contact.cta.href}>{contact.cta.label}</Link>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/*
-         * The news signup. It replaced the comment that stood here — #272 had removed a
-         * mailing band because it took an address with no sender behind it. The sender is real
-         * now: `app/api/news/subscribe/route.ts` writes the address to `news_signup` and sends
-         * through `lib/flow/email.ts`, so the band can make the promise its markup implies.
-         */}
-        <NewsSignup section={news} />
+          {/* Note: the news band renders above this footer since #539 item 7 — see the section
+            before `<footer>` in the return. */}
 
-        {/* Bottom footer */}
-        <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-slate-500 dark:text-slate-400">
-              © {new Date().getFullYear()} {itemLabel(legal, "copyright")}
-            </p>
-            <div className="flex flex-wrap justify-center gap-6 mt-4 md:mt-0">
-              <LegalRowLink href="/privacy" label={itemLabel(legal, "privacy")} leaving={leaving} />
-              <LegalRowLink href="/terms" label={itemLabel(legal, "terms")} leaving={leaving} />
-              <LegalRowLink href="/privacy" label={itemLabel(legal, "cookies")} leaving={leaving} />
+          {/* Bottom footer */}
+          <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
+              <p className="text-slate-500 dark:text-slate-400 text-center md:text-left">
+                © {new Date().getFullYear()} {itemLabel(legal, "copyright")}
+              </p>
+              <div className="flex flex-wrap justify-center gap-6 mt-4 md:mt-0">
+                <LegalRowLink
+                  href="/privacy"
+                  label={itemLabel(legal, "privacy")}
+                  leaving={leaving}
+                />
+                <LegalRowLink href="/terms" label={itemLabel(legal, "terms")} leaving={leaving} />
+                <LegalRowLink
+                  href="/privacy"
+                  label={itemLabel(legal, "cookies")}
+                  leaving={leaving}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/*
-         * The version badge — the very bottom of the footer (issue #269), below the copyright
-         * and the legal row, centred so it reads as the document's signature rather than as a
-         * fourth legal link. `AppVersion` owns the URL, the version and the words; this file
-         * only decides where it stands.
-         */}
-        <div className="mt-6 flex justify-center">
-          <AppVersion copy={copy} />
+          {/*
+           * The version badge — the very bottom of the footer (issue #269), below the copyright
+           * and the legal row, centred so it reads as the document's signature rather than as a
+           * fourth legal link. `AppVersion` owns the URL, the version and the words; this file
+           * only decides where it stands.
+           */}
+          <div className="mt-6 flex justify-center">
+            <AppVersion copy={copy} />
+          </div>
         </div>
-      </div>
-    </footer>
+      </footer>
+    </>
   );
 }
 
@@ -490,7 +523,7 @@ function AlignSynchLinkColumn({
     <div className="space-y-5">
       <FooterColumnHeading>{links.heading}</FooterColumnHeading>
       <ul className="space-y-3">
-        <FooterLinkRow href="/#templates" label={itemLabel(links, "templates")} leaving={leaving} />
+        <FooterLinkRow href="/templates" label={itemLabel(links, "templates")} leaving={leaving} />
         <FooterLinkRow
           href="/#questions"
           label={itemLabel(links, "how-it-works")}

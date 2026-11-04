@@ -637,7 +637,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The public help centre: the help categories, the FAQ and the knowledge base in the marketing chrome, and — under the answers — the one public contact form: a name, a reply address, a message and one submit, posted as plain HTML to `/api/contact` with no captcha and no third-party widget.",
     notes:
-      "The public half of the Help/Support split (owner's review). A variation of the old `/support` hub with its Contact tab removed rather than left empty: the answers are public, and the band at the foot of the page says where a person is. It renders the same panels the account page links back to (`components/support/**`), so the two surfaces cannot tell a reader different things about one product.",
+      "The public half of the Help/Support split (owner's review). A variation of the old `/support` hub with its Contact tab removed rather than left empty: the answers are public, and the band at the foot of the page says where a person is. It renders the same panels the account page links back to (`components/support/**`), so the two surfaces cannot tell a reader different things about one product. **The category rail's selected row is the tree's tinted-panel treatment (#539 item 3):** `bg-action/10` with an inset `ring-action/20` and `text-action` — the soft ground QuizHub's own active rows use — instead of the solid `bg-action` fill the row drew before, and its labels wrap inside the rail (`whitespace-normal`, `min-w-0`) rather than painting past it at 768 (#539 item 9). Both are the same control, so the registry lists them here rather than as a second surface.",
   },
   {
     kind: "route",
@@ -843,6 +843,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/templates",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The public Relationship Templates catalogue: what a template is, what buying one gets you (both sides answering blind, the Gap by Aspect, the session agenda), and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count, its price and — where a demo sheet exists — a worked example. Both card actions are public: `/register`, and `/assessment/demo/<type>`. No session, no clock and no database, so the page prerenders.",
+    notes:
+      "The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. The catalogue is derived (`lib/template-catalogue.ts` over `data/relationship-types.ts`), so the count sentence above the shelf and the cards under it cannot disagree, and a type the shop will not sell throws instead of rendering a card nobody can buy. The front page shows six of these cards, curated in `data/template-shelf.ts`, with no per-card actions — one CTA there, the full shelf here.",
+  },
+  {
+    kind: "route",
     surface: "/terms",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
@@ -1029,7 +1039,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "Both front pages: the QuizHub shelves (hero, category slider, latest, featured, top players, winners, testimonials) and the AlignSynch practice page — a two-column hero over the worked-example card, then the cycle, the mechanism, the catalogue, the scope ledger and the seats.",
+      "Both front pages: the QuizHub shelves (hero, category slider, latest, featured, top players, winners, testimonials) and the AlignSynch practice page — a two-column hero over the worked-example card, then the cycle, the mechanism, the capped template shelf with its one View-all, the scope ledger and the seats.",
   },
   {
     kind: "domain",
@@ -1178,6 +1188,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     templates: ["quizhub", "alignsynch"],
     capability:
       "The help panels shared by the two halves of the split — the two-tab help header, help categories, FAQ and knowledge base — plus the account page's contact form and its article reader.",
+  },
+  {
+    kind: "domain",
+    surface: "components/templates",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The public catalogue's two files: one template card (name, realm, the two roles, the Aspect count and the price, with the two actions optional) and the page that draws four bands over it — hero, what a template is, what buying one gets you, the catalogue grouped by realm, and the closing action.",
+    notes:
+      "Imported by `/` (the front page's capped shelf, six cards with no per-card actions and one View-all) and by `/templates` (every purchasable type, each card linked to `/register` and to its worked example where one exists). A variation of `components/explore/explore-quiz-list.tsx` for the page and `components/home/featured-quizzes.tsx` for the shelf, both stated in the files' own `template-ancestor:` headers. Holds no words: E23 attributes the domain to `data/pages/templates.ts` at budget 0, and the cards are records from `lib/template-catalogue.ts`.",
   },
   {
     kind: "domain",

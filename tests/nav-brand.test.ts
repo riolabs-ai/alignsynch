@@ -36,9 +36,12 @@ import { isValidRoute } from "@/content/route-manifest";
 import { routeManifest } from "@/content/routes";
 import { querySearchIndex } from "@/content/search";
 import type { BrandId } from "@/data/brand";
-import { assessmentInstances } from "@/data/assessments";
+import { assessmentInstances, assessments } from "@/data/assessments";
+import { alignSynchBrand } from "@/data/brands/alignsynch";
+import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndex, searchIndexFor } from "@/data/searchdata";
+import { alignmentHome } from "@/lib/alignment-home";
 import { ALIGNMENT_ROUTES, type NavViewer, PLATFORM_VIEWER, viewerWith } from "@/lib/nav";
 import { itemLabel } from "@/lib/page-copy";
 import { searchSectionFor } from "@/lib/shell-copy";
@@ -154,18 +157,39 @@ describe("the alignment brand's menu is alignment destinations", () => {
   });
 
   /**
-   * #542 phase 1 — the rail carries no marketing anchor any more.
+   * #542 phase 1 — the rail carries no marketing anchor any more, and every row is in-app.
    *
-   * It used to carry exactly one (`/#templates`), and the case here held it to an `id` the
-   * rendered front page emitted. That row is the destination `/assessment/templates` now, so the
-   * claim inverts: nothing in the rail leaves the app, which is what E39 reads from the other
-   * side — a dashboard file linking to `app/(marketing)` must be a marked departure, and a rail
-   * with none has nothing to mark.
+   * It used to carry exactly one anchor (`/#templates`), and the case here held it to an `id` the
+   * rendered front page emitted. That row reads the catalogue at `/assessment/templates` now, so
+   * the anchor rule moves to the footer — still scrolling the front page for `How it works` — and
+   * the rail is held to the stronger claim: **no row leaves the workspace**. That is what E39
+   * reads from the other side (a dashboard file linking to `app/(marketing)` must be a marked
+   * departure, and a rail with none has nothing to mark).
    */
-  it("sends nobody out to the public site — every row is an in-app route", () => {
+  it("points every in-page anchor still in the chrome at a band the front page emits", () => {
+    const model = alignmentHome(
+      alignSynchBrand,
+      alignSynchHomeCopy,
+      assessments,
+      assessmentInstances,
+      ALIGN_SYNCH_FEATURED_SLUG,
+    );
+    const home = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
+    const ids = [...home.matchAll(/id="([^"]*)"/g)].map((match) => match[1]);
+
+    // The rail links no anchor at all any more, which is the change this card made.
     expect(hrefs.filter((href) => href.startsWith("/#"))).toEqual([]);
+    // …and no row is a route the marketing group serves, either: Support, How it works and
+    // Library are `/dashboard/*` since #542, and Templates reads the page this build serves.
     for (const href of hrefs) {
       expect(href.startsWith("/dashboard") || href.startsWith("/assessment")).toBe(true);
+    }
+
+    const anchors = footerHrefs("alignsynch").filter((href) => href.startsWith("/#"));
+    // Guard the guard: at least one anchor, or the loop below proves nothing.
+    expect(anchors.length).toBeGreaterThan(0);
+    for (const anchor of anchors) {
+      expect(ids).toContain(anchor.slice(2));
     }
   });
 });
@@ -224,9 +248,13 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     expect(member).toContain(`>${itemLabelOf("my-relationships")}<`);
   });
 
-  it("draws every operator row for an admin, appended after the console's", () => {
+  it("draws every operator row for an admin, first, in their own group", () => {
+    /**
+     * #539 item 10 moved the operator's five rows **above** the member's: an admin's rail used
+     * to open on six product destinations and reach its own console below the fold. The set is
+     * unchanged — this is an order, not a filter — and the two group labels frame it.
+     */
     expect(adminHrefs).toEqual([
-      ...ALIGNMENT_MENU,
       "/admin/gaps",
       "/admin/instances",
       // #503 — the log the five repairs commit into.
@@ -235,6 +263,7 @@ describe("the console's own rows are a member's, the operator's rows are not", (
       "/admin/billing",
       // #507 — the broadcast, the console's sixth row.
       "/admin/broadcast",
+      ...ALIGNMENT_MENU,
     ]);
     const admin = navHtml("alignsynch", viewerWith("admin-console"));
     expect(admin).toContain(itemLabelOf("console-gaps"));
@@ -242,10 +271,18 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     expect(admin).toContain(itemLabelOf("admin-audit"));
     expect(admin).toContain(itemLabelOf("admin-billing"));
     expect(admin).toContain(itemLabelOf("admin-broadcast"));
+    // The two group labels, from the fixture, in order: administration, then the workspace.
+    expect(admin.indexOf(itemLabelOf("group-admin"))).toBeLessThan(
+      admin.indexOf(itemLabelOf("group-app")),
+    );
+    expect(admin).toContain(itemLabelOf("group-admin"));
+    expect(admin).toContain(itemLabelOf("group-app"));
   });
 
-  it("keeps the member's sidebar a prefix of the admin's — same rows, same order", () => {
-    expect(adminHrefs.slice(0, memberHrefs.length)).toEqual(memberHrefs);
+  it("keeps the member's rows a suffix of the admin's — same rows, same order", () => {
+    // The admin's rail is the operator's group and then the member's, unchanged: the group is
+    // additive, so the member's six rows keep their relative order at the end of the admin's.
+    expect(adminHrefs.slice(adminHrefs.length - memberHrefs.length)).toEqual(memberHrefs);
   });
 });
 
@@ -305,7 +342,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
     // so its column carries the public help centre — the account page is the rail's row, and a
     // marketing footer pointing at it is the mistake the Help/Support split exists to remove.
     expect(hrefs).toEqual([
-      "/#templates",
+      "/templates",
       "/#questions",
       "/help",
       // The contact band's one link, to the form (owner, 2026-11-02): the band no longer prints
@@ -319,7 +356,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
 
   it("restores them for a viewer with the quiz capability", () => {
     const hrefs = footerHrefs("alignsynch", viewerWith("quiz-surfaces"));
-    expect(hrefs.slice(0, 3)).toEqual(["/#templates", "/#questions", "/help"]);
+    expect(hrefs.slice(0, 3)).toEqual(["/templates", "/#questions", "/help"]);
     expect(hrefs).toContain("/leaderboard");
     expect(hrefs.some((href) => href.startsWith("/categories/"))).toBe(true);
   });
