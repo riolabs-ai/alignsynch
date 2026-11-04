@@ -1,0 +1,118 @@
+name: Release notify
+
+# The stakeholder release note, sent once per tag (#548).
+#
+# Until this file existed, a release was announced to nobody: the notes went up as a GitHub Release
+# and the people who need to know found out by reading GitHub. This workflow is the announcement.
+#
+# **What sends is the changelog.** `scripts/release-notify.mjs` reads the `CHANGELOG.md` section for
+# the tag — the file `scripts/release.sh` generates from the conventional commits, which is also the
+# body of the GitHub Release, byte for byte — renders it through the email band (plain text first,
+# HTML derived from it) and sends it through Resend. The Known limits block is part of that section,
+# so the mail carries it verbatim; a section without one is refused rather than trimmed.
+#
+# **A missing secret is not a failure, and it is not a silent skip either.** No `RESEND_API_KEY`
+# means nothing can be sent, so the script prints the fully rendered mail into the job log and exits
+# 0. That is what keeps a fork, a secret-less clone or a rehearsal green — and the printed mail is
+# the evidence that the render ran, rather than a green tick over a job that did nothing.
+#
+# **Idempotent by tag.** A tag that has already been mailed is recorded as a comment on the
+# `release-mail · sent tags` issue (see the script for why that record and not a database row), and
+# a re-run for that tag sends nothing and logs `already sent for v…`. Nothing here may be re-run into
+# a second send: a release note that arrives twice reads as two releases.
+#
+# **The key is the sending-only one.** A release notification needs exactly one permission: send.
+# `RESEND_API_KEY` here must be a sending-scoped key, never the account key that can create keys or
+# manage the domain — a tag-triggered job is not a place to keep that. `RESEND_FROM` is the verified
+# sender (`AlignSynch <support@…>`); `STAKEHOLDERS` is a comma-separated list of addresses, and an
+# empty one is a refusal, not a green run.
+
+on:
+  push:
+    tags:
+      - "v*"
+  # A manual run is how a rehearsal, or a re-send after fixing a recipient list, happens. It never
+  # bypasses the ledger: a tag that is already recorded still sends nothing.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to notify for (defaults to the pushed tag, else v<package.json version>)"
+        required: false
+        type: string
+
+# Least privilege, on purpose: read the tree the tag points at, write the ledger comment.
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  # Two runs for one ref would race the ledger check and could both pass it. Queue them instead of
+  # cancelling: a queued run still learns the tag is recorded and stops there.
+  group: release-notify-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: release note
+    # pinned OS: ubuntu-latest is migrating to Ubuntu 26 during 2026
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      # The mail is the AlignSynch product's, whatever brand a different lane builds.
+      BRAND: alignsynch
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM: ${{ secrets.RESEND_FROM }}
+      STAKEHOLDERS: ${{ secrets.STAKEHOLDERS }}
+      # The ledger is written with the job token; `issues: write` above is what lets it.
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # The repository the ledger issue lives in.
+      GITHUB_REPOSITORY: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The tag's own tree: the changelog section sent is the one the tag carries.
+          fetch-depth: 1
+
+      - name: Resolve the tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          tag="${INPUT_TAG:-}"
+          if [ -z "$tag" ] && [ "$REF_TYPE" = "tag" ]; then
+            tag="$REF_NAME"
+          fi
+          if [ -z "$tag" ]; then
+            tag="v$(node -p "require('./package.json').version")"
+          fi
+          case "$tag" in
+            v*) ;;
+            *) tag="v$tag" ;;
+          esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Release note for $tag"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          # keep in sync with EXPECTED_PNPM in scripts/verify.sh
+          version: 12.16.1
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # The script imports TypeScript source (`lib/email/**`, `data/brand.ts`) through the same
+      # resolve hook the `db:*` scripts use, so it needs the installed tree and nothing else.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Send the release note (or print it, when there is no key)
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/release-notify.mjs --tag "$TAG"

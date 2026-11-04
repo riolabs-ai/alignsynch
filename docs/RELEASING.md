@@ -124,6 +124,33 @@ row, a CTA that is not there, a screen that does not follow — that half is sti
 a claim about the running app and not a name in the tree. Route claims are out of scope in this first
 cut, and the mode's usage text says what that would need.
 
+## The release note goes out with the tag
+
+Pushing `v*` runs `.github/workflows/release-notify.yml`, which mails the stakeholder release note
+(#548): the entry for that tag, rendered through `lib/email/band.ts` and sent through Resend. **The
+Known limits block ships with it, verbatim** — the mail is the entry, not a selection from it, and a
+section without a limits block is refused rather than trimmed.
+
+```bash
+pnpm release:note --tag v1.4.0 --dry-run   # render and print; send nothing, record nothing
+```
+
+Three properties are worth knowing before you touch it:
+
+- **The plain text is the master.** `renderEmail()` composes the text first and derives the HTML from
+  that string, so the two cannot say different things. The HTML therefore carries no bold: plain text
+  has none.
+- **It is idempotent by tag.** Sent tags are recorded as a comment (`<!-- release-mail: v1.4.0 -->`)
+  on the `release-mail · sent tags` issue, and a re-run for a recorded tag logs `already sent for v…`
+  and sends nothing. A rehearsal must set `RELEASE_MAIL_LEDGER_TITLE` to its own ledger, or it
+  consumes the release it is rehearsing.
+- **No `RESEND_API_KEY` is a green run, not a skipped one.** The fully rendered mail is printed into
+  the job log and the script exits 0, so a fork or a secret-less clone proves the render without
+  mailing anybody. `RESEND_API_KEY` in Actions must be a **sending-only** key; `RESEND_FROM` is the
+  verified sender and `STAKEHOLDERS` the comma-separated recipients. An empty `STAKEHOLDERS` with a
+  key present is a refusal — a note that reports success and reaches nobody is the failure mode this
+  whole step exists to avoid.
+
 ## The version badge points at the tag
 
 Every build prints its own version — on `/login`, in the footer, at the foot of the sidebar —
