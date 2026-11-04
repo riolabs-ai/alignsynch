@@ -1,6 +1,7 @@
 import { ArticleDetail } from "@/components/support/article-detail";
 import { supportArticlePageCopy } from "@/data/pages/support-article";
 import { publishedArticle, relatedArticles } from "@/lib/article-records";
+import { PUBLIC_HELP_PATH } from "@/lib/flow/paths";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { use } from "react";
@@ -42,6 +43,7 @@ export default function ArticlePage({ params }: { params: Promise<{ slug: string
       article={article}
       relatedArticles={relatedArticles(article)}
       copy={supportArticlePageCopy}
+      backHref={PUBLIC_HELP_PATH}
     />
   );
 }

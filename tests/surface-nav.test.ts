@@ -98,11 +98,11 @@ describe("the shell's menus", () => {
   it("keeps every alignment destination — a status never adds or removes a row", () => {
     expect(hrefsOf(navHtml("platform"))).toEqual([
       "/dashboard",
-      "/how-it-works",
+      "/dashboard/help",
       "/assessment/instances",
+      "/dashboard/library",
       "/assessment/templates",
-      "/templates",
-      "/support",
+      "/dashboard/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
       // #539 item 10: the operator's group comes first, then the member's own rows.
@@ -115,16 +115,53 @@ describe("the shell's menus", () => {
       // #507 — the broadcast, the console's last row.
       "/admin/broadcast",
       "/dashboard",
-      "/how-it-works",
+      "/dashboard/help",
       "/assessment/instances",
+      "/dashboard/library",
       "/assessment/templates",
-      "/templates",
-      "/support",
+      "/dashboard/support",
     ]);
   });
 
   it("draws no disabled row today — every alignment destination is live", () => {
     expect(navHtml("admin")).not.toContain("aria-disabled");
+  });
+
+  /**
+   * One active row, on every workspace page (#542 phase 1).
+   *
+   * `isActive()` marks a row for its children, which lit **two** rows on `/dashboard/help`,
+   * `/dashboard/library` and `/dashboard/support`: the page's own row and Overview, because every
+   * one of them is a child of `/dashboard`. A rail that says the reader is in two places is a
+   * navigation bug no route test sees, so it is counted here: every `<a>` whose class carries the
+   * active token, by its `href` (an avatar's initials wear the same token, and are not links).
+   */
+  it("lights exactly one row on every workspace page, Overview included", () => {
+    const activeRowHrefs = (html: string) =>
+      [...html.matchAll(/<a\b[^>]*>/g)]
+        .map((match) => match[0])
+        .filter((tag) => tag.includes("bg-nav-active"))
+        .map((tag) => /href="([^"]*)"/.exec(tag)?.[1] ?? "");
+    const at = (pathname: string) =>
+      renderToStaticMarkup(
+        createElement(AppNav, {
+          brandId: "alignsynch",
+          viewer: PLATFORM_VIEWER,
+          copy: shellPageCopy,
+          collapsed: false,
+          pathname,
+          onNavigate: () => undefined,
+        }),
+      );
+    for (const pathname of [
+      "/dashboard",
+      "/dashboard/help",
+      "/dashboard/library",
+      "/dashboard/support",
+      "/assessment/instances",
+    ]) {
+      expect(activeRowHrefs(at(pathname))).toEqual([pathname]);
+    }
   });
 });
 

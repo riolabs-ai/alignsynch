@@ -114,6 +114,20 @@ function isActive(pathname: string, path: string): boolean {
 }
 
 /**
+ * The Overview row's own match (#542 phase 1) — **exact**, not a prefix.
+ *
+ * `isActive()` marks a row for its children too, which is right for `/assessment/instances/[id]`
+ * sitting under its list. It stopped being right for `/dashboard` when the workspace grew
+ * `/dashboard/help`, `/dashboard/library` and `/dashboard/support`: the prefix rule lit two rows
+ * at once (Overview and whichever page you were on), and a rail that says you are in two places is
+ * worse than one that says you are in none. Overview has no children of its own, so its match is
+ * its own address.
+ */
+function isOverview(pathname: string): boolean {
+  return pathname === "/dashboard";
+}
+
+/**
  * Where a row goes, or what it does — exactly one of the two (issue #272).
  *
  * A row that would have been a link with nothing behind it is not a link: sign-out revokes a
@@ -566,16 +580,23 @@ function AlignSynchMenu({
           href="/dashboard"
           icon={<Gauge className="size-5" />}
           label={itemLabel(nav, "dashboard")}
-          active={isActive(pathname, "/dashboard")}
+          active={isOverview(pathname)}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
         />
+        {/*
+          How It Works and Support are pages this build serves (#542): `/dashboard/help` and
+          `/dashboard/support`. The rail used to send a signed-in member to `/how-it-works` and
+          `/support` — the marketing site — to read the product they had already bought, and a
+          departure from the shell is not a destination. `components/tour/replay-tour.tsx` lives
+          on the help page, so the tour is replayable from inside the app.
+        */}
         <NavRow
-          href="/how-it-works"
+          href="/dashboard/help"
           icon={<Workflow className="size-5" />}
           label={itemLabel(nav, "how-it-works")}
-          active={isActive(pathname, "/how-it-works")}
+          active={isActive(pathname, "/dashboard/help")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
@@ -589,38 +610,45 @@ function AlignSynchMenu({
           labelled={labelled}
           onNavigate={onNavigate}
         />
+        {/*
+          Library is the member's own shelf — what they saved and own — and it is
+          `/dashboard/library` since #542. It used to be the public catalogue, which is the same
+          departure as the two rows above: a catalogue is not a library when the reader is signed
+          in and the page cannot know what they own.
+        */}
         <NavRow
-          href="/assessment/templates"
+          href="/dashboard/library"
           icon={<Library className="size-5" />}
           label={itemLabel(nav, "template-library")}
-          active={isActive(pathname, "/assessment/templates")}
+          active={isActive(pathname, "/dashboard/library")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
         />
         {/*
-          Templates is the public catalogue, `/templates` — a real product page since the
-          `#templates` card (#544), not the front page's band. The band is still there (and
-          still has `id="templates"`), but a nav row that scrolls a marketing page to a
-          section is not a destination; the page that lists every template is.
+          Templates is the catalogue a member starts from, and it is `/assessment/templates` — the
+          page this build serves. #544 made `/templates` a real public catalogue, and the rail
+          briefly pointed there; a workspace row into the marketing site is the same departure
+          #542 removed, so the row stays in-app. The public page is still reachable from the
+          public header, which is where a non-user belongs.
 
           It sits in Workspace, not Administration: it is a member-facing catalogue, and
           #539 item 10's split is admin functions first, then the reader's own links.
         */}
         <NavRow
-          href="/templates"
+          href="/assessment/templates"
           icon={<LayoutTemplate className="size-5" />}
           label={itemLabel(nav, "templates")}
-          active={isActive(pathname, "/templates")}
+          active={isActive(pathname, "/assessment/templates")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
         />
         <NavRow
-          href="/support"
+          href="/dashboard/support"
           icon={<LifeBuoy className="size-5" />}
           label={itemLabel(nav, "support")}
-          active={isActive(pathname, "/support")}
+          active={isActive(pathname, "/dashboard/support")}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}

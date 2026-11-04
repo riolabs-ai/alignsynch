@@ -95,3 +95,44 @@ export async function recordMailOutcome(id: string, outcome: MailOutcome): Promi
     outcome,
   ]);
 }
+
+/** What a member's own message says, as `/dashboard/support` may show it back (#542 phase 1). */
+export interface OwnContactMessage {
+  readonly id: string;
+  readonly status: string;
+  readonly createdAt: string;
+}
+
+/**
+ * One message, **by id and by the reader's own address** — the dashboard form's confirmation.
+ *
+ * The id travels in a query string the server action wrote, so it is a value a reader can edit; the
+ * address is the session's, resolved on the server. Both have to match, which is what keeps this
+ * from being an id-guessable read of somebody else's message: a crafted `?thread=` draws the plain
+ * sentence instead of a confirmation, and no message body is ever read by this statement — the
+ * screen needs the reference, the status and nothing a stranger could use.
+ *
+ * A read, so it may use the retrying helper. `undefined` is "no such message for this address" and
+ * the page treats it as nothing to confirm.
+ */
+export async function readOwnContactMessage(
+  id: string,
+  email: string,
+): Promise<OwnContactMessage | undefined> {
+  const rows = await queryRows<{ id: string; status: string; created_at: Date | string }>(
+    `SELECT id, status, created_at
+       FROM contact_message
+      WHERE id = $1 AND lower(email) = lower($2)`,
+    [id, email],
+  );
+  const row = rows[0];
+  if (row === undefined) return undefined;
+  return {
+    id: row.id,
+    status: row.status,
+    createdAt:
+      row.created_at instanceof Date
+        ? row.created_at.toISOString()
+        : new Date(row.created_at).toISOString(),
+  };
+}
