@@ -7,6 +7,7 @@ import { PasswordCard } from "@/components/identity/password-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -157,7 +158,7 @@ export function SettingsView({
         {copy.subtitle !== undefined && <p className="text-muted-foreground">{copy.subtitle}</p>}
       </header>
 
-      <Card>
+      <FormSurface>
         <CardHeader>
           <CardTitle>{identity.heading}</CardTitle>
           {identity.body !== undefined && <CardDescription>{identity.body}</CardDescription>}
@@ -264,7 +265,7 @@ export function SettingsView({
             )}
           </form>
         </CardContent>
-      </Card>
+      </FormSurface>
 
       <PasswordCard copy={copy} hasPassword={hasPassword} save={savePassword} />
 

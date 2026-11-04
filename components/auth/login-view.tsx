@@ -9,7 +9,8 @@ import { DemoRoles } from "@/components/auth/demo-roles";
 import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -356,7 +357,7 @@ export function LoginView({
         <div className="w-full max-w-md">
           <AuthHomeLink label={itemLabel(home, "back")} />
         </div>
-        <Card className="w-full max-w-md shadow-xl border-0">
+        <FormSurface className="w-full max-w-md">
           <CardHeader className="text-center pb-8">
             <div
               className={`lg:hidden mx-auto mb-4 w-12 h-12 ${markGroundClass(marks.hero)} rounded-lg flex items-center justify-center`}
@@ -483,7 +484,7 @@ export function LoginView({
             {demo.kind === "entry" && <DemoEntry copy={copy} />}
             {demo.kind === "roles" && <DemoRoles copy={copy} action={demo.action} />}
           </CardContent>
-        </Card>
+        </FormSurface>
 
         {/*
          * The running version, centred directly below the credentials card (issue #269). Below

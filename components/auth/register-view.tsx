@@ -6,7 +6,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -248,7 +249,7 @@ export function RegisterView({
           </div>
 
           {/* Form Card */}
-          <Card className="shadow-xl border-0">
+          <FormSurface>
             <CardHeader className="pb-6">
               <CardTitle className="text-2xl font-bold">
                 {fillLabel(itemLabel(progressCopy, "label"), {
@@ -442,7 +443,7 @@ export function RegisterView({
                 )}
               </div>
             </CardContent>
-          </Card>
+          </FormSurface>
         </div>
       </div>
     </div>

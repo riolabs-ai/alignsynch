@@ -37,6 +37,11 @@ const MUST_FLAG = [
   // Rule 3: the accent as an ink. 2.64:1 on white with the owner's cyan.
   ["x.tsx", 'export const g = <a className="text-accent underline">link</a>;'],
   ["x.tsx", 'export const h = <span className="hover:text-accent">chip</span>;'],
+  // Rule 4: a form surface carries no shadow. Rendered, so the file is a form surface.
+  ["x.tsx", 'export const j = <FormSurface className="shadow-lg p-6" />;'],
+  ["components/auth/probe.tsx", 'export const k = <FormSurface className="shadow p-6" />;'],
+  // Rule 5: an auth screen draws the shared surface, not a Card (whose default is shadow-sm).
+  ["components/auth/probe.tsx", 'export const l = <Card className="p-2" />;'],
 ];
 const MUST_PASS = [
   ["x.tsx", 'export const d = <div className="bg-action text-action-foreground" />;'],
@@ -45,6 +50,16 @@ const MUST_PASS = [
   ["x.ts", 'const f = "bg-action/10 hover:bg-action/90 hover:bg-action-hover";'],
   // An accent *surface* and the ink on it stay legal; only the accent as text is a violation.
   ["x.tsx", 'export const i = <span className="bg-accent text-accent-foreground">ok</span>;'],
+  // A form surface with no shadow, and `shadow-none` as the explicit opt-out.
+  ["x.tsx", 'export const m = <FormSurface className="rounded-lg border bg-card" />;'],
+  ["components/auth/probe.tsx", 'export const n = <FormSurface className="shadow-none" />;'],
+  // A Card that is *not* a form surface keeps its raised default — this rule is about forms.
+  ["x.tsx", 'export const o = <Card className="shadow-sm p-6" />;'],
+  // The word in a comment is documentation, not markup.
+  [
+    "components/auth/probe.tsx",
+    '// the old <Card className="shadow-xl"> is gone.\nexport const p = <FormSurface />;',
+  ],
 ];
 
 function selfTest() {
@@ -92,7 +107,10 @@ for (const root of roots) {
 
 console.log(
   `  brand classes: ${files} file(s) under ${roots.map((r) => `${r}/`).join(", ")} ` +
-    `— palette steps (indigo/purple/violet), bg-gradient-* utilities and text-accent bans, no allowlist`,
+    `— palette steps (indigo/purple/violet), bg-gradient-* utilities, text-accent bans, and`,
+);
+console.log(
+  `                 shadows on a form surface (\`FormSurface\` or components/auth/**), no allowlist`,
 );
 console.log(`  rule self-test: ${selfTestReport}`);
 
@@ -102,11 +120,12 @@ if (violations.length > 0) {
   console.error(
     `\n✗ brand classes: ${violations.length} violation(s). The palette has one home — ` +
       `data/brand.ts. Use bg-action / text-action / border-action (and their /opacity forms), ` +
-      `text-accent-foreground on an accent fill, or add a token to the record; do not exempt the line.`,
+      `text-accent-foreground on an accent fill, or add a token to the record; do not exempt the line. ` +
+      `A form surface is \`FormSurface\` and carries no shadow.`,
   );
   process.exit(1);
 }
 
 console.log(
-  "  ✓ brand classes: 0 palette steps, 0 gradient utilities — the record is the only home",
+  "  ✓ brand classes: 0 palette steps, 0 gradient utilities, 0 form-surface shadows — the record is the only home",
 );

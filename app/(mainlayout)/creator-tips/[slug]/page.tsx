@@ -72,7 +72,7 @@ export default function TipPage({ params }: { params: Promise<{ slug: string }> 
         copy={sectionOf(creatorTipsDetailPageCopy, "article")}
         related={sectionOf(creatorTipsDetailPageCopy, "related")}
       />
-      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
+      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} leaving />
     </>
   );
 }

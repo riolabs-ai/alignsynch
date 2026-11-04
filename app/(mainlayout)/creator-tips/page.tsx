@@ -32,7 +32,7 @@ export default function CreatorTips() {
         grid={sectionOf(creatorTipsPageCopy, "tips-grid")}
         cta={sectionOf(creatorTipsPageCopy, "cta")}
       />
-      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} />
+      <Footer copy={shellPageCopy} hiddenNav={hiddenNavHrefs()} leaving />
     </>
   );
 }

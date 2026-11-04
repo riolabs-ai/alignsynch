@@ -84,7 +84,7 @@ export function TournamentPage({
       </div>
 
       {/* Add the Footer */}
-      <Footer copy={shellCopy} hiddenNav={hiddenNav} />
+      <Footer copy={shellCopy} hiddenNav={hiddenNav} leaving />
     </>
   );
 }

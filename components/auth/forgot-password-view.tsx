@@ -5,7 +5,8 @@
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy } from "@/content/pages";
@@ -103,7 +104,7 @@ export function ForgotPasswordView({
         )}
       </header>
 
-      <Card>
+      <FormSurface>
         <CardHeader>
           <CardTitle>{band.heading}</CardTitle>
         </CardHeader>
@@ -141,7 +142,7 @@ export function ForgotPasswordView({
             </div>
           )}
         </CardContent>
-      </Card>
+      </FormSurface>
 
       <div className="flex items-center justify-between gap-4">
         <Link

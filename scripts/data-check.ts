@@ -142,6 +142,16 @@ import {
   type SourceFile,
 } from "./ui-refs";
 import { findTaxonomyLiterals, taxonomyEntries, taxonomyVocabulary } from "./taxonomy-refs";
+import {
+  LEAVING_MIN_WALKED,
+  dashboardFiles,
+  departureSurfaces,
+  marketingRoutes,
+  runtimeTableDrift,
+  unmarkedLeavingLinks,
+  unmarkedLeavingMounts,
+} from "./leaving-links";
+import { LEAVING_ROUTES } from "../lib/marketing-routes";
 import { brands } from "../data/brand";
 import { brandIconPaths } from "../lib/brand-icon";
 import { decodePng } from "./image-bytes";
@@ -1143,6 +1153,63 @@ for (const [id, record] of Object.entries(brands)) {
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * E39 — a link out of the dashboard opens a new tab
+ *
+ * The dashboard (`app/(mainlayout)/**`) and the public site (`app/(marketing)/**`) are two trees
+ * behind one shell. A dashboard link to a public page takes the reader out of the app, and in the
+ * same tab it throws away the screen they were on. The rule is `target="_blank"` +
+ * `rel="noopener noreferrer"` on that element, with the departure announced — and
+ * `components/layout/leaving-link.tsx` is the one component that draws it.
+ *
+ * Both halves are **derived**. Which files are the dashboard's is a graph question (reachable
+ * from `app/(mainlayout)/**`, not reachable from `app/(marketing)/**` or `app/(auth)/**`), and
+ * which routes are public is read from the page files under `app/(marketing)` — so `/help` and the
+ * support articles, which a hand-kept list would have missed, are in scope by being pages.
+ *
+ * The second rule covers the one shape the first cannot: a module both trees render (`Footer`)
+ * must not carry a `target` unconditionally, because the marketing pages mount it too. A
+ * dashboard mount of it must pass `leaving`, and `unmarkedLeavingMounts` fails the mount that
+ * forgets. `scripts/leaving-links.ts` owns the extraction and is pure, so
+ * `scripts/__tests__/leaving-links.test.ts` drives every shape and its last section asserts the
+ * real tree is clean. The floor is the point: a walk that classified zero files checks nothing.
+ * ------------------------------------------------------------------ */
+
+const leavingRoutes = marketingRoutes(uiSources.map((file) => file.path));
+const leavingDashboard = dashboardFiles(uiSources);
+const leavingSurfaces = departureSurfaces({ files: uiSources, routes: leavingRoutes });
+
+for (const finding of [
+  ...unmarkedLeavingLinks({
+    files: leavingDashboard,
+    routes: leavingRoutes,
+    surfaces: leavingSurfaces,
+  }),
+  ...unmarkedLeavingMounts({
+    files: leavingDashboard,
+    surfaces: leavingSurfaces,
+    sources: uiSources,
+  }),
+  ...runtimeTableDrift({ routes: leavingRoutes, table: LEAVING_ROUTES }),
+]) {
+  err(finding.rule, `${finding.file}:${finding.line} ${finding.message}`);
+}
+
+if (leavingRoutes.length === 0) {
+  err(
+    "E39",
+    "no page was found under app/(marketing)/ — the public route set is derived from those files, so a walk that read none checks nothing",
+  );
+}
+if (leavingDashboard.length < LEAVING_MIN_WALKED) {
+  err(
+    "E39",
+    `the dashboard walk read ${leavingDashboard.length} file(s) and this rule is measured over at least ${LEAVING_MIN_WALKED} — a walk that quietly found nothing checks nothing`,
+  );
+}
+
+const leavingCensus = `${leavingDashboard.length} dashboard file(s) against ${leavingRoutes.length} public route(s), ${leavingSurfaces.length} shared departure surface(s)`;
+
 const imageTags = nextImageTags(imageSources);
 const imageMeasured = imageCensus(imageTags);
 
@@ -1861,6 +1928,7 @@ console.log(
 );
 console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
 console.log(`      ${brandWordCensus} (E37)`);
+console.log(`      ${leavingCensus} (E39)`);
 console.log(
   `      ${iconMarkMeasurements.length} icon set(s) drawn from the brand's own mark (E38${iconMarkMeasurements.length > 0 ? `: ${iconMarkMeasurements.join(", ")}` : " — no record names a mark"})`,
 );

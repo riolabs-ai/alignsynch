@@ -90,9 +90,32 @@ function collect(
 /** Every literal the UI navigates to: `href` attributes plus `router.push`/`redirect`. */
 export function navigationReferences(files: SourceFile[]): UiReference[] {
   return [
-    ...collect(files, HREF_ATTR, (match) => match[1] ?? match[2]),
+    ...hrefLiterals(files).map(({ at: _at, ...reference }) => reference),
     ...collect(files, NAV_CALL, (match) => match[1]),
   ];
+}
+
+/**
+ * The `href` literals with their offsets, for a rule that needs to look at the element the
+ * literal sits in rather than only at its value (`scripts/leaving-links.ts`, E39).
+ */
+export function hrefLiterals(files: SourceFile[]): (UiReference & { at: number })[] {
+  const found: (UiReference & { at: number })[] = [];
+  for (const file of files) {
+    HREF_ATTR.lastIndex = 0;
+    for (
+      let match = HREF_ATTR.exec(file.source);
+      match !== null;
+      match = HREF_ATTR.exec(file.source)
+    ) {
+      const literal = match[1] ?? match[2];
+      if (literal === undefined) continue;
+      // The value's offset, not the match's: `href="` and `href={"` are different lengths.
+      const at = match.index + match[0].indexOf(literal, match[0].indexOf("="));
+      found.push({ file: file.path, line: lineAt(file.source, match.index), value: literal, at });
+    }
+  }
+  return found;
 }
 
 /** Every literal that looks like a `public/` asset path, wherever it is written. */

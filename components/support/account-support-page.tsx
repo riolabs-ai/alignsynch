@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LeavingLink } from "@/components/layout/leaving-link";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { itemBody, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
@@ -63,7 +64,7 @@ export function AccountSupportPage({ copy }: AccountSupportPageProps) {
             */}
             <div className="mt-4 flex flex-col gap-2">
               <Button asChild variant="outline" size="sm">
-                <Link href="/help">{itemLabel(whereElse, "help")}</Link>
+                <LeavingLink href="/help" label={itemLabel(whereElse, "help")} />
               </Button>
               <Button asChild variant="outline" size="sm">
                 <Link href="/settings">{itemLabel(whereElse, "settings")}</Link>

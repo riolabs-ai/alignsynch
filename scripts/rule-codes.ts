@@ -183,6 +183,17 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
+    owner: "leaving the dashboard for the public site (scripts/leaving-links.ts)",
+    // Two files for the same reason the client-graph and template-ancestor groups have two: the
+    // code is *minted* where the rule lives (a finding carries `rule: "E39"`), and `data-check.ts`
+    // mints it once more for the two coverage floors — "the walk classified nothing, or found no
+    // public route" is a failure of the same rule.
+    files: ["leaving-links.ts", "data-check.ts"],
+    codes: {
+      E39: 'a link from the dashboard (`app/(mainlayout)`) to the public site (`app/(marketing)`) opens a new tab — `target="_blank"` + `rel="noopener noreferrer"`, announced as "opens in a new tab", via `LeavingLink`; a module both trees mount carries the departure only when the dashboard mount passes `leaving`',
+    },
+  },
+  {
     owner: "the brand icon set (lib/brand-icon.ts + scripts/gen-brand-icons.mjs)",
     // One file: the rule *lives* in `scripts/icon-fingerprint.ts` (the fingerprints and the
     // threshold) but the code is minted only here, where the brand records and the files on disk
