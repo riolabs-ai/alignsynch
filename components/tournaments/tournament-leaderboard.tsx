@@ -28,7 +28,7 @@ import { metric } from "@/data/metrics";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { ArrowDown, ArrowUp, Award, Medal, Minus, Search, Trophy } from "lucide-react";
 import { useState } from "react";
-import { Tournament } from "./tournament-detail";
+import type { Tournament } from "./tournament-detail";
 
 interface TournamentLeaderboardProps {
   tournament: Tournament;

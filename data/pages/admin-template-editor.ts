@@ -93,6 +93,32 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * The band the member's screen draws (#533 phase 2) — and the console declares it because
+       * **one editor draws both bands**: `components/admin/template-editor.tsx` reads `publish` or
+       * `private` depending on its `band` prop, and E23 binds a component's asks to every copy its
+       * budget row names. A console template is not publicly listed until a version is published,
+       * so the same words are true here.
+       */
+      id: "private",
+      heading: "Private until published",
+      body: "A template is not offered in the catalogue until one of its versions is published. Until then it is visible only on this screen, and no relationship can be started from it.",
+      items: [
+        { id: "state-draft", label: "Not offered" },
+        { id: "state-published", label: "Offered in the catalogue" },
+        { id: "state-archived", label: "Archived" },
+        { id: "live", label: "Live version {version}" },
+        { id: "history", label: "Highest version {version} — not offered" },
+        { id: "never", label: "Never published" },
+        { id: "reason", label: "Why" },
+        { id: "publish", label: "Publish a version" },
+        { id: "unpublish", label: "Unpublish" },
+        { id: "working", label: "Working…" },
+        { id: "published", label: "Published version {version}. Audit action {actionId}." },
+        { id: "unpublished", label: "Unpublished. Version {version} remains in the history." },
+      ],
+    },
+    {
       id: "publish",
       heading: "Publish",
       body: "Publishing writes this template's stored words and Aspects as a new immutable version. Every relationship reads the version it was created from, so a live relationship keeps the questions it was asked even after this template changes. Unpublishing withdraws the template from the catalogue and keeps every version.",

@@ -3,7 +3,7 @@
 // template-ancestor: components/ui/button.tsx   (variation: a submit button with a pending state, one per plan)
 
 import { Button } from "@/components/ui/button";
-import { type BillingInterval } from "@/data/billing-plans";
+import type { BillingInterval } from "@/data/billing-plans";
 import { useCallback, useState } from "react";
 
 /**

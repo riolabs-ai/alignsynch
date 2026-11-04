@@ -130,10 +130,11 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
     case "ADD_ANSWER":
       return { ...state, answers: [...state.answers, action.payload] };
 
-    case "UPDATE_ANSWER":
+    case "UPDATE_ANSWER": {
       const updatedAnswers = [...state.answers];
       updatedAnswers[action.payload.index] = action.payload.answer;
       return { ...state, answers: updatedAnswers };
+    }
 
     case "NAVIGATE_QUESTION":
       return {
@@ -150,7 +151,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         timeRemaining: 0,
       };
 
-    case "RESTART_QUIZ":
+    case "RESTART_QUIZ": {
       const now = Date.now();
       return {
         ...state,
@@ -166,6 +167,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         lastAnswerCorrect: null,
         direction: 0,
       };
+    }
 
     case "START_REVIEW":
       return {

@@ -20,7 +20,7 @@ import { battleMode } from "@/data/battle-modes";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { CheckCircle2, Clock, Copy, ListChecks, Trophy, X, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BattleState } from "./battle-page";
+import type { BattleState } from "./battle-page";
 
 /**
  * The icon and colour each lobby rule renders with, keyed by the rule's id in

@@ -17,7 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { DIFFICULTIES, difficultyLabel, type Difficulty } from "@/content/core";
 import type { PageCopySection } from "@/content/pages";
 import { itemLabel } from "@/lib/page-copy";
-import { Dispatch, SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 
 /** The badge tint per level; the label is `difficultyLabel`'s, never typed here (WU-5). */
 const DIFFICULTY_BADGES: Readonly<Record<Difficulty, "success" | "warning" | "destructive">> = {

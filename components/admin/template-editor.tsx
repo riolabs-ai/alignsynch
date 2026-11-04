@@ -128,6 +128,16 @@ function Field({
   );
 }
 
+/**
+ * Which band sits under the editor (#533 phase 2).
+ *
+ * Exported as a constant because it is **not copy**: a page that wrote the literal `"private"` in
+ * its JSX would be charged one leaf literal against a copy budget of zero (E23), and the fix is to
+ * name the band, not to widen the budget.
+ */
+export const PRIVATE_BAND = "private" as const;
+export const CATALOGUE_BAND = "catalogue" as const;
+
 export function TemplateEditor({
   copy,
   sheetCopy,
@@ -136,6 +146,7 @@ export function TemplateEditor({
   status,
   versions,
   catalogue,
+  band = CATALOGUE_BAND,
   onSave,
   onPublish,
   onUnpublish,
@@ -151,12 +162,25 @@ export function TemplateEditor({
   versions: readonly TemplateVersionSummary[];
   /** The catalogue type the slug names, when it names one: realm and price are its fields. */
   catalogue: { readonly realm: string; readonly price: number } | null;
+  /**
+   * Which band sits under the editor (#533 phase 2).
+   *
+   * `"catalogue"` — the console's: the live state, the highest version, and the two buttons that
+   * publish a version or withdraw it. `"private"` — a member's own template, where publishing to
+   * the catalogue is **not this member's decision** (public listing is admin-curated) and the band
+   * draws the `private` section of the copy instead of a control that would always refuse.
+   *
+   * The variation is a prop rather than a second editor: the tabs, the Aspect rows, the save band
+   * and the preview are identical, so a second module would be the same 600 lines with one card
+   * different — which is the hand-bake #336's rule exists to catch.
+   */
+  band?: "catalogue" | "private";
   /** The server action, passed in rather than imported: this module never reaches `app/`. */
   onSave: (payload: TemplateFormPayload) => Promise<TemplateSaveOutcome>;
-  /** Publish the stored rows as the next immutable version (#502b). */
-  onPublish: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  /** Publish the stored rows as the next immutable version (#502b). Required in catalogue mode. */
+  onPublish?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
   /** Withdraw the template from the catalogue; no version row is touched. */
-  onUnpublish: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  onUnpublish?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -180,10 +204,17 @@ export function TemplateEditor({
   const aspectCopy = sectionOf(copy, "aspects");
   const preview = sectionOf(copy, "preview");
   const save = sectionOf(copy, "save");
-  const publishCopy = sectionOf(copy, "publish");
+  const publishCopy =
+    band === "catalogue" ? sectionOf(copy, "publish") : sectionOf(copy, "private");
   const refusals = sectionOf(copy, "refusals");
   const locked = sectionOf(copy, "locked");
   const problems = sectionOf(copy, "problems");
+  /**
+   * The member band's words (#533 phase 2). Only read in `band: "private"`, and only that copy
+   * carries the section — a console copy without it never asks, so `sectionOf` cannot throw on the
+   * path that does not render it.
+   */
+  const privateCopy = band === "private" ? sectionOf(copy, "private") : locked;
   const readOnly = !editable;
 
   /**
@@ -249,6 +280,7 @@ export function TemplateEditor({
    * immutable row record something no reader has ever agreed to.
    */
   function publishVersion(): void {
+    if (onPublish === undefined) return;
     setVersionOutcome(null);
     startVersionTransition(async () => {
       const answer = await onPublish({ templateId: template.id, reason });
@@ -259,6 +291,7 @@ export function TemplateEditor({
 
   /** Withdraw the offer. The versions the band names are not deleted by this — that is the point. */
   function unpublishVersion(): void {
+    if (onUnpublish === undefined) return;
     setVersionOutcome(null);
     startVersionTransition(async () => {
       const answer = await onUnpublish({ templateId: template.id, reason });
@@ -475,97 +508,108 @@ export function TemplateEditor({
         </TabsContent>
       </Tabs>
 
-      <Card data-template-publish={status}>
-        <CardHeader>
-          <CardTitle>{publishCopy.heading}</CardTitle>
-          <CardDescription>{sectionBody(publishCopy)}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <Badge variant="outline" data-template-status={status}>
-              {itemLabel(publishCopy, `state-${status}`)}
-            </Badge>
-            <span
-              data-template-live-version={offered === undefined ? "none" : String(offered.version)}
-              className="text-muted-foreground"
-            >
-              {offered !== undefined
-                ? fillLabel(itemLabel(publishCopy, "live"), { version: String(offered.version) })
-                : highest === undefined
-                  ? itemLabel(publishCopy, "never")
-                  : fillLabel(itemLabel(publishCopy, "history"), {
-                      version: String(highest.version),
-                    })}
-            </span>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="template-version-reason">{itemLabel(publishCopy, "reason")}</Label>
-            <Input
-              id="template-version-reason"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            {status === "published" ? (
-              <Button
-                type="button"
-                variant="outline"
-                data-template-unpublish
-                onClick={unpublishVersion}
-                disabled={versionPending}
-              >
-                {versionPending
-                  ? itemLabel(publishCopy, "working")
-                  : itemLabel(publishCopy, "unpublish")}
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                data-template-publish-action
-                onClick={publishVersion}
-                disabled={versionPending || readOnly}
-              >
-                {versionPending
-                  ? itemLabel(publishCopy, "working")
-                  : itemLabel(publishCopy, "publish")}
-              </Button>
-            )}
-            {versionNotice === null ? null : (
-              <p
-                data-template-version-notice={versionOutcome?.ok === true ? "ok" : "none"}
-                className="text-sm text-muted-foreground"
-              >
-                {versionNotice}
-              </p>
-            )}
-            {versionRefusal === null ? null : (
-              <p
-                data-template-version-refusal={
-                  versionOutcome?.ok === false ? versionOutcome.code : ""
+      {band === "private" ? (
+        <Card data-template-private>
+          <CardHeader>
+            <CardTitle>{privateCopy.heading}</CardTitle>
+            <CardDescription>{sectionBody(privateCopy)}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Card data-template-publish={status}>
+          <CardHeader>
+            <CardTitle>{publishCopy.heading}</CardTitle>
+            <CardDescription>{sectionBody(publishCopy)}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <Badge variant="outline" data-template-status={status}>
+                {itemLabel(publishCopy, `state-${status}`)}
+              </Badge>
+              <span
+                data-template-live-version={
+                  offered === undefined ? "none" : String(offered.version)
                 }
-                className="text-sm"
+                className="text-muted-foreground"
               >
-                {versionRefusal}
-              </p>
-            )}
-          </div>
-          {versionOutcome?.ok === false && versionOutcome.problems !== undefined ? (
-            <div data-template-version-problems className="space-y-1">
-              <p className="text-sm font-medium">{problems.heading}</p>
-              <ul className="space-y-1 text-sm">
-                {versionOutcome.problems.map((problem) => (
-                  <li key={`${problem.path}:${problem.message}`}>
-                    <span className="font-mono">{problem.path || "record"}</span>
-                    {": "}
-                    {problem.message}
-                  </li>
-                ))}
-              </ul>
+                {offered !== undefined
+                  ? fillLabel(itemLabel(publishCopy, "live"), { version: String(offered.version) })
+                  : highest === undefined
+                    ? itemLabel(publishCopy, "never")
+                    : fillLabel(itemLabel(publishCopy, "history"), {
+                        version: String(highest.version),
+                      })}
+              </span>
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="template-version-reason">{itemLabel(publishCopy, "reason")}</Label>
+              <Input
+                id="template-version-reason"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              {status === "published" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  data-template-unpublish
+                  onClick={unpublishVersion}
+                  disabled={versionPending}
+                >
+                  {versionPending
+                    ? itemLabel(publishCopy, "working")
+                    : itemLabel(publishCopy, "unpublish")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  data-template-publish-action
+                  onClick={publishVersion}
+                  disabled={versionPending || readOnly}
+                >
+                  {versionPending
+                    ? itemLabel(publishCopy, "working")
+                    : itemLabel(publishCopy, "publish")}
+                </Button>
+              )}
+              {versionNotice === null ? null : (
+                <p
+                  data-template-version-notice={versionOutcome?.ok === true ? "ok" : "none"}
+                  className="text-sm text-muted-foreground"
+                >
+                  {versionNotice}
+                </p>
+              )}
+              {versionRefusal === null ? null : (
+                <p
+                  data-template-version-refusal={
+                    versionOutcome?.ok === false ? versionOutcome.code : ""
+                  }
+                  className="text-sm"
+                >
+                  {versionRefusal}
+                </p>
+              )}
+            </div>
+            {versionOutcome?.ok === false && versionOutcome.problems !== undefined ? (
+              <div data-template-version-problems className="space-y-1">
+                <p className="text-sm font-medium">{problems.heading}</p>
+                <ul className="space-y-1 text-sm">
+                  {versionOutcome.problems.map((problem) => (
+                    <li key={`${problem.path}:${problem.message}`}>
+                      <span className="font-mono">{problem.path || "record"}</span>
+                      {": "}
+                      {problem.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
 
       {readOnly ? null : (
         <Card>
