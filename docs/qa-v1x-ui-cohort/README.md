@@ -1,7 +1,7 @@
 # #539 — v1.x UI polish cohort, evidence
 
 Ten owner items, one cohort. Every number below is measured in a real browser against the built
-app: **before** = `origin/main` at `dfc6ebf5` (its own production build, `BRAND=alignsynch`),
+app: **before** = `origin/main` at `d338b44f` (its own production build, `BRAND=alignsynch`),
 **after** = this branch's build, same brand, same viewport, same session.
 
 Reproduce: `BRAND=alignsynch pnpm build && pnpm start`, then measure with
