@@ -30,7 +30,10 @@ export const dynamic = "force-dynamic";
  *
  * **Two bands, two jobs** (owner, 2026-11-02). The answers come first — `HelpPage`, the split's
  * page — and the form follows under them (`ContactSection`), because a form is what a reader
- * wants *after* the FAQ failed them. There used to be three contact paths: an address link in the
+ * wants *after* the FAQ failed them. That row carries two columns at `md` and up: the form, and
+ * the "need a person" band beside it (owner, 2026-11-04). The band used to sit at the foot of the
+ * help centre, which put the alternative to the form below the form rather than beside it. There
+ * used to be three contact paths: an address link in the
  * footer, one on the pricing page, and a disabled form on `/support`. There is one now, here, and
  * it stores the message in Postgres before it mails it (`app/api/contact/route.ts`).
  *
