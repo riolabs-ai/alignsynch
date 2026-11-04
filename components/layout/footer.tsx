@@ -202,10 +202,10 @@ export function Footer({
                    * **The row does not move.** `h-24` on the row is the height the 96px mark gave
                    * this row before this card, so the footer's brand block keeps its exact
                    * rhythm — brand row 96px, gap 24px, blurb 63.4px at 1440 — and only the thing
-                   * inside the row changes. The 48px lockup (309×48 at 1440) is as tall as the
-                   * 336px `lg:col-span-4` column allows: 336 × 127/818 = 52.2px is the ceiling,
-                   * and the blurb it sits above is 320px wide, so the image stays inside the
-                   * paragraph's own block instead of becoming the block.
+                   * inside the row changes. `h-12` (48px, 309×48) is the size below the expanded
+                   * breakpoint; from 992px the shared `img[data-brand-lockup]` rule sets 2rem /
+                   * 206.1px, the same number the header draws (t_f4e69dba), so the footer's
+                   * signature and the header's cannot disagree.
                    *
                    * `alt={brand.name}` because the image *is* the brand's name for a screen
                    * reader. There is no typed wordmark beside it any more — the lockup carries
@@ -217,6 +217,7 @@ export function Footer({
                     width={mark.width}
                     height={mark.height}
                     className="h-12 w-auto shrink-0"
+                    data-brand-lockup
                   />
                 ) : (
                   <div className="bg-action p-2 rounded-lg">

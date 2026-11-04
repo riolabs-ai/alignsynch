@@ -95,19 +95,21 @@ export function MarketingHeader({
              * arithmetic and not a class someone can get wrong. No square box, no `object-cover`,
              * no window: the whole file is placed, which is what #470 fixed the first time.
              *
-             * **Measured, at three widths.** The header row is `h-20` (80px) and this image must
-             * never make it taller, so every size here is below 80px. The row's own arithmetic
-             * decides the number: at 1440 the brand slot has 376.8px before the menu starts
-             * (24px gap included), at 768 — where `PublicNav` reappears — only 193px, and at 390
-             * 171.7px before the account pair. Hence 24px tall / 155px wide at 390, 180px wide
-             * from `sm`, and 56px tall / 361px wide from `lg`, where the menu has room again.
-             * The 56px is 1.75× the 32px the chrome drew before the polish, and the monogram
-             * inside it is ~65px tall against ~25px: the "2–2.5× the icon" the owner asked for,
-             * delivered by resizing the lockup rather than by replacing it.
+             * **The expanded size is not set here** (t_f4e69dba). Every viewport where the header
+             * is expanded draws the lockup at `2rem` / 206.1px from the one `img[data-brand-lockup]`
+             * rule in `app/globals.css`, shared with the footer, which used to draw the same file
+             * at 48px. The `h-6` / `sm:h-7` below are the sizes *below* that breakpoint, where the
+             * header is collapsed and the criterion does not apply; measured 24px at 390 and 28px
+             * at 768, both unchanged by this card.
+             *
+             * The header row is `h-20` (80px), so no size here can make it taller — 32px is well
+             * inside it, and the brand slot keeps the room it had (376.8px at 1440, 193px at 768
+             * where `PublicNav` reappears, 171.7px at 390 before the account pair).
              */
             <Image
               alt={brand.name}
-              className="h-6 w-auto shrink-0 sm:h-7 lg:h-14"
+              className="h-6 w-auto shrink-0 sm:h-7"
+              data-brand-lockup
               height={mark.height}
               priority
               src={mark.src}

@@ -176,13 +176,16 @@ describe("the marketing chrome", () => {
     /**
      * And it is scaled the only way a lockup may be: by height, with the aspect ratio the record
      * itself carries. `next/image` emits the intrinsic width/height, and the height-driven class
-     * (`h-6`, `sm:h-7`, `lg:h-14`) with `w-auto` is what keeps 818:127 the browser's arithmetic —
-     * a square box, an `object-cover` or a fixed width is how #470's crop came back.
+     * (`h-6`, `sm:h-7`) with `w-auto` is what keeps 818:127 the browser's arithmetic — a square
+     * box, an `object-cover` or a fixed width is how #470's crop came back. The expanded size is
+     * not a class: it is the one `data-brand-lockup` rule in `app/globals.css` (below), so the
+     * header and the footer cannot render two different heights.
      */
     const image = /<img\b[^>]*>/.exec(html)?.[0] ?? "";
     expect(image).toMatch(/width="818"/);
     expect(image).toMatch(/height="127"/);
     expect(image).toMatch(/w-auto/);
+    expect(image).toMatch(/data-brand-lockup/);
     expect(image).not.toMatch(/object-(cover|contain)/);
 
     // The header reads the lockup, and never asks for the icon.
@@ -212,6 +215,38 @@ describe("the marketing chrome", () => {
     const source = readFileSync("components/layout/footer.tsx", "utf8");
     expect(source).toMatch(/const mark = brandMark\(brand\.logo\)/);
     expect(source).not.toMatch(/brandIconMark|alignsynch-icon/);
+  });
+
+  it("sizes the lockup from one rule shared by the header and the footer", () => {
+    /**
+     * **One number, two surfaces** (t_f4e69dba). The header and the footer draw the same export,
+     * and each used to carry its own height utility (24/28/56px in the header, 48px in the
+     * footer), so the signature read three sizes on one page. Both `<img>`s now carry
+     * `data-brand-lockup` and the expanded height lives in exactly one place.
+     *
+     * The numbers are read out of the stylesheet rather than trusted: `height: 2rem` inside
+     * `@media (min-width: 992px)`, on an `img[data-brand-lockup]` selector — the bare attribute
+     * selector ties with a `.h-*` utility on specificity and the bundle puts Tailwind's
+     * responsive variants after this file, so a bare selector measured 28px where this reads
+     * 32px — and no unconditional `height` for the hook, which would out-rank the mobile
+     * utilities and render the lockup at its intrinsic 818×127 below the breakpoint.
+     */
+    if (brand.logo === LOGO) {
+      expect(/<img\b[^>]*data-brand-lockup[^>]*>/.test(headerHtml())).toBe(true);
+      expect(/<img\b[^>]*data-brand-lockup[^>]*>/.test(footerHtml())).toBe(true);
+    }
+
+    const css = readFileSync("app/globals.css", "utf8");
+    const rule = /@media\s*\(min-width:\s*992px\)\s*\{[^}]*img\[data-brand-lockup\][^}]*\}/.exec(
+      css,
+    )?.[0];
+    expect(rule).toBeDefined();
+    expect(rule).toMatch(/height:\s*2rem/);
+    expect(rule).toMatch(/width:\s*auto/);
+    // The hook appears once in code — inside the media block. A second, unconditional rule would
+    // be the mobile regression: it out-ranks `h-6`/`sm:h-7` and draws the 818×127 at full size.
+    const code = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(code.match(/\[data-brand-lockup\]/g)).toHaveLength(1);
   });
 
   it("keeps the square mark on the surfaces that need an icon", () => {

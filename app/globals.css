@@ -394,3 +394,38 @@
     transition: none;
   }
 }
+
+/*
+ * The brand lockup is one size in the chrome: 2rem tall wherever the header is expanded
+ * (t_f4e69dba).
+ *
+ * The header and the footer draw the same 818×127 export and each had its own height utility
+ * — 24/28/56px in the header, 48px in the footer — so the signature read three sizes on one
+ * page. `data-brand-lockup` is the hook both `<img>`s carry, and this is the only place the
+ * expanded size is written: 32px tall, width from the asset's own ratio (`width: auto`), which
+ * is 206.1px.
+ *
+ * **Why the breakpoint is 992 and not a Tailwind step.** The criterion is the *expanded* header:
+ * 992 is where `PublicNav` is drawn in full instead of the hamburger, so it is where the number
+ * starts applying. Below it the hamburger is showing and the utilities on each element keep
+ * today's mobile sizes untouched (header 24px, then 28px from `sm`; footer 48px) — this rule is
+ * deliberately not allowed to reach them.
+ *
+ * **Why the selector carries `img`.** A bare `[data-brand-lockup]` ties with a `.h-*` utility on
+ * specificity, and the emitted bundle does not keep source order: Tailwind's responsive variants
+ * (`sm:h-7`) land *after* this file's own rules, so measured, a bare attribute selector lost and
+ * the header stayed at 28px while the footer (whose `h-12` is a base utility) already read 32px.
+ * `img[data-brand-lockup]` (0,1,1) settles it against any utility without an `!important` and
+ * without depending on where the bundler puts them.
+ *
+ * The card sketched an unconditional `[data-brand-lockup] { height: auto; }` above the media
+ * block. It is not here because it would out-rank the mobile utilities the same way and would
+ * render the lockup at its intrinsic 818×127 below 992 — measured, that is a 127px header image
+ * at 768, which is the one thing requirement 3 forbids.
+ */
+@media (min-width: 992px) {
+  img[data-brand-lockup] {
+    height: 2rem;
+    width: auto;
+  }
+}
