@@ -35,9 +35,10 @@ import type { PartyRole } from "@/content/assessment";
 import { answersPath } from "@/lib/flow/paths";
 import { maySubmit, type InstanceStatus } from "@/lib/flow/state";
 import type { FlowAspect } from "@/lib/flow/screen";
+import type { Membership } from "@/lib/relationship/membership";
 
-/** The three surfaces one answer URL can draw. */
-export const ANSWER_SHEET_STATES = ["sheet", "readonly", "coach"] as const;
+/** The four surfaces one answer URL can draw. */
+export const ANSWER_SHEET_STATES = ["sheet", "readonly", "lapsed", "coach"] as const;
 
 export type AnswerSheetState = (typeof ANSWER_SHEET_STATES)[number];
 
@@ -73,6 +74,12 @@ export interface AnswerGateInput {
   readonly viewerAccepted: boolean;
   /** The projected Aspects. Only `own` is read, and it is the viewer's own. */
   readonly aspects: readonly Pick<FlowAspect, "own">[];
+  /**
+   * #533 phase 3 — the membership paying for this relationship. `lapsed` outranks every other
+   * state except `coach`: a coach has no seat to lose, and a party whose membership ended keeps
+   * reading their own sheet but cannot write it, whatever the session's status said.
+   */
+  readonly membership?: Membership | null;
 }
 
 /**
@@ -88,6 +95,12 @@ export function answerGateOf(input: AnswerGateInput): AnswerGate {
 
   if (input.viewerRole === "coach") {
     return { ...counts, state: "coach", role: null, action: null };
+  }
+  // #533 phase 3 — a lapsed membership is asked before the session's own freeze: the session may
+  // still be `answering`, but nothing may be written to it. The sheet is still drawn (the viewer's
+  // own scores are theirs); only the form is gone, and the band says whose membership ended.
+  if (input.membership?.state === "lapsed") {
+    return { ...counts, state: "lapsed", role: input.viewerRole, action: null };
   }
   if (!maySubmit(input.status, input.viewerAccepted)) {
     return { ...counts, state: "readonly", role: input.viewerRole, action: null };

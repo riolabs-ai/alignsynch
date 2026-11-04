@@ -145,10 +145,13 @@ describe("publishable and isClosed", () => {
     expect(publishable("active")).toBe(false);
   });
 
-  it("calls the three statuses with no way out closed, and active open", () => {
-    const open: RelationshipStatus[] = ["draft", "pending", "published", "active"];
+  it("calls complete and void closed, and leaves lapsed open to a payment", () => {
+    // #533 phase 3: `expired` is no longer closed. It has no *person's* edge out, but the system's
+    // payment edge exists (`expired → active|published`), so a screen that said "nothing more can
+    // happen" about a lapsed relationship would be telling the payer it is over.
+    const closed: RelationshipStatus[] = ["complete", "void"];
     for (const status of RELATIONSHIP_STATUSES) {
-      expect(isClosed(status), status).toBe(!open.includes(status));
+      expect(isClosed(status), status).toBe(closed.includes(status));
     }
   });
 });
@@ -250,7 +253,20 @@ describe("MemberRefused", () => {
   it("names the trial's last instant in the trial-already-running sentence", () => {
     const endsAt = new Date("2026-11-18T12:00:00.000Z");
     expect(trialAlreadyRunningMessage(endsAt)).toContain("2026-11-18T12:00:00.000Z");
-    expect(trialAlreadyRunningMessage(endsAt)).toContain("one active trial per account");
+    expect(trialAlreadyRunningMessage(endsAt)).toContain("One active trial per account");
+  });
+
+  it("names the relationship that holds the trial, when one was read (#533 phase 3)", () => {
+    const endsAt = new Date("2026-11-18T12:00:00.000Z");
+    const sentence = trialAlreadyRunningMessage(endsAt, {
+      relationshipId: "rel-1",
+      title: "Avery and Rowan",
+    });
+    expect(sentence).toContain('relationship "rel-1"');
+    expect(sentence).toContain('("Avery and Rowan")');
+    expect(sentence).toContain("holds it");
+    // No relationship read: the sentence still names the instant, and says whose trial it is not.
+    expect(trialAlreadyRunningMessage(endsAt, null)).toContain("a relationship on this account");
   });
 
   it("lists every code once, and every code is one a refusal can carry", () => {

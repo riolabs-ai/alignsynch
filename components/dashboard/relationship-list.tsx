@@ -110,6 +110,14 @@ export function RelationshipList({
                       <Badge variant={toneOf(row.status)} data-relationship-status={row.status}>
                         {statusLabel(statusCopy, row.status)}
                       </Badge>
+                      {/* #533 phase 3 — the derived membership, beside the stored status. A row
+                          whose trial ran out reads `published` in the column until a write flips
+                          it; the badge says the pair is read-only now, not a month ago. */}
+                      {row.membership.state === "lapsed" ? (
+                        <Badge variant="outline" data-membership-state="lapsed">
+                          {statusLabel(statusCopy, "read-only")}
+                        </Badge>
+                      ) : null}
                       <Badge variant="outline" data-relationship-view={row.view}>
                         {viewLabel(viewCopy, row.view)}
                       </Badge>

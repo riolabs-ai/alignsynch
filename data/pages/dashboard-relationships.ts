@@ -56,6 +56,12 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         { id: "complete", label: "Complete" },
         { id: "void", label: "Void" },
         { id: "expired", label: "Expired" },
+        /**
+         * #533 phase 3 — the derived membership state, drawn beside the stored status. "Read-only"
+         * rather than a second lifecycle word: the row's status is the lifecycle, and this is the
+         * consequence the money has on it.
+         */
+        { id: "read-only", label: "Read-only" },
       ],
     },
     {

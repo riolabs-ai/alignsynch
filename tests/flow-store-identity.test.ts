@@ -166,6 +166,12 @@ const stub = vi.hoisted(() => {
     if (sql.startsWith("SELECT session_record_id, counterparty_name, claimed_at, expires_at")) {
       return { rows: state.invite === undefined ? [] : [state.invite], rowCount: 1 };
     }
+    // #533 phase 3 — the claim asks which relationship the invitation's session belongs to before
+    // it binds the seat. These cases are about the binding, not the membership, so the answer is
+    // "no relationship named": the lapse check is skipped and the claim is unchanged.
+    if (sql.startsWith("SELECT relationship_id FROM session")) {
+      return { rows: [{ relationship_id: null }], rowCount: 1 };
+    }
     if (sql.includes("access_token_hash = ANY")) {
       const hashes = values[1] as readonly string[];
       return {

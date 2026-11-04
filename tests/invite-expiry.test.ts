@@ -190,6 +190,12 @@ const stub = vi.hoisted(() => {
     if (sql.startsWith("SELECT session_record_id, role, name")) {
       return { rows: state.parties, rowCount: state.parties.length };
     }
+    // #533 phase 3 — `readFlowScreen` derives the membership beside the invitation. This fixture
+    // names a relationship that no row holds, so the read is `undefined` and the screen draws
+    // exactly what it drew before: the phase-3 band has its own suite.
+    if (sql.startsWith("SELECT id, status, initiator_user_id, expired_at, lapse_reason")) {
+      return { rows: [], rowCount: 0 };
+    }
     if (sql.startsWith("SELECT email, counterparty_name, claimed_at")) {
       return { rows: state.invite === undefined ? [] : [state.invite], rowCount: 1 };
     }

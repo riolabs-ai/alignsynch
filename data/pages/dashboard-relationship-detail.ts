@@ -41,6 +41,8 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     { id: "invited", label: "Invited" },
     { id: "trial", label: "Trial ends" },
     { id: "none", label: "—" },
+    /** #533 phase 3 — the badge the derived lapse draws beside the stored status. */
+    { id: "read-only", label: "Read-only" },
   ],
   sections: [
     {

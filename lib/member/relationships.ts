@@ -70,7 +70,9 @@ import { hashToken, mintToken } from "@/lib/flow/tokens";
 import { freeSlug } from "@/lib/member/templates";
 import type { Subscription } from "@/lib/billing/types";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
-import { trialStateOf, type TrialState } from "@/lib/relationship/trial";
+import { lapseIfDue, trialHolderOf, type Sql } from "@/lib/relationship/enforcement";
+import { membershipOf, membershipSentence, type Membership } from "@/lib/relationship/membership";
+import { trialStateOf, type TrialFacts, type TrialState } from "@/lib/relationship/trial";
 import {
   aspectsEditable,
   inviteExpiresAt,
@@ -88,6 +90,21 @@ import {
 
 /** Where the relationship screens live. One place, because a redirect and a link agree. */
 export const MEMBER_RELATIONSHIPS_PATH = "/dashboard/relationships";
+
+/**
+ * The pool in the shape `lib/relationship/enforcement.ts` reads through.
+ *
+ * The two pre-flight reads below (`trialHolderOf`) happen outside `act()`'s transaction, because
+ * they only decide *which* refusal to answer with; the transaction re-reads everything it writes.
+ * The same literal appears in `lib/flow/store.ts` for the same reason: `pg`'s `Pool` and `PoolClient`
+ * share the query surface, so one function serves both.
+ */
+const poolSql: Sql = {
+  query: async <R = Record<string, unknown>>(text: string, values?: readonly unknown[]) => {
+    const rows = await queryRows<R & Record<string, unknown>>(text, values);
+    return { rows };
+  },
+};
 
 /**
  * The tier a trial starts on, and the interval a checkout buys.
@@ -130,6 +147,12 @@ export interface MemberRelationshipRow {
   readonly counterpartyName: string | null;
   /** What the band says, derived at the instant the read was given. */
   readonly view: PublishView;
+  /**
+   * #533 phase 3 — the membership, derived at the same instant. A relationship whose trial ran out
+   * reads `lapsed` here even before a write has flipped its stored status to `expired`, so the list
+   * never shows a relationship as writable that the answer sheet would refuse.
+   */
+  readonly membership: Membership;
 }
 
 interface RelationshipQueryRow {
@@ -137,6 +160,9 @@ interface RelationshipQueryRow {
   readonly status: string;
   readonly created_at: Date | string;
   readonly published_at: Date | string | null;
+  /** #533 phase 3 — the lapse, when the row records one (`0032`). */
+  readonly expired_at: Date | string | null;
+  readonly lapse_reason: string | null;
   readonly template_id: string;
   readonly title: string;
   readonly summary: string;
@@ -157,7 +183,7 @@ interface RelationshipQueryRow {
  * the relationship, not one cycle. The invitation hangs off that session, so a draft has none.
  */
 const RELATIONSHIP_COLUMNS = `
-  rel.id, rel.status, rel.created_at, rel.published_at,
+  rel.id, rel.status, rel.created_at, rel.published_at, rel.expired_at, rel.lapse_reason,
   t.id AS template_id, t.title, t.summary,
   s.record_id AS session_record_id,
   (SELECT count(*)::int FROM item i WHERE i.record_id = t.id) AS aspect_count,
@@ -184,7 +210,11 @@ function instantOf(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
-function relationshipOf(row: RelationshipQueryRow, now: Date): MemberRelationshipRow {
+function relationshipOf(
+  row: RelationshipQueryRow,
+  now: Date,
+  subscription: TrialFacts | null,
+): MemberRelationshipRow {
   const status = row.status as RelationshipStatus;
   const invite =
     row.expires_at === null
@@ -207,6 +237,13 @@ function relationshipOf(row: RelationshipQueryRow, now: Date): MemberRelationshi
     invite,
     counterpartyName: row.counterparty_name,
     view: publishViewOf({ status, invite, now }),
+    membership: membershipOf({
+      status,
+      subscription,
+      expiredAt: row.expired_at === null ? null : new Date(row.expired_at),
+      lapseReason: row.lapse_reason,
+      now,
+    }),
   };
 }
 
@@ -222,7 +259,11 @@ export async function listMyRelationships(
       ORDER BY rel.created_at DESC, rel.id DESC`,
     [userId],
   );
-  return rows.map((row) => relationshipOf(row, now));
+  // One subscription read for the whole list: the membership is the *account's* fact, so asking
+  // per row would be the same query N times and could return two different answers if a payment
+  // landed between two of them.
+  const subscription = rows.length === 0 ? null : await readActiveSubscription(userId);
+  return rows.map((row) => relationshipOf(row, now, subscription));
 }
 
 /** The detail screen's view: the row above, plus the Aspects it configures. */
@@ -248,6 +289,14 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
   /** The trial, read from the account's subscription rather than from any relationship column. */
   readonly trial: TrialState;
   readonly trialEndsAt: string | null;
+  /**
+   * #533 phase 3 — whether the membership paying for this relationship is still running, derived
+   * at the instant the page was given. `lapsed` is the read-only state, and `lapseSentence` is the
+   * sentence the screen prints: it names the initiator's membership and the instant it ended, which
+   * is what keeps the counterparty from reading a lapse as their own failure.
+   */
+  readonly membership: Membership;
+  readonly lapseSentence: string | null;
   /** The invitation's link, when the read can produce one — never: only a mint returns a token. */
   readonly inviteLinkAvailable: boolean;
 }
@@ -295,17 +344,23 @@ export async function readMyRelationship(
   if (primary === undefined) return undefined;
 
   const subscription = await readActiveSubscription(userId);
-  const base = relationshipOf(row, now);
+  const base = relationshipOf(row, now, subscription);
   const trial = trialStateOf(subscription, now);
+  // #533 phase 3 — derived at the instant the page was handed, never written here (a render may
+  // not write). The same function the claim and the answer submit refuse with, so the band and the
+  // refusal can never disagree about whether this relationship may be written to.
+  const membership = base.membership;
   return {
     ...base,
     template: assessmentTemplateFromRows({ record: primary, items, options }),
     aspectsEditable: aspectsEditable(base.status),
     publishable: publishable(base.status),
-    offersRepublish: republishable(base.view),
+    offersRepublish: republishable(base.view) && membership.state !== "lapsed",
     trialWithoutLiveInvite: trialRunningWithoutLiveInvite(trial, base.view),
     closed: isClosed(base.status),
     trial,
+    membership,
+    lapseSentence: membership.state === "lapsed" ? membershipSentence(membership) : null,
     trialEndsAt:
       subscription !== null && subscription.status === "trialing"
         ? subscription.currentPeriodEnd
@@ -853,7 +908,14 @@ export async function publishRelationship(
   const subscription: Subscription | null = await readActiveSubscription(request.actorUserId);
   const basis = publishBasisOf(subscription, now);
   if (basis.kind === "trial-running") {
-    throw new MemberRefused("trial-already-running", trialAlreadyRunningMessage(basis.endsAt));
+    // #533 phase 3 — the refusal names the relationship that holds the trial, not just the
+    // instant. Asked *before* the transaction: it is a read, and a refusal that costs a lock is a
+    // refusal that could have been answered without one.
+    const holder = await trialHolderOf(poolSql, request.actorUserId);
+    throw new MemberRefused(
+      "trial-already-running",
+      trialAlreadyRunningMessage(basis.endsAt, holder),
+    );
   }
 
   let publishWith: "trial" | "paid" = "paid";
@@ -1189,6 +1251,15 @@ export async function republishRelationship(
             "not-publishable",
             `relationship "${rel.id}" is ${rel.status}: only a published relationship has an invitation to reissue`,
           );
+        }
+
+        // #533 phase 3 — a lapsed membership is not a broken link. Re-minting a token would hand
+        // out a link to a relationship nobody can write to, so the answer names the lapse instead
+        // of the invitation. `lapseIfDue` writes the `expired` status in this transaction, so the
+        // refusal and the row it is explained by land together.
+        const reading = await lapseIfDue(sql, rel.id, now);
+        if (reading !== undefined && reading.membership.state === "lapsed") {
+          throw new MemberRefused("lapsed", membershipSentence(reading.membership));
         }
 
         const found = await sql.query<{

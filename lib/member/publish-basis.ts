@@ -36,7 +36,7 @@
  */
 import { INVITE_TTL_MS } from "@/lib/flow/tokens";
 import { inviteStateOf, type InviteDisplayState } from "@/lib/flow/invite-state";
-import { isTerminalRelationshipStatus, type RelationshipStatus } from "@/lib/relationship/status";
+import { isClosedRelationshipStatus, type RelationshipStatus } from "@/lib/relationship/status";
 import {
   TRIAL_DAYS,
   trialStateOf,
@@ -280,6 +280,12 @@ export const MEMBER_REFUSALS = [
   "invite-live",
   "checkout-required",
   "slug-taken",
+  /**
+   * #533 phase 3 — the membership paying for this relationship ended. Its own code because the
+   * answer is not "try again later": the initiator has to subscribe before anything on this
+   * relationship moves, and the sentence names the instant it ended.
+   */
+  "lapsed",
   "failed",
 ] as const;
 
@@ -296,9 +302,29 @@ export class MemberRefused extends Error {
   }
 }
 
-/** The trial-already-running sentence, with the instant #533's card asks to be named. */
-export function trialAlreadyRunningMessage(endsAt: Date): string {
-  return `a trial is already running on this account and ends at ${endsAt.toISOString()} — one active trial per account (#533), so publish once this one has ended or subscribe`;
+/**
+ * The trial-already-running sentence, with the instant #533's card asks to be named — **and the
+ * relationship that holds the trial**, which phase 3 adds.
+ *
+ * The card's acceptance is "a second relationship cannot start a trial, and the refusal names the
+ * relationship that holds the trial". The id is the fact; the title is what makes the sentence
+ * readable. Both are optional because a caller inside a transaction may have the subscription row
+ * and not the relationship's title, and a refusal with the instant is still better than a button
+ * that does nothing.
+ */
+export function trialAlreadyRunningMessage(
+  endsAt: Date,
+  holder?: { readonly relationshipId?: string | null; readonly title?: string | null } | null,
+): string {
+  const id = holder?.relationshipId ?? null;
+  const title = holder?.title?.trim() ?? "";
+  const which =
+    id === null
+      ? "a relationship on this account"
+      : title === ""
+        ? `relationship "${id}"`
+        : `relationship "${id}" ("${title}")`;
+  return `a trial is already running on this account — ${which} holds it and it ends at ${endsAt.toISOString()}. One active trial per account (#533), so publish once this one has ended or subscribe to add more.`;
 }
 
 /**
@@ -307,5 +333,5 @@ export function trialAlreadyRunningMessage(endsAt: Date): string {
  * `publishable()` (that one is about the two editable states).
  */
 export function isClosed(status: RelationshipStatus): boolean {
-  return isTerminalRelationshipStatus(status);
+  return isClosedRelationshipStatus(status);
 }
