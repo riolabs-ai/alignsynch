@@ -132,6 +132,26 @@ export const ADMIN_ACTIONS = [
    * per-address cooldown rows beside it, in the same transaction.
    */
   "broadcast.send",
+  /**
+   * Answer a contact message through the mail provider (#506). **`support`**, and the action
+   * this rung exists for: the inbox is the queue a support seat works, and answering a person is
+   * the courtesy the role is named after.
+   *
+   * One name covers both halves of a send, because they are one decision: the reply row is
+   * written (and the message goes `waiting`) under this action, and the provider's answer — the
+   * `sent_at` that lands or the error that is stored — is recorded under it too. A second name
+   * for the outcome would split "I answered this" across two log entries a reader has to join.
+   */
+  "message.reply",
+  /** Claim a message, or hand it to another seat. `support`: taking work off the queue. */
+  "message.assign",
+  /**
+   * Move a message between `new`, `open`, `waiting` and `closed` (#506). `support`, like the two
+   * beside it — triage is the queue's own vocabulary, and closing a message changes nothing a
+   * party wrote. `waiting` is written by the reply outcome as well, so this action and
+   * `message.reply` can both reach the same status; the reason on the audit row says which did.
+   */
+  "message.status",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -190,6 +210,19 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
    * `tests/admin-broadcast.test.ts`.
    */
   "broadcast.send": "admin",
+  /**
+   * #506 — **the support inbox's three names, all floor `support`.**
+   *
+   * The epic's first invariant is that a write is gated and recorded; the second is that PII is
+   * read behind a rung. A contact message carries a stranger's name and address, so the inbox is
+   * a `support` surface and not a public one — and the three actions are the rung's own work:
+   * claim the row, move it through triage, answer the person. Nothing here is destructive
+   * (`closed` is reversible), nothing spends money and nothing writes a party's words, which is
+   * exactly the set of decisions `support` exists to make.
+   */
+  "message.reply": "support",
+  "message.assign": "support",
+  "message.status": "support",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.
@@ -285,6 +318,14 @@ export const AUDIT_TARGET_TABLES = [
    * particular send.
    */
   "broadcast_send",
+  /**
+   * #506 — the inbox's two rows. `contact_message` is what a triage transition and a send outcome
+   * both change (status, assignment, `sent_at`); `contact_reply` is the row a reply creates, and
+   * it is a target so the audit entry points at the words a person was sent rather than only at
+   * the message they belong to. `/admin/audit` joins either id back to a real row.
+   */
+  "contact_message",
+  "contact_reply",
 ] as const;
 
 export type AuditTargetTable = (typeof AUDIT_TARGET_TABLES)[number];

@@ -36,6 +36,21 @@ export const ADMIN_BILLING_PATH = "/admin/billing";
 export const ADMIN_BROADCAST_PATH = "/admin/broadcast";
 
 /**
+ * `/admin/inbox` — the support inbox (#506): the contact form's queue, one thread, and the reply.
+ *
+ * The selection is a query parameter rather than a child route (`?message=<uuid>`), so the queue
+ * and the thread are one request-time render of one surface: the list a seat is working and the
+ * message they opened cannot disagree, because they were read together. It also keeps the inbox
+ * out of the route manifest's dynamic segments — a message id is a row, not a URL a reader types.
+ */
+export const ADMIN_INBOX_PATH = "/admin/inbox";
+
+/** `/admin/inbox?message=<id>` — the queue with one message's thread open. */
+export function adminInboxMessagePath(messageId: string): string {
+  return `${ADMIN_INBOX_PATH}?message=${messageId}`;
+}
+
+/**
  * `/admin/templates/<id>` — one template's editor.
  *
  * Here rather than beside `lib/admin/templates.ts` (#502a): the editor is a client component and

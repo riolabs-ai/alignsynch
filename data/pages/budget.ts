@@ -155,6 +155,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-report",
     budget: 0,
   },
+  // #506 — the support inbox. Budget 0 from the first commit: the queue's five column labels, the
+  // four status words, the delivery band's four states, the throttle's two sentences, the thread's
+  // receipts, three forms and the ten refusal sentences are all `data/pages/admin-inbox.ts`, so the
+  // next literal written in either component is a red build. Attribution is reachability, so this
+  // row counts `components/admin/support-inbox.tsx` and `support-thread.tsx` — and nothing else in
+  // the directory, because no other page imports them.
+  "/admin/inbox": {
+    page: "app/(mainlayout)/admin/inbox/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-inbox",
+    budget: 0,
+  },
   "/battle": {
     page: "app/(mainlayout)/battle/page.tsx",
     dirs: ["components/battle"],

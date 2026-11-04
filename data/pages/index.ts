@@ -19,6 +19,7 @@ import { adminBillingPageCopy } from "./admin-billing";
 import { adminBroadcastPageCopy } from "./admin-broadcast";
 import { adminGapsPageCopy } from "./admin-gaps";
 import { adminHealthPageCopy } from "./admin-health";
+import { adminInboxPageCopy } from "./admin-inbox";
 import { adminInstancesPageCopy } from "./admin-instances";
 import { adminRelationshipPageCopy } from "./admin-relationship";
 import { adminTemplateEditorPageCopy } from "./admin-template-editor";
@@ -81,6 +82,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/templates": adminTemplatesPageCopy,
   "/admin/templates/[id]": adminTemplateEditorPageCopy,
   "/admin/instances/[id]/report": adminReportPageCopy,
+  // #506 — the support inbox: the contact form's queue, one thread, the reply.
+  "/admin/inbox": adminInboxPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   "/assessment/instances": myInstancesPageCopy,
