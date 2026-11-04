@@ -1,5 +1,6 @@
 /**
- * `/` for the AlignSynch build — the alignment page's copy, positioned as a practice (issue #143).
+ * `/` for the AlignSynch build — the alignment page's copy, pitched at the leader's outcome
+ * (issue #143).
  *
  * `data/pages/home.ts` is the QuizHub front page: categories, tournaments, leaderboards,
  * "Earn Rewards". This module is the other composition of the same route, and which one
@@ -7,12 +8,15 @@
  * on the brand the way `resolveBrand` does, so neither product inherits the other's front
  * page by accident.
  *
- * **The page leads with a practice, and the Gap is the proof underneath.** An earlier version
- * of this fixture opened on the two questions ("How do you feel, against how they feel?") and
- * sold a relationship curiosity. The words below sell the thing a practitioner charges for:
- * a template that is theirs, a blind two-sided answer, and a report that becomes the agenda
- * of the session they run. The `questions` and `templates` bands are unchanged — the Gap is
- * still the mechanism — but they now sit under a business framing rather than in front of it.
+ * **The page leads with a leadership outcome, and the Gap is the proof underneath.** An earlier
+ * version of this fixture opened on the two questions ("How do you feel, against how they feel?")
+ * and sold a relationship curiosity; the version after it sold a practice — a heading promising
+ * the reader a business they bill clients for — which made the reader a vendor before they had
+ * read a word about the work. The words below are pitched at the person accountable for the
+ * relationship — a lead, a manager, a partner — and the hero names what they cannot otherwise
+ * hear: what their team will not say to their face. The Gap is still the mechanism, and the
+ * `practice` band still describes running the cycle with each counterparty; the hero no longer
+ * sells a session.
  *
  * Why this is not an entry in `data/pages/index.ts`: the table is keyed by the route pattern
  * (`/`), and one route carries one `PageCopy` — the fixture the `"/"` budget entry in
@@ -59,23 +63,34 @@ export const ALIGN_SYNCH_FEATURED_SLUG = "avery-rowan";
  * A function of the brand, like `homeTitle`: the page names the product itself, and the
  * alignment page's tagline is the practice the product makes possible rather than the quiz
  * template's "Play, Share, Earn". Neither word is spelled in a `.tsx`.
+ *
+ * The title still carries the practice word after the hero stopped carrying it. That is
+ * deliberate, not drift: the title is a positioning decision of its own (it is what a search
+ * result and a browser tab say), and it is not one of the three hero strings the leadership
+ * card names. Moving it is a one-line change here plus a parity summary, to be taken as its
+ * own decision by the owner.
  */
 export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
   return `${brand.name} — Turn one relationship into a practice`;
 }
 
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
-  eyebrow: "Relationship alignment · for practitioners",
-  heading: "Turn one assessment into a practice you can charge for.",
+  eyebrow: "Relationship alignment · for leaders and teams",
+  heading: "Know what your team will not say out loud.",
   /**
-   * The hero's three pieces of copy divide one job each, and the division is the fix for a
-   * footnote that said the money three times: the heading states the promise ("charge for"), the
-   * subtitle states the mechanism (pick a type, both answer blind, you get the Gap), and the
-   * fineprint — one sentence, never two — states what a reader is buying. "Paid to run" and
-   * "yours to run" used to repeat the heading's business fact in the two lines beneath it.
+   * The hero's copy divides one job each: the eyebrow says who the page is for, the heading
+   * states the outcome a leader owns (the thing their team will not say to their face), the
+   * subtitle states the mechanism (two people answer the same questions blind, and where their
+   * answers part is the thing to act on), and the fineprint — one sentence, never two — states
+   * what a reader is buying.
+   *
+   * The register is leadership, not practice: the reader is accountable for the relationship and
+   * for what they do next, not selling a session to a client. So no line here prices the work.
+   * A heading about billing, "paid to run" and "yours to run" all made the sale the promise,
+   * which read as a business a practitioner runs rather than an advantage the reader holds.
    */
   subtitle:
-    "Pick a relationship type, write the Aspects you actually work on, and send it to a client and the person they're aligning with. Both answer blind. You get the Gap — and the agenda for the session.",
+    "Two people answer the same questions blind. You see where intention and experience part company — and what to do next.",
   /**
    * Two CTAs, and the order is the argument: creating the first relationship is what the reader
    * came to do, and the worked example is how they check the product can do it. Both are
@@ -152,8 +167,9 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
      * Under the hero CTA: the two facts that make the button safe to press — one relationship is
      * bought once and every session after it is the reader's, and the reader's seat is the coach's
      * rather than a third answer. **One sentence**, because the three-line version repeated the
-     * heading's word ("charge for") twice ("paid to run", "yours to run") and buried the fact it
-     * was trying to make.
+     * purchase fact twice ("paid to run", "yours to run") and buried the fact it was trying to
+     * make. Since the heading now states an outcome rather than a sale, this line is the only
+     * place on the page that says what buying a relationship gets you.
      */
     {
       id: "hero-fineprint",
