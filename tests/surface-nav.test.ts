@@ -29,7 +29,7 @@ import { AppNav, NavRow } from "@/components/layout/nav-menus";
 import { PendingSurface } from "@/components/shell/pending-surface";
 import { requireSurface, surfaceFor } from "@/data/surface-registry";
 import { shellPageCopy } from "@/data/pages/shell";
-import { PLATFORM_VIEWER, viewerWith } from "@/lib/nav";
+import { navViewer, PLATFORM_VIEWER } from "@/lib/nav";
 
 /** Every `href` in a rendered tree, in document order. */
 function hrefsOf(html: string): string[] {
@@ -83,11 +83,11 @@ describe("a pending nav row", () => {
 });
 
 describe("the shell's menus", () => {
-  const navHtml = (capabilities: "platform" | "admin") =>
+  const navHtml = (who: "member" | "admin") =>
     renderToStaticMarkup(
       createElement(AppNav, {
         brandId: "alignsynch",
-        viewer: capabilities === "admin" ? viewerWith("admin-console") : PLATFORM_VIEWER,
+        viewer: navViewer(who),
         copy: shellPageCopy,
         collapsed: false,
         pathname: "/",
@@ -96,30 +96,31 @@ describe("the shell's menus", () => {
     );
 
   it("keeps every alignment destination — a status never adds or removes a row", () => {
-    expect(hrefsOf(navHtml("platform"))).toEqual([
+    expect(hrefsOf(navHtml("member"))).toEqual([
       "/dashboard",
-      "/dashboard/help",
-      "/assessment/instances",
+      "/dashboard/relationships",
+      "/dashboard/templates",
       "/dashboard/library",
-      "/assessment/templates",
+      "/dashboard/help",
       "/dashboard/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
-      // #539 item 10: the operator's group comes first, then the member's own rows.
-      "/admin/gaps",
-      "/admin/instances",
-      // #503 — the audit log, the operator's third row.
-      "/admin/audit",
-      // #505 — billing control, beside the log it writes into.
-      "/admin/billing",
-      // #507 — the broadcast, the console's last row.
-      "/admin/broadcast",
+      // #542 phase 2: the reader's own work, then help, then the staff group — which leads with
+      // the console hub that had no row anywhere before this card.
       "/dashboard",
-      "/dashboard/help",
-      "/assessment/instances",
+      "/dashboard/relationships",
+      "/dashboard/templates",
       "/dashboard/library",
-      "/assessment/templates",
+      "/dashboard/help",
       "/dashboard/support",
+      "/admin/console",
+      "/admin/instances",
+      "/admin/gaps",
+      "/admin/inbox",
+      "/admin/health",
+      "/admin/billing",
+      "/admin/broadcast",
+      "/admin/audit",
     ]);
   });
 
@@ -128,7 +129,7 @@ describe("the shell's menus", () => {
   });
 
   /**
-   * One active row, on every workspace page (#542 phase 1).
+   * One active row, on every workspace page (#542 phase 1, kept by phase 2).
    *
    * `isActive()` marks a row for its children, which lit **two** rows on `/dashboard/help`,
    * `/dashboard/library` and `/dashboard/support`: the page's own row and Overview, because every
@@ -153,14 +154,17 @@ describe("the shell's menus", () => {
           onNavigate: () => undefined,
         }),
       );
-    for (const pathname of [
-      "/dashboard",
-      "/dashboard/help",
-      "/dashboard/library",
-      "/dashboard/support",
-      "/assessment/instances",
+    for (const [pathname, lit] of [
+      ["/dashboard", "/dashboard"],
+      ["/dashboard/help", "/dashboard/help"],
+      ["/dashboard/library", "/dashboard/library"],
+      ["/dashboard/support", "/dashboard/support"],
+      ["/dashboard/relationships", "/dashboard/relationships"],
+      // A child keeps its list row lit, and does not light Overview with it.
+      ["/dashboard/relationships/abc", "/dashboard/relationships"],
+      ["/dashboard/templates/abc", "/dashboard/templates"],
     ]) {
-      expect(activeRowHrefs(at(pathname))).toEqual([pathname]);
+      expect(activeRowHrefs(at(pathname))).toEqual([lit]);
     }
   });
 });

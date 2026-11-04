@@ -2,6 +2,7 @@
 // template-ancestor: components/layout/nav-menus.tsx   (variation: the rail — wordmark, the AppNav rows, a sign-out row, and a width that answers the viewport)
 
 import { AppNav, NavRow } from "@/components/layout/nav-menus";
+import { toggleRail } from "@/app/(mainlayout)/rail-actions";
 import { AppVersion } from "@/components/layout/app-version";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
@@ -10,7 +11,7 @@ import type { BrandMark } from "@/lib/brand-mark";
 import type { NavViewer } from "@/lib/nav";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cn } from "@/lib/utils";
-import { LogOut, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -69,8 +70,14 @@ const FOCUSABLE =
  *
  * `open` only describes the drawer; at `md` and up the overrides below make it a sticky column
  * again whatever it says, which is why a drawer left open by a resize cannot survive as one.
+ *
+ * **`collapsed` is the reader's choice, not the viewport's (#542 phase 2).** From `lg` the rail is
+ * 250px with labels unless the `shell.rail` cookie says otherwise, in which case it is the same
+ * 64px icon column the viewport forces between `md` and `lg`. It arrives as a prop from
+ * `app/(mainlayout)/layout.tsx`, which read the cookie on the server, so there is no state here
+ * and no width that changes after hydration.
  */
-export function railClassName(open: boolean): string {
+export function railClassName(open: boolean, collapsed = false): string {
   return cn(
     // Below `md`: an overlay. Out of the flow, off-canvas, and absent from the a11y tree while
     // closed — `transform` alone moves paint, not focus.
@@ -78,7 +85,7 @@ export function railClassName(open: boolean): string {
     open ? "visible translate-x-0 shadow-2xl" : "invisible -translate-x-full",
     // From `md`: a column again — sticky, 64px, always visible — and from `lg` the expanded rail.
     "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none",
-    "lg:w-[250px]",
+    collapsed ? "lg:w-16" : "lg:w-[250px]",
   );
 }
 
@@ -88,6 +95,7 @@ export function AppSidebar({
   brandId,
   viewer,
   hiddenNav,
+  collapsed = false,
   open,
   onClose,
 }: {
@@ -102,6 +110,12 @@ export function AppSidebar({
    */
   hiddenNav?: readonly string[];
   /**
+   * The rail's width from the `shell.rail` cookie (#542 phase 2), read on the server. Only the
+   * `lg` column changes: below `md` the rail is a drawer and draws its labels whatever this says,
+   * and between `md` and `lg` the viewport has already forced the icon column.
+   */
+  collapsed?: boolean;
+  /**
    * The mobile drawer is open. Owned by `MainLayout` (`components/layout/main-layout.tsx`)
    * because the trigger lives in the header and the panel lives here; it has no meaning at `md`
    * and up, where the rail is a column.
@@ -113,6 +127,14 @@ export function AppSidebar({
   const nav = sectionOf(copy, "nav");
   const rail = sectionOf(copy, "rail");
   const pathname = usePathname();
+
+  /**
+   * **The rail's narrow form**, once (#542 phase 2). The drawer is always wide (250px at a 390px
+   * viewport has room for words); the column is wide unless the reader collapsed it. Every width
+   * decision below — the labels, the mark window, the version badge — reads this one value, so the
+   * three cannot disagree about which form they are drawing.
+   */
+  const narrow = collapsed && !open;
 
   const panelRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -206,6 +228,15 @@ export function AppSidebar({
   const railLabel = itemLabel(rail, "label");
 
   /**
+   * The width control's two names (#542 phase 2). Two literals at two `itemLabel` calls, chosen
+   * afterwards: a ternary over an *id* is an id E23 cannot read, and the words this control needs
+   * are the rail's own.
+   */
+  const collapseLabel = itemLabel(rail, "collapse");
+  const expandLabel = itemLabel(rail, "expand");
+  const toggleLabel = collapsed ? expandLabel : collapseLabel;
+
+  /**
    * Sign out — for real (issue #272).
    *
    * The row used to be a link whose `href` was a bare hash: it announced "Logout", took focus, and ended nothing,
@@ -259,7 +290,7 @@ export function AppSidebar({
          */
         tabIndex={-1}
         {...(open ? { role: "dialog", "aria-modal": true, "aria-label": railLabel } : {})}
-        className={railClassName(open)}
+        className={railClassName(open, collapsed)}
       >
         <div className="flex h-16 items-center justify-between gap-2 border-b px-3 md:justify-center md:px-2 lg:justify-start lg:px-4">
           <LeavingLink
@@ -304,7 +335,7 @@ export function AppSidebar({
                 <span
                   className={cn(
                     "h-7 w-10 shrink-0 overflow-hidden",
-                    open ? "hidden" : "hidden md:block lg:hidden",
+                    open ? "hidden" : narrow ? "hidden md:block" : "hidden md:block lg:hidden",
                   )}
                 >
                   <Image
@@ -321,7 +352,10 @@ export function AppSidebar({
                   alt=""
                   width={mark.width}
                   height={mark.height}
-                  className={cn("h-7 w-auto", open ? "block" : "hidden lg:block")}
+                  className={cn(
+                    "h-7 w-auto",
+                    open ? "block" : narrow ? "hidden" : "hidden lg:block",
+                  )}
                   priority
                 />
               </>
@@ -333,7 +367,12 @@ export function AppSidebar({
                 twice; the template's placeholder logo has no lockup, and its rail is still the
                 glyph plus the word. */}
             {!mark && (
-              <span className={cn("text-xl font-bold", open ? "inline" : "hidden lg:inline")}>
+              <span
+                className={cn(
+                  "text-xl font-bold",
+                  open ? "inline" : narrow ? "hidden" : "hidden lg:inline",
+                )}
+              >
                 {copy.heading}
               </span>
             )}
@@ -363,6 +402,7 @@ export function AppSidebar({
               viewer={viewer}
               copy={copy}
               labelled={open}
+              collapsed={narrow}
               pathname={pathname}
               onNavigate={onClose}
               hidden={hiddenNav}
@@ -376,12 +416,44 @@ export function AppSidebar({
               icon={<LogOut className="size-5" />}
               label={signingOut ? logoutPendingLabel : logoutLabel}
               active={false}
+              collapsed={narrow}
               labelled={open}
               onNavigate={onClose}
               onSelect={signOut}
             />
           </nav>
           {signOutFailed && <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>}
+          {/**
+           * **The width control** (#542 phase 2) — a form, not a handler.
+           *
+           * Submitting posts to `app/(mainlayout)/rail-actions.ts`, a server action that writes
+           * the `shell.rail` cookie and revalidates the shell, so the next render is already the
+           * width asked for. There is no client state here and nothing in browser storage, which is
+           * the difference between this control and the one this file records as removed: that
+           * one changed the browser after the server had already drawn the other width.
+           *
+           * Desktop only (`md:flex`): below `md` the rail is a drawer whose width is the viewport's
+           * business, and a control that narrows a panel already sliding over the page is noise.
+           * `formAction`-free and POST-only, so a keyboard user reaches it after sign-out and the
+           * version badge stays the last stop in the panel.
+           */}
+          <form
+            action={toggleRail}
+            className={cn("hidden px-2 pt-2 md:flex", narrow ? "justify-center" : "justify-end")}
+          >
+            <button
+              type="submit"
+              aria-label={toggleLabel}
+              title={toggleLabel}
+              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {collapsed ? (
+                <ChevronRight className="size-4" aria-hidden="true" />
+              ) : (
+                <ChevronLeft className="size-4" aria-hidden="true" />
+              )}
+            </button>
+          </form>
         </div>
 
         {/* The version badge — the bottom of the rail (issue #269). Last in the document, so it is
@@ -391,10 +463,10 @@ export function AppSidebar({
             the long form needs the 250px column, and an icon rail has 64px. Only the form the
             width shows is in the accessibility tree — the other is `display:none`. */}
         <div className="border-t px-1 py-3 text-center lg:px-2">
-          <span className={open ? "hidden" : "lg:hidden"}>
+          <span className={open ? "hidden" : narrow ? "inline" : "lg:hidden"}>
             <AppVersion copy={copy} compact />
           </span>
-          <span className={open ? "inline" : "hidden lg:inline"}>
+          <span className={open ? "inline" : narrow ? "hidden" : "hidden lg:inline"}>
             <AppVersion copy={copy} />
           </span>
         </div>
