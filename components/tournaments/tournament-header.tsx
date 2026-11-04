@@ -9,7 +9,7 @@ import { media } from "@/data/media";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
 import { CalendarDays, Clock, Share2, Trophy, Users } from "lucide-react";
 import Image from "next/image";
-import { Tournament } from "./tournament-detail";
+import type { Tournament } from "./tournament-detail";
 
 interface TournamentHeaderProps {
   tournament: Tournament;

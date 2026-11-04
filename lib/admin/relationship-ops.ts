@@ -42,6 +42,17 @@ import type { AdminAction } from "@/lib/admin/roles";
 import type { PartyRole } from "@/content/assessment";
 import { emailLooksDeliverable } from "@/lib/flow/resend";
 import { hashToken, inviteExpiry, mintToken } from "@/lib/flow/tokens";
+import { LAPSABLE_STATUSES } from "@/lib/relationship/enforcement";
+
+/**
+ * The statuses an operator override may act on — published, active, or a lapsed one being revived.
+ *
+ * `expired` is here because `extendTrial()` is one of the ways back from a lapse (the other is a
+ * payment event), and excluding it would make the operator's only repair "comp a new grant".
+ * `draft`/`pending` are not: there is no membership yet. `complete`/`void` are not: they are
+ * somebody's decision, and the mutations refuse them again after the lock.
+ */
+const LIVE_STATUSES = [...LAPSABLE_STATUSES, "expired"] as const;
 
 /* ------------------------------------------------------------------ *
  * Refusals
@@ -66,6 +77,16 @@ export const OP_REFUSALS = [
   "instance-voided",
   "sheet-incomplete",
   "invalid-email",
+  /**
+   * #533 phase 3 — the two relationship overrides' own refusals. `already-closed` covers
+   * `complete`/`void` (a decision nobody overrides with another decision); `not-live` covers a
+   * draft, which has no membership to end or extend; `no-subscription` is the account the operator
+   * asked to extend and which holds no trial to extend.
+   */
+  "no-such-relationship",
+  "already-closed",
+  "not-live",
+  "no-subscription",
 ] as const;
 
 export type OpRefusal = (typeof OP_REFUSALS)[number];
@@ -539,6 +560,259 @@ export async function forceCloseSeat(
           impersonatedBy: after.impersonated_by,
         },
       };
+    },
+    runner,
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * 6. Void a relationship — #533 phase 3's escape hatch
+ * ------------------------------------------------------------------ */
+
+/** What an operator is ending, and why. The relationship, not a session: a relationship may hold
+ * several rounds and voiding one of them is `voidSession()`. */
+export interface RelationshipOverrideRequest {
+  readonly actorUserId: string;
+  readonly relationshipId: string;
+  readonly reason: string;
+  /** A clock, injectable so a test pins `expired_at`/`completed_at`; production passes none. */
+  readonly now?: Date;
+}
+
+/** The status a void wrote, as the audit row records it. */
+export interface VoidedRelationship {
+  readonly relationshipId: string;
+  readonly status: "void";
+  readonly previousStatus: string;
+  readonly voidReason: string;
+}
+
+/**
+ * End a relationship, terminally, with a reason (#533 phase 3).
+ *
+ * Support's force-close already existed for a session (`voidSession`); this is the relationship
+ * itself, which is the thing #533's lifecycle has a `void` for. The two are different because a
+ * relationship can outlive a single round — voiding the session ends one assessment, voiding the
+ * relationship ends the purchase.
+ *
+ * **`complete` and `void` are refused.** Both are decisions somebody already made, and `void` is
+ * terminal by construction (`lib/relationship/status.ts`). `draft`/`pending` are refused too: there
+ * is no membership yet, and an operator ending something that was never sold is the `not-live`
+ * refusal rather than a write with nothing behind it.
+ *
+ * The write goes through `act()`, so it is one transaction with its audit row — the card's "any
+ * admin override (void, extend, comp) goes through `act()` with a reason; no new write path".
+ */
+export async function voidRelationship(
+  request: RelationshipOverrideRequest,
+  runner?: ActTransactionRunner,
+): Promise<ActResult<VoidedRelationship>> {
+  return act<VoidedRelationship>(
+    {
+      actorUserId: request.actorUserId,
+      action: "relationship.void" satisfies AdminAction,
+      target: { table: "relationship", id: request.relationshipId },
+      reason: request.reason,
+      mutate: async (sql) => {
+        const locked = await sql.query<{
+          id: string;
+          status: string;
+          initiator_user_id: string | null;
+          void_reason: string | null;
+        }>(
+          `SELECT id, status, initiator_user_id, void_reason
+             FROM relationship WHERE id = $1 FOR UPDATE`,
+          [request.relationshipId],
+        );
+        const rel = locked.rows[0];
+        if (rel === undefined) {
+          throw new OpRefused(
+            "no-such-relationship",
+            `no relationship holds the id "${request.relationshipId}"`,
+          );
+        }
+        if (!LIVE_STATUSES.includes(rel.status as (typeof LIVE_STATUSES)[number])) {
+          throw new OpRefused(
+            "already-closed",
+            `relationship "${rel.id}" is ${rel.status}: there is nothing live to void`,
+          );
+        }
+
+        const written = await sql.query<{ id: string }>(
+          `UPDATE relationship
+              SET status = 'void',
+                  void_reason = $2,
+                  completed_at = $3
+            WHERE id = $1 AND status = ANY($4::text[])
+            RETURNING id`,
+          [rel.id, request.reason.trim(), (request.now ?? new Date()).toISOString(), LIVE_STATUSES],
+        );
+        if (written.rows.length === 0) {
+          throw new OpRefused(
+            "already-closed",
+            `relationship "${rel.id}" left ${rel.status} while this repair was running`,
+          );
+        }
+
+        return {
+          before: { status: rel.status, voidReason: rel.void_reason },
+          after: {
+            relationshipId: rel.id,
+            status: "void" as const,
+            previousStatus: rel.status,
+            voidReason: request.reason.trim(),
+          },
+        };
+      },
+    },
+    runner,
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * 7. Extend a trial — the comp's relationship-side twin
+ * ------------------------------------------------------------------ */
+
+/** How far an operator may push a trial out in one action, in days. A guard, not a policy. */
+export const MAX_TRIAL_EXTENSION_DAYS = 90;
+
+/** What an extension wrote. */
+export interface ExtendedTrial {
+  readonly relationshipId: string;
+  readonly days: number;
+  readonly previousPeriodEnd: string;
+  readonly currentPeriodEnd: string;
+  /** The status the relationship returned to, when it had lapsed. */
+  readonly reactivated: "active" | "published" | null;
+}
+
+/**
+ * Push a running trial's end out by `days`, and revive the relationship if it had lapsed
+ * (#533 phase 3, alongside #505's `plan.comp` for a comp).
+ *
+ * **Why this is not a second write path.** It goes through `act()` like every other operator
+ * write, and the audit row carries the days and both instants. The status move it performs is the
+ * `system` consequence of the entitlement it writes — the same pair of edges a payment event takes
+ * — because the operator's act is "this account is paid for another N days", and the relationship
+ * follows the money. It is *not* a way to reopen `complete`/`void`: those refuse before the write,
+ * and the reactivation only names `expired`.
+ *
+ * **`no-subscription` when there is nothing to extend.** An account with no live `trialing` row is
+ * not on a trial; extending a non-existent period would be the operator inventing a subscription.
+ * #505's `plan_grant` is the comp for that case, and the refusal names it.
+ */
+export async function extendTrial(
+  request: RelationshipOverrideRequest & { readonly days: number },
+  runner?: ActTransactionRunner,
+): Promise<ActResult<ExtendedTrial>> {
+  const days = Math.trunc(request.days);
+  if (!Number.isFinite(days) || days <= 0 || days > MAX_TRIAL_EXTENSION_DAYS) {
+    throw new OpRefused(
+      "no-subscription",
+      `an extension is between 1 and ${MAX_TRIAL_EXTENSION_DAYS} whole days; "${request.days}" is neither`,
+    );
+  }
+
+  return act<ExtendedTrial>(
+    {
+      actorUserId: request.actorUserId,
+      action: "relationship.extend" satisfies AdminAction,
+      target: { table: "relationship", id: request.relationshipId },
+      reason: request.reason,
+      mutate: async (sql) => {
+        const locked = await sql.query<{
+          id: string;
+          status: string;
+          initiator_user_id: string | null;
+        }>(`SELECT id, status, initiator_user_id FROM relationship WHERE id = $1 FOR UPDATE`, [
+          request.relationshipId,
+        ]);
+        const rel = locked.rows[0];
+        if (rel === undefined) {
+          throw new OpRefused(
+            "no-such-relationship",
+            `no relationship holds the id "${request.relationshipId}"`,
+          );
+        }
+        if (!LIVE_STATUSES.includes(rel.status as (typeof LIVE_STATUSES)[number])) {
+          throw new OpRefused(
+            "already-closed",
+            `relationship "${rel.id}" is ${rel.status}: a closed relationship is not extended`,
+          );
+        }
+        if (rel.initiator_user_id === null) {
+          throw new OpRefused(
+            "no-subscription",
+            `relationship "${rel.id}" has no initiator account, so there is no trial to extend`,
+          );
+        }
+
+        const found = await sql.query<{
+          provider_subscription_id: string;
+          current_period_end: Date;
+        }>(
+          `SELECT provider_subscription_id, current_period_end
+             FROM billing_subscription
+            WHERE user_id = $1 AND status = 'trialing'
+            ORDER BY updated_at DESC
+            LIMIT 1
+            FOR UPDATE`,
+          [rel.initiator_user_id],
+        );
+        const trial = found.rows[0];
+        if (trial === undefined) {
+          throw new OpRefused(
+            "no-subscription",
+            `the initiator of "${rel.id}" holds no running trial — a comp is #505's plan_grant`,
+          );
+        }
+
+        const written = await sql.query<{ current_period_end: Date }>(
+          `UPDATE billing_subscription
+              SET current_period_end = current_period_end + ($2 || ' days')::interval,
+                  updated_at = now()
+            WHERE provider_subscription_id = $1
+            RETURNING current_period_end`,
+          [trial.provider_subscription_id, String(days)],
+        );
+        const endsAt = written.rows[0]?.current_period_end;
+        if (endsAt === undefined) {
+          throw new OpRefused("no-subscription", "the extension wrote no row");
+        }
+
+        // The reactivation half, when the relationship had lapsed. Same two `system` edges the
+        // payment event takes, decided by whether the counterparty seat exists.
+        let reactivated: "active" | "published" | null = null;
+        if (rel.status === "expired") {
+          const seat = await sql.query<{ present: boolean }>(
+            `SELECT EXISTS (
+                      SELECT 1 FROM session s
+                        JOIN party p ON p.session_record_id = s.record_id
+                       WHERE s.relationship_id = $1 AND p.role = 'counterparty'
+                    ) AS present`,
+            [rel.id],
+          );
+          reactivated = seat.rows[0]?.present === true ? "active" : "published";
+          await sql.query(
+            "UPDATE relationship SET status = $2 WHERE id = $1 AND status = 'expired'",
+            [rel.id, reactivated],
+          );
+        }
+
+        return {
+          before: {
+            status: rel.status,
+            currentPeriodEnd: trial.current_period_end.toISOString(),
+          },
+          after: {
+            relationshipId: rel.id,
+            days,
+            previousPeriodEnd: trial.current_period_end.toISOString(),
+            currentPeriodEnd: endsAt.toISOString(),
+            reactivated,
+          },
+        };
+      },
     },
     runner,
   );

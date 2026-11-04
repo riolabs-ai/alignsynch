@@ -47,6 +47,12 @@ const STATIC_ROUTES = [
   "/creator-tips",
   "/daily-challenge",
   "/dashboard",
+  // #533 phase 2 — the initiator's own CRUD: their private templates and the relationships they
+  // started. Both detail routes exist so a link out of a list is a manifest route, not a 404.
+  "/dashboard/relationships",
+  "/dashboard/relationships/[id]",
+  "/dashboard/templates",
+  "/dashboard/templates/[id]",
   "/dashboard/user",
   "/demo",
   "/demo/admin",

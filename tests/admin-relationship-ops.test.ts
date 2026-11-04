@@ -62,6 +62,9 @@ const VOID_INSTANT = new Date("2026-11-02T09:30:00.000Z");
 const ACCEPT_INSTANT = new Date("2026-11-02T09:31:00.000Z");
 const INVITE_EXPIRY = new Date("2026-11-09T10:00:00.000Z");
 const REVOKED_INSTANT = new Date("2026-11-02T09:32:00.000Z");
+/** #533 phase 3 — the trial's last instant, and the relationship the override acts on. */
+const TRIAL_ENDS = new Date("2026-11-18T09:00:00.000Z");
+const RELATIONSHIP_ID = "rel-1";
 
 /**
  * The hash the invitation carried before a resend, and the token whose hash it is.
@@ -98,6 +101,18 @@ interface Fixture {
     voided_at: Date | null;
   } | null;
   forceCloseUpdateReturnsRow: boolean;
+  /**
+   * #533 phase 3 — the relationship override's own fixture. `null` is "no such relationship".
+   */
+  relationship: {
+    status: string;
+    initiator_user_id: string | null;
+    void_reason: string | null;
+  } | null;
+  /** The initiator's running trial, or `null` for an account with none. */
+  trial: { provider_subscription_id: string; current_period_end: Date } | null;
+  /** Whether the relationship holds a counterparty seat — the reactivation target's turn. */
+  counterpartySeat: boolean;
 }
 
 /**
@@ -161,6 +176,16 @@ class FakeDb {
         voided_at: null,
       },
       forceCloseUpdateReturnsRow: true,
+      relationship: {
+        status: "active",
+        initiator_user_id: "auth-initiator",
+        void_reason: null,
+      },
+      trial: {
+        provider_subscription_id: "trial-rel-1",
+        current_period_end: TRIAL_ENDS,
+      },
+      counterpartySeat: true,
       ...fixture,
     };
   }
@@ -256,6 +281,48 @@ class FakeDb {
           : []) as unknown as readonly R[],
       };
     }
+    /* --- #533 phase 3: the two relationship overrides ------------------------------------- */
+    if (/^SELECT id, status, initiator_user_id, void_reason FROM relationship/i.test(head)) {
+      return {
+        rows: (f.relationship === null ? [] : [f.relationship]) as unknown as readonly R[],
+      };
+    }
+    if (/^SELECT id, status, initiator_user_id FROM relationship/i.test(head)) {
+      return {
+        rows: (f.relationship === null ? [] : [f.relationship]) as unknown as readonly R[],
+      };
+    }
+    if (/^UPDATE relationship SET status = 'void'/i.test(head)) {
+      this.pending.push("UPDATE relationship (void)");
+      return {
+        rows: (f.relationship === null ? [] : [{ id: RELATIONSHIP_ID }]) as unknown as readonly R[],
+      };
+    }
+    if (/^SELECT provider_subscription_id, current_period_end/i.test(head)) {
+      return { rows: (f.trial === null ? [] : [f.trial]) as unknown as readonly R[] };
+    }
+    if (/^UPDATE billing_subscription\s+SET current_period_end/i.test(head)) {
+      const days = Number(values[1]);
+      this.pending.push("UPDATE billing_subscription (extend)");
+      return {
+        rows: (f.trial === null
+          ? []
+          : [
+              {
+                current_period_end: new Date(
+                  (f.trial?.current_period_end ?? TRIAL_ENDS).getTime() + days * 86_400_000,
+                ),
+              },
+            ]) as unknown as readonly R[],
+      };
+    }
+    if (/^SELECT EXISTS \(\s*SELECT 1 FROM session s/i.test(head)) {
+      return { rows: [{ present: f.counterpartySeat }] as unknown as readonly R[] };
+    }
+    if (/^UPDATE relationship SET status = \$2 WHERE id = \$1 AND status = 'expired'/i.test(head)) {
+      this.pending.push("UPDATE relationship (reactivate)");
+      return { rows: [] as unknown as readonly R[] };
+    }
     throw new Error(`the fake has no answer for: ${head.slice(0, 60)}`);
   }
 
@@ -281,6 +348,13 @@ class FakeDb {
       if (/^UPDATE session SET voided_at/i.test(head)) return "UPDATE session.voided_at";
       if (/^SELECT p\.accepted_at/i.test(head)) return "SELECT party.accepted_at";
       if (/^UPDATE party SET accepted_at/i.test(head)) return "UPDATE party.accepted_at";
+      if (/^SELECT id, status, initiator_user_id.*FROM relationship/i.test(head))
+        return "SELECT relationship";
+      if (/^UPDATE relationship SET status = 'void'/i.test(head)) return "UPDATE relationship.void";
+      if (/^SELECT provider_subscription_id/i.test(head)) return "SELECT billing_subscription";
+      if (/^UPDATE billing_subscription/i.test(head)) return "UPDATE billing_subscription";
+      if (/^SELECT EXISTS/i.test(head)) return "SELECT party.counterparty EXISTS";
+      if (/^UPDATE relationship SET status = \$2/i.test(head)) return "UPDATE relationship.status";
       return head.split(" ").slice(0, 2).join(" ");
     });
   }

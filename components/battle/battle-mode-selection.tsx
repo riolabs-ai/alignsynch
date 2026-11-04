@@ -39,7 +39,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { BattleState } from "./battle-page";
+import type { BattleState } from "./battle-page";
 
 /**
  * The subjects a battle can be fought over. Slugs, not labels: the taxonomy owns the text

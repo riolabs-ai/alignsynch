@@ -152,6 +152,51 @@ export const ADMIN_ACTIONS = [
    * `message.reply` can both reach the same status; the reason on the audit row says which did.
    */
   "message.status",
+  /**
+   * #533 phase 2 — **the five member actions, and the reason the ladder starts at `member`.**
+   *
+   * The epic this table belongs to (#500) is the *admin* write path, and every name above it is
+   * floored at `support` or higher. #533 needs the same property for a person who is not staff:
+   * a member authors a private template, saves a relationship's Aspects, publishes it and
+   * re-mints a lapsed invitation, and each of those is a state change that has to leave an
+   * `admin_action` row with a reason — "the only write path", in the card's words.
+   *
+   * So the ladder gains nothing and the table gains five names at the rung it already had.
+   * `can("member", "relationship.publish")` is a rank comparison against a floor of `member`,
+   * which is true — and `act()` still reads the rung from `user_profile` **inside** the
+   * transaction, so a member cannot publish as somebody else by claiming a floor. **Ownership is
+   * not this table's question**: a member action names a row, and the mutation that writes it
+   * checks the row belongs to the actor (`lib/member/**`), inside the same transaction. A floor
+   * says *who may take this kind of action at all*; ownership says *on which row*.
+   *
+   * The names keep the `<subject>.<verb>` shape, and the subject is the table the change is
+   * about, so `/admin/audit` groups them with the rest of that subject's history.
+   */
+  /** Create or edit one of the actor's own private templates (`record`). */
+  "template.draft",
+  /** Start a relationship from one of the actor's own templates — the copy, the version, the row. */
+  "relationship.create",
+  /** Save a relationship's Aspects — the copy the initiator owns until they publish. */
+  "relationship.aspects",
+  /**
+   * Publish: the trial starts (or a checkout is opened), the status moves `→ published`, and the
+   * invitation is minted with its seven-day window. One action, because those are one decision.
+   */
+  "relationship.publish",
+  /** Re-mint a lapsed invitation on a published relationship — one click, no Aspects re-entered. */
+  "relationship.republish",
+  /**
+   * #533 phase 3 — the two operator overrides on a relationship's membership, and the third is
+   * #505's `plan.comp` (a comp is a grant, not a subscription edit).
+   *
+   * `void` ends a live relationship with a reason: support's force-close, one level up from
+   * `session.void`. `extend` pushes a running trial out and revives a lapsed relationship with it.
+   * Both are `admin` for the same reason `session.void` is — they end or continue somebody's
+   * purchase — and both go through `act()` so each leaves exactly one reason-bearing audit row.
+   * Neither can reopen `complete`/`void`: those are decisions, and the mutations refuse them.
+   */
+  "relationship.void",
+  "relationship.extend",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -223,6 +268,24 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "message.reply": "support",
   "message.assign": "support",
   "message.status": "support",
+  /**
+   * #533 phase 2 — the member floors, and the only five rows in this table below `support`.
+   *
+   * Each one writes only what its actor already owns: `template.draft` writes a `record` whose
+   * `owner_user_id` is the actor, and the four `relationship.*` rows write a relationship whose
+   * `initiator_user_id` is the actor. The floor is `member` because the action is a member's own
+   * product, and the ownership check travels with the mutation (it must be inside the transaction
+   * to be true) rather than with the floor. Floors above `member` here would make the member path
+   * un-auditable, which is the one thing #533's card forbids.
+   */
+  "template.draft": "member",
+  "relationship.create": "member",
+  "relationship.aspects": "member",
+  "relationship.publish": "member",
+  "relationship.republish": "member",
+  // #533 phase 3 — the two operator overrides, floored where `session.void` is: `admin`.
+  "relationship.void": "admin",
+  "relationship.extend": "admin",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.

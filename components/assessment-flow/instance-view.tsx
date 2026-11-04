@@ -177,6 +177,13 @@ export function AssessmentInstanceView({
   const stageBand = sectionOf(copy, "stage");
   const partiesBand = sectionOf(copy, "parties");
   const paidBand = sectionOf(copy, "paid");
+  // #533 phase 3 — the membership band. Resolved unconditionally (a fixture section is not a
+  // branch), drawn only when the read says the membership lapsed.
+  const membershipBand = sectionOf(copy, "lapsed");
+  const membershipLapsed = screen.membership?.state === "lapsed";
+  const membershipValues = {
+    endedAt: screen.membership?.endedAt?.toISOString() ?? "",
+  };
   const problemLabel = problem === undefined ? undefined : itemLabel(problems, problem);
   const resendLabel =
     resendRefusal === undefined
@@ -272,6 +279,27 @@ export function AssessmentInstanceView({
       >
         {fillLabel(itemLabel(viewerBand, screen.viewer.role), { name: screen.viewer.name })}
       </p>
+
+      {/* #533 phase 3 — the lapse, said on both seats. The sentence names the initiator's
+          membership because the invited party bought nothing, and a band that said "your
+          membership ended" would read to them as their own failure. */}
+      {membershipLapsed ? (
+        <section
+          data-membership="lapsed"
+          data-membership-reason={screen.membership?.reason ?? "unrecorded"}
+          className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950"
+        >
+          <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            {membershipBand.heading}
+          </h2>
+          <p className="mt-2 text-sm text-amber-900 dark:text-amber-200">
+            {fillLabel(sectionBody(membershipBand), membershipValues)}
+          </p>
+          <p className="mt-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+            {itemLabel(membershipBand, "lapsed-note")}
+          </p>
+        </section>
+      ) : null}
 
       {/* The two seats (#409) — the block `components/my-quizzes/quiz-details.tsx` draws for a
           quiz's players, on a relationship's parties. The parties are always legible; what either

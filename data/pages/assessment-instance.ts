@@ -176,6 +176,23 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
+       * #533 phase 3 — the lapse, drawn on both seats. The body names the initiator's membership
+       * and the instant from the row, and the item says the part the counterparty needs not to
+       * invent: they bought nothing and nothing they did ended it.
+       */
+      id: "lapsed",
+      heading: "The membership behind this relationship ended",
+      body: "It ended on {endedAt}. It was the initiator's membership — you did not fail at anything and there is nothing here for you to fix — and until a payment lands this relationship is read-only for both of you: no new answers, no edits, and the invitation no longer works.",
+      items: [
+        {
+          id: "lapsed-note",
+          label:
+            "Your answers are kept and stay readable. The relationship becomes writable again if the initiator's payment lands.",
+        },
+      ],
+    },
+    {
+      /**
        * What was paid, for the Initiator alone (#409). Two facts and no arithmetic: the plan and
        * the instant it was bought. A total would be a number nobody was charged — one
        * relationship, one purchase — so there is no item for one here.

@@ -98,6 +98,15 @@ export type TemplateVersionOutcome =
 export type TemplateRefusalCode =
   | "no-such-template"
   | "not-editable"
+  /**
+   * The row exists and this actor does not own it (#533 phase 2).
+   *
+   * The member path answers it where the console answers `no-such-template` — the console's rows
+   * are the platform's and a wrong id is a wrong id, while a member's rows are rows, and "not
+   * yours" is the sentence their screen carries. Both codes are in the union because one editor
+   * renders either answer, and the page-level reads still turn both into the same 404.
+   */
+  | "not-yours"
   | "not-published"
   | "slug-taken"
   | "invalid-draft"

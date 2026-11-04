@@ -29,6 +29,7 @@ import { SCORE_MAX, SCORE_MIN } from "@/content/record";
 import type { AssessmentReport } from "@/lib/assessment-report";
 import { assessmentReport } from "@/lib/assessment-report";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
+import type { Membership } from "@/lib/relationship/membership";
 import {
   assessmentInstanceFromRows,
   isoInstantOf,
@@ -172,6 +173,12 @@ export interface FlowScreen {
    * the markup — a screen that cannot be drawn cannot leak.
    */
   readonly report: AssessmentReport | null;
+  /**
+   * #533 phase 3 — the membership that pays for this relationship, or `null` when the session
+   * names no relationship. `lapsed` is the read-only state: both parties keep reading and neither
+   * writes, and the sentence says it was the initiator's membership that ended.
+   */
+  readonly membership?: Membership | null;
 }
 
 export interface FlowInstanceRows {
@@ -196,6 +203,13 @@ export interface ProjectInput {
   readonly template: Assessment;
   readonly viewerRole: PartyRole | "coach";
   readonly invite: FlowInvite | null;
+  /**
+   * #533 phase 3 — whether the membership paying for this relationship is still running, or
+   * `null` for a session that names no relationship. Optional so a projection written before the
+   * field existed (a test fixture, the `/v1` prototype's own screen) still type-checks: absent is
+   * "nothing known", which renders as no band rather than as a lapse.
+   */
+  readonly membership?: Membership | null;
 }
 
 /** The party row for a role, or `undefined` — the caller's "not your instance" branch. */
@@ -337,6 +351,7 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     viewerAccepted: viewerRole !== "coach" && acceptedCountIn(rows.parties, viewerRole) === 1,
     waiting: waitingOn(progress, partyIn(rows.parties, "initiator") !== undefined),
     invite,
+    membership: input.membership ?? null,
     report,
   };
 }
