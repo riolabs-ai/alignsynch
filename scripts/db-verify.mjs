@@ -98,6 +98,12 @@
  *       complaint write. The marks are the column #507 reads before it sends, so a database
  *       migrated without `0027` is a request-time 500 on the first bounce; this names it instead.
  *
+ *   V25 the support inbox (#506): `contact_message.status` exists, is `NOT NULL` and defaults to
+ *       `new`, its four-word vocabulary CHECK is on the table, and `contact_reply` exists with the
+ *       constraint that refuses a `sent` reply with no instant. A database migrated without `0028`
+ *       is a request-time 500 on the first visit to `/admin/inbox`; a reply marked sent without a
+ *       `sent_at` is the one thing the card forbids, so it is also checked row by row.
+ *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
 import { Client } from "pg";
@@ -1224,6 +1230,94 @@ async function main() {
       }
     }
 
+    /* V25 — the support inbox (#506).
+     *
+     * Three facts, checked together because a database missing any one of them is a request-time
+     * 500 on `/admin/inbox` rather than a caught bug: `contact_message.status` exists with the
+     * column's own `new` default (so a row the public route writes lands in the queue without the
+     * route knowing the screen exists), the four-word vocabulary constraint is on the table, and
+     * `contact_reply` exists with the CHECK that makes "sent only after the provider accepted" a
+     * property of the row. A CHECK is looked up by name and its definition read, because an index
+     * that merely exists is the false green `0027`'s V24 warns about.
+     */
+    let inboxMessages = 0;
+    let inboxReplies = 0;
+    const { rows: statusColumn } = await client.query(
+      `SELECT is_nullable, column_default FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'contact_message' AND column_name = 'status'`,
+    );
+    if (statusColumn.length === 0) {
+      fail("V25", "public.contact_message.status does not exist — run `pnpm db:migrate`");
+    } else {
+      if (statusColumn[0]?.is_nullable !== "NO") {
+        fail(
+          "V25",
+          "public.contact_message.status is nullable — a message with no triage state is not a queue row",
+        );
+      }
+      if (!String(statusColumn[0]?.column_default ?? "").includes("'new'")) {
+        fail(
+          "V25",
+          "public.contact_message.status does not default to 'new' — a stored message would arrive with no status",
+        );
+      }
+      const { rows: vocabulary } = await client.query(
+        `SELECT pg_get_constraintdef(c.oid) AS def FROM pg_constraint c
+          WHERE c.conrelid = 'public.contact_message'::regclass
+            AND c.conname = 'contact_message_status_vocabulary'`,
+      );
+      const definition = String(vocabulary[0]?.def ?? "");
+      for (const status of ["new", "open", "waiting", "closed"]) {
+        if (!definition.includes(`'${status}'`)) {
+          fail(
+            "V25",
+            `public.contact_message.status has no '${status}' in its CHECK — the four-word vocabulary the screen renders is the column's own`,
+          );
+        }
+      }
+    }
+
+    const { rows: replyTable } = await client.query(
+      "SELECT to_regclass('public.contact_reply') IS NOT NULL AS present",
+    );
+    if (replyTable[0]?.present !== true) {
+      fail(
+        "V25",
+        "public.contact_reply does not exist — a reply has nowhere to be stored (run `pnpm db:migrate`)",
+      );
+    } else {
+      const { rows: replyChecks } = await client.query(
+        `SELECT c.conname, pg_get_constraintdef(c.oid) AS def FROM pg_constraint c
+          WHERE c.conrelid = 'public.contact_reply'::regclass`,
+      );
+      const named = new Map(replyChecks.map((row) => [row.conname, String(row.def ?? "")]));
+      for (const name of [
+        "contact_reply_state_vocabulary",
+        "contact_reply_sent_has_instant",
+        "contact_reply_failed_has_error",
+      ]) {
+        if (!named.has(name)) {
+          fail(
+            "V25",
+            `public.contact_reply has no ${name} constraint — the reply's state would be a convention, not a rule`,
+          );
+        }
+      }
+      const { rows: counts } = await client.query(
+        `SELECT (SELECT count(*)::int FROM contact_message) AS messages,
+                (SELECT count(*)::int FROM contact_reply) AS replies,
+                (SELECT count(*)::int FROM contact_reply WHERE state = 'sent' AND sent_at IS NULL) AS sent_without_instant`,
+      );
+      inboxMessages = counts[0]?.messages ?? 0;
+      inboxReplies = counts[0]?.replies ?? 0;
+      if ((counts[0]?.sent_without_instant ?? 0) > 0) {
+        fail(
+          "V25",
+          `${counts[0].sent_without_instant} reply row(s) are 'sent' with no sent_at — a send that the provider never accepted`,
+        );
+      }
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -1239,7 +1333,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

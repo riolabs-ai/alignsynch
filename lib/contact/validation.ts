@@ -44,9 +44,20 @@ export function contactStateOf(value: string | string[] | undefined): ContactSta
  */
 export const CONTACT_MIN_FILL_MS = 2_000;
 
-/** The rate window and its budget: this many messages per client per window. */
-export const CONTACT_RATE_WINDOW_MS = 10 * 60 * 1_000;
-export const CONTACT_RATE_MAX = 5;
+/**
+ * The rate window and its budget: this many messages per client per window.
+ *
+ * **Defined in `lib/contact/limits.ts`, imported and re-exported here.** The two numbers have a
+ * second reader — the support inbox (#506), in a client component — and this module reaches
+ * `lib/flow/tokens.ts`'s `node:crypto` through `emailLooksDeliverable`, so importing them from here
+ * would put a Node builtin in the browser graph (E34). The parser keeps its own home; the numbers
+ * keep a pure one. Imported as well as re-exported because `rateExceeded()` below reads the budget
+ * as its own default.
+ */
+import { CONTACT_RATE_MAX } from "./limits";
+
+export { CONTACT_RATE_MAX };
+export { CONTACT_RATE_WINDOW_MS } from "./limits";
 
 /** The caps the form and the table agree on. */
 export const CONTACT_NAME_MAX = 120;
