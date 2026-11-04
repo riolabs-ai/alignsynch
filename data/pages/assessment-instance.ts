@@ -109,6 +109,35 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       heading: "You have both answered",
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
     },
+    /**
+     * The confirmation a submit lands on (#t_0aa81144).
+     *
+     * The submit used to answer with a 303 to this screen and nothing else: the person had answered
+     * every Aspect and was handed a form or a blank wait, with no sentence saying their answers
+     * were saved, what the other party still had to do, or how to change their mind. This band is
+     * drawn *above* the ordinary screen for the one visit the submit created (`?submitted=1`), and
+     * only while the report is still closed — once both parties have accepted, the report is the
+     * answer and a "thank you, nothing is shown yet" band would be false.
+     */
+    {
+      id: "submitted",
+      heading: "Thank you — your answers are saved",
+      body: "Nothing you wrote is shown to {other} yet. You will both see the report once you have both answered and accepted.",
+      items: [
+        {
+          id: "waiting",
+          label: "What happens next",
+          body: "{other} answers the same questions from their side and accepts the session. When both of you have accepted, the report opens for you both.",
+        },
+        {
+          id: "change",
+          label: "How to change an opinion",
+          body: "Open your answer sheet and change any score before you accept. After you accept, your answers are sealed.",
+        },
+        { id: "change-link", label: "Open your answer sheet" },
+        { id: "session-link", label: "Back to the session" },
+      ],
+    },
     {
       /**
        * The Steps panel (#478) — "Steps for Improving the Relationship", ported from the `/v1`

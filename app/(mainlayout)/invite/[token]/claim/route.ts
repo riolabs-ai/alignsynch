@@ -1,6 +1,6 @@
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimInvite } from "@/lib/flow/store";
-import { instancePath, invitePath } from "@/lib/flow/paths";
+import { instancePath, inviteStepPath } from "@/lib/flow/paths";
 import {
   FLOW_COOKIE_MAX_AGE,
   flowCookieOptions,
@@ -31,16 +31,22 @@ import { NextResponse } from "next/server";
  *   the confirmation   `confirm`, the counterparty's name: the checkbox the page renders
  *                      beside "You are joining as Rowan, the Counterparty"
  *
- * Success binds the Counterparty's party row, sets their party cookie, and redirects (303)
- * to the instance screen. Every refusal — unknown, claimed, expired, already-a-party,
- * already-bound, unconfirmed — redirects back to the invite page, which draws the band that
- * matches the code. The refusal is not a 4xx here because the person has done nothing
- * wrong: they followed a link that is not claimable *by them*, and the page they land on
- * says which of the six it is. `?claim=<code>` carries the store's code through the
- * redirect, so the page renders the store's own answer instead of re-deriving it.
+ * Success binds the Counterparty's party row, sets their party cookie, and redirects (303) to the
+ * instance screen — which since #t_0aa81144 is the **last** hop and is only reachable from step 3
+ * of the onboarding wizard (`/invite/[token]?step=3`), the form this endpoint exists for. The
+ * invitation itself no longer lands anybody in a session directly: `/invite/[token]` renders the
+ * three steps, and `GET` still claims nothing.
  *
- * Nothing is written on any refusal: `claimed_at` stays NULL and no party row appears, so
- * the link still works for the person it was addressed to.
+ * Every refusal — unknown, claimed, expired, already-a-party, already-bound, unconfirmed, lapsed
+ * — redirects back to **step 3**, which draws the band that matches the code (a dead token falls
+ * back to `InviteView`'s state band, because the wizard only mounts for a live one). The refusal
+ * is not a 4xx here because the person has done nothing wrong: they followed a link that is not
+ * claimable *by them*, and the page they land on says which of the seven it is. `?claim=<code>`
+ * carries the store's code through the redirect, so the page renders the store's own answer
+ * instead of re-deriving it.
+ *
+ * Nothing is written on any refusal: `claimed_at` stays NULL and no party row appears, so the
+ * link still works for the person it was addressed to.
  */
 export async function POST(
   request: Request,
@@ -61,7 +67,7 @@ export async function POST(
   });
 
   if (!result.ok) {
-    const back = new URL(invitePath(token), request.url);
+    const back = new URL(inviteStepPath(token, 3), request.url);
     back.searchParams.set("claim", result.code);
     return NextResponse.redirect(back, 303);
   }

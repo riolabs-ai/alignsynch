@@ -48,6 +48,81 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
         { id: "claim", label: "Accept and answer" },
       ],
     },
+    /**
+     * The onboarding wizard's three steps (#t_0aa81144).
+     *
+     * Before this, the claim dropped the Counterparty straight into the session: no sentence said
+     * who had invited them, what was about to happen, or why they were suddenly being asked for
+     * scores. Each step is one screen with one question answered, and the `steps` band is the
+     * "where am I" rail above it — the same numbered, one-screen-per-step shape
+     * `components/create/quiz-editor.tsx` gives the template author.
+     *
+     * The copy never says the Counterparty pays, because they never do: `free` says who does.
+     */
+    {
+      id: "steps",
+      items: [
+        { id: "1", label: "What this is" },
+        { id: "2", label: "What happens next" },
+        { id: "3", label: "Your account" },
+        { id: "count", label: "Step {step} of 3" },
+        { id: "back", label: "Back" },
+        { id: "next", label: "Continue" },
+      ],
+    },
+    {
+      id: "step-1",
+      heading: "What this is",
+      body: "Someone you know wants to compare notes with you. It takes a few minutes, and nothing you write is shown to them until you have both finished.",
+      items: [
+        { id: "invited-by", label: "{initiator} invited you to answer {template}." },
+        {
+          id: "they-see",
+          label:
+            "They answer the same questions from their side. They never see your answers before you submit, and you never see theirs.",
+        },
+        {
+          id: "you-see",
+          label:
+            "You see the questions and your own answers. When you have both finished, you both see the report.",
+        },
+      ],
+    },
+    {
+      id: "step-2",
+      heading: "What happens next",
+      body: "Three things happen in order, and you can stop after any of them.",
+      items: [
+        {
+          id: "you-answer",
+          label: "You answer every question: how it feels now, and how you wish it to be.",
+        },
+        { id: "they-answer", label: "{initiator} answers the same questions from their side." },
+        {
+          id: "report",
+          label:
+            "When you have both answered and accepted, the report opens for both of you: every gap, computed from the two answers.",
+        },
+        {
+          id: "editable",
+          label:
+            "You can change any opinion until you accept the session. After you accept, your answers are sealed.",
+        },
+      ],
+    },
+    {
+      id: "step-3",
+      heading: "Your account",
+      body: "The answers are tied to an account so you can come back to them. If you are already signed in, this is the last step.",
+      items: [
+        { id: "free", label: "Accepting costs you nothing — {initiator} is the one who pays." },
+        { id: "signed-in", label: "You are signed in as {name}." },
+        { id: "sign-in", label: "Sign in to accept {initiator}'s invitation" },
+        { id: "register", label: "Create an account" },
+        { id: "accept", label: "Accept the invitation" },
+        { id: "confirm", label: "I am {counterparty}, and I am joining as the Counterparty." },
+      ],
+    },
     {
       id: "claimed",
       heading: "This invitation was used already",

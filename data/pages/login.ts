@@ -245,6 +245,19 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
           { id: "privacy", label: "Privacy Policy" },
         ],
       },
+      /**
+       * The one sentence a visitor who was accepting an invitation gets above the form
+       * (#t_0aa81144). `lib/auth/invite-prompt.ts` picks `named` when the wizard's `inviter`
+       * parameter came through and `unnamed` when it did not — the sentence, never the name,
+       * is what the fixture owns.
+       */
+      {
+        id: "invite-intent",
+        items: [
+          { id: "named", label: "Sign in to accept {inviter}'s invitation." },
+          { id: "unnamed", label: "Sign in to accept the invitation you were sent." },
+        ],
+      },
     ],
   });
 }

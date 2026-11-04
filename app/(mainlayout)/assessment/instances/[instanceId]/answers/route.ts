@@ -3,7 +3,7 @@ import { opinionKindsFor } from "@/content/assessment";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { answersFrom } from "@/lib/flow/answers";
-import { instancePath } from "@/lib/flow/paths";
+import { instancePath, submittedPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { readInstanceMode, submitAnswers } from "@/lib/flow/store";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -90,7 +90,10 @@ export async function POST(
   });
 
   if (result.ok) {
-    return NextResponse.redirect(new URL(instancePath(instanceId), request.url), 303);
+    // #t_0aa81144 — a submit lands on the confirmation state, not on a bare re-render of the
+    // screen: the person has just answered every Aspect and needs to be told it was saved, who is
+    // still to answer and how to change a score. The session itself is one link away.
+    return NextResponse.redirect(new URL(submittedPath(instanceId), request.url), 303);
   }
 
   const status =

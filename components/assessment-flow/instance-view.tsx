@@ -53,6 +53,7 @@ import { AnswerForm } from "@/components/assessment-flow/answer-form";
 import { InviteLink } from "@/components/assessment-flow/invite-link";
 import { ReinviteForm } from "@/components/assessment-flow/reinvite-form";
 import { StepsPanel } from "@/components/assessment-flow/steps-panel";
+import { SubmissionConfirmation } from "@/components/assessment-flow/submission-confirmation";
 import { MODE_LABELS } from "@/content/assessment";
 import type { Step } from "@/content/steps";
 import { formatDate } from "@/content/core";
@@ -135,12 +136,19 @@ export function AssessmentInstanceView({
   problem,
   inviteNotice,
   resendRefusal,
+  submitted = false,
   paid = null,
   steps = [],
 }: {
   screen: FlowScreen;
   copy: PageCopy;
   problem?: ProblemCode;
+  /**
+   * Whether this visit is the one a submit created (`?submitted=1`, #t_0aa81144), so the
+   * confirmation band is drawn above the ordinary screen. A state, not a route: the read is the
+   * same `readFlowScreen()` the page already made.
+   */
+  submitted?: boolean;
   /** `sent` / `unset` / `failed` from the creation redirect; absent on a later visit. */
   inviteNotice?: InviteNotice;
   /**
@@ -279,6 +287,23 @@ export function AssessmentInstanceView({
       >
         {fillLabel(itemLabel(viewerBand, screen.viewer.role), { name: screen.viewer.name })}
       </p>
+
+      {/* #t_0aa81144 — the confirmation a submit lands on. Drawn only for the visit the submit
+          created, only for a party (a coach answered nothing), and only while the report is still
+          closed: once both parties have accepted, the report is the answer. */}
+      {submitted && !isCoach && screen.report === null ? (
+        <div className="mb-6">
+          <SubmissionConfirmation
+            copy={copy}
+            instanceRecordId={screen.instanceRecordId}
+            otherName={
+              screen.viewer.role === "initiator"
+                ? (screen.counterpartyName ?? "")
+                : screen.initiatorName
+            }
+          />
+        </div>
+      ) : null}
 
       {/* #533 phase 3 — the lapse, said on both seats. The sentence names the initiator's
           membership because the invited party bought nothing, and a band that said "your
