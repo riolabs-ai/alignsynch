@@ -219,10 +219,15 @@ function headerBand(origin: string): string {
   if (mark === undefined) {
     return `<span style="display:block;font-size:20px;line-height:1.3;font-weight:600;color:#ffffff;letter-spacing:0.01em;">${escapeHtml(brand.name)}</span>`;
   }
-  const width = 240;
+  // The lockup is dark ink on transparency (measured: the wordmark is near-black), so on the
+  // graphite band it is drawn on a **white plate** rather than recoloured. The brand rule is
+  // "place the asset, never redraw, recolour or filter it" (`tests/brand-immutable.test.ts`), and a
+  // CSS filter to invert a logo is exactly the recolour that rule forbids — so the band moves the
+  // paper under the mark instead of the mark's own colours.
+  const width = 216;
   const height = Math.round((mark.height / mark.width) * width);
   const src = mark.src.startsWith("http") ? mark.src : `${origin}${mark.src}`;
-  return `<img src="${escapeHtml(src)}" alt="${escapeHtml(brand.name)}" width="${width}" height="${height}" style="display:block;border:0;outline:none;text-decoration:none;width:${width}px;height:${height}px;">`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border-radius:4px;"><tr><td style="padding:10px 14px;"><img src="${escapeHtml(src)}" alt="${escapeHtml(brand.name)}" width="${width}" height="${height}" style="display:block;border:0;outline:none;text-decoration:none;width:${width}px;height:${height}px;"></td></tr></table>`;
 }
 
 /**
@@ -330,7 +335,7 @@ export function htmlFromText(
 ${hidden}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef0f2;">
 <tr><td align="center" style="padding:24px 12px;">
-<table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:560px;background:#ffffff;border-radius:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background:#ffffff;border-radius:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
 <tr><td style="background:#37474F;padding:24px 28px;">${headerBand(origin)}</td></tr>
 <tr><td style="padding:28px;">${body.join("\n")}</td></tr>
 <tr><td style="background:#f4f5f6;padding:20px 28px;font-size:12px;line-height:1.6;color:#5b6470;">${footer.join("\n")}</td></tr>

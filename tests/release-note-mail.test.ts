@@ -194,9 +194,10 @@ describe("the band's shell", () => {
   const doc = document([{ kind: "paragraph", text: "Body." }]);
   const { html } = renderEmail(doc, { emailClass: "transactional" });
 
-  it("is a 560 px column", () => {
-    expect(html).toContain('width="560"');
+  it("is a 560 px maximum column that does not overflow a phone", () => {
     expect(html).toContain("max-width:560px");
+    // A hard `width="560"` would make a 390 px client scroll sideways; the column is capped, not fixed.
+    expect(html).not.toContain('width="560"');
   });
 
   it("draws a graphite header band with the lockup, never the square icon", () => {
@@ -207,6 +208,9 @@ describe("the band's shell", () => {
       expect(html).toContain(`>${brand.name}</span>`);
     } else {
       expect(html).toContain(`${brand.domain}${mark.src}`);
+      // The lockup is dark ink, so it sits on a white plate rather than being recoloured.
+      expect(html).toContain("background:#ffffff;border-radius:4px");
+      expect(html).not.toMatch(/filter:\s*(invert|brightness)/);
     }
     expect(html).not.toContain(brand.icon);
   });
