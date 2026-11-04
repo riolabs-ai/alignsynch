@@ -8,13 +8,13 @@ import Link from "next/link";
  * The front page's templates band: six cards, one call to action.
  *
  * **Not a tablist any more, and that is the change.** The band used to be a three-view toggle —
- * Relationship templates, Library templates, My relationships — and the third view was
- * user-owned: a signed-in reader's own list, on a page anyone can open. A tab that says "My
- * relationships" promises a public page can show it, and the panel behind it could only ever be
- * a door to the console, which is where the list actually lives (`/dashboard/relationships`).
- * So the toggle is gone, the two user-owned views are gone with it, and the band does the one
- * thing a public section can honestly do: show what is for sale, and link to the page that
- * sells it.
+ * the relationship catalogue, the account's library, and the reader's own list of relationships —
+ * and that third view was user-owned: a signed-in reader's own rows, on a page anyone can open.
+ * A tab labelled as the reader's own promises a public page can show it, and the panel behind it
+ * could only ever be a door to the console, which is where the list actually lives
+ * (`/dashboard/relationships`). So the toggle is gone, the two user-owned views are gone with it,
+ * and the band does the one thing a public section can honestly do: show what is for sale, and
+ * link to the page that sells it.
  *
  * **The cards carry no links (`linked={false}`).** The band's single CTA is `viewAll`, and a
  * grid of six cards each linking to `/register` would be six competing calls to action around
