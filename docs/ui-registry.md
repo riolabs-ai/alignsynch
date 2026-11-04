@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **79** — 51 static, 28 dynamic, from `app/**/page.tsx`
-- component domains: **40** — 292 files under `components/`, 286 of them `.tsx`
+- routes: **80** — 52 static, 28 dynamic, from `app/**/page.tsx`
+- component domains: **41** — 294 files under `components/`, 288 of them `.tsx`
 - route handlers: **21** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 14 · **fixture** 63 · **db** 33 · **live** 8 · **prototype** 1
-- templates: Both templates 36 · AlignSynch 39 · QuizHub 42 · No template yet 2
+- status: **mock** 14 · **fixture** 65 · **db** 33 · **live** 8 · **prototype** 1
+- templates: Both templates 38 · AlignSynch 39 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -36,7 +36,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/` — **fixture**
   - capability: The front page: QuizHub leads with category, latest and featured shelves, top players and live winners; AlignSynch leads with the practice a coach runs — a template of their own, a blind two-sided answer and the Gap as the session's agenda — and backs it with the four assessment templates, the counted relationship scope and the three seats on a relationship.
-  - components: `components/categories`, `components/home`, `components/media`, `components/ui`
+  - components: `components/categories`, `components/home`, `components/media`, `components/templates`, `components/ui`
   - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/admin/audit` — **db**
@@ -152,6 +152,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/content`, `components/support`, `components/ui`
   - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
+- `/templates` — **fixture**
+  - capability: The public Relationship Templates catalogue: what a template is, what buying one gets you (both sides answering blind, the Gap by Aspect, the session agenda), and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count, its price and — where a demo sheet exists — a worked example. Both card actions are public: `/register`, and `/assessment/demo/<type>`. No session, no clock and no database, so the page prerenders.
+  - components: `components/templates`
+  - reads: 2 record fixtures — `data/relationship-types.ts`, `data/template-shelf.ts`
+  - notes: The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. The catalogue is derived (`lib/template-catalogue.ts` over `data/relationship-types.ts`), so the count sentence above the shelf and the cards under it cannot disagree, and a type the shop will not sell throws instead of rendering a card nobody can buy. The front page shows six of these cards, curated in `data/template-shelf.ts`, with no per-card actions — one CTA there, the full shelf here.
+
 - `/terms` — **fixture**
   - capability: The draft terms of service: the rules for using the product, its liability and dispute clauses, and a draft notice that cannot be dismissed.
   - components: `components/legal`
@@ -183,8 +189,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: Holds no words of its own — the blocks arrive from `content/blocks.ts` through props.
 
 - `components/home` — **fixture**
-  - capability: Both front pages: the QuizHub shelves (hero, category slider, latest, featured, top players, winners, testimonials) and the AlignSynch practice page — a two-column hero over the worked-example card, then the cycle, the mechanism, the catalogue, the scope ledger and the seats.
-  - files (12): `alignment-home.tsx`, `alignment-templates.tsx`, `categories-slider.tsx`, `featured-quizzes.tsx`, `hero-section.tsx`, `latest-quizzes.tsx`, `live-winners.tsx`, `newsletter-section.tsx`, `player-testimonials.tsx`, `quizzes-by-difficulty.tsx`, `resources-and-referral.tsx`, `top-players-carousel.tsx`
+  - capability: Both front pages: the QuizHub shelves (hero, category slider, latest, featured, top players, winners, testimonials) and the AlignSynch practice page — a two-column hero over the worked-example card, then the cycle, the mechanism, the capped template shelf with its one View-all, the scope ledger and the seats.
+  - files (12): `alignment-home.tsx`, `categories-slider.tsx`, `featured-quizzes.tsx`, `hero-section.tsx`, `latest-quizzes.tsx`, `live-winners.tsx`, `newsletter-section.tsx`, `player-testimonials.tsx`, `quizzes-by-difficulty.tsx`, `resources-and-referral.tsx`, `template-shelf.tsx`, `top-players-carousel.tsx`
   - routes (1): `/`
 
 - `components/identity` — **live**
@@ -228,6 +234,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: The help panels shared by the two halves of the split — the two-tab help header, help categories, FAQ and knowledge base — plus the account page's contact form and its article reader.
   - files (9): `account-support-page.tsx`, `article-detail.tsx`, `category.ts`, `contact-pointer.tsx`, `help-header.tsx`, `help-page.tsx`, `knowledge-base.tsx`, `support-categories.tsx`, `support-faq.tsx`
   - routes (3): `/help`, `/support`, `/support/articles/[slug]`
+
+- `components/templates` — **fixture**
+  - capability: The public catalogue's two files: one template card (name, realm, the two roles, the Aspect count and the price, with the two actions optional) and the page that draws four bands over it — hero, what a template is, what buying one gets you, the catalogue grouped by realm, and the closing action.
+  - files (2): `template-card.tsx`, `templates-page.tsx`
+  - routes (2): `/`, `/templates`
+  - notes: Imported by `/` (the front page's capped shelf, six cards with no per-card actions and one View-all) and by `/templates` (every purchasable type, each card linked to `/register` and to its worked example where one exists). A variation of `components/explore/explore-quiz-list.tsx` for the page and `components/home/featured-quizzes.tsx` for the shelf, both stated in the files' own `template-ancestor:` headers. Holds no words: E23 attributes the domain to `data/pages/templates.ts` at budget 0, and the cards are records from `lib/template-catalogue.ts`.
 
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.

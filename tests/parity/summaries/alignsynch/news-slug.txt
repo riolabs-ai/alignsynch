@@ -33,7 +33,6 @@ landmarks (5)
 
 links (12 unique, 13 total)
   /                                                    1
-  /#templates                                          1
   /assessment/instances                                1
   /assessment/templates                                1
   /dashboard                                           1
@@ -43,6 +42,7 @@ links (12 unique, 13 total)
   /news/quiz-monetization-strategies-2025              1
   /settings                                            1
   /support                                             1
+  /templates                                           1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 2
 
 counts
