@@ -524,7 +524,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "One relationship the member initiated: its status, its Aspects editor while `draft`/`pending`, save-as-pending, publish through a trial or a checkout, and the one-click re-publish that replaces an expired invite link.",
     notes:
-      "Reuses `components/admin/template-editor.tsx` in its `band=\"private\"` shape for Aspects (`template-ancestor:` on the header), so there is one editor and not two. Every write is a server action over `act()`; the ownership refusal (`not-yours`) is decided in the action, not by hiding the form — the counterparty reaching this URL gets the same refusal a crafted POST gets.",
+      'Reuses `components/admin/template-editor.tsx` in its `band="private"` shape for Aspects (`template-ancestor:` on the header), so there is one editor and not two. Every write is a server action over `act()`; the ownership refusal (`not-yours`) is decided in the action, not by hiding the form — the counterparty reaching this URL gets the same refusal a crafted POST gets.',
   },
   {
     kind: "route",
@@ -544,7 +544,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "One private template's editor: the catalogue editor's questions and Aspects shape, writing `owner_user_id` = the actor and `visibility` = `private`, with no publish or unpublish control.",
     notes:
-      "`band=\"private\"` on the reused `components/admin/template-editor.tsx`; `onPublish`/`onUnpublish` are simply not passed, which is why the member cannot reach the catalogue writer through this screen. The ownership check is in the server action (`not-yours`), so the editor's props are a convenience and not the gate.",
+      '`band="private"` on the reused `components/admin/template-editor.tsx`; `onPublish`/`onUnpublish` are simply not passed, which is why the member cannot reach the catalogue writer through this screen. The ownership check is in the server action (`not-yours`), so the editor\'s props are a convenience and not the gate.',
   },
   {
     kind: "route",

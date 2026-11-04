@@ -153,7 +153,7 @@ export const ADMIN_ACTIONS = [
    */
   "message.status",
   /**
-   * #533 phase 2 — **the four member actions, and the reason the ladder starts at `member`.**
+   * #533 phase 2 — **the five member actions, and the reason the ladder starts at `member`.**
    *
    * The epic this table belongs to (#500) is the *admin* write path, and every name above it is
    * floored at `support` or higher. #533 needs the same property for a person who is not staff:
@@ -161,7 +161,7 @@ export const ADMIN_ACTIONS = [
    * re-mints a lapsed invitation, and each of those is a state change that has to leave an
    * `admin_action` row with a reason — "the only write path", in the card's words.
    *
-   * So the ladder gains nothing and the table gains four names at the rung it already had.
+   * So the ladder gains nothing and the table gains five names at the rung it already had.
    * `can("member", "relationship.publish")` is a rank comparison against a floor of `member`,
    * which is true — and `act()` still reads the rung from `user_profile` **inside** the
    * transaction, so a member cannot publish as somebody else by claiming a floor. **Ownership is
@@ -257,10 +257,10 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "message.assign": "support",
   "message.status": "support",
   /**
-   * #533 phase 2 — the member floors, and the only four rows in this table below `support`.
+   * #533 phase 2 — the member floors, and the only five rows in this table below `support`.
    *
    * Each one writes only what its actor already owns: `template.draft` writes a `record` whose
-   * `owner_user_id` is the actor, and the three `relationship.*` rows write a relationship whose
+   * `owner_user_id` is the actor, and the four `relationship.*` rows write a relationship whose
    * `initiator_user_id` is the actor. The floor is `member` because the action is a member's own
    * product, and the ownership check travels with the mutation (it must be inside the transaction
    * to be true) rather than with the floor. Floors above `member` here would make the member path
