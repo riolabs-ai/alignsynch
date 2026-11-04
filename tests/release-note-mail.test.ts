@@ -46,6 +46,10 @@ One sentence on what this release is for.
 - An audited **operations console**: every write passes one \`act()\` path.
 - A second bullet, which the parser must not merge into the first.
 
+### Commits
+- \`feat(console)\` — a commit subject that must never reach the mail.
+- \`fix(mail)\` — a second ledger line that must never reach the mail.
+
 ### Known limits
 - **Stripe is test mode only** — checkout cannot charge a card.
 - **Chat has no persistence** — /chat has no tables behind it.`;
@@ -285,6 +289,21 @@ describe("the release note", () => {
   it("keeps the bullets it was given and invents none", () => {
     const bullets = text.split("\n").filter((line) => line.startsWith("- "));
     expect(bullets).toHaveLength(4);
+  });
+
+  it("drops the `### Commits` ledger — provenance is not a highlight", () => {
+    // The ledger is in the entry (release:check requires it) …
+    expect(section?.body).toContain("### Commits");
+    expect(section?.body).toContain("a commit subject that must never reach the mail");
+    // … and it is not in the mail: no heading, no bullet, no mention of either ledger line.
+    expect(text).not.toContain("## Commits");
+    expect(text).not.toContain("a commit subject that must never reach the mail");
+    expect(text).not.toContain("a second ledger line that must never reach the mail");
+    // Known limits still ships, and still ships last and verbatim.
+    expect(text).toContain("## Known limits");
+    expect(text).toContain("- Stripe is test mode only — checkout cannot charge a card.");
+    expect(text.indexOf("## Known limits")).toBeGreaterThan(text.indexOf("## Console"));
+    expect(text).not.toContain("## Commits");
   });
 
   it("refuses an entry with no Known limits block rather than sending a highlight reel", () => {
