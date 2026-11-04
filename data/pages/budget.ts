@@ -63,6 +63,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-audit",
     budget: 0,
   },
+  // #507 — the broadcast. Budget 0 from the first commit, like the console's other screens: the four
+  // mail-key banners, the compose band's fourteen fields, the four dry-run counts, the six list
+  // captions, the send table's six columns and the fourteen refusal sentences are all
+  // `data/pages/admin-broadcast.ts`, so the next literal written in `broadcast-composer.tsx` is a
+  // red build. Attribution is reachability, so this row counts one component.
+  "/admin/broadcast": {
+    page: "app/(mainlayout)/admin/broadcast/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-broadcast",
+    budget: 0,
+  },
   // #505 — billing control. Budget 0 from the first commit, like the console's other screens: the
   // test-mode banner's three states, the six stat captions, the nine column labels, the five
   // subscription states, the four plan sources, the plan-limit sentences, the comp band's eleven

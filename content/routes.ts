@@ -23,6 +23,8 @@ const STATIC_ROUTES = [
   "/admin/console/templates",
   "/admin/console/users",
   "/admin/audit",
+  // #507 — the broadcast: compose, dry run, send, and the sends already made.
+  "/admin/broadcast",
   // #505 — billing control: subscription state per relationship, and the owner's comp.
   "/admin/billing",
   "/admin/gaps",

@@ -189,6 +189,18 @@ vi.mock("@/lib/db/admin-audit", () => ({
 }));
 
 /**
+ * `/admin/broadcast`'s one read, answered with an empty list and zero counts (#507) — the same move
+ * again: the boundary case measures the capability gate, and an empty console renders the screen's
+ * own idle states. `tests/admin-broadcast.test.ts` is where the populated audience is pinned.
+ */
+vi.mock("@/lib/db/news-signups", () => ({
+  readBroadcastConsole: async () => ({
+    counts: { total: 0, consented: 0, unsubscribed: 0, bounced: 0, complained: 0, cooling: 0 },
+    sends: [],
+  }),
+}));
+
+/**
  * The console's **role** gate, opened for the whole run (#509).
  *
  * The admin boundary block asks one question — does `product.admin` close these routes — and the

@@ -97,6 +97,11 @@
  *       `news_signup` carries the two marks (`bounced_at`, `complained_at`) a hard bounce and a
  *       complaint write. The marks are the column #507 reads before it sends, so a database
  *       migrated without `0027` is a request-time 500 on the first bounce; this names it instead.
+ *   V25 the broadcast's record (#507): `news_signup.unsubscribed_at` exists (the third consent
+ *       mark), `broadcast_send` and `broadcast_recipient` exist, the recipient table carries the
+ *       `PRIMARY KEY (broadcast_id, email)` that makes one address one row per send, and its
+ *       `(email, created_at DESC)` index exists because the cooldown read is an existence test per
+ *       candidate address.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -1224,6 +1229,77 @@ async function main() {
       }
     }
 
+    /* V25 — the broadcast's record (#507).
+     *
+     * Four facts, checked together because the console's send depends on all of them and each one
+     * failing alone is a request-time 500 on the screen rather than a caught bug:
+     *
+     *   the consent mark    `news_signup.unsubscribed_at` exists, so the audience predicate has a
+     *                       column to read;
+     *   the send row        `broadcast_send` exists, so a send is auditable without the body;
+     *   the cooldown row    `broadcast_recipient` exists **with the primary key that makes one
+     *                       address one row per send** — a plain table would accept a duplicate and
+     *                       a second send inside the window would look like the first;
+     *   the cooldown's read `(email, created_at DESC)` is indexed, because the audience query is an
+     *                       existence test per candidate address.
+     *
+     * The counts are printed with the rest of the census: how many sends exist and how many
+     * addresses they have recorded is the answer to "has anything been broadcast from this database".
+     */
+    let broadcasts = 0;
+    let broadcastRecipients = 0;
+    const { rows: consentColumn } = await client.query(
+      `SELECT 1 AS present FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'news_signup'
+          AND column_name = 'unsubscribed_at'`,
+    );
+    if (consentColumn.length === 0) {
+      fail(
+        "V25",
+        "public.news_signup.unsubscribed_at does not exist — a broadcast cannot exclude an unsubscribed address (run `pnpm db:migrate`)",
+      );
+    }
+    const { rows: broadcastTables } = await client.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name IN ('broadcast_send', 'broadcast_recipient')`,
+    );
+    for (const table of ["broadcast_send", "broadcast_recipient"]) {
+      if (!broadcastTables.some((row) => row.table_name === table)) {
+        fail("V25", `public.${table} does not exist — a send would have nowhere to be recorded`);
+      }
+    }
+    if (broadcastTables.length === 2) {
+      const { rows: recipientKey } = await client.query(
+        `SELECT c.conname FROM pg_constraint c
+          WHERE c.conrelid = 'public.broadcast_recipient'::regclass
+            AND c.contype = 'p'
+            AND pg_get_constraintdef(c.oid) = 'PRIMARY KEY (broadcast_id, email)'`,
+      );
+      if (recipientKey.length === 0) {
+        fail(
+          "V25",
+          "public.broadcast_recipient has no PRIMARY KEY (broadcast_id, email) — one address could be recorded twice in one send",
+        );
+      }
+      const { rows: cooldownIndex } = await client.query(
+        `SELECT indexname FROM pg_indexes
+          WHERE schemaname = 'public' AND tablename = 'broadcast_recipient'
+            AND indexdef LIKE '%(email, created_at DESC)%'`,
+      );
+      if (cooldownIndex.length === 0) {
+        fail(
+          "V25",
+          "public.broadcast_recipient has no (email, created_at DESC) index — the cooldown read is a scan",
+        );
+      }
+      const { rows: broadcastCounts } = await client.query(
+        `SELECT (SELECT count(*)::int FROM broadcast_send) AS sends,
+                (SELECT count(*)::int FROM broadcast_recipient) AS recipients`,
+      );
+      broadcasts = broadcastCounts[0]?.sends ?? 0;
+      broadcastRecipients = broadcastCounts[0]?.recipients ?? 0;
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -1239,7 +1315,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

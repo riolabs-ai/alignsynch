@@ -16,6 +16,7 @@
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { adminAuditPageCopy } from "./admin-audit";
 import { adminBillingPageCopy } from "./admin-billing";
+import { adminBroadcastPageCopy } from "./admin-broadcast";
 import { adminGapsPageCopy } from "./admin-gaps";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInstancesPageCopy } from "./admin-instances";
@@ -69,6 +70,8 @@ import { tournamentsPageCopy } from "./tournaments";
 export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/": homePageCopy,
   "/admin/audit": adminAuditPageCopy,
+  // #507 — the broadcast: compose, dry run, send, and the sends already made.
+  "/admin/broadcast": adminBroadcastPageCopy,
   // #505 — the billing control screen: one row per relationship, and the owner's comp.
   "/admin/billing": adminBillingPageCopy,
   "/admin/gaps": adminGapsPageCopy,

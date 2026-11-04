@@ -27,6 +27,15 @@ export const ADMIN_TEMPLATES_PATH = "/admin/templates";
 export const ADMIN_BILLING_PATH = "/admin/billing";
 
 /**
+ * `/admin/broadcast` — a one-off notice to the news list (#507), the epic's last child.
+ *
+ * Here rather than beside `lib/admin/broadcast.ts` for the reason `ADMIN_BILLING_PATH` is here: the
+ * screen's component links back to the audit log, and a path constant in a module that opens a pool
+ * would be the E34 crossing the client graph forbids.
+ */
+export const ADMIN_BROADCAST_PATH = "/admin/broadcast";
+
+/**
  * `/admin/templates/<id>` — one template's editor.
  *
  * Here rather than beside `lib/admin/templates.ts` (#502a): the editor is a client component and
