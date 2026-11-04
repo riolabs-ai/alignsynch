@@ -114,6 +114,20 @@ function isActive(pathname: string, path: string): boolean {
 }
 
 /**
+ * The Overview row's own match (#542 phase 1) — **exact**, not a prefix.
+ *
+ * `isActive()` marks a row for its children too, which is right for `/assessment/instances/[id]`
+ * sitting under its list. It stopped being right for `/dashboard` when the workspace grew
+ * `/dashboard/help`, `/dashboard/library` and `/dashboard/support`: the prefix rule lit two rows
+ * at once (Overview and whichever page you were on), and a rail that says you are in two places is
+ * worse than one that says you are in none. Overview has no children of its own, so its match is
+ * its own address.
+ */
+function isOverview(pathname: string): boolean {
+  return pathname === "/dashboard";
+}
+
+/**
  * Where a row goes, or what it does — exactly one of the two (issue #272).
  *
  * A row that would have been a link with nothing behind it is not a link: sign-out revokes a
@@ -566,7 +580,7 @@ function AlignSynchMenu({
           href="/dashboard"
           icon={<Gauge className="size-5" />}
           label={itemLabel(nav, "dashboard")}
-          active={isActive(pathname, "/dashboard")}
+          active={isOverview(pathname)}
           collapsed={collapsed}
           labelled={labelled}
           onNavigate={onNavigate}
