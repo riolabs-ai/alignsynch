@@ -780,7 +780,7 @@
   "shots": [
     {
       "file": "help-1440.png",
-      "bytes": 269132
+      "bytes": 272607
     },
     {
       "file": "contact-1440.png",
@@ -788,11 +788,11 @@
     },
     {
       "file": "tap-1440.png",
-      "bytes": 101234
+      "bytes": 103978
     },
     {
       "file": "help-1024.png",
-      "bytes": 262467
+      "bytes": 265112
     },
     {
       "file": "contact-1024.png",
@@ -800,11 +800,11 @@
     },
     {
       "file": "tap-1024.png",
-      "bytes": 99971
+      "bytes": 102507
     },
     {
       "file": "help-768.png",
-      "bytes": 259742
+      "bytes": 257057
     },
     {
       "file": "contact-768.png",
@@ -812,11 +812,11 @@
     },
     {
       "file": "tap-768.png",
-      "bytes": 96649
+      "bytes": 93354
     },
     {
       "file": "help-390.png",
-      "bytes": 230467
+      "bytes": 227870
     },
     {
       "file": "contact-390.png",
@@ -824,11 +824,11 @@
     },
     {
       "file": "tap-390.png",
-      "bytes": 52653
+      "bytes": 50295
     },
     {
       "file": "sticky-1440.png",
-      "bytes": 99718
+      "bytes": 102400
     }
   ]
 }
