@@ -7,8 +7,9 @@
  * are the four that make it a fix rather than a rewrite:
  *
  *   1. the quiz brand's menu is the menu it shipped: the same fifteen destinations, in order;
- *   2. the alignment brand's menu is alignment destinations only, and every `/#…` it links to
- *      is an `id` the alignment front page actually emits;
+ *   2. the alignment brand's menu is alignment destinations only, and every row is a route this
+ *      build serves inside the dashboard — the rail carries no anchor into the marketing site
+ *      since #542 moved Support, Help and Library under `/dashboard/*`;
  *   3. a viewer carrying the quiz capability gets the quiz menu back — which is what makes the
  *      split a visibility rule and not a deletion of the product;
  *   4. the footer's columns follow the same rule as the sidebar's rows.
@@ -35,12 +36,9 @@ import { isValidRoute } from "@/content/route-manifest";
 import { routeManifest } from "@/content/routes";
 import { querySearchIndex } from "@/content/search";
 import type { BrandId } from "@/data/brand";
-import { assessmentInstances, assessments } from "@/data/assessments";
-import { alignSynchBrand } from "@/data/brands/alignsynch";
-import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
+import { assessmentInstances } from "@/data/assessments";
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndex, searchIndexFor } from "@/data/searchdata";
-import { alignmentHome } from "@/lib/alignment-home";
 import { ALIGNMENT_ROUTES, type NavViewer, PLATFORM_VIEWER, viewerWith } from "@/lib/nav";
 import { itemLabel } from "@/lib/page-copy";
 import { searchSectionFor } from "@/lib/shell-copy";
@@ -112,6 +110,28 @@ const QUIZ_MENU = [
 /** The destinations that are the quiz product, and must not reach an alignment visitor. */
 const QUIZ_ONLY = ["/leaderboard", "/tournaments", "/battle", "/categories", "/explore"];
 
+/**
+ * The alignment rail's six destinations, in order (#542 phase 1).
+ *
+ * **Every one is a route this build serves inside the dashboard.** Support, the onboarding page and
+ * the library were the three rows that sent a signed-in member out to the marketing site — to a
+ * page written for somebody who had not bought the product. They are `/dashboard/support`,
+ * `/dashboard/help` and `/dashboard/library` now, and the fourth row that left (`/#templates`, the
+ * catalogue's band on the front page) reads the catalogue the console already serves at
+ * `/assessment/templates`.
+ *
+ * It is one constant rather than six literals per case because three cases assert the same six
+ * rows; a second copy is how a menu edit lands in one expectation and not the others.
+ */
+const ALIGNMENT_MENU = [
+  "/dashboard",
+  "/dashboard/help",
+  "/assessment/instances",
+  "/dashboard/library",
+  "/assessment/templates",
+  "/dashboard/support",
+];
+
 describe("the quiz brand renders the menu it shipped", () => {
   it("lists the fifteen destinations, in the order it always has", () => {
     expect(navHrefs("quizhub")).toEqual(QUIZ_MENU);
@@ -126,36 +146,26 @@ describe("the alignment brand's menu is alignment destinations", () => {
   const hrefs = navHrefs("alignsynch");
 
   it("links only to what exists on this brand today", () => {
-    expect(hrefs).toEqual([
-      "/dashboard",
-      "/how-it-works",
-      "/assessment/instances",
-      "/assessment/templates",
-      "/#templates",
-      "/support",
-    ]);
+    expect(hrefs).toEqual(ALIGNMENT_MENU);
   });
 
   it.each(QUIZ_ONLY)("does not link to %s", (path) => {
     expect(hrefs.filter((href) => href === path || href.startsWith(`${path}/`))).toEqual([]);
   });
 
-  it("keeps every in-page anchor pointing at a band the front page emits", () => {
-    const model = alignmentHome(
-      alignSynchBrand,
-      alignSynchHomeCopy,
-      assessments,
-      assessmentInstances,
-      ALIGN_SYNCH_FEATURED_SLUG,
-    );
-    const home = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
-    const ids = [...home.matchAll(/id="([^"]*)"/g)].map((match) => match[1]);
-
-    const anchors = hrefs.filter((href) => href.startsWith("/#"));
-    // Guard the guard: at least one anchor, or the loop below proves nothing.
-    expect(anchors.length).toBeGreaterThan(0);
-    for (const anchor of anchors) {
-      expect(ids).toContain(anchor.slice(2));
+  /**
+   * #542 phase 1 — the rail carries no marketing anchor any more.
+   *
+   * It used to carry exactly one (`/#templates`), and the case here held it to an `id` the
+   * rendered front page emitted. That row is the destination `/assessment/templates` now, so the
+   * claim inverts: nothing in the rail leaves the app, which is what E39 reads from the other
+   * side — a dashboard file linking to `app/(marketing)` must be a marked departure, and a rail
+   * with none has nothing to mark.
+   */
+  it("sends nobody out to the public site — every row is an in-app route", () => {
+    expect(hrefs.filter((href) => href.startsWith("/#"))).toEqual([]);
+    for (const href of hrefs) {
+      expect(href.startsWith("/dashboard") || href.startsWith("/assessment")).toBe(true);
     }
   });
 });
@@ -163,14 +173,7 @@ describe("the alignment brand's menu is alignment destinations", () => {
 describe("the quiz product is filtered, not deleted", () => {
   it("gives a viewer with the quiz capability both menus", () => {
     const hrefs = navHrefs("alignsynch", viewerWith("quiz-surfaces"));
-    expect(hrefs.slice(0, 6)).toEqual([
-      "/dashboard",
-      "/how-it-works",
-      "/assessment/instances",
-      "/assessment/templates",
-      "/#templates",
-      "/support",
-    ]);
+    expect(hrefs.slice(0, 6)).toEqual(ALIGNMENT_MENU);
     expect(hrefs.slice(6)).toEqual(QUIZ_MENU);
   });
 
@@ -223,12 +226,7 @@ describe("the console's own rows are a member's, the operator's rows are not", (
 
   it("draws every operator row for an admin, appended after the console's", () => {
     expect(adminHrefs).toEqual([
-      "/dashboard",
-      "/how-it-works",
-      "/assessment/instances",
-      "/assessment/templates",
-      "/#templates",
-      "/support",
+      ...ALIGNMENT_MENU,
       "/admin/gaps",
       "/admin/instances",
       // #503 — the log the five repairs commit into.
@@ -269,13 +267,15 @@ describe("the console rail reads Dashboard, My Relationships, Library, Templates
   });
 
   it("puts Library directly below My Relationships", () => {
-    expect(memberHrefs.indexOf("/assessment/templates")).toBe(
+    expect(memberHrefs.indexOf("/dashboard/library")).toBe(
       memberHrefs.indexOf("/assessment/instances") + 1,
     );
   });
 
   it("puts Templates directly above Support", () => {
-    expect(memberHrefs.indexOf("/support")).toBe(memberHrefs.indexOf("/#templates") + 1);
+    expect(memberHrefs.indexOf("/dashboard/support")).toBe(
+      memberHrefs.indexOf("/assessment/templates") + 1,
+    );
   });
 
   it("keeps the console's rows and their routes off the quiz brand", () => {

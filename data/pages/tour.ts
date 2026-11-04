@@ -39,6 +39,19 @@ export const tourPageCopy: PageCopy = zPageCopy.parse({
     { id: "previous", label: "Back" },
     { id: "done", label: "Done" },
     { id: "close", label: "Close the tour" },
+    /**
+     * The replay control (#458, mounted by `/dashboard/help` in #542). Three strings, not one: the
+     * action's name, the sentence beside it that says what replaying does, and the word the button
+     * shows while the mark is being cleared — a control that looks idle while a request is in
+     * flight is a control a person presses twice.
+     */
+    { id: "replay", label: "Replay the tour" },
+    {
+      id: "replay-note",
+      label: "Clears the mark that keeps the tour from opening, then returns you to the dashboard.",
+    },
+    { id: "replay-pending", label: "Opening the tour..." },
+    { id: "replay-failed", label: "The tour could not be reopened just now. Try again." },
   ],
   sections: [
     {

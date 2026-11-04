@@ -505,10 +505,10 @@ function AlignSynchMenu({
         onNavigate={onNavigate}
       />
       <NavRow
-        href="/how-it-works"
+        href="/dashboard/help"
         icon={<Workflow className="size-5" />}
         label={itemLabel(nav, "how-it-works")}
-        active={isActive(pathname, "/how-it-works")}
+        active={isActive(pathname, "/dashboard/help")}
         collapsed={collapsed}
         labelled={labelled}
         onNavigate={onNavigate}
@@ -523,38 +523,36 @@ function AlignSynchMenu({
         onNavigate={onNavigate}
       />
       <NavRow
-        href="/assessment/templates"
+        href="/dashboard/library"
         icon={<Library className="size-5" />}
         label={itemLabel(nav, "template-library")}
-        active={isActive(pathname, "/assessment/templates")}
+        active={isActive(pathname, "/dashboard/library")}
         collapsed={collapsed}
         labelled={labelled}
         onNavigate={onNavigate}
       />
       {/*
-        Templates is the front page's `#templates` band, the one marketing anchor the console
-        still carries: the four record templates the brand ships are drawn there, and the rail
-        names them with the page that shows them. **How it works is not an anchor any more** — it
-        is `/how-it-works`, an in-app onboarding page
-        (`app/(mainlayout)/how-it-works/page.tsx`) — because the owner's review of the console
-        said a signed-in member must not be sent to the public site to be told how the product
-        works. `tests/nav-brand.test.ts` holds every remaining `/#…` href to an `id` the rendered
-        front page emits; this comment is the record of why there is only one left.
+        Templates is the catalogue a member starts from, and it is `/assessment/templates` now.
+        It used to be the front page's `#templates` band — the one marketing anchor the console
+        still carried — which is exactly the departure #542 removed: a signed-in member sent out
+        to the public site to look at the thing they were about to use. The row's label is
+        unchanged; the destination is a page this build serves. `How it works` moved the same way,
+        to `/dashboard/help`, so no rail row leaves the workspace.
       */}
       <NavRow
-        href="/#templates"
+        href="/assessment/templates"
         icon={<LayoutTemplate className="size-5" />}
         label={itemLabel(nav, "templates")}
-        active={false}
+        active={isActive(pathname, "/assessment/templates")}
         collapsed={collapsed}
         labelled={labelled}
         onNavigate={onNavigate}
       />
       <NavRow
-        href="/support"
+        href="/dashboard/support"
         icon={<LifeBuoy className="size-5" />}
         label={itemLabel(nav, "support")}
-        active={isActive(pathname, "/support")}
+        active={isActive(pathname, "/dashboard/support")}
         collapsed={collapsed}
         labelled={labelled}
         onNavigate={onNavigate}

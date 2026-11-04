@@ -35,6 +35,44 @@ export const MY_INSTANCES_PATH = "/assessment/instances";
 export const CREATE_INSTANCE_PATH = "/assessment/new";
 
 /**
+ * `/dashboard/support` — the member's support surface (#542 phase 1).
+ *
+ * The rail's Support row used to open `/support`, whose one action was a link out to the public
+ * help centre; this is the work itself, inside the shell: the knowledge base, one article and the
+ * request form. Three constants and one builder, because the page, its server action, the article
+ * route and the rail's `href` are four callers of the same address.
+ */
+export const DASHBOARD_SUPPORT_PATH = "/dashboard/support";
+
+/** The knowledge-base list inside the dashboard — where one article's links resolve. */
+export const DASHBOARD_ARTICLE_BASE = `${DASHBOARD_SUPPORT_PATH}/articles`;
+
+/** One article, inside the dashboard. */
+export function dashboardArticlePath(slug: string): string {
+  return `${DASHBOARD_ARTICLE_BASE}/${slug}`;
+}
+
+/**
+ * `/dashboard/help` — the onboarding sequence plus the tour's replay control (#542 phase 1).
+ *
+ * The rail's "How it works" row points here; `/how-it-works` still answers for a bookmarked link.
+ */
+export const DASHBOARD_HELP_PATH = "/dashboard/help";
+
+/** `/dashboard/library` — the templates this member owns or has adopted (#542 phase 1). */
+export const DASHBOARD_LIBRARY_PATH = "/dashboard/library";
+
+/**
+ * `/help` — the public help centre (FAQ, knowledge base, the one public contact form).
+ *
+ * A constant because two trees read it: the marketing article page passes it to `ArticleDetail` as
+ * the breadcrumb's destination, and `/support` (the account page) redirects a signed-out visitor
+ * there instead of to `/login`. A path spelled in JSX is a copy literal to E23 and a second copy of
+ * the manifest to a reader, so both callers name it here.
+ */
+export const PUBLIC_HELP_PATH = "/help";
+
+/**
  * `/assessment/templates/new` — the form that authors a template (#255).
  *
  * Registered in `content/routes.ts` (E7 checks it in both directions) because it is a page. It is

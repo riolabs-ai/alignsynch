@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { categoryName } from "@/content/categories";
 import type { PageCopySection } from "@/content/pages";
-import { articlePath, publishedArticles } from "@/lib/article-records";
+import { publishedArticles } from "@/lib/article-records";
 import { itemLabel } from "@/lib/page-copy";
 import { ArrowRight, BookOpen, FileText, Search } from "lucide-react";
 import Link from "next/link";
@@ -19,9 +19,24 @@ interface KnowledgeBaseProps {
   selectedCategory: SupportCategory;
   copy: PageCopySection;
   categoryCopy: PageCopySection;
+  /**
+   * Where one entry opens. The public help centre keeps the default; `/dashboard/support` passes
+   * its own path so an article opens inside the shell instead of sending the reader out to the
+   * marketing site mid-task (#542). A base rather than a builder, because this component is
+   * `"use client"` and a function cannot cross the server boundary as a prop.
+   */
+  articleHrefBase?: string;
 }
 
-export function KnowledgeBase({ selectedCategory, copy, categoryCopy }: KnowledgeBaseProps) {
+/** The public article path, as `lib/article-records` spells it — the default base. */
+const DEFAULT_ARTICLE_BASE = "/support/articles";
+
+export function KnowledgeBase({
+  selectedCategory,
+  copy,
+  categoryCopy,
+  articleHrefBase = DEFAULT_ARTICLE_BASE,
+}: KnowledgeBaseProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   /**
@@ -69,7 +84,7 @@ export function KnowledgeBase({ selectedCategory, copy, categoryCopy }: Knowledg
               className="overflow-hidden border hover:border-primary/50 transition-colors"
             >
               <CardContent className="!pt-6">
-                <Link href={articlePath(article)} className="block">
+                <Link href={`${articleHrefBase}/${article.slug}`} className="block">
                   <Button
                     variant="ghost"
                     className="w-full h-full p-4 justify-start flex-col items-start"

@@ -98,19 +98,19 @@ describe("the shell's menus", () => {
   it("keeps every alignment destination — a status never adds or removes a row", () => {
     expect(hrefsOf(navHtml("platform"))).toEqual([
       "/dashboard",
-      "/how-it-works",
+      "/dashboard/help",
       "/assessment/instances",
+      "/dashboard/library",
       "/assessment/templates",
-      "/#templates",
-      "/support",
+      "/dashboard/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
       "/dashboard",
-      "/how-it-works",
+      "/dashboard/help",
       "/assessment/instances",
+      "/dashboard/library",
       "/assessment/templates",
-      "/#templates",
-      "/support",
+      "/dashboard/support",
       "/admin/gaps",
       "/admin/instances",
       // #503 — the audit log, the operator's third row.
