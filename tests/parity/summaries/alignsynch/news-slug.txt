@@ -43,7 +43,7 @@ links (12 unique, 13 total)
   /news/quiz-accessibility-guidelines                  1
   /news/quiz-monetization-strategies-2025              1
   /settings                                            1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.4.0 2
 
 counts
   elements  369
