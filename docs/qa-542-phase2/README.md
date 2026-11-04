@@ -33,10 +33,10 @@ renders the rail for all four rungs and asserts `member` (6 rows) ⊂ `support` 
 
 ## Authorisation is not the menu
 
-| request | as | result |
-| --- | --- | --- |
-| `/admin/console` | member | **404** (`member-404-1440.png`) |
-| `/admin/console` | admin | **200** (`admin-console-1440.png`) |
+| request          | as     | result                             |
+| ---------------- | ------ | ---------------------------------- |
+| `/admin/console` | member | **404** (`member-404-1440.png`)    |
+| `/admin/console` | admin  | **200** (`admin-console-1440.png`) |
 
 Hiding a row is not the rule that refuses a route: `lib/auth/require-role.ts` answers `notFound()`
 for a member on every `/admin/*` page, and `lib/admin/act.ts` re-asks the floor inside the
@@ -67,12 +67,12 @@ browser storage.
 
 ## The gate
 
-| step | result |
-| --- | --- |
-| `pnpm typecheck` | pass |
-| `pnpm data:check` | 692 `node:test` cases, 0 failures |
-| `pnpm test` | 2041 passed / 153 files |
-| `pnpm lint` / `format:check` | clean for the changed files |
-| `BRAND=alignsynch pnpm build` | pass |
-| `pnpm parity` | manifest regenerated (the rail is in the shell on every gated route) |
-| E10 negative run | `/admin/consolex` in `lib/nav-menu.ts` → `[E10] lib/nav-menu.ts:144 links …` |
+| step                          | result                                                                       |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm typecheck`              | pass                                                                         |
+| `pnpm data:check`             | 692 `node:test` cases, 0 failures                                            |
+| `pnpm test`                   | 2041 passed / 153 files                                                      |
+| `pnpm lint` / `format:check`  | clean for the changed files                                                  |
+| `BRAND=alignsynch pnpm build` | pass                                                                         |
+| `pnpm parity`                 | manifest regenerated (the rail is in the shell on every gated route)         |
+| E10 negative run              | `/admin/consolex` in `lib/nav-menu.ts` → `[E10] lib/nav-menu.ts:144 links …` |
