@@ -93,7 +93,7 @@ export function ResourcesAndReferral({
 
   return (
     <section className="py-10 xl:py-16 bg-white dark:bg-slate-950">
-      <div className="container mx-auto xl:px-4">
+      <div className="marketing-container">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Referral Program CTA - 5 columns */}
           <div className="md:col-span-5">

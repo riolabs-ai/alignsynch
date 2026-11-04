@@ -1,41 +1,20 @@
 route  /
 brand  alignsynch
 
-headings (42)
+headings (21)
   h1  "Know what your team will not say out loud."
   h2  "Create once. Run it with every client."
   h3  "Create"
   h3  "Invite both sides"
   h3  "Run the session"
   h2  "The same question, answered twice"
-  h2  "Start from a type, a template, or your own list."
+  h2  "Start from the relationship you have."
   h3  "Staff–Manager"
-  h3  "Coworker–Colleague"
-  h3  "Business Partner A–Business Partner B"
-  h3  "Project Manager–Team Member"
-  h3  "Project Teammate A–Project Teammate B"
-  h3  "Customer–Vendor Product"
-  h3  "Customer–Vendor Services"
-  h3  "Investor–SponsorEntrepreneur"
   h3  "Co-founders"
-  h3  "HOA Board Member–Owner"
   h3  "Parent–Teacher"
-  h3  "Teacher–Student"
   h3  "Patient–Caregiver"
-  h3  "Spouse A–Spouse B"
   h3  "Parent–Child"
-  h3  "Father–Son"
-  h3  "Father–Daughter"
-  h3  "Mother–Son"
-  h3  "Mother–Daughter"
-  h3  "Sibling A–Sibling B"
-  h3  "Brother–Sister"
-  h3  "Sister A–Sister B"
-  h3  "Brother A–Brother B"
   h3  "Friend A–Friend B"
-  h3  "Guy Friend A–Guy Friend B"
-  h3  "Gal Friend A–Gal Friend B"
-  h3  "Guy Friend–Gal Friend"
   h2  "Twenty-seven relationship types, across seven realms."
   h3  "Business"
   h3  "Personal"
@@ -50,53 +29,24 @@ landmarks (3)
   contentinfo    1
   navigation     1
 
-links (42 unique, 48 total)
+links (13 unique, 20 total)
   /                                                    1
   /#questions                                          2
-  /#templates                                          2
   /assessment/avery-rowan                              1
-  /assessment/demo/co-founders                         1
-  /assessment/demo/staff-manager                       1
   /assessment/marco-priya                              1
   /assessment/ruth-sam                                 1
-  /assessment/templates/assessment-brother-sister/create 1
-  /assessment/templates/assessment-brothers/create     1
-  /assessment/templates/assessment-business-partners/create 1
-  /assessment/templates/assessment-business-staff-manager/create 1
-  /assessment/templates/assessment-co-founders/create  1
-  /assessment/templates/assessment-colleagues/create   1
-  /assessment/templates/assessment-customer-vendor-product/create 1
-  /assessment/templates/assessment-customer-vendor-services/create 1
-  /assessment/templates/assessment-father-daughter/create 1
-  /assessment/templates/assessment-father-son/create   1
-  /assessment/templates/assessment-friends/create      1
-  /assessment/templates/assessment-gal-friends/create  1
-  /assessment/templates/assessment-guy-friend-gal-friend/create 1
-  /assessment/templates/assessment-guy-friends/create  1
-  /assessment/templates/assessment-hoa-board-owner/create 1
-  /assessment/templates/assessment-investor-entrepreneur/create 1
-  /assessment/templates/assessment-mother-daughter/create 1
-  /assessment/templates/assessment-mother-son/create   1
-  /assessment/templates/assessment-parent-teacher/create 1
-  /assessment/templates/assessment-patient-caregiver/create 1
-  /assessment/templates/assessment-personal-parent-child/create 1
-  /assessment/templates/assessment-project-manager-member/create 1
-  /assessment/templates/assessment-siblings/create     1
-  /assessment/templates/assessment-sisters/create      1
-  /assessment/templates/assessment-spouses/create      1
-  /assessment/templates/assessment-teacher-student/create 1
-  /assessment/templates/assessment-team/create         1
   /help                                                3
   /login                                               1
   /pricing                                             1
   /privacy                                             2
   /register                                            2
+  /templates                                           3
   /terms                                               1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 1
 
 counts
-  elements  621
+  elements  371
   images    2
-  buttons   4
+  buttons   1
   inputs    2
-  classes   309 (sha 8204e96453aa)
+  classes   299 (sha 06b7adfdbc09)

@@ -168,7 +168,8 @@ export function shellCopy(brand: Brand): PageCopy {
        *                                             Postgres; not the browser-local `/v1/` prototype
        *   Library        `/assessment/templates`  the template catalogue: built-ins plus this
        *                                             account's
-       *   Templates      the `#templates` band of `/` — the four records' own heading
+       *   Templates      `/templates`              the public Relationship Templates catalogue:
+       *                                             every type the shop will sell, by realm
        *   Pricing        `/pricing`               the public price page (the marketing header's
        *                                             fourth row)
        *   Support        `/support`               the shell's existing support route,

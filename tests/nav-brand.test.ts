@@ -131,7 +131,7 @@ describe("the alignment brand's menu is alignment destinations", () => {
       "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
-      "/#templates",
+      "/templates",
       "/support",
     ]);
   });
@@ -140,7 +140,13 @@ describe("the alignment brand's menu is alignment destinations", () => {
     expect(hrefs.filter((href) => href === path || href.startsWith(`${path}/`))).toEqual([]);
   });
 
-  it("keeps every in-page anchor pointing at a band the front page emits", () => {
+  /**
+   * The rail has no in-page anchor left: `Templates` was the last one (`/#templates`), and it
+   * points at the public catalogue page now. The rule that keeps an anchor honest therefore moves
+   * to the footer, which still scrolls the front page for `How it works` — and the guard below is
+   * what stops the loop passing on a list that has no anchors at all.
+   */
+  it("points every in-page anchor still in the chrome at a band the front page emits", () => {
     const model = alignmentHome(
       alignSynchBrand,
       alignSynchHomeCopy,
@@ -151,7 +157,10 @@ describe("the alignment brand's menu is alignment destinations", () => {
     const home = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
     const ids = [...home.matchAll(/id="([^"]*)"/g)].map((match) => match[1]);
 
-    const anchors = hrefs.filter((href) => href.startsWith("/#"));
+    // The rail links no anchor at all any more, which is the change this card made.
+    expect(hrefs.filter((href) => href.startsWith("/#"))).toEqual([]);
+
+    const anchors = footerHrefs("alignsynch").filter((href) => href.startsWith("/#"));
     // Guard the guard: at least one anchor, or the loop below proves nothing.
     expect(anchors.length).toBeGreaterThan(0);
     for (const anchor of anchors) {
@@ -168,7 +177,7 @@ describe("the quiz product is filtered, not deleted", () => {
       "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
-      "/#templates",
+      "/templates",
       "/support",
     ]);
     expect(hrefs.slice(6)).toEqual(QUIZ_MENU);
@@ -240,7 +249,7 @@ describe("the console's own rows are a member's, the operator's rows are not", (
       "/how-it-works",
       "/assessment/instances",
       "/assessment/templates",
-      "/#templates",
+      "/templates",
       "/support",
     ]);
     const admin = navHtml("alignsynch", viewerWith("admin-console"));
@@ -288,7 +297,7 @@ describe("the console rail reads Dashboard, My Relationships, Library, Templates
   });
 
   it("puts Templates directly above Support", () => {
-    expect(memberHrefs.indexOf("/support")).toBe(memberHrefs.indexOf("/#templates") + 1);
+    expect(memberHrefs.indexOf("/support")).toBe(memberHrefs.indexOf("/templates") + 1);
   });
 
   it("keeps the console's rows and their routes off the quiz brand", () => {
@@ -318,7 +327,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
     // so its column carries the public help centre — the account page is the rail's row, and a
     // marketing footer pointing at it is the mistake the Help/Support split exists to remove.
     expect(hrefs).toEqual([
-      "/#templates",
+      "/templates",
       "/#questions",
       "/help",
       // The contact band's one link, to the form (owner, 2026-11-02): the band no longer prints
@@ -332,7 +341,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
 
   it("restores them for a viewer with the quiz capability", () => {
     const hrefs = footerHrefs("alignsynch", viewerWith("quiz-surfaces"));
-    expect(hrefs.slice(0, 3)).toEqual(["/#templates", "/#questions", "/help"]);
+    expect(hrefs.slice(0, 3)).toEqual(["/templates", "/#questions", "/help"]);
     expect(hrefs).toContain("/leaderboard");
     expect(hrefs.some((href) => href.startsWith("/categories/"))).toBe(true);
   });

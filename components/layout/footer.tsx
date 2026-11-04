@@ -523,7 +523,7 @@ function AlignSynchLinkColumn({
     <div className="space-y-5">
       <FooterColumnHeading>{links.heading}</FooterColumnHeading>
       <ul className="space-y-3">
-        <FooterLinkRow href="/#templates" label={itemLabel(links, "templates")} leaving={leaving} />
+        <FooterLinkRow href="/templates" label={itemLabel(links, "templates")} leaving={leaving} />
         <FooterLinkRow
           href="/#questions"
           label={itemLabel(links, "how-it-works")}

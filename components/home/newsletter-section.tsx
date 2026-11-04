@@ -63,7 +63,7 @@ export function NewsletterSection({ copy }: { copy: PageCopySection }) {
         <div className="absolute inset-0 bg-foreground/90 backdrop-blur-sm"></div>
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="marketing-container relative z-10">
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

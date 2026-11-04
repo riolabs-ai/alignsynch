@@ -29,7 +29,6 @@ landmarks (6)
 
 links (18 unique, 34 total)
   /                                                    1
-  /#templates                                          1
   /assessment/instances                                1
   /assessment/templates                                1
   /dashboard                                           1
@@ -45,6 +44,7 @@ links (18 unique, 34 total)
   /news/summer-quiz-championship-announcement          2
   /settings                                            1
   /support                                             1
+  /templates                                           1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 2
 
 counts
