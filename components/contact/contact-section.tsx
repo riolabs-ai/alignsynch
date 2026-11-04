@@ -52,7 +52,7 @@ export function ContactSection({
   const settled = state === "sent" || state === "received";
 
   return (
-    <section id="contact" className="container mx-auto pb-16">
+    <section id="contact" className="marketing-container pb-16">
       <div className="max-w-3xl">
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {contact.heading}

@@ -3,7 +3,7 @@ import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { brand, brandIdOf } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
 import { shellAccount } from "@/lib/auth/shell-account";
-import { brandMark } from "@/lib/brand-mark";
+import { brandIconMark, brandMark } from "@/lib/brand-mark";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { navViewer } from "@/lib/nav";
 import { publicChromeCopy } from "@/lib/shell-copy";
@@ -75,7 +75,7 @@ export default async function MarketingLayout({
         brand={brand}
         brandId={brandId}
         copy={publicChromeCopy(shellPageCopy, brandId)}
-        mark={brandMark(brand.logo)}
+        mark={brandIconMark(brand.mark) ?? brandMark(brand.logo)}
       />
       <div className="flex-1">{children}</div>
       {/*

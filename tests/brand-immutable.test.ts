@@ -45,7 +45,7 @@ import { brand } from "@/data/brand";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { shellPageCopy } from "@/data/pages/shell";
 import { brandIconPaths } from "@/lib/brand-icon";
-import { brandMark } from "@/lib/brand-mark";
+import { brandIconMark, brandMark } from "@/lib/brand-mark";
 import { PLATFORM_VIEWER } from "@/lib/nav";
 
 /** The three fixed assets, as the brand record names them. */
@@ -105,7 +105,7 @@ function headerHtml(): string {
       brand: alignSynchBrand,
       brandId: "alignsynch",
       copy: shellPageCopy,
-      mark: brandMark(alignSynchBrand.logo),
+      mark: brandIconMark(alignSynchBrand.mark),
       account: null,
     }),
   );
@@ -151,23 +151,30 @@ describe("the brand's three fixed assets", () => {
 });
 
 describe("the marketing chrome", () => {
-  it("draws the brand's lockup in the header, and no other image for the brand", () => {
+  it("draws the brand's icon in the header, and no other image for the brand", () => {
+    /**
+     * #539 items 1 and 5: the header draws `brand.mark` (the square monogram the icon set is
+     * generated from) at an icon size, and the wordmark is type beside it — so the one image is
+     * the icon, not the 818×127 lockup. The lockup is still drawn whole in the rail.
+     */
     const sources = imagePaths(headerHtml());
-    expect(sources).toEqual([LOGO]);
+    expect(sources).toEqual([MARK]);
   });
 
   it("draws the mark the brand record names in the footer, and nothing else", () => {
     /**
-     * The footer resolves `brandMark(brand.logo)` — the *build's* record, not an argument — so the
-     * expected value is this build's own mark: the AlignSynch lockup under `BRAND=alignsynch`
-     * (where it must equal `LOGO`, and the gate runs that lane), and the template's glyph under
-     * the default build, whose logo is a `fallback` entry and therefore draws no image at all.
-     * Either way, one source and no invented one.
+     * The footer resolves `brandIconMark(brand.mark) ?? brandMark(brand.logo)` — the *build's*
+     * record, not an argument — so the expected value is this build's own answer: the square
+     * mark under `BRAND=alignsynch` (where the record names one), and no image at all under the
+     * default build, whose logo is a `fallback` entry and whose record names no mark. Either
+     * way, one source and no invented one — and #539 keeps it that way: the footer draws an
+     * icon, never a crop of the lockup.
      */
-    const expected = brandMark(brand.logo)?.src;
+    const expected = brandIconMark(brand.mark)?.src ?? brandMark(brand.logo)?.src;
     expect(imagePaths(footerHtml())).toEqual(expected === undefined ? [] : [expected]);
     // And the resolution is the record's, not a literal typed into the footer.
     const source = readFileSync("components/layout/footer.tsx", "utf8");
+    expect(source).toMatch(/brandIconMark\(brand\.mark\)/);
     expect(source).toMatch(/brandMark\(brand\.logo\)/);
   });
 
