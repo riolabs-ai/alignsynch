@@ -147,9 +147,9 @@ Three properties are worth knowing before you touch it:
 - **No `RESEND_API_KEY` is a green run, not a skipped one.** The fully rendered mail is printed into
   the job log and the script exits 0, so a fork or a secret-less clone proves the render without
   mailing anybody. `RESEND_API_KEY` in Actions must be a **sending-only** key; `RESEND_FROM` is the
-  verified sender and `STAKEHOLDERS` the comma-separated recipients. An empty `STAKEHOLDERS` with a
-  key present is a refusal — a note that reports success and reaches nobody is the failure mode this
-  whole step exists to avoid.
+  verified sender and `STAKEHOLDERS` the comma-separated recipients. An empty `STAKEHOLDERS` is a
+  rehearsal too — the mail is printed and the run is green, because the work of writing it is done
+  and only the recipient list is missing. Nothing is silenced: the job log says which secret to add.
 
 ## The version badge points at the tag
 

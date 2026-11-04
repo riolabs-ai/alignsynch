@@ -24,8 +24,9 @@ name: Release notify
 # **The key is the sending-only one.** A release notification needs exactly one permission: send.
 # `RESEND_API_KEY` here must be a sending-scoped key, never the account key that can create keys or
 # manage the domain — a tag-triggered job is not a place to keep that. `RESEND_FROM` is the verified
-# sender (`AlignSynch <support@…>`); `STAKEHOLDERS` is a comma-separated list of addresses, and an
-# empty one is a refusal, not a green run.
+# sender (`AlignSynch <support@…>`); `STAKEHOLDERS` is a comma-separated list of addresses. Until
+# that list is set the run is a rehearsal: the mail is printed to the log and the job is green,
+# because the note is written and only the recipients are missing — and the log says so.
 
 on:
   push:

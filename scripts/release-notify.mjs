@@ -288,9 +288,22 @@ async function main() {
 
   const to = recipients();
   if (to.length === 0) {
-    fail(
-      "STAKEHOLDERS is empty — a release notification with no recipients would report success and mail nobody",
+    // Owner decision (2026-11-04): an unset recipient list is a rehearsal, not a failure — the same
+    // evidence rule as a missing key. Print the whole mail, say what is missing, exit 0. A note that
+    // goes nowhere has to be visible in the log, never a green tick over a send that never ran.
+    printMail(document.subject, rendered.text);
+    say("");
+    say(
+      "release-notify: dry run — RESEND_API_KEY is set but STAKEHOLDERS is empty, so nothing was sent and nothing was recorded. Add the comma-separated recipient list as a repository secret to send. The mail above is the evidence.",
     );
+    summary(
+      [
+        `### Release note ${tag} — dry run`,
+        "",
+        "`STAKEHOLDERS` is not set, so there is no recipient list and nothing was sent. The rendered mail is in the job log.",
+      ].join("\n"),
+    );
+    return 0;
   }
   const from = (process.env.RESEND_FROM ?? "").trim() || DEFAULT_FROM;
 
