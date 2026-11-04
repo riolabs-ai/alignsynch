@@ -8,18 +8,44 @@ at the instant both have submitted.
 
 ## The routes
 
-| Route                                        | Method | What it does                                                              |
-| -------------------------------------------- | ------ | ------------------------------------------------------------------------- |
-| `/assessment`                                | GET    | the published Templates, each with its own create form                    |
-| `/assessment/new`                            | POST   | create an Instance (one transaction), then 303 to the screen              |
-| `/assessment/instances/[instanceId]`         | GET    | the one screen both parties share — answer, waiting, or report            |
-| `/assessment/instances/[instanceId]/answers` | POST   | one party's whole sheet, or **409** when the answers are frozen           |
-| `/assessment/instances/[instanceId]/invite`  | POST   | reissue an unclaimed invitation: new token, old link dead (**#275**)      |
-| `/invite/[token]`                            | GET    | what the invitation says; **claims nothing**                              |
-| `/invite/[token]/claim`                      | POST   | spend the single-use invitation, bind the Counterparty, 303 to the screen |
+| Route                                        | Method | What it does                                                               |
+| -------------------------------------------- | ------ | -------------------------------------------------------------------------- |
+| `/assessment`                                | GET    | the published Templates, each with its own create form                     |
+| `/assessment/new`                            | POST   | create an Instance (one transaction), then 303 to the screen               |
+| `/assessment/instances/[instanceId]`         | GET    | the one screen both parties share — answer, waiting, or report             |
+| `/assessment/instances/[instanceId]/answers` | POST   | one party's whole sheet, or **409** when the answers are frozen            |
+| `/assessment/instances/[instanceId]/invite`  | POST   | reissue an unclaimed invitation: new token, old link dead (**#275**)       |
+| `/invite/[token]`                            | GET    | step 1 of the Counterparty's onboarding wizard; **claims nothing**         |
+| `/invite/[token]?step=2`                     | GET    | what happens next — answer, answer, report; opinions editable until accept |
+| `/invite/[token]?step=3`                     | GET    | the account gate: sign in / sign up, or (signed in) the claim form         |
+| `/invite/[token]/claim`                      | POST   | spend the single-use invitation, bind the Counterparty, 303 to the screen  |
 
 `/invite/[token]` is inert on purpose: the token is single-use, and a GET that consumed it would
 be consumed by the first mail client to preview the link.
+
+## The Counterparty's onboarding (#t_0aa81144)
+
+The invitation used to be one button whose `POST` answered with the instance screen: a stranger was
+joined to a relationship and dropped into a questionnaire with no sentence saying who had invited
+them, what would happen, or whether anything was owed. It now opens a three-step wizard
+(`components/assessment-flow/counterparty-wizard.tsx`, varying the numbered stepper in
+`components/create/quiz-editor.tsx`):
+
+1. **what this is** — who invited you, which template, and what each of you will see;
+2. **what happens next** — you answer, they answer, then the report opens for both; opinions stay
+   editable until you accept;
+3. **your account** — sign in or create one, and the claim form appears only here, only signed in.
+
+Every step's URL is `/invite/<token>?step=N`, so the token stays in the path and the sign-in
+`next` is the step 3 URL itself: `safeNextPath`/`signInDestination` keep it, and the login page
+renders one sentence naming what the person was doing (`lib/auth/invite-prompt.ts`). A token that
+is spent, expired, revoked, lapsed or unknown still draws the refusal bands on `InviteView`, and a
+`?claim=` refusal is carried back to step 3.
+
+The claim is the **last** hop. A submit is no longer a bare 303 either: `POST …/answers` redirects
+to `/assessment/instances/<id>?submitted=1`, which draws the confirmation band
+(`components/assessment-flow/submission-confirmation.tsx`) above the screen — thank you, who is
+still to answer, and how to change an opinion before the answers are sealed.
 
 ## What the database holds
 

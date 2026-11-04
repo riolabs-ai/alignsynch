@@ -2403,6 +2403,16 @@ export type InviteState =
 
 export interface InvitePreview {
   readonly state: InviteState;
+  /**
+   * The session this invitation names, or `null` for a token that is not even the right shape
+   * (#t_0aa81144).
+   *
+   * The onboarding wizard needs it for one thing only: a visitor who **already holds this seat**
+   * (the Counterparty who claimed it in this browser) should land on the session rather than being
+   * shown "this invitation was used already". It is an id, not a route — `instancePath()` owns the
+   * address — and it reveals nothing a holder of the token did not already have.
+   */
+  readonly instanceRecordId: string | null;
   readonly initiatorName: string | null;
   readonly counterpartyName: string | null;
   readonly templateTitle: string | null;
@@ -2447,6 +2457,7 @@ export async function previewInvite(
   const now = options.now ?? new Date();
   const empty = {
     state: "unknown" as const,
+    instanceRecordId: null,
     initiatorName: null,
     counterpartyName: null,
     templateTitle: null,
@@ -2503,6 +2514,7 @@ export async function previewInvite(
     (await roleForUser(row.session_record_id, options.viewerUserId));
   return {
     state,
+    instanceRecordId: row.session_record_id,
     initiatorName: row.initiator_name,
     counterpartyName: row.counterparty_name,
     templateTitle: row.title,

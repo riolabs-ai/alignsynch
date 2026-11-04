@@ -16,7 +16,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **79** — 51 static, 28 dynamic, from `app/**/page.tsx`
-- component domains: **40** — 288 files under `components/`, 282 of them `.tsx`
+- component domains: **40** — 290 files under `components/`, 284 of them `.tsx`
 - route handlers: **21** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 14 · **fixture** 63 · **db** 33 · **live** 8 · **prototype** 1
 - templates: Both templates 36 · AlignSynch 39 · QuizHub 42 · No template yet 2
@@ -432,7 +432,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (16): `accept-session.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `steps-panel.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`
+  - files (18): `accept-session.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`
   - routes (13): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/new`, `/dashboard/templates/[id]`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 

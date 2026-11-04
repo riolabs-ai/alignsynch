@@ -318,10 +318,10 @@ async function main() {
   check(
     "the Initiator's own claim is refused with already-a-party",
     selfClaim.status === 303 &&
-      (selfClaim.location ?? "").endsWith(`/invite/${token}?claim=already-a-party`),
+      (selfClaim.location ?? "").endsWith(`/invite/${token}?step=3&claim=already-a-party`),
     `${selfClaim.status} ${selfClaim.location}`,
   );
-  const selfRefusal = await initiator.get(`/invite/${token}?claim=already-a-party`);
+  const selfRefusal = await initiator.get(`/invite/${token}?step=3&claim=already-a-party`);
   check(
     "the refusal says nothing was claimed and the link is still unused",
     selfRefusal.html.includes("Nothing was claimed") &&
@@ -361,9 +361,20 @@ async function main() {
   );
   check("it names the Initiator", invitePage.html.includes("Avery E2E"));
   check("it names the Template", invitePage.html.includes("Relationship Basics"));
+  // #t_0aa81144 — the invitation lands on step 1 of the onboarding wizard, not on a claim button.
   check(
-    "it says who the visitor is joining as, before anything is claimed",
-    invitePage.html.includes("You are joining as Rowan E2E, the Counterparty."),
+    "it opens on step 1 of the wizard",
+    invitePage.html.includes("Step 1 of 3") &&
+      invitePage.html.includes("Avery E2E invited you to answer Relationship Basics."),
+  );
+  const stepTwo = await counterparty.get(`/invite/${token}?step=2`);
+  check("step 2 keeps the token and explains the order", stepTwo.html.includes("Step 2 of 3"));
+  const stepThree = await counterparty.get(`/invite/${token}?step=3`);
+  check(
+    "step 3 is the account gate and claims nothing on a GET",
+    stepThree.html.includes("Step 3 of 3") &&
+      stepThree.html.includes("You are joining as Rowan E2E, the Counterparty.") === false &&
+      stepThree.html.includes("Accepting costs you nothing"),
   );
   check(
     "it does not name an answering party for a browser that is not one",
@@ -382,14 +393,14 @@ async function main() {
   check(
     "a claim that confirms nothing is refused with unconfirmed",
     unconfirmed.status === 303 &&
-      (unconfirmed.location ?? "").endsWith(`/invite/${token}?claim=unconfirmed`),
+      (unconfirmed.location ?? "").endsWith(`/invite/${token}?step=3&claim=unconfirmed`),
     `${unconfirmed.status} ${unconfirmed.location}`,
   );
   const wrongName = await counterparty.post(`/invite/${token}/claim`, { confirm: "Avery E2E" });
   check(
     "a claim that confirms the other party's name is refused with unconfirmed",
     wrongName.status === 303 &&
-      (wrongName.location ?? "").endsWith(`/invite/${token}?claim=unconfirmed`),
+      (wrongName.location ?? "").endsWith(`/invite/${token}?step=3&claim=unconfirmed`),
     `${wrongName.status} ${wrongName.location}`,
   );
   const afterRefusals = await db.query(

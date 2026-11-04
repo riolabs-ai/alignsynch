@@ -19,9 +19,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { CounterpartyWizard } from "@/components/assessment-flow/counterparty-wizard";
 import { InviteView } from "@/components/assessment-flow/invite-view";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { invitePageCopy } from "@/data/pages/invite";
+import { loginPageCopy } from "@/data/pages/login";
+import { signInDestination } from "@/lib/auth/next-path";
+import { invitePromptFor } from "@/lib/auth/invite-prompt";
 import {
   CLAIM_REFUSALS,
   claimConfirmationValue,
@@ -29,6 +33,12 @@ import {
   confirmationMatches,
   isTokenStateRefusal,
 } from "@/lib/flow/claim";
+import {
+  inviteAuthPath,
+  inviteStepPath,
+  inviteWizardStepOf,
+  submittedPath,
+} from "@/lib/flow/paths";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { partyTokensFrom } from "@/lib/flow/session";
 import type { InvitePreview } from "@/lib/flow/store";
@@ -155,6 +165,7 @@ describe("the invite fixture carries every band the page can ask for", () => {
 function preview(over: Partial<InvitePreview> = {}): InvitePreview {
   return {
     state: "claimable",
+    instanceRecordId: "instance-1",
     initiatorName: "Avery",
     counterpartyName: "Rowan",
     templateTitle: "Relationship Basics",
@@ -167,60 +178,123 @@ function inviteMarkup(input: Parameters<typeof InviteView>[0]): string {
   return renderToStaticMarkup(createElement(InviteView, input));
 }
 
-const CLAIM_CONTROL = "Accept and answer";
+function wizardMarkup(input: Parameters<typeof CounterpartyWizard>[0]): string {
+  return renderToStaticMarkup(createElement(CounterpartyWizard, input));
+}
 
-describe("the claim page", () => {
-  it("tells a visitor who they are joining, and asks them to confirm it", () => {
-    const html = inviteMarkup({ copy: invitePageCopy, preview: preview(), token: "t" });
-    expect(html).toContain("You are joining as Rowan, the Counterparty.");
-    expect(html).toContain("I am Rowan, and I am joining as the Counterparty.");
-    expect(html).toContain('name="confirm"');
-    expect(html).toContain('value="Rowan"');
-    expect(html).toContain(CLAIM_CONTROL);
-  });
+const CLAIM_CONTROL = "Accept the invitation";
 
+describe("the invitation's refusal bands", () => {
   it("refuses the Initiator their own invitation, and offers no control that would take it", () => {
     const html = inviteMarkup({
       copy: invitePageCopy,
       preview: preview({ viewerRole: "initiator" }),
-      token: "t",
     });
     expect(html).toContain("You are answering as Avery, the Initiator.");
     expect(html).toContain("You already have a seat in this instance");
     expect(html).toContain("Nothing was claimed");
-    expect(html).not.toContain(CLAIM_CONTROL);
     expect(html).not.toContain("You are joining as");
   });
 
-  it("names the Counterparty on a later visit too", () => {
+  it("names the Counterparty on a later visit too, and still offers no claim control", () => {
     const html = inviteMarkup({
       copy: invitePageCopy,
       preview: preview({ viewerRole: "counterparty" }),
-      token: "t",
     });
     expect(html).toContain("You are answering as Rowan, the Counterparty.");
     expect(html).not.toContain(CLAIM_CONTROL);
-  });
-
-  it("draws the store's refusal sentence after a refused claim", () => {
-    const html = inviteMarkup({
-      copy: invitePageCopy,
-      preview: preview(),
-      token: "t",
-      refusal: "unconfirmed",
-    });
-    expect(html).toContain("Nothing was claimed: the claim did not confirm joining as Rowan.");
   });
 
   it("does not repeat the token's own state as a second refusal", () => {
     const html = inviteMarkup({
       copy: invitePageCopy,
       preview: preview({ state: "claimed" }),
-      token: "t",
       refusal: "claimed",
     });
     expect(html).toContain("This invitation was used already");
     expect(html).not.toContain("Nothing was claimed");
+  });
+});
+
+/* ------------------------------------------------------------------ *\
+ * The onboarding wizard (#t_0aa81144)
+ * ------------------------------------------------------------------ */
+
+describe("the counterparty wizard", () => {
+  it("step 1 says who invited them and what this is, and claims nothing", () => {
+    const html = wizardMarkup({
+      copy: invitePageCopy,
+      preview: preview(),
+      token: "token-1",
+      step: 1,
+      viewerName: null,
+    });
+    expect(html).toContain("Avery invited you to answer Relationship Basics.");
+    expect(html).toContain("Step 1 of 3");
+    expect(html).toContain('data-step-state="current"');
+    expect(html).not.toContain('name="confirm"');
+    expect(html).toContain('href="/invite/token-1?step=2"');
+  });
+
+  it("step 2 explains the order, and the back link returns to step 1 with the token", () => {
+    const html = wizardMarkup({
+      copy: invitePageCopy,
+      preview: preview(),
+      token: "token-1",
+      step: 2,
+      viewerName: null,
+    });
+    expect(html).toContain("Step 2 of 3");
+    expect(html).toContain("You can change any opinion until you accept the session.");
+    expect(html).toContain('href="/invite/token-1"');
+    expect(html).toContain('href="/invite/token-1?step=3"');
+  });
+
+  it("step 3 signed out offers sign-in and sign-up, both carrying the step URL as next", () => {
+    const html = wizardMarkup({
+      copy: invitePageCopy,
+      preview: preview(),
+      token: "token-1",
+      step: 3,
+      viewerName: null,
+    });
+    expect(html).toContain("Step 3 of 3");
+    expect(html).toContain("Accepting costs you nothing");
+    expect(html).toContain(
+      'href="/login?next=%2Finvite%2Ftoken-1%3Fstep%3D3&amp;intent=invite&amp;inviter=Avery"',
+    );
+    expect(html).toContain(
+      'href="/register?next=%2Finvite%2Ftoken-1%3Fstep%3D3&amp;intent=invite&amp;inviter=Avery"',
+    );
+    expect(html).not.toContain('name="confirm"');
+  });
+
+  it("step 3 signed in is the one screen that can claim", () => {
+    const html = wizardMarkup({
+      copy: invitePageCopy,
+      preview: preview(),
+      token: "token-1",
+      step: 3,
+      viewerName: "Rowan",
+    });
+    expect(html).toContain("You are signed in as Rowan.");
+    expect(html).toContain('action="/invite/token-1/claim"');
+    expect(html).toContain('name="confirm"');
+    expect(html).toContain('value="Rowan"');
+    expect(html).toContain(CLAIM_CONTROL);
+    expect(html).not.toContain('href="/login?next=');
+  });
+
+  it("draws the store's refusal sentence on the step the claim was refused from", () => {
+    const html = wizardMarkup({
+      copy: invitePageCopy,
+      preview: preview(),
+      token: "token-1",
+      step: 3,
+      viewerName: "Rowan",
+      refusal: "unconfirmed",
+    });
+    expect(html).toContain("Nothing was claimed: the claim did not confirm joining as Rowan.");
   });
 });
 
@@ -276,5 +350,136 @@ describe("the instance screen names the answering party on every visit", () => {
     );
     expect(html).toContain("You are answering as Rowan, the Counterparty.");
     expect(html).toContain('data-answering-as="counterparty"');
+  });
+});
+
+/* ------------------------------------------------------------------ *\
+ * The addresses the wizard hands around (#t_0aa81144)
+ * ------------------------------------------------------------------ */
+
+describe("the wizard's addresses", () => {
+  it("keeps the token in the path on every step", () => {
+    expect(inviteStepPath("token-1", 1)).toBe("/invite/token-1");
+    expect(inviteStepPath("token-1", 2)).toBe("/invite/token-1?step=2");
+    expect(inviteStepPath("token-1", 3)).toBe("/invite/token-1?step=3");
+  });
+
+  it("reads a step, and falls back to step 1 rather than failing", () => {
+    expect(inviteWizardStepOf("1")).toBe(1);
+    expect(inviteWizardStepOf("2")).toBe(2);
+    expect(inviteWizardStepOf("3")).toBe(3);
+    expect(inviteWizardStepOf("0")).toBe(1);
+    expect(inviteWizardStepOf("4")).toBe(1);
+    expect(inviteWizardStepOf("nope")).toBe(1);
+    expect(inviteWizardStepOf(undefined)).toBe(1);
+    expect(inviteWizardStepOf(["2", "3"])).toBe(2);
+  });
+
+  it("sends sign-in and sign-up back to the same step, token intact", () => {
+    const login = inviteAuthPath("login", "token-1", 3, "Avery");
+    expect(login).toBe("/login?next=%2Finvite%2Ftoken-1%3Fstep%3D3&intent=invite&inviter=Avery");
+    const register = inviteAuthPath("register", "token-1", 3, "Avery");
+    expect(register).toBe(
+      "/register?next=%2Finvite%2Ftoken-1%3Fstep%3D3&intent=invite&inviter=Avery",
+    );
+  });
+
+  it("survives the login page's own validation — the round-trip target is the step, not home", () => {
+    const next = new URL(
+      inviteAuthPath("login", "token-1", 3, "Avery"),
+      "https://app.example",
+    ).searchParams.get("next");
+    expect(next).toBe("/invite/token-1?step=3");
+    for (const brandDestination of ["/dashboard", "/dashboard/user"]) {
+      expect(signInDestination(next, brandDestination)).toBe("/invite/token-1?step=3");
+    }
+  });
+
+  it("lands a submit on the instance's confirmation state", () => {
+    expect(submittedPath("instance-1")).toBe("/assessment/instances/instance-1?submitted=1");
+  });
+});
+
+/* ------------------------------------------------------------------ *\
+ * The login page's one sentence (#t_0aa81144)
+ * ------------------------------------------------------------------ */
+
+describe("invitePromptFor", () => {
+  it("names the inviter when the wizard passed one through", () => {
+    expect(
+      invitePromptFor(loginPageCopy, {
+        intent: "invite",
+        inviter: "Avery",
+        next: "/invite/token-1?step=3",
+      }),
+    ).toBe("Sign in to accept Avery's invitation.");
+  });
+
+  it("still says why with no name, rather than nothing", () => {
+    expect(
+      invitePromptFor(loginPageCopy, {
+        intent: "invite",
+        inviter: "",
+        next: "/invite/token-1?step=3",
+      }),
+    ).toBe("Sign in to accept the invitation you were sent.");
+  });
+
+  it("reads an older link that carries only next", () => {
+    expect(
+      invitePromptFor(loginPageCopy, {
+        intent: undefined,
+        inviter: undefined,
+        next: "/invite/token-1?step=3",
+      }),
+    ).toBe("Sign in to accept the invitation you were sent.");
+  });
+
+  it("is absent for an ordinary visit", () => {
+    expect(
+      invitePromptFor(loginPageCopy, {
+        intent: undefined,
+        inviter: "Avery",
+        next: "/settings",
+      }),
+    ).toBeNull();
+  });
+
+  it("caps what it will print from a URL", () => {
+    const long = "A".repeat(200);
+    const prompt = invitePromptFor(loginPageCopy, {
+      intent: "invite",
+      inviter: long,
+      next: "/invite/token-1",
+    });
+    expect(prompt).toBe(`Sign in to accept ${"A".repeat(80)}'s invitation.`);
+  });
+});
+
+/* ------------------------------------------------------------------ *\
+ * The confirmation a submit lands on (#t_0aa81144)
+ * ------------------------------------------------------------------ */
+
+describe("the post-submit confirmation", () => {
+  const render = (role: "initiator" | "counterparty", submitted: boolean) =>
+    renderToStaticMarkup(
+      createElement(AssessmentInstanceView, {
+        screen: screen(role),
+        copy: assessmentInstancePageCopy,
+        submitted,
+      }),
+    );
+
+  it("thanks the Counterparty, names the other party and says how to change an opinion", () => {
+    const html = render("counterparty", true);
+    expect(html).toContain("Thank you — your answers are saved");
+    expect(html).toContain("Avery answers the same questions from their side and accepts");
+    expect(html).toContain("How to change an opinion");
+    expect(html).toContain('href="/assessment/instances/instance-1/answer"');
+    expect(html).toContain('data-submitted-confirmation=""');
+  });
+
+  it("is not drawn on an ordinary visit to the same screen", () => {
+    expect(render("counterparty", false)).not.toContain("Thank you — your answers are saved");
   });
 });
