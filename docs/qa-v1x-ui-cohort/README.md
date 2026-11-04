@@ -48,16 +48,16 @@ faintest thing in the chart.
 
 ## Files
 
-| Item | Files                                                                                                 |
-| ---- | ----------------------------------------------------------------------------------------------------- |
-| 1, 5 | `item01-05-header-1440-{before,after}.png`, `item01-05-header-390-{before,after}.png`                 |
-| 2, 4 | `item02-gap-scale-after.png`, `item02-04-home-1440-{before,after}.png`                                |
-| 3    | `item03-help-1440-{before,after}.png` (selected row: solid `bg-action` → `bg-action/10` + inset ring) |
-| 4    | `item04-quizhub-home-{1440,390}-after.png` (template brand, same tokens)                              |
-| 6, 7 | `item06-07-footer-{1440,768,390}-{before,after}.png`                                                  |
-| 8    | `item08-home-1920-{before,after}.png`, `item08-pricing-1920-{before,after}.png`                       |
-| 9    | `item09-help-rail-768-{before,after}.png`                                                             |
-| 10   | `item10-admin-rail-{before,after}.png`                                                                |
+| Item | Files                                                                                                                 |
+| ---- | --------------------------------------------------------------------------------------------------------------------- |
+| 1, 5 | `item01-05-header-1440-{before,after}.png`, `item01-05-header-390-{before,after}.png`                                 |
+| 2, 4 | `item02-gap-scale-after.png`, `item02-04-home-1440-{before,after}.png`                                                |
+| 3    | `item03-help-1440-{before,after}.png` (selected row: solid `bg-action` → `bg-action/10` + inset ring)                 |
+| 4    | `item04-quizhub-home-{1440,390}-after.png` (template brand, same tokens)                                              |
+| 6, 7 | `item06-07-footer-{1440,768,390}-{before,after}.png`                                                                  |
+| 8    | `item08-home-1920-{before,after}.png`, `item08-pricing-1920-{before,after}.png`, `item08-quizhub-home-1920-after.png` |
+| 9    | `item09-help-rail-768-{before,after}.png`                                                                             |
+| 10   | `item10-admin-rail-{before,after}.png`                                                                                |
 
 ## Two honest notes
 
