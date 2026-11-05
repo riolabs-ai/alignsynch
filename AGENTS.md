@@ -490,10 +490,11 @@ head cannot merge — see `docs/GATE.md` for the evidence and for why the classi
 ## Numbers
 
 Baseline and how to re-measure: `docs/GATE.md` — that file is the one home for these numbers,
-because a figure copied here has already gone stale once. Measured 2026-11-03 over the
-2026-11-02 CI window: run incl. queue p50 **144 s** / p95 **176 s**, first-pass yield
-**97.4 %** (185/190 head SHAs green on their first run); local full gate **138–152 s** (n=2).
-The 2026-10-29 figures (55 s a job, 81.8 %) are history rows in that file, not today's.
+because a figure copied here has already gone stale once. It carries the current window, the
+command that produced each figure, and the history rows; read it rather than a copy. The budget
+those figures are read against: **CI under 4 min holds**, and the local ceiling is the one
+`docs/ITERATION.md` states — `pnpm check:fast` for the inner loop, the full gate as the boundary
+at **≤ 3 min**. Do not make a step optional to buy time.
 
 ## Docs
 
