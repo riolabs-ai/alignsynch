@@ -175,8 +175,9 @@ describe("the message names the instance and carries nothing else", () => {
 
     const links = calls[0].text.match(/https?:\/\/\S+/g) ?? [];
     // The band's footer draws the site line on every message; the instance's own screen is the
-    // message's only link.
-    expect(links.filter((href) => !href.startsWith(`https://${brand.domain}`))).toEqual([
+    // message's only link. The site line is compared whole: on the AlignSynch brand it shares an
+    // origin with a link on that domain, so a prefix filter would eat both.
+    expect(links.filter((href) => href !== `https://${brand.domain}`)).toEqual([
       `${BASE}/assessment/instances/${INSTANCE}`,
     ]);
   });

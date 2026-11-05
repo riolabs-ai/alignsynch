@@ -165,9 +165,12 @@ describe("every template renders both parts, text first", () => {
       const { text } = item.render();
       for (const fact of item.mustSay) expect(text).toContain(fact);
       const links = text.match(/https?:\/\/\S+/g) ?? [];
-      // The band's footer carries the site line (`https://<brand.domain>`) on every message; the
-      // message's own link is the only other address, and it appears once.
-      const contentLinks = links.filter((href) => !href.startsWith(`https://${brand.domain}`));
+      // The band's footer carries exactly the site line (`https://<brand.domain>`) on every
+      // message — compare it whole, because on the AlignSynch brand the content link shares that
+      // origin. The message's own link is the only other address, and it appears once.
+      const siteLine = `https://${brand.domain}`;
+      const contentLinks = links.filter((href) => href !== siteLine);
+      expect(links.filter((href) => href === siteLine)).toHaveLength(1);
       expect(contentLinks).toEqual([item.link]);
     });
 
