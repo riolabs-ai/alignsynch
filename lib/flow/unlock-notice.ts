@@ -32,13 +32,9 @@
  * `fetch` and is the same shape the invitation's send has taken since #146.
  */
 import type { PartyRole } from "@/content/assessment";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { reportReadyTemplate, renderTemplate } from "@/lib/email/templates";
 import { instanceLink, sendMail, type MailMessage, type MailOutcome } from "@/lib/flow/email";
 import { readUnlockFacts } from "@/lib/flow/store";
-import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
-
-/** The fixture band these words live in — `data/pages/assessment-instance.ts`. */
-export const UNLOCK_EMAIL_BAND = "unlock-email";
 
 /**
  * The seat to tell: the one that did **not** just submit.
@@ -69,26 +65,27 @@ export interface UnlockNoticeMessage extends MailMessage {
 }
 
 /**
- * The message, built from the fixture — subject, body and one link.
+ * The message, built from the band's template #5 (#548) — subject, text, HTML and one link.
  *
- * The placeholders are `{recipient}`, `{other}`, `{template}` and `{link}`, filled by the same
- * `fillLabel()` every other user-facing string in this repo goes through (E23). Nothing else is
- * substituted, so a band that grew a `{score}` or `{gap}` placeholder would render it literally
- * in the mail — which is the failure mode a fixture-owned body is meant to show, not hide.
+ * The words moved from `data/pages/assessment-instance.ts`'s `unlock-email` band to
+ * `lib/email/templates/report-ready.ts` when the five templates were registered through the band:
+ * the subject is now the report's own (`Your Gap report is ready`), and the body is composed as
+ * plain text first with the HTML derived from it. The recipient, the link and the blind rule are
+ * unchanged — the template is handed no score, no Gap value and no token.
  */
 export function unlockNoticeMessage(fields: UnlockNoticeFields): UnlockNoticeMessage {
-  const band = sectionOf(assessmentInstancePageCopy, UNLOCK_EMAIL_BAND);
   const link = instanceLink(fields.instanceRecordId, fields.base);
-  const values = {
+  const rendered = renderTemplate(reportReadyTemplate, {
     recipient: fields.recipientName,
     other: fields.otherName,
     template: fields.templateTitle,
     link,
-  };
+  });
   return {
     to: fields.to,
-    subject: fillLabel(itemLabel(band, "subject"), values),
-    text: fillLabel(itemLabel(band, "body"), values),
+    subject: rendered.subject,
+    text: rendered.text,
+    html: rendered.html,
     link,
   };
 }

@@ -133,17 +133,43 @@ never the token and never the link. The instance screen prints the invitation li
 outcomes — email is attempted after the transaction commits, so a mailer that breaks is a
 degraded path, never a failed creation and never an unshareable invitation.
 
-### The unlock notice (#258)
+### The templates (#548)
 
-The second message goes the other way. When a submit makes an instance `complete`, the party who
-did **not** just submit is emailed once: `lib/flow/unlock-notice.ts` composes it, the answers route
-sends it after `submitAnswers` has committed, and `sendMail()` in `lib/flow/email.ts` is the same
-transport the invitation uses — one provider, one set of outcomes, no new dependency.
+Every message the product sends is a template in `lib/email/templates/`, registered in one index
+beside the release note. Each returns an `EmailDocument`, and the band (`lib/email/band.ts`)
+composes the **plain text first** and derives the HTML from that string — so the two parts cannot
+drift, and a template cannot carry a sentence the text half does not. All four flow templates are
+`transactional`: no unsubscribe line, and the band refuses to render one.
 
-- **Once, on the transition only.** `submitAnswers` returns `status: "complete"` on the write that
-  filled the last missing answer; the submit before it says `answering` and the submit after it is
-  refused `frozen` by the row lock. There is no `notified_at` column and no queue, because the
-  freeze already makes "complete" a one-shot event.
+| #   | template                  | sent when                                                                                        | recipient                            |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| 2   | `counterparty-invitation` | an invitation is minted (create, re-invite)                                                      | the address typed on the create form |
+| 3   | `invitation-reminder`     | 48 h before `expires_at` — **copy and due-window predicate only**; the scheduler is its own card | the Counterparty                     |
+| 4   | `counterparty-joined`     | `claimInvite()` commits                                                                          | the Initiator on the record          |
+| 5   | `gap-report-ready`        | the acceptance that completes the session                                                        | the other seat                       |
+
+The reminder's `reminderIsDue(expiresAt, now)` is pure: no clock is read in this module, so the
+scheduler decides _when_ and the template only says what is true (the deadline is the row's own
+`expires_at`, printed as a date).
+
+### The completion notice (#258, #548 template #5)
+
+The second message goes the other way. When the second **acceptance** completes an instance, the
+party who did **not** just accept is emailed once: `lib/flow/unlock-notice.ts` composes it through
+template #5 (`Your Gap report is ready`), the accepts route sends it after `acceptSession()` has
+committed, and `sendMail()` in `lib/flow/email.ts` is the same transport the invitation uses — one
+provider, one set of outcomes, no new dependency. Submission is not the hinge: both parties
+submitting leaves the report locked through the review window (#R2), which is why the send hangs
+on the acceptance and the subject can be true when it is sent.
+
+- **Once, on the transition only.** `acceptSession()` returns `completed: true` on the write that
+  made both seats accepted; the acceptance before it returns `false`, and the one after it is
+  refused `already-accepted` by the row lock. There is no `notified_at` column and no queue,
+  because the lock already makes "complete" a one-shot event.
+- **The join notice (#548 template #4)** is the same shape in the other direction: `claimInvite()`
+  returns `ok` once, the claim route sends after the row commits, and the recipient is the
+  record's Initiator seat. A create nobody signed in for has no Initiator address, so that notice
+  answers `no-address` and the instance screen is the delivery.
 - **What it carries.** The instance's title, the two party names, and a link to
   `/assessment/instances/<id>`. No answer, no score, no Gap value and no token: buying a mailbox is
   not the same as being a party, so the blind rule travels with the message.

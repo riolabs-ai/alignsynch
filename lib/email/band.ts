@@ -40,6 +40,16 @@ import type { MailKeyMode } from "@/lib/email/key-mode";
 /** The two classes a mail can be. `marketing` may carry an unsubscribe line; `transactional` may not. */
 export type EmailClass = "transactional" | "marketing";
 
+/**
+ * The marker a body carries where its prose has not been written yet (#548).
+ *
+ * It lives in the band rather than in any one template because it is a property of the pass, not
+ * of a message: a template that cannot say something yet writes this marker and a bare
+ * instruction, and never a sentence nobody wrote. The release note re-exports it so its callers
+ * keep one import.
+ */
+export const CONTENT_TO_REFINE = "{{content_to_refine}}";
+
 /** A section heading — rendered as `## ` in the text, so the parser needs no second channel. */
 export interface EmailHeading {
   readonly kind: "heading";
