@@ -1,5 +1,6 @@
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimInvite } from "@/lib/flow/store";
+import { sendJoinNotice } from "@/lib/flow/join-notice";
 import { instancePath, inviteStepPath } from "@/lib/flow/paths";
 import {
   FLOW_COOKIE_MAX_AGE,
@@ -77,5 +78,17 @@ export async function POST(
     result.sessionToken,
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
+
+  // #548 template #4 — the Initiator is told the seat exists. Attempted **after** the claim
+  // committed and after the claimer's cookie is set, so neither a provider refusal nor an
+  // unreachable host can cost the person their claim; the redirect below happens either way.
+  // `sendJoinNotice()` never throws and answers `no-address` when the create was signed out.
+  await sendJoinNotice({ instanceRecordId: result.instanceRecordId }).catch((error: unknown) => {
+    console.error(
+      "[joined] the notice could not be attempted after a claim — the claim is stored and the instance screen shows both seats",
+      error instanceof Error ? error.name : "unknown",
+    );
+  });
+
   return NextResponse.redirect(new URL(instancePath(result.instanceRecordId), request.url), 303);
 }

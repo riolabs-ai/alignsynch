@@ -23,10 +23,10 @@
  * uses. A parser that knew only one would fail the first release cut in the other style.
  */
 import { brand } from "@/data/brand";
-import { plainInline, type EmailBlock, type EmailDocument } from "./band";
+import { CONTENT_TO_REFINE, plainInline, type EmailBlock, type EmailDocument } from "./band";
 
-/** The `{{…}}` a block carries when its prose has not been written yet. Never filled by guessing. */
-export const CONTENT_TO_REFINE = "{{content_to_refine}}";
+/** Re-exported from the band: the `{{…}}` marker a block carries when its prose is unwritten. */
+export { CONTENT_TO_REFINE };
 
 /** One release's section of the changelog, as the file carries it. */
 export interface ChangelogSection {
