@@ -98,6 +98,18 @@ export interface ParsedEntry {
 const LIMITS_TITLE = "known limits";
 
 /**
+ * The title of the ledger `scripts/release.sh` appends to a curated entry.
+ *
+ * `release.sh --check` refuses the newest entry unless it names every commit in
+ * `<previous tag>..<tag>`, so an owner-approved prose entry carries a generated `### Commits`
+ * list. That list is provenance — the record that the entry accounts for the range — and it is
+ * not a highlight: it is a mechanical roll-up of the sections above it, with no reader in the
+ * mail. So it is skipped here exactly as `Known limits` is special-cased, and for the opposite
+ * reason: the limits must never be dropped, the ledger must never be printed.
+ */
+const LEDGER_TITLE = "commits";
+
+/**
  * Split an entry into its intro and its `###` subsections.
  *
  * Continuation lines (an indented wrap, or a line that is not a new bullet) join the item above
@@ -158,6 +170,9 @@ export function parseEntry(body: string): ParsedEntry {
  * `skipIntro` exists because the band draws the **preheader** as the visible lead paragraph: the
  * intro line that became the preheader would otherwise be printed twice, once above the version
  * line and once below it. Nothing is dropped from the mail — the preheader is rendered.
+ *
+ * Highlights are every `###` subsection except two: `Known limits`, which is rendered last and
+ * verbatim, and the `Commits` ledger, which is provenance and is not rendered at all.
  */
 export function releaseNoteBlocks(
   section: ChangelogSection,
@@ -171,7 +186,10 @@ export function releaseNoteBlocks(
     );
   }
 
-  const highlights = parsed.subsections.filter((sub) => sub.title.toLowerCase() !== LIMITS_TITLE);
+  const highlights = parsed.subsections.filter((sub) => {
+    const title = sub.title.toLowerCase();
+    return title !== LIMITS_TITLE && title !== LEDGER_TITLE;
+  });
   const intro = parsed.intro.slice(options.skipIntro ?? 0);
   const lead: string[] = intro.length > 0 ? [...intro] : [];
   if (parsed.intro.length === 0) {

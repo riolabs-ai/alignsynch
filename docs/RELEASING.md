@@ -124,11 +124,39 @@ row, a CTA that is not there, a screen that does not follow — that half is sti
 a claim about the running app and not a name in the tree. Route claims are out of scope in this first
 cut, and the mode's usage text says what that would need.
 
+## A curated entry carries the `### Commits` ledger
+
+`release:check` — and therefore the gate, in every lane — requires the newest entry to name every
+commit in `<previous tag>..<tag>`. The entry is normally generated from those commits, so drift
+between the two is drift in a published document. A **curated** entry does not name commits: prose
+written by a human, as `1.4.0`'s was, drops the whole range the moment the tag exists:
+
+```
+✗ entry [1.4.0] drops 55 of 55 commit(s) since v1.3.0
+```
+
+So a curated entry appends a generated ledger, above `### Known limits`:
+
+```markdown
+### Commits
+
+- `feat(nav)` — the rail is a role-constrained menu … ([#552](https://github.com/…/pull/552))
+- `fix(mail)` — … ([#551](https://github.com/…/pull/551))
+```
+
+The ledger is **provenance**: the record that the entry accounts for the range. It is not
+release-note content, and **the mail does not print it** — `releaseNoteBlocks()` skips a `Commits`
+subsection the way it special-cases `Known limits`, for the opposite reason: the limits must never be
+dropped, the ledger must never be printed. `tests/release-note-mail.test.ts` asserts both halves —
+the ledger present in the changelog and absent from the rendered mail, the limits still shipping
+verbatim.
+
 ## The release note goes out with the tag
 
 Pushing `v*` runs `.github/workflows/release-notify.yml`, which mails the stakeholder release note
 (#548): the entry for that tag, rendered through `lib/email/band.ts` and sent through Resend. **The
-Known limits block ships with it, verbatim** — the mail is the entry, not a selection from it, and a
+Known limits block ships with it, verbatim** — the mail is the entry, not a selection from it (the
+one exception is the `Commits` ledger, which is provenance and is never mailed — see above), and a
 section without a limits block is refused rather than trimmed.
 
 ```bash
