@@ -56,6 +56,18 @@ Three operations, in this order, and nothing else:
    **source**, not on the target's parent: the parent of a branch cut before the base existed is a
    historical accident, and a rule that refused it would refuse every scheduled run.
 
+   **A branch with children needs `preserve_under_name`.** The API answers `422 — Branch has
+   children, preserve_under_name is required` to a restore of a branch that has any branch cut from
+   it, which is how the nightly job failed every night for as long as the demo had one. The body is
+   built by `scripts/demo-restore-plan.mjs` (pure, proved by `tests/demo-restore-plan.test.ts`):
+   with no children it sends `source_branch_id` alone, and with children it also sends the branch's
+   state to be preserved as `<branch>-preserved-<UTC stamp>`. The API moves every child under that
+   preserved branch, so the demo comes out of the restore with none and the next run needs nothing
+   different — the repair is once per child, not once per night. A preserved branch is a real
+   branch: one against the project's branch limit, the storage its rows occupy, no compute, and the
+   reset never deletes it (it is the recovery point the parameter exists to create — retiring one
+   is `neon branches delete`).
+
 3. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
    `DEMO_AUTH=1`, pointed at _that branch's_ connection string and _that branch's_ auth host. The
    seed reads the bundle through the importer's own reader, asserts it is still the canonical export
