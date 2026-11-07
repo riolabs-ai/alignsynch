@@ -133,6 +133,18 @@ export function templateDuplicatePath(recordId: string): string {
  */
 export const CREATE_TEMPLATE_PATH = `${TEMPLATE_LIBRARY_PATH}/save`;
 
+/**
+ * `/dashboard/relationships/[id]` — one relationship's own screen (#619).
+ *
+ * The address a payment notice links to, and the page the payer returns to after a capture. It is
+ * written here rather than in the mail module because `lib/member/payment.ts` also needs it and a
+ * second literal would be a second copy of the manifest — the same reason every other path in this
+ * file exists.
+ */
+export function relationshipScreenPath(relationshipId: string): string {
+  return `${OVERVIEW_PATH}/relationships/${encodeURIComponent(relationshipId)}`;
+}
+
 export function instancePath(instanceRecordId: string): string {
   return `/assessment/instances/${instanceRecordId}`;
 }

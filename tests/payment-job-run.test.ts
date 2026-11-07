@@ -138,6 +138,32 @@ describe("reminders are not stamped without a delivery", () => {
     expect(run.results[0]?.jobs[0]?.outcome).toEqual({ kind: "remind", status: "sent", day: 3 });
   });
 
+  it("stands pending and writes nothing when the notifier cannot deliver", async () => {
+    // #638: a notifier that could not send throws (`PaymentNoticeUndelivered`). The nag is still
+    // owed, so the outcome says so and the stamp is never written — the next run finds it due.
+    const { sql, touched } = fakeSql();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const notify = vi.fn(async () => {
+      throw new Error("the mail provider refused the message");
+    });
+
+    const run = await runPaymentJobs({
+      now: day(3),
+      sql,
+      obligations: [withMethod()],
+      notify,
+    });
+
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(touched("reminder_day3_at")).toBe(0);
+    expect(run.results[0]?.jobs[0]?.outcome).toEqual({
+      kind: "remind",
+      status: "pending-delivery",
+      day: 3,
+    });
+    warn.mockRestore();
+  });
+
   it("owes no nag on a quiet day", async () => {
     const { sql, writes } = fakeSql();
     const run = await runPaymentJobs({ now: day(2), sql, obligations: [withMethod()] });
@@ -293,6 +319,31 @@ describe("expiry ends the obligation and the relationship", () => {
       relationshipId: REL,
       reason: "unpaid",
     });
+  });
+
+  it("still reports the expiry when its notice cannot be delivered", async () => {
+    // The expiry is stored before the notice is attempted, so a mailbox is not a state fact: the
+    // run must report what it did rather than swallow the outcome with the failed send (#638).
+    const { sql, touched } = fakeSql({ relationshipStatus: "active" });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const notify = vi.fn(async () => {
+      throw new Error("no mailer on this deployment");
+    });
+
+    const run = await runPaymentJobs({
+      now: day(14),
+      sql,
+      obligations: [withMethod()],
+      notify,
+    });
+
+    expect(touched("SET expired_at")).toBe(1);
+    expect(run.results[0]?.jobs[0]?.outcome).toEqual({
+      kind: "expire",
+      status: "expired",
+      reason: "unpaid",
+    });
+    error.mockRestore();
   });
 });
 

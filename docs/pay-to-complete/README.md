@@ -29,7 +29,8 @@ render.
 - **Decided:** all product questions, recorded on #619 (2026-11-07).
 - **Approved:** migration `0036` may reach production after a snapshot; a daily cron at 09:00 is wanted.
 - **Landed:** PR #634 squash-merged as `7508f71b` (2026-11-07); `0036` applied to production after the
-  `production-preserved-20261107-195905` snapshot, `db:verify` green, production serving it. Remaining work is
-  [SPEC §9](SPEC.md#9-what-remains-in-pr-634): the payer's UI and reminder delivery.
+  `production-preserved-20261107-195905` snapshot, `db:verify` green, production serving it. Reminder
+  delivery landed as #638 ([SPEC §11](SPEC.md#11-reminder-delivery--the-paymentnotice-seam-filled-638));
+  remaining work is [SPEC §9](SPEC.md#9-what-remains-in-pr-634): the payer's UI.
 - **Not yet answered:** the Free-plan consequence, the provider for the release, and the path for a charge that
   needs the payer present ([RESEARCH §6](RESEARCH.md#6-open-research-questions-unmeasured-carried-into-the-prd)).
