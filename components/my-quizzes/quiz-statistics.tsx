@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import type { PieLabelRenderProps } from "recharts";
 import Link from "next/link";
 import { Media } from "@/components/media/media";
 import { entryOf, FALLBACK_KIND } from "@/lib/media-entry";
@@ -284,20 +285,13 @@ export function QuizStatistics({ id }: { id: string }) {
 
   // Custom label for pie charts
   const renderCustomizedLabel = ({
-    cx,
-    cy,
-    midAngle,
-    innerRadius,
-    outerRadius,
-    percent,
-  }: {
-    cx: number;
-    cy: number;
-    midAngle: number;
-    innerRadius: number;
-    outerRadius: number;
-    percent: number;
-  }) => {
+    cx = 0,
+    cy = 0,
+    midAngle = 0,
+    innerRadius = 0,
+    outerRadius = 0,
+    percent = 0,
+  }: Partial<PieLabelRenderProps>) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -824,7 +818,9 @@ export function QuizStatistics({ id }: { id: string }) {
                         fill="#8884d8"
                         dataKey="percentage"
                         nameKey="group"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent }) =>
+                          `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
+                        }
                       >
                         {quiz.stats.playerDemographics.ageGroups.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -1027,7 +1023,9 @@ export function QuizStatistics({ id }: { id: string }) {
                             if (active && payload && payload.length) {
                               return (
                                 <div className="rounded-lg border bg-background p-2 shadow-sm">
-                                  <p className="text-sm font-medium">{formatDate(label)}</p>
+                                  <p className="text-sm font-medium">
+                                    {typeof label === "string" ? formatDate(label) : null}
+                                  </p>
                                   <p className="text-sm text-muted-foreground">
                                     Average Time: {formatTime(payload[0]?.value as number)}
                                   </p>
