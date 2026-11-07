@@ -49,7 +49,7 @@ export type DeleteAccountOutcome =
  * `confirmation` is the typed phrase. A mismatch answers `mismatch` and touches nothing — that is
  * the whole reason a destructive control has one: it cannot be triggered by a stray click.
  */
-export async function deleteAccount(confirmation: string): Promise<DeleteAccountOutcome> {
+export async function deleteAccountAction(confirmation: string): Promise<DeleteAccountOutcome> {
   const user = await currentUser();
   if (user === null) return { kind: "unauthorized" };
 

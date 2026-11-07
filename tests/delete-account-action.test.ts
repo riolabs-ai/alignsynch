@@ -1,5 +1,5 @@
 /**
- * `deleteAccount` — the one server entry point that destroys an account (`t_31f95f36`, #278).
+ * `deleteAccountAction` — the one server entry point that destroys an account (`t_31f95f36`, #278).
  *
  * `lib/account/purge.ts` has its own tests (`tests/account-purge.test.ts`) and the live matrix runs
  * the whole feature on the demo branch. What neither covers is this file's two gates, and they are
@@ -37,7 +37,7 @@ const { currentUser, runAccountDeletion } = vi.hoisted(() => ({
 vi.mock("@/lib/auth/session", () => ({ currentUser }));
 vi.mock("@/lib/account/purge", () => ({ runAccountDeletion }));
 
-import { deleteAccount } from "@/app/(mainlayout)/settings/delete-account-actions";
+import { deleteAccountAction } from "@/app/(mainlayout)/settings/delete-account-actions";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { settingsPageCopy } from "@/data/pages/settings";
 
@@ -55,70 +55,70 @@ beforeEach(() => {
   runAccountDeletion.mockReset();
 });
 
-describe("deleteAccount: the session gate", () => {
+describe("deleteAccountAction: the session gate", () => {
   it("answers unauthorized and purges nothing when there is no session", async () => {
     currentUser.mockResolvedValue(null);
-    await expect(deleteAccount(phrase)).resolves.toEqual({ kind: "unauthorized" });
+    await expect(deleteAccountAction(phrase)).resolves.toEqual({ kind: "unauthorized" });
     expect(runAccountDeletion).not.toHaveBeenCalled();
   });
 
   it("deletes the session's own account, and takes no user id from the caller", async () => {
     currentUser.mockResolvedValue(signedIn);
     runAccountDeletion.mockResolvedValue({ kind: "deleted", counts: {} });
-    await deleteAccount(phrase);
-    // The id is the session's. `deleteAccount` is typed `(confirmation: string)`, so there is no
+    await deleteAccountAction(phrase);
+    // The id is the session's. `deleteAccountAction` is typed `(confirmation: string)`, so there is no
     // parameter a caller could put somebody else's id in — this asserts the value it does pass.
     expect(runAccountDeletion).toHaveBeenCalledWith("user-1");
   });
 });
 
-describe("deleteAccount: the phrase gate", () => {
+describe("deleteAccountAction: the phrase gate", () => {
   it("answers mismatch and purges nothing for a wrong phrase", async () => {
     currentUser.mockResolvedValue(signedIn);
-    await expect(deleteAccount("delete account")).resolves.toEqual({ kind: "mismatch" });
+    await expect(deleteAccountAction("delete account")).resolves.toEqual({ kind: "mismatch" });
     expect(runAccountDeletion).not.toHaveBeenCalled();
   });
 
   it("answers mismatch for an empty phrase", async () => {
     currentUser.mockResolvedValue(signedIn);
-    await expect(deleteAccount("   ")).resolves.toEqual({ kind: "mismatch" });
+    await expect(deleteAccountAction("   ")).resolves.toEqual({ kind: "mismatch" });
     expect(runAccountDeletion).not.toHaveBeenCalled();
   });
 
   it("accepts the fixture's phrase regardless of case and surrounding space", async () => {
     currentUser.mockResolvedValue(signedIn);
     runAccountDeletion.mockResolvedValue({ kind: "deleted", counts: {} });
-    await expect(deleteAccount(`  ${phrase.toUpperCase()} `)).resolves.toEqual({
+    await expect(deleteAccountAction(`  ${phrase.toUpperCase()} `)).resolves.toEqual({
       kind: "deleted",
     });
     expect(runAccountDeletion).toHaveBeenCalledTimes(1);
   });
 });
 
-describe("deleteAccount: every purge outcome is mapped, and a throw is never 'deleted'", () => {
+describe("deleteAccountAction: every purge outcome is mapped, and a throw is never 'deleted'", () => {
   beforeEach(() => {
     currentUser.mockResolvedValue(signedIn);
   });
 
   it("maps deleted → deleted", async () => {
     runAccountDeletion.mockResolvedValue({ kind: "deleted", counts: {} });
-    await expect(deleteAccount(phrase)).resolves.toEqual({ kind: "deleted" });
+    await expect(deleteAccountAction(phrase)).resolves.toEqual({ kind: "deleted" });
   });
 
   it("maps unknown-account → not-found", async () => {
     runAccountDeletion.mockResolvedValue({ kind: "unknown-account" });
-    await expect(deleteAccount(phrase)).resolves.toEqual({ kind: "not-found" });
+    await expect(deleteAccountAction(phrase)).resolves.toEqual({ kind: "not-found" });
   });
 
   it("maps auth-failed → unavailable, the retryable answer", async () => {
     runAccountDeletion.mockResolvedValue({ kind: "auth-failed", reason: "503" });
-    await expect(deleteAccount(phrase)).resolves.toEqual({ kind: "unavailable" });
+    await expect(deleteAccountAction(phrase)).resolves.toEqual({ kind: "unavailable" });
   });
 
   it("answers unavailable — never deleted — when the purge throws", async () => {
     const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
     runAccountDeletion.mockRejectedValue(new Error("connection terminated"));
-    await expect(deleteAccount(phrase)).resolves.toEqual({ kind: "unavailable" });
+    await expect(deleteAccountAction(phrase)).resolves.toEqual({ kind: "unavailable" });
     quiet.mockRestore();
   });
 });
