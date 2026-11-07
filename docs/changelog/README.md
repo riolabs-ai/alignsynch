@@ -1,0 +1,119 @@
+# The release blog
+
+`CHANGELOG.md` is the record: 8 release entries, generated from the conventional commits on `main`,
+and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. It is
+correct, and it is unreadable as a story — 595 lines of commit subjects in the order they merged.
+
+This directory is the same eight releases told as eight pages: what was painful before, what the
+release does now, one diagram of the mechanism that earns it, and the screens the change landed on.
+It is a **view**, not a second record.
+
+## The rule
+
+`CHANGELOG.md` stays the source of truth and `pnpm release:check` owns it. Nothing here retypes a
+fact the entry already carries:
+
+- **the date** — the entry's heading.
+- **the tag and its URL** — the entry's version.
+- **how many pull requests the entry names** — the entry's own PR links.
+- **what the release changed, section by section** — the entry's bullets, verbatim.
+- **the Known limits block** — the entry's Known limits, verbatim.
+
+`scripts/changelog-view.mjs` fills those five things between `<!-- changelog-view:begin … -->`
+markers, and `pnpm changelog:check` — a step in `scripts/verify.sh`, in every lane — fails when a
+page and the entry disagree. The prose, the diagrams, the screenshots and the two one-line
+judgements per release (its `theme` and `headline`, in `releases.json`) are authored, because a
+generator cannot know what was painful before; that is the same split `docs/ui-registry.md` makes
+between what the tree votes and what a person decides.
+
+To change a fact, change the entry. To change the story, change the page.
+
+```bash
+pnpm changelog          # rewrite every generated block from CHANGELOG.md
+pnpm changelog:check    # fail, naming the page and line, when one has drifted
+```
+
+## Releases
+
+<!-- changelog-view:begin index -->
+<!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
+
+### [v1.6.0](v1-6-0.md)
+
+- **Released** 2026-11-07
+- **Tag** [`v1.6.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.6.0)
+- **Pull requests named** 6
+- **Theme:** pay-to-complete: the fee moves from creation to completion, and the member rail stops asking three shelves apart.
+- **Headline:** `feat(billing)` — pay-to-complete: the counterparty submits, the initiator picks a plan and pays, and the Gap opens (#619)
+
+### [v1.5.1](v1-5-1.md)
+
+- **Released** 2026-11-07
+- **Tag** [`v1.5.1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.5.1)
+- **Pull requests named** 7
+- **Theme:** the gate notices when its own evidence has aged, and the screens a real flow needed get a door.
+- **Headline:** `fix(health)` — a stale platform-health record fails the gate instead of rendering as current (#599)
+
+### [v1.5.0](v1-5-0.md)
+
+- **Released** 2026-11-07
+- **Tag** [`v1.5.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.5.0)
+- **Pull requests named** 31
+- **Theme:** account deletion a person can perform themselves, with the intent recorded before anything is destroyed.
+- **Headline:** `feat(privacy)` — account deletion: 0033 indexes, the auth-user delete, one transactional scrub, an in-app control (#597)
+
+### [v1.4.0](v1-4-0.md)
+
+- **Released** 2026-11-04
+- **Tag** [`v1.4.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.4.0)
+- **Pull requests named** 55
+- **Theme:** the operator's console — one audited write path — and relationship templates become products a member can own.
+- **Headline:** an audited operations console: every write passes `act()`, every action carries a reason, and `product.admin` is a capability (#500)
+
+### [v1.3.0](v1-3-0.md)
+
+- **Released** 2026-11-03
+- **Tag** [`v1.3.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0)
+- **Pull requests named** 38
+- **Theme:** the two-party flow closes — create, answer blind, accept, and the Gap opens on the second acceptance.
+- **Headline:** `feat(flow)` — acceptance is the completion hinge, and Steps are derived on the transition (#427)
+
+### [v1.2.0](v1-2-0.md)
+
+- **Released** 2026-11-02
+- **Tag** [`v1.2.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.2.0)
+- **Pull requests named** 64
+- **Theme:** five read surfaces go live from Postgres, and every write surface says on screen that it cannot write.
+- **Headline:** five read surfaces server-rendered from the database — relationships, their sessions, the template catalogue and the report (#412)
+
+### [v1.1.0-rc1](v1-1-0-rc1.md)
+
+- **Released** 2026-10-31
+- **Tag** [`v1.1.0-rc1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.1.0-rc1)
+- **Pull requests named** 107
+- **Theme:** the template becomes a product: a brand record, a parity gate, and the two-party assessment flow on six tables.
+- **Headline:** `feat(db)` — six content tables, the database-backed assessment screen, and the db scripts (#145)
+
+### [v1.0.0](v1-0-0.md)
+
+- **Released** 2026-10-30
+- **Tag** [`v1.0.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.0.0)
+- **Pull requests named** 81
+- **Theme:** one record type, two brands and no database — the webapp stops being a mock of a business nobody ran.
+- **Headline:** `feat(content)` — one record type, two templates: a quiz and an assessment (#128)
+<!-- changelog-view:end -->
+
+## What the screenshots are, and are not
+
+Every frame here comes from [`docs/assets/screens/`](../assets/screens/README.md): the current set,
+captured 2026-11-07 from a production build of each brand on the demo branch, with a registry that
+says which commit each file was taken at. They are **pictures of the product now**, not of the
+release they sit beside — a release page from October shows today's layout of the surface that
+release created, and each caption says which surface it is. Where a release changed something the
+set has no frame for, the page says so rather than borrowing a nearby one.
+
+## Reading order
+
+Newest first, the same order as the changelog. A reader who wants the argument rather than the
+history should read v1.3.0 (the flow closes), v1.4.0 (the console and the audited write) and v1.6.0
+(the payment ladder) in that order: those three are where the product stops being a prototype.
