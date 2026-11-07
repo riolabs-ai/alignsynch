@@ -1,5 +1,11 @@
 # Releasing
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Releasing · prev [Deploying](DEPLOYING.md) · next [Orchestration rules](ORCHESTRATION.md)
+
+<!-- docs-nav:end -->
+
 A release is four artefacts that must agree: a **version** in `package.json`, a **CHANGELOG entry**,
 an **annotated tag `v<version>`**, and a **GitHub Release** whose body is that entry, byte for byte.
 `scripts/release.sh` writes all four, in that order, and refuses when the tree cannot support them.
@@ -479,3 +485,9 @@ node scripts/deploy-check.mjs --expect "$(git rev-parse "v$VERSION")"
 
 and [`main → production`](#main--production-promoting-a-release) above is the procedure that closes
 the gap it prints.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Releasing · prev [Deploying](DEPLOYING.md) · next [Orchestration rules](ORCHESTRATION.md)
+
+<!-- docs-nav:end -->

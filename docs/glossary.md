@@ -1,5 +1,11 @@
 # Glossary
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › Glossary · next [UI registry](ui-registry.md)
+
+<!-- docs-nav:end -->
+
 The domain's terms, defined by the schema comments in `content/`. This page is generated: do not edit it. Change the comment in the schema, then run `pnpm glossary`; the gate fails while the committed page is stale.
 
 Each entry names the file its prose came from.

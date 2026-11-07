@@ -1,5 +1,11 @@
 # Sequence diagrams
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › Sequence walks · prev [Class diagram](class-diagram.md)
+
+<!-- docs-nav:end -->
+
 Three walks through the tree. Each one is traced from a real entry point, and every participant is a
 file that exists. Where a path contains `[` `]` it is written as code rather than a link, because the
 brackets end a markdown link.
@@ -207,3 +213,9 @@ sequenceDiagram
    the scheduler's log says what each relationship's job did.
 6. **The route fails closed.** No `PAYMENT_JOB_SECRET` (or `CRON_SECRET`) means 503 and no mutation; an
    unauthenticated endpoint that expires relationships is a public button.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › Sequence walks · prev [Class diagram](class-diagram.md)
+
+<!-- docs-nav:end -->

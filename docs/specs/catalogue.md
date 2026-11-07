@@ -1,5 +1,11 @@
 # Spec: the assessment template catalogue
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Template catalogue · prev [Specifications index](README.md) · next [Transactional email lifecycle](flow-emails.md)
+
+<!-- docs-nav:end -->
+
 ## Recommendation (read this first)
 
 **Ship 6 catalogue entries: 5 playable named templates plus 1 blank starting point.**
@@ -201,3 +207,14 @@ So the split requires one column, nothing else:
 - Paired (paired.com FAQ): the closest product (two-person relationship Q&A) organizes
   content by **topic packs** (conflict, money, future plans), not by relationship
   demographic — supporting topic-shaped templates over descriptor-spam.
+
+## Related
+
+- [DATA-MODEL.md](../DATA-MODEL.md) — the record model these categories project.
+- [BUNDLES.md](../BUNDLES.md) — how a catalogue template travels between deployments.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Template catalogue · prev [Specifications index](README.md) · next [Transactional email lifecycle](flow-emails.md)
+
+<!-- docs-nav:end -->

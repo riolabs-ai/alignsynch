@@ -1,5 +1,11 @@
 # Relationship types — the owner's source catalogue
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › Relationship types · prev [UI registry](ui-registry.md) · next [Reference mockups](REFERENCE-MOCKUPS.md)
+
+<!-- docs-nav:end -->
+
 This is the **owner's supplied catalogue**, preserved verbatim (typos included) as the
 record of what was asked. It is **not** normalised here — the normalised, typed version
 is `data/relationship-types.ts`, which corrects the three source typos, adds the
@@ -38,3 +44,14 @@ GuyFriendA-GuyFriendB                              GuyFriends                   
 GalFriendA-GalFriendB                              GalFriends                                                            Social             [placeholder tbd]     GalFriendA                     GalFriendB
 GuyFriend-GalFriend                                GuyFriend-GalFriend                                                   Social             [placeholder tbd]     GuyFriend                      GalFriend
 ```
+
+## Related
+
+- [DATA-MODEL.md](DATA-MODEL.md) — where these types land in the content model.
+- [STAGES.md](STAGES.md) — the four stages the types are rendered in.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › Relationship types · prev [UI registry](ui-registry.md) · next [Reference mockups](REFERENCE-MOCKUPS.md)
+
+<!-- docs-nav:end -->

@@ -1,5 +1,11 @@
 # The template doctrine — one core, many expressions
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Template doctrine · prev [Stages](STAGES.md) · next [Two brands, one tree](BRAND-RELEASE.md)
+
+<!-- docs-nav:end -->
+
 Owner statement, 2026-10-31, verbatim:
 
 > "we will use or reuse all UI surfaces in extending the base core webapp, and this template and other
@@ -174,3 +180,9 @@ routes the quiz product owns (`tests/parity/boundary.ts`, #300). That is a produ
 deletion: the surface stays catalogued, still renders on QuizHub, and the boundary records which
 expression sells it. Dropping a surface from the catalogue because one brand does not render it is
 exactly the deletion this page forbids.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Template doctrine · prev [Stages](STAGES.md) · next [Two brands, one tree](BRAND-RELEASE.md)
+
+<!-- docs-nav:end -->

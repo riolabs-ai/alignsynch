@@ -1,5 +1,11 @@
 # Architecture
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Code wiki** › Request lifecycle · prev [Getting started](getting-started.md) · next [app/(mainlayout)](modules/app-mainlayout.md)
+
+<!-- docs-nav:end -->
+
 A request enters through the App Router, lands in one of three route groups or in `app/api`, and is
 answered by a **Server Component** that reads its content from one of two places:
 
@@ -108,3 +114,9 @@ flowchart LR
     Lib --> Write["POSTGRES write<br/>lib/db/**"]
     Write --> Audit["admin_action row<br/>lib/admin/act.ts"]
 ```
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Code wiki** › Request lifecycle · prev [Getting started](getting-started.md) · next [app/(mainlayout)](modules/app-mainlayout.md)
+
+<!-- docs-nav:end -->

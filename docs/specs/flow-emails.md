@@ -1,5 +1,11 @@
 # The transactional email lifecycle: two senders are the complete set
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
+
+<!-- docs-nav:end -->
+
 > **Superseded in part by #548 (the band and templates 2–5).** This document's volume argument
 > still governs _what the product does not send_, but three of its rows are now wrong by decision:
 > the claim notice (row 4) and the pre-expiry reminder (row 7) **are** built — as templates #4 and
@@ -180,3 +186,15 @@ The evidence, and what each piece is used for here:
    record that disposition (rejection is a document, not a hope).
 8. Gate stays green and dependency-free: `bash scripts/verify.sh` passes with no new package and
    no database access; `pnpm data:check` still validates the new copy items (E23/E10).
+
+## Related
+
+- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the flow every one of these emails belongs to.
+- [RESEND-INBOUND.md](../RESEND-INBOUND.md) — what happens when a send bounces or is complained about.
+- [flow-reinvite.md](flow-reinvite.md) — the expired-invitation case, specified separately.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
+
+<!-- docs-nav:end -->

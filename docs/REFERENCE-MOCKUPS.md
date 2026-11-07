@@ -1,5 +1,11 @@
 # REFERENCE — mockups from the specification
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › Reference mockups · prev [Relationship types](RELATIONSHIP-TYPES-SOURCE.md) · next [MiMo harness guide](MIMO-GUIDE.md)
+
+<!-- docs-nav:end -->
+
 **Inspiration, not instruction.** The images in `docs/reference/mockups/` are page renders from
 `docs/AlignSynch.com - Website Specs.pdf` (V2-01-01g, Dec 2023). They show how the product was
 imagined before it was built. Use them to improve layout, flow and vocabulary. **Do not** treat a
@@ -36,3 +42,14 @@ Rendered at 150 dpi with `pdftoppm -r 150 -png`. The PDF stays the source; these
 - The dense spreadsheet table on p11 is a wireframe for a desktop Excel habit, not a target for a responsive screen. Keep the _content_ (aspect, two values, per-party opinions), not the layout.
 - Anything about **Account Bank, Relationship Week, subscriptions, lock watermarks** (stages A–D). That is a billing product this template does not have.
 - The **Mid Value (notch 3)**. The mockup shows a three-anchor scale; `content/record.ts` models two Values per Aspect. Adding a middle anchor is a schema decision, not styling — see `docs/SPEC-DRIFT.md`.
+
+## Related
+
+- [RELATIONSHIP-TYPES-SOURCE.md](RELATIONSHIP-TYPES-SOURCE.md) — the owner's catalogue the mockups were drawn against.
+- [README.md](specs/README.md) — the research specifications that cite these mockups.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › Reference mockups · prev [Relationship types](RELATIONSHIP-TYPES-SOURCE.md) · next [MiMo harness guide](MIMO-GUIDE.md)
+
+<!-- docs-nav:end -->

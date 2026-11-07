@@ -1,5 +1,11 @@
 # recharts 3 render evidence (#571 deferred)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Lockup 2rem](../qa-lockup-2rem/README.md) · next [swiper 12](../qa-swiper-12/README.md)
+
+<!-- docs-nav:end -->
+
 Three pies whose labels are built from recharts' `percent` argument — the field
 recharts 3 retyped as optional, which is what turned into three `percent is
 possibly 'undefined'` typecheck errors. The `?? 0` fallbacks added for that are
@@ -34,3 +40,14 @@ its own card so the labels are legible. recharts 3 renders pie labels only once 
 entrance animation finishes (`showLabels: !isAnimating`), so the capture waits 4.5 s
 after mount or tab switch — an earlier attempt read an empty label layer for exactly
 that reason.
+
+## Related
+
+- [ui-registry.md](../ui-registry.md) — the surfaces that render the pies.
+- [README.md](../qa-v1x-ui-cohort/README.md) — the UI cohort this dependency move belongs to.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Lockup 2rem](../qa-lockup-2rem/README.md) · next [swiper 12](../qa-swiper-12/README.md)
+
+<!-- docs-nav:end -->

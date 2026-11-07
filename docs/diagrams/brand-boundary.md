@@ -1,5 +1,11 @@
 # One tree, two brands
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Brand boundary · prev [Payment](payment.md) · next [Schemas → fixtures → tables](data.md)
+
+<!-- docs-nav:end -->
+
 `BRAND` picks a template at build time, and the difference is mostly copy. The quiz product is not a
 skin of the alignment product — it is a product that does not exist on the other build — so its
 surfaces are **gated, not deleted**: the route answers the same 404 an unknown URL gets. Two
@@ -80,3 +86,9 @@ not a measured gate.
 - [`tests/parity/boundary.ts`](../../tests/parity/boundary.ts) — the route lists.
 - [`data/flags.ts`](../../data/flags.ts) — every flag, its default and the templates that claim it.
 - [`docs/UI-DIVERGENCE.md`](../UI-DIVERGENCE.md) — what the two brands say differently.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Brand boundary · prev [Payment](payment.md) · next [Schemas → fixtures → tables](data.md)
+
+<!-- docs-nav:end -->

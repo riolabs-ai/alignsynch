@@ -1,5 +1,11 @@
 # SPEC-DRIFT — where the build differs from the specification
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Spec drift · prev [UI/UX audit](UI-UX-AUDIT.md) · next [Bundles](BUNDLES.md)
+
+<!-- docs-nav:end -->
+
 Two authoritative documents describe this product. Neither is code, both are in `docs/`, and they
 **disagree with each other** on load-bearing content. This file records what each says, what the
 build does, and what should happen about each difference.
@@ -179,3 +185,14 @@ They are inspiration, not requirements.
 
 The research behind the recommendations above lives in `docs/specs/`, one file per question, indexed
 by `docs/specs/README.md`.
+
+## Related
+
+- [RELATIONSHIP-TYPES-SOURCE.md](RELATIONSHIP-TYPES-SOURCE.md) — the owner's own catalogue, which the build is measured against.
+- [README.md](specs/README.md) — the research specifications produced by this drift review.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Spec drift · prev [UI/UX audit](UI-UX-AUDIT.md) · next [Bundles](BUNDLES.md)
+
+<!-- docs-nav:end -->

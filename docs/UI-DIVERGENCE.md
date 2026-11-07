@@ -1,5 +1,11 @@
 # The divergence table
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Divergence table · prev [Quiz-surface map](UI-MAPPING.md) · next [UI/UX audit](UI-UX-AUDIT.md)
+
+<!-- docs-nav:end -->
+
 Every surface in the console, admin, dashboard, assessment-template and marketing paths, one row per
 file, with a verdict: what it is, who renders it, and whether it should compose something that
 already exists. Compiled on `2fedcd58` (2026-11-01) for the parent card _Repair · restore the top
@@ -232,3 +238,9 @@ loses:
 - **`components/console/stat-card-grid.tsx` and `components/console/gap-histogram.tsx`** — the two
   deliberate divergences: a `number` the caller computed, and a chart. Both say why in the file, which
   is what a recorded divergence is supposed to look like.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Divergence table · prev [Quiz-surface map](UI-MAPPING.md) · next [UI/UX audit](UI-UX-AUDIT.md)
+
+<!-- docs-nav:end -->

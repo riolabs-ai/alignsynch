@@ -1,5 +1,11 @@
 # Module: `data`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › data · prev [content](content.md) · next [lib/db](lib-db.md)
+
+<!-- docs-nav:end -->
+
 38 TypeScript modules holding the fixtures — the authored content every product route projects. The
 database is a mirror of this directory, never the other way round: `pnpm db:seed` reads
 [`assessments.ts`](../../../data/assessments.ts), and nothing derives a fixture from a row.
@@ -66,3 +72,9 @@ E37/E39 finding, not dead code.
 - **A snapshot key is a harness label, not a shelf position.** `scripts/__tests__/fixtures/card-records.ts`
   keys its rows `explore-page/*` and `explore-featured/*`, and those two groups are the opposite way
   round from the pages that render them.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › data · prev [content](content.md) · next [lib/db](lib-db.md)
+
+<!-- docs-nav:end -->

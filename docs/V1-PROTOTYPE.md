@@ -1,5 +1,11 @@
 # AlignSynch V1 Prototype
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › V1 prototype · prev [P2 inventory](P2-INVENTORY.md)
+
+<!-- docs-nav:end -->
+
 > **Retired (#478).** The `/v1` tree is deleted: 95 items were classified in
 > [`V1-RETIREMENT.md`](V1-RETIREMENT.md) and every one of them has reached its destination. The
 > console moved to `/admin/console` (behind `requireAdmin`), the worked example moved to
@@ -98,3 +104,9 @@ Start on `/v1`. The exact order of clicks:
 
 Final state: stage **sharing**, the report unlocked, gaps computed. (With the two parties answering
 differently, the verdict is **Not yet aligned**.)
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › V1 prototype · prev [P2 inventory](P2-INVENTORY.md)
+
+<!-- docs-nav:end -->

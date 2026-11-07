@@ -42,6 +42,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { entryFor as navEntryFor, navRegion } from "./docs-nav.mjs";
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** The schema files the glossary is generated from. Read on every run, all three. */
@@ -220,6 +222,8 @@ function entryFor(spec, index, root) {
 function renderPage(entries) {
   const out = [
     "# Glossary",
+    "",
+    ...navRegion(navEntryFor("docs/glossary.md")),
     "",
     "The domain's terms, defined by the schema comments in `content/`. This page is generated:" +
       " do not edit it. Change the comment in the schema, then run `pnpm glossary`; the gate" +

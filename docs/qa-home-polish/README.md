@@ -1,5 +1,11 @@
 # Home hero polish — the six defects, before and after
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Home hero polish · prev [Help two-column](../qa-help-two-column/README.md) · next [Lockup 2rem](../qa-lockup-2rem/README.md)
+
+<!-- docs-nav:end -->
+
 The AlignSynch `/` hero was reviewed from its own acceptance screenshot (home v2, #463). The review
 called it "a solid, credible B2B hero … good and specific, but not yet fully hero-polished" and named
 six defects. This folder is the evidence for the six, not a redesign: both columns below are the same
@@ -59,3 +65,14 @@ CDP, at `1440×N` and `390×N`, clipped to `section.home-hero-ground`. The "befo
 The optional item — three rows plus an emphasised Gap callout — was **not** attempted. Trimming five
 fixture Aspects to three needs a rule for which three, and an emphasis block is a new pattern rather
 than a spacing change, which is the line the card draws.
+
+## Related
+
+- [UI-MAPPING.md](../UI-MAPPING.md) — the surface map the hero is a variation of.
+- [ui-registry.md](../ui-registry.md) — the home surface and its status.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Home hero polish · prev [Help two-column](../qa-help-two-column/README.md) · next [Lockup 2rem](../qa-lockup-2rem/README.md)
+
+<!-- docs-nav:end -->

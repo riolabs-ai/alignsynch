@@ -1,5 +1,11 @@
 # Stages — the four relationship stages, and the two ladders behind them
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Stages · prev [The two-party flow](TWO-PARTY-FLOW.md) · next [Template doctrine](TEMPLATE-DOCTRINE.md)
+
+<!-- docs-nav:end -->
+
 A **Stage** is the glossary's name for "The progress of the Relationship functions". The two
 authoritative documents use the same word for **two different ladders**, and telling them apart is
 the whole of this note:
@@ -113,3 +119,9 @@ stage.
   it must never outrun ([TWO-PARTY-FLOW](TWO-PARTY-FLOW.md)).
 - `docs/SPEC-DRIFT.md` — the specification against the build; §4 holds the rulings this note
   applies, and [REFERENCE-MOCKUPS](REFERENCE-MOCKUPS.md) indexes the page renders quoted above.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Stages · prev [The two-party flow](TWO-PARTY-FLOW.md) · next [Template doctrine](TEMPLATE-DOCTRINE.md)
+
+<!-- docs-nav:end -->

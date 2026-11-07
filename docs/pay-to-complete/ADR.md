@@ -1,5 +1,11 @@
 # Architecture decision record — pay to complete
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › ADR · prev [Technical spec](SPEC.md) · next [Research](RESEARCH.md)
+
+<!-- docs-nav:end -->
+
 **Release:** `v1.6.0` · **Status:** accepted 2026-11-07 · **Supersedes:** the creation-time charge (#533)
 
 An ADR per decision, each with the alternative it beat and what it costs us. If you disagree with something in
@@ -187,3 +193,14 @@ implementation Postgres refuses.
 
 **Consequences.** Evidence depends on someone running a command, so the PR must show it. It already earned its
 keep: it found three fixture defects and the missing charge branch.
+
+## Related
+
+- [SPEC.md](SPEC.md) — the implementation contract these decisions produced.
+- [PRD.md](PRD.md) — the product case each decision is answerable to.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › ADR · prev [Technical spec](SPEC.md) · next [Research](RESEARCH.md)
+
+<!-- docs-nav:end -->

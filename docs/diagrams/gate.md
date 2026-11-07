@@ -1,5 +1,11 @@
 # A change's path through the gate
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Gate · prev [Schemas → fixtures → tables](data.md)
+
+<!-- docs-nav:end -->
+
 One script, two callers: `bash scripts/verify.sh` runs locally (and from the pre-push hook), and
 `.github/workflows/ci.yml` runs the same file and nothing else. A check that lives only in one of them
 is a red the other cannot reproduce — which is why the YAML has no steps of its own beyond the matrix
@@ -96,3 +102,9 @@ run two gates at once.
 - [`scripts/gate-lanes.sh`](../../scripts/gate-lanes.sh) — the classifier, pure over a path.
 - [`docs/REPO-LAYERS.md`](../REPO-LAYERS.md) — the layer table and the measurements behind it.
 - [`docs/GATE.md`](../GATE.md) — the current baseline, yield and the required-check ruleset.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Gate · prev [Schemas → fixtures → tables](data.md)
+
+<!-- docs-nav:end -->

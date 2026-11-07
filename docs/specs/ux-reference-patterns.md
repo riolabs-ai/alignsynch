@@ -1,5 +1,11 @@
 # Reference UX pattern spec — `spec-ux-repo-patterns/`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Reference UX patterns · prev [Stage display](ux-stages.md)
+
+<!-- docs-nav:end -->
+
 **Method.** `vision_analyze` was unavailable (vision model is text-only). The nine PNGs (1440×900) were read via local OCR
 and pixel scans for geometry/colour — numbers are measured, not guessed.
 
@@ -88,3 +94,15 @@ Hero 30 + lede 16, **320px search centred below**, then a 3-col grid of **260px 
 
 **Mobile: no evidence.** All captures are 1440×900 with no responsive state, so how the rail or sidebar collapses is
 unproven. Proposed: off-canvas sidebar, single column, rail full width with `Step 1/3`, option rows 48px.
+
+## Related
+
+- [UI-UX-AUDIT.md](../UI-UX-AUDIT.md) — what the build follows, varies or diverges from, measured against the purchased template.
+- [REFERENCE-MOCKUPS.md](../REFERENCE-MOCKUPS.md) — the specification's own mockups, the other reference set this one is measured against.
+- [ui-registry.md](../ui-registry.md) — the surfaces these nine screens are, and their status.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Reference UX patterns · prev [Stage display](ux-stages.md)
+
+<!-- docs-nav:end -->

@@ -1,5 +1,11 @@
 # The demo — one branch, one base, one reset, one bundle (#185)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › The demo · prev [Branch triage](BRANCH-TRIAGE.md) · next [Demo auth](DEMO-AUTH.md)
+
+<!-- docs-nav:end -->
+
 The demo is a **Neon branch** named `demo`, restored from the **schema-only base** `demo-base`: a
 branch holding the migrations' schema, the `schema_migrations` ledger, the auth configuration and
 no rows — no app deployment, no data, no users. It runs the same code as everything else and holds
@@ -234,3 +240,9 @@ someone meant.
 - **Not session management.** No expiry, no TTL, no "reset on first visit" — the cron is the bound.
 - **Not production tooling.** Every path in the script and the workflow is scoped to the demo
   branch; the default branch is a refusal, not a default.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › The demo · prev [Branch triage](BRANCH-TRIAGE.md) · next [Demo auth](DEMO-AUTH.md)
+
+<!-- docs-nav:end -->

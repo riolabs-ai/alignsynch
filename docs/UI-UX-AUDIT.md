@@ -1,5 +1,11 @@
 # UI/UX audit — AlignSynch against the purchased template
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › UI/UX audit · prev [Divergence table](UI-DIVERGENCE.md) · next [Spec drift](SPEC-DRIFT.md)
+
+<!-- docs-nav:end -->
+
 What AlignSynch follows, varies, or quietly diverges from, measured against the UI/UX patterns the
 purchased quiz template already established. The question is not "is this good design" — it is
 "does this follow the template we own, and where does it quietly diverge?"
@@ -238,3 +244,14 @@ Breakpoints are not Tailwind's defaults (`tailwind.config.ts` L103–107: `sm` 5
 The document is a `docs/`-only change; the gate runs the docs lane (`glossary` +
 `release:check`). Result: `bash scripts/verify.sh` exited 0 (see the run log). No component,
 fixture or route file was modified — `git status` is clean apart from this file.
+
+## Related
+
+- [UI-DIVERGENCE.md](UI-DIVERGENCE.md) — the row-by-row divergence table behind this audit.
+- [UI-MAPPING.md](UI-MAPPING.md) — which quiz surface each AlignSynch file varies from.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › UI/UX audit · prev [Divergence table](UI-DIVERGENCE.md) · next [Spec drift](SPEC-DRIFT.md)
+
+<!-- docs-nav:end -->

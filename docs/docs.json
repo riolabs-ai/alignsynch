@@ -1,0 +1,528 @@
+{
+  "hub": "README.md",
+  "sections": [
+    {
+      "id": "start",
+      "title": "Start here",
+      "blurb": "Read these before your first command.",
+      "docs": [
+        {
+          "path": "ENV-SPEC.md",
+          "title": "Environment & ops spec",
+          "question": "What is installed, what does the team own, and what did the P1–P4 gates demand?"
+        },
+        {
+          "path": "ITERATION.md",
+          "title": "Iteration rhythm",
+          "question": "Which loop do I run for this edit — `check:fast` or the full gate?"
+        },
+        {
+          "path": "REPO-LAYERS.md",
+          "title": "Repo layers",
+          "question": "Why does the gate cost what my change costs, and which lane am I in?"
+        },
+        {
+          "path": "GATE.md",
+          "title": "The gate",
+          "question": "What does `scripts/verify.sh` run, in what order, and what are its current numbers?"
+        }
+      ]
+    },
+    {
+      "id": "architecture",
+      "title": "Architecture",
+      "blurb": "How the tree is put together, and why it is shaped that way.",
+      "docs": [
+        {
+          "path": "DATA-MODEL.md",
+          "title": "Data model",
+          "question": "What is a record, an item, an answer — and where does the Gap live?"
+        },
+        {
+          "path": "TWO-PARTY-FLOW.md",
+          "title": "The two-party flow",
+          "question": "How do two people get from an invitation to a sealed Gap?"
+        },
+        {
+          "path": "STAGES.md",
+          "title": "Stages",
+          "question": "What are Invited, Connected, Sharing and Aligned, and who decides each?"
+        },
+        {
+          "path": "TEMPLATE-DOCTRINE.md",
+          "title": "Template doctrine",
+          "question": "When I add a screen, what existing surface is it a variation of?"
+        },
+        {
+          "path": "BRAND-RELEASE.md",
+          "title": "Two brands, one tree",
+          "question": "How does a brand version ship without moving parity?"
+        },
+        {
+          "path": "QUIZHUB-CAPABILITY-MAP.md",
+          "title": "QuizHub capability map",
+          "question": "What can a reader reach under the quiz expression, and what is each surface made of?"
+        },
+        {
+          "path": "UI-MAPPING.md",
+          "title": "Quiz-surface map",
+          "question": "Which quiz surface is this AlignSynch file a variation of?"
+        },
+        {
+          "path": "UI-DIVERGENCE.md",
+          "title": "Divergence table",
+          "question": "Where does each surface deliberately differ from its ancestor?"
+        },
+        {
+          "path": "UI-UX-AUDIT.md",
+          "title": "UI/UX audit",
+          "question": "What does the build follow, vary, or quietly diverge from in the purchased template?"
+        },
+        {
+          "path": "SPEC-DRIFT.md",
+          "title": "Spec drift",
+          "question": "Where has the build moved away from the specification, and is that deliberate?"
+        },
+        {
+          "path": "BUNDLES.md",
+          "title": "Bundles",
+          "question": "How does a template or a demo dataset travel as one versioned JSON file?"
+        }
+      ]
+    },
+    {
+      "id": "wiki",
+      "title": "Code wiki",
+      "blurb": "A guided tour of the code, module by module.",
+      "docs": [
+        {
+          "path": "wiki/README.md",
+          "title": "Code wiki index",
+          "question": "Where do I start reading the code?"
+        },
+        {
+          "path": "wiki/getting-started.md",
+          "title": "Getting started",
+          "question": "What do I install and run to get a green tree?"
+        },
+        {
+          "path": "wiki/architecture.md",
+          "title": "Request lifecycle",
+          "question": "What happens to a request from the App Router down to Postgres?"
+        },
+        {
+          "path": "wiki/modules/app-mainlayout.md",
+          "title": "app/(mainlayout)",
+          "question": "What does the product route group own?"
+        },
+        {
+          "path": "wiki/modules/app-marketing.md",
+          "title": "app/(marketing)",
+          "question": "Which pages are public, and why do they never get the shell?"
+        },
+        {
+          "path": "wiki/modules/app-api.md",
+          "title": "app/api",
+          "question": "Which HTTP endpoints exist and what does each serve?"
+        },
+        {
+          "path": "wiki/modules/components.md",
+          "title": "components",
+          "question": "How is the UI organised, and what belongs in components/ui?"
+        },
+        {
+          "path": "wiki/modules/content.md",
+          "title": "content",
+          "question": "Where is the content model defined, and what derives from it?"
+        },
+        {
+          "path": "wiki/modules/data.md",
+          "title": "data",
+          "question": "Where do the fixtures live that every product route projects?"
+        },
+        {
+          "path": "wiki/modules/lib-db.md",
+          "title": "lib/db",
+          "question": "Where is SQL written, and how do rows map back to the model?"
+        },
+        {
+          "path": "wiki/modules/lib-flow.md",
+          "title": "lib/flow",
+          "question": "What drives the two-party session end to end?"
+        },
+        {
+          "path": "wiki/modules/lib-member.md",
+          "title": "lib/member",
+          "question": "What does the initiator's side own?"
+        },
+        {
+          "path": "wiki/modules/lib-admin.md",
+          "title": "lib/admin",
+          "question": "How does an operator action pass the write gate?"
+        },
+        {
+          "path": "wiki/diagrams/class-diagram.md",
+          "title": "Class diagram",
+          "question": "How do a quiz and an assessment share one record root?"
+        },
+        {
+          "path": "wiki/diagrams/sequences.md",
+          "title": "Sequence walks",
+          "question": "What does a traced request look like, step by step?"
+        }
+      ]
+    },
+    {
+      "id": "product",
+      "title": "Product",
+      "blurb": "What the product promises, and the specifications behind it.",
+      "docs": [
+        {
+          "path": "pay-to-complete/README.md",
+          "title": "Pay-to-complete set",
+          "question": "What is in the v1.6.0 document set, and in what order do I read it?"
+        },
+        {
+          "path": "pay-to-complete/PRD.md",
+          "title": "PRD",
+          "question": "Why is a relationship paid for once, at completion?"
+        },
+        {
+          "path": "pay-to-complete/SPEC.md",
+          "title": "Technical spec",
+          "question": "What exactly is the payment obligation, in code terms?"
+        },
+        {
+          "path": "pay-to-complete/ADR.md",
+          "title": "ADR",
+          "question": "Which choice was made, what alternative did it beat, and what does it cost?"
+        },
+        {
+          "path": "pay-to-complete/RESEARCH.md",
+          "title": "Research",
+          "question": "What does the tree do today, and what does the industry do?"
+        },
+        {
+          "path": "billing.md",
+          "title": "Billing",
+          "question": "How are the two billing drivers wired, and where is the pricing CTA?"
+        },
+        {
+          "path": "ACCOUNT-DELETION-SPEC.md",
+          "title": "Account deletion",
+          "question": "What happens to a shared record when one person deletes their account?"
+        },
+        {
+          "path": "specs/README.md",
+          "title": "Specifications index",
+          "question": "What are these research specs, and what do they have in common?"
+        },
+        {
+          "path": "specs/catalogue.md",
+          "title": "Template catalogue",
+          "question": "How is the catalogue grouped, and what does each category mean?"
+        },
+        {
+          "path": "specs/flow-emails.md",
+          "title": "Transactional email lifecycle",
+          "question": "Which emails send, when, and to whom?"
+        },
+        {
+          "path": "specs/flow-reinvite.md",
+          "title": "Re-invite",
+          "question": "What happens when an invitation expires — and why not a void?"
+        },
+        {
+          "path": "specs/maintenance-fields.md",
+          "title": "Maintenance fields",
+          "question": "Which fields does the relationship-maintenance form carry?"
+        },
+        {
+          "path": "specs/ux-input.md",
+          "title": "Answer input",
+          "question": "How does a person answer — scale, labels, semantics?"
+        },
+        {
+          "path": "specs/ux-report.md",
+          "title": "The Gap report",
+          "question": "How are the eight kinds per Aspect rendered?"
+        },
+        {
+          "path": "specs/ux-stages.md",
+          "title": "Stage display",
+          "question": "How is each stage shown, and who acts next?"
+        },
+        {
+          "path": "specs/ux-reference-patterns.md",
+          "title": "Reference UX patterns",
+          "question": "What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?"
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "title": "Operations",
+      "blurb": "Deploying, releasing, demoing and running the fleet.",
+      "docs": [
+        {
+          "path": "DEPLOYING.md",
+          "title": "Deploying",
+          "question": "How does this repository reach `alignsynch.com`?"
+        },
+        {
+          "path": "RELEASING.md",
+          "title": "Releasing",
+          "question": "Which four artefacts must agree for a release, and how is the tag cut?"
+        },
+        {
+          "path": "ORCHESTRATION.md",
+          "title": "Orchestration rules",
+          "question": "How does the orchestrator behave — decisions, blocking, re-carding?"
+        },
+        {
+          "path": "BRANCH-TRIAGE.md",
+          "title": "Branch triage",
+          "question": "Which of the non-main heads is safe, and on what evidence?"
+        },
+        {
+          "path": "DEMO.md",
+          "title": "The demo",
+          "question": "How is the demo branch built, reset and bundled?"
+        },
+        {
+          "path": "DEMO-AUTH.md",
+          "title": "Demo auth",
+          "question": "How do the demo roles and the PIN gate work?"
+        },
+        {
+          "path": "RESEND-INBOUND.md",
+          "title": "Resend inbound",
+          "question": "How do bounces, complaints and suppression marks reach us?"
+        },
+        {
+          "path": "P3-EXIT.md",
+          "title": "P3 exit record",
+          "question": "Did bulk generation meet its gate, and with what numbers?"
+        }
+      ]
+    },
+    {
+      "id": "reference",
+      "title": "Reference",
+      "blurb": "The generated tables, the owner's own material, and the records nothing else owns.",
+      "docs": [
+        {
+          "path": "glossary.md",
+          "title": "Glossary",
+          "question": "What does this domain's vocabulary mean? Generated from the schema comments."
+        },
+        {
+          "path": "ui-registry.md",
+          "title": "UI registry",
+          "question": "Which surface is this, and may a template reuse it? Generated from the tree."
+        },
+        {
+          "path": "RELATIONSHIP-TYPES-SOURCE.md",
+          "title": "Relationship types",
+          "question": "What did the owner actually supply as the catalogue, before anyone edited it?"
+        },
+        {
+          "path": "REFERENCE-MOCKUPS.md",
+          "title": "Reference mockups",
+          "question": "What did the specification's own mockups look like?"
+        },
+        {
+          "path": "MIMO-GUIDE.md",
+          "title": "MiMo harness guide",
+          "question": "How is the MiMo model wired, and what are its measured quirks?"
+        },
+        {
+          "path": "legal/PROVENANCE.md",
+          "title": "Legal provenance",
+          "question": "Where did `/terms` and `/privacy` come from, and what was cut?"
+        },
+        {
+          "path": "PROTOTYPE-WIRING.md",
+          "title": "Prototype wiring",
+          "question": "What of the one prototype screen moves into the build, and in what order?"
+        },
+        {
+          "path": "P2-INVENTORY.md",
+          "title": "P2 inventory",
+          "question": "Which hardcoded strings and media paths does templatisation have to cover?"
+        },
+        {
+          "path": "V1-PROTOTYPE.md",
+          "title": "V1 prototype",
+          "question": "What is the clickable `/v1/**` prototype, and who is it for?"
+        }
+      ]
+    },
+    {
+      "id": "diagrams",
+      "title": "Diagrams",
+      "blurb": "The five Mermaid charts, one home each.",
+      "docs": [
+        {
+          "path": "diagrams/lifecycle.md",
+          "title": "Lifecycle",
+          "question": "Which states can one relationship reach, and on what event?"
+        },
+        {
+          "path": "diagrams/payment.md",
+          "title": "Payment",
+          "question": "When is money owed, retried, or written off?"
+        },
+        {
+          "path": "diagrams/brand-boundary.md",
+          "title": "Brand boundary",
+          "question": "Which routes does the quiz product own, and which does the console?"
+        },
+        {
+          "path": "diagrams/data.md",
+          "title": "Schemas → fixtures → tables",
+          "question": "How does one model become fixtures and then Postgres tables?"
+        },
+        {
+          "path": "diagrams/gate.md",
+          "title": "Gate",
+          "question": "What path does a change take through the gate?"
+        }
+      ]
+    },
+    {
+      "id": "changelog",
+      "title": "Release notes",
+      "blurb": "One page per release, a view of `CHANGELOG.md`.",
+      "docs": [
+        {
+          "path": "changelog/README.md",
+          "title": "Release blog",
+          "question": "What shipped in which release, and where does this page come from?"
+        },
+        {
+          "path": "changelog/v1-0-0.md",
+          "title": "v1.0.0",
+          "question": "The release where the webapp stopped being a mock."
+        },
+        {
+          "path": "changelog/v1-1-0-rc1.md",
+          "title": "v1.1.0-rc1",
+          "question": "The release candidate that made the template a product."
+        },
+        {
+          "path": "changelog/v1-2-0.md",
+          "title": "v1.2.0",
+          "question": "The release where five surfaces read the database."
+        },
+        {
+          "path": "changelog/v1-3-0.md",
+          "title": "v1.3.0",
+          "question": "The release where the flow closed."
+        },
+        {
+          "path": "changelog/v1-4-0.md",
+          "title": "v1.4.0",
+          "question": "The release where the console arrived and templates became products."
+        },
+        {
+          "path": "changelog/v1-5-0.md",
+          "title": "v1.5.0",
+          "question": "The release where a person could delete their account."
+        },
+        {
+          "path": "changelog/v1-5-1.md",
+          "title": "v1.5.1",
+          "question": "The patch where the gate stopped believing a stale record."
+        },
+        {
+          "path": "changelog/v1-6-0.md",
+          "title": "v1.6.0",
+          "question": "The release where the fee moved to completion."
+        }
+      ]
+    },
+    {
+      "id": "records",
+      "title": "Records & QA",
+      "blurb": "What was measured, on which tree, and what the migration changed.",
+      "docs": [
+        {
+          "path": "assets/screens/README.md",
+          "title": "Screenshot registry",
+          "question": "Which screenshot shows which surface, on which brand and viewport?"
+        },
+        {
+          "path": "p1-migration/MIGRATION.md",
+          "title": "P1 migration",
+          "question": "What did the P1 content model change, field by field?"
+        },
+        {
+          "path": "V1-RETIREMENT.md",
+          "title": "V1 retirement",
+          "question": "What happened to every `/v1` item?"
+        },
+        {
+          "path": "QA-DOGFOOD-P4.md",
+          "title": "P4 dogfood pass",
+          "question": "Did every route answer, on a production build?"
+        },
+        {
+          "path": "qa-flow-validation/2026-11-07.md",
+          "title": "Flow validation, 2026-11-07",
+          "question": "Does the assessment flow work end to end with two real identities?"
+        },
+        {
+          "path": "qa-542-phase2/README.md",
+          "title": "#542 phase 2",
+          "question": "Is the rail role-constrained data, with focused-flow chrome?"
+        },
+        {
+          "path": "qa-brand-lockup/README.md",
+          "title": "Brand lockup",
+          "question": "Is the lockup back in the chrome, at a seal's size?"
+        },
+        {
+          "path": "qa-contact-land/README.md",
+          "title": "Contact landing",
+          "question": "What do the contact pages look like?"
+        },
+        {
+          "path": "qa-help-two-column/README.md",
+          "title": "Help two-column",
+          "question": "Did `/help` get its two-column layout?"
+        },
+        {
+          "path": "qa-home-polish/README.md",
+          "title": "Home hero polish",
+          "question": "Were the six hero defects fixed, before and after?"
+        },
+        {
+          "path": "qa-lockup-2rem/README.md",
+          "title": "Lockup 2rem",
+          "question": "Is the lockup 2rem in every expanded-header viewport?"
+        },
+        {
+          "path": "qa-recharts-3/README.md",
+          "title": "recharts 3",
+          "question": "Do the pie labels still render after the recharts 3 bump?"
+        },
+        {
+          "path": "qa-swiper-12/README.md",
+          "title": "swiper 12",
+          "question": "Do the carousels survive swiper 11.2.7 → 12.2.0?"
+        },
+        {
+          "path": "qa-template-catalogue/README.md",
+          "title": "Template catalogue",
+          "question": "What do the catalogue pages look like from the AlignSynch build?"
+        },
+        {
+          "path": "qa-v1x-ui-cohort/README.md",
+          "title": "v1.x UI cohort",
+          "question": "Were all ten owner items measured in a real browser?"
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,11 @@
 # The quiz-surface map
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Quiz-surface map · prev [QuizHub capability map](QUIZHUB-CAPABILITY-MAP.md) · next [Divergence table](UI-DIVERGENCE.md)
+
+<!-- docs-nav:end -->
+
 Every quiz surface this tree inherits, the AlignSynch file that is a variation of it, the axis that
 changes, and the mobile mechanics a variation has to copy rather than invent. Compiled on
 `87663a5e` (`origin/main`, 2026-11-01) for the cohort cards under _SPRINT · backend UI prototypes in
@@ -326,3 +332,9 @@ grep -rln "requireQuizProduct" app | sort
 - **Not evidence that a surface works.** A built file is a file: `assessment-flow/` is DB-backed and
   request-time (`force-dynamic`, `DATABASE_URL` unset in the gate), so proving a variation works is a
   dogfood run, not a `next build`.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Quiz-surface map · prev [QuizHub capability map](QUIZHUB-CAPABILITY-MAP.md) · next [Divergence table](UI-DIVERGENCE.md)
+
+<!-- docs-nav:end -->

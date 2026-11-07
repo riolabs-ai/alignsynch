@@ -1,5 +1,11 @@
 # Module: `app/(mainlayout)`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › app/(mainlayout) · prev [Request lifecycle](../architecture.md) · next [app/(marketing)](app-marketing.md)
+
+<!-- docs-nav:end -->
+
 The product route group: 68 pages, 10 route handlers and 9 `actions.ts` files, all mounted under the
 shell — sidebar, header, search palette, notification and message drawers, account menu.
 
@@ -75,3 +81,9 @@ Writes split two ways, and the choice is deliberate:
 - **A gated console route with no auth env answers 500 `NEON_AUTH_BASE_URL is not set`, on purpose** —
   `currentUser()` builds the auth server outside its `try`. `/support` and `/how-it-works` answer
   `307 → /login` instead because they use `currentUserIfConfigured()`.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › app/(mainlayout) · prev [Request lifecycle](../architecture.md) · next [app/(marketing)](app-marketing.md)
+
+<!-- docs-nav:end -->

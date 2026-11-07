@@ -1,5 +1,11 @@
 # Billing — the port, the two drivers, the gate and the pricing CTA (#289, cards 1–3)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Product** › Billing · prev [Research](pay-to-complete/RESEARCH.md) · next [Account deletion](ACCOUNT-DELETION-SPEC.md)
+
+<!-- docs-nav:end -->
+
 Billing is an **integration of our own**, not an auth plugin: Neon's managed Better Auth exposes a
 fixed plugin subset and hosts no payment provider, so the app owns the tables, the checkout entry
 point, the webhook receiver and the entitlement read.
@@ -220,3 +226,14 @@ next to it is a real checkout on a test key.
 No tax, invoices, dunning, coupons or seats. No coach role — `party.role` is structurally
 `initiator|counterparty`, and a coach paying for a seat is an architectural decision (SPEC-DRIFT
 §8), not a billing one. No `gap` column anywhere: the Gap stays `gapOf()` over two scores.
+
+## Related
+
+- [SPEC.md](pay-to-complete/SPEC.md) — the payment obligation this implements.
+- [payment.md](diagrams/payment.md) — when money is owed, retried or written off.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Product** › Billing · prev [Research](pay-to-complete/RESEARCH.md) · next [Account deletion](ACCOUNT-DELETION-SPEC.md)
+
+<!-- docs-nav:end -->

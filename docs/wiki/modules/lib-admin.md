@@ -1,5 +1,11 @@
 # Module: `lib/admin`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › lib/admin · prev [lib/member](lib-member.md) · next [Class diagram](../diagrams/class-diagram.md)
+
+<!-- docs-nav:end -->
+
 21 modules — the operator's side. Two halves: the **write gate** every admin action must pass
 through, and the per-surface operations the console calls.
 
@@ -72,3 +78,9 @@ from its caller, because a nested transaction is two commits waiting to disagree
   `user_profile.role`.
 - **A refused action is a `role-too-low` or a `reason-too-short`, not a 500.** `ActRefused` carries the
   code the screen has a sentence for.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › lib/admin · prev [lib/member](lib-member.md) · next [Class diagram](../diagrams/class-diagram.md)
+
+<!-- docs-nav:end -->
