@@ -1,5 +1,11 @@
 # Module: `lib/db`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › lib/db · prev [data](data.md) · next [lib/flow](lib-flow.md)
+
+<!-- docs-nav:end -->
+
 25 modules — the only place a Postgres statement is written. `pg` is the only driver; there is no ORM,
 no Prisma, no Drizzle, and `pg` + `@types/pg` are the only dependencies this layer adds.
 
@@ -65,3 +71,9 @@ Managed Auth lives in its own `neon_auth` schema and is never migrated here.
   `import type` is the correct way through.
 - **Secrets stay server-side.** `DATABASE_URL` and friends live in `.env.local` (gitignored) and are
   never inlined into the client bundle.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › lib/db · prev [data](data.md) · next [lib/flow](lib-flow.md)
+
+<!-- docs-nav:end -->

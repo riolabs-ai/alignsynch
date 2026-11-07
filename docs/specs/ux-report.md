@@ -1,5 +1,11 @@
 # UX Spec — The Gap Report (eight kinds per Aspect)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › The Gap report · prev [Answer input](ux-input.md) · next [Stage display](ux-stages.md)
+
+<!-- docs-nav:end -->
+
 **Recommendation:** Keep the per-Aspect card as the row unit, but restructure each card into
 **three named groups using the spec's own headings** ("Feelings and Wishes Differ",
 "Desires To Change", "Prediction Gaps & Analysis"), render each group as a semantic
@@ -166,3 +172,14 @@ since Soft/Full change the verdict on the same numbers.
    switch in the render test.
 8. `bash scripts/verify.sh` exits 0 (content + components lanes both run; `data:check` validates
    the new `GAP_GROUPS` table against `GAP_KINDS` if a z-schema is added).
+
+## Related
+
+- [PRD.md](../pay-to-complete/PRD.md) — the report is what the completion fee buys.
+- [ux-input.md](ux-input.md) — the answers the report is derived from.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › The Gap report · prev [Answer input](ux-input.md) · next [Stage display](ux-stages.md)
+
+<!-- docs-nav:end -->

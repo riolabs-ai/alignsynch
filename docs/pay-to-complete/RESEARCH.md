@@ -1,5 +1,11 @@
 # Research — paying for a completed assessment
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Research · prev [ADR](ADR.md) · next [Billing](../billing.md)
+
+<!-- docs-nav:end -->
+
 **Scope:** milestone `v1.6.0 — pay to complete` (#619, #623). This file is the evidence the other three
 documents argue from. It records what the tree does today, what the industry does, and which constraints
 of this repo decide the design before any preference does.
@@ -138,3 +144,14 @@ Not re-litigated here; they are inputs to the PRD:
    release ships mock-only behind a flag, or live test-mode Stripe, is a release question nobody has answered.
 3. **SCA-style challenge.** If an off-session charge needs the payer present, does the product email a link that
    opens a payment page, or expire? The spec proposes the link; the product has not agreed it.
+
+## Related
+
+- [PRD.md](PRD.md) — the product case this research argues for.
+- [ADR.md](ADR.md) — the decisions it settled.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Research · prev [ADR](ADR.md) · next [Billing](../billing.md)
+
+<!-- docs-nav:end -->

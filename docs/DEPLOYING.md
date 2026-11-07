@@ -1,5 +1,11 @@
 # Deploying
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Deploying · next [Releasing](RELEASING.md)
+
+<!-- docs-nav:end -->
+
 `alignsynch.com` is a Vercel project (`alignsynch`, team `riolabs-ai`) that builds this repository.
 Whether a **push** produces that build is a setting on the project, not a property of this tree: on
 2026-11-01 the project reported deployment creation switched off; on 2026-11-03 two merges to `main`
@@ -353,3 +359,9 @@ This is not a gate step. `scripts/env-sync.mjs` is a `scripts/**` change, so `pn
 `pnpm format:check` and `pnpm typecheck` keep it honest, but `scripts/verify.sh` and CI never run
 it: the gate is network-free and has no credentials, by contract. A write is also not a deploy —
 the run ends with `a new deployment is required on <target> for these to take effect`.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Deploying · next [Releasing](RELEASING.md)
+
+<!-- docs-nav:end -->

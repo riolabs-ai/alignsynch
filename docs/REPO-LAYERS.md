@@ -1,5 +1,11 @@
 # The four layers, and why the gate costs what your change costs
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Start here** › Repo layers · prev [Iteration rhythm](ITERATION.md) · next [The gate](GATE.md)
+
+<!-- docs-nav:end -->
+
 Issue: [#30](https://github.com/riolabs-ai/alignsynch/issues/30) built one gate:
 `scripts/verify.sh`, called by CI and by the pre-push hook. It was **flat** — a
 one-line typo in `docs/` and a refactor of `app/` both paid the 40–76 s
@@ -69,9 +75,9 @@ the commit) classifies what it is about to push. `GATE_REF` defaults to
 | -------------------- | ---- | ------- | ------ | ---- |
 | `deps`               | ✓    | ✓       | ✓      | ✓    |
 | `glossary`           | ✓    | ✓       | ✓      | ✓    |
+| `docs:check`         | ✓    | ✓       | ✓      | ✓    |
 | `bash -n` scripts    |      |         | ✓      |      |
 | `whitespace`         | ✓    |         |        |      |
-| `links`              | ✓    |         |        |      |
 | `typecheck`          |      | ✓       | ✓      | ✓    |
 | `lint` (biome)       | ✓    | ✓       | ✓      | ✓    |
 | `format:check`       | ✓    | ✓       | ✓      | ✓    |
@@ -258,3 +264,9 @@ Measured lane costs and how to re-measure them are in `docs/GATE.md`.
   the full gate.
 - **The build is still 90 % of the code lane.** Lanes decide whether you pay
   for it; nothing here makes `next build` faster.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Start here** › Repo layers · prev [Iteration rhythm](ITERATION.md) · next [The gate](GATE.md)
+
+<!-- docs-nav:end -->

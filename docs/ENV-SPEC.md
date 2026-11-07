@@ -1,5 +1,11 @@
 # Environment, tooling, team & ops spec — Quizhub prototype phase
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Start here** › Environment & ops spec · next [Iteration rhythm](ITERATION.md)
+
+<!-- docs-nav:end -->
+
 Scope: how we _work_, not what we build. Product scope is frozen to Quizhub's existing
 features and data until the three prototype gates below pass. One machine, one operator,
 one profile.
@@ -385,3 +391,14 @@ The same build-time caveat applies to those four, since they are part of a prere
 and the 404 body is the extreme case: Next renders it once, into `/_not-found`, so the flag is a
 build-time value there exactly as it is for the sidebar. A flip therefore needs a rebuild for the
 advertising to follow; only the route's 404/200 answer moves on a restart.
+
+## Related
+
+- [GATE.md](GATE.md) — the gate this spec's P1–P4 phases were judged against.
+- [RELEASING.md](RELEASING.md) — how the environment reaches a release.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Start here** › Environment & ops spec · next [Iteration rhythm](ITERATION.md)
+
+<!-- docs-nav:end -->

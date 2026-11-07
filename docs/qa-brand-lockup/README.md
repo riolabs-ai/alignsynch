@@ -1,5 +1,11 @@
 # QA — the lockup back in the chrome, and the auth mark at a seal's size
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Brand lockup · prev [#542 phase 2](../qa-542-phase2/README.md) · next [Contact landing](../qa-contact-land/README.md)
+
+<!-- docs-nav:end -->
+
 Evidence for the correction to #539 item 1: the header and footer draw the **full lockup**
 (`public/brand/as2-logo_v2_cl.png`, 818×127), and the square mark stays where an icon belongs.
 Two visual jobs, one table:
@@ -74,3 +80,14 @@ the footer's is `brandMark(brand.logo)`, the `<img>` carries the 818×127 intrin
 height-driven `w-auto` class, neither file may name `alignsynch-icon` or `brand.mark`, and the tab /
 PWA bytes are in the same SHA-256 table. Pointing the header back at the mark fails the first
 assertion — the run is in the PR.
+
+## Related
+
+- [BRAND-RELEASE.md](../BRAND-RELEASE.md) — tokens + name + mark — the three things a brand ships.
+- [ui-registry.md](../ui-registry.md) — the surfaces whose chrome carries the lockup.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Brand lockup · prev [#542 phase 2](../qa-542-phase2/README.md) · next [Contact landing](../qa-contact-land/README.md)
+
+<!-- docs-nav:end -->

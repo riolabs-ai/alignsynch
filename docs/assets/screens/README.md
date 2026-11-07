@@ -1,5 +1,11 @@
 # Current screenshots — the registry
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Records & QA** › Screenshot registry · next [P1 migration](../../p1-migration/MIGRATION.md)
+
+<!-- docs-nav:end -->
+
 `docs/` holds ~330 images, almost all of them `qa-*/` before/after pairs captured for the ticket that
 changed a screen. Those are evidence for their own tickets: they show a layout that was under
 discussion, and several of them show a layout the product no longer has. **Nothing there tells a
@@ -110,3 +116,9 @@ red test rather than a broken link somebody finds later.
   rather than surfaces. Unchanged by this set.
 - Anything dated after the commit in its row. If a screen has moved since, the row is stale and the
   fix is a new capture, not a new paragraph.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Records & QA** › Screenshot registry · next [P1 migration](../../p1-migration/MIGRATION.md)
+
+<!-- docs-nav:end -->

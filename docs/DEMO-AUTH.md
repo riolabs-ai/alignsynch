@@ -1,5 +1,11 @@
 # Demo auth — a role, a gate, the role buttons, and three seeded accounts
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Demo auth · prev [The demo](DEMO.md) · next [Resend inbound](RESEND-INBOUND.md)
+
+<!-- docs-nav:end -->
+
 Parts 1 and 2 of #183, re-cut by #218. Part 1 is the data and the roles (`user_profile.role`,
 `lib/auth/require-role.ts`, the three seeded accounts); part 2 is `/demo`, the PIN gate, and the
 three role buttons `/login` draws for a browser that has entered the PIN. The gate and the buttons
@@ -246,3 +252,14 @@ somewhere to go.
 process — `demo`, `off`, or `refused` with the reason. It names variables and the mode, never a
 value. `mode=off` says the gate is not mounted; there is no line claiming a demo login exists
 when there is none.
+
+## Related
+
+- [DEMO.md](DEMO.md) — the demo branch these accounts are seeded into.
+- [DEPLOYING.md](DEPLOYING.md) — the deployment the demo gate is disabled on.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Demo auth · prev [The demo](DEMO.md) · next [Resend inbound](RESEND-INBOUND.md)
+
+<!-- docs-nav:end -->

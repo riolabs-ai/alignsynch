@@ -1,5 +1,11 @@
 # Spec: Relationship Maintenance form fields (the "one more field" problem)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Maintenance fields · prev [Re-invite](flow-reinvite.md) · next [Answer input](ux-input.md)
+
+<!-- docs-nav:end -->
+
 ## Recommendation (read this first)
 
 **Create-relationship form (the per-template card on `/assessment`) keeps exactly what it
@@ -195,3 +201,14 @@ name per party — a prior "one more field" cut, and the right one; nothing here
   guide (https://arclet.io/guides/miro/use-templates): "Rename the board… so your team can
   find it easily later" — the product-standard evidence that a name distinct from the
   template title pays off as soon as a person has two of anything.
+
+## Related
+
+- [DATA-MODEL.md](../DATA-MODEL.md) — the relationship rows these fields land in.
+- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the flow the form is reached from.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Maintenance fields · prev [Re-invite](flow-reinvite.md) · next [Answer input](ux-input.md)
+
+<!-- docs-nav:end -->

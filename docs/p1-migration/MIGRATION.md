@@ -1,5 +1,11 @@
 # P1 — the quiz-first content model
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › P1 migration · prev [Screenshot registry](../assets/screens/README.md) · next [V1 retirement](../V1-RETIREMENT.md)
+
+<!-- docs-nav:end -->
+
 `content/` is the single source of truth for every fixture in `data/`. zod schemas
 define the shape, TypeScript types are `z.infer`red from them, and `pnpm data:check`
 validates every module at build time. A fixture that drifts from the model is a red
@@ -705,3 +711,9 @@ delivered with the card that implemented B-01).
   did (that array was the same four records on every category route). Giving it a
   per-category shelf, or a `selectQuizCardsByCategory()`, is the next step; until
   then every category route lists the whole `exploreAll` shelf.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › P1 migration · prev [Screenshot registry](../assets/screens/README.md) · next [V1 retirement](../V1-RETIREMENT.md)
+
+<!-- docs-nav:end -->

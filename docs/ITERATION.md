@@ -1,5 +1,11 @@
 # The iteration rhythm: fast loop, cohort boundary
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Start here** › Iteration rhythm · prev [Environment & ops spec](ENV-SPEC.md) · next [Repo layers](REPO-LAYERS.md)
+
+<!-- docs-nav:end -->
+
 The full gate is **138–176 s**, and `next build` is roughly half of it. Paying it between two edits
 to a component is what makes an hour of UI work feel like a day — so the gate is not the loop. It
 is the **boundary**.
@@ -88,3 +94,14 @@ git push                          # one push → one CI run → one merge
 - A screenshot for a UI change.
 - The gate at the boundary, and the migration ordering before any deploy.
 - `git ls-remote` (or a PR link) as the proof a push actually happened.
+
+## Related
+
+- [GATE.md](GATE.md) — what the cohort boundary actually runs.
+- [REPO-LAYERS.md](REPO-LAYERS.md) — the four lanes and their costs.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Start here** › Iteration rhythm · prev [Environment & ops spec](ENV-SPEC.md) · next [Repo layers](REPO-LAYERS.md)
+
+<!-- docs-nav:end -->

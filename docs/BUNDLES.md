@@ -1,5 +1,11 @@
 # Bundles — a template or a demo dataset, as one file (#147)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Bundles · prev [Spec drift](SPEC-DRIFT.md)
+
+<!-- docs-nav:end -->
+
 Four templates and four instances live in `data/assessments.ts`, compiled into the build. That
 is a fine store for this repository and a useless one for anybody else: a tenant cannot produce
 a template this repo can read, and this repo cannot hand a tenant a dataset it can install. A
@@ -95,7 +101,7 @@ Deleting it resets the tenant to the fixtures, which stay untouched as the demo 
 
 Every refusal is one line per problem, `[B<n>] <path>: <message>`, where the path is the key a
 person has to change: `[B4] payload.templates.0.secret: forbidden key "secret" — …`. The codes
-are declared once in [`scripts/rule-codes.ts`](scripts/rule-codes.ts) with one owner each, the
+are declared once in [`scripts/rule-codes.ts`](../scripts/rule-codes.ts) with one owner each, the
 same way the `E` codes are.
 
 ## What the gate checks
@@ -116,9 +122,15 @@ version, so a release bump does not churn a fixture, and `--fix` re-stamps it.
 - No id/slug rewriting, suffixing or `--force` overwrite-by-id.
 - No UI: no buttons, routes or uploads. `pnpm bundles` is the whole surface.
 - **The app does not read the store yet.** `/assessment/[slug]` reads six Postgres tables
-  ([`docs/TWO-PARTY-FLOW.md`](docs/TWO-PARTY-FLOW.md), #145/#146), so the flow and the bundle
+  ([`docs/TWO-PARTY-FLOW.md`](TWO-PARTY-FLOW.md), #145/#146), so the flow and the bundle
   store are two sources today. Switching that route to the store would undo the two-party flow,
   and the store is not a database: it carries templates and instances, not invitations or
   submitted answers. `data/tenant-assessments.ts` in the original spec is therefore not part of
   this change; the store is what `data:check` and the CLI read, and the portability that makes a
   tenant possible is the bundle itself.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Bundles · prev [Spec drift](SPEC-DRIFT.md)
+
+<!-- docs-nav:end -->

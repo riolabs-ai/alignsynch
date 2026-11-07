@@ -1,5 +1,11 @@
 # Class diagram — the content model
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › Class diagram · prev [lib/admin](../modules/lib-admin.md) · next [Sequence walks](sequences.md)
+
+<!-- docs-nav:end -->
+
 Two families share one root. A **quiz** and an **assessment template** are both `Record`s; only the
 assessment family has instances and parties. Everything below is a zod object in
 [`content/`](../../../content), which means every class here is a runtime validator as well as a type.
@@ -178,3 +184,9 @@ which is what makes `pnpm db:verify` able to report drift as a _named_ failure.
   guard rejects.
 - **The quiz family does not appear in the database.** Only assessment records and instances are
   seeded, which is why `lib/db/rows.ts` has no quiz mapper.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › Class diagram · prev [lib/admin](../modules/lib-admin.md) · next [Sequence walks](sequences.md)
+
+<!-- docs-nav:end -->

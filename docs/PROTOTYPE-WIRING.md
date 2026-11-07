@@ -1,5 +1,11 @@
 # Prototype wiring — the one screen that exists, what it moves into, and what must not be wired
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › Prototype wiring · prev [Legal provenance](legal/PROVENANCE.md) · next [P2 inventory](P2-INVENTORY.md)
+
+<!-- docs-nav:end -->
+
 Sprint `t_1ba42696` ended with "then — and only then — a wiring plan, one card per cohort". This is
 that plan, and it is written against the tree rather than against the sprint's premise, because the
 two disagree.
@@ -368,3 +374,14 @@ precondition is on the wiring card itself — run the merged screen at 1440×900
 sentence repeated from a PR body. With either missing the card blocks, instead of wiring a screen
 nobody signed off. That is the same gate the sprint put on cohort 5, moved to the one place where it
 still has a subject.
+
+## Related
+
+- [V1-PROTOTYPE.md](V1-PROTOTYPE.md) — the prototype screen the wiring plan moves into the build.
+- [TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md) — the three questions every new surface has to answer.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › Prototype wiring · prev [Legal provenance](legal/PROVENANCE.md) · next [P2 inventory](P2-INVENTORY.md)
+
+<!-- docs-nav:end -->

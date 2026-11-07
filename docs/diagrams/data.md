@@ -1,5 +1,11 @@
 # Schemas → fixtures → tables
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Schemas → fixtures → tables · prev [Brand boundary](brand-boundary.md) · next [Gate](gate.md)
+
+<!-- docs-nav:end -->
+
 One content model, three layers. `content/` says what a record **is**, `data/` holds the authored
 records, and the six Postgres tables are the same model in rows. The arrow that matters is the
 validator: a fixture drifts from its schema and `pnpm data:check` fails the build, which is why the
@@ -70,3 +76,9 @@ Two caveats, so the mark is read exactly:
 - [`lib/db/rows.ts`](../../lib/db/rows.ts) — the row→model mapping, and its tests.
 - [`docs/BUNDLES.md`](../BUNDLES.md) — a template or the demo dataset as one JSON document.
 - [`db/migrations/`](../../db/migrations) — plain SQL, one file per change.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Schemas → fixtures → tables · prev [Brand boundary](brand-boundary.md) · next [Gate](gate.md)
+
+<!-- docs-nav:end -->

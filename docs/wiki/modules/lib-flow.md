@@ -1,5 +1,11 @@
 # Module: `lib/flow`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › lib/flow · prev [lib/db](lib-db.md) · next [lib/member](lib-member.md)
+
+<!-- docs-nav:end -->
+
 22 modules — the two-party session, end to end: create it from a template, claim the invitation,
 submit a sheet, accept it, and project the screen a person sees. It is the oldest and most traversed
 path in the app, and it is deliberately split into **decisions** (pure, testable with literals) and
@@ -69,3 +75,9 @@ instance page contains no layout logic.
   contradiction is refused (`403`), never quietly written.
 - **A void or a lapsed membership freezes both seats**, checked under the same session lock, and the
   lapse is recorded in its own commit so the row explaining the refusal is not lost.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › lib/flow · prev [lib/db](lib-db.md) · next [lib/member](lib-member.md)
+
+<!-- docs-nav:end -->

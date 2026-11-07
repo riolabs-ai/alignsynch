@@ -1,5 +1,11 @@
 # Module: `lib/member`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › lib/member · prev [lib/flow](lib-flow.md) · next [lib/admin](lib-admin.md)
+
+<!-- docs-nav:end -->
+
 11 modules — the initiator's side of the product. Where `lib/flow` serves a session to whoever holds
 the link, `lib/member` serves an **account**: its relationships, its templates, its payment method and
 its invoices.
@@ -63,3 +69,9 @@ operations that use them. `lib/relationship/status.ts` is the state machine —
   carries the server's sentence with the trial's last instant in it.
 - **A checkout that has not completed is not a failure.** It returns the URL the browser must visit;
   nothing was written and the relationship is still `pending`.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › lib/member · prev [lib/flow](lib-flow.md) · next [lib/admin](lib-admin.md)
+
+<!-- docs-nav:end -->

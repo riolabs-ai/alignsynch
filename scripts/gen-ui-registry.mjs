@@ -66,6 +66,8 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { entryFor, navRegion } from "./docs-nav.mjs";
+
 const DEFAULT_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** The tree every read is relative to — `--root` moves it, and nothing caches across a move. */
@@ -548,6 +550,8 @@ function renderPage(structure, entries) {
 
   const out = [
     "# UI registry",
+    "",
+    ...navRegion(entryFor("docs/ui-registry.md")),
     "",
     "Every surface this tree can render, as a resource a template can pick from rather than a set" +
       " of screens somebody has to remember. This page is generated: do not edit it.",
