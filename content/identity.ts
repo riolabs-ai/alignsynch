@@ -165,7 +165,7 @@ export const zProfileFields = z
   .strict()
   .superRefine((value, ctx) => {
     const problem = countryPairProblem(value);
-    if (problem !== null) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem });
+    if (problem !== null) ctx.addIssue({ code: "custom", message: problem });
   });
 
 export type ProfileFields = z.infer<typeof zProfileFields>;
@@ -193,7 +193,7 @@ export const zUserProfile = z
   .strict()
   .superRefine((value, ctx) => {
     const problem = countryPairProblem(value);
-    if (problem !== null) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem });
+    if (problem !== null) ctx.addIssue({ code: "custom", message: problem });
   });
 
 export type UserProfile = z.infer<typeof zUserProfile>;

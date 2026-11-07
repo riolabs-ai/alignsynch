@@ -52,7 +52,7 @@ export const zQuizAnswer = z
   .superRefine((answer, ctx) => {
     if (answer.selectedOptionId === null && answer.isCorrect) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["isCorrect"],
         message: "a skipped question (selectedOptionId: null) cannot be correct",
       });
@@ -68,7 +68,7 @@ export const zQuizScore = z
   .superRefine((score, ctx) => {
     if (score.correct > score.total) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["correct"],
         message: `correct (${score.correct}) exceeds total (${score.total})`,
       });
@@ -107,7 +107,7 @@ export const zQuizResult = z
     if (answers === undefined) return;
     if (answers.length !== result.score.total) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["answers"],
         message: `the sheet has ${answers.length} answers, score.total says ${result.score.total} — the sheet IS the score`,
       });
@@ -116,7 +116,7 @@ export const zQuizResult = z
     answers.forEach((answer, index) => {
       if (seen.has(answer.questionId)) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["answers", index, "questionId"],
           message: `duplicate question "${answer.questionId}" in one sheet`,
         });
@@ -126,7 +126,7 @@ export const zQuizResult = z
     const correct = answers.filter((answer) => answer.isCorrect).length;
     if (correct !== result.score.correct) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["score", "correct"],
         message: `${correct} answers are marked correct, score.correct says ${result.score.correct}`,
       });

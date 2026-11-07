@@ -50,14 +50,14 @@ export const zContact = zPersonRef
     const isOffline = contact.status === "offline";
     if (isOffline && contact.lastSeenAt === undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["lastSeenAt"],
         message: 'lastSeenAt is required when status === "offline"',
       });
     }
     if (!isOffline && contact.lastSeenAt !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["lastSeenAt"],
         message: 'lastSeenAt must be absent when status !== "offline"',
       });
@@ -113,7 +113,7 @@ export const zConversation = z
     conversation.messages.forEach((message, index) => {
       if (seen.has(message.id)) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["messages", index, "id"],
           message: `duplicate message id "${message.id}" inside conversation "${conversation.id}"`,
         });
@@ -124,7 +124,7 @@ export const zConversation = z
       // or it is the counterparty. This is what makes the fixture's `senderId` referential.
       if (message.senderId !== CURRENT_USER_ID && message.senderId !== conversation.contactId) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["messages", index, "senderId"],
           message: `senderId "${message.senderId}" is neither "${CURRENT_USER_ID}" nor the conversation's contactId "${conversation.contactId}"`,
         });
@@ -134,7 +134,7 @@ export const zConversation = z
       const at = Date.parse(message.sentAt);
       if (at < previous) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["messages", index, "sentAt"],
           message: `messages must be in ascending sentAt order ("${message.id}" is out of order)`,
         });
