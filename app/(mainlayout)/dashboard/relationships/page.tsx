@@ -28,11 +28,7 @@ import {
   type MemberRelationshipRow,
 } from "@/lib/member/relationships";
 import { listMyTemplates, type MemberTemplateRow } from "@/lib/member/templates";
-import {
-  capturePaymentMethodAction,
-  completeRelationshipAction,
-  createRelationshipAction,
-} from "./actions";
+import { createRelationshipAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -77,8 +73,6 @@ export default async function MemberRelationshipsPage() {
         copy={dashboardRelationshipsPageCopy}
         rows={rows}
         unreadable={unreadable}
-        onCapture={capturePaymentMethodAction}
-        onComplete={completeRelationshipAction}
       />
     </div>
   );

@@ -120,15 +120,6 @@ export interface PaymentFacts {
   readonly expireReason?: string | null;
   /** The instant both sheets were sealed — the **second** `party.accepted_at`. `null` while one is missing. */
   readonly sealedAt?: Date | string | null;
-  /**
-   * The stored `charge_due_at` — `method_captured_at + METHOD_TRIAL_DAYS`, written at capture.
-   *
-   * Carried so a screen states the trial date **the row holds** rather than re-deriving it from the
-   * capture instant (#t_e9212bf9). `chargeDueAtOf()` is still the fallback for a row written
-   * before the column was populated, and both are arithmetic over stored instants — neither reads a
-   * clock.
-   */
-  readonly chargeDueAt?: Date | string | null;
   /** When each nag went out. Absent is "not sent yet" — the job's idempotency. */
   readonly reminderDay3At?: Date | string | null;
   readonly reminderDay10At?: Date | string | null;

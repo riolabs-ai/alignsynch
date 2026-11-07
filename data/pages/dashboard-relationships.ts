@@ -18,12 +18,11 @@
  * row (`publishViewOf`) so the list cannot disagree with the detail screen.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
-import { paymentDoorSections } from "./payment-door";
 
 export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
   heading: "My relationships",
   subtitle:
-    "Every relationship you started, newest first. A draft is a configuration nobody has been invited to yet; publishing one opens the session and mints the invitation. The fee belongs to activation, once both of you have answered and accepted.",
+    "Every relationship you started, newest first. A draft is a configuration nobody has been invited to yet; publishing one starts your trial (or a checkout), opens the session and mints the invitation.",
   items: [
     { id: "aspects", label: "{count} Aspects" },
     { id: "open", label: "Open" },
@@ -31,8 +30,6 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     { id: "new-template", label: "Start from a template" },
   ],
   sections: [
-    /* #t_e9212bf9 — the payment door's sentences, shared with the detail screen. */
-    ...paymentDoorSections,
     {
       id: "list",
       heading: "The list",
@@ -86,7 +83,7 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "disabled-note",
           label:
-            "Activate Relationship puts a method on file and takes the fee once both of you have accepted; Gap Analysis opens with the report.",
+            "Payment is not built yet, so Activate Relationship stays disabled. Gap Analysis opens once both people have accepted the assessment.",
         },
         { id: "last-session", label: "Started {when}" },
       ],
