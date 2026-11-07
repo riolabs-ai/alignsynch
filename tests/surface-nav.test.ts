@@ -97,20 +97,16 @@ describe("the shell's menus", () => {
 
   it("keeps every alignment destination — a status never adds or removes a row", () => {
     expect(hrefsOf(navHtml("member"))).toEqual([
-      "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",
-      "/dashboard/library",
       "/dashboard/help",
       "/dashboard/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
-      // #542 phase 2: the reader's own work, then help, then the staff group — which leads with
-      // the console hub that had no row anywhere before this card.
-      "/dashboard",
+      // #620: the reader's own two rows, then help, then the staff group — which leads with
+      // the console hub that had no row anywhere before #542 phase 2.
       "/dashboard/relationships",
       "/dashboard/templates",
-      "/dashboard/library",
       "/dashboard/help",
       "/dashboard/support",
       "/admin/console",
@@ -131,13 +127,18 @@ describe("the shell's menus", () => {
   /**
    * One active row, on every workspace page (#542 phase 1, kept by phase 2).
    *
-   * `isActive()` marks a row for its children, which lit **two** rows on `/dashboard/help`,
-   * `/dashboard/library` and `/dashboard/support`: the page's own row and Overview, because every
-   * one of them is a child of `/dashboard`. A rail that says the reader is in two places is a
-   * navigation bug no route test sees, so it is counted here: every `<a>` whose class carries the
-   * active token, by its `href` (an avatar's initials wear the same token, and are not links).
+   * `isActive()` marks a row for its children, which lit **two** rows on `/dashboard/help` and
+   * `/dashboard/support` while `/dashboard` was a row: the page's own row and Overview, because
+   * every one of them is a child of `/dashboard`. A rail that says the reader is in two places is
+   * a navigation bug no route test sees, so it is counted here: every `<a>` whose class carries
+   * the active token, by its `href` (an avatar's initials wear the same token, and are not links).
+   *
+   * **#620 removed the Overview row**, so `/dashboard` now lights nothing — the console's home is
+   * reachable by URL and by the Overview's own cards, and the two rows the rail keeps are the
+   * member's work. That is asserted, not skipped: a rail that lit a row for a page it does not
+   * draw would be the same defect in the other direction.
    */
-  it("lights exactly one row on every workspace page, Overview included", () => {
+  it("lights exactly one row on every workspace page, and none on the unrowed Overview", () => {
     const activeRowHrefs = (html: string) =>
       [...html.matchAll(/<a\b[^>]*>/g)]
         .map((match) => match[0])
@@ -155,16 +156,15 @@ describe("the shell's menus", () => {
         }),
       );
     for (const [pathname, lit] of [
-      ["/dashboard", "/dashboard"],
+      ["/dashboard", ""],
       ["/dashboard/help", "/dashboard/help"],
-      ["/dashboard/library", "/dashboard/library"],
       ["/dashboard/support", "/dashboard/support"],
       ["/dashboard/relationships", "/dashboard/relationships"],
       // A child keeps its list row lit, and does not light Overview with it.
       ["/dashboard/relationships/abc", "/dashboard/relationships"],
       ["/dashboard/templates/abc", "/dashboard/templates"],
     ]) {
-      expect(activeRowHrefs(at(pathname))).toEqual([lit]);
+      expect(activeRowHrefs(at(pathname))).toEqual(lit === "" ? [] : [lit]);
     }
   });
 });

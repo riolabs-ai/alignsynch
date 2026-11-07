@@ -49,7 +49,6 @@ const STATIC_ROUTES = [
   "/dashboard",
   // #542 phase 1 — the destinations the rail used to reach on the marketing site.
   "/dashboard/help",
-  "/dashboard/library",
   "/dashboard/support",
   // #533 phase 2 — the initiator's own CRUD: their private templates and the relationships they
   // started. Both *lists* are static routes; their detail pages are in `DYNAMIC_ROUTES` below,

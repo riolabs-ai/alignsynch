@@ -64,6 +64,30 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         { id: "read-only", label: "Read-only" },
       ],
     },
+    /**
+     * #620 — the card's own words. The four actions are the owner's labels, verbatim, and the
+     * note under them says out loud why two of the four are disabled: a person should be able to
+     * read that completion is coming rather than find four buttons where two do nothing.
+     */
+    {
+      id: "card",
+      items: [
+        { id: "template", label: "Template" },
+        { id: "with", label: "with" },
+        { id: "not-claimed", label: "Not claimed yet" },
+        { id: "aspects", label: "{count} Aspects" },
+        { id: "open-assessment", label: "Open Assessment" },
+        { id: "publish-assessment", label: "Publish Assessment" },
+        { id: "activate", label: "Activate Relationship" },
+        { id: "gap", label: "Gap Analysis" },
+        {
+          id: "disabled-note",
+          label:
+            "Payment is not built yet, so Activate Relationship stays disabled. Gap Analysis opens once both people have accepted the assessment.",
+        },
+        { id: "last-session", label: "Started {when}" },
+      ],
+    },
     {
       id: "view",
       items: [
