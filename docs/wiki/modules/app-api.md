@@ -1,5 +1,11 @@
 # Module: `app/api`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › app/api · prev [app/(marketing)](app-marketing.md) · next [components](components.md)
+
+<!-- docs-nav:end -->
+
 Thirteen route handlers — the HTTP surface that is neither a page nor a server action. They exist
 where the acceptance is a `curl`, where the answer must be a status code, or where a third party
 (a payment provider, a mail provider, a scheduler) has to be able to call in.
@@ -59,3 +65,9 @@ from the body), calls one library function, and maps the result to a status. The
   public button.
 - **A mail failure never fails a committed write.** The notice is sent _after_ the transaction and the
   route reports `pending-delivery` rather than rolling anything back.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › app/api · prev [app/(marketing)](app-marketing.md) · next [components](components.md)
+
+<!-- docs-nav:end -->

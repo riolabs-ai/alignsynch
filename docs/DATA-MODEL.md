@@ -1,5 +1,11 @@
 # Data model — AlignSynch (quizhub)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Data model · next [The two-party flow](TWO-PARTY-FLOW.md)
+
+<!-- docs-nav:end -->
+
 One typed model: `content/*.ts` zod schemas are the single source of truth; types are `z.infer`red,
 every `data/*` fixture is validated at build by `pnpm data:check` (134 tests, exit 0). A drift is a
 red build. `content/` has no React/Next import. Full history: docs/p1-migration/MIGRATION.md.
@@ -183,3 +189,14 @@ record: `selectQuizCard`→`QuizCard`, `selectQuizAuthoringCard`→`QuizAuthorin
 - Quiz results / per-question `correctPercentage` tables (observed results, not content).
 - Auth, accounts, route metadata (D14).
 - The promotion fixture's own copy — the fixture landed in B-01 (`data/promotions.ts`); this page defines the model, not the campaign.
+
+## Related
+
+- [data.md](diagrams/data.md) — the same model drawn schemas → fixtures → tables.
+- [MIGRATION.md](p1-migration/MIGRATION.md) — what the P1 model changed, field by field.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Data model · next [The two-party flow](TWO-PARTY-FLOW.md)
+
+<!-- docs-nav:end -->

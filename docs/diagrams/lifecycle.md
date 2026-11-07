@@ -1,5 +1,11 @@
 # The assessment lifecycle
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Lifecycle · next [Payment](payment.md)
+
+<!-- docs-nav:end -->
+
 One relationship, two sheets, one Gap — drawn from the three state machines that decide it. Every
 node below is a real word or file: the relationship's status column (`lib/relationship/status.ts`,
 `0030_relationship_lifecycle.sql`), the session's derived status (`lib/flow/state.ts`), and the
@@ -73,3 +79,9 @@ reach — a dead surface, which is the defect these diagrams exist to prevent.
 - [`docs/TWO-PARTY-FLOW.md`](../TWO-PARTY-FLOW.md) — the same lifecycle in prose, screen by screen.
 - [`lib/flow/store.ts`](../../lib/flow/store.ts) — the reads and writes behind each edge.
 - [`docs/pay-to-complete/SPEC.md`](../pay-to-complete/SPEC.md) — what completion costs.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Lifecycle · next [Payment](payment.md)
+
+<!-- docs-nav:end -->

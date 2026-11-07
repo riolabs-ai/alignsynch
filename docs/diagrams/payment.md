@@ -1,5 +1,11 @@
 # The money ladder
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Payment · prev [Lifecycle](lifecycle.md) · next [Brand boundary](brand-boundary.md)
+
+<!-- docs-nav:end -->
+
 A relationship is free to create. The fee is owed at **completion**, taken against a method that is
 captured up front, delayed seven days, retried three times if declined, nagged twice and expired on
 day fourteen. Every window below is arithmetic over a stored instant in
@@ -93,3 +99,9 @@ clicks "pay" is refused by name, not hidden behind a disabled button.
 - [`lib/flow/payment-jobs.ts`](../../lib/flow/payment-jobs.ts) — what the cron owes at one instant.
 - [`docs/billing.md`](../billing.md) — the billing port and its adapters.
 - [`docs/pay-to-complete/ADR.md`](../pay-to-complete/ADR.md) — the decisions this ladder implements.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Diagrams** › Payment · prev [Lifecycle](lifecycle.md) · next [Brand boundary](brand-boundary.md)
+
+<!-- docs-nav:end -->

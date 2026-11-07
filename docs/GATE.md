@@ -1,5 +1,11 @@
 # The gate — one script, two callers
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Start here** › The gate · prev [Repo layers](REPO-LAYERS.md)
+
+<!-- docs-nav:end -->
+
 Issue: [#30](https://github.com/riolabs-ai/alignsynch/issues/30) (ORD 0).
 
 Before this change the gate existed only as four `run:` lines in
@@ -36,7 +42,7 @@ Markdown is formatter-gated too: Biome 2 formats `.md`, so a hand-wrapped doc ca
 
 `scripts/verify.sh` classifies the diff against `origin/main` and prints
 `lane=docs|content|config|code`. The lane picks **depth**, never the check context: a
-docs-only change runs `git diff --check` + relative links + biome (~2 s), a `content/**`
+docs-only change runs `git diff --check` + biome (~2 s), a `content/**`
 change runs typecheck + `data:check` and **skips `next build`**, and only
 `app|components|lib|hooks` pays for the build. `GATE_LANE=full bash scripts/verify.sh`
 forces the full gate. CI still runs one job named `typecheck / lint / build`, and it
@@ -213,9 +219,12 @@ rm content/__lane_probe__.ts
 
 Two readings:
 
-- **The docs lane is 3.3 s because it runs almost nothing.** Eight executed steps and one skip:
-  `lint` 2.1 s is two-thirds of the total, `format:check` 0.4 s and the four shared scripts make
-  up the rest. No compiler, no browser, no build.
+- **The docs lane is 3.3 s because it runs almost nothing.** One skip and nine executed steps:
+  `lint` 2.1 s is two-thirds of the total, and `format:check`, `whitespace` and the shared drift
+  checks that run in every lane (`glossary`, `ui-registry`, `release:check`, `changelog:check`,
+  `docs:check`) make up the rest. No compiler, no browser, no build. `docs:check` sits where the old
+  `links` step sat, in the same lane and every other one: it resolves every relative link and image
+  in the checkout instead of only the markdown the branch happened to touch, and it costs 0.17 s.
 - **`content` is no longer cheaper than `config`.** Both pay `typecheck`, `data:check`, `test` and
   `parity`; only the build differs, and neither runs it. The 70.7 s first `content` run is a cold
   Next typegen cache (`typecheck` 25.5 s vs 5.1 s warm), not a lane difference.
@@ -393,3 +402,14 @@ Rules that keep this file honest:
   report both and say which is which. A field is not a wait.
 - If first-pass yield drops below 70 %, the local gate is missing a step CI has, or the
   runtimes differ — check the parity preflight first, never add a CI step.
+
+## Related
+
+- [REPO-LAYERS.md](REPO-LAYERS.md) — which of the four lanes a diff lands in, and why the gate costs what it costs.
+- [ITERATION.md](ITERATION.md) — the inner loop and the cohort boundary this gate sits at.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Start here** › The gate · prev [Repo layers](REPO-LAYERS.md)
+
+<!-- docs-nav:end -->

@@ -1,5 +1,11 @@
 # Module: `components`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › components · prev [app/api](app-api.md) · next [content](content.md)
+
+<!-- docs-nav:end -->
+
 41 directories, 295 `.tsx` files. One directory per feature; [`ui/`](../../../components/ui) is the
 shadcn primitives and nothing else. This page documents the shape and the rules, not an inventory.
 
@@ -63,3 +69,9 @@ conventions are load-bearing:
 - **A fixture row is imported, never pasted.** `data:check` E21 fails a module-scope record array or a
   pasted quiz title in `components/search/**`, `components/chat/**` and the header palette.
 - **No shadow on a form, no bare `Card` under `components/auth/**`** — both are lint failures.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › components · prev [app/api](app-api.md) · next [content](content.md)
+
+<!-- docs-nav:end -->

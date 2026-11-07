@@ -1,5 +1,11 @@
 # `/help` two-column layout — QA evidence
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Help two-column · prev [Contact landing](../qa-contact-land/README.md) · next [Home hero polish](../qa-home-polish/README.md)
+
+<!-- docs-nav:end -->
+
 Card: kanban `t_bdb02052`. Two owner comments on `/help`, one defect: the two-column intent
 collapsed, so a category click changed an answer far below the click, and the "need a person" band
 stacked under the form instead of sitting beside it.
@@ -68,3 +74,14 @@ sticky card room to travel; the narrow chip row is sticky against the section in
 - `sticky-1440.png` — the rail still in view at the bottom of the list
 - `quizhub-390.png` — the other brand at 390, with its own six filters (Quiz Creation included)
 - `measurements.json` — every rectangle above, as measured
+
+## Related
+
+- [UI-MAPPING.md](../UI-MAPPING.md) — the surface map `/help` is a variation of.
+- [ui-registry.md](../ui-registry.md) — the `/help` surface and its status.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Help two-column · prev [Contact landing](../qa-contact-land/README.md) · next [Home hero polish](../qa-home-polish/README.md)
+
+<!-- docs-nav:end -->

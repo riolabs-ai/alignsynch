@@ -1,5 +1,11 @@
 # Branch triage — the twelve non-main heads, sorted by what proves them safe
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Branch triage · prev [Orchestration rules](ORCHESTRATION.md) · next [The demo](DEMO.md)
+
+<!-- docs-nav:end -->
+
 `git ls-remote --heads origin` carried **13 heads on 2026-11-05**: `main`, `demo`, and eleven
 others that fell into four different kinds of thing. Treating them as one cleanup is how unlanded
 work gets deleted, so each was classified by evidence, not by its title, and only what the evidence
@@ -423,3 +429,9 @@ $ git ls-remote --heads origin             # after
 
 Local worktrees were left in place; `git worktree list` still names the old branches, whose local
 copies are the pruner's business. Deleting a remote ref cannot remove a local branch or a checkout.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Branch triage · prev [Orchestration rules](ORCHESTRATION.md) · next [The demo](DEMO.md)
+
+<!-- docs-nav:end -->

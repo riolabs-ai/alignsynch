@@ -1,5 +1,11 @@
 # The release blog
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.0.0](v1-0-0.md)
+
+<!-- docs-nav:end -->
+
 `CHANGELOG.md` is the record: 8 release entries, generated from the conventional commits on `main`,
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. It is
 correct, and it is unreadable as a story — 595 lines of commit subjects in the order they merged.
@@ -117,3 +123,9 @@ set has no frame for, the page says so rather than borrowing a nearby one.
 Newest first, the same order as the changelog. A reader who wants the argument rather than the
 history should read v1.3.0 (the flow closes), v1.4.0 (the console and the audited write) and v1.6.0
 (the payment ladder) in that order: those three are where the product stops being a prototype.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.0.0](v1-0-0.md)
+
+<!-- docs-nav:end -->

@@ -1,5 +1,11 @@
 # QA Dogfood Pass — P4 · Production build, every route
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [V1 retirement](V1-RETIREMENT.md) · next [Flow validation, 2026-11-07](qa-flow-validation/2026-11-07.md)
+
+<!-- docs-nav:end -->
+
 - **`main` sha tested:** `f5e1b00a2d1fe59419fcb5f2fe0d9eff6dfbf3e9` (`f5e1b00a`)
 - **Build:** `pnpm build` (Next.js 16.1.6, Turbopack) — exit 0, 30 static pages + dynamic routes
 - **Server:** `pnpm start` on **port 3000**, Node `v24.22.0`, pnpm `12.16.1`
@@ -184,3 +190,14 @@ Three routes render the wrong page (no `notFound()`) instead of a 404 for an unk
   pass; cross-browser. The build is served with `next start`, so no dev-only behaviour
   was exercised.
 - **Blockers:** none.
+
+## Related
+
+- [ENV-SPEC.md](ENV-SPEC.md) — the P4 gate this pass closes.
+- [GATE.md](GATE.md) — the gate the walked build had to pass first.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [V1 retirement](V1-RETIREMENT.md) · next [Flow validation, 2026-11-07](qa-flow-validation/2026-11-07.md)
+
+<!-- docs-nav:end -->

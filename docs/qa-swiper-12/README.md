@@ -1,5 +1,11 @@
 # swiper 11.2.7 → 12.2.0 — visual QA (card t_f18a9115)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › swiper 12 · prev [recharts 3](../qa-recharts-3/README.md) · next [Template catalogue](../qa-template-catalogue/README.md)
+
+<!-- docs-nav:end -->
+
 Two critical advisories (`>= 6.5.1, < 12.1.2`) are fixed by 12.1.2, so the five homepage carousels
 were migrated to 12.2.0. This folder is the visual evidence: the same carousels, rendered by the
 same page, built once from `swiper@11.2.7` and once from `swiper@12.2.0`.
@@ -47,3 +53,14 @@ across the two versions at both widths.
   element carries.
 - `quizzes-by-difficulty`'s medium and hard tabs use `components/ui/carousel.tsx`, which is
   **embla-carousel-react**, not swiper; only the easy tab is a swiper.
+
+## Related
+
+- [ui-registry.md](../ui-registry.md) — the surfaces that render the carousels.
+- [README.md](../qa-v1x-ui-cohort/README.md) — the UI cohort this dependency move belongs to.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › swiper 12 · prev [recharts 3](../qa-recharts-3/README.md) · next [Template catalogue](../qa-template-catalogue/README.md)
+
+<!-- docs-nav:end -->

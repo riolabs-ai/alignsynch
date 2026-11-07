@@ -1,5 +1,11 @@
 # The QuizHub capability map
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › QuizHub capability map · prev [Two brands, one tree](BRAND-RELEASE.md) · next [Quiz-surface map](UI-MAPPING.md)
+
+<!-- docs-nav:end -->
+
 Every surface the quiz expression can put in front of a reader, what each one is actually made of
 today, and what it would cost to make it what it looks like. This is the registry the template
 doctrine refers to: **what this template can do**, so a future brand picks from it instead of
@@ -607,3 +613,9 @@ it was written to catch.
   it cost" — the two questions a brand asks before it claims a surface.
 - **Not a decision about any brand.** Which of these AlignSynch claims is [TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md)'s
   question; this page only records what is there to claim.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › QuizHub capability map · prev [Two brands, one tree](BRAND-RELEASE.md) · next [Quiz-surface map](UI-MAPPING.md)
+
+<!-- docs-nav:end -->

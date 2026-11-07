@@ -1,5 +1,11 @@
 # quizhub — the code wiki
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Code wiki** › Code wiki index · next [Getting started](getting-started.md)
+
+<!-- docs-nav:end -->
+
 A Next.js 16 App Router application that ships **two products from one tree**: QuizHub and
 AlignSynch. `BRAND` picks which one a build serves; the code, the fixtures and the database schema
 are shared.
@@ -98,3 +104,9 @@ Node 24, `pnpm install --frozen-lockfile`, `pnpm dev`. See [getting-started.md](
   fresh clone, and imported by nothing.
 - No database migration history: [`db/migrations/`](../../db/migrations) is 39 numbered SQL files and
   [`docs/DATA-MODEL.md`](../DATA-MODEL.md) already narrates them.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Code wiki** › Code wiki index · next [Getting started](getting-started.md)
+
+<!-- docs-nav:end -->

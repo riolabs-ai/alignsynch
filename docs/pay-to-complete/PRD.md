@@ -1,5 +1,11 @@
 # PRD — a relationship is paid for once, at completion
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › PRD · prev [Pay-to-complete set](README.md) · next [Technical spec](SPEC.md)
+
+<!-- docs-nav:end -->
+
 **Release:** `v1.6.0` · **Issues:** #619 (payment), #623 (CRUD) · **Status:** decided, build in flight
 **Owner decisions:** 2026-11-07, recorded on #619 · **Research:** [RESEARCH.md](RESEARCH.md) ·
 **Technical spec:** [SPEC.md](SPEC.md) · **Decisions:** [ADR.md](ADR.md)
@@ -195,3 +201,9 @@ _Acceptance:_ after this release neither control is `disabled`, and their hrefs 
 3. **Needs-action charges** — if an unattended charge needs the payer present, email a link or expire?
 
 None of the three blocks the build; each blocks the **release**.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › PRD · prev [Pay-to-complete set](README.md) · next [Technical spec](SPEC.md)
+
+<!-- docs-nav:end -->

@@ -1,5 +1,11 @@
 # #539 — v1.x UI polish cohort, evidence
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › v1.x UI cohort · prev [Template catalogue](../qa-template-catalogue/README.md)
+
+<!-- docs-nav:end -->
+
 Ten owner items, one cohort. Every number below is measured in a real browser against the built
 app: **before** = `origin/main` at `6b8ea138` (its own production build, `BRAND=alignsynch`),
 **after** = this branch's build, same brand, same viewport, same session.
@@ -68,3 +74,14 @@ faintest thing in the chart.
 - **Item 2's histogram** lives on `/admin/gaps`, which is behind the same gate. The scale is
   therefore shown as a swatch built from the live tokens plus the contrast read; the hero ground
   that consumes the same two stops is visible in the home screenshots.
+
+## Related
+
+- [UI-MAPPING.md](../UI-MAPPING.md) — the surface map every item in this cohort moved.
+- [ui-registry.md](../ui-registry.md) — the surfaces these frames capture.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › v1.x UI cohort · prev [Template catalogue](../qa-template-catalogue/README.md)
+
+<!-- docs-nav:end -->

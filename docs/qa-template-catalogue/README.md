@@ -1,5 +1,11 @@
 # Template catalogue — the pages, looked at
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Template catalogue · prev [swiper 12](../qa-swiper-12/README.md) · next [v1.x UI cohort](../qa-v1x-ui-cohort/README.md)
+
+<!-- docs-nav:end -->
+
 Four screenshots from the AlignSynch build (`BRAND=alignsynch pnpm build`, `next start` on a free
 port), captured at 1440×900 and 390×844 through Chrome's device emulation, with `innerWidth`
 checked against the target after every override. They exist because a string assertion cannot tell
@@ -56,3 +62,14 @@ filter is showing. The page is 5,804 px at 1440 and no card is taller than its r
 The one deliberate asymmetry left is `Parent & Child`, whose summary is longer than the 27 derived
 records': it is the hand-authored starter template from #409, and rewriting its copy is not this
 card's business.
+
+## Related
+
+- [catalogue.md](../specs/catalogue.md) — the specification the catalogue pages implement.
+- [BUNDLES.md](../BUNDLES.md) — how a template travels as a bundle.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Template catalogue · prev [swiper 12](../qa-swiper-12/README.md) · next [v1.x UI cohort](../qa-v1x-ui-cohort/README.md)
+
+<!-- docs-nav:end -->
