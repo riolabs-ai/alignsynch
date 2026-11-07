@@ -702,6 +702,12 @@ export function shellCopy(brand: Brand): PageCopy {
         items: [
           { id: "field-label", label: "Email address" },
           /**
+           * The honeypot's label — never drawn, never read, and it must not describe a real field
+           * (a script that looks for "email" fills the wrong input, which is the point). Blank is
+           * the honest value: nothing a person or a screen reader should ever reach.
+           */
+          { id: "honeypot", label: "Leave this field empty" },
+          /**
            * No address-shaped placeholder (owner, 2026-11-02): the sweep in
            * `tests/public-contact.test.tsx` reads every string in this fixture for an
            * address, and `you@example.com` is one — a placeholder a visitor can copy is the

@@ -30,7 +30,7 @@
  */
 import type { DeliveryState, MessageStatus, ReplyState } from "@/lib/admin/inbox";
 import { deliveryStateOf, throttleStateOf, type RecipientEvent } from "@/lib/admin/inbox";
-import { CONTACT_RATE_WINDOW_MS } from "@/lib/contact/limits";
+import { CONTACT_RATE_WINDOW_MS } from "@/lib/forms/guard";
 import { getPool, queryRows } from "@/lib/db/client";
 
 /** How many rows the list draws. The queue is worked newest-first; a hundred is a screenful × 4. */

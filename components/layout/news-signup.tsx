@@ -25,10 +25,18 @@
  * submission so the row records where the signup came from. The route re-checks it: a posted path
  * that is not root-relative is stored as `/`, because that value is also what a no-JavaScript
  * submit is redirected with.
+ *
+ * **The two fields a person never sees (#615).** The honeypot (`website`) is rendered hidden, out
+ * of the tab order and out of the accessibility tree — a person leaves it empty and a script fills
+ * whatever it finds. The signed `fillToken` is fetched from this same endpoint at mount: the route
+ * mints `"<ms>.<hmac>"` there because the footer renders on prerendered pages, where a timestamp
+ * baked into the HTML would be as old as the build and prove nothing. Both failures are answered
+ * by the route with the ordinary success sentence, so nothing here has to know a bot was dropped —
+ * and nothing here can leak that knowledge either.
  */
 import { Mail } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type React from "react";
 import type { PageCopySection } from "@/content/pages";
 import { type NewsSignupState, newsSignupStateOf } from "@/lib/news/states";
@@ -60,10 +68,42 @@ function stateOf(body: unknown): NewsSignupState {
 
 export function NewsSignup({ section }: { section: PageCopySection }) {
   const [status, setStatus] = useState<FormStatus>("idle");
+  const [fillToken, setFillToken] = useState("");
   const path = usePathname() ?? "/";
   const fieldId = useId();
   const headingId = useId();
   const statusId = useId();
+  const honeypotId = useId();
+
+  /**
+   * Ask for a signed start instant, once, when the form appears.
+   *
+   * A failure is not surfaced: the route treats a submission with no token as one that could not
+   * carry timing evidence (a no-JavaScript post looks the same), so the worst case is a submit
+   * the honeypot and the window still guard. A `bot-status` band for a failed `GET` would tell a
+   * visitor about plumbing they cannot act on.
+   */
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      try {
+        const response = await fetch(NEWS_SIGNUP_ENDPOINT, {
+          headers: { accept: "application/json" },
+        });
+        const body: unknown = await response.json();
+        const token =
+          typeof body === "object" && body !== null && "token" in body
+            ? (body as { token?: unknown }).token
+            : undefined;
+        if (live) setFillToken(typeof token === "string" ? token : "");
+      } catch {
+        // No token: see above.
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -111,6 +151,18 @@ export function NewsSignup({ section }: { section: PageCopySection }) {
             className="flex flex-col gap-3 sm:flex-row sm:items-start"
           >
             <input type="hidden" name="source" value={path} />
+            <input type="hidden" name="fillToken" value={fillToken} />
+            {/*
+              The honeypot. `hidden` keeps it out of the layout, `aria-hidden` out of the
+              accessibility tree, and `tabIndex={-1}` out of the tab order — a person with a
+              keyboard never lands in it. The label is `sr-only` rather than absent so the field
+              is not an unlabelled input for a stray screen reader; its words are the fixture's
+              like every other string here.
+            */}
+            <div className="hidden" aria-hidden="true">
+              <label htmlFor={honeypotId}>{itemLabel(section, "honeypot")}</label>
+              <input id={honeypotId} name="website" type="text" tabIndex={-1} autoComplete="off" />
+            </div>
             <label htmlFor={fieldId} className="sr-only">
               {itemLabel(section, "field-label")}
             </label>
@@ -157,6 +209,7 @@ export const NEWS_SIGNUP_ITEM_IDS = [
   "placeholder",
   "submit",
   "pending",
+  "honeypot",
   ...Object.values(MESSAGE_ITEM),
   "confirm-subject",
   "confirm-body",

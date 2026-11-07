@@ -35,7 +35,7 @@ import {
   setMessageStatus,
 } from "@/lib/admin/inbox-ops";
 import type { ReplyMail, ReplySend } from "@/lib/contact/reply";
-import { CONTACT_RATE_MAX, CONTACT_RATE_WINDOW_MS } from "@/lib/contact/limits";
+import { CONTACT_RATE_MAX, CONTACT_RATE_WINDOW_MS } from "@/lib/forms/guard";
 import type { InboxMessage } from "@/lib/db/admin-inbox";
 
 /* ------------------------------------------------------------------ *
