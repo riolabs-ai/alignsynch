@@ -127,7 +127,7 @@ jobs:
       # `if-no-files-found: ignore` because most failures are not parity failures.
       - name: parity artifacts (full HTML of any route that drifted)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: parity-artifacts-${{ matrix.brand }}
           path: tests/parity/artifacts/
