@@ -216,6 +216,11 @@ rewritten to state the decision instead of hiding it: _"Preview deployments are 
 builds. Run `vercel deploy` by hand if you need a preview."_ That last sentence is the route
 [below](#a-preview-for-review-one-command-and-the-toolbar-with-it) automates.
 
+A branch push on that date produced **no record at all**, not a `CANCELED` one: `vercel ls` was
+identical before and after pushing `alignsynch/t_34d47fd0-…` and waiting three minutes, so the
+`ignoreCommand` was never consulted. Disabled creation is upstream of the rule, which is why a
+preview has to be asked for.
+
 Turning previews on takes two changes that have to agree, and only one of them is in this
 repository:
 
