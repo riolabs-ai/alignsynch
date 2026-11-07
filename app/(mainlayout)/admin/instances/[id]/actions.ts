@@ -31,6 +31,12 @@
 import { currentUser } from "@/lib/auth/session";
 import { ActRefused } from "@/lib/admin/act";
 import { OpRefused } from "@/lib/admin/relationship-ops";
+import { validateTemplateRecord } from "@/lib/admin/template-draft";
+import { queryRows } from "@/lib/db/client";
+import { editRelationship, previewRelationshipEdit } from "@/lib/member/relationship-edit";
+import { MemberRefused } from "@/lib/member/publish-basis";
+import type { EditOutcome, EditPreviewOutcome } from "@/lib/member/outcomes";
+import type { EditDraft } from "@/lib/relationship/edit-view";
 import {
   forceCloseSeat,
   resendInvite,
@@ -50,6 +56,174 @@ import type { PartyRole } from "@/content/assessment";
  */
 export type { RepairInput, RepairOutcome } from "@/lib/admin/repairs";
 
+/**
+ * #623 — the console's edit of somebody else's relationship.
+ *
+ * The URL names the *session* record, and every edit is a relationship-level write, so the id is
+ * resolved here (`session.relationship_id`) rather than guessed from the string. `audience:
+ * "staff"` is what makes the library accept a row whose `initiator_user_id` is somebody else — and
+ * it reads the actor's rung out of `user_profile` inside the same transaction, so a member who
+ * posts this action is refused there rather than here.
+ */
+export async function editRelationshipAsStaff(input: {
+  instanceRecordId?: string;
+  record?: unknown;
+  versionId?: string | null;
+  counterpartyName?: string;
+  counterpartyEmail?: string;
+  inviteDays?: number;
+  reason?: string;
+  confirm?: boolean;
+}): Promise<EditOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const instanceRecordId =
+    typeof input?.instanceRecordId === "string" ? input.instanceRecordId : "";
+  if (instanceRecordId === "") return { ok: false, code: "no-such-relationship" };
+
+  const relationshipId = await relationshipIdOf(instanceRecordId);
+  if (relationshipId === null) return { ok: false, code: "no-such-relationship" };
+
+  const draft = await draftOf(input, relationshipId);
+  if (!draft.ok) return draft;
+
+  try {
+    const result = await editRelationship({
+      actorUserId: user.userId,
+      relationshipId,
+      audience: "staff",
+      reason: text(input.reason) || "edit the relationship from the console",
+      draft: draft.value,
+      confirmInvalidation: input.confirm === true,
+    });
+    return {
+      ok: true,
+      actionId: result.actionId,
+      status: result.after.status,
+      version: result.after.version,
+      discardedAnswers: result.after.discardedAnswers,
+    };
+  } catch (error) {
+    if (error instanceof ActRefused) return { ok: false, code: error.reason };
+    if (error instanceof MemberRefused) {
+      return { ok: false, code: error.reason, message: error.message };
+    }
+    throw error;
+  }
+}
+
+/** #623 — the same cost question, asked by the console before an operator commits a change. */
+export async function previewRelationshipEditAsStaff(input: {
+  instanceRecordId?: string;
+  record?: unknown;
+  versionId?: string | null;
+  counterpartyName?: string;
+  counterpartyEmail?: string;
+  inviteDays?: number;
+}): Promise<EditPreviewOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const instanceRecordId =
+    typeof input?.instanceRecordId === "string" ? input.instanceRecordId : "";
+  if (instanceRecordId === "") return { ok: false, code: "no-such-relationship" };
+
+  const relationshipId = await relationshipIdOf(instanceRecordId);
+  if (relationshipId === null) return { ok: false, code: "no-such-relationship" };
+
+  const draft = await draftOf(input, relationshipId);
+  if (!draft.ok) return draft;
+
+  try {
+    const preview = await previewRelationshipEdit({
+      actorUserId: user.userId,
+      relationshipId,
+      audience: "staff",
+      draft: draft.value,
+    });
+    return {
+      ok: true,
+      blocked: preview.blocked,
+      invalidations: preview.invalidations,
+      state: preview.state,
+    };
+  } catch (error) {
+    if (error instanceof ActRefused) return { ok: false, code: error.reason };
+    if (error instanceof MemberRefused) {
+      return { ok: false, code: error.reason, message: error.message };
+    }
+    throw error;
+  }
+}
+
+/** The relationship a console session belongs to, or `null` for an id this app does not audit. */
+async function relationshipIdOf(instanceRecordId: string): Promise<string | null> {
+  const rows = await queryRows<{ relationship_id: string }>(
+    `SELECT s.relationship_id FROM session s
+       JOIN record r ON r.id = s.record_id
+      WHERE s.record_id = $1 AND r.record_type = 'assessment'`,
+    [instanceRecordId],
+  );
+  return rows[0]?.relationship_id ?? null;
+}
+
+/** The posted record, validated exactly as a save validates it — one validator, one answer. */
+async function draftOf(
+  input: {
+    record?: unknown;
+    versionId?: string | null;
+    counterpartyName?: string;
+    counterpartyEmail?: string;
+    inviteDays?: number;
+  },
+  relationshipId: string,
+): Promise<{ ok: true; value: EditDraft } | { ok: false; code: string; message?: string }> {
+  const posted = input?.record;
+  if (typeof posted !== "object" || posted === null || Array.isArray(posted)) {
+    return { ok: false, code: "invalid-draft" };
+  }
+  const body: Record<string, unknown> = {
+    ...(posted as Record<string, unknown>),
+    type: "assessment",
+    status: "draft",
+  };
+  const parsed = validateTemplateRecord(body);
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      code: "invalid-draft",
+      message: parsed.problems.map((problem) => `${problem.path}: ${problem.message}`).join("; "),
+    };
+  }
+  const relationship = await queryRows<{ template_id: string }>(
+    "SELECT template_id FROM relationship WHERE id = $1",
+    [relationshipId],
+  );
+  const templateId = relationship[0]?.template_id;
+  if (templateId === undefined) return { ok: false, code: "no-such-relationship" };
+  return {
+    ok: true,
+    value: {
+      record: { ...parsed.record, id: templateId },
+      versionId: input.versionId ?? null,
+      ...(input.counterpartyName === undefined
+        ? {}
+        : { counterpartyName: text(input.counterpartyName) }),
+      ...(input.counterpartyEmail === undefined
+        ? {}
+        : { counterpartyEmail: text(input.counterpartyEmail) }),
+      ...(input.inviteDays === undefined ? {} : { inviteDays: input.inviteDays }),
+    },
+  };
+}
+
+/** A payload field as a trimmed string; anything else is empty, so a refusal names the hole. */
+function text(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/** The seat a repair names, or `null` for anything that is not one of the two roles. */
 function seatOf(value: string | undefined): PartyRole | null {
   return value === "initiator" || value === "counterparty" ? value : null;
 }

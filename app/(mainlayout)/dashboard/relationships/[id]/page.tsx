@@ -25,13 +25,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
+import { RelationshipEditPanel } from "@/components/relationship/relationship-edit-panel";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
+import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import {
-  capturePaymentMethodAction,
-  completeRelationshipAction,
+  editRelationshipAction,
+  previewRelationshipEditAction,
   publishRelationshipAction,
   republishInviteAction,
   saveAspectsAction,
@@ -44,21 +46,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** `?payment=captured|failed` → the band's one-visit notice. A value this build does not know renders nothing. */
-function returnStateOf(value: string | undefined): "captured" | "failed" | undefined {
-  return value === "captured" || value === "failed" ? value : undefined;
-}
-
 export default async function MemberRelationshipPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ payment?: string }>;
 }) {
   const { user } = await requireRole("member", { next: MEMBER_RELATIONSHIPS_PATH });
   const { id } = await params;
-  const { payment } = await searchParams;
 
   let view: Awaited<ReturnType<typeof readMyRelationship>>;
   try {
@@ -79,6 +73,24 @@ export default async function MemberRelationshipPage({
   }
   if (view === undefined) notFound();
 
+  /*
+   * #623 — the edit surface, read beside the view rather than inside it.
+   *
+   * Two reads because they answer different questions: `readMyRelationship` is what the screen
+   * draws, and this is what an *edit* would need (the pin's versions, the invitation's window, and
+   * the per-seat answer counts that make a cost printable). A failure here is not a 404 — the page
+   * still renders; the edit band is simply absent, because a relationship that cannot be edited is
+   * not a relationship that cannot be read.
+   */
+  let editState: Awaited<ReturnType<typeof readRelationshipEditState>>;
+  try {
+    editState = await readRelationshipEditState({ actorUserId: user.userId, relationshipId: id });
+  } catch (error) {
+    if (!(error instanceof DatabaseUnavailableError)) throw error;
+    console.error("member-relationship: the edit state could not be read", error);
+    editState = undefined;
+  }
+
   return (
     <div className="space-y-6">
       <header className="space-y-2">
@@ -98,10 +110,15 @@ export default async function MemberRelationshipPage({
         onSaveAspects={saveAspectsAction}
         onPublish={publishRelationshipAction}
         onRepublish={republishInviteAction}
-        onCapture={capturePaymentMethodAction}
-        onComplete={completeRelationshipAction}
-        {...(returnStateOf(payment) === undefined ? {} : { returnState: returnStateOf(payment) })}
       />
+      {editState === undefined || editState.closed ? null : (
+        <RelationshipEditPanel
+          copy={dashboardRelationshipDetailPageCopy}
+          state={editState}
+          onPreview={previewRelationshipEditAction}
+          onEdit={editRelationshipAction}
+        />
+      )}
     </div>
   );
 }

@@ -52,15 +52,12 @@
  */
 import { act, type ActResult, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
-import type { Assessment } from "@/content/assessment";
+import type { AlignmentSetting, Assessment, AssessmentMode } from "@/content/assessment";
 import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
 import { billingProvider } from "@/lib/billing";
 import { readActiveSubscription } from "@/lib/db/billing";
 import { queryRows } from "@/lib/db/client";
 import { openPaymentObligation } from "@/lib/db/relationship-payment";
-import type { PaymentFacts } from "@/lib/flow/payment";
-import { type PaymentDoor, paymentDoorOf } from "@/lib/member/payment-door";
-import { relationshipFeeCents } from "@/lib/member/payment";
 import {
   assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
@@ -155,17 +152,6 @@ export interface MemberRelationshipRow {
   /** The assessment round that exists once the relationship is published; `null` before. */
   readonly sessionRecordId: string | null;
   readonly aspectCount: number;
-  /**
-   * #t_e9212bf9 — the payment door: what this relationship owes, and whether the fee may be taken
-   * now. `null` for every reader who is not the relationship's **payer** (ADR-8: the counterparty
-   * never sees billing state — no amount, no date, no method, no decline).
-   *
-   * The payer is `relationship_payment.payer_user_id`, which is the relationship's original
-   * initiator and not the seat role of the latest round: a counterparty who opened a second round
-   * reads as `initiator` on that session and still pays nothing, so a band keyed on the seat role
-   * would draw somebody else's money for them.
-   */
-  readonly payment: PaymentDoor | null;
   /** The invitation, when one exists. `null` is "not sent yet" (or a defect, see `view`). */
   readonly invite: {
     readonly claimed: boolean;
@@ -200,18 +186,6 @@ interface RelationshipQueryRow {
   readonly claimed: boolean | null;
   readonly revoked: boolean | null;
   readonly expires_at: Date | string | null;
-  /* #t_e9212bf9 — the obligation, joined rather than read twice (one statement, one instant). */
-  readonly payer_user_id: string | null;
-  readonly method_captured_at: Date | string | null;
-  readonly charge_due_at: Date | string | null;
-  readonly payment_charged_at: Date | string | null;
-  readonly charge_attempts: number | null;
-  readonly first_failed_at: Date | string | null;
-  readonly payment_expired_at: Date | string | null;
-  readonly charge_amount_cents: number | null;
-  readonly sealed_at: Date | string | null;
-  /** How many of the latest round's two seats have accepted. `2` is "both sheets sealed". */
-  readonly accepted_count: number;
 }
 
 /**
@@ -230,16 +204,7 @@ const RELATIONSHIP_COLUMNS = `
   inv.counterparty_name,
   (inv.claimed_at IS NOT NULL) AS claimed,
   (inv.revoked_at IS NOT NULL) AS revoked,
-  inv.expires_at,
-  rp.payer_user_id, rp.method_captured_at, rp.charge_due_at,
-  rp.charged_at AS payment_charged_at, rp.charge_attempts, rp.first_failed_at,
-  rp.expired_at AS payment_expired_at, rp.charge_amount_cents,
-  (SELECT max(p.accepted_at)
-     FROM party p
-     JOIN session s2 ON s2.record_id = p.session_record_id
-    WHERE s2.relationship_id = rel.id) AS sealed_at,
-  (SELECT count(*)::int FROM party p
-    WHERE p.session_record_id = s.record_id AND p.accepted_at IS NOT NULL) AS accepted_count
+  inv.expires_at
 `;
 
 const RELATIONSHIP_FROM = `
@@ -253,7 +218,6 @@ const RELATIONSHIP_FROM = `
      LIMIT 1
   ) s ON true
   LEFT JOIN session_invite inv ON inv.session_record_id = s.record_id
-  LEFT JOIN relationship_payment rp ON rp.relationship_id = rel.id
 `;
 
 function instantOf(value: Date | string): string {
@@ -264,7 +228,6 @@ function relationshipOf(
   row: RelationshipQueryRow,
   now: Date,
   subscription: TrialFacts | null,
-  viewerUserId: string | null,
 ): MemberRelationshipRow {
   const status = row.status as RelationshipStatus;
   const invite =
@@ -285,7 +248,6 @@ function relationshipOf(
     publishedAt: row.published_at === null ? null : instantOf(row.published_at),
     sessionRecordId: row.session_record_id,
     aspectCount: Number(row.aspect_count),
-    payment: paymentDoorRowOf(row, now, viewerUserId),
     invite,
     counterpartyName: row.counterparty_name,
     view: publishViewOf({ status, invite, now }),
@@ -297,44 +259,6 @@ function relationshipOf(
       now,
     }),
   };
-}
-
-/**
- * The payment door for one row — `null` for every reader who is not its payer.
- *
- * ADR-8 in one expression: the counterparty's card keeps "waiting for <name> to publish" and is
- * handed no amount, no instant and no method, because the read never produced them. `payer_user_id`
- * is `NOT NULL` on the table, so a joined row is always somebody; `null` here means the join found
- * no obligation (a relationship created before `0036`) *or* the reader is not the payer — and both
- * answers are "draw no money", which is why one absence is enough.
- *
- * `sealed` is `accepted_count >= 2`: a party may only accept a sheet they have answered in full, so
- * two acceptances on the latest round is the same fact `sealedOf()` computes from four counts.
- */
-function paymentDoorRowOf(
-  row: RelationshipQueryRow,
-  now: Date,
-  viewerUserId: string | null,
-): PaymentDoor | null {
-  if (row.payer_user_id === null) return null;
-  if (viewerUserId === null || row.payer_user_id !== viewerUserId) return null;
-  const facts: PaymentFacts = {
-    methodCapturedAt: row.method_captured_at,
-    chargeDueAt: row.charge_due_at,
-    chargedAt: row.payment_charged_at,
-    chargeAttempts: row.charge_attempts,
-    firstFailedAt: row.first_failed_at,
-    expiredAt: row.payment_expired_at,
-    sealedAt: row.sealed_at,
-  };
-  return paymentDoorOf({
-    facts,
-    sealed: Number(row.accepted_count) >= 2,
-    // The amount the payer read is the amount the charge will ask for: the row's own recorded
-    // attempt when there is one, else the tier every path defaults to.
-    amountCents: row.charge_amount_cents ?? relationshipFeeCents(),
-    now,
-  });
 }
 
 /** Every relationship this member started, newest first. */
@@ -353,7 +277,7 @@ export async function listMyRelationships(
   // per row would be the same query N times and could return two different answers if a payment
   // landed between two of them.
   const subscription = rows.length === 0 ? null : await readActiveSubscription(userId);
-  return rows.map((row) => relationshipOf(row, now, subscription, userId));
+  return rows.map((row) => relationshipOf(row, now, subscription));
 }
 
 /** The detail screen's view: the row above, plus the Aspects it configures. */
@@ -434,7 +358,7 @@ export async function readMyRelationship(
   if (primary === undefined) return undefined;
 
   const subscription = await readActiveSubscription(userId);
-  const base = relationshipOf(row, now, subscription, userId);
+  const base = relationshipOf(row, now, subscription);
   const trial = trialStateOf(subscription, now);
   // #533 phase 3 — derived at the instant the page was handed, never written here (a render may
   // not write). The same function the claim and the answer submit refuse with, so the band and the
@@ -526,8 +450,11 @@ async function latestVersion(sql: ActSql, templateId: string): Promise<number> {
  * `published_by` is the actor, because a member's snapshot is a real publication of those words to
  * their own relationship — it is not the catalogue's publish (`template.publish`, admin-floored);
  * `record.status` stays `draft` and the catalogue never sees it.
+ *
+ * Exported for `lib/member/relationship-edit.ts` (#623): an edit after the invitation went out
+ * writes the same next version through the same statements, so the pin moves in exactly one way.
  */
-async function snapshotVersion(
+export async function snapshotVersion(
   sql: ActSql,
   input: {
     readonly templateId: string;
@@ -903,6 +830,20 @@ export interface PublishRequest {
   readonly initiatorEmail: string | null;
   readonly counterpartyName: string;
   readonly email: string;
+  /**
+   * #623 — the mode and the Setting the session opens under.
+   *
+   * They are chosen **here** and not on the edit screen, and that is a schema fact rather than a
+   * preference: both are columns of `session`, and `db:verify` V18 refuses an `UPDATE session` that
+   * touches them once the row exists (a scored session is immutable). Publish is the last instant
+   * at which they can be a choice — before it there is no row, after it there is a sheet whose
+   * answers were shaped by the mode that was written.
+   *
+   * Absent means `basic`/`soft`, which is what this call hard-coded before #623 and what a caller
+   * that has not been taught to ask still gets.
+   */
+  readonly mode?: AssessmentMode;
+  readonly setting?: AlignmentSetting;
   /** Where a hosted checkout sends the browser back to. */
   readonly returnUrl: string;
   readonly now?: Date;
@@ -1128,8 +1069,15 @@ export async function publishRelationship(
         await sql.query(
           `INSERT INTO session
              (record_id, template_record_id, mode, alignment_setting, relationship_id, round)
-           VALUES ($1, $2, 'basic', 'soft', $3, $4)`,
-          [sessionRecordId.id, rel.template_id, rel.id, nextRound],
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            sessionRecordId.id,
+            rel.template_id,
+            request.mode ?? "basic",
+            request.setting ?? "soft",
+            rel.id,
+            nextRound,
+          ],
         );
 
         await sql.query(

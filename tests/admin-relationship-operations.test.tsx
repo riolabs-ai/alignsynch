@@ -54,6 +54,7 @@ function seat(overrides: Partial<AdminSeat> = {}): AdminSeat {
 function detail(overrides: Partial<AdminRelationshipDetail> = {}): AdminRelationshipDetail {
   return {
     instanceRecordId: "inst-1",
+    relationshipId: "relationship-inst-1",
     slug: "avery-rowan",
     name: "Avery & Rowan",
     templateTitle: "Parent & Child",

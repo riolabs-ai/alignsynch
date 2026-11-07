@@ -945,6 +945,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "domain",
+    surface: "components/relationship",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The relationship edit surface (#623): one panel that edits every field a created relationship carries — title, summary, Aspects, the template-version pin, the counterparty's name and address, the invitation window — with the cost of the change priced from rows and printed before the save.",
+    notes:
+      'Reads nothing itself: `readRelationshipEditState()` runs on the route (the panel is a client component and may not reach `lib/db/client`, E34), so the domain is `mock` while both mounts, `/dashboard/relationships/[id]` and `/admin/instances/[id]`, are `db`. One panel, two mounts, one action: staff pass `audience: "staff"` rather than a second screen or a second name. The authority is the ownership/rung check inside `lib/member/relationship-edit.ts`, never a prop. `data/pages/dashboard-relationship-detail.ts` and `data/pages/admin-relationship.ts` each hold the words under one `edit` section (E23 budget 0 on both routes).',
+  },
+  {
+    kind: "domain",
     surface: "components/chat",
     status: "fixture",
     templates: [],
@@ -1001,9 +1011,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub"],
     capability:
-      "The dashboard's components: the retired prototype shell (overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes) beside the live member surfaces — the relationship list, one relationship's detail with its payment band, and the create step.",
+      "The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.",
     notes:
-      "Two generations live side by side. The prototype shell — overview, affiliate and wallet panes, the earnings chart, my-quizzes, settings, the template gallery and shelf — is rendered by no route any more: /dashboard/user is the account home since #164, and only `dashboard-page.tsx` imports the panes, so that half is a candidate to delete or relayout rather than a surface to pick. The member half is live: `relationship-cards.tsx` is `/dashboard/relationships`' list, `relationship-detail.tsx` is `/dashboard/relationships/[id]`, `relationship-create.tsx` is the create step, and `relationship-payment.tsx` (#t_e9212bf9) is the payment band and its two controls. That last one takes `relationship-detail.tsx`'s band as its template — same border, same heading, same item rows — and varies it on one axis: the content is billing facts plus two writers, so it is drawn twice, once inside the detail's own band and once inside a card's action row, which is why every word arrives as a prop from `data/pages/payment-door.ts` (E23 budget 0 on the component, because a literal there would need duplicating in two route fixtures).",
+      "No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.",
   },
   {
     kind: "domain",

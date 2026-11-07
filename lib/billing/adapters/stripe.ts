@@ -505,10 +505,6 @@ export class StripeBillingAdapter implements BillingPort {
     const separator = request.successUrl.includes("?") ? "&" : "?";
     const form = new URLSearchParams({
       mode: "setup",
-      // Stripe requires `currency` on a setup-mode session (it prices the zero-value setup intent):
-      // without it the POST answers 400 `Missing required param: currency` and the door never opens.
-      // Measured against the test-mode API, not inferred from the docs.
-      currency: STRIPE_CURRENCY,
       success_url: `${request.successUrl}${separator}capture={CHECKOUT_SESSION_ID}`,
       cancel_url: request.cancelUrl,
       client_reference_id: request.userId,

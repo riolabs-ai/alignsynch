@@ -163,7 +163,6 @@ export function paymentFactsOf(snapshot: PaymentSnapshot): PaymentFacts | null {
 export function rowFacts(row: RelationshipPaymentRow, sealedAt: Date | null): PaymentFacts {
   return {
     methodCapturedAt: row.method_captured_at,
-    chargeDueAt: row.charge_due_at,
     chargedAt: row.charged_at,
     chargeAttempts: row.charge_attempts,
     firstFailedAt: row.first_failed_at,
