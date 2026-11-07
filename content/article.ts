@@ -322,7 +322,7 @@ export const zArticleCollection = z
       list.forEach((article, i) => {
         if (ids.has(article.id)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: [field, i, "id"],
             message: `duplicate article id "${article.id}" (ids are globally unique, kind-prefixed)`,
           });
@@ -332,7 +332,7 @@ export const zArticleCollection = z
         const key = `${article.kind}:${article.slug}`;
         if (slugs.has(key)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: [field, i, "slug"],
             message: `duplicate ${article.kind} slug "${article.slug}" (slugs are URLs: unique per kind, never reused)`,
           });

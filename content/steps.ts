@@ -163,7 +163,7 @@ export const zStep = z
     // and an authored Step with one claims a provenance it does not have.
     if (step.derivedFrom.length > 0 && step.suggestedText === undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["suggestedText"],
         message:
           "A Step derived from a Gap keeps the suggestion that explains it (suggestedText); only an authored Step, with an empty derivedFrom, may omit it.",
@@ -171,7 +171,7 @@ export const zStep = z
     }
     if (step.derivedFrom.length === 0 && step.suggestedText !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["suggestedText"],
         message:
           "An authored Step came from no Gap and has no suggestion: an empty derivedFrom and a suggestedText cannot both be true.",

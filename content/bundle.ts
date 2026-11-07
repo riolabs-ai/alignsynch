@@ -41,6 +41,7 @@
  * live in `scripts/rule-codes.ts` with one owner each, the same way the `E` codes do.
  */
 import { z } from "zod";
+import { pathOf } from "./core";
 import {
   instanceTemplateProblems,
   zAssessment,
@@ -129,7 +130,7 @@ export const zDatasetBundleObject = zBundleEnvelope
 export const zDatasetBundle = zDatasetBundleObject.superRefine((bundle, ctx) => {
   for (const issue of datasetCollectionProblems(bundle.payload)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["payload", ...issue.path],
       message: `[${issue.code}] ${issue.message}`,
     });
@@ -324,17 +325,17 @@ function zodIssues(
 ): BundleIssue[] {
   const mapped: BundleIssue[] = [];
   for (const issue of issues) {
-    if (issue.code === z.ZodIssueCode.unrecognized_keys) {
+    if (issue.code === "unrecognized_keys") {
       for (const key of issue.keys) {
         mapped.push({
           code,
-          path: [...prefix, ...issue.path, key],
+          path: [...prefix, ...pathOf(issue), key],
           message: `unknown key "${key}" — a bundle carries exactly what the schema defines (every object is strict)`,
         });
       }
       continue;
     }
-    mapped.push({ code, path: [...prefix, ...issue.path], message: issue.message });
+    mapped.push({ code, path: [...prefix, ...pathOf(issue)], message: issue.message });
   }
   return mapped;
 }
