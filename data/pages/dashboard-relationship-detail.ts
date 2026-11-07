@@ -28,11 +28,12 @@
  *   unreadable the database did not answer
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { paymentDoorSections } from "./payment-door";
 
 export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship",
   subtitle:
-    "Its Aspects are yours to change until you publish. Publishing starts your fourteen-day trial (or a checkout), opens the session and mints an invitation good for seven days.",
+    "Its Aspects are yours to change until you publish. Publishing opens the session and mints an invitation good for seven days; the fee is taken when you activate the relationship, not before.",
   items: [
     { id: "status", label: "State" },
     { id: "aspects", label: "Aspects" },
@@ -45,6 +46,8 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     { id: "read-only", label: "Read-only" },
   ],
   sections: [
+    /* #t_e9212bf9 — the payment door's sentences, shared with the list (`payment-door.ts`). */
+    ...paymentDoorSections,
     {
       id: "status",
       heading: "State",
@@ -101,7 +104,7 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "publish",
       heading: "Publish",
-      body: "The invitation needs the other person's name — it is what they are asked to confirm — and an address to send it to. Publishing starts your fourteen-day trial if you have none, or opens a checkout if your trial has already been used; either way the relationship is published and the link minted in one action.",
+      body: "The invitation needs the other person's name — it is what they are asked to confirm — and an address to send it to. Publishing opens the session and mints the link in one action. It bills nothing: the fee belongs to activation, once both sheets are sealed.",
       items: [
         { id: "name", label: "Their name" },
         { id: "email", label: "Their email" },

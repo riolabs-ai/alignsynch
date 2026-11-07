@@ -40,9 +40,16 @@ import { Label } from "@/components/ui/label";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { buildTemplateRecord } from "@/lib/admin/template-draft";
 import { formatDate } from "@/content/core";
+import { instancePath, reportPath } from "@/lib/flow/paths";
+import {
+  PaymentBand,
+  type PaymentLabels,
+  type PaymentRefusals,
+} from "@/components/dashboard/relationship-payment";
 import {
   refusalSentence,
   type AspectsOutcome,
+  type CompleteOutcome,
   type PublishOutcome,
   type RepublishOutcome,
 } from "@/lib/member/outcomes";
@@ -78,6 +85,9 @@ export function RelationshipDetail({
   onSaveAspects,
   onPublish,
   onRepublish,
+  onCapture,
+  onComplete,
+  returnState,
 }: {
   copy: PageCopy;
   relationship: MemberRelationshipView;
@@ -96,6 +106,18 @@ export function RelationshipDetail({
     setting?: string;
   }) => Promise<PublishOutcome>;
   onRepublish: (payload: { relationshipId?: string; reason?: string }) => Promise<RepublishOutcome>;
+  /** #t_e9212bf9 — the two writes the payment band posts. Server actions, passed down. */
+  onCapture: (payload: {
+    relationshipId?: string;
+    reason?: string;
+  }) => Promise<{ ok: true; url: string | null } | { ok: false; code: string; message?: string }>;
+  onComplete: (payload: {
+    relationshipId?: string;
+    planId?: string;
+    reason?: string;
+  }) => Promise<CompleteOutcome>;
+  /** `?payment=captured|failed` — the capture return route's own answer. */
+  returnState?: "captured" | "failed";
 }) {
   const viewCopy = sectionOf(copy, "view");
   const statusCopy = sectionOf(copy, "status");
@@ -105,6 +127,33 @@ export function RelationshipDetail({
   const linkCopy = sectionOf(copy, "link");
   const closedCopy = sectionOf(copy, "closed");
   const refusals = sectionOf(copy, "refusals");
+  // #t_e9212bf9 — the payment band's sentences. Resolved unconditionally (a fixture section is not
+  // a branch) and drawn only when the read says this viewer is the payer.
+  const paymentCopy = sectionOf(copy, "payment");
+  const paymentRefusalCopy = sectionOf(copy, "payment-refusals");
+  const paymentLabels: PaymentLabels = {
+    heading: paymentCopy.heading ?? "",
+    body: sectionBody(paymentCopy),
+    method: itemLabel(paymentCopy, "method"),
+    methodNone: itemLabel(paymentCopy, "method-none"),
+    methodOnFile: itemLabel(paymentCopy, "method-on-file"),
+    fee: itemLabel(paymentCopy, "fee"),
+    nothingToday: itemLabel(paymentCopy, "nothing-today"),
+    due: itemLabel(paymentCopy, "due"),
+    charged: itemLabel(paymentCopy, "charged"),
+    retrying: itemLabel(paymentCopy, "retrying"),
+    expired: itemLabel(paymentCopy, "expired"),
+    capture: itemLabel(paymentCopy, "capture"),
+    capturing: itemLabel(paymentCopy, "capturing"),
+    activate: itemLabel(paymentCopy, "activate"),
+    activating: itemLabel(paymentCopy, "activating"),
+    gap: itemLabel(paymentCopy, "gap"),
+    capturedNotice: itemLabel(paymentCopy, "captured-notice"),
+    failedNotice: itemLabel(paymentCopy, "failed-notice"),
+  };
+  const paymentRefusals: PaymentRefusals = Object.fromEntries(
+    (paymentRefusalCopy.items ?? []).map((item) => [item.id, item.label]),
+  );
 
   const [pending, startTransition] = useTransition();
   const [aspects, setAspects] = useState<AspectState[]>(
@@ -223,6 +272,19 @@ export function RelationshipDetail({
         ? { url: republishOutcome.inviteLink, expiresAt: republishOutcome.inviteExpiresAt }
         : null;
 
+  /**
+   * #t_e9212bf9 — `Gap Analysis`'s destination is the state's truth, not one fixed page: the report
+   * once the fee has landed and the Gap is open, the assessment itself before that, where the stage
+   * sentence says what is still missing. A link to a report that does not exist yet is a 404 the
+   * card would have shipped.
+   */
+  const gapHref =
+    relationship.sessionRecordId === null
+      ? null
+      : relationship.status === "complete"
+        ? reportPath(relationship.sessionRecordId)
+        : instancePath(relationship.sessionRecordId);
+
   return (
     <div className="space-y-6">
       <Card data-relationship-view={relationship.view}>
@@ -294,6 +356,24 @@ export function RelationshipDetail({
           ) : null}
         </CardContent>
       </Card>
+
+      {/* #t_e9212bf9 — the payment door. Drawn only when the read handed this viewer the door
+          (`payment !== null`, which is "you are the relationship's payer": ADR-8 is enforced in
+          the read, not here), and only once a session exists, because the fee belongs to a
+          relationship that has something to open a Gap on. */}
+      {relationship.payment === null || gapHref === null ? null : (
+        <PaymentBand
+          labels={paymentLabels}
+          refusals={paymentRefusals}
+          payment={relationship.payment}
+          gapHref={gapHref}
+          none={pageItemOf(copy, "none").label}
+          relationshipId={relationship.id}
+          onCapture={onCapture}
+          onComplete={onComplete}
+          {...(returnState === undefined ? {} : { returnState })}
+        />
+      )}
 
       {editable ? (
         <Card>

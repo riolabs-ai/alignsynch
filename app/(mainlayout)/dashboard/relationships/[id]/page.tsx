@@ -32,6 +32,8 @@ import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import {
+  capturePaymentMethodAction,
+  completeRelationshipAction,
   editRelationshipAction,
   previewRelationshipEditAction,
   publishRelationshipAction,
@@ -46,13 +48,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** `?payment=captured|failed` → the band's one-visit notice. A value this build does not know renders nothing. */
+function returnStateOf(value: string | undefined): "captured" | "failed" | undefined {
+  return value === "captured" || value === "failed" ? value : undefined;
+}
+
 export default async function MemberRelationshipPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ payment?: string }>;
 }) {
   const { user } = await requireRole("member", { next: MEMBER_RELATIONSHIPS_PATH });
   const { id } = await params;
+  const { payment } = await searchParams;
 
   let view: Awaited<ReturnType<typeof readMyRelationship>>;
   try {
@@ -110,6 +120,9 @@ export default async function MemberRelationshipPage({
         onSaveAspects={saveAspectsAction}
         onPublish={publishRelationshipAction}
         onRepublish={republishInviteAction}
+        onCapture={capturePaymentMethodAction}
+        onComplete={completeRelationshipAction}
+        {...(returnStateOf(payment) === undefined ? {} : { returnState: returnStateOf(payment) })}
       />
       {editState === undefined || editState.closed ? null : (
         <RelationshipEditPanel
