@@ -108,6 +108,23 @@ const nextConfig = {
    */
   outputFileTracingIncludes: {
     "/admin/health": ["./data/health/**"],
+    /**
+     * The review shelf (#665): `/admin/review` reads `docs/review/artifacts.json` at request time and
+     * `/review-artifacts/[id]` serves the file that manifest names, both through constants in
+     * `lib/review/artifacts.ts` — a path the tracer cannot follow statically. Naming the two
+     * directories here is what makes a deployment carry the manifest and the four prototypes instead
+     * of rendering the screen's honest "the catalogue could not be read" panel.
+     */
+    "/admin/review": [
+      "./docs/review/artifacts.json",
+      "./docs/review/artifacts/**",
+      "./docs/changelog/releases.json",
+    ],
+    "/review-artifacts/[id]": [
+      "./docs/review/artifacts.json",
+      "./docs/review/artifacts/**",
+      "./docs/changelog/releases.json",
+    ],
   },
   // typescript: {
   //   ignoreBuildErrors: true,

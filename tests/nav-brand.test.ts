@@ -152,6 +152,8 @@ const ADMIN_MENU = [
   "/admin/health",
   "/admin/billing",
   "/admin/broadcast",
+  // #665 — the review shelf, between Broadcast and the audit log.
+  "/admin/review",
   "/admin/audit",
 ];
 

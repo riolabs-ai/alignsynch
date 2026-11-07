@@ -124,6 +124,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-relationship",
     budget: 0,
   },
+  // #665 — the review shelf. Budget 0 from the first commit, like the console's other screens: the
+  // group heading's two states, the row's one-line summary, the preview's served-from note, the
+  // metadata labels, the to-do states and the whole feedback/issue vocabulary are
+  // `data/pages/admin-review.ts`, so the next literal written in `review-artifacts.tsx` is a red
+  // build. Attribution is reachability, so this row counts one component.
+  "/admin/review": {
+    page: "app/(mainlayout)/admin/review/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-review",
+    budget: 0,
+  },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
   // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
   // so the next literal written in `template-registry.tsx` is a red build. Attribution is

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "id": "relationship-lifecycle-v4",
+      "title": "Relationship lifecycle — ten stages",
+      "kind": "prototype",
+      "version": "v4",
+      "date": "2026-11-07",
+      "release": "1.6.0",
+      "file": "prototype-relationship-lifecycle-v4.html",
+      "lookFor": "The version in review: all ten stages in order, each naming the person who acts, and the Gap appearing only where both parties have accepted."
+    },
+    {
+      "id": "relationship-lifecycle-v3",
+      "title": "Relationship lifecycle — ten stages",
+      "kind": "prototype",
+      "version": "v3",
+      "date": "2026-11-07",
+      "release": "1.6.0",
+      "file": "prototype-relationship-lifecycle-v3.html",
+      "lookFor": "The same ten stages as v2 with a fuller copy pass — read the stage rail and the Aspects step against the flow the app renders today."
+    },
+    {
+      "id": "relationship-lifecycle-v2",
+      "title": "Relationship lifecycle — ten stages",
+      "kind": "prototype",
+      "version": "v2",
+      "date": "2026-11-07",
+      "release": "1.6.0",
+      "file": "prototype-relationship-lifecycle-v2.html",
+      "lookFor": "Where the account step sits between Basics and Who — the stage v1 did not have, which is why the flow went from six stages to ten."
+    },
+    {
+      "id": "relationship-lifecycle-v1",
+      "title": "Relationship lifecycle — six stages",
+      "kind": "prototype",
+      "version": "v1",
+      "date": "2026-11-07",
+      "release": "1.6.0",
+      "file": "prototype-relationship-lifecycle-v1.html",
+      "lookFor": "The original six stages from template choice to alignment — read the count against the ten the model defines now."
+    }
+  ]
+}

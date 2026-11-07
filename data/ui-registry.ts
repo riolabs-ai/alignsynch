@@ -261,6 +261,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/review",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The console's review shelf: every published prototype, diagram and report grouped by the release it belongs to, with the artifact itself in a sandboxed frame beside its to-do checklist and its GitHub-shaped feedback list (issue number, state, title, labels, author, age → thread).",
+    notes:
+      "#665 — the manifest is the catalogue: `docs/review/artifacts.json` names the file under `docs/review/artifacts/`, the release, the version and one line on what to look at, and `/review-artifacts/[id]` resolves the id through that manifest and answers 404 for anything it does not name (no disk scan, no path parameter; `file` is a bare basename, so a traversal fails the schema). Grouping is derived — membership from the artifact's `release`, state from `docs/changelog/releases.json`, where only the newest release is active and every earlier group is archived as one. Read-only in this cut: the to-dos and issues come from the `ReviewStore` fixture (`data/review/records.ts`) and the screen prints the store's own `readOnlyReason`; the `review_artifact` / `review_todo` / `review_issue` tables are carded separately, and that card swaps the store behind the same components. Both templates claim `product.admin` (#509), so `requireAdminProduct()` runs before `requireAdmin()`. `data/pages/admin-review.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "route",
     surface: "/admin/templates",
     status: "db",
     templates: ["alignsynch"],

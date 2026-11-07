@@ -304,6 +304,12 @@ export function shellCopy(brand: Brand): PageCopy {
           // #507 — the broadcast: a one-off notice to the news list.
           { id: "admin-broadcast", label: "Broadcast" },
           /**
+           * #665 — the console's review shelf. The rail row is "Review" and the page's own heading is
+           * longer ("Review artifacts"): the row sits under the Admin group, where every other row is
+           * one word, and the page says what it reviews.
+           */
+          { id: "review", label: "Review" },
+          /**
            * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
            * the member's own work under `group-app`, the help/contact pair under
            * `group-support`, and the operator's rows under `group-admin` — "the reader's work,

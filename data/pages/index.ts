@@ -22,6 +22,8 @@ import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
 import { adminInstancesPageCopy } from "./admin-instances";
 import { adminRelationshipPageCopy } from "./admin-relationship";
+// #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
+import { adminReviewPageCopy } from "./admin-review";
 import { adminTemplateEditorPageCopy } from "./admin-template-editor";
 import { adminTemplatesPageCopy } from "./admin-templates";
 import { adminReportPageCopy } from "./admin-report";
@@ -88,6 +90,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/health": adminHealthPageCopy,
   "/admin/instances": adminInstancesPageCopy,
   "/admin/instances/[id]": adminRelationshipPageCopy,
+  // #665 — the review shelf, grouped by release; the manifest is the catalogue.
+  "/admin/review": adminReviewPageCopy,
   "/admin/templates": adminTemplatesPageCopy,
   "/admin/templates/[id]": adminTemplateEditorPageCopy,
   "/admin/instances/[id]/report": adminReportPageCopy,

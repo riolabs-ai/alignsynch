@@ -19,6 +19,7 @@ import {
   Award,
   BarChart3,
   BookOpen,
+  ClipboardCheck,
   Compass,
   CreditCard,
   DollarSign,
@@ -483,6 +484,7 @@ const NAV_ICONS: Record<NavIconName, ComponentType<{ className?: string }>> = {
   health: Activity,
   billing: CreditCard,
   broadcast: Megaphone,
+  review: ClipboardCheck,
   audit: ScrollText,
 };
 

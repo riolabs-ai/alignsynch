@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlignSynch — the relationship lifecycle, ten stages</title>
+<style>
+  /* Geometry measured from docs/specs/spec-ux-repo-patterns/ (see docs/specs/ux-reference-patterns.md):
+     content 1126px left-justified, 12-col grid @24px gutter, cards 1px border radius 6 padding 24
+     with no shadow, labels 12px muted above 40px controls, progress as a cell rail (never numbered
+     circles), one accent primary action per view. Brand colour stays the app's token: #37474f. */
+  :root{
+    --action:#37474f; --action-ink:#fff; --action-soft:#eef1f3;
+    --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --line-strong:#d1d5db;
+    --bg:#f9fafb; --panel:#fff; --ok:#15803d; --ok-soft:#f0fdf4; --warn:#b45309; --warn-soft:#fffbeb;
+    --paypal:#003087;
+    --radius:6px; --pad:24px; --gap:24px; --gutter:24px;
+    --stage-max:1126px; --rail:241px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif; color:var(--ink); background:var(--bg)}
+  a{color:var(--action)}
+  h1,h2,h3,h4{margin:0; line-height:1.25; font-weight:600}
+  h1{font-size:1.875rem} h2{font-size:1.125rem} h3{font-size:1rem}
+  p{margin:.35rem 0}
+  small,.muted{color:var(--muted); font-size:.875rem}
+  .meta{color:var(--muted); font-size:.75rem}
+
+  /* ---- shell ---- */
+  .shell{display:grid; grid-template-columns:var(--rail) minmax(0,1fr); min-height:100vh}
+  .rail{background:var(--panel); border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; overflow:auto}
+  .brand{display:flex; gap:9px; align-items:center; margin-bottom:20px}
+  .mark{width:26px; height:26px; border-radius:6px; background:var(--action); display:grid; place-items:center; color:#fff; font-size:11px; font-weight:700}
+  .brand b{font-size:.9rem; display:block}
+  .brand span{font-size:.72rem; color:var(--muted)}
+  .nav-group{margin:0 0 14px}
+  .nav-group>label{display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 8px 5px}
+  .nav a{display:flex; justify-content:space-between; gap:8px; align-items:center; padding:0 10px; min-height:40px; border-radius:6px; font-size:.875rem; color:var(--ink); text-decoration:none}
+  .nav a[aria-current="page"]{background:var(--action); color:var(--action-ink); font-weight:600}
+  .nav a:hover{background:#f3f4f6}
+  .nav a[aria-current="page"]:hover{background:var(--action)}
+  .nav .count{font-size:.72rem; color:var(--muted)}
+  .nav a[aria-current="page"] .count{color:var(--action-ink); opacity:.8}
+
+  main{padding:22px 40px 72px 24px; min-width:0}
+  .column{width:100%; max-width:var(--stage-max)}
+
+  /* ---- progress: CELL RAIL (reference §4b) ---- */
+  .steps{display:flex; align-items:stretch; margin:0 0 20px; padding:0; list-style:none;
+         border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--panel)}
+  .steps li{flex:1 1 0; min-width:0; display:flex}
+  .steps button{all:unset; cursor:pointer; display:flex; align-items:center; justify-content:center;
+                width:100%; min-height:39px; padding:0 6px; font-size:.75rem; color:var(--muted);
+                background:var(--panel); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .steps li+li button{box-shadow:inset 1px 0 0 var(--line)}
+  .steps button:hover{background:#f6f7f8}
+  .steps li[data-state="now"] button{background:var(--bg); color:var(--ink); font-weight:600; font-size:.8rem}
+  .steps li[data-state="done"] button{color:var(--ink)}
+  .steps button:focus-visible{outline:2px solid var(--action); outline-offset:-2px}
+
+  /* ---- surfaces ---- */
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius)}
+  .card>.head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:var(--pad); border-bottom:1px solid var(--line)}
+  .card>.body{padding:var(--pad)}
+  .card>.foot{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px var(--pad);
+              border-top:1px solid var(--line); background:#fcfcfd; border-radius:0 0 var(--radius) var(--radius)}
+  .chip{display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); background:#fff;
+        border-radius:999px; padding:2px 9px; font-size:.75rem; font-weight:500; color:#374151}
+  .chip.ok{border-color:#bbf7d0; background:var(--ok-soft); color:var(--ok)}
+  .chip.warn{border-color:#fde68a; background:var(--warn-soft); color:var(--warn)}
+  .chip.gap{border-color:#fecaca; background:#fef2f2; color:#b91c1c}
+  .stack{display:grid; gap:var(--gap)}
+  .tight{display:grid; gap:12px}
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .between{display:flex; justify-content:space-between; align-items:center; gap:12px}
+  .grid12{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--gutter)}
+  .span3{grid-column:span 3} .span4{grid-column:span 4} .span5{grid-column:span 5}
+  .span6{grid-column:span 6} .span7{grid-column:span 7} .span8{grid-column:span 8} .span12{grid-column:span 12}
+  label.field{display:block}
+  label.field>span{display:block; font-size:.75rem; font-weight:500; color:var(--muted); margin-bottom:8px}
+  label.field>em{display:block; font-size:.78rem; color:var(--muted); font-style:normal; margin-top:6px}
+  input[type=text],input[type=email],input[type=password],textarea,select{
+    width:100%; min-height:40px; padding:9px 10px; border:1px solid var(--line-strong);
+    border-radius:8px; font:inherit; background:#fff; color:var(--ink)}
+  textarea{min-height:76px; resize:vertical}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--action); outline-offset:1px; border-color:var(--action)}
+  .btn{all:unset; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+       min-height:40px; padding:0 16px; border-radius:6px; font-size:.875rem; font-weight:600; text-align:center}
+  .btn:focus-visible{outline:2px solid var(--action); outline-offset:2px}
+  .btn.primary{background:var(--action); color:var(--action-ink)}
+  .btn.secondary{background:#fff; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line-strong)}
+  .btn.ghost{color:var(--action); padding:0 4px; min-height:32px}
+  .btn.paypal{background:var(--paypal); color:#fff}
+  .btn[disabled]{opacity:.5; cursor:not-allowed}
+  .choice{display:flex; gap:12px; align-items:flex-start; padding:16px; border:1px solid var(--line-strong);
+          border-radius:var(--radius); cursor:pointer; background:#fff}
+  .choice[aria-checked="true"]{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action); background:#fbfcfc}
+  .choice .dot{width:16px; height:16px; border-radius:50%; border:1px solid var(--line-strong); margin-top:3px; flex:0 0 auto; display:grid; place-items:center}
+  .choice[aria-checked="true"] .dot{border-color:var(--action)}
+  .choice[aria-checked="true"] .dot::after{content:""; width:8px; height:8px; border-radius:50%; background:var(--action)}
+  .choice b{display:block; font-size:.9rem}
+  .tpl{display:flex; flex-direction:column; gap:10px; padding:var(--pad); border:1px solid var(--line);
+       border-radius:var(--radius); background:#fff; cursor:pointer; height:100%}
+  .tpl[aria-checked="true"]{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action)}
+  .tpl h3{font-size:1rem}
+  .tpl .thumb{height:104px; border-radius:var(--radius); border:1px solid var(--line); background:var(--bg);
+              display:grid; place-items:center; color:var(--muted); font-size:.75rem}
+  .aspect{border:1px solid var(--line); border-radius:var(--radius); padding:16px; background:#fff}
+  .aspect header{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px}
+  .two-up{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .meter{height:6px; border-radius:999px; background:#eef0f2; overflow:hidden}
+  .meter>i{display:block; height:100%; background:var(--action)}
+  .mini{font-size:.78rem; color:var(--muted)}
+  .note{border-left:3px solid var(--line-strong); padding:2px 0 2px 10px; color:var(--muted); font-size:.84rem}
+  .banner{display:flex; gap:10px; align-items:flex-start; padding:14px 16px; border-radius:var(--radius);
+          border:1px solid #bbf7d0; background:var(--ok-soft); font-size:.875rem}
+  .kv{display:grid; grid-template-columns:auto 1fr; gap:6px 16px; font-size:.875rem}
+  .kv dt{color:var(--muted)} .kv dd{margin:0; text-align:right; font-weight:600}
+  .stage-foot{display:flex; justify-content:space-between; gap:12px; margin-top:var(--gap); padding-top:16px; border-top:1px solid var(--line)}
+  .tabs{display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:var(--gap)}
+  .tabs button{all:unset; cursor:pointer; padding:10px 16px; font-size:.875rem; color:var(--muted); border-bottom:2px solid transparent}
+  .tabs button[aria-selected="true"]{color:var(--ink); font-weight:600; border-bottom-color:var(--action)}
+  .hidden{display:none !important}
+
+  /* ---- copy editor ---- */
+  #editor{position:fixed; right:18px; bottom:18px; z-index:40; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+          background:var(--panel); border:1px solid var(--line-strong); border-radius:999px; padding:8px 12px;
+          box-shadow:0 6px 20px rgb(16 24 40 / .12); font-size:.8rem}
+  #editor .dot-live{width:8px; height:8px; border-radius:50%; background:var(--ok)}
+  body[data-editing="on"] [data-copy]{outline:1px dashed #9ca3af; outline-offset:2px; border-radius:3px}
+  body[data-editing="on"] [data-copy]:focus{outline:2px solid var(--action); background:#fffdf5}
+  #toast{position:fixed; left:22px; bottom:18px; z-index:41; background:var(--ink); color:#fff; padding:8px 12px;
+         border-radius:6px; font-size:.8rem; opacity:0; transform:translateY(6px); transition:.18s; max-width:60ch}
+  #toast.show{opacity:1; transform:none}
+
+  @media (max-width:1024px){ :root{--stage-max:100%} .span4,.span5,.span7,.span8{grid-column:span 6} }
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .rail{position:static; height:auto; border-right:0; border-bottom:1px solid var(--line); padding:12px 14px}
+    .rail .nav,.rail .brand span{display:none}
+    main{padding:16px 16px 84px}
+    .grid12,.two-up{grid-template-columns:1fr}
+    .span3,.span4,.span5,.span6,.span7,.span8,.span12{grid-column:auto}
+    .steps button{font-size:0; min-height:34px; padding:0}
+    .steps button::after{content:""; width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.45}
+    .steps li[data-state="now"] button{font-size:.75rem; padding:0 8px}
+    .steps li[data-state="now"] button::after{display:none}
+    .stage-foot{flex-direction:column-reverse; align-items:stretch}
+    .stage-foot .btn{width:100%}
+    #editor{right:10px; left:10px; bottom:10px; justify-content:center}
+  }
+</style>
+</head>
+<body data-editing="off">
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="mark">AS</div>
+      <div><b data-copy="brand.name">AlignSynch</b><span data-copy="brand.tagline">Relationship Alignment Platform</span></div>
+    </div>
+    <div class="nav">
+      <div class="nav-group"><label data-copy="nav.workspace">Workspace</label>
+        <a href="#" data-goto="0"><span data-copy="nav.dashboard">Dashboard</span></a>
+        <a href="#" data-goto="9"><span data-copy="nav.relationships">My Relationships</span><span class="count" data-copy="nav.relationshipsCount">1</span></a>
+        <a href="#" data-goto="1" aria-current="page"><span data-copy="nav.templates">Templates</span></a>
+      </div>
+      <div class="nav-group"><label data-copy="nav.account">Account</label>
+        <a href="#"><span data-copy="nav.support">Support</span></a>
+        <a href="#"><span data-copy="nav.settings">Settings</span></a>
+      </div>
+    </div>
+  </aside>
+  <main><div class="column">
+    <ol class="steps" id="steps" aria-label="Relationship lifecycle"></ol>
+    <div id="stage"></div>
+  </div></main>
+</div>
+
+<div id="editor">
+  <span class="dot-live"></span>
+  <span id="editorState" data-copy="editor.live">Copy loads from JSON</span>
+  <button class="btn ghost" id="editToggle" data-copy="editor.edit">Edit copy</button>
+  <button class="btn ghost" id="saveJson" data-copy="editor.save">Save .json</button>
+  <button class="btn ghost" id="loadJsonBtn" data-copy="editor.load">Load</button>
+  <input type="file" id="loadJson" accept="application/json" class="hidden">
+  <button class="btn ghost" id="resetCopy" data-copy="editor.reset">Reset</button>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================================
+   COPY — every reader-visible string, one object, loaded and saved as JSON.
+   ============================================================================ */
+const DEFAULT_COPY = {
+  "brand.name":"AlignSynch","brand.tagline":"Relationship Alignment Platform",
+  "nav.workspace":"Workspace","nav.dashboard":"Dashboard","nav.relationships":"My Relationships",
+  "nav.relationshipsCount":"1","nav.templates":"Templates","nav.account":"Account",
+  "nav.support":"Support","nav.settings":"Settings",
+  "editor.live":"Copy loads from JSON","editor.edit":"Edit copy","editor.save":"Save .json",
+  "editor.load":"Load","editor.reset":"Reset",
+
+  "step.1":"Gallery","step.2":"Detail","step.3":"Account","step.4":"Who","step.5":"Mode",
+  "step.6":"Aspects","step.7":"Payment","step.8":"Review","step.9":"Sent","step.10":"Alignment",
+
+  /* 1 — discovery: the two places a template is chosen from */
+  "s1.heading":"Relationship Templates",
+  "s1.body":"Two ways in: the public gallery shows what a template asks, and the dashboard lists the ones your workspace can copy.",
+  "s1.tabGallery":"Gallery",
+  "s1.tabDashboard":"My templates",
+  "s1.galleryNote":"Public: anyone can read what a template asks before creating an account.",
+  "s1.dashboardNote":"In your workspace: every template you can copy, with its last use and who owns it.",
+  "s1.search":"Search templates",
+  "s1.searchPlaceholder":"Search by name or aspect",
+  "s1.count":"3 templates",
+  "s1.owned":"Owned by you","s1.shared":"Shared",
+  "s1.choose":"Open",
+  "s1.empty":"No template matches that search yet.",
+  "s1.tplBasics":"Relationship Basics","s1.tplBasicsDesc":"Time together, housework, money, conflict, affection — the five things most couples disagree about without naming.",
+  "s1.tplStaff":"Staff & Manager","s1.tplStaffDesc":"Work priorities, feedback, workload, growth, and the weekly rhythm of a reporting line.",
+  "s1.tplParent":"Parent & Child","s1.tplParentDesc":"Chores, screen time, school, independence, and how decisions get made at home.",
+  "s1.aspects":"5 Aspects","s1.seats":"Two seats","s1.updated":"Updated 2 Nov",
+
+  /* 2 — template detail */
+  "s2.heading":"Relationship Basics",
+  "s2.desc":"A five-Aspect template for couples. Both parties answer the same five questions on a 1–5 scale; the report shows only where the two readings differ.",
+  "s2.aboutHeading":"About this template",
+  "s2.aspectsHeading":"What it asks",
+  "s2.aspectHelp":"Each Aspect is one question, answered by both seats.",
+  "s2.seatsHeading":"The two seats",
+  "s2.seatInitiator":"Initiator — the seat the relationship is created from",
+  "s2.seatCounterparty":"Counterparty — the seat filled when they claim the invitation",
+  "s2.meta":"Version 3 · 5 Aspects · used 128 times",
+  "s2.back":"Back to templates","s2.next":"Copy this template",
+
+  /* 3 — account */
+  "s3.heading":"Create your account",
+  "s3.body":"You need an account to create a relationship — the invitation is sent from it, and the report is kept on it.",
+  "s3.tabSignup":"Create account","s3.tabSignin":"Sign in",
+  "s3.google":"Continue with Google",
+  "s3.or":"or",
+  "s3.name":"Your name","s3.nameHelp":"Shown to the person you invite.",
+  "s3.email":"Email address","s3.password":"Password",
+  "s3.passwordHelp":"At least 10 characters.",
+  "s3.terms":"By creating an account you accept the Terms and the Privacy notice.",
+  "s3.signupBtn":"Create account and continue",
+  "s3.signinBtn":"Sign in and continue",
+  "s3.haveAccount":"Already have an account?","s3.noAccount":"No account yet?",
+  "s3.back":"Back","s3.next":"Continue",
+
+  /* 4 — who and how, with description */
+  "s4.heading":"Who and how",
+  "s4.body":"One template, two seats, and the facts that shape every screen after this one.",
+  "s4.templateRow":"Template",
+  "s4.initiator":"Your name — the Initiator",
+  "s4.initiatorHelp":"The seat this relationship is created from.",
+  "s4.counterparty":"Who you are asking",
+  "s4.counterpartyPlaceholder":"Their name",
+  "s4.counterpartyHelp":"Display only: the seat is filled when they claim the invitation. A name typed here is not a party.",
+  "s4.email":"Their email address",
+  "s4.emailPlaceholder":"name@example.com",
+  "s4.title":"What are you in the middle of",
+  "s4.titlePlaceholder":"Relationship Basics",
+  "s4.titleHelp":"The card title both of you see.",
+  "s4.description":"Description",
+  "s4.descriptionPlaceholder":"A sentence on why you are doing this — both of you read it on the card.",
+  "s4.descriptionHelp":"Optional. Shown to both parties, never scored.",
+  "s4.back":"Back","s4.next":"Continue to mode and setting",
+
+  /* 5 — mode and setting */
+  "s5.heading":"Mode and setting",
+  "s5.body":"Mode is fixed at creation: both parties answer one shape, which is what makes two sheets comparable at all.",
+  "s5.modeHeading":"Mode",
+  "s5.modeFixed":"Fixed at creation",
+  "s5.modeFull":"Full","s5.modeFullHelp":"Every Aspect is asked, and every Gap is named.",
+  "s5.modeSoft":"Soft","s5.modeSoftHelp":"Small Gaps are tolerated rather than named.",
+  "s5.settingHeading":"Setting",
+  "s5.settingHelp":"Setting is what a party may change later. It moves the bar the report is judged against; it never changes a question.",
+  "s5.settingSoft":"Soft","s5.settingFull":"Full",
+  "s5.settingNote":"Setting moves the bar the report is judged against; it never changes a question.",
+  "s5.back":"Back","s5.next":"Continue to aspects",
+
+  /* 6 — aspects: view and edit */
+  "s6.heading":"Aspects",
+  "s6.body":"Copied from the template. You can rename or reword an Aspect here, and add one — it is yours from the moment the relationship is created.",
+  "s6.editHeading":"Edit an Aspect",
+  "s6.nameLabel":"Aspect name",
+  "s6.questionLabel":"The question both seats answer",
+  "s6.scaleLabel":"Scale",
+  "s6.scaleValue":"1 to 5",
+  "s6.add":"Add an Aspect",
+  "s6.remove":"Remove",
+  "s6.save":"Save Aspect",
+  "s6.copied":"Copied from the template",
+  "s6.edited":"Edited",
+  "s6.added":"Added",
+  "s6.count":"5 Aspects",
+  "s6.back":"Back","s6.next":"Continue to payment",
+
+  /* 7 — payment: card or PayPal */
+  "s7.heading":"Payment method",
+  "s7.body":"Creating is free and the invite is never blocked. A method is required to publish the report, and the fee is taken when both sheets are sealed.",
+  "s7.payNow":"Add a method now","s7.payNowHelp":"The 7-day trial starts today and the charge lands 7 days later.",
+  "s7.payLater":"Decide later","s7.payLaterHelp":"Invite and answer first. Publishing waits until a method is on file.",
+  "s7.methodHeading":"How would you like to pay",
+  "s7.methodCard":"Card","s7.methodCardHelp":"Visa, Mastercard, Amex.",
+  "s7.methodPaypal":"PayPal","s7.methodPaypalHelp":"You approve in PayPal and come back here — no card details are stored.",
+  "s7.cardNumber":"Card number","s7.expiry":"Expiry","s7.cvc":"CVC","s7.cardName":"Name on card",
+  "s7.paypalBtn":"Continue with PayPal",
+  "s7.paypalNote":"You will be taken to PayPal to approve, then returned to this screen.",
+  "s7.noMethod":"Nothing has been paid on this relationship.",
+  "s7.fee":"$19 per completed relationship",
+  "s7.back":"Back","s7.next":"Continue to review",
+
+  /* 8 — review and invite */
+  "s8.heading":"Review and invite",
+  "s8.body":"Submitting now creates the relationship and sends the invitation. Nothing is charged yet.",
+  "s8.templateRow":"Template","s8.initiatorRow":"Initiator","s8.counterpartyRow":"Counterparty",
+  "s8.titleRow":"Title","s8.descriptionRow":"Description","s8.modeRow":"Mode","s8.settingRow":"Setting",
+  "s8.aspectsRow":"Aspects","s8.paymentRow":"Payment",
+  "s8.paymentLater":"Decide later","s8.none":"—",
+  "s8.back":"Back","s8.submit":"Create relationship and send invite",
+
+  /* 9 — invite sent */
+  "s9.heading":"Invitation sent",
+  "s9.body":"Rowan has an email with one link. The relationship waits at Invited until they accept.",
+  "s9.status":"Invited — waiting for Rowan to accept",
+  "s9.sentTo":"Sent to rowan@example.com",
+  "s9.nextHeading":"What happens next",
+  "s9.next1":"They accept, and the seat is filled.",
+  "s9.next2":"You both answer the same five Aspects.",
+  "s9.next3":"When both sheets are sealed, the report opens to both of you.",
+  "s9.resend":"Resend the invitation",
+  "s9.copy":"Copy the invite link",
+  "s9.open":"Open the relationship",
+  "s9.back":"Back","s9.next":"Open the relationship",
+
+  /* 10 — alignment */
+  "s10.heading":"Alignment",
+  "s10.body":"Both sheets are sealed. The Gap is what the two sets of answers disagree by, Aspect by Aspect.",
+  "s10.sealed":"Sharing — the report is open to both of you.",
+  "s10.gapHeading":"The Gap",
+  "s10.gapSubline":"Aligned under Soft · 1 Gap exceeds Full",
+  "s10.a1":"Time together","s10.a2":"Housework","s10.a3":"Money","s10.a4":"Conflict","s10.a5":"Affection",
+  "s10.you":"You","s10.them":"Rowan","s10.verdict":"Aligned","s10.verdictGap":"Gap",
+  "s10.total":"Total Gap",
+  "s10.completeHeading":"Relationship Aspect complete Alignment",
+  "s10.completeBody":"Every Aspect has now been answered by both seats and read by both seats. This is the end of the flow — nothing further is required of either party.",
+  "s10.back":"Back","s10.finish":"Finish"
+};
+
+const STEPS = ["step.1","step.2","step.3","step.4","step.5","step.6","step.7","step.8","step.9","step.10"];
+const STORE = "alignsynch.prototype.copy.v2";
+
+const TEMPLATES = [
+  { id:"basics", nameKey:"s1.tplBasics", descKey:"s1.tplBasicsDesc", aspects:5, own:"s1.owned" },
+  { id:"staff",  nameKey:"s1.tplStaff",  descKey:"s1.tplStaffDesc",  aspects:5, own:"s1.shared" },
+  { id:"parent", nameKey:"s1.tplParent", descKey:"s1.tplParentDesc", aspects:5, own:"s1.shared" }
+];
+const BASE_ASPECTS = [
+  { key:"s10.a1", q:"How satisfied are you with the time you spend together?", origin:"s6.copied" },
+  { key:"s10.a2", q:"How fairly is the housework split?", origin:"s6.copied" },
+  { key:"s10.a3", q:"How well do you handle money decisions?", origin:"s6.copied" },
+  { key:"s10.a4", q:"How well do you resolve conflict?", origin:"s6.copied" },
+  { key:"s10.a5", q:"How satisfied are you with affection?", origin:"s6.copied" }
+];
+const SCORES = [ {you:4,them:3},{you:2,them:4},{you:5,them:4},{you:3,them:3},{you:4,them:2} ];
+
+let copy = load();
+function stageFromHash(){ const m=/stage=(\d+)/.exec(location.hash||""); return m?Math.min(9,Math.max(0,+m[1]-1)):0; }
+let state = {
+  stage: stageFromHash(), tab: "gallery", authTab: "signup",
+  template:"basics", mode:"full", setting:"soft", pay:"later", method:"card",
+  aspects: BASE_ASPECTS.map(a => ({...a})), editingAspect: 0
+};
+
+function load(){ try{ const s=localStorage.getItem(STORE); if(s) return Object.assign({},DEFAULT_COPY,JSON.parse(s)); }catch(e){} return Object.assign({},DEFAULT_COPY); }
+function c(k){ return copy[k] ?? "⟨"+k+"⟩"; }
+function esc(s){ return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+function T(k,tag){ const t=tag||"span"; return "<"+t+' data-copy="'+k+'">'+esc(c(k))+"</"+t+">"; }
+function H(k,tag){ const t=tag||"span"; return "<"+t+' data-copy="'+k+'">'+esc(c(k))+"</"+t+">"; }
+
+function renderSteps(){
+  document.getElementById("steps").innerHTML = STEPS.map((k,i)=>{
+    const st = i<state.stage ? "done" : i===state.stage ? "now" : "todo";
+    return '<li data-state="'+st+'"><button data-goto="'+i+'" aria-current="'+(i===state.stage?"step":"false")+'" title="'+esc(c(k))+'">'
+      + '<span data-copy="'+k+'">'+esc(c(k))+'</span></button></li>';
+  }).join("");
+}
+
+function render(){
+  renderSteps();
+  const views=[s1Gallery,s2Detail,s3Account,s4Who,s5Mode,s6Aspects,s7Payment,s8Review,s9Sent,s10Align];
+  document.getElementById("stage").innerHTML = views[state.stage]();
+  if (document.body.dataset.editing==="on") document.querySelectorAll("[data-copy]").forEach(el=>el.contentEditable="true");
+}
+
+/* ---------- 1: discovery ---------- */
+function s1Gallery(){
+  const isGallery = state.tab === "gallery";
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s1.heading">'+esc(c("s1.heading"))+'</h1><p class="muted" data-copy="s1.body">'+esc(c("s1.body"))+'</p></div>'
+   + '<div class="card"><div class="head" style="padding-bottom:0;border-bottom:0">'
+     + '<div class="tabs" role="tablist">'
+       + '<button role="tab" aria-selected="'+isGallery+'" data-tab="gallery" data-copy="s1.tabGallery">'+esc(c("s1.tabGallery"))+'</button>'
+       + '<button role="tab" aria-selected="'+(!isGallery)+'" data-tab="dashboard" data-copy="s1.tabDashboard">'+esc(c("s1.tabDashboard"))+'</button>'
+     + '</div><span class="meta" data-copy="s1.count">'+esc(c("s1.count"))+'</span></div>'
+   + '<div class="body stack">'
+     + '<p class="note" data-copy="'+(isGallery?"s1.galleryNote":"s1.dashboardNote")+'">'+esc(c(isGallery?"s1.galleryNote":"s1.dashboardNote"))+'</p>'
+     + '<label class="field"><span data-copy="s1.search">'+esc(c("s1.search"))+'</span>'
+       + '<input type="text" placeholder="'+esc(c("s1.searchPlaceholder"))+'"></label>'
+     + '<div class="grid12">'
+       + TEMPLATES.map((t,i)=>{
+           const span = i===0 ? "span12" : "span6";
+           return '<div class="'+span+'"><div class="tpl" role="radio" tabindex="0" aria-checked="'+(state.template===t.id)+'" data-tpl="'+t.id+'">'
+             + '<div class="thumb" data-copy="s1.thumbPlaceholder">Template preview</div>'
+             + '<div class="between"><h3 data-copy="'+t.nameKey+'">'+esc(c(t.nameKey))+'</h3><span class="chip" data-copy="'+t.own+'">'+esc(c(t.own))+'</span></div>'
+             + '<p class="muted" data-copy="'+t.descKey+'">'+esc(c(t.descKey))+'</p>'
+             + '<div class="between"><div class="row"><span class="chip" data-copy="s1.aspects">'+esc(c("s1.aspects"))+'</span>'
+               + '<span class="chip" data-copy="s1.seats">'+esc(c("s1.seats"))+'</span></div>'
+               + '<button class="btn secondary" data-goto="1" data-copy="s1.choose">'+esc(c("s1.choose"))+'</button></div>'
+           + '</div></div>';
+         }).join("")
+     + '</div>'
+   + '</div></div>'
+   + '<p class="mini" data-copy="s1.empty">'+esc(c("s1.empty"))+'</p>'
+  + '</div>';
+}
+
+/* ---------- 2: template detail ---------- */
+function s2Detail(){
+  const t = TEMPLATES.find(x=>x.id===state.template)||TEMPLATES[0];
+  return '<div class="stack">'
+   + '<div class="row" style="justify-content:space-between">'
+     + '<button class="btn ghost" data-goto="0" data-copy="s2.back">'+esc(c("s2.back"))+'</button>'
+     + '<span class="meta" data-copy="s2.meta">'+esc(c("s2.meta"))+'</span></div>'
+   + '<div class="grid12">'
+     + '<div class="span8 stack">'
+       + '<div><h1 data-copy="'+t.nameKey+'">'+esc(c(t.nameKey))+'</h1></div>'
+       + '<div class="card"><div class="head"><h2 data-copy="s2.aboutHeading">'+esc(c("s2.aboutHeading"))+'</h2></div>'
+         + '<div class="body"><p class="muted" data-copy="s2.desc">'+esc(c("s2.desc"))+'</p></div></div>'
+       + '<div class="card"><div class="head"><h2 data-copy="s2.aspectsHeading">'+esc(c("s2.aspectsHeading"))+'</h2>'
+         + '<span class="chip" data-copy="s1.aspects">'+esc(c("s1.aspects"))+'</span></div>'
+         + '<div class="body tight">'
+           + state.aspects.map((a,i)=>'<div class="between" style="padding:10px 0;border-bottom:1px solid var(--line)">'
+               + '<b data-copy="'+a.key+'">'+esc(c(a.key))+'</b><span class="mini">'+esc(a.q)+'</span></div>').join("")
+           + '<p class="mini" data-copy="s2.aspectHelp">'+esc(c("s2.aspectHelp"))+'</p>'
+         + '</div></div>'
+     + '</div>'
+     + '<aside class="span4 stack">'
+       + '<div class="card"><div class="head"><h2 data-copy="s2.seatsHeading">'+esc(c("s2.seatsHeading"))+'</h2></div>'
+         + '<div class="body tight">'
+           + '<p class="mini" data-copy="s2.seatInitiator">'+esc(c("s2.seatInitiator"))+'</p>'
+           + '<p class="mini" data-copy="s2.seatCounterparty">'+esc(c("s2.seatCounterparty"))+'</p>'
+           + '<button class="btn primary" data-goto="2" data-copy="s2.next" style="width:100%">'+esc(c("s2.next"))+'</button>'
+         + '</div></div>'
+     + '</aside>'
+   + '</div></div>';
+}
+
+/* ---------- 3: account ---------- */
+function s3Account(){
+  const signup = state.authTab === "signup";
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s3.heading">'+esc(c("s3.heading"))+'</h1><p class="muted" data-copy="s3.body">'+esc(c("s3.body"))+'</p></div>'
+   + '<div class="grid12"><div class="span8"><div class="card"><div class="body stack">'
+     + '<div class="tabs" role="tablist">'
+       + '<button role="tab" aria-selected="'+signup+'" data-authtab="signup" data-copy="s3.tabSignup">'+esc(c("s3.tabSignup"))+'</button>'
+       + '<button role="tab" aria-selected="'+(!signup)+'" data-authtab="signin" data-copy="s3.tabSignin">'+esc(c("s3.tabSignin"))+'</button></div>'
+     + '<button class="btn secondary" style="width:100%" data-copy="s3.google">'+esc(c("s3.google"))+'</button>'
+     + '<p class="meta" style="text-align:center" data-copy="s3.or">'+esc(c("s3.or"))+'</p>'
+     + (signup ? '<label class="field"><span data-copy="s3.name">'+esc(c("s3.name"))+'</span><input type="text" value="Daniel">'
+          + '<em data-copy="s3.nameHelp">'+esc(c("s3.nameHelp"))+'</em></label>' : '')
+     + '<label class="field"><span data-copy="s3.email">'+esc(c("s3.email"))+'</span><input type="email" placeholder="you@example.com"></label>'
+     + '<label class="field"><span data-copy="s3.password">'+esc(c("s3.password"))+'</span><input type="password" placeholder="••••••••••">'
+       + (signup ? '<em data-copy="s3.passwordHelp">'+esc(c("s3.passwordHelp"))+'</em>' : '')+'</label>'
+     + (signup ? '<p class="mini" data-copy="s3.terms">'+esc(c("s3.terms"))+'</p>' : '')
+     + '<button class="btn primary" data-goto="3" style="width:100%" data-copy="'+(signup?"s3.signupBtn":"s3.signinBtn")+'">'+esc(c(signup?"s3.signupBtn":"s3.signinBtn"))+'</button>'
+   + '</div><div class="foot"><span class="mini" data-copy="'+(signup?"s3.haveAccount":"s3.noAccount")+'">'+esc(c(signup?"s3.haveAccount":"s3.noAccount"))+'</span>'
+     + '<button class="btn ghost" data-authtab="'+(signup?"signin":"signup")+'" data-copy="'+(signup?"s3.tabSignin":"s3.tabSignup")+'">'+esc(c(signup?"s3.tabSignin":"s3.tabSignup"))+'</button>'
+   + '</div></div></div></div>'
+   + '<aside class="span4"><div class="card"><div class="head"><h2 data-copy="s2.seatsHeading">'+esc(c("s2.seatsHeading"))+'</h2></div>'
+     + '<div class="body tight"><p class="mini" data-copy="s2.seatInitiator">'+esc(c("s2.seatInitiator"))+'</p>'
+     + '<p class="mini" data-copy="s2.seatCounterparty">'+esc(c("s2.seatCounterparty"))+'</p></div></div></aside>'
+   + '</div>'
+   + '<div class="stage-foot"><button class="btn secondary" data-goto="1" data-copy="s3.back">'+esc(c("s3.back"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 4: who and how ---------- */
+function s4Who(){
+  const t = TEMPLATES.find(x=>x.id===state.template)||TEMPLATES[0];
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s4.heading">'+esc(c("s4.heading"))+'</h1><p class="muted" data-copy="s4.body">'+esc(c("s4.body"))+'</p></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="'+t.nameKey+'">'+esc(c(t.nameKey))+'</h2>'
+     + '<span class="chip" data-copy="s1.aspects">'+esc(c("s1.aspects"))+'</span></div>'
+   + '<div class="body stack">'
+     + '<div class="grid12">'
+       + '<label class="field span6"><span data-copy="s4.initiator">'+esc(c("s4.initiator"))+'</span><input type="text" value="Daniel">'
+         + '<em data-copy="s4.initiatorHelp">'+esc(c("s4.initiatorHelp"))+'</em></label>'
+       + '<label class="field span6"><span data-copy="s4.counterparty">'+esc(c("s4.counterparty"))+'</span>'
+         + '<input type="text" placeholder="'+esc(c("s4.counterpartyPlaceholder"))+'">'
+         + '<em data-copy="s4.counterpartyHelp">'+esc(c("s4.counterpartyHelp"))+'</em></label>'
+       + '<label class="field span6"><span data-copy="s4.email">'+esc(c("s4.email"))+'</span>'
+         + '<input type="email" placeholder="'+esc(c("s4.emailPlaceholder"))+'"></label>'
+       + '<label class="field span6"><span data-copy="s4.title">'+esc(c("s4.title"))+'</span>'
+         + '<input type="text" value="'+esc(c("s4.titlePlaceholder"))+'">'
+         + '<em data-copy="s4.titleHelp">'+esc(c("s4.titleHelp"))+'</em></label>'
+       + '<label class="field span12"><span data-copy="s4.description">'+esc(c("s4.description"))+'</span>'
+         + '<textarea placeholder="'+esc(c("s4.descriptionPlaceholder"))+'"></textarea>'
+         + '<em data-copy="s4.descriptionHelp">'+esc(c("s4.descriptionHelp"))+'</em></label>'
+     + '</div>'
+   + '</div></div>'
+   + '<div class="stage-foot"><button class="btn secondary" data-goto="2" data-copy="s4.back">'+esc(c("s4.back"))+'</button>'
+     + '<button class="btn primary" data-goto="4" data-copy="s4.next">'+esc(c("s4.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 5: mode and setting ---------- */
+function s5Mode(){
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s5.heading">'+esc(c("s5.heading"))+'</h1><p class="muted" data-copy="s5.body">'+esc(c("s5.body"))+'</p></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="s5.modeHeading">'+esc(c("s5.modeHeading"))+'</h2>'
+     + '<span class="chip warn" data-copy="s5.modeFixed">'+esc(c("s5.modeFixed"))+'</span></div>'
+     + '<div class="body stack">'
+       + [["full","s5.modeFull","s5.modeFullHelp"],["soft","s5.modeSoft","s5.modeSoftHelp"]].map(([id,k,hk])=>
+         '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.mode===id)+'" data-mode="'+id+'">'
+         + '<span class="dot"></span><span><b data-copy="'+k+'">'+esc(c(k))+'</b><span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span></div>').join("")
+     + '</div></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="s5.settingHeading">'+esc(c("s5.settingHeading"))+'</h2>'
+     + '<span class="chip" data-copy="s5.settingSoft">'+esc(c("s5.settingSoft"))+' / '+esc(c("s5.settingFull"))+'</span></div>'
+   + '<div class="body stack"><p class="muted" data-copy="s5.settingHelp">'+esc(c("s5.settingHelp"))+'</p>'
+     + '<div class="row">'
+       + ['soft','full'].map(id=>'<button class="btn '+(state.setting===id?"primary":"secondary")+'" data-setting="'+id+'" data-copy="'+(id==="soft"?"s5.settingSoft":"s5.settingFull")+'">'+esc(c(id==="soft"?"s5.settingSoft":"s5.settingFull"))+'</button>').join("")
+     + '</div><p class="note" data-copy="s5.settingNote">'+esc(c("s5.settingNote"))+'</p></div></div>'
+   + '<div class="stage-foot"><button class="btn secondary" data-goto="3" data-copy="s5.back">'+esc(c("s5.back"))+'</button>'
+     + '<button class="btn primary" data-goto="5" data-copy="s5.next">'+esc(c("s5.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 6: aspects, view AND edit ---------- */
+function s6Aspects(){
+  const a = state.aspects[state.editingAspect] || state.aspects[0];
+  return '<div class="stack">'
+   + '<div class="between"><div><h1 data-copy="s6.heading">'+esc(c("s6.heading"))+'</h1>'
+     + '<p class="muted" data-copy="s6.body">'+esc(c("s6.body"))+'</p></div>'
+     + '<span class="chip" data-copy="s6.count">'+state.aspects.length+' Aspects</span></div>'
+   + '<div class="grid12">'
+     + '<div class="span7 stack">'
+       + state.aspects.map((asp,i)=>'<div class="aspect" data-aspect="'+i+'" style="cursor:pointer;'+(i===state.editingAspect?"border-color:var(--action);box-shadow:inset 0 0 0 1px var(--action)":"")+'">'
+           + '<header><b data-copy="'+asp.key+'">'+esc(c(asp.key))+'</b>'
+           + '<span class="chip'+(asp.origin==="s6.edited"?" warn":asp.origin==="s6.added"?" ok":"")+'" data-copy="'+asp.origin+'">'+esc(c(asp.origin))+'</span></header>'
+           + '<p class="mini">'+esc(asp.q)+'</p>'
+           + '<div class="row" style="margin-top:10px"><span class="mini" data-copy="s6.scaleValue">'+esc(c("s6.scaleValue"))+'</span>'
+           + '<button class="btn ghost" data-aspect="'+i+'" data-copy="s6.remove">'+esc(c("s6.remove"))+'</button></div>'
+         + '</div>').join("")
+       + '<button class="btn secondary" data-add-aspect="1" data-copy="s6.add">+ '+esc(c("s6.add"))+'</button>'
+     + '</div>'
+     + '<aside class="span5"><div class="card"><div class="head"><h2 data-copy="s6.editHeading">'+esc(c("s6.editHeading"))+'</h2>'
+       + '<span class="chip">Aspect '+(state.editingAspect+1)+'</span></div>'
+       + '<div class="body stack">'
+         + '<label class="field"><span data-copy="s6.nameLabel">'+esc(c("s6.nameLabel"))+'</span>'
+           + '<input type="text" value="'+esc(c(a.key))+'" id="aspectName"></label>'
+         + '<label class="field"><span data-copy="s6.questionLabel">'+esc(c("s6.questionLabel"))+'</span>'
+           + '<textarea id="aspectQuestion">'+esc(a.q)+'</textarea></label>'
+         + '<label class="field"><span data-copy="s6.scaleLabel">'+esc(c("s6.scaleLabel"))+'</span>'
+           + '<input type="text" value="'+esc(c("s6.scaleValue"))+'" disabled></label>'
+         + '<button class="btn primary" data-save-aspect="1" data-copy="s6.save" style="width:100%">'+esc(c("s6.save"))+'</button>'
+       + '</div></div></aside>'
+   + '</div>'
+   + '<div class="stage-foot"><button class="btn secondary" data-goto="4" data-copy="s6.back">'+esc(c("s6.back"))+'</button>'
+     + '<button class="btn primary" data-goto="6" data-copy="s6.next">'+esc(c("s6.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 7: payment, card or PayPal ---------- */
+function s7Payment(){
+  const now = state.pay === "now";
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s7.heading">'+esc(c("s7.heading"))+'</h1><p class="muted" data-copy="s7.body">'+esc(c("s7.body"))+'</p></div>'
+   + '<div class="card"><div class="body stack">'
+     + '<div class="choice" role="radio" tabindex="0" aria-checked="'+now+'" data-pay="now">'
+       + '<span class="dot"></span><span><b data-copy="s7.payNow">'+esc(c("s7.payNow"))+'</b>'
+       + '<span class="mini" data-copy="s7.payNowHelp">'+esc(c("s7.payNowHelp"))+'</span></span></div>'
+     + '<div class="choice" role="radio" tabindex="0" aria-checked="'+(!now)+'" data-pay="later">'
+       + '<span class="dot"></span><span><b data-copy="s7.payLater">'+esc(c("s7.payLater"))+'</b>'
+       + '<span class="mini" data-copy="s7.payLaterHelp">'+esc(c("s7.payLaterHelp"))+'</span></span></div>'
+     + (now ? '<div class="stack" style="border-top:1px solid var(--line);padding-top:16px">'
+         + '<div class="between"><h3 data-copy="s7.methodHeading">'+esc(c("s7.methodHeading"))+'</h3>'
+           + '<span class="chip" data-copy="s7.fee">'+esc(c("s7.fee"))+'</span></div>'
+         + '<div class="grid12">'
+           + '<div class="span6"><div class="choice" role="radio" tabindex="0" aria-checked="'+(state.method==="card")+'" data-method="card">'
+             + '<span class="dot"></span><span><b data-copy="s7.methodCard">'+esc(c("s7.methodCard"))+'</b>'
+             + '<span class="mini" data-copy="s7.methodCardHelp">'+esc(c("s7.methodCardHelp"))+'</span></span></div></div>'
+           + '<div class="span6"><div class="choice" role="radio" tabindex="0" aria-checked="'+(state.method==="paypal")+'" data-method="paypal">'
+             + '<span class="dot"></span><span><b data-copy="s7.methodPaypal">'+esc(c("s7.methodPaypal"))+'</b>'
+             + '<span class="mini" data-copy="s7.methodPaypalHelp">'+esc(c("s7.methodPaypalHelp"))+'</span></span></div></div>'
+         + '</div>'
+         + (state.method === "card"
+           ? '<div class="grid12">'
+               + '<label class="field span6"><span data-copy="s7.cardNumber">'+esc(c("s7.cardNumber"))+'</span><input type="text" placeholder="4242 4242 4242 4242"></label>'
+               + '<label class="field span3"><span data-copy="s7.expiry">'+esc(c("s7.expiry"))+'</span><input type="text" placeholder="MM / YY"></label>'
+               + '<label class="field span3"><span data-copy="s7.cvc">'+esc(c("s7.cvc"))+'</span><input type="text" placeholder="123"></label>'
+               + '<label class="field span12"><span data-copy="s7.cardName">'+esc(c("s7.cardName"))+'</span><input type="text" placeholder="Daniel Rowan"></label>'
+             + '</div>'
+           : '<div class="stack"><button class="btn paypal" data-copy="s7.paypalBtn">'+esc(c("s7.paypalBtn"))+'</button>'
+               + '<p class="mini" data-copy="s7.paypalNote">'+esc(c("s7.paypalNote"))+'</p></div>')
+       + '</div>' : '<p class="note" data-copy="s7.noMethod">'+esc(c("s7.noMethod"))+'</p>')
+   + '</div></div>'
+   + '<div class="stage-foot"><button class="btn secondary" data-goto="5" data-copy="s7.back">'+esc(c("s7.back"))+'</button>'
+     + '<button class="btn primary" data-goto="7" data-copy="s7.next">'+esc(c("s7.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 8: review ---------- */
+function s8Review(){
+  const t = TEMPLATES.find(x=>x.id===state.template)||TEMPLATES[0];
+  const rows = [
+    ["s8.templateRow", c(t.nameKey)],
+    ["s8.initiatorRow", "Daniel"],
+    ["s8.counterpartyRow", "Rowan"],
+    ["s8.titleRow", c("s4.titlePlaceholder")],
+    ["s8.descriptionRow", "—"],
+    ["s8.modeRow", c(state.mode==="full"?"s5.modeFull":"s5.modeSoft")],
+    ["s8.settingRow", c(state.setting==="soft"?"s5.settingSoft":"s5.settingFull")],
+    ["s8.aspectsRow", state.aspects.length + " Aspects"],
+    ["s8.paymentRow", state.pay==="now" ? (state.method==="card"?c("s7.methodCard"):c("s7.methodPaypal")) : c("s8.paymentLater")]
+  ];
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s8.heading">'+esc(c("s8.heading"))+'</h1><p class="muted" data-copy="s8.body">'+esc(c("s8.body"))+'</p></div>'
+   + '<div class="card"><div class="body"><dl class="kv">'
+     + rows.map(([k,v])=>'<dt data-copy="'+k+'">'+esc(c(k))+'</dt><dd>'+esc(v)+'</dd>').join("")
+   + '</dl></div></div>'
+   + '<div class="stage-foot"><button class="btn secondary" data-goto="6" data-copy="s8.back">'+esc(c("s8.back"))+'</button>'
+     + '<button class="btn primary" data-goto="8" data-copy="s8.submit">'+esc(c("s8.submit"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 9: invite sent ---------- */
+function s9Sent(){
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s9.heading">'+esc(c("s9.heading"))+'</h1><p class="muted" data-copy="s9.body">'+esc(c("s9.body"))+'</p></div>'
+   + '<div class="banner"><span>✓</span><div><b data-copy="s9.status">'+esc(c("s9.status"))+'</b>'
+     + '<div class="mini" data-copy="s9.sentTo">'+esc(c("s9.sentTo"))+'</div></div></div>'
+   + '<div class="grid12">'
+     + '<div class="span7"><div class="card"><div class="head"><h2 data-copy="s9.nextHeading">'+esc(c("s9.nextHeading"))+'</h2></div>'
+       + '<div class="body tight">'
+         + ['s9.next1','s9.next2','s9.next3'].map((k,i)=>'<div class="row"><span class="chip">'+(i+1)+'</span>'
+           + '<span class="muted" data-copy="'+k+'">'+esc(c(k))+'</span></div>').join("")
+       + '</div><div class="foot"><button class="btn secondary" data-copy="s9.resend">'+esc(c("s9.resend"))+'</button>'
+       + '<button class="btn ghost" data-copy="s9.copy">'+esc(c("s9.copy"))+'</button></div></div></div>'
+     + '<aside class="span5"><div class="card"><div class="head"><h2 data-copy="s9.status">'+esc(c("s9.status"))+'</h2></div>'
+       + '<div class="body"><p class="mini" data-copy="s9.sentTo">'+esc(c("s9.sentTo"))+'</p>'
+       + '<button class="btn primary" data-goto="9" data-copy="s9.open" style="width:100%;margin-top:12px">'+esc(c("s9.open"))+'</button></div></div></aside>'
+   + '</div>'
+   + '<div class="stage-foot"><button class="btn secondary" data-goto="7" data-copy="s9.back">'+esc(c("s9.back"))+'</button>'
+     + '<button class="btn primary" data-goto="9" data-copy="s9.next">'+esc(c("s9.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 10: alignment ---------- */
+function s10Align(){
+  const total = state.aspects.reduce((n,a,i)=> n + Math.abs((SCORES[i]||{you:3,them:3}).you - (SCORES[i]||{you:3,them:3}).them), 0);
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s10.heading">'+esc(c("s10.heading"))+'</h1><p class="muted" data-copy="s10.body">'+esc(c("s10.body"))+'</p></div>'
+   + '<div class="card"><div class="head"><div><h2 data-copy="s10.gapHeading">'+esc(c("s10.gapHeading"))+'</h2>'
+     + '<span class="muted" data-copy="s10.gapSubline">'+esc(c("s10.gapSubline"))+'</span></div>'
+     + '<span class="chip ok" data-copy="s10.sealed">'+esc(c("s10.sealed"))+'</span></div>'
+     + '<div class="body stack">'
+       + state.aspects.map((a,i)=>{ const s = SCORES[i]||{you:3,them:3}; const gap = Math.abs(s.you-s.them);
+           return '<div class="aspect"><header><b data-copy="'+a.key+'">'+esc(c(a.key))+'</b>'
+             + '<span class="chip'+(gap>=2?" gap":"")+'"><span data-copy="'+(gap>=2?"s10.verdictGap":"s10.verdict")+'">'
+             + esc(c(gap>=2?"s10.verdictGap":"s10.verdict"))+'</span> · '+gap+'</span></header>'
+             + '<div class="two-up"><div><span class="mini" data-copy="s10.you">'+esc(c("s10.you"))+'</span>'
+               + '<div class="meter"><i style="width:'+(s.you/5*100)+'%"></i></div></div>'
+               + '<div><span class="mini" data-copy="s10.them">'+esc(c("s10.them"))+'</span>'
+               + '<div class="meter"><i style="width:'+(s.them/5*100)+'%;background:#94a3b8"></i></div></div></div></div>';
+         }).join("")
+     + '</div>'
+     + '<div class="foot"><span class="mini"><span data-copy="s10.total">'+esc(c("s10.total"))+'</span> <b>'+total+'</b></span>'
+       + '<span class="chip">'+state.aspects.length+' Aspects</span></div></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="s10.completeHeading">'+esc(c("s10.completeHeading"))+'</h2></div>'
+     + '<div class="body"><p class="muted" data-copy="s10.completeBody">'+esc(c("s10.completeBody"))+'</p></div>'
+     + '<div class="foot"><button class="btn secondary" data-goto="8" data-copy="s10.back">'+esc(c("s10.back"))+'</button>'
+     + '<button class="btn primary" data-copy="s10.finish">'+esc(c("s10.finish"))+'</button></div></div>'
+  + '</div>';
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const tab = e.target.closest("[data-tab]");
+  if (tab) { state.tab = tab.dataset.tab; render(); return; }
+  const at = e.target.closest("[data-authtab]");
+  if (at) { state.authTab = at.dataset.authtab; render(); return; }
+  const asp = e.target.closest("[data-aspect]");
+  if (asp && !asp.dataset.addAspect) { state.editingAspect = +asp.dataset.aspect; render(); return; }
+  if (e.target.closest("[data-add-aspect]")) {
+    const n = state.aspects.length + 1;
+    state.aspects.push({ key:"s10.a"+n, q:"A new question both seats answer.", origin:"s6.added" });
+    copy["s10.a"+n] = "New Aspect";
+    state.editingAspect = n - 1; persist(); render();
+    toast("Aspect added — edit it on the right"); return;
+  }
+  if (e.target.closest("[data-save-aspect]")) {
+    const name = document.getElementById("aspectName"), q = document.getElementById("aspectQuestion");
+    if (name && q) {
+      const a = state.aspects[state.editingAspect];
+      copy[a.key] = name.value.trim() || c(a.key);
+      a.q = q.value.trim() || a.q;
+      a.origin = "s6.edited"; persist(); render(); toast("Aspect saved — it is yours from creation");
+    }
+    return;
+  }
+  const t = e.target.closest("[data-goto],[data-tpl],[data-mode],[data-setting],[data-pay],[data-method],#editToggle,#saveJson,#loadJsonBtn,#resetCopy");
+  if (!t) return;
+  if (t.dataset.goto !== undefined) { state.stage = +t.dataset.goto; render(); window.scrollTo({top:0}); return; }
+  if (t.dataset.tpl) { state.template = t.dataset.tpl; render(); return; }
+  if (t.dataset.mode) { state.mode = t.dataset.mode; render(); return; }
+  if (t.dataset.setting) { state.setting = t.dataset.setting; render(); return; }
+  if (t.dataset.pay) { state.pay = t.dataset.pay; render(); return; }
+  if (t.dataset.method) { state.method = t.dataset.method; render(); return; }
+  if (t.id === "editToggle") { toggleEdit(); return; }
+  if (t.id === "saveJson") { saveJson(); return; }
+  if (t.id === "loadJsonBtn") { document.getElementById("loadJson").click(); return; }
+  if (t.id === "resetCopy") { copy = Object.assign({},DEFAULT_COPY); persist(); render(); toast("Copy reset to the shipped JSON"); return; }
+});
+document.addEventListener("keydown", e => {
+  if ((e.key==="Enter"||e.key===" ") && e.target.matches('[role="radio"]')) { e.preventDefault(); e.target.click(); }
+});
+function toggleEdit(){
+  const on = document.body.dataset.editing !== "on";
+  document.body.dataset.editing = on ? "on" : "off";
+  document.querySelectorAll("[data-copy]").forEach(el=>{ el.contentEditable = on?"true":"false"; if(on) el.setAttribute("spellcheck","false"); });
+  document.getElementById("editorState").textContent = on ? "Editing — blur writes back to JSON" : "Copy loads from JSON";
+  if (on) toast("Click any label to edit it; blur writes it into the JSON");
+}
+document.addEventListener("blur", e => {
+  const el = e.target;
+  if (document.body.dataset.editing !== "on" || !el.dataset || !el.dataset.copy) return;
+  const next = el.textContent.trim();
+  if (!next) { el.textContent = c(el.dataset.copy); return; }
+  copy[el.dataset.copy] = next; persist(); toast("Saved “"+el.dataset.copy+"”");
+}, true);
+function persist(){ try{ localStorage.setItem(STORE, JSON.stringify(copy)); }catch(e){} }
+function saveJson(){
+  const blob = new Blob([JSON.stringify(copy,null,2)],{type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "alignsynch-copy.json"; a.click();
+  URL.revokeObjectURL(a.href); toast("Saved alignsynch-copy.json — "+Object.keys(copy).length+" strings");
+}
+document.getElementById("loadJson").addEventListener("change", ev => {
+  const f = ev.target.files && ev.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  fr.onload = () => { try { const p = JSON.parse(fr.result); copy = Object.assign({},DEFAULT_COPY,p); persist(); render(); toast("Loaded "+Object.keys(p).length+" strings"); } catch(e){ toast("That file is not valid JSON"); } };
+  fr.readAsText(f);
+});
+let toastTimer;
+function toast(m){ const el=document.getElementById("toast"); el.textContent=m; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),2400); }
+render();
+</script>
+</body>
+</html>

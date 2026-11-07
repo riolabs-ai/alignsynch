@@ -116,6 +116,8 @@ describe("the shell's menus", () => {
       "/admin/health",
       "/admin/billing",
       "/admin/broadcast",
+      // #665 — the review shelf: published artifacts with their to-dos and feedback.
+      "/admin/review",
       "/admin/audit",
     ]);
   });
