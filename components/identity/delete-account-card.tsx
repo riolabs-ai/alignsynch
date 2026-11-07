@@ -19,7 +19,7 @@ import { type FormEvent, useState } from "react";
  *
  * The card exists because the sentence on this page used to be a promise with no mechanism behind
  * it ("account deletion isn't available in-app yet"). What replaced it is the mechanism: the typed
- * phrase, then `deleteAccount`, which deletes the managed-auth user and scrubs `public` in one
+ * phrase, then `deleteAccountAction`, which deletes the managed-auth user and scrubs `public` in one
  * transaction (`lib/account/purge.ts`).
  *
  * Every word is `data/pages/settings.ts`'s `deletion` band — E23's budget for `/settings` is 0, so
