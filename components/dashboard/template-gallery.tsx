@@ -70,6 +70,7 @@ export function TemplateGallery({
   unreadable,
   onCreate,
   onClone,
+  showList = true,
 }: {
   copy: PageCopy;
   rows: readonly MemberTemplateRow[];
@@ -79,6 +80,12 @@ export function TemplateGallery({
   unreadable: string | null;
   onCreate: (payload: { record?: unknown }) => Promise<TemplateWriteOutcome>;
   onClone: (payload: { templateId?: string }) => Promise<TemplateWriteOutcome>;
+  /**
+   * Whether the "Your templates" card is drawn. #620's Templates tab lists the member's rows in
+   * the shared shelf above this form, so the tab passes `false` and keeps only the two create
+   * bands — one list, two presentations, never two lists of the same rows on one screen.
+   */
+  showList?: boolean;
 }) {
   const list = sectionOf(copy, "list");
   const blank = sectionOf(copy, "new");
@@ -148,57 +155,59 @@ export function TemplateGallery({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{list.heading}</CardTitle>
-          <CardDescription>{sectionBody(list)}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {unreadable !== null ? (
-            <div data-templates-unreadable>
-              <p className="text-sm font-medium">{unreadableCopy.heading}</p>
-              <p className="text-sm text-muted-foreground">{unreadable}</p>
-            </div>
-          ) : rows.length === 0 ? (
-            <div data-templates-empty>
-              <p className="text-sm font-medium">{empty.heading}</p>
-              <p className="text-sm text-muted-foreground">{sectionBody(empty)}</p>
-            </div>
-          ) : (
-            <ul data-templates-list className="grid gap-3 sm:grid-cols-2">
-              {rows.map((row) => (
-                <li key={row.id} className="rounded-lg border p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <p className="font-medium">{row.title}</p>
-                      <p className="text-sm text-muted-foreground">{row.summary}</p>
+      {showList ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{list.heading}</CardTitle>
+            <CardDescription>{sectionBody(list)}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {unreadable !== null ? (
+              <div data-templates-unreadable>
+                <p className="text-sm font-medium">{unreadableCopy.heading}</p>
+                <p className="text-sm text-muted-foreground">{unreadable}</p>
+              </div>
+            ) : rows.length === 0 ? (
+              <div data-templates-empty>
+                <p className="text-sm font-medium">{empty.heading}</p>
+                <p className="text-sm text-muted-foreground">{sectionBody(empty)}</p>
+              </div>
+            ) : (
+              <ul data-templates-list className="grid gap-3 sm:grid-cols-2">
+                {rows.map((row) => (
+                  <li key={row.id} className="rounded-lg border p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="font-medium">{row.title}</p>
+                        <p className="text-sm text-muted-foreground">{row.summary}</p>
+                      </div>
+                      <span className="font-mono text-xs text-muted-foreground">{row.slug}</span>
                     </div>
-                    <span className="font-mono text-xs text-muted-foreground">{row.slug}</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    <span>
-                      {fillLabel(pageItemOf(copy, "aspects").label, {
-                        count: String(row.aspectCount),
-                      })}
-                    </span>
-                    <span>
-                      {fillLabel(pageItemOf(copy, "relationships").label, {
-                        count: String(row.relationshipCount),
-                      })}
-                    </span>
-                    <Link
-                      className="underline underline-offset-4"
-                      href={`/dashboard/templates/${row.id}`}
-                    >
-                      {pageItemOf(copy, "open").label}
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span>
+                        {fillLabel(pageItemOf(copy, "aspects").label, {
+                          count: String(row.aspectCount),
+                        })}
+                      </span>
+                      <span>
+                        {fillLabel(pageItemOf(copy, "relationships").label, {
+                          count: String(row.relationshipCount),
+                        })}
+                      </span>
+                      <Link
+                        className="underline underline-offset-4"
+                        href={`/dashboard/templates/${row.id}`}
+                      >
+                        {pageItemOf(copy, "open").label}
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

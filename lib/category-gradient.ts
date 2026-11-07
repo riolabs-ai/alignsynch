@@ -77,3 +77,33 @@ export function monogramOf(name: string): string {
   if (words.length === 1) return first.toUpperCase();
   return (first + words[words.length - 1].charAt(0)).toUpperCase();
 }
+
+/**
+ * The **muted** wash a template cover is drawn with (#620, owner-approved).
+ *
+ * Same seed, same 45°-step angle, same hue for the same slug — only the two stops move close
+ * together: `hsl(h 22% 86%) → hsl(h+12..23° 24% 74%)`. Two nearby stops read as one tinted
+ * surface, which is what a card cover should be; the full-strength band above is a *tile*, and
+ * putting that behind a title is the "poster" the owner rejected.
+ *
+ * **It is a second derivation and `/categories` keeps the first.** `gradientFor()` is what the
+ * category grid draws and it does not change here — this function exists so a template cover can
+ * be quieter without a component composing a gradient of its own, which is what
+ * `scripts/lint-brand-classes.mjs` refuses (that rule reads class strings; the shipped precedent
+ * for a seeded value is `components/categories/category-tile.tsx`'s inline `backgroundImage`, and
+ * this follows it).
+ *
+ * The monogram that sits on top is **ink at ~34%, never white**: an 86%-lightness tint with white
+ * type on it is invisible, which is the defect the muted band would otherwise introduce.
+ */
+export function mutedGradientFor(slug: string): { readonly css: string } {
+  const seed = slugSeed(slug);
+  const fromHue = seed % 360;
+  // 12..23 degrees: close enough to read as one surface, far enough that two slugs differ.
+  const delta = 12 + (Math.floor(seed / 360) % 12);
+  const toHue = (fromHue + delta) % 360;
+  const angle = 45 + (Math.floor(seed / 72000) % 8) * 45;
+  return {
+    css: `linear-gradient(${angle}deg, ${hsl(fromHue, 22, 86)} 0%, ${hsl(toHue, 24, 74)} 100%)`,
+  };
+}

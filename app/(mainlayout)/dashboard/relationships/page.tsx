@@ -18,7 +18,7 @@
 import type { Metadata } from "next";
 
 import { RelationshipCreate } from "@/components/dashboard/relationship-create";
-import { RelationshipList } from "@/components/dashboard/relationship-list";
+import { RelationshipCards } from "@/components/dashboard/relationship-cards";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -69,7 +69,11 @@ export default async function MemberRelationshipsPage() {
           onCreate={createRelationshipAction}
         />
       ) : null}
-      <RelationshipList copy={dashboardRelationshipsPageCopy} rows={rows} unreadable={unreadable} />
+      <RelationshipCards
+        copy={dashboardRelationshipsPageCopy}
+        rows={rows}
+        unreadable={unreadable}
+      />
     </div>
   );
 }

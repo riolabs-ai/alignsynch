@@ -47,7 +47,6 @@ describe("the focused flows", () => {
       "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",
-      "/dashboard/library",
       "/dashboard/help",
       "/dashboard/support",
       "/assessment/templates",

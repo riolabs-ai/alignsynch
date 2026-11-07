@@ -43,8 +43,7 @@ import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
 import { dailyChallengePageCopy } from "./daily-challenge";
 import { dashboardPageCopy } from "./dashboard";
-// #542 phase 1 — support, help and the library, inside the dashboard.
-import { dashboardLibraryPageCopy } from "./dashboard-library";
+// #542 phase 1 — support and help, inside the dashboard.
 import { dashboardSupportPageCopy } from "./dashboard-support";
 // #533 phase 2 — the initiator's own templates and relationships.
 import { dashboardRelationshipDetailPageCopy } from "./dashboard-relationship-detail";
@@ -114,7 +113,6 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/daily-challenge": dailyChallengePageCopy,
   "/dashboard": overviewPageCopy,
   // #542 phase 1 — the work the dashboard used to leave the app to do.
-  "/dashboard/library": dashboardLibraryPageCopy,
   "/dashboard/support": dashboardSupportPageCopy,
   // #533 phase 2 — the initiator's own templates and relationships. Four routes, four fixtures:
   // the two lists, the private template editor, and one relationship's detail.

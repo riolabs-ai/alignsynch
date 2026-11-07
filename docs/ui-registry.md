@@ -15,11 +15,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **84** — 55 static, 29 dynamic, from `app/**/page.tsx`
+- routes: **83** — 54 static, 29 dynamic, from `app/**/page.tsx`
 - component domains: **41** — 300 files under `components/`, 294 of them `.tsx`
 - route handlers: **24** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 14 · **fixture** 67 · **db** 35 · **live** 8 · **prototype** 1
-- templates: Both templates 42 · AlignSynch 39 · QuizHub 42 · No template yet 2
+- status: **mock** 14 · **fixture** 67 · **db** 34 · **live** 8 · **prototype** 1
+- templates: Both templates 41 · AlignSynch 39 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -69,12 +69,6 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/tour/replay-tour.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/tour/mark.ts`
   - notes: Reuses `data/pages/how-it-works.ts` and `data/pages/tour.ts` rather than authoring a third copy of either — the page's job is the route, not the words. `/how-it-works` still answers for a bookmarked link; the rail points here since #542 phase 1. The only write is `POST /api/tour { seen: false }` through `lib/tour/mark.ts`, and a refusal shows the fixture's failure sentence instead of navigating.
 
-- `/dashboard/library` — **db**
-  - capability: What this member has saved: every template they own plus the ones their relationships were built from, each with its Aspect count and how many of their relationships use it. The empty state names the two moves that put a row here.
-  - components: `components/dashboard`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
-  - notes: `lib/member/library.ts` is the read: `owner_user_id = $1` OR a `relationship.template_id` whose `initiator_user_id`/`counterparty_user_id` is the viewer, and `NOT EXISTS (session)` for the template definition. Distinct from `/dashboard/templates` (authoring: create, clone, edit) and `/assessment/templates` (the catalogue you start from) — three screens, three questions.
-
 - `/dashboard/relationships` — **db**
   - capability: The relationships this member started: a table of their own initiator rows with the stored status on each, and the create band that copies one of their templates into a new relationship's own record.
   - components: `components/dashboard`, `components/ui`
@@ -100,10 +94,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: A slug that is not a published `kb` article is a 404 before the component mounts, exactly as the public route decides it. The component takes both paths as props because it renders in two trees: a marketing `href` spelled inside it would be a dashboard departure E39 refuses.
 
 - `/dashboard/templates` — **db**
-  - capability: The private templates this member wrote: each row opens its editor, a blank one starts from nothing, and a public catalogue template can be cloned into a private copy the member owns.
+  - capability: One destination with two tabs (#620): Relationship Templates is the product shelf a member can start a relationship from, each card carrying the price of the relationship and the two owner-named actions (View Details, Create Relationship); My Templates is what they own or adopted, plus the blank and clone bands that create a new one.
   - components: `components/dashboard`, `components/ui`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
-  - notes: `record.owner_user_id` is the member and `record.visibility` is always `private` on every write here — a member can never mint a public template, because public listing is admin-curated (#533). Distinct from `/assessment/templates`, which is the library a member can _use_ (built-ins plus their own, archive/duplicate); this page is only what they _wrote_.
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/template-library.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/assessment/templates/<id>/create`, the shipped create step; nobody here says "start an instance", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.
 
 - `/dashboard/templates/[id]` — **db**
   - capability: One private template's editor: the catalogue editor's questions and Aspects shape, writing `owner_user_id` = the actor and `visibility` = `private`, with no publish or unpublish control.
@@ -268,7 +262,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/ui` — **mock**
   - capability: The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.
   - files (51): `accordion.tsx`, `alert-dialog.tsx`, `alert.tsx`, `aspect-ratio.tsx`, `avatar.tsx`, `badge.tsx`, `button.tsx`, `card.tsx`, `carousel.tsx`, `chart.tsx`, `checkbox.tsx`, `circular-progress.tsx`, `collapsible.tsx`, `command.tsx`, `context-menu.tsx`, `dialog.tsx`, `drawer.tsx`, `dropdown-menu.tsx`, `form-surface.tsx`, `form.tsx`, `hover-card.tsx`, `input-otp.tsx`, `input.tsx`, `label.tsx`, `menubar.tsx`, `motion.tsx`, `navigation-menu.tsx`, `page-header.tsx`, `pagination.tsx`, `popover.tsx`, `progress.tsx`, `radio-group.tsx`, `resizable.tsx`, `scroll-area.tsx`, `select.tsx`, `separator.tsx`, `sheet.tsx`, `skeleton.tsx`, `slider.tsx`, `sonner.tsx`, `switch.tsx`, `table.tsx`, `tabs.tsx`, `textarea.tsx`, `toast.tsx`, `toaster.tsx`, `toggle-group.tsx`, `toggle.tsx`, `tooltip.tsx`, `use-mobile.tsx`, `use-toast.ts`
-  - routes (66): `/`, `/admin/audit`, `/admin/billing`, `/admin/broadcast`, `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`, `/admin/gaps`, `/admin/health`, `/admin/inbox`, `/admin/instances`, `/admin/instances/[id]`, `/admin/instances/[id]/report`, `/admin/templates`, `/admin/templates/[id]`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/help`, `/dashboard/library`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/support`, `/dashboard/support/articles/[slug]`, `/dashboard/templates`, `/dashboard/templates/[id]`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/help`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/welcome` — and every other route through `app/layout.tsx`
+  - routes (65): `/`, `/admin/audit`, `/admin/billing`, `/admin/broadcast`, `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`, `/admin/gaps`, `/admin/health`, `/admin/inbox`, `/admin/instances`, `/admin/instances/[id]`, `/admin/instances/[id]/report`, `/admin/templates`, `/admin/templates/[id]`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/create/editor`, `/create/generator`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard`, `/dashboard/help`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/support`, `/dashboard/support/articles/[slug]`, `/dashboard/templates`, `/dashboard/templates/[id]`, `/dashboard/user`, `/demo`, `/demo/admin`, `/explore`, `/explore/featured`, `/forgot-password`, `/help`, `/leaderboard`, `/login`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/pricing`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/quiz/[id]/play`, `/register`, `/reset/[token]`, `/search`, `/settings`, `/support`, `/support/articles/[slug]`, `/tournaments`, `/tournaments/[id]`, `/welcome` — and every other route through `app/layout.tsx`
   - notes: Renders only the props it is given; the tokens it paints with come from app/globals.css.
 
 ## AlignSynch
@@ -667,8 +661,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/dashboard` — **fixture**
   - capability: The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.
-  - files (14): `affiliate-dashboard.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `member-library.tsx`, `my-quizzes-dashboard.tsx`, `recent-quizzes.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationship-list.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `wallet-dashboard.tsx`
-  - routes (4): `/dashboard/library`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`
+  - files (14): `affiliate-dashboard.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
+  - routes (3): `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`
   - notes: No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.
 
 - `components/explore` — **fixture**

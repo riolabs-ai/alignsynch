@@ -538,16 +538,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/dashboard/library",
-    status: "db",
-    templates: ["quizhub", "alignsynch"],
-    capability:
-      "What this member has saved: every template they own plus the ones their relationships were built from, each with its Aspect count and how many of their relationships use it. The empty state names the two moves that put a row here.",
-    notes:
-      "`lib/member/library.ts` is the read: `owner_user_id = $1` OR a `relationship.template_id` whose `initiator_user_id`/`counterparty_user_id` is the viewer, and `NOT EXISTS (session)` for the template definition. Distinct from `/dashboard/templates` (authoring: create, clone, edit) and `/assessment/templates` (the catalogue you start from) — three screens, three questions.",
-  },
-  {
-    kind: "route",
     surface: "/dashboard/support",
     status: "db",
     templates: ["quizhub", "alignsynch"],
@@ -572,9 +562,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The private templates this member wrote: each row opens its editor, a blank one starts from nothing, and a public catalogue template can be cloned into a private copy the member owns.",
+      "One destination with two tabs (#620): Relationship Templates is the product shelf a member can start a relationship from, each card carrying the price of the relationship and the two owner-named actions (View Details, Create Relationship); My Templates is what they own or adopted, plus the blank and clone bands that create a new one.",
     notes:
-      "`record.owner_user_id` is the member and `record.visibility` is always `private` on every write here — a member can never mint a public template, because public listing is admin-curated (#533). Distinct from `/assessment/templates`, which is the library a member can *use* (built-ins plus their own, archive/duplicate); this page is only what they *wrote*.",
+      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/assessment/templates/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
   },
   {
     kind: "route",

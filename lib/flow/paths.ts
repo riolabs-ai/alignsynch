@@ -59,9 +59,6 @@ export function dashboardArticlePath(slug: string): string {
  */
 export const DASHBOARD_HELP_PATH = "/dashboard/help";
 
-/** `/dashboard/library` — the templates this member owns or has adopted (#542 phase 1). */
-export const DASHBOARD_LIBRARY_PATH = "/dashboard/library";
-
 /**
  * `/help` — the public help centre (FAQ, knowledge base, the one public contact form).
  *

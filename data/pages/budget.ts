@@ -211,16 +211,6 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/overview",
     budget: 0,
   },
-  // #542 phase 1 — the library: the templates this member owns or has adopted. Budget 0 from the
-  // first commit: the two badges, the three counts, the empty state's two actions and the
-  // unreadable panel are `data/pages/dashboard-library.ts`, so the next literal in
-  // `components/dashboard/member-library.tsx` is a red build.
-  "/dashboard/library": {
-    page: "app/(mainlayout)/dashboard/library/page.tsx",
-    dirs: ["components/dashboard"],
-    fixture: "data/pages/dashboard-library",
-    budget: 0,
-  },
   // #542 phase 1 — support inside the shell: the knowledge base, the request form and the outcome
   // band. Budget 0: the list's chrome, the fields, the five states and the band's three facts are
   // `data/pages/dashboard-support.ts`.
