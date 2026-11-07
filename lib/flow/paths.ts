@@ -184,6 +184,40 @@ export function createRelationshipPath(templateRecordId: string): string {
   return `${templateDetailPath(templateRecordId)}/create`;
 }
 
+/**
+ * `/register?next=<the product's own create step>` — sign-up that returns to the chosen product (#618).
+ *
+ * **The chosen product is the URL, not client state.** `next` is this template's create path, so a
+ * person who leaves for an account and comes back is looking at the same product with nothing held
+ * in a cookie, a draft row or a selected id read back from a form. A sign-up that returned to the
+ * product *list* is the failure the builder makes impossible: there is no other address to return to.
+ *
+ * Composed here rather than through `lib/auth/paths.ts::loginPathFor`, for the mechanical reason
+ * that module already imports `OVERVIEW_PATH` from this one — the dependency runs one way. The
+ * encoding is the same `encodeURIComponent`, and `/register` reads `next` through the same
+ * `safeNextPath` gate as `/login` (a value that leaves this site falls back to the brand's home).
+ */
+export function createSignUpPath(templateRecordId: string): string {
+  return `/register?next=${encodeURIComponent(createRelationshipPath(templateRecordId))}`;
+}
+
+/** `/login?next=<the same create step>` — the returning account's half of the same round trip. */
+export function createSignInPath(templateRecordId: string): string {
+  return `/login?next=${encodeURIComponent(createRelationshipPath(templateRecordId))}`;
+}
+
+/**
+ * `/pricing` — where a plan is chosen (#618).
+ *
+ * The create screen's two refusals (`relationship-limit`, `mode-not-entitled`) name a plan and, until
+ * this constant, drew no door. They point *here* and not at a checkout URL: a checkout is started
+ * from a plan card (`components/pricing/plan-checkout-button.tsx`) which posts the tier it sells, and
+ * a refusal that built a checkout session would be a second copy of that decision — a link that can
+ * only work for one tier, on a page that does not know which tier the person needs. The route is
+ * already in `content/routes.ts`, so E7's both-directions check is satisfied without an edit there.
+ */
+export const PRICING_PATH = "/pricing";
+
 /** The submit endpoint: a form post, so a frozen answer is a status code and not a banner. */
 export function answersPath(instanceRecordId: string): string {
   return `${instancePath(instanceRecordId)}/answers`;
