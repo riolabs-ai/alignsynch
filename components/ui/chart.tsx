@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
+import type { LegendPayload, TooltipContentProps } from "recharts";
 
 import { cn } from "@/lib/utils";
 
@@ -94,17 +95,22 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<"div"> & {
-      hideLabel?: boolean;
-      hideIndicator?: boolean;
-      indicator?: "line" | "dot" | "dashed";
-      nameKey?: string;
-      labelKey?: string;
-    }
->(
+/**
+ * recharts 3 reads `active`, `payload` and `label` from its own store and hands
+ * them to `content` as `TooltipContentProps` (they are no longer props of the
+ * `<Tooltip>` element itself), so the wrapper takes the content props — made
+ * optional for authoring — beside the div props it forwards.
+ */
+type ChartTooltipContentProps = React.ComponentProps<"div"> &
+  Partial<TooltipContentProps> & {
+    hideLabel?: boolean;
+    hideIndicator?: boolean;
+    indicator?: "line" | "dot" | "dashed";
+    nameKey?: string;
+    labelKey?: string;
+  };
+
+const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContentProps>(
   (
     {
       active,
@@ -174,7 +180,7 @@ const ChartTooltipContent = React.forwardRef<
 
             return (
               <div
-                key={item.dataKey}
+                key={typeof item.dataKey === "function" ? index : item.dataKey}
                 className={cn(
                   "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                   indicator === "dot" && "items-center",
@@ -240,57 +246,66 @@ ChartTooltipContent.displayName = "ChartTooltip";
 
 const ChartLegend = RechartsPrimitive.Legend;
 
-const ChartLegendContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-      hideIcon?: boolean;
-      nameKey?: string;
+/**
+ * `payload` and `verticalAlign` moved off `LegendProps` in recharts 3 — they are
+ * injected into `content` by the legend, so they are read from the default
+ * content's own props type instead of `Pick<LegendProps, …>`.
+ */
+type ChartLegendContentProps = React.ComponentProps<"div"> & {
+  payload?: ReadonlyArray<LegendPayload>;
+  verticalAlign?: React.ComponentProps<
+    typeof RechartsPrimitive.DefaultLegendContent
+  >["verticalAlign"];
+  hideIcon?: boolean;
+  nameKey?: string;
+};
+
+const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentProps>(
+  ({ className, hideIcon = false, payload, verticalAlign = "bottom", nameKey }, ref) => {
+    const { config } = useChart();
+
+    if (!payload?.length) {
+      return null;
     }
->(({ className, hideIcon = false, payload, verticalAlign = "bottom", nameKey }, ref) => {
-  const { config } = useChart();
 
-  if (!payload?.length) {
-    return null;
-  }
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex items-center justify-center gap-4",
+          verticalAlign === "top" ? "pb-3" : "pt-3",
+          className,
+        )}
+      >
+        {payload.map((item) => {
+          const key = `${nameKey || item.dataKey || "value"}`;
+          const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "flex items-center justify-center gap-4",
-        verticalAlign === "top" ? "pb-3" : "pt-3",
-        className,
-      )}
-    >
-      {payload.map((item) => {
-        const key = `${nameKey || item.dataKey || "value"}`;
-        const itemConfig = getPayloadConfigFromPayload(config, item, key);
-
-        return (
-          <div
-            key={item.value}
-            className={cn(
-              "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
-            )}
-          >
-            {itemConfig?.icon && !hideIcon ? (
-              <itemConfig.icon />
-            ) : (
-              <div
-                className="h-2 w-2 shrink-0 rounded-[2px]"
-                style={{
-                  backgroundColor: item.color,
-                }}
-              />
-            )}
-            {itemConfig?.label}
-          </div>
-        );
-      })}
-    </div>
-  );
-});
+          return (
+            <div
+              key={item.value}
+              className={cn(
+                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
+              )}
+            >
+              {itemConfig?.icon && !hideIcon ? (
+                <itemConfig.icon />
+              ) : (
+                <div
+                  className="h-2 w-2 shrink-0 rounded-[2px]"
+                  style={{
+                    backgroundColor: item.color,
+                  }}
+                />
+              )}
+              {itemConfig?.label}
+            </div>
+          );
+        })}
+      </div>
+    );
+  },
+);
 ChartLegendContent.displayName = "ChartLegend";
 
 // Helper to extract item config from a payload.
