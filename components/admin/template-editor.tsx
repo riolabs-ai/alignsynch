@@ -18,9 +18,12 @@
  *     template; it posts it, and the server answers with `zAssessment`'s own findings
  *     (`{ path, message }`), which are drawn under the save band verbatim. A client-side copy of
  *     "an Aspect needs two poles" would be the second rule this card forbids.
- *   - **A save is a write.** The reason field is the audit row's sentence, and the answer carries
- *     the `admin_action` id, which the saved line prints. Local state is the *draft*; the record
- *     in Postgres is what everything else in the product reads.
+ *   - **A save is a write.** The audit sentence is composed server-side
+ *     (`lib/member/template-reasons.ts`, #625) — a member is never asked to justify their own draft,
+ *     and the console's save shares this component, so it does not either. The answer carries the
+ *     `admin_action` id, which the saved line prints. Local state is the *draft*; the record
+ *     in Postgres is what everything else in the product reads. Publish and withdraw keep a typed
+ *     reason: those are privileged acts on the catalogue and the reason is their record of why.
  *   - **The preview cannot read a published row.** It is built from the in-progress draft, so a
  *     change is visible before it is saved — and the sheet it reuses is
  *     `components/assessment-flow/answer-form.tsx`, the flow's own party sheet (whose ancestor is
@@ -267,7 +270,6 @@ export function TemplateEditor({
           date: template.date,
           aspects,
         }),
-        reason,
       });
       setOutcome(answer);
       if (answer.ok) router.refresh();
@@ -618,14 +620,6 @@ export function TemplateEditor({
             <CardDescription>{sectionBody(save)}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="editor-reason">{itemLabel(save, "reason")}</Label>
-              <Input
-                id="editor-reason"
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-              />
-            </div>
             <div className="flex flex-wrap items-center gap-4">
               <Button type="button" onClick={submit} disabled={pending}>
                 {pending ? itemLabel(save, "saving") : itemLabel(save, "submit")}

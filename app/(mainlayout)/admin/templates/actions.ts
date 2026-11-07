@@ -4,10 +4,15 @@
  * Template authoring, as four server actions (#502a, #502b).
  *
  * Two of them write a **draft** (`createTemplate`, `saveTemplate`); two publish and withdraw it
- * (`publishTemplateVersion`, `unpublishTemplateVersion`). All four name a reason, all four reach
- * `act()`, and each of the four lands its own `admin_action` row.
+ * (`publishTemplateVersion`, `unpublishTemplateVersion`). All four reach `act()` and land their own
+ * `admin_action` row, but only three name a reason: `createTemplate`, publish and withdraw are
+ * privileged acts — a catalogue row is opened, a version goes live — so the person performing them
+ * states why. `saveTemplate` does not (#625): its sentence is composed from the record by
+ * `lib/member/template-reasons.ts`, exactly as a member's create, clone and save are, so no save on
+ * either surface can answer `reason-too-short`.
  *
- * The component posts **the record it is editing** — a plain JSON body — plus a reason. This file
+ * The component posts **the record it is editing** — a plain JSON body — and a create adds a
+ * reason. This file
  * resolves who is asking, forces the two fields the console does not own (`type`, `status`), and
  * then asks `zAssessment` whether that body is a template. Every decision worth testing lives
  * further down: the schema decides what a template is, `act()` decides whether this actor may
@@ -50,6 +55,7 @@ import {
 } from "@/lib/admin/templates";
 import {
   slugify,
+  type TemplateCreatePayload,
   type TemplateFormPayload,
   type TemplateSaveOutcome,
   type TemplateVersionFormPayload,
@@ -59,6 +65,7 @@ import {
 import { ADMIN_TEMPLATES_PATH } from "@/lib/admin/paths";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { currentUser } from "@/lib/auth/session";
+import { templateWriteReason } from "@/lib/member/template-reasons";
 
 /** A payload field as a trimmed string; anything else is empty, so zod names the hole. */
 function text(value: unknown): string {
@@ -102,7 +109,7 @@ function refusalOf(error: unknown): TemplateSaveOutcome {
 }
 
 /** Create a draft, and answer with its id so the screen can open it. */
-export async function createTemplate(payload: TemplateFormPayload): Promise<TemplateSaveOutcome> {
+export async function createTemplate(payload: TemplateCreatePayload): Promise<TemplateSaveOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
   // The gate again, on the action: hiding a form is not enforcement.
@@ -142,7 +149,11 @@ export async function saveTemplate(payload: TemplateFormPayload): Promise<Templa
   try {
     const result = await updateTemplateDraft({
       actorUserId: user.userId,
-      reason: text(payload.reason),
+      reason: templateWriteReason({
+        action: "saved",
+        scope: "console",
+        title: parsed.record.title,
+      }),
       record: parsed.record,
     });
     return { ok: true, id: result.after.id, actionId: result.actionId };
