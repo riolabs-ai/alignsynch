@@ -151,7 +151,7 @@ export const settingsPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "outcome-unavailable",
           label:
-            "We couldn\u2019t finish the deletion. Your account is unchanged \u2014 try again.",
+            "We couldn\u2019t finish the deletion. If you are still signed in, nothing was deleted and you can try again.",
         },
         {
           id: "retained",

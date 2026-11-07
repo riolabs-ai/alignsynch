@@ -1,5 +1,11 @@
 /**
- * The eight proofs `docs/ACCOUNT-DELETION-SPEC.md` §7 asks for, against a **live branch** (#278).
+ * The nine proofs `docs/ACCOUNT-DELETION-SPEC.md` §7 asks for, against a **live branch** (#278).
+ *
+ * Eight are the matrix §7 tabulates. The ninth is the one that matrix was missing and t_091acbc0's
+ * T9 measured: a scrub that fails after the auth user is gone must be **resumable**, with the
+ * second attempt reporting the counts a first run would. It is here rather than in a second suite
+ * because it needs exactly this fixture — the same seats, the same address-keyed rows, the same
+ * real auth user to delete.
  *
  * Skipped unless `DATABASE_URL`, `NEON_AUTH_BASE_URL` and `NEON_PROJECT_ID` are set, so the gate
  * (which has no connection string, by design — `docs/GATE.md`) stays database-free and this file
@@ -255,13 +261,22 @@ async function dropFixture(pool: Pool): Promise<void> {
     await client.query("DELETE FROM relationship WHERE id = $1", [relationshipId]);
     await client.query("DELETE FROM template_version WHERE id = $1", [templateVersionId]);
     await client.query("DELETE FROM record WHERE id LIKE $1", [`${tag}%`]);
-    await client.query("DELETE FROM user_profile WHERE user_id LIKE $1", [`${tag}%`]);
+    // By the probe's own id **and** by handle: `user_id` is an auth uuid, so the tag prefix never
+    // matched it, and the auth-failure case (whose account is deleted by `afterAll` afterwards)
+    // left its profile behind — exactly the `user_profile` orphan V27 names.
+    await client.query("DELETE FROM user_profile WHERE user_id = $1 OR handle LIKE $2", [
+      probeUserId,
+      `${tag}%`,
+    ]);
     await client.query("DELETE FROM news_signup WHERE email LIKE $1", [`${tag}%`]);
     await client.query("DELETE FROM contact_message WHERE email LIKE $1", [`${tag}%`]);
     await client.query("DELETE FROM admin_action WHERE actor_user_id LIKE $1 OR target_id = $2", [
       `${tag}%`,
       tag,
     ]);
+    // The intent row outlives the sweep on purpose (it is the resumable record), so the fixture's
+    // residue is removed here rather than by the sweep.
+    await client.query("DELETE FROM account_deletion_job WHERE user_id = $1", [probeUserId]);
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -269,6 +284,73 @@ async function dropFixture(pool: Pool): Promise<void> {
   } finally {
     client.release();
   }
+}
+
+/**
+ * What every §1.1 predicate reads once the sweep has landed — the whole "deleted means gone" claim
+ * as one object, so the clean run and the resumed run cannot assert two different notions of gone.
+ */
+const GONE = {
+  profiles: 0,
+  bound_seats: 0,
+  named_seats: 0,
+  // The two seats the deleted account held now read the label (S1's initiator, S2's
+  // counterparty); the survivor's seat keeps its own name, which `named_seats` above covers.
+  labelled_seats: 2,
+  seat_credentials: 0,
+  unlock_marks: 0,
+  impersonations: 0,
+  relationships: 0,
+  members: 0,
+  coach_invites: 0,
+  admin_invites: 0,
+  password_resets: 0,
+  contact_messages: 0,
+  addressable_signups: 0,
+  owned_records: 0,
+  audit_payloads: 0,
+  session_names: 0,
+  summaries: 0,
+  invites_carrying: 0,
+} as const;
+
+/**
+ * The counts a clean first run over `buildFixture`'s rows reports, per statement.
+ *
+ * Written out rather than computed, because the point of the resumed run is that it reports **the
+ * same numbers** a first run would: a retry that reached the email-keyed rows with a re-derived
+ * (empty) address would report zeroes here and still look like a success.
+ */
+const FIRST_RUN_COUNTS = {
+  sessionsVoided: 1,
+  sessionInvitesDeleted: 1,
+  sessionInvitesUnaddressed: 1,
+  recordSummariesRewritten: 2,
+  sessionNamesRewritten: 1,
+  partiesAnonymised: 2,
+  relationshipsDeidentified: 1,
+  relationshipMembersDeleted: 1,
+  coachInvitesDeleted: 1,
+  adminInvitesDeleted: 1,
+  passwordResetsDeleted: 1,
+  adminActionsRedacted: 1,
+  recordsArchived: 3,
+  profilesDeleted: 1,
+  contactMessagesDeleted: 1,
+  newsSignupsSuppressed: 1,
+} as const;
+
+/**
+ * The unfinished intent rows for this account — the record a failed scrub resumes from, read the
+ * way the operator runbook reads it (§7): `finished_at IS NULL` is "a deletion did not land".
+ */
+async function jobRows(pool: Pool): Promise<{ email: string; names: string[]; roles: string[] }[]> {
+  const { rows } = await pool.query(
+    `SELECT email, names, roles FROM account_deletion_job
+      WHERE user_id = $1 AND finished_at IS NULL`,
+    [probeUserId],
+  );
+  return rows as { email: string; names: string[]; roles: string[] }[];
 }
 
 /** Every row the spec says must be `0` or `NULL` for the deleted person, as one snapshot. */
@@ -326,7 +408,7 @@ let caseIndex = 0;
  */
 const liveIt = (name: string, fn: () => Promise<void>) => it(name, fn, 90_000);
 
-describe.skipIf(!live)("account deletion, live (§7's eight proofs)", () => {
+describe.skipIf(!live)("account deletion, live (§7's nine proofs)", () => {
   const pool = new Pool({
     connectionString: tlsPinnedUrl(databaseUrl),
     ssl: { rejectUnauthorized: true },
@@ -360,30 +442,10 @@ describe.skipIf(!live)("account deletion, live (§7's eight proofs)", () => {
   liveIt("deleted means gone: every §1.1 row is 0 or NULL for that person", async () => {
     const outcome = await runAccountDeletion(probeUserId);
     expect(outcome.kind).toBe("deleted");
+    // The counts the resumed run has to reproduce, on the run that got there first.
+    expect(outcome.kind === "deleted" && outcome.counts).toEqual(FIRST_RUN_COUNTS);
 
-    expect(await snapshot(pool)).toMatchObject({
-      profiles: 0,
-      bound_seats: 0,
-      named_seats: 0,
-      // The two seats the deleted account held now read the label (S1's initiator, S2's
-      // counterparty); the survivor's seat keeps its own name, which `named_seats` above covers.
-      labelled_seats: 2,
-      seat_credentials: 0,
-      unlock_marks: 0,
-      impersonations: 0,
-      relationships: 0,
-      members: 0,
-      coach_invites: 0,
-      admin_invites: 0,
-      password_resets: 0,
-      contact_messages: 0,
-      addressable_signups: 0,
-      owned_records: 0,
-      audit_payloads: 0,
-      session_names: 0,
-      summaries: 0,
-      invites_carrying: 0,
-    });
+    expect(await snapshot(pool)).toMatchObject(GONE);
   });
 
   liveIt("keeps the survivor's report complete, with both roles' answers", async () => {
@@ -507,6 +569,76 @@ describe.skipIf(!live)("account deletion, live (§7's eight proofs)", () => {
     const account = createdAccounts.find((candidate) => candidate.id === probeUserId);
     expect(account).toBeDefined();
     if (account !== undefined) expect(await signInStatus(account)).toBe(200);
+    // Nothing was deleted, so there is nothing to resume: the intent row went with the failure.
+    expect(await jobRows(pool)).toEqual([]);
+  });
+
+  liveIt("resumes a failed scrub: the second attempt completes the sweep (§7 T9)", async () => {
+    const before = await snapshot(pool);
+
+    // The state a failed scrub leaves, driven the way T9 drove it: the reader connects, the sweep's
+    // connection refuses. `connect` is called twice on this path — reader, then scrub — so the
+    // second call is the one that throws, after the auth user has been deleted for real.
+    let connections = 0;
+    const injected = "the scrub connection refused (injected)";
+    await expect(
+      runAccountDeletion(probeUserId, {
+        connect: async () => {
+          connections += 1;
+          if (connections === 2) throw new Error(injected);
+          return pool.connect();
+        },
+      }),
+    ).rejects.toThrow(injected);
+
+    // What T9 measured, restated as the precondition of the fix: the account cannot sign in, and
+    // every public row rolled back untouched.
+    const account = createdAccounts.find((candidate) => candidate.id === probeUserId);
+    expect(account).toBeDefined();
+    if (account === undefined) return;
+    expect(await signInStatus(account)).toBe(401);
+    expect(await snapshot(pool)).toEqual(before);
+
+    // The thing that did not survive before this card: the identity, written before step 3.
+    const open = await jobRows(pool);
+    expect(open).toHaveLength(1);
+    expect(open[0]?.email).toBe(probeEmail);
+    expect(open[0]?.names).toEqual([probeName]);
+    expect(open[0]?.roles).toHaveLength(2);
+
+    // The retry the old code answered `unknown-account` for. It reports what a clean first run
+    // reports, per statement, and leaves the §1.1 state the clean run leaves.
+    const second = await runAccountDeletion(probeUserId);
+    expect(second.kind).toBe("deleted");
+    if (second.kind !== "deleted") return;
+    expect(second.counts).toEqual(FIRST_RUN_COUNTS);
+    expect(await snapshot(pool)).toMatchObject(GONE);
+    expect(await sessionCounts(pool, completeSessionId)).toMatchObject({
+      voided: 0,
+      initiator_answered: itemCount,
+      counterparty_answered: itemCount,
+    });
+
+    // The record is finished rather than deleted: an opaque id and two instants, and no identity —
+    // the table's CHECK refuses the other shape, so this is the retention rule being enforced.
+    const finished = await pool.query(
+      `SELECT email, names, roles, finished_at FROM account_deletion_job WHERE user_id = $1`,
+      [probeUserId],
+    );
+    expect(finished.rows[0]?.email).toBeNull();
+    expect(finished.rows[0]?.names).toEqual([]);
+    expect(finished.rows[0]?.finished_at).not.toBeNull();
+
+    // V27's state after the resume: the profile row the failed attempt left is gone, so
+    // `db:verify` has no orphan to name.
+    const { rows } = await pool.query(
+      `SELECT count(*)::int AS n FROM user_profile WHERE user_id = $1`,
+      [probeUserId],
+    );
+    expect(rows[0]).toEqual({ n: 0 });
+    // And a third request is a no-op, not a second deletion (§7: safe to re-run).
+    expect((await runAccountDeletion(probeUserId)).kind).toBe("unknown-account");
+    expect(await snapshot(pool)).toMatchObject(GONE);
   });
 
   liveIt("deletes a throwaway account, and sign-in answers 401 afterwards", async () => {
