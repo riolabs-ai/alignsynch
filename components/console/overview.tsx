@@ -173,10 +173,19 @@ export function ConsoleOverview({
             </CardHeader>
             {empty.cta !== undefined && (
               <CardContent>
+                {/**
+                 * The tour's fourth step used to aim here (#455); since #457 it aims at the
+                 * scripted example's real answer sheet instead, which is the thing the step's
+                 * sentence describes. The link keeps its own job — opening the create flow — and
+                 * hands the anchor over, because `lib/tour/steps.ts` joins a step to the first
+                 * element carrying its anchor (`querySelector` takes the first match).
+                 *
+                 * The comment sits outside `<Button asChild>` on purpose: Slot counts its
+                 * children, and a JSX comment beside the link is a second child that renders
+                 * nothing, which is a request-time 500 rather than a build error.
+                 */}
                 <Button asChild size="sm">
-                  <Link href={empty.cta.href} data-tour="answer">
-                    {empty.cta.label}
-                  </Link>
+                  <Link href={empty.cta.href}>{empty.cta.label}</Link>
                 </Button>
               </CardContent>
             )}
