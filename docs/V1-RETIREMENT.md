@@ -1,5 +1,11 @@
 # V1 retirement — the disposition of every `/v1` item
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Records & QA** › V1 retirement · prev [P1 migration](p1-migration/MIGRATION.md) · next [P4 dogfood pass](QA-DOGFOOD-P4.md)
+
+<!-- docs-nav:end -->
+
 **Issue #478 · disposition only.** This document deletes nothing: no file under `app/(prototype)/v1/**`,
 `components/v1/`, `lib/v1/` or `data/v1/` moves or changes in this card. It is the table the follow-up
 cohorts are cut from — one row per file, one destination each, and the reason the destination is what it
@@ -313,3 +319,13 @@ Four cards, in this order. The order is not stylistic: three of them break the b
   fixture-seeded store behind the allowlist (small, and honest for UI approval) or rewire the console to
   `lib/db/**` (larger, and the only version where the store and its fixtures can ever be deleted). The
   `admin` rows above are written so either answer leaves them in place.
+
+## Related
+
+- [V1-PROTOTYPE.md](V1-PROTOTYPE.md) — the prototype this retires.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Records & QA** › V1 retirement · prev [P1 migration](p1-migration/MIGRATION.md) · next [P4 dogfood pass](QA-DOGFOOD-P4.md)
+
+<!-- docs-nav:end -->

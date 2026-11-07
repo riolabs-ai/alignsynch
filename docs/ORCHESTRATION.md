@@ -1,5 +1,11 @@
 # Orchestration rules — how the orchestrator behaves
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Orchestration rules · prev [Releasing](RELEASING.md) · next [Branch triage](BRANCH-TRIAGE.md)
+
+<!-- docs-nav:end -->
+
 Companion to `docs/ENV-SPEC.md` (which owns runtime, gates and repo ops). This file owns the
 _behaviour_ of the orchestrating agent: how it asks, how it queues work, and how it recovers.
 
@@ -119,3 +125,14 @@ consent, so the worker correctly blocks instead of retrying.
 Workers therefore **propose** instruction-file edits as a unified diff in a card comment and stop;
 the orchestrator applies them in an interactive session, formats the markdown, and lands the PR.
 Card `t_4988e8f6` burned a run discovering this — the same diff took one interactive edit.
+
+## Related
+
+- [ENV-SPEC.md](ENV-SPEC.md) — the runtime, gates and repo ops this contract sits on.
+- [GATE.md](GATE.md) — the gate every card has to pass before it lands.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Orchestration rules · prev [Releasing](RELEASING.md) · next [Branch triage](BRANCH-TRIAGE.md)
+
+<!-- docs-nav:end -->

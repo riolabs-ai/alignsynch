@@ -1,5 +1,11 @@
 # Module: `app/(marketing)`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › app/(marketing) · prev [app/(mainlayout)](app-mainlayout.md) · next [app/api](app-api.md)
+
+<!-- docs-nav:end -->
+
 The public route group: 8 pages behind a marketing header and footer, and **never** the product
 shell.
 
@@ -56,3 +62,9 @@ server actions and holds no `"use client"` state beyond the components it mounts
   `shadow-*` on a form surface.
 - **Adding a page here is a two-file change**: the page and the row in
   [`lib/marketing-routes.ts`](../../../lib/marketing-routes.ts), or E39 fails the gate.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › app/(marketing) · prev [app/(mainlayout)](app-mainlayout.md) · next [app/api](app-api.md)
+
+<!-- docs-nav:end -->

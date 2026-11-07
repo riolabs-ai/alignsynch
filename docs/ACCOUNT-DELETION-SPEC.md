@@ -1,5 +1,11 @@
 # Account deletion — the personal-data inventory, the shared record, and the auth-side path
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Product** › Account deletion · prev [Billing](billing.md) · next [Specifications index](specs/README.md)
+
+<!-- docs-nav:end -->
+
 Scope: the **specification** for deleting a participant's account, not the build. Issue #278 stays
 open; this document is the answer that must exist before the build starts, and §7 is the plan that
 build follows.
@@ -556,3 +562,14 @@ separate right, a separate mechanism, no reader exists today); **the build itsel
 lands it needs its own gate and its own review); **regional variants** (CCPA/CPRA have their own
 notice requirements that belong in `/privacy`, not in the schema); **an admin UI for operator-run
 deletion** (the route in §4.3 is a runbook step, and a console surface is a product decision).
+
+## Related
+
+- [DATA-MODEL.md](DATA-MODEL.md) — the record and party rows the deletion has to reach.
+- [TWO-PARTY-FLOW.md](TWO-PARTY-FLOW.md) — the shared record both people are part of.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Product** › Account deletion · prev [Billing](billing.md) · next [Specifications index](specs/README.md)
+
+<!-- docs-nav:end -->

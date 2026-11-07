@@ -1,5 +1,11 @@
 # UX Spec — The Stage Display (Invited → Connected → Sharing → Aligned)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md)
+
+<!-- docs-nav:end -->
+
 **Recommendation: no stepper, no stage bar.** Show **one status sentence** naming the current
 stage and who acts next (derived, never stored), and render **Aligned only as a verdict on the
 report**, not as a fourth step. If a richer display is wanted later, use a **process list**
@@ -177,3 +183,14 @@ testing every transition, the same discipline as `myInstanceStateOf`.
 8. `bash scripts/verify.sh` exits 0; the parity manifest for the affected routes is updated with
    `pnpm parity:update --reason "stage sentence added"` only after review, or the harness
    change is documented in the PR (per tests/parity/README.md).
+
+## Related
+
+- [STAGES.md](../STAGES.md) — the two ladders behind the four stages.
+- [lifecycle.md](../diagrams/lifecycle.md) — the state chart these displays follow.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md)
+
+<!-- docs-nav:end -->

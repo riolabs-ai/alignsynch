@@ -1,5 +1,11 @@
 # UI registry
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › UI registry · prev [Glossary](glossary.md) · next [Relationship types](RELATIONSHIP-TYPES-SOURCE.md)
+
+<!-- docs-nav:end -->
+
 Every surface this tree can render, as a resource a template can pick from rather than a set of screens somebody has to remember. This page is generated: do not edit it.
 
 It has two halves, and each one is owned by a different place:

@@ -1,5 +1,11 @@
 # Pay to complete — the v1.6.0 document set
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Pay-to-complete set · next [PRD](PRD.md)
+
+<!-- docs-nav:end -->
+
 Milestone [`v1.6.0 — pay to complete`](https://github.com/riolabs-ai/alignsynch/milestone/10) ·
 Issues [#619](https://github.com/riolabs-ai/alignsynch/issues/619) (payment) and
 [#623](https://github.com/riolabs-ai/alignsynch/issues/623) (CRUD).
@@ -34,3 +40,9 @@ render.
   remaining work is [SPEC §9](SPEC.md#9-what-remains-in-pr-634): the payer's UI.
 - **Not yet answered:** the Free-plan consequence, the provider for the release, and the path for a charge that
   needs the payer present ([RESEARCH §6](RESEARCH.md#6-open-research-questions-unmeasured-carried-into-the-prd)).
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Pay-to-complete set · next [PRD](PRD.md)
+
+<!-- docs-nav:end -->

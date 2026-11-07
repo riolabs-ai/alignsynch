@@ -1,5 +1,11 @@
 # BRAND-RELEASE — how a brand version ships without breaking parity
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Two brands, one tree · prev [Template doctrine](TEMPLATE-DOCTRINE.md) · next [QuizHub capability map](QUIZHUB-CAPABILITY-MAP.md)
+
+<!-- docs-nav:end -->
+
 A brand in this repo is **tokens + name + mark**, and all three live in exactly one place each.
 This page is the answer to the question that actually gets asked — _"how do I change the brand
 without breaking the parity gate?"_ — in the order a change has to happen.
@@ -100,3 +106,14 @@ both-brand CI green.** A change that skips step 3 and 4 is how a parity rewrite 
 real drift; a change that skips step 2 is how the favicon drifts from the page.
 
 See also: `tests/parity/README.md`, `docs/TEMPLATE-DOCTRINE.md`, `lib/brand-icon.ts`.
+
+## Related
+
+- [brand-boundary.md](diagrams/brand-boundary.md) — which routes each brand owns.
+- [TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md) — one core, many expressions — the rule a brand version follows.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › Two brands, one tree · prev [Template doctrine](TEMPLATE-DOCTRINE.md) · next [QuizHub capability map](QUIZHUB-CAPABILITY-MAP.md)
+
+<!-- docs-nav:end -->

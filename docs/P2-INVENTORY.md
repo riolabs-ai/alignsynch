@@ -1,5 +1,11 @@
 # P2 inventory — hardcoded strings and literal media paths
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › P2 inventory · prev [Prototype wiring](PROTOTYPE-WIRING.md) · next [V1 prototype](V1-PROTOTYPE.md)
+
+<!-- docs-nav:end -->
+
 Read-only analysis for gate **P2 (media & content templatization)**. It exists to size the work
 before any schema is written: every literal a page renders that the model does not supply, where it
 lives, and which single PR can retire it.
@@ -809,3 +815,9 @@ delta instead of quietly rewriting totals it cannot recompute. To get a live "hi
 filter the CSV: `grep -v` the paths from `git show --name-only 195881b4`, or read the same filter from
 the header note. When the extractor is finally checked in, regenerate the page rather than editing
 these numbers by hand.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › P2 inventory · prev [Prototype wiring](PROTOTYPE-WIRING.md) · next [V1 prototype](V1-PROTOTYPE.md)
+
+<!-- docs-nav:end -->

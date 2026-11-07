@@ -1,5 +1,11 @@
 # UX Spec — The Answer Input (1–5 Opinion scale)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Answer input · prev [Maintenance fields](maintenance-fields.md) · next [The Gap report](ux-report.md)
+
+<!-- docs-nav:end -->
+
 **Recommendation:** Replace the per-opinion native `<select>` with a **radio group styled as a
 five-segment control** (segmented-control look, radio semantics) — five discrete, labeled,
 mutually exclusive options per opinion kind (Feel / Wish / Think / Guess), each at least 44×44 CSS px,
@@ -159,3 +165,14 @@ below; guard with a min-width and test at 320 px.
    sheet for any radiogroup rule.
 8. `pnpm lint` / `pnpm format:check` / `bash scripts/verify.sh` exit 0 — the change is pure
    markup+CSS+copy, no new dependencies, no client JS bundle added.
+
+## Related
+
+- [DATA-MODEL.md](../DATA-MODEL.md) — the opinion row the scale writes.
+- [ux-report.md](ux-report.md) — what these answers are rendered as.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Answer input · prev [Maintenance fields](maintenance-fields.md) · next [The Gap report](ux-report.md)
+
+<!-- docs-nav:end -->

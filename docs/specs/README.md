@@ -1,5 +1,11 @@
 # Research specifications
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Specifications index · prev [Account deletion](../ACCOUNT-DELETION-SPEC.md) · next [Template catalogue](catalogue.md)
+
+<!-- docs-nav:end -->
+
 These are research specifications produced during a drift review of the two documents in `docs/`
 (the glossary and the website specification PDF) against the build. Each one takes a single open
 question, surveys what the accessibility, design-system and survey-methodology literature says about
@@ -16,3 +22,9 @@ product or schema consequence the decision still belongs to §4 of `docs/SPEC-DR
 | [`flow-emails.md`](flow-emails.md)               | The email lifecycle: the two senders that exist (invitation, unlock) are the complete set; ship no new types.            |
 | [`catalogue.md`](catalogue.md)                   | The template catalogue: six entries — five playable, one blank starting point — in three categories, with no search.     |
 | [`maintenance-fields.md`](maintenance-fields.md) | Relationship maintenance fields: keep today's create form, add one optional relationship name pre-filled from the title. |
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Specifications index · prev [Account deletion](../ACCOUNT-DELETION-SPEC.md) · next [Template catalogue](catalogue.md)
+
+<!-- docs-nav:end -->

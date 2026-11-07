@@ -1,5 +1,11 @@
 # The two-party flow (#146)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › The two-party flow · prev [Data model](DATA-MODEL.md) · next [Stages](STAGES.md)
+
+<!-- docs-nav:end -->
+
 The first version two people use: an Initiator creates an Instance from a published Template,
 invites the Counterparty, both answer Feel and Wish on every Aspect, and the Gap unlocks for both
 at the instant both have submitted.
@@ -193,3 +199,14 @@ with three cookie jars: create, invite, a stranger's 404, the claim, a second cl
 Initiator answering alone (no Gap on the Counterparty's page), the Counterparty answering, the
 report (`data-feel-gap="3"` where Feel 2 meets Feel 5), a post-completion submit answering 409 with
 the rows unchanged, a Template edit that does not reach the Instance, and the hash-only columns.
+
+## Related
+
+- [lifecycle.md](diagrams/lifecycle.md) — every state the flow can reach, and the event that moves it.
+- [STAGES.md](STAGES.md) — the four stages a relationship passes through.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › The two-party flow · prev [Data model](DATA-MODEL.md) · next [Stages](STAGES.md)
+
+<!-- docs-nav:end -->

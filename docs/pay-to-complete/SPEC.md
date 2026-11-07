@@ -1,5 +1,11 @@
 # Technical spec — the payment obligation
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Technical spec · prev [PRD](PRD.md) · next [ADR](ADR.md)
+
+<!-- docs-nav:end -->
+
 **Release:** `v1.6.0` · **Issue:** #619 · **Branch under review:** `card/pay-to-complete` (PR #634)
 **Product requirements:** [PRD.md](PRD.md) · **Decisions:** [ADR.md](ADR.md) · **Evidence:** [RESEARCH.md](RESEARCH.md)
 
@@ -210,3 +216,9 @@ publish) and `session_invite.email` (the counterparty's invited address). That k
 on a branch with no auth schema, and it uses the address the invitation actually reached. A
 signed-out create stores NULL, so such a relationship answers `no-address` and nothing is stamped —
 a degraded path, not a false claim.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Technical spec · prev [PRD](PRD.md) · next [ADR](ADR.md)
+
+<!-- docs-nav:end -->

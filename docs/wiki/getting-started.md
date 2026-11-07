@@ -1,5 +1,11 @@
 # Getting started
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Code wiki** › Getting started · prev [Code wiki index](README.md) · next [Request lifecycle](architecture.md)
+
+<!-- docs-nav:end -->
+
 ## Prerequisites
 
 - **Node 24** — [`.nvmrc`](../../.nvmrc) pins `24`, and `package.json` asks for `>=20.9.0`. Use 24:
@@ -135,3 +141,9 @@ plain shell has no credentials — never assume one is in the environment.
 - [Sequence diagrams](diagrams/sequences.md) — three walks through the tree.
 - [`docs/GATE.md`](../GATE.md) — the current gate numbers and how to re-measure them.
 - [`AGENTS.md`](../../AGENTS.md) — the rules a change must obey.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Code wiki** › Getting started · prev [Code wiki index](README.md) · next [Request lifecycle](architecture.md)
+
+<!-- docs-nav:end -->

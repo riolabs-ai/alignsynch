@@ -1,5 +1,11 @@
 # The chrome lockup is 2rem in every expanded-header viewport (t_f4e69dba)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../qa-home-polish/README.md) · next [recharts 3](../qa-recharts-3/README.md)
+
+<!-- docs-nav:end -->
+
 The header and the footer draw the same 818×127 export and each carried its own height utility,
 so one page showed the signature at 56px (header, `lg`), 28px (header, `sm`) and 48px (footer).
 Both `<img>`s now carry `data-brand-lockup` and the expanded height is written once, in
@@ -66,3 +72,14 @@ Identical, and `git status public/brand` is empty.
   footer lockup in one frame, both 32px.
 - `lockup-768.png` — the same page at 768, where the rule does not fire (28px / 48px).
 - `measurements.json` — the six rows above, machine-written by the CDP rig.
+
+## Related
+
+- [BRAND-RELEASE.md](../BRAND-RELEASE.md) — the lockup as one of a brand's three artefacts.
+- [ui-registry.md](../ui-registry.md) — the header and footer surfaces measured here.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../qa-home-polish/README.md) · next [recharts 3](../qa-recharts-3/README.md)
+
+<!-- docs-nav:end -->

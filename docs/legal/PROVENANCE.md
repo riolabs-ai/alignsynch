@@ -1,5 +1,11 @@
 # PROVENANCE — the legal pages, version 1
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Reference** › Legal provenance · prev [MiMo harness guide](../MIMO-GUIDE.md) · next [Prototype wiring](../PROTOTYPE-WIRING.md)
+
+<!-- docs-nav:end -->
+
 Where `/terms` and `/privacy` came from, what was taken out of the source templates and why, and
 which statements are assumptions a lawyer must confirm before either page is described as final.
 
@@ -127,3 +133,9 @@ the policy itself would need one added back deliberately, and the form reaches t
   document and offers no way to hide it).
 - Not a compliance artefact: no certification, audit, DPO, EU representative, transfer mechanism or
   retention schedule is claimed, because none exists.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Reference** › Legal provenance · prev [MiMo harness guide](../MIMO-GUIDE.md) · next [Prototype wiring](../PROTOTYPE-WIRING.md)
+
+<!-- docs-nav:end -->

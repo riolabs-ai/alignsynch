@@ -1,5 +1,11 @@
 # #542 phase 2 — the rail as role-constrained data, and focused-flow chrome
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › #542 phase 2 · prev [Flow validation, 2026-11-07](../qa-flow-validation/2026-11-07.md) · next [Brand lockup](../qa-brand-lockup/README.md)
+
+<!-- docs-nav:end -->
+
 Evidence for the card. Captured against the **demo branch** (`ep-crimson-truth`), `next start` on
 `:3199`, `BRAND=alignsynch`, with the seeded demo accounts (`pnpm db:seed`). Re-measured after
 merging `origin/main` (`7d4c859b`, the `/help` two-column layout) into `feat/role-menus`, so these
@@ -108,3 +114,14 @@ browser storage.
 | E35                               | 240 components walked, 234 with an ancestor, 6 approved exceptions           |
 | E39                               | 280 dashboard files against 8 public routes, 1 departure surface             |
 | E10 negative run                  | `/admin/consolex` in `lib/nav-menu.ts` → `[E10] lib/nav-menu.ts:144 links …` |
+
+## Related
+
+- [UI-MAPPING.md](../UI-MAPPING.md) — which quiz surface the rail and chrome vary from.
+- [ui-registry.md](../ui-registry.md) — the surfaces these frames capture.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › #542 phase 2 · prev [Flow validation, 2026-11-07](../qa-flow-validation/2026-11-07.md) · next [Brand lockup](../qa-brand-lockup/README.md)
+
+<!-- docs-nav:end -->

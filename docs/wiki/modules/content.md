@@ -1,5 +1,11 @@
 # Module: `content`
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › content · prev [components](components.md) · next [data](data.md)
+
+<!-- docs-nav:end -->
+
 27 TypeScript modules that define the content model as zod schemas, plus the pure derivations over
 them. **No React, no `next`, no `pg`** — `pnpm data:check` compiles this directory with
 `tsconfig.datacheck.json` into `.datacheck/` and runs it under plain node, so an import of a
@@ -70,3 +76,9 @@ Three layers, and imports only ever point one way:
   fixture dated after it.
 - **`lib/db/rows.ts` parses rows back through these schemas** — so the model is enforced on the way out
   of Postgres as well as on the way into the fixtures.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Code wiki** › content · prev [components](components.md) · next [data](data.md)
+
+<!-- docs-nav:end -->

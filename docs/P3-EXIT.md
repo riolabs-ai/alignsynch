@@ -1,5 +1,11 @@
 # P3 exit record — bulk generation / variation
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › P3 exit record · prev [Resend inbound](RESEND-INBOUND.md)
+
+<!-- docs-nav:end -->
+
 **Status: PASS** · verified on `main` @ `f5e1b00a` · 2026-10-30
 
 Gate definition (`docs/ENV-SPEC.md` §5):
@@ -67,3 +73,14 @@ registry both-directions, metric computability, image dimensions).
    `data/` fixtures, with **no edit to Quizhub's screens**.
 3. Keep the generator: variants for the new vertical come from `npm run gen`, not from a second
    one-off script.
+
+## Related
+
+- [ENV-SPEC.md](ENV-SPEC.md) — the P3 gate definition this record closes.
+- [MIGRATION.md](p1-migration/MIGRATION.md) — the content model the bulk generation writes.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › P3 exit record · prev [Resend inbound](RESEND-INBOUND.md)
+
+<!-- docs-nav:end -->
