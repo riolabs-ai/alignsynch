@@ -252,7 +252,8 @@ const BUNDLE_CASES: readonly RefusalCase[] = [
   {
     name: "B1 — the envelope's kind is not a kind this build has",
     code: "B1",
-    line: /^\[B1\] kind: Invalid enum value/,
+    // zod 3 said "Invalid enum value"; zod 4 says `Invalid option: expected one of …`.
+    line: /^\[B1\] kind: Invalid (enum value|option)/,
     text: () =>
       datasetText((bundle) => {
         (bundle as unknown as Record<string, unknown>).kind = "quiz";
