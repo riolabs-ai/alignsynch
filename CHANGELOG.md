@@ -6,6 +6,30 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.6.0] - 2026-11-07
+
+### Added
+
+- `feat(billing)` — pay-to-complete — the fee moves from creation to completion (#619) ([#634](https://github.com/riolabs-ai/alignsynch/pull/634))
+- `feat(ui)` — two-row member menu, two-tab Templates shelf, relationship cards (#620) ([#633](https://github.com/riolabs-ai/alignsynch/pull/633))
+- `feat(flow)` — the create journey keeps its product across auth and stops dead-ending at the library (#618) ([#632](https://github.com/riolabs-ai/alignsynch/pull/632))
+
+### Maintenance
+
+- `docs(pay-to-complete)` — research, PRD, spec and ADR for v1.6.0 (#619, #623) ([#635](https://github.com/riolabs-ai/alignsynch/pull/635))
+- `docs(pay-to-complete)` — the SPEC's row 0 requires the seal, and the job that does it has landed ([#636](https://github.com/riolabs-ai/alignsynch/pull/636))
+
+### Known limits
+
+- **No member can pay yet.** The payment engine is complete and covered by a live suite, but nothing in `components/` calls `capturePaymentMethodAction` or `completeRelationshipAction`, and the relationship card's `Activate Relationship` and `Gap Analysis` still render **disabled**. Nothing can request a charge, so nothing charges. The door is tracked as the next card.
+- **Two billing shapes are alive at once.** Publishing a relationship _still_ starts a 14-day trial or opens a checkout (`lib/member/publish-basis.ts`, unchanged in this release), and completion now _also_ creates a `relationship_payment` obligation. ADR-1's rule — remove the creation-time trigger in the same change that adds the completion charge — has **not** been carried out. A relationship whose creation checkout completed can therefore be billed twice: once at creation, once at completion. Do not enable the payment door before this is resolved.
+- **The provider is the mock adapter.** `BILLING_PROVIDER` unset means `mock`, the keyless demo path. The `stripe` adapter is carried but never resolved unless the variable names it, so this release claims no live charging and moves no money.
+- **A relationship still cannot be edited.** #623 ships separately: there is no edit surface, and five `relationship` columns (`template_version_id`, `completed_at`, `void_reason`, `expired_at`, `lapse_reason`) have no writer at all.
+- **The Free plan's consequence is unconfirmed.** Payment is required to complete a session, so a Free member with "one active relationship" cannot reach a Gap report unless the trial carries them. The rule is stated in #619; the product decision is not final.
+- **A charge that needs the payer present has no path.** An unattended charge can be declined for reasons a retry cannot fix (expired card, and any payer-approved challenge). The ladder retries three times across a week and then expires with notice; there is no "come back and confirm" link.
+- **The counterparty is told nothing about billing.** Their card reads "waiting for &lt;name&gt; to publish". That is deliberate (ADR-8) and is worth knowing before reading a support thread about a stuck relationship.
+- **`0036` is applied to production with no pre-migration snapshot.** The table is additive, has 0 rows, and its columns match the committed DDL exactly; `db:verify` is green. The snapshot condition attached to the approval was not honoured when it was applied — recorded here so the omission is visible rather than repaired by a later claim.
+
 ## [1.5.1] - 2026-11-07
 
 ### Fixed
