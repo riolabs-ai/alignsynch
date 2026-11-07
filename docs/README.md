@@ -4,7 +4,7 @@ The hub for everything under `docs/` — every document, grouped by the question
 carries the same nav block above and below its body (hub › section › page, with the previous and next
 page in that section), and both the rows below and those blocks are generated from
 [`docs.json`](docs.json) by `scripts/docs-nav.mjs`. This page is the root of that nav, so it carries no
-block of its own; the other 91 documents do.
+block of its own; every other document does.
 
 Looking for the product story rather than the engineering record? Start at the
 [root README](../README.md). The working rules for this checkout are in [AGENTS.md](../AGENTS.md), and
@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**91 documents in 9 sections.** Every page carries the same nav block, generated
+**92 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,7 +31,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 4 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 15 documents
+- [Product](#product) — 16 documents
 - [Operations](#operations) — 8 documents
 - [Reference](#reference) — 9 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -102,6 +102,7 @@ What the product promises, and the specifications behind it.
 - [`specs/ux-input.md`](specs/ux-input.md) — **Answer input** — How does a person answer — scale, labels, semantics?
 - [`specs/ux-report.md`](specs/ux-report.md) — **The Gap report** — How are the eight kinds per Aspect rendered?
 - [`specs/ux-stages.md`](specs/ux-stages.md) — **Stage display** — How is each stage shown, and who acts next?
+- [`specs/ux-reference-patterns.md`](specs/ux-reference-patterns.md) — **Reference UX patterns** — What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?
 
 ## Operations
 

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md)
+[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md) · next [Reference UX patterns](ux-reference-patterns.md)
 
 <!-- docs-nav:end -->
 
@@ -191,6 +191,6 @@ testing every transition, the same discipline as `myInstanceStateOf`.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md)
+[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md) · next [Reference UX patterns](ux-reference-patterns.md)
 
 <!-- docs-nav:end -->

@@ -251,6 +251,11 @@
           "path": "specs/ux-stages.md",
           "title": "Stage display",
           "question": "How is each stage shown, and who acts next?"
+        },
+        {
+          "path": "specs/ux-reference-patterns.md",
+          "title": "Reference UX patterns",
+          "question": "What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?"
         }
       ]
     },
