@@ -16,10 +16,10 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **83** — 54 static, 29 dynamic, from `app/**/page.tsx`
-- component domains: **41** — 300 files under `components/`, 294 of them `.tsx`
+- component domains: **42** — 301 files under `components/`, 295 of them `.tsx`
 - route handlers: **24** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 14 · **fixture** 67 · **db** 34 · **live** 8 · **prototype** 1
-- templates: Both templates 41 · AlignSynch 39 · QuizHub 42 · No template yet 2
+- status: **mock** 15 · **fixture** 67 · **db** 34 · **live** 8 · **prototype** 1
+- templates: Both templates 41 · AlignSynch 40 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -77,7 +77,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/dashboard/relationships/[id]` — **db**
   - capability: One relationship the member initiated: its status, its Aspects editor while `draft`/`pending`, save-as-pending, publish through a trial or a checkout, and the one-click re-publish that replaces an expired invite link.
-  - components: `components/dashboard`, `components/ui`
+  - components: `components/dashboard`, `components/relationship`, `components/ui`
   - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/member/payment.ts`
   - notes: Reuses `components/admin/template-editor.tsx` in its `band="private"` shape for Aspects (`template-ancestor:` on the header), so there is one editor and not two. Every write is a server action over `act()`; the ownership refusal (`not-yours`) is decided in the action, not by hiding the form — the counterparty reaching this URL gets the same refusal a crafted POST gets.
 
@@ -320,8 +320,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/admin/instances/[id]` — **db**
   - capability: One relationship, and the five audited repairs an operator may make on it: clear a party's unlock mark, reissue or withdraw the invitation, void the session, or record an acceptance on a seat's behalf.
-  - components: `components/admin`, `components/ui`
-  - reads: Postgres — `lib/db/admin-relationship.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - components: `components/admin`, `components/relationship`, `components/ui`
+  - reads: Postgres — `lib/db/admin-relationship.ts`, `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: #503 — the first caller of `lib/admin/act.ts`: every repair is one transaction that reads the actor's rung from `user_profile`, runs the mutation and inserts the `admin_action` row before it commits, so a change without its audit entry is not representable. Admin-only (`requireAdmin()`, after `requireAdminProduct()`), while two of the five floors are `support` — the floors are enforced by `act()`, and the support view is #506. The read is `lib/db/admin-relationship.ts`: seats, the invitation's address and answered **counts**, never an opinion or a score. The fresh token a resend mints is returned to the component once and is deliberately absent from the audit row.
 
 - `/admin/instances/[id]/report` — **db**
@@ -482,6 +482,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - files (1): `how-it-works.tsx`
   - routes (2): `/dashboard/help`, `/how-it-works`
   - notes: One file (`how-it-works.tsx`), and it is a variation rather than a new pattern: the ancestor is the alignment front page's `#questions` band (`components/home/alignment-home.tsx`), stated in its `template-ancestor:` header. The variation is the sequence — numbered bands instead of a two-up explainer, in the app shell instead of the marketing page. `mock` on the domain and `fixture` on its route for the reason `components/console` is: it renders no data of its own, it takes the route's parsed `PageCopy` as a prop, and the fixture is reached by the page module, not by this domain.
+
+- `components/relationship` — **mock**
+  - capability: The relationship edit surface (#623): one panel that edits every field a created relationship carries — title, summary, Aspects, the template-version pin, the counterparty's name and address, the invitation window — with the cost of the change priced from rows and printed before the save.
+  - files (1): `relationship-edit-panel.tsx`
+  - routes (2): `/admin/instances/[id]`, `/dashboard/relationships/[id]`
+  - notes: Reads nothing itself: `readRelationshipEditState()` runs on the route (the panel is a client component and may not reach `lib/db/client`, E34), so the domain is `mock` while both mounts, `/dashboard/relationships/[id]` and `/admin/instances/[id]`, are `db`. One panel, two mounts, one action: staff pass `audience: "staff"` rather than a second screen or a second name. The authority is the ownership/rung check inside `lib/member/relationship-edit.ts`, never a prop. `data/pages/dashboard-relationship-detail.ts` and `data/pages/admin-relationship.ts` each hold the words under one `edit` section (E23 budget 0 on both routes).
 
 - `components/tour` — **live**
   - capability: The first-run tour: up to six steps spotlighting real console elements, a callout naming what each one is for, and a polite live region that announces every step change to a screen reader.

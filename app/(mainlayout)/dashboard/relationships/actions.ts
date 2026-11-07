@@ -31,6 +31,8 @@ import { ActRefused } from "@/lib/admin/act";
 import { validateTemplateRecord } from "@/lib/admin/template-draft";
 import { currentUser } from "@/lib/auth/session";
 import { BillingRefusal } from "@/lib/billing/port";
+import type { Assessment } from "@/content/assessment";
+import { zAlignmentSetting, zAssessmentMode } from "@/content/assessment";
 import { baseUrl } from "@/lib/flow/email";
 import {
   createRelationship,
@@ -40,7 +42,9 @@ import {
   saveAspects,
   MEMBER_RELATIONSHIPS_PATH,
 } from "@/lib/member/relationships";
+import { editRelationship, previewRelationshipEdit } from "@/lib/member/relationship-edit";
 import { MemberRefused } from "@/lib/member/publish-basis";
+import type { EditDraft } from "@/lib/relationship/edit-view";
 import {
   capturePaymentMethod,
   completeRelationship,
@@ -50,6 +54,8 @@ import {
 import type {
   AspectsOutcome,
   CompleteOutcome,
+  EditOutcome,
+  EditPreviewOutcome,
   PublishOutcome,
   RelationshipCreateOutcome,
   RepublishOutcome,
@@ -149,12 +155,19 @@ export async function publishRelationshipAction(payload: {
   counterpartyName?: string;
   email?: string;
   reason?: string;
+  /** #623 — the two settings the session opens under; absent keeps `basic`/`soft`. */
+  mode?: string;
+  setting?: string;
 }): Promise<PublishOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
   const relationshipId = text(payload.relationshipId);
   if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  const mode = zAssessmentMode.safeParse(payload.mode);
+  const setting = zAlignmentSetting.safeParse(payload.setting);
+  if (!mode.success || !setting.success) return { ok: false, code: "invalid-draft" };
 
   try {
     const result = await publishRelationship({
@@ -167,6 +180,8 @@ export async function publishRelationshipAction(payload: {
       initiatorEmail: user.email ?? null,
       counterpartyName: text(payload.counterpartyName),
       email: text(payload.email),
+      mode: mode.data,
+      setting: setting.data,
       returnUrl: returnUrlFor(relationshipId),
     });
     return {
@@ -224,6 +239,156 @@ export async function republishInviteAction(payload: {
     }
     throw error;
   }
+}
+
+/**
+ * #623 — what an edit would cost, asked before it is written.
+ *
+ * The same payload as the write, minus the confirmation: a screen cannot decide the cost itself
+ * (it would need every party's answer counts, which is a database read it must not do), so the
+ * server computes it from the rows and hands back the list plus the state to draw.
+ */
+export async function previewRelationshipEditAction(payload: {
+  relationshipId?: string;
+  record?: unknown;
+  versionId?: string | null;
+  counterpartyName?: string;
+  counterpartyEmail?: string;
+  inviteDays?: number;
+  reason?: string;
+}): Promise<EditPreviewOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  const parsed = parseEditedRecord(payload.record);
+  if (!parsed.ok) return parsed;
+
+  try {
+    const preview = await previewRelationshipEdit({
+      actorUserId: user.userId,
+      relationshipId,
+      draft: editDraftOf(parsed.record, payload),
+    });
+    return {
+      ok: true,
+      blocked: preview.blocked,
+      invalidations: preview.invalidations,
+      state: preview.state,
+    };
+  } catch (error) {
+    return previewFailure(error);
+  }
+}
+
+/**
+ * #623 — the write, and it is refused until the cost is confirmed.
+ *
+ * `confirm` is the person's answer to the list the preview printed. The library recomputes the list
+ * from the locked rows and refuses `unconfirmed-invalidation` when it is non-empty and this is not
+ * `true` — so a caller that skips the preview gets the refusal rather than a silent discard, and a
+ * caller that confirms a list which has since changed gets `unconfirmed-invalidation` again.
+ */
+export async function editRelationshipAction(payload: {
+  relationshipId?: string;
+  record?: unknown;
+  versionId?: string | null;
+  counterpartyName?: string;
+  counterpartyEmail?: string;
+  inviteDays?: number;
+  reason?: string;
+  confirm?: boolean;
+}): Promise<EditOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  const parsed = parseEditedRecord(payload.record);
+  if (!parsed.ok) return parsed;
+
+  try {
+    const result = await editRelationship({
+      actorUserId: user.userId,
+      relationshipId,
+      reason: text(payload.reason) || "edit the relationship from its own screen",
+      draft: editDraftOf(parsed.record, payload),
+      confirmInvalidation: payload.confirm === true,
+    });
+    return {
+      ok: true,
+      actionId: result.actionId,
+      status: result.after.status,
+      version: result.after.version,
+      discardedAnswers: result.after.discardedAnswers,
+    };
+  } catch (error) {
+    if (error instanceof ActRefused) return { ok: false, code: error.reason };
+    if (error instanceof MemberRefused) {
+      return { ok: false, code: error.reason, message: error.message };
+    }
+    throw error;
+  }
+}
+
+/** The posted record, validated exactly as a save validates it — one validator, one answer. */
+function parseEditedRecord(
+  posted: unknown,
+): { ok: true; record: Assessment } | { ok: false; code: string; message?: string } {
+  if (typeof posted !== "object" || posted === null || Array.isArray(posted)) {
+    return { ok: false, code: "invalid-draft" };
+  }
+  // `type` and `status` are the record's own facts, never a control: the copy is a draft
+  // assessment, and a body that says otherwise is refused by the schema.
+  const body: Record<string, unknown> = {
+    ...(posted as Record<string, unknown>),
+    type: "assessment",
+    status: "draft",
+  };
+  const parsed = validateTemplateRecord(body);
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      code: "invalid-draft",
+      message: parsed.problems.map((problem) => `${problem.path}: ${problem.message}`).join("; "),
+    };
+  }
+  return { ok: true, record: parsed.record };
+}
+
+/** The draft the library takes, from a validated record and the payload's side fields. */
+function editDraftOf(
+  record: Assessment,
+  payload: {
+    versionId?: string | null;
+    counterpartyName?: string;
+    counterpartyEmail?: string;
+    inviteDays?: number;
+  },
+): EditDraft {
+  return {
+    record,
+    versionId: payload.versionId ?? null,
+    ...(payload.counterpartyName === undefined
+      ? {}
+      : { counterpartyName: text(payload.counterpartyName) }),
+    ...(payload.counterpartyEmail === undefined
+      ? {}
+      : { counterpartyEmail: text(payload.counterpartyEmail) }),
+    ...(payload.inviteDays === undefined ? {} : { inviteDays: payload.inviteDays }),
+  };
+}
+
+/** A preview's refusals are the member's own codes plus a database-shaped failure. */
+function previewFailure(error: unknown): EditPreviewOutcome {
+  if (error instanceof ActRefused) return { ok: false, code: error.reason };
+  if (error instanceof MemberRefused) {
+    return { ok: false, code: error.reason, message: error.message };
+  }
+  throw error;
 }
 
 /* ------------------------------------------------------------------ *

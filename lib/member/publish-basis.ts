@@ -228,6 +228,24 @@ export const MEMBER_REFUSALS = [
    * relationship moves, and the sentence names the instant it ended.
    */
   "lapsed",
+  /**
+   * #623 — the edit surface's six dead ends, one code each because each has its own sentence.
+   *
+   *   unconfirmed-invalidation  the edit strands answers and nobody has confirmed the count
+   *   answers-sealed            a new Aspect on an answered sheet (a new round is the honest path)
+   *   mode-fixed                `mode`/`setting` on a session that exists (`db:verify` V18)
+   *   seat-claimed              the counterparty's seat is an account binding, not a text field
+   *   invalid-window            the invitation window is not 1..60 whole days
+   *   no-such-version           the pin names no version of this relationship's template
+   *   no-change                 the payload differs from the row in nothing
+   */
+  "unconfirmed-invalidation",
+  "answers-sealed",
+  "mode-fixed",
+  "seat-claimed",
+  "invalid-window",
+  "no-such-version",
+  "no-change",
   "failed",
 ] as const;
 

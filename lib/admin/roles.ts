@@ -186,6 +186,14 @@ export const ADMIN_ACTIONS = [
   /** Re-mint a lapsed invitation on a published relationship — one click, no Aspects re-entered. */
   "relationship.republish",
   /**
+   * #623 — edit a relationship that already exists: its copy's title and summary, its Aspects (with
+   * the invalidation confirmed), its pin, and — while the seat is unclaimed — the invitee's name,
+   * address and window. `member`-floored because it is the initiator's own row, and the
+   * mutation's ownership check is what keeps it to that row; the console's staff path passes
+   * `audience: "staff"` and reads the actor's rung inside the same transaction.
+   */
+  "relationship.edit",
+  /**
    * #619 — the payer completes: the fee is charged, the relationship moves `→ complete` and the
    * Gap opens to both parties. One action, because "take the money" and "open the product" are one
    * decision and a half-applied one is either a free Gap or a charge for nothing.
@@ -289,6 +297,8 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "relationship.aspects": "member",
   "relationship.publish": "member",
   "relationship.republish": "member",
+  // #623 — the initiator's own row; the console's staff path checks the rung inside the mutation.
+  "relationship.edit": "member",
   // #619 — the payer's own act on their own relationship, audited like every other member write.
   "relationship.complete": "member",
   // #533 phase 3 — the two operator overrides, floored where `session.void` is: `admin`.

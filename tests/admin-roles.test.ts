@@ -96,18 +96,22 @@ describe("can()", () => {
     expect(can("admin", "owner.transfer")).toBe(false);
   });
 
-  it("lets a member take exactly the six initiator actions, and nothing else", () => {
+  it("lets a member take exactly the seven initiator actions, and nothing else", () => {
     // #533 phase 2 lowered five names to `member`: the member's own template and relationship
     // writes, audited through the same `act()` the staff path uses. #619 added the sixth —
     // `relationship.complete`, the payer taking the fee — because the member whose card it is must
-    // be able to finish their own relationship. Every other action keeps its support-or-above
-    // floor, so this list is the whole of what a non-staff seat may take — and it is pinned by
-    // name, so a seventh rung being lowered is a decision somebody makes here.
+    // be able to finish their own relationship. #623 added the seventh, `relationship.edit`, for
+    // the same reason from the other end: the row a person created is the row they may correct, and
+    // staff reach the identical action by passing `audience: "staff"` rather than by a second name.
+    // Every other action keeps its support-or-above floor, so this list is the whole of what a
+    // non-staff seat may take — and it is pinned by name, so an eighth rung being lowered is a
+    // decision somebody makes here.
     const memberFloor = ADMIN_ACTIONS.filter((action) => requirementFor(action) === "member");
     expect([...memberFloor].sort()).toEqual([
       "relationship.aspects",
       "relationship.complete",
       "relationship.create",
+      "relationship.edit",
       "relationship.publish",
       "relationship.republish",
       "template.draft",

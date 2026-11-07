@@ -92,6 +92,8 @@ export function RelationshipDetail({
     counterpartyName?: string;
     email?: string;
     reason?: string;
+    mode?: string;
+    setting?: string;
   }) => Promise<PublishOutcome>;
   onRepublish: (payload: { relationshipId?: string; reason?: string }) => Promise<RepublishOutcome>;
 }) {
@@ -119,6 +121,9 @@ export function RelationshipDetail({
   const [counterpartyName, setCounterpartyName] = useState("");
   const [email, setEmail] = useState("");
   const [publishReason, setPublishReason] = useState("");
+  /** #623 — the two settings the session opens under; written once, at publish (V18). */
+  const [mode, setMode] = useState("basic");
+  const [setting, setSetting] = useState("soft");
   const [publishOutcome, setPublishOutcome] = useState<PublishOutcome | null>(null);
 
   const [republishReason, setRepublishReason] = useState("");
@@ -183,6 +188,8 @@ export function RelationshipDetail({
         counterpartyName,
         email,
         reason: publishReason,
+        mode,
+        setting,
       });
       setPublishOutcome(answer);
     });
@@ -446,6 +453,38 @@ export function RelationshipDetail({
                   onChange={(event) => setEmail(event.target.value)}
                 />
               </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="publish-mode">{itemLabel(publishCopy, "mode")}</Label>
+                <select
+                  id="publish-mode"
+                  className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+                  value={mode}
+                  onChange={(event) => setMode(event.target.value)}
+                >
+                  <option value="basic">{itemLabel(publishCopy, "mode-basic")}</option>
+                  <option value="advanced">{itemLabel(publishCopy, "mode-advanced")}</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="publish-setting">{itemLabel(publishCopy, "setting")}</Label>
+                <select
+                  id="publish-setting"
+                  className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+                  value={setting}
+                  onChange={(event) => setSetting(event.target.value)}
+                >
+                  <option value="soft">{itemLabel(publishCopy, "setting-soft")}</option>
+                  <option value="full">{itemLabel(publishCopy, "setting-full")}</option>
+                </select>
+              </div>
+              <p className="text-sm text-muted-foreground sm:col-span-2">
+                {itemLabel(publishCopy, "mode-help")}
+              </p>
+              <p className="text-sm text-muted-foreground sm:col-span-2">
+                {itemLabel(publishCopy, "setting-help")}
+              </p>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="publish-reason">{itemLabel(publishCopy, "reason")}</Label>

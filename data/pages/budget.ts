@@ -120,7 +120,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // the registry belongs to `/admin/instances` above it and the log to `/admin/audit` below.
   "/admin/instances/[id]": {
     page: "app/(mainlayout)/admin/instances/[id]/page.tsx",
-    dirs: ["components/admin"],
+    dirs: ["components/admin", "components/relationship"],
     fixture: "data/pages/admin-relationship",
     budget: 0,
   },
@@ -246,7 +246,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   },
   "/dashboard/relationships/[id]": {
     page: "app/(mainlayout)/dashboard/relationships/[id]/page.tsx",
-    dirs: ["components/dashboard"],
+    dirs: ["components/dashboard", "components/relationship"],
     fixture: "data/pages/dashboard-relationship-detail",
     budget: 0,
   },

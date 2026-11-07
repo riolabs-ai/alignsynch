@@ -52,7 +52,7 @@
  */
 import { act, type ActResult, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
-import type { Assessment } from "@/content/assessment";
+import type { AlignmentSetting, Assessment, AssessmentMode } from "@/content/assessment";
 import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
 import { billingProvider } from "@/lib/billing";
 import { readActiveSubscription } from "@/lib/db/billing";
@@ -450,8 +450,11 @@ async function latestVersion(sql: ActSql, templateId: string): Promise<number> {
  * `published_by` is the actor, because a member's snapshot is a real publication of those words to
  * their own relationship — it is not the catalogue's publish (`template.publish`, admin-floored);
  * `record.status` stays `draft` and the catalogue never sees it.
+ *
+ * Exported for `lib/member/relationship-edit.ts` (#623): an edit after the invitation went out
+ * writes the same next version through the same statements, so the pin moves in exactly one way.
  */
-async function snapshotVersion(
+export async function snapshotVersion(
   sql: ActSql,
   input: {
     readonly templateId: string;
@@ -827,6 +830,20 @@ export interface PublishRequest {
   readonly initiatorEmail: string | null;
   readonly counterpartyName: string;
   readonly email: string;
+  /**
+   * #623 — the mode and the Setting the session opens under.
+   *
+   * They are chosen **here** and not on the edit screen, and that is a schema fact rather than a
+   * preference: both are columns of `session`, and `db:verify` V18 refuses an `UPDATE session` that
+   * touches them once the row exists (a scored session is immutable). Publish is the last instant
+   * at which they can be a choice — before it there is no row, after it there is a sheet whose
+   * answers were shaped by the mode that was written.
+   *
+   * Absent means `basic`/`soft`, which is what this call hard-coded before #623 and what a caller
+   * that has not been taught to ask still gets.
+   */
+  readonly mode?: AssessmentMode;
+  readonly setting?: AlignmentSetting;
   /** Where a hosted checkout sends the browser back to. */
   readonly returnUrl: string;
   readonly now?: Date;
@@ -1052,8 +1069,15 @@ export async function publishRelationship(
         await sql.query(
           `INSERT INTO session
              (record_id, template_record_id, mode, alignment_setting, relationship_id, round)
-           VALUES ($1, $2, 'basic', 'soft', $3, $4)`,
-          [sessionRecordId.id, rel.template_id, rel.id, nextRound],
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            sessionRecordId.id,
+            rel.template_id,
+            request.mode ?? "basic",
+            request.setting ?? "soft",
+            rel.id,
+            nextRound,
+          ],
         );
 
         await sql.query(
