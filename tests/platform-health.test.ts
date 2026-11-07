@@ -15,8 +15,12 @@
  *      five behind with a limit of five does not; `PLATFORM_HEALTH_DRIFT_LIMIT=0` is legal.
  *   4. **`support` gets the 404 and the record is never read.** The page is driven through the real
  *      role policy with the read spied, the way `tests/admin-audit-page.test.ts` drives `/admin/audit`.
- *   5. **The screen's own source is read-only and clock-free.** No `lib/admin/act` import, no
- *      `new Date()`/`Date.now()` in the page, the component or the module — the `#418` rule.
+ *   5. **The screen's own source is read-only and clock-free.** No `lib/admin/act` import and no
+ *      `new Date()`/`Date.now()` in the component or the module — the `#418` rule. The page takes
+ *      **one** clock per request, and only for the record's age (#599), which a test pins.
+ *   6. **A stale committed record fails the gate.** The record is committed, so its age is part of
+ *      what it says: `data/health/platform-health.json` outside the declared freshness window is a
+ *      red suite, not a screen an operator reads as current (#599).
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -28,6 +32,9 @@ import { zPlatformHealthRecord, type PlatformHealthRecord } from "@/content/plat
 import {
   deployDriftOf,
   driftLimitFromEnv,
+  FRESHNESS_VARIABLE,
+  freshnessOf,
+  freshnessWindowFromEnv,
   HealthRecordUnreadable,
   normaliseVersion,
   readTreeFacts,
@@ -37,6 +44,21 @@ import {
 } from "@/lib/admin/platform-health";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
+
+/**
+ * Two hours before the test run: the fixture has to be *inside* the freshness window whenever the
+ * suite runs, or a test about a fresh record would start failing on a calendar date instead of a
+ * regression (#599).
+ */
+const FRESH_AT = new Date(Date.now() - 2 * 3_600_000).toISOString();
+
+/**
+ * `pnpm health:record` runs the gate **before** it writes the record, so during that one run the
+ * committed record is by definition the stale one it is replacing (#599). The recorder — and
+ * nothing else — sets this for its own gate run; every other gate run enforces freshness, and a
+ * test that could not be satisfied on the path that fixes it would be a deadlock, not a check.
+ */
+const REFRESHING = process.env.HEALTH_RECORD_REFRESH === "1";
 
 /** A record shaped like the committed one, with the two codes the card names. */
 function record(overrides: Record<string, unknown> = {}): PlatformHealthRecord {
@@ -86,14 +108,14 @@ function record(overrides: Record<string, unknown> = {}): PlatformHealthRecord {
       status: 200,
       version: "1.3.0",
     },
-    recordedAt: "2026-11-03T18:04:00.000Z",
+    recordedAt: FRESH_AT,
     recorder: "pnpm health:record",
     schemaVersion: 1,
     tree: {
       headSha: "639d55e96079b82798debd8e288a998517bd5039",
       latestTag: "v1.3.0",
       mainSha: "639d55e96079b82798debd8e288a998517bd5039",
-      measuredAt: "2026-11-03T18:04:00.000Z",
+      measuredAt: FRESH_AT,
       packageVersion: "1.3.0",
     },
     ...overrides,
@@ -210,6 +232,67 @@ describe("deploy drift", () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * Freshness — a record older than its window is history, not status (#599)
+ * ------------------------------------------------------------------ */
+
+describe("record freshness (#599)", () => {
+  const window = (hours: number) => ({
+    hours,
+    origin: "default" as const,
+    problem: null,
+    variable: FRESHNESS_VARIABLE,
+  });
+
+  it("is fresh inside the window, stale past it, and measured from the instant it is given", () => {
+    const at = record().recordedAt;
+    const plus = (hours: number) => new Date(Date.parse(at) + hours * 3_600_000).toISOString();
+
+    expect(freshnessOf(record(), plus(0), window(72)).stale).toBe(false);
+    expect(freshnessOf(record(), plus(71), window(72)).stale).toBe(false);
+    // The boundary is inclusive: at exactly the window the record is still current.
+    expect(freshnessOf(record(), plus(72), window(72)).stale).toBe(false);
+    expect(freshnessOf(record(), plus(72.5), window(72)).stale).toBe(true);
+    expect(freshnessOf(record(), plus(96), window(72))).toMatchObject({
+      ageHours: 96,
+      recordedAt: at,
+      stale: true,
+    });
+  });
+
+  it("reads a stamp in the future as age 0, not as fresh forever", () => {
+    const ahead = new Date(Date.now() + 6 * 3_600_000).toISOString();
+    expect(freshnessOf(record({ recordedAt: ahead }), new Date().toISOString())).toMatchObject({
+      ageHours: 0,
+      stale: false,
+    });
+  });
+
+  it("defaults to 72 hours, accepts zero, and reports a value that is not a count", () => {
+    expect(freshnessWindowFromEnv({})).toMatchObject({ hours: 72, origin: "default" });
+    expect(freshnessWindowFromEnv({ [FRESHNESS_VARIABLE]: "0" })).toMatchObject({
+      hours: 0,
+      origin: "env",
+    });
+    const bad = freshnessWindowFromEnv({ [FRESHNESS_VARIABLE]: "two days" });
+    expect(bad.hours).toBe(72);
+    expect(bad.problem).not.toBeNull();
+  });
+
+  it.skipIf(REFRESHING)("holds the committed record inside its window", async () => {
+    const real = await vi.importActual<typeof import("@/lib/admin/platform-health")>(
+      "@/lib/admin/platform-health",
+    );
+    const actual = real.readPlatformHealthRecord();
+    const freshness = real.freshnessOf(actual, new Date().toISOString());
+    expect(
+      freshness.stale,
+      `data/health/platform-health.json recordedAt=${actual.recordedAt} is ${freshness.ageHours} h old, ` +
+        `past the ${freshness.window.hours} h freshness window — re-record it: \`pnpm health:record --db --gate\` (#599)`,
+    ).toBe(false);
+  });
+});
+
+/* ------------------------------------------------------------------ *
  * The page
  * ------------------------------------------------------------------ */
 
@@ -287,6 +370,35 @@ describe("/admin/health — what the page renders", () => {
     expect(html).toContain("python3 docs/gate-baseline.py --window 2026-11-02");
   });
 
+  it("draws a stale record as a failure above the panels it invalidates (#599)", async () => {
+    gate.role = "admin";
+    read.mockClear();
+    read.mockImplementation(() =>
+      record({ recordedAt: new Date(Date.now() - 96 * 3_600_000).toISOString() }),
+    );
+    const { default: AdminHealthPage } = await import("@/app/(mainlayout)/admin/health/page");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+
+    const html = renderToStaticMarkup((await AdminHealthPage()) as ReactElement);
+    expect(html).toContain("The record is stale — nothing below is current");
+    expect(html).toContain("past the 72 h freshness window");
+    expect(html).toContain("pnpm health:record --db --gate");
+    // Above the panels it invalidates, not below them in the sources card.
+    expect(html.indexOf("The record is stale")).toBeLessThan(html.indexOf("Database checks"));
+  });
+
+  it("says a fresh record is inside its window, in one muted line (#599)", async () => {
+    gate.role = "admin";
+    read.mockClear();
+    read.mockImplementation(() => record());
+    const { default: AdminHealthPage } = await import("@/app/(mainlayout)/admin/health/page");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+
+    const html = renderToStaticMarkup((await AdminHealthPage()) as ReactElement);
+    expect(html).toContain("inside the 72 h freshness window");
+    expect(html).not.toContain("The record is stale");
+  });
+
   it("fires the release alarm on a production build that is not this tree", async () => {
     gate.role = "admin";
     read.mockClear();
@@ -339,11 +451,17 @@ describe("the screen's own source", () => {
     }
   });
 
-  it("reads no wall clock: a render-path `new Date()` is the #418 mismatch", () => {
-    for (const file of [page, component, pure]) {
+  it("holds no clock of its own: the instant is taken once, in the page (#599)", () => {
+    for (const file of [component, pure]) {
       const source = code(readFileSync(`${ROOT}${file}`, "utf8"));
-      expect(source, `${file} must not call new Date()`).not.toMatch(/new Date\(\s*\)/);
+      expect(source, `${file} must not call new Date(`).not.toMatch(/new Date\(/);
       expect(source, `${file} must not call Date.now()`).not.toMatch(/Date\.now\(/);
     }
+    // The record's age needs one instant (#599). It is taken on the request path, exactly once, and
+    // handed to a pure derivation — a server component with no client bundle has no second render
+    // to disagree with, which is what #418 was about.
+    const pageSource = code(readFileSync(`${ROOT}${page}`, "utf8"));
+    expect(pageSource.match(/new Date\(/g)?.length).toBe(1);
+    expect(pageSource, `${page} must not call Date.now()`).not.toMatch(/Date\.now\(/);
   });
 });
