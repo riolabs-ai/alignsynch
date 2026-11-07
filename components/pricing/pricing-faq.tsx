@@ -100,7 +100,7 @@ export function pricingFaqCategories(brand: Pick<Brand, "name">): PricingFaqCate
         },
         {
           question: "Can I delete my account and data?",
-          answer: `Not from inside the app yet: the settings screen draws the delete control, but the action is not wired up, and there is no self-serve way to remove an account. Send us a message from the contact form on the Help page and the account and its data are removed by hand.`,
+          answer: `Yes — from Account settings while signed in. The delete control removes your account and its data immediately, and it cannot be undone: your profile, your invitations and the details that identify you are removed permanently, while an assessment you took part in remains for the other participant with your seat shown as a deleted account. If a deletion you started did not finish, send us a message from the contact form on the Help page and we will help you finish it.`,
         },
       ],
     },

@@ -340,34 +340,34 @@ Two deletion routes **do** exist:
 
 ## 5. Timing and what the policy may say
 
-**The data deletion is immediate and irreversible once triggered. The trigger today is a request to
-an operator, because no self-service endpoint exists (§4).** There is no soft-delete window, no
-scheduled purge, and no "deactivated" state; a grace period is a policy decision the product has not
-made, and this document does not invent one.
+**Deletion is in the app, immediate, and irreversible the moment the confirmation phrase is
+accepted.** The settings control calls §4.1's project-API route, which deletes the auth user first
+and scrubs `public` in one transaction (§7). There is no soft-delete window, no scheduled purge, no
+"deactivated" state and no grace period — a grace period is a policy decision the product has not
+made, and the copy does not imply one, because the code has none.
 
-That gap is the whole point of stating the sentence carefully. The app may say, once the build in §7
-ships:
+The app says this (the settings control's body, `data/pages/settings.ts` → `deletion`); `/privacy`
+(`data/pages/legal.ts` → `retention`/`deletion`) carries the same claims plus the §6 retention rows,
+and neither promises anything the other does not:
 
-> You can ask us to delete your account from the Help page, and we will delete it within 30 days. Your
+> Deleting your account is immediate and irreversible, and you can do it yourself from Account
+> settings while signed in: there is no grace period, and no way to restore what is deleted. Your
 > profile, your invitations, and the details that identify you in any shared assessment are removed
-> permanently. Assessments you took part in remain for the other participant, with your seat shown as
-> "Deleted account"; your answers stay only as part of their completed report and are no longer linked
-> to your name, email or account. Deletion cannot be undone and there is no grace period.
+> permanently. Assessments you took part in remain for the other participant, with your seat shown
+> as "Deleted account"; your answers stay only as part of their completed report and are no longer
+> linked to your name, email or account. Deletion cannot be undone and there is no grace period.
 
-The app may **not** say any of the following until the mechanism exists:
+The app may **not** say any of the following:
 
-- "You can delete your account in Settings" — there is no self-service endpoint (§4.3);
-- "Your data is deleted immediately" without the "within 30 days" qualifier — the immediate part is
-  the scrub, the request is what is immediate;
+- any deletion window — "within N days", "within N business days", "we will process it". A window
+  reads as a grace period, and the reader has just been told there is none;
 - "All your data is erased" — §2 and §6 retain the survivor's report, a suppression row and
   accounting records, and the sentence must name them.
 
-The current in-app copy (`components/settings/security-settings.tsx:196`) already says _"Account
-deletion isn't available in-app yet. To delete your account, send us a message … and we'll remove
-it."_ That is **honest about the trigger and silent about the mechanism**, and today it is also a
-promise nobody can keep consistently: there is no runbook, and a hand-run deletion that skips §2
-leaves a half-deleted person. §7 is what turns that sentence into a promise with a mechanism behind
-it.
+**The operator path is a fallback, not the mechanism.** If the Neon auth call fails, §7's ordering
+means nothing has been scrubbed and the account still works: the user sees an honest error and may
+ask support to finish it by runbook. That is recovery from a failed request, never the product's
+deletion route, and no copy may present it as one.
 
 ## 6. Retention exceptions
 
@@ -418,9 +418,11 @@ the whole sequence is safe to re-run.
    `neon_auth.user`, and no `party.user_id` that resolves to nothing while its seat's session is
    still `complete`. `0003`'s header already blesses `db:verify` as the orphan reporter.
 6. **The server action and the UI.** `deleteAccountAction` (session required, confirmation phrase
-   typed, no CSRF-free GET), and `components/settings/security-settings.tsx` replacing the
-   "isn't available in-app yet" copy with the real control and the §5 sentence. The action calls
-   step 2 → 3 → 4 in that order.
+   typed, no CSRF-free GET) in `app/(mainlayout)/settings/delete-account-actions.ts`, rendered by
+   `components/identity/delete-account-card.tsx` on the surface `/settings` actually draws
+   (`components/identity/settings-view.tsx`). The older `components/settings/security-settings.tsx`
+   panel has no route since #164: its stale "not available in-app" sentence is corrected in place,
+   and the control is not wired there. The action calls step 2 → 3 → 4 in that order.
 7. **The policy text** — `/privacy` (#270) and the settings copy carry the §5 sentence, not a
    stronger one.
 
