@@ -11,8 +11,14 @@
  *
  * **#1 is not moved.** The stakeholder release note is `lib/email/release-note.ts` and its builder
  * parses `CHANGELOG.md`; it is registered here through `releaseNoteDocument()` rather than
- * rewritten into the fields shape the four flow templates share. The register is a directory, not
- * a house move.
+ * rewritten into the fields shape the flow templates share. The register is a directory, not a
+ * house move.
+ *
+ * **The class is the column that decides the footer, so `renderTemplate()` forwards the one input
+ * it needs.** Nine of the ten are transactional and carry no unsubscribe line. #9 is the marketing
+ * one, and its unsubscribe URL is a per-recipient token — it cannot live in a fixture, so it is an
+ * option on `renderTemplate()` and reaches the band unchanged. A caller that forgets it gets the
+ * band's own throw ("a marketing mail needs an unsubscribe URL"), not a mail with no way out.
  *
  * **Text first holds for every entry by construction.** Each `document()` returns blocks; the
  * only way to get bodies is `renderTemplate()`, which composes the text and derives the HTML from
@@ -37,6 +43,24 @@ import {
   type JoinedFacts,
 } from "@/lib/email/templates/counterparty-joined";
 import { reportReadyDocument, type ReportReadyFacts } from "@/lib/email/templates/report-ready";
+import { trialEndingDocument, type TrialEndingFacts } from "@/lib/email/templates/trial-ending";
+import {
+  membershipLapsedDocument,
+  type MembershipLapsedFacts,
+} from "@/lib/email/templates/membership-lapsed";
+import {
+  supportReplyDocument,
+  supportReplySubject,
+  type SupportReplyFacts,
+} from "@/lib/email/templates/support-reply";
+import {
+  signupConfirmationDocument,
+  type SignupConfirmationFacts,
+} from "@/lib/email/templates/signup-confirmation";
+import {
+  purchaseConfirmationDocument,
+  type PurchaseConfirmationFacts,
+} from "@/lib/email/templates/purchase-confirmation";
 
 /** One mail: its identity, its class, and the pure functions that build it. */
 export interface EmailTemplate<Facts> {
@@ -99,6 +123,59 @@ export const reportReadyTemplate: EmailTemplate<ReportReadyFacts> = {
 };
 
 /**
+ * #6 — the trial is ending, two days before `current_period_end`. Copy only: the clock that decides
+ * *when* is a scheduler card, and `lib/relationship/trial.ts` already answers whether a trial is
+ * running at an instant it is handed.
+ */
+export const trialEndingTemplate: EmailTemplate<TrialEndingFacts> = {
+  id: "trial-ending",
+  numeral: 6,
+  emailClass: "transactional",
+  subject: (facts) => trialEndingDocument(facts).subject,
+  document: trialEndingDocument,
+};
+
+/** #7 — the membership lapsed: the words for `membershipOf()`'s read-only state. */
+export const membershipLapsedTemplate: EmailTemplate<MembershipLapsedFacts> = {
+  id: "membership-lapsed",
+  numeral: 7,
+  emailClass: "transactional",
+  subject: (facts) => membershipLapsedDocument(facts).subject,
+  document: membershipLapsedDocument,
+};
+
+/** #8 — the support reply, sent from the inbox on `lib/contact/reply.ts`'s transport. */
+export const supportReplyTemplate: EmailTemplate<SupportReplyFacts> = {
+  id: "support-reply",
+  numeral: 8,
+  emailClass: "transactional",
+  subject: supportReplySubject,
+  document: supportReplyDocument,
+};
+
+/**
+ * #9 — the signup confirmation. **The one marketing template**: the band requires an unsubscribe
+ * URL on it and `renderTemplate()` forwards the caller's, which is why this entry is the reason
+ * that option exists.
+ */
+export const signupConfirmationTemplate: EmailTemplate<SignupConfirmationFacts> = {
+  id: "signup-confirmation",
+  numeral: 9,
+  emailClass: "marketing",
+  subject: (facts) => signupConfirmationDocument(facts).subject,
+  document: signupConfirmationDocument,
+};
+
+/** #10 — the purchase confirmation: it announces the grant, and never re-sends a receipt. */
+export const purchaseConfirmationTemplate: EmailTemplate<PurchaseConfirmationFacts> = {
+  id: "purchase-confirmation",
+  numeral: 10,
+  emailClass: "transactional",
+  subject: (facts) => purchaseConfirmationDocument(facts).subject,
+  document: purchaseConfirmationDocument,
+};
+
+/**
  * Every template, in the spec's order. The union is written out so `EMAIL_TEMPLATES` stays a
  * readable list whose entries each keep their own fact type; a bare `EmailTemplate<unknown>` would
  * force every `document()` to accept a shape it does not use.
@@ -108,7 +185,12 @@ export type RegisteredEmailTemplate =
   | EmailTemplate<InvitationFacts>
   | EmailTemplate<ReminderFacts>
   | EmailTemplate<JoinedFacts>
-  | EmailTemplate<ReportReadyFacts>;
+  | EmailTemplate<ReportReadyFacts>
+  | EmailTemplate<TrialEndingFacts>
+  | EmailTemplate<MembershipLapsedFacts>
+  | EmailTemplate<SupportReplyFacts>
+  | EmailTemplate<SignupConfirmationFacts>
+  | EmailTemplate<PurchaseConfirmationFacts>;
 
 export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   releaseNoteTemplate,
@@ -116,6 +198,11 @@ export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   reminderTemplate,
   joinedTemplate,
   reportReadyTemplate,
+  trialEndingTemplate,
+  membershipLapsedTemplate,
+  supportReplyTemplate,
+  signupConfirmationTemplate,
+  purchaseConfirmationTemplate,
 ];
 
 /** What a caller gets back: the document it was built from, and the two bodies. */
@@ -129,6 +216,11 @@ export interface RenderedTemplate extends RenderedEmail {
  * The class is read from the template, never passed by the caller: a sender cannot accidentally
  * render a transactional notice as marketing, and `composeText()` still refuses an unsubscribe
  * URL on either side of the rule.
+ *
+ * `unsubscribeUrl` is the one input the class column cannot supply by itself — it is a
+ * per-recipient token, so the marketing template (#9) needs it from its caller and the other nine
+ * must not be handed one. Forwarding it is all this function does about it; the band's own throws
+ * are what police both directions.
  */
 export function renderTemplate<Facts>(
   template: EmailTemplate<Facts>,
@@ -136,6 +228,8 @@ export function renderTemplate<Facts>(
   options: {
     readonly origin?: string;
     readonly mode?: Parameters<typeof renderEmail>[1]["mode"];
+    /** Required for a `marketing` template (the band throws without it), refused for the rest. */
+    readonly unsubscribeUrl?: string;
   } = {},
 ): RenderedTemplate {
   const document = template.document(facts);
@@ -143,6 +237,7 @@ export function renderTemplate<Facts>(
     emailClass: template.emailClass,
     ...(options.origin === undefined ? {} : { origin: options.origin }),
     ...(options.mode === undefined ? {} : { mode: options.mode }),
+    ...(options.unsubscribeUrl === undefined ? {} : { unsubscribeUrl: options.unsubscribeUrl }),
   });
   return { subject: document.subject, ...rendered };
 }
