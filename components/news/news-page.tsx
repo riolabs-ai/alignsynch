@@ -46,6 +46,12 @@ export function NewsPage({ copy }: { copy: PageCopy }) {
 
   return (
     <div className="container mx-auto">
+      {/* PARITY-PROOF: deliberate, temporary. This marker exists only on the
+          verify/upload-artifact-v7-parity-proof branch so `pnpm parity` drifts
+          /news on both brands, which is what makes CI's `if: failure()`
+          parity-artifacts step upload through actions/upload-artifact@v7. It is
+          removed by the next commit on the same branch. Never merged. */}
+      <span hidden data-parity-proof="upload-artifact-v7" />
       <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{copy.heading}</h1>
