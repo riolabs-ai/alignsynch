@@ -18,7 +18,47 @@
  * answering rule the read itself enforces (`lib/flow/store.ts`), and the Support row. Nothing
  * carries a metric, a rating or a comparison, per #454's "no fabricated claims" constraint.
  */
+import type { OpinionKind } from "../../content/assessment";
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import type { Score } from "../../content/record";
+
+/**
+ * One scripted answer (#457): which Aspect (by position in the example's own list), which
+ * Opinion, and the two scores the example gives it.
+ *
+ * **This is the one place the example's answers are written.** `components/tour/demo-fill.tsx`
+ * clicks `you` into the real radio and prints `theirs` beside it, and step 4's sentence below
+ * interpolates the same numbers — so a copy that says "5 against 2" over a sheet that types
+ * something else is not a proofreading risk, it is a value used twice. `tests/tour-demo.test.tsx`
+ * holds the two halves together.
+ */
+export interface TourDemoAnswer {
+  /** The Aspect's index in the example's list (`demoAspectsOf` slices the template's items). */
+  readonly aspect: number;
+  readonly kind: OpinionKind;
+  /** The score the script clicks into the sheet — the viewer's own answer. */
+  readonly you: Score;
+  /** The other party's answer, revealed beside it once the script has finished. */
+  readonly theirs: Score;
+}
+
+/**
+ * The example's answers, in the order they are typed, on the first two Aspects of
+ * "Relationship Basics" (`data/assessments.ts`, Basic Mode's two Opinions).
+ *
+ * The first Aspect parts sharply (5 against 2, then 2 against 5) so the Gap is visible in a
+ * screenshot of the finished example; the second Aspect agrees on Feel and parts by one on Wish,
+ * so the reveal shows both a Gap and the no-Gap case rather than four identical rows.
+ */
+export const tourDemoAnswers: readonly TourDemoAnswer[] = [
+  { aspect: 0, kind: "feel", you: 5, theirs: 2 },
+  { aspect: 0, kind: "wish", you: 2, theirs: 5 },
+  { aspect: 1, kind: "feel", you: 5, theirs: 5 },
+  { aspect: 1, kind: "wish", you: 3, theirs: 2 },
+];
+
+/** The first scripted answer — the pair step 4's sentence quotes. */
+const demoFirstAnswer = tourDemoAnswers[0] as TourDemoAnswer;
 
 export const tourPageCopy: PageCopy = zPageCopy.parse({
   heading: "A short tour of your console",
@@ -52,6 +92,35 @@ export const tourPageCopy: PageCopy = zPageCopy.parse({
     },
     { id: "replay-pending", label: "Opening the tour..." },
     { id: "replay-failed", label: "The tour could not be reopened just now. Try again." },
+    /**
+     * The example's own words (#457). The demo is a real answer sheet that fills itself, so it
+     * needs exactly the strings a person reads around it: that it is an example, that it saves
+     * nothing, whose questions it asks, which column is whose, and what the Gap between two
+     * columns is. `components/tour/**` is at a literal budget of 0, so none of these may be
+     * typed there.
+     */
+    {
+      id: "demo-example",
+      label: "An example: the answers fill themselves, and nothing here is saved.",
+    },
+    {
+      id: "demo-example-note",
+      label:
+        "Both sides are shown, only to show the Gap. The real sheet keeps the other person's answers hidden until you have both submitted.",
+    },
+    { id: "demo-source", label: "Questions from {title}" },
+    { id: "demo-yours", label: "You {value}" },
+    { id: "demo-theirs", label: "They {value}" },
+    { id: "demo-gap-heading", label: "Where the two answers part" },
+    { id: "demo-gap", label: "Gap {value}" },
+    { id: "demo-no-gap", label: "No Gap" },
+    {
+      id: "demo-cancelled",
+      label:
+        "The example stopped when you took over. The sheet is yours to answer, or start it again.",
+    },
+    { id: "demo-again", label: "Start the example again" },
+    { id: "demo-saved-nothing", label: "The example was not submitted, and nothing was saved." },
   ],
   sections: [
     {
@@ -72,7 +141,13 @@ export const tourPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "answer",
       heading: "You answer separately",
-      body: "You both answer those questions on your own, and the Gap is where your two sets of answers part.",
+      /**
+       * The one step whose sentence quotes the example's own numbers (#457): the pair comes from
+       * `tourDemoAnswers` above, so the words and the sheet the demo fills cannot disagree. The
+       * target is the demo's real answer sheet — the same `AnswerForm` `/assessment/instances/[id]`
+       * renders — rather than a picture of one.
+       */
+      body: `You both answer those questions on your own. Watch the example fill itself: ${demoFirstAnswer.you} against ${demoFirstAnswer.theirs} on the first question, and the Gap is where your two sets of answers part.`,
     },
     {
       id: "blind",
