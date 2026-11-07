@@ -55,21 +55,21 @@ export const zCategory = z
     if (category.scope === "quiz") {
       if (category.slug !== category.id) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["slug"],
           message: `quiz-scope slug must equal id (got id="${category.id}", slug="${category.slug}")`,
         });
       }
       if (EDITORIAL_SCOPES.some((scope) => category.id.startsWith(`${scope}-`))) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["id"],
           message: `quiz-scope id "${category.id}" uses a reserved editorial prefix`,
         });
       }
     } else if (category.id !== `${category.scope}-${category.slug}`) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["id"],
         message: `${category.scope}-scope id must be "${category.scope}-${category.slug}" (got "${category.id}")`,
       });
@@ -85,7 +85,7 @@ export const zCategories = z.array(zCategory).superRefine((rows, ctx) => {
     const firstId = ids.get(category.id);
     if (firstId !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: [index, "id"],
         message: `duplicate category id "${category.id}" (also row ${firstId})`,
       });
@@ -97,7 +97,7 @@ export const zCategories = z.array(zCategory).superRefine((rows, ctx) => {
     const firstSlug = slugs.get(slugKey);
     if (firstSlug !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: [index, "slug"],
         message: `duplicate slug "${category.slug}" in scope ${category.scope} (also row ${firstSlug})`,
       });

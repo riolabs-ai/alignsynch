@@ -179,7 +179,7 @@ export const zOpinions = zOpinionsObject.superRefine((opinions, ctx) => {
   const hasGuess = opinions.guess !== undefined;
   if (hasThink !== hasGuess) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: [hasThink ? "guess" : "think"],
       message:
         "Think and Guess come together: Advanced Mode adds the pair, so one of them alone is not a mode",
@@ -337,7 +337,7 @@ export const zAssessmentInstance = zAssessmentInstanceObject
     const roles = instance.parties.map((party) => party.role);
     if (new Set(roles).size !== roles.length) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["parties"],
         message: `the two parties must be one initiator and one counterparty (have: ${roles.join(", ")})`,
       });
@@ -348,14 +348,14 @@ export const zAssessmentInstance = zAssessmentInstanceObject
       answered.forEach((itemId, index) => {
         if (answered.indexOf(itemId) !== index) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["parties", partyIndex, "opinions", index, "itemId"],
             message: `party "${party.name}" answers Aspect "${itemId}" twice`,
           });
         }
         if (!instance.items.some((item) => item.id === itemId)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["parties", partyIndex, "opinions", index, "itemId"],
             message: `party "${party.name}" answers Aspect "${itemId}", which this instance does not hold`,
           });
@@ -364,7 +364,7 @@ export const zAssessmentInstance = zAssessmentInstanceObject
       for (const item of instance.items) {
         if (!answered.includes(item.id)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["parties", partyIndex, "opinions"],
             message: `party "${party.name}" does not answer Aspect "${item.id}" — every Aspect is answered by both parties`,
           });
@@ -381,14 +381,14 @@ export const zAssessmentInstance = zAssessmentInstanceObject
       party.opinions.forEach((entry, opinionIndex) => {
         if (instance.mode === "basic" && entry.opinions.think !== undefined) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["parties", partyIndex, "opinions", opinionIndex, "opinions"],
             message: `party "${party.name}" answers Aspect "${entry.itemId}" in Advanced (Think/Guess), but this instance is ${MODE_LABELS.basic}`,
           });
         }
         if (instance.mode === "advanced" && entry.opinions.think === undefined) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             path: ["parties", partyIndex, "opinions", opinionIndex, "opinions"],
             message: `party "${party.name}" answers Aspect "${entry.itemId}" with only Feel/Wish, but this instance is ${MODE_LABELS.advanced} — Think and Guess are owed on every Aspect`,
           });
