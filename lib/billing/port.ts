@@ -21,9 +21,14 @@
  * change, no component change, no rebuild.
  */
 import type {
+  ChargeOutcome,
   CheckoutRequest,
   CheckoutSession,
   Entitlement,
+  MethodCaptureRequest,
+  MethodCaptureSession,
+  RelationshipChargeRequest,
+  ResolvedMethod,
   Subscription,
   WebhookOutcome,
   WebhookRequest,
@@ -32,6 +37,32 @@ import type {
 export interface BillingPort {
   /** Which adapter answered. Rendered by nothing — read by logs and the smoke script. */
   readonly provider: CheckoutSession["provider"];
+
+  /**
+   * Capture a payment method, and charge nothing (#619).
+   *
+   * This is the "pay now / later" half of the model: the method comes on file so completion can
+   * take the fee, and the invite is never blocked on it. The mock captures inline; a hosted adapter
+   * sends the browser to its own page and the ids arrive through `resolveMethodCapture()`.
+   */
+  startMethodCapture(request: MethodCaptureRequest): Promise<MethodCaptureSession>;
+
+  /**
+   * Resolve a hosted capture after the browser returned.
+   *
+   * The return URL carries the provider's session id, and this reads it back so the ids are
+   * **the provider's own objects** rather than anything a return URL claimed. An incomplete or
+   * foreign session is a refusal, never a captured method.
+   */
+  resolveMethodCapture(sessionId: string): Promise<ResolvedMethod>;
+
+  /**
+   * Charge a method already on file — one fee per relationship (#619).
+   *
+   * A decline is a `ChargeOutcome`, not an exception: it is the outcome the retry ladder exists
+   * for. `idempotencyKey` is the caller's, so a retried completion cannot take the fee twice.
+   */
+  chargeOnFile(request: RelationshipChargeRequest): Promise<ChargeOutcome>;
 
   /**
    * Start a purchase and return where to send the browser.

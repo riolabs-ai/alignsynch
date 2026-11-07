@@ -87,6 +87,8 @@ import { entitlementForAccount } from "@/lib/billing";
 import { instanceGateRefusal, relationshipGateRefusal } from "@/lib/billing/entitlements";
 import { activeInstanceCount, activeRelationshipCount } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
+import { paymentFactsOf, readPaymentForSession } from "@/lib/db/relationship-payment";
+import { paymentArmedOf } from "@/lib/flow/payment";
 import {
   assessmentInstanceFromRows,
   assessmentTemplateFromPayload,
@@ -1190,6 +1192,43 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
       };
     }
 
+    /*
+     * #619 — a method on file is required when the **initiator publishes their sheet**.
+     *
+     * Publishing is the initiator's act (the counterparty's is accepting a seat), and #619 asks
+     * for a card at exactly this point — never before, and never as a gate on the invitation. The
+     * check is here, in the write, not on a button: a request that was open before the rule
+     * applied still reaches this line.
+     *
+     * A relationship with **no obligation row** is not gated: it predates `relationship_payment`
+     * and was charged at creation under the model #619 retires, so `has_row` is false and the
+     * submit proceeds — the same "not measured" direction `paymentArmedOf()` takes.
+     */
+    if (role === "initiator") {
+      const obligation = await client.query<{
+        has_row: boolean;
+        method_captured_at: Date | null;
+        expired_at: Date | null;
+      }>(
+        `SELECT (rp.relationship_id IS NOT NULL) AS has_row,
+                rp.method_captured_at, rp.expired_at
+           FROM session s
+           LEFT JOIN relationship_payment rp ON rp.relationship_id = s.relationship_id
+          WHERE s.record_id = $1`,
+        [input.instanceRecordId],
+      );
+      const payment = obligation.rows[0];
+      if (payment !== undefined && payment.has_row && payment.method_captured_at === null) {
+        await client.query("ROLLBACK");
+        return {
+          ok: false,
+          code: "payment-method-required",
+          reason:
+            "publishing the initiator's sheet needs a payment method on file — the fee for this relationship is taken when the assessment is published, and no card is on the account yet",
+        };
+      }
+    }
+
     const aspects = await client.query<{ item_id: string }>(
       "SELECT item_id FROM item WHERE record_id = $1 ORDER BY position",
       [input.instanceRecordId],
@@ -2285,7 +2324,12 @@ export async function readFlowScreen(input: {
     answerCounts: bundle.answerCounts,
     voided: bundle.voided,
   };
-  const status = instanceStatusOf(progressOf(answersOnly));
+  // #619 — the obligation behind this session, read once: `undefined` when the relationship has no
+  // `relationship_payment` row (created before this card), which `instanceStatusOf()` reads as
+  // "not measured" rather than as unpaid.
+  const payment = await readPaymentForSession(input.instanceRecordId);
+  const paymentArmed = payment === undefined ? undefined : paymentArmedOf(paymentFactsOf(payment));
+  const status = instanceStatusOf({ ...progressOf(answersOnly), paymentArmed });
   const roles = visibleRoles(viewerRole, status);
   const opinions = await query<OpinionRow>(
     `SELECT session_record_id, role, item_id, feel, wish, think, guess
@@ -2335,6 +2379,7 @@ export async function readFlowScreen(input: {
     template,
     viewerRole,
     membership: membership?.membership ?? null,
+    paymentArmed,
     invite:
       invite === null
         ? null

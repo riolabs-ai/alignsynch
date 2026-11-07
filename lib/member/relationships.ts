@@ -54,9 +54,10 @@ import { act, type ActResult, type ActSql, type ActTransactionRunner } from "@/l
 import type { AdminAction } from "@/lib/admin/roles";
 import type { Assessment } from "@/content/assessment";
 import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
-import { startCheckout } from "@/lib/billing";
+import { billingProvider } from "@/lib/billing";
 import { readActiveSubscription } from "@/lib/db/billing";
 import { queryRows } from "@/lib/db/client";
+import { openPaymentObligation } from "@/lib/db/relationship-payment";
 import {
   assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
@@ -83,12 +84,9 @@ import {
   inviteExpiresAt,
   isClosed,
   MemberRefused,
-  publishBasisOf,
   publishViewOf,
   publishable,
   republishable,
-  trialAlreadyRunningMessage,
-  trialEndsAt,
   trialRunningWithoutLiveInvite,
   type PublishView,
 } from "@/lib/member/publish-basis";
@@ -605,6 +603,20 @@ export async function createRelationship(
           [relationshipId, request.actorUserId, now.toISOString()],
         );
 
+        /*
+         * #619 — the payment obligation opens with the relationship, and names its one payer.
+         *
+         * Written here rather than at publish because the payer is fixed **at creation**: a second
+         * round the counterparty opens still bills this account, and a create that was abandoned
+         * leaves an obligation that simply never captures a method (which is `none`, not a charge).
+         * `ON CONFLICT DO NOTHING` inside the insert keeps a retried create a no-op.
+         */
+        await openPaymentObligation(sql, {
+          relationshipId,
+          payerUserId: request.actorUserId,
+          provider: billingProvider(),
+        });
+
         return {
           before: null,
           after: {
@@ -910,39 +922,19 @@ export async function publishRelationship(
     );
   }
 
-  const subscription: Subscription | null = await readActiveSubscription(request.actorUserId);
-  const basis = publishBasisOf(subscription, now);
-  if (basis.kind === "trial-running") {
-    // #533 phase 3 — the refusal names the relationship that holds the trial, not just the
-    // instant. Asked *before* the transaction: it is a read, and a refusal that costs a lock is a
-    // refusal that could have been answered without one.
-    const holder = await trialHolderOf(poolSql, request.actorUserId);
-    throw new MemberRefused(
-      "trial-already-running",
-      trialAlreadyRunningMessage(basis.endsAt, holder),
-    );
-  }
-
-  let publishWith: "trial" | "paid" = "paid";
-  if (basis.kind === "checkout") {
-    // A checkout is required before any invitation may exist. `startCheckout` writes what the
-    // adapter wrote (the mock completes inline and writes an `active` row through the same
-    // `writeSubscription` a provider event uses), and its own `BillingRefusal` propagates: a
-    // deployment with no keys is a 503 the caller shows, never a published relationship.
-    const checkout = await startCheckout({
-      userId: request.actorUserId,
-      planId: TRIAL_PLAN_ID,
-      interval: CHECKOUT_INTERVAL,
-      successUrl: request.returnUrl,
-      cancelUrl: request.returnUrl,
-      email: request.initiatorEmail ?? undefined,
-    });
-    if (!checkout.completed) {
-      throw new MemberCheckoutRequired(checkout.url);
-    }
-  } else if (basis.kind === "trial") {
-    publishWith = "trial";
-  }
+  /*
+   * #619 — **publishing bills nothing.**
+   *
+   * This used to decide a basis (`publishBasisOf`): start a 14-day trial, or open a checkout, or
+   * need neither because the account already paid. That was the charge-at-creation model, and it is
+   * retired here rather than left beside the new one: the money now belongs to **completion**
+   * (`lib/member/payment.ts`), and a publish that also billed would charge twice for one
+   * relationship.
+   *
+   * What is left at publish is what the word means: the status moves `→ published`, the session
+   * opens from the bound version, and the invitation is minted. The invitation is never blocked on
+   * a card (#619: "the invite sends either way").
+   */
 
   const inviteToken = mintToken();
   const expiresAt = inviteExpiresAt(now);
@@ -989,43 +981,8 @@ export async function publishRelationship(
           );
         }
 
-        let started: string | null = null;
-        if (publishWith === "trial") {
-          started = trialEndsAt(now).toISOString();
-          try {
-            await sql.query(
-              `INSERT INTO billing_subscription
-                 (user_id, plan_id, interval, provider, provider_subscription_id,
-                  status, livemode, current_period_end)
-               VALUES ($1, $2, $3, 'mock', $4, 'trialing', false, $5)`,
-              [
-                request.actorUserId,
-                TRIAL_PLAN_ID,
-                CHECKOUT_INTERVAL,
-                `trial-${request.relationshipId}`,
-                started,
-              ],
-            );
-          } catch (error) {
-            // The one-trial rule is the index, not a comparison — so the answer is the violation.
-            if (isUniqueViolation(error, "billing_subscription_live_user_key")) {
-              const live = await sql.query<{ current_period_end: Date }>(
-                `SELECT current_period_end FROM billing_subscription
-                  WHERE user_id = $1 AND status = ANY($2::text[])
-                  ORDER BY updated_at DESC LIMIT 1`,
-                [request.actorUserId, ["active", "trialing", "past_due"]],
-              );
-              const endsAt = live.rows[0]?.current_period_end;
-              throw new MemberRefused(
-                "trial-already-running",
-                trialAlreadyRunningMessage(
-                  endsAt instanceof Date ? endsAt : new Date(endsAt ?? now),
-                ),
-              );
-            }
-            throw error;
-          }
-        }
+        // #619 — nothing is billed here. The fee belongs to completion, and the obligation row
+        // written at creation is what will carry it.
 
         // The version the relationship is bound to — never the working copy, which may have moved
         // since the last save. This is what V4 compares the copy against.
@@ -1127,14 +1084,15 @@ export async function publishRelationship(
             status,
             publishedAt: rel.published_at === null ? null : rel.published_at.toISOString(),
             invite: null,
-            trial: publishWith === "trial" ? null : "already-purchased",
+            /* #619 — publishing no longer starts a trial, so there is no trial fact to record. */
+            trial: "none",
           },
           after: {
             relationshipId: rel.id,
             status: "published" as const,
             inviteExpiresAt: expiresAt.toISOString(),
             sessionRecordId: sessionRecordId.id,
-            trialEndsAt: started,
+            trialEndsAt: null,
           },
         };
       },
