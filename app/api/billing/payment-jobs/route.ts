@@ -19,8 +19,15 @@
  *
  * The response is the run's own report — how many obligations were scanned and what each job did —
  * so the scheduler's log is the trace, not a bare 200.
+ *
+ * **The notice is real (#638).** `paymentNotice()` is what lets a reminder be *sent*: the job stamps
+ * `reminder_day3_at` / `reminder_day10_at` only after that call resolves, so a run whose mailer is
+ * unconfigured (or whose provider refuses a message) reports `pending-delivery` and leaves the nag
+ * owed. One mailbox failure never fails the request — the other relationships' charges and expiries
+ * still run, and this response is where their outcomes are read.
  */
 import { runPaymentJobs } from "@/lib/member/payment-job-run";
+import { paymentNotice } from "@/lib/member/payment-notice";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -52,7 +59,9 @@ async function run(request: Request): Promise<Response> {
     return json({ error: "unauthorized", message: "A bearer token is required" }, 401);
   }
 
-  const run = await runPaymentJobs({ now: new Date() });
+  // The real notifier (#638): a nag is delivered before its day's stamp is written, and a send
+  // that cannot happen leaves the nag owed — `pending-delivery` in this response is the trace.
+  const run = await runPaymentJobs({ now: new Date(), notify: paymentNotice() });
   return json(run, 200);
 }
 

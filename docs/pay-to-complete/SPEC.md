@@ -176,3 +176,37 @@ Branch `card/pay-to-complete`, remote `7383cc73`, local `b071a458` in `.worktree
 - parity: if a rendered public route changes, `pnpm parity:update --reason "…"` and the PR names the routes;
 - the gate passes with `DATABASE_URL` unset;
 - the migration is additive, idempotent, and adds no `gap` name.
+
+## 11. Reminder delivery — the `PaymentNotice` seam, filled (#638)
+
+Row 2 of the job ladder said "notify both, stamp that day", and until #638 the job did neither: it
+called no notifier, so every nag was reported `pending-delivery` and no message existed. The seam is
+now wired, and the rule it was built for is enforced in code rather than in prose.
+
+| piece        | file                                                                             | what it decides                                                                                         |
+| ------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| the notifier | `lib/member/payment-notice.ts`                                                   | reads the row, builds the message, sends it, and **throws** when it did not                             |
+| the read     | `lib/db/payment-notice.ts`                                                       | one statement: title, both seats' names and addresses, `charge_amount_cents`, `sealed_at`, `expired_at` |
+| the words    | `lib/email/templates/payment-reminder.ts` (#11), `relationship-expired.ts` (#12) | amount, deadline, and — for the counterparty's expiry only — no figure at all                           |
+| the caller   | `app/api/billing/payment-jobs/route.ts`                                          | passes `paymentNotice()`; `pending-delivery` in the response is the trace of a nag still owed           |
+
+**The stamp is evidence, so the order is fixed.** `executeJob()` calls `notify` first and writes
+`reminder_day3_at` / `reminder_day10_at` only because the call resolved. A notifier that could not
+deliver (`RESEND_API_KEY` unset, a provider refusal, no address on the payer, no seal to measure the
+deadline from) throws `PaymentNoticeUndelivered`, the job logs one line, answers `pending-delivery`
+and writes nothing — so the next run finds the nag still due. `tests/payment-notice.test.ts` pins the
+call order (`read → send → stamp`) and that a refused send leaves the log with no stamp at all.
+
+**Who is written to.**
+`remind` goes to the **payer** only — the relationship's initiator is the person who owes the fee, and
+the counterparty is told no billing detail at any point (PRD R6); "your partner has not paid" is the
+message `docs/specs/flow-emails.md` §4 rejected, and this row does not reintroduce it. `expire` goes
+to both seats, in two sentences: the payer's names the unpaid fee, the counterparty's names the
+closed relationship and carries no figure — the same split `lib/relationship/membership.ts` already
+draws for a lapsed relationship (#533).
+
+**The addresses are the invite row's**, not `neon_auth`'s: `session_invite.initiator_email` (written at
+publish) and `session_invite.email` (the counterparty's invited address). That keeps the read working
+on a branch with no auth schema, and it uses the address the invitation actually reached. A
+signed-out create stores NULL, so such a relationship answers `no-address` and nothing is stamped —
+a degraded path, not a false claim.
