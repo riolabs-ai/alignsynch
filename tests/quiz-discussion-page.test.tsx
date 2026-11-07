@@ -9,10 +9,11 @@
  * (the surface is quiz-only), so it reported the throw but never the label, and nothing in the
  * gate would have caught the silent version before the bump.
  *
- * The card is a link to the discussion; "View Discussion" is its affordance, not a second
- * control, so it is a styled `<span>` — not a `<button>` inside an `<a>` and not an `asChild`
- * that has nothing to slot onto. This file renders the real page over the real fixtures and
- * asserts both halves: the render succeeds, and the label is inside an element.
+ * The card is a link to the discussion, so the redundant CTA is **retired**, not restyled: a
+ * `<button>` (or an `asChild` that has nothing to slot onto) inside an `<a>` is invalid nesting,
+ * and the label never reached the DOM under 1.2.2 anyway. This file renders the real page over
+ * the real fixtures and asserts what that leaves: the render succeeds, and each card's own
+ * anchor is the only affordance.
  */
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -42,19 +43,20 @@ describe("/quiz-discussions", () => {
     expect(html).toContain("Quiz Discussions");
   });
 
-  it("draws every discussion card's affordance as text inside an element", () => {
+  it("offers one affordance per card, and it is the card's own link", () => {
     const html = render();
 
-    // The label is what 1.2.2 silently dropped and what 1.5 throws over: an `asChild` with a
-    // bare text child has nothing to slot onto. It has to be in the markup, in an element.
-    expect(html).toMatch(/<span[^>]*>View Discussion<\/span>/);
+    // The retired CTA: a bare text child under `asChild` is what 1.2.2 silently dropped and what
+    // 1.5 throws over. It is gone rather than restyled — nothing comes back in its place.
+    expect(html).not.toContain("View Discussion");
 
-    // One affordance per card, and none of them a second interactive control: each card is
-    // already an `<a>`, and a `<button>` inside it is invalid nesting the version before this
-    // migration quietly avoided by rendering nothing.
-    const cards = html.match(/hover:bg-muted\/50/g) ?? [];
-    const labels = html.match(/>View Discussion</g) ?? [];
-    expect(labels).toHaveLength(cards.length);
+    // Every card still reaches its discussion, through the anchor that wraps the whole card.
+    const cardLinks = html.match(/href="\/quiz\/[^"]*\/discussion"/g) ?? [];
+    expect(cardLinks).toHaveLength(discussions.length);
+
+    // And no interactive control nests inside an anchor: each card already is one, so a second
+    // control there is invalid HTML the version before this migration avoided by rendering
+    // nothing at all.
     expect(html).not.toMatch(/<a\b[^>]*>(?:(?!<\/a>)[\s\S])*?<button\b/);
   });
 });

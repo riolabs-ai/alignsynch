@@ -4,7 +4,7 @@
 
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -153,15 +153,10 @@ function DiscussionCard({ discussion }: { discussion: QuizDiscussionSummary }) {
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-sm">
-                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {commentCount} {commentCount === 1 ? "comment" : "comments"}
-                  </span>
-                </div>
-                <span className={buttonVariants({ variant: "outline", size: "sm" })}>
-                  View Discussion
+              <div className="flex items-center gap-1 text-sm">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  {commentCount} {commentCount === 1 ? "comment" : "comments"}
                 </span>
               </div>
             </div>
