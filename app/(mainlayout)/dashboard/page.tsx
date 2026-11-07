@@ -41,8 +41,11 @@
  */
 import { ConsoleOverview } from "@/components/console/overview";
 import { FirstRunTour } from "@/components/tour/first-run-tour";
+import { DemoFill } from "@/components/tour/demo-fill";
+import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { overviewPageCopy } from "@/data/pages/overview";
-import { tourPageCopy } from "@/data/pages/tour";
+import { tourDemoAnswers, tourPageCopy } from "@/data/pages/tour";
+import { assessments } from "@/data/assessments";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -50,6 +53,7 @@ import { listMyInstances, type MyInstance } from "@/lib/db/my-instances";
 import { readTourState } from "@/lib/db/tour";
 import { OVERVIEW_PATH } from "@/lib/flow/paths";
 import { listPublishedTemplates } from "@/lib/flow/store";
+import { demoAspectsOf, TOUR_DEMO_MODE, TOUR_DEMO_TEMPLATE_ID } from "@/lib/tour/demo-script";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -97,6 +101,30 @@ export default async function OverviewPage() {
     unreadable = error.reason;
   }
 
+  /**
+   * One decision, read once: whether the tour opens on this render. The demo rides on it (below),
+   * so the example and the tour can never disagree about whether this is a first run.
+   */
+  const start = !tourSeen;
+
+  /**
+   * **The example is the tour's own surface** (#457). It renders only when the tour is about to
+   * open (`start`), because step 4's anchor is the example's real answer sheet: a demo left on the
+   * page for everyone would be a second answer form on the console, and the tour would have
+   * nothing to aim at when the sheet was absent. `/help`'s replay clears the mark, so the example
+   * comes back with the tour rather than needing a control of its own.
+   *
+   * The questions are the fixture's, not a read: `data/assessments.ts` is the catalogue's own
+   * record of the template, `demoAspectsOf` takes its first two Aspects in authored order, and
+   * nothing here is invented for the demo. A template that the fixture drops makes the example
+   * empty, and an empty example is not rendered — the step then skips, which is the rule
+   * `lib/tour/steps.ts` already holds.
+   */
+  const demoTemplate = start
+    ? assessments.find((record) => record.id === TOUR_DEMO_TEMPLATE_ID)
+    : undefined;
+  const demoAspects = demoTemplate === undefined ? [] : demoAspectsOf(demoTemplate);
+
   return (
     <>
       <ConsoleOverview
@@ -106,12 +134,22 @@ export default async function OverviewPage() {
         templates={templates}
         unreadable={unreadable}
       />
+      {demoTemplate !== undefined && demoAspects.length > 0 ? (
+        <DemoFill
+          copy={tourPageCopy}
+          sheetCopy={assessmentInstancePageCopy}
+          aspects={demoAspects}
+          answers={tourDemoAnswers}
+          exampleTitle={demoTemplate.title}
+          mode={TOUR_DEMO_MODE}
+        />
+      ) : null}
       {/*
         Mounted by the page, not the component, for the reason `components/legal` records: the
         fixture is parsed by zod at module load, so the route resolves it and the browser receives
         a plain object. `components/tour/**` therefore imports no `data/` module and no zod.
       */}
-      <FirstRunTour copy={tourPageCopy} start={!tourSeen} />
+      <FirstRunTour copy={tourPageCopy} start={start} />
     </>
   );
 }
