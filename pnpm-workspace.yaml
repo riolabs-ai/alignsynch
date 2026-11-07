@@ -1,2 +1,8 @@
 allowBuilds:
   sharp: true
+
+# @better-auth/core (>= 1.7.13) declares `@better-fetch/fetch: 1.3.3` as a peer while
+# @neon/auth 0.8.2 pins 1.3.2 as its own dependency, so the tree resolved both. One version
+# is the only state `pnpm peers check` reports clean; the patch is inside both ranges.
+overrides:
+  "@better-fetch/fetch": 1.3.3

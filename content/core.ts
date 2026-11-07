@@ -183,6 +183,23 @@ export const zContentBase = z
 export type ContentBase = z.infer<typeof zContentBase>;
 
 /* ------------------------------------------------------------------ *
+ * Issue paths — zod's path, as this repo reports it
+ * ------------------------------------------------------------------ */
+
+/**
+ * A zod issue path as the flat key list every diagnostic here reports.
+ *
+ * Zod 4 types `issue.path` as `PropertyKey[]` (a path may hold a `symbol` key), while
+ * `BundleIssue.path` and `TemplateProblem.path` are `readonly (string | number)[]` — the
+ * JSON-pointer shape a bundle refusal or a `db:verify` line prints. `String()` is the
+ * coercion at that one boundary, kept here instead of three inline `.map(String)` calls so
+ * the two target types stay the same shape by construction. Array indices stay numbers.
+ */
+export function pathOf(issue: { readonly path: readonly PropertyKey[] }): (string | number)[] {
+  return issue.path.map((key) => (typeof key === "number" ? key : String(key)));
+}
+
+/* ------------------------------------------------------------------ *
  * Formatters — render-time only, so no prose is ever stored
  * ------------------------------------------------------------------ */
 
