@@ -108,6 +108,17 @@
  *       `PRIMARY KEY (broadcast_id, email)` that makes one address one row per send, and its
  *       `(email, created_at DESC)` index exists because the cooldown read is an existence test per
  *       candidate address. Numbered after #506's V25, which landed on `main` first.
+ *   V27 no orphan profile (#278): every `user_profile.user_id` names a user `neon_auth` still has.
+ *       `public` holds no foreign key to the managed schema on purpose (`0003`'s header), so a
+ *       deletion that stopped half way — the auth user gone, the profile row left — is a row no
+ *       constraint can refuse and no read notices: `/profile/<handle>` keeps resolving to a person
+ *       who cannot sign in, and the handle stays taken. The sweep deletes the auth user first
+ *       (`docs/ACCOUNT-DELETION-SPEC.md` §7 step 3), so this is the one half-state it can leave.
+ *
+ *       The seat half of §7 step 5 is **V10's**, not a second code here: V10 fails on any
+ *       `party.user_id` the auth table does not have, which strictly contains "while its session is
+ *       still `complete`". Two codes for one fact make a failure line ambiguous, the same reason
+ *       V26 is not V25.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -271,6 +282,28 @@ function seededStatusDetail(row) {
   if (row.initiator_accepted === 0) details.push("the initiator's party.accepted_at is NULL");
   if (row.counterparty_accepted === 0) details.push("the counterparty's party.accepted_at is NULL");
   return details.join("; ");
+}
+
+/**
+ * V27 over two id lists — the whole rule, so a case suite can drive it with no database.
+ *
+ * `profileIds` is every `public.user_profile.user_id`; `authIds` is every id in
+ * `neon_auth."user"`. A profile whose account is gone is the half-deleted state
+ * `docs/ACCOUNT-DELETION-SPEC.md` §7 step 5 names: the sweep deletes the auth user **first**, so a
+ * scrub that then failed leaves exactly this row, and the public profile URL keeps resolving to a
+ * person who cannot sign in while the `UNIQUE` handle stays taken.
+ */
+export function orphanProfileProblems(profileIds, authIds) {
+  const known = new Set(authIds);
+  const problems = [];
+  for (const userId of profileIds) {
+    if (known.has(userId)) continue;
+    problems.push({
+      code: "V27",
+      message: `public.user_profile carries "${userId}", which neon_auth has no user for — a deleted account's profile survived the sweep, so /profile/<handle> still resolves to a person who cannot sign in and the handle stays taken`,
+    });
+  }
+  return problems;
 }
 
 /**
@@ -1398,6 +1431,48 @@ async function main() {
       broadcastRecipients = broadcastCounts[0]?.recipients ?? 0;
     }
 
+    /* V27 — no orphan profile (#278).
+     *
+     * `public` holds no foreign key to `neon_auth` (`0003`'s header: "a profile whose user was
+     * deleted in the managed schema is an orphan row, not a broken constraint"), so this is the one
+     * half-deleted state no constraint refuses: the auth user gone and the profile row left. The
+     * sweep deletes the auth user **first** on purpose (`docs/ACCOUNT-DELETION-SPEC.md` §7 step 3),
+     * so a scrub that failed after it leaves exactly this, and the person's public profile URL keeps
+     * resolving to an account nobody can sign in to.
+     *
+     * The users table is read from the catalogue rather than assumed (`user` on Neon, `users`
+     * elsewhere) — V10 does the same for `party.user_id`, and the two must agree about which table
+     * owns an account.
+     */
+    const { rows: profileOwners } = await client.query(
+      "SELECT user_id FROM user_profile ORDER BY user_id",
+    );
+    const profileRows = profileOwners.length;
+    if (profileRows > 0) {
+      const { rows: authUserTables } = await client.query(
+        `SELECT table_name FROM information_schema.tables
+          WHERE table_schema = 'neon_auth' AND table_name IN ('user', 'users')
+          ORDER BY table_name`,
+      );
+      const usersTable = authUserTables[0]?.table_name;
+      if (usersTable === undefined) {
+        fail(
+          "V27",
+          `${profileRows} user_profile row(s) and no neon_auth users table to own them — run \`neon env pull\` against a branch that has auth before trusting a green profile check`,
+        );
+      } else {
+        const { rows: accounts } = await client.query(
+          `SELECT id::text AS id FROM neon_auth."${usersTable}"`,
+        );
+        for (const problem of orphanProfileProblems(
+          profileOwners.map((row) => row.user_id),
+          accounts.map((row) => row.id),
+        )) {
+          fail(problem.code, problem.message);
+        }
+      }
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -1413,7 +1488,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
