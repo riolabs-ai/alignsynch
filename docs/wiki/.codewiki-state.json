@@ -1,0 +1,19 @@
+{
+  "repo_name": "quizhub",
+  "source_path": "github.com/riolabs-ai/alignsynch",
+  "source_sha": "bcc3bd66d0c365ede05deabe1332ad2c10ea0431",
+  "generated_at": "2026-11-07T22:12:20Z",
+  "generator": "hermes-agent code-wiki skill v0.1.0",
+  "modules_documented": [
+    "app/(mainlayout)",
+    "app/(marketing)",
+    "app/api",
+    "components",
+    "content",
+    "data",
+    "lib/db",
+    "lib/flow",
+    "lib/member",
+    "lib/admin"
+  ]
+}
