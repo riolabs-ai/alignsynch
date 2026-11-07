@@ -126,11 +126,15 @@ describe("a reminder goes to the payer, and only the payer", () => {
 
 describe("a notice that did not deliver throws, so no stamp can follow", () => {
   it("refuses when the deployment has no mailer", async () => {
-    vi.unstubAllEnvs();
+    // `unstubAllEnvs()` restores the **real** environment, and a developer shell (or `withenv.sh`, which
+    // every push runs the gate through) carries RESEND_API_KEY — so the "unset" case has to be built, not
+    // assumed. Without this the test passes on CI (no key) and fails on every machine that can send mail.
+    vi.stubEnv("RESEND_API_KEY", "");
     const notify = paymentNotice({ read: read(facts()), fetchImpl: transport().fetchImpl });
     await expect(notify({ kind: "remind", relationshipId: REL, day: 3 })).rejects.toMatchObject({
       failure: "unset",
     });
+    vi.unstubAllEnvs();
   });
 
   it("refuses when the provider refuses the message", async () => {
