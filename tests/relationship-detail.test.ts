@@ -252,3 +252,138 @@ describe("the paid band", () => {
     expect(band).not.toContain("—");
   });
 });
+
+/* ------------------------------------------------------------------ *
+ * #t_e9212bf9 — the payment door
+ * ------------------------------------------------------------------ */
+
+/** The relationship row as the page's statement returns it, with the door's facts beside it. */
+const doorRow = {
+  relationship_id: "relationship-detail-test",
+  session_record_id: INSTANCE_ID,
+  plan: null,
+  purchased_at: null,
+  payer_user_id: "user-avery",
+  method_captured_at: null,
+  charge_due_at: null,
+  payment_charged_at: null,
+  charge_attempts: 0,
+  first_failed_at: null,
+  payment_expired_at: null,
+  charge_amount_cents: null,
+  sealed_at: new Date("2026-11-01T12:00:00.000Z"),
+  accepted_count: 2,
+};
+
+describe("the payment door is sliced to its payer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryRows.mockResolvedValue([doorRow]);
+    readFlowScreen.mockResolvedValue(
+      projectScreen({ rows: complete, template, viewerRole: "initiator", invite: null }),
+    );
+  });
+
+  it("hands the payer a door: no method, sealed, and the fee the server will charge", async () => {
+    const detail = await readRelationshipById(INSTANCE_ID, { viewerUserId: "user-avery" });
+
+    expect(detail?.payment).not.toBeNull();
+    expect(detail?.payment?.phase).toBe("none");
+    expect(detail?.payment?.refusal).toBe("method-required");
+    expect(detail?.payment?.canComplete).toBe(false);
+    expect(detail?.payment?.amountCents).toBe(895);
+    expect(detail?.payment?.chargeDueAt).toBeNull();
+  });
+
+  it("states the stored charge_due_at once a method is on file", async () => {
+    queryRows.mockResolvedValue([
+      {
+        ...doorRow,
+        method_captured_at: new Date("2026-11-03T09:30:00.000Z"),
+        charge_due_at: new Date("2026-11-10T09:30:00.000Z"),
+      },
+    ]);
+
+    const detail = await readRelationshipById(INSTANCE_ID, { viewerUserId: "user-avery" });
+
+    expect(detail?.payment?.chargeDueAt).toBe("2026-11-10T09:30:00.000Z");
+    expect(detail?.payment?.canComplete).toBe(true);
+  });
+
+  it("hands the counterparty `null`, though the obligation names the payer (ADR-8)", async () => {
+    const detail = await readRelationshipById(INSTANCE_ID, { viewerUserId: "user-rowan" });
+
+    expect(detail?.payment).toBeNull();
+  });
+
+  it("hands a cookie-only reader `null` — no account, no billing", async () => {
+    const detail = await readRelationshipById(INSTANCE_ID, { viewerUserId: null });
+
+    expect(detail?.payment).toBeNull();
+  });
+});
+
+describe("the payment band on the assessment", () => {
+  /**
+   * Both sealed, the fee outstanding — the state the stage sentence could name and not leave.
+   *
+   * `status` is set here rather than derived: `projectScreen` decides it from the party rows this
+   * fixture does not populate with acceptance instants, and `instanceStatusOf()`'s own mapping is
+   * pinned by `tests/flow-state`-family cases. What this file is about is which band the status
+   * draws — and that the counterparty's carries no money.
+   */
+  const sealedUnpaid = (viewerRole: "initiator" | "counterparty") => ({
+    ...projectScreen({ rows: complete, template, viewerRole, invite: null }),
+    status: "awaiting_payment" as const,
+  });
+
+  function band(html: string): string {
+    return html.match(/<section data-payment-door="[^"]*"[\s\S]*?<\/section>/)?.[0] ?? "";
+  }
+
+  it("is the way to the relationship's Payment band for the payer", () => {
+    const html = renderToStaticMarkup(
+      createElement(AssessmentInstanceView, {
+        screen: sealedUnpaid("initiator"),
+        copy: assessmentInstancePageCopy,
+        relationshipId: "relationship-detail-test",
+        paymentDoor: true,
+      }),
+    );
+
+    expect(html).toContain('data-payment-door="payer"');
+    expect(band(html)).toContain('href="/dashboard/relationships/relationship-detail-test"');
+    expect(band(html)).toContain("Activate Relationship");
+  });
+
+  it("says the waiting sentence and carries no amount for the counterparty", () => {
+    const html = renderToStaticMarkup(
+      createElement(AssessmentInstanceView, {
+        screen: sealedUnpaid("counterparty"),
+        copy: assessmentInstancePageCopy,
+        relationshipId: "relationship-detail-test",
+        // The read hands a counterparty `payment: null`, which is what this flag is derived from.
+        paymentDoor: false,
+      }),
+    );
+
+    expect(html).toContain('data-payment-door="counterparty"');
+    expect(band(html)).toContain("Waiting for Avery to publish.");
+    expect(band(html)).not.toContain("/dashboard/relationships/");
+    expect(band(html)).not.toMatch(/\$\d/);
+  });
+
+  it("is not drawn before the sheets are sealed or after the fee landed", () => {
+    for (const rows of [halfAnswered, complete]) {
+      const html = renderToStaticMarkup(
+        createElement(AssessmentInstanceView, {
+          screen: projectScreen({ rows, template, viewerRole: "initiator", invite: null }),
+          copy: assessmentInstancePageCopy,
+          relationshipId: "relationship-detail-test",
+          paymentDoor: true,
+        }),
+      );
+      expect(html).not.toContain("data-payment-door");
+    }
+  });
+});

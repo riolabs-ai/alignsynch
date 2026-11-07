@@ -216,6 +216,8 @@ export default async function AssessmentInstancePage({
       copy={assessmentInstancePageCopy}
       paid={detail.paid}
       steps={steps}
+      relationshipId={detail.relationshipId}
+      paymentDoor={detail.payment !== null}
       submitted={submitted === SUBMITTED_QUERY_VALUE}
       {...(inviteNotice === undefined ? {} : { inviteNotice })}
       {...(problemCode === undefined ? {} : { problem: problemCode })}

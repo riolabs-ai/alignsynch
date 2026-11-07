@@ -12,13 +12,13 @@
  * than drawn from figures this read never returned. `template-ancestor:` names the file for the
  * same reason every other card in `components/dashboard/` does.
  *
- * **Four actions, and only two of them are live — on purpose.** The owner's decision on #620:
- * ship the menu and the card now, with the actions the product cannot reach yet **visibly
- * disabled**. `Activate Relationship` needs payment (`#619`'s state does not exist) and
- * `Gap Analysis` needs the Gap the report opens; hiding them was rejected — a person should see
- * that completion is coming — and wiring them to nothing would be a dead control. **This is
- * temporary and it is written down in the handoff:** the change that makes payment possible must
- * wire `Activate Relationship`, or this ships a permanently dead button.
+ * **Four actions, all four live.** The owner's decision on #620 shipped the two-row menu and the
+ * card with `Activate Relationship` and `Gap Analysis` **visibly disabled**, because the payment
+ * state did not exist yet and the Gap it opens was not there. That was explicitly temporary, and
+ * #t_e9212bf9 is the change it named: `Activate Relationship` posts `completeRelationshipAction`
+ * (which captures a method first when there is none on file), `Gap Analysis` links to the state's
+ * truth — the report once the fee has landed, the assessment before that — and a refusal is a
+ * sentence under the row. No control on this card is disabled to explain itself.
  *
  * **Two more refusals are drawn, not hidden.** `Publish Assessment` is a link to the relationship's
  * own screen, which is the only surface that publishes and the only one that can say why a
@@ -32,9 +32,15 @@
  */
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { formatDate } from "@/content/core";
-import { instancePath } from "@/lib/flow/paths";
+import { instancePath, reportPath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 import { memberRelationshipPath, type MemberRelationshipRow } from "@/lib/member/relationships";
+import type { CompleteOutcome } from "@/lib/member/outcomes";
+import {
+  PaymentControls,
+  type PaymentLabels,
+  type PaymentRefusals,
+} from "@/components/dashboard/relationship-payment";
 import { MEMBER_TEMPLATES_PATH } from "@/lib/member/templates";
 import Link from "next/link";
 
@@ -67,10 +73,22 @@ export function RelationshipCards({
   copy,
   rows,
   unreadable,
+  onCapture,
+  onComplete,
 }: {
   copy: PageCopy;
   rows: readonly MemberRelationshipRow[];
   unreadable: string | null;
+  /** #t_e9212bf9 — the two payment writes the card's `Activate Relationship` posts. */
+  onCapture: (payload: {
+    relationshipId?: string;
+    reason?: string;
+  }) => Promise<{ ok: true; url: string | null } | { ok: false; code: string; message?: string }>;
+  onComplete: (payload: {
+    relationshipId?: string;
+    planId?: string;
+    reason?: string;
+  }) => Promise<CompleteOutcome>;
 }) {
   const list = sectionOf(copy, "list");
   const statusCopy = sectionOf(copy, "status");
@@ -78,6 +96,32 @@ export function RelationshipCards({
   const card = sectionOf(copy, "card");
   const empty = sectionOf(copy, "empty");
   const unreadableCopy = sectionOf(copy, "unreadable");
+  const paymentCopy = sectionOf(copy, "payment");
+  const paymentRefusalCopy = sectionOf(copy, "payment-refusals");
+  const noneLabel = pageItemOf(copy, "none").label;
+  const paymentLabels: PaymentLabels = {
+    heading: paymentCopy.heading ?? "",
+    body: sectionBody(paymentCopy),
+    method: itemLabel(paymentCopy, "method"),
+    methodNone: itemLabel(paymentCopy, "method-none"),
+    methodOnFile: itemLabel(paymentCopy, "method-on-file"),
+    fee: itemLabel(paymentCopy, "fee"),
+    nothingToday: itemLabel(paymentCopy, "nothing-today"),
+    due: itemLabel(paymentCopy, "due"),
+    charged: itemLabel(paymentCopy, "charged"),
+    retrying: itemLabel(paymentCopy, "retrying"),
+    expired: itemLabel(paymentCopy, "expired"),
+    capture: itemLabel(paymentCopy, "capture"),
+    capturing: itemLabel(paymentCopy, "capturing"),
+    activate: itemLabel(paymentCopy, "activate"),
+    activating: itemLabel(paymentCopy, "activating"),
+    gap: itemLabel(paymentCopy, "gap"),
+    capturedNotice: itemLabel(paymentCopy, "captured-notice"),
+    failedNotice: itemLabel(paymentCopy, "failed-notice"),
+  };
+  const paymentRefusals: PaymentRefusals = Object.fromEntries(
+    (paymentRefusalCopy.items ?? []).map((item) => [item.id, item.label]),
+  );
 
   if (unreadable !== null) {
     return (
@@ -119,6 +163,18 @@ export function RelationshipCards({
             const assessmentHref =
               row.sessionRecordId === null ? null : instancePath(row.sessionRecordId);
             const publishHref = memberRelationshipPath(row.id);
+            /**
+             * #t_e9212bf9 — `Gap Analysis`'s destination is the state's truth: the report once the
+             * fee has landed and the Gap is open, the assessment itself before that (where the
+             * stage says what is still missing), and the relationship when there is no session to
+             * point at. A single fixed href would 404 on two of the three.
+             */
+            const gapHref =
+              row.sessionRecordId === null
+                ? publishHref
+                : row.status === "complete"
+                  ? reportPath(row.sessionRecordId)
+                  : instancePath(row.sessionRecordId);
             const other = row.counterpartyName ?? itemLabel(card, "not-claimed");
             return (
               <li
@@ -186,14 +242,24 @@ export function RelationshipCards({
                     <Link href={publishHref} className={ACTION_PRIMARY}>
                       {itemLabel(card, "publish-assessment")}
                     </Link>
-                    {/* Disabled until payment exists (#619). The change that wires payment owns
-                        these two controls — see the handoff note on #620. */}
-                    <button type="button" disabled className={ACTION_DISABLED}>
-                      {itemLabel(card, "activate")}
-                    </button>
-                    <button type="button" disabled className={ACTION_DISABLED}>
-                      {itemLabel(card, "gap")}
-                    </button>
+                    {/* #t_e9212bf9 — the two controls #620 shipped disabled. Neither is disabled
+                        now: `Activate Relationship` posts the completion (or opens the capture when
+                        no method is on file), `Gap Analysis` links to the state's truth, and a
+                        refusal is a sentence under the row rather than a control that explains
+                        nothing. Drawn once the relationship has a session: a draft has nothing to
+                        activate and no Gap to open, and `Publish Assessment` is its next step. */}
+                    {row.sessionRecordId === null ? null : (
+                      <PaymentControls
+                        labels={paymentLabels}
+                        refusals={paymentRefusals}
+                        payment={row.payment}
+                        gapHref={gapHref}
+                        none={noneLabel}
+                        relationshipId={row.id}
+                        onCapture={onCapture}
+                        onComplete={onComplete}
+                      />
+                    )}
                   </div>
                   <p className="text-[11px] text-gray-500 dark:text-gray-400">
                     {itemLabel(card, "disabled-note")}

@@ -29,7 +29,13 @@ import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-rela
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
-import { publishRelationshipAction, republishInviteAction, saveAspectsAction } from "../actions";
+import {
+  capturePaymentMethodAction,
+  completeRelationshipAction,
+  publishRelationshipAction,
+  republishInviteAction,
+  saveAspectsAction,
+} from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -38,13 +44,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** `?payment=captured|failed` → the band's one-visit notice. A value this build does not know renders nothing. */
+function returnStateOf(value: string | undefined): "captured" | "failed" | undefined {
+  return value === "captured" || value === "failed" ? value : undefined;
+}
+
 export default async function MemberRelationshipPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ payment?: string }>;
 }) {
   const { user } = await requireRole("member", { next: MEMBER_RELATIONSHIPS_PATH });
   const { id } = await params;
+  const { payment } = await searchParams;
 
   let view: Awaited<ReturnType<typeof readMyRelationship>>;
   try {
@@ -84,6 +98,9 @@ export default async function MemberRelationshipPage({
         onSaveAspects={saveAspectsAction}
         onPublish={publishRelationshipAction}
         onRepublish={republishInviteAction}
+        onCapture={capturePaymentMethodAction}
+        onComplete={completeRelationshipAction}
+        {...(returnStateOf(payment) === undefined ? {} : { returnState: returnStateOf(payment) })}
       />
     </div>
   );
