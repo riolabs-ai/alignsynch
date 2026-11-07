@@ -3,8 +3,9 @@
  *
  * `tests/payment-job-run.test.ts` proves the job's decisions with a fake SQL surface. This file
  * proves the SQL itself: that `openPaymentObligations()` finds a sealed unpaid obligation, that its
- * `SEALED_AT_SQL` reads the **second** acceptance, that a retry stamps `charged_at` and completes
- * the relationship, and that day 14 expires both rows — in a real transaction on a real schema.
+ * `SEALED_AT_SQL` reads the **second** acceptance, that the trial charge stamps `charged_at` and
+ * completes the relationship, and that day 14 expires both rows — in a real transaction on a real
+ * schema.
  *
  * **Skipped unless `DATABASE_URL` is set**, exactly like `tests/account-deletion-live.test.ts`: the
  * gate has no connection string by design (`docs/GATE.md`), so this costs the gate nothing and runs
@@ -53,9 +54,17 @@ async function fixture(suffix: string, options: { sealed: boolean }): Promise<st
     [versionId, templateId],
   );
   await pool.query(
-    `INSERT INTO relationship (id, template_id, template_version_id, initiator_user_id, status)
-     VALUES ($1, $2, $3, $4, 'active')`,
-    [relationshipId, templateId, versionId, `${relationshipId}-payer`],
+    `INSERT INTO relationship
+       (id, template_id, template_version_id, initiator_user_id, status, created_at, published_at)
+     VALUES ($1, $2, $3, $4, 'active', $5, $6)`,
+    // Both instants are dated explicitly, because the fixture invents March instants and three
+    // merged CHECKs pair them with the row's state:
+    //   0032 `relationship_lapsed_pair`            expired_at >= created_at  (the day-14 case)
+    //   0030 `relationship_completed_after_published`  completed_at needs published_at, and >= it
+    //   0030 `relationship_published_after_creation`   published_at >= created_at
+    // Left to their defaults the row is created in the present, and every historical write is a
+    // constraint violation that looks exactly like the write path being wrong.
+    [relationshipId, templateId, versionId, `${relationshipId}-payer`, day(-30), day(-29)],
   );
   // The session's own record row: `session.record_id` is `PRIMARY KEY REFERENCES record (id)`, so the
   // assessment instance is a record before it is a session. Skipping this is what made the first
@@ -114,6 +123,23 @@ const chargeOk = async (): Promise<ChargeOutcome> => ({
   amountCents: 1900,
 });
 
+/**
+ * Run the job against **one fixture's** obligations.
+ *
+ * `runPaymentJobs()` scans every open obligation, and this file keeps three of them alive at the
+ * same instant: an unscoped day-8 run charges the day-14 fixture's fee and the expiry it is meant
+ * to prove never happens. Scoping the input is what makes each case a case; the unscoped scan is
+ * `openPaymentObligations()` itself, which the first test pins.
+ */
+async function runFor(relationshipId: string, now: Date) {
+  const all = await openPaymentObligations();
+  return runPaymentJobs({
+    now,
+    charge: chargeOk,
+    obligations: all.filter((row) => row.row.relationship_id === relationshipId),
+  });
+}
+
 live("the payment job, on the real schema", () => {
   // One fixture per case, created once: `relationship` is keyed by id, so a second create would be
   // a collision rather than a test.
@@ -169,15 +195,21 @@ live("the payment job, on the real schema", () => {
     const found = open.find((row) => row.row.relationship_id === ids.retry);
     expect(found, "the scan must find this obligation").toBeDefined();
     expect(found?.sealedAt?.toISOString()).toBe(SEALED.toISOString());
-    expect(found?.facts.sealedAt?.toString()).toBe(SEALED.toISOString());
+    // `pg` hands a `timestamptz` back as a `Date`, and `rowFacts` keeps it one; comparing a
+    // `Date.prototype.toString()` ("Sun Mar 01 2026 …") with an ISO string is not a near miss, it
+    // is a different string, so the comparison is ISO to ISO.
+    const factsSealedAt = found?.facts.sealedAt;
+    expect(factsSealedAt instanceof Date).toBe(true);
+    expect((factsSealedAt as Date).toISOString()).toBe(SEALED.toISOString());
   });
 
-  it("retries on day 8, charges the stored amount, and completes the relationship", async () => {
+  it("takes the trial fee on day 8 for the stored amount, and completes the relationship", async () => {
     const id = ids.retry;
 
-    const run = await runPaymentJobs({ now: day(8), charge: chargeOk });
+    const run = await runFor(id, day(8));
     const mine = run.results.find((result) => result.relationshipId === id);
-    expect(mine?.jobs.some((job) => job.outcome.kind === "retry-charge")).toBe(true);
+    // The first attempt is `charge`, not `retry-charge`: nothing had failed before it.
+    expect(mine?.jobs.some((job) => job.outcome.kind === "charge")).toBe(true);
 
     const row = await readRelationshipPayment(id);
     expect(row?.charged_at?.toISOString()).toBe(day(8).toISOString());
@@ -193,7 +225,7 @@ live("the payment job, on the real schema", () => {
   it("is idempotent: a second run takes nothing twice", async () => {
     const id = ids.retry;
     const before = await readRelationshipPayment(id);
-    await runPaymentJobs({ now: day(9), charge: chargeOk });
+    await runFor(id, day(9));
     const after = await readRelationshipPayment(id);
     expect(after?.charged_at?.toISOString()).toBe(before?.charged_at?.toISOString());
     // A charged obligation is no longer in the scan at all.
@@ -204,7 +236,7 @@ live("the payment job, on the real schema", () => {
   it("expires an unpaid seal at day 14 and closes the relationship with a reason", async () => {
     const relationshipId = ids.expire;
 
-    const run = await runPaymentJobs({ now: day(14), charge: chargeOk });
+    const run = await runFor(relationshipId, day(14));
     const mine = run.results.find((result) => result.relationshipId === relationshipId);
     expect(mine?.jobs[0]?.outcome).toEqual({ kind: "expire", status: "expired", reason: "unpaid" });
 
@@ -222,7 +254,7 @@ live("the payment job, on the real schema", () => {
   it("leaves a relationship that has not sealed alone", async () => {
     const relationshipId = ids.quiet;
 
-    await runPaymentJobs({ now: day(30), charge: chargeOk });
+    await runFor(relationshipId, day(30));
 
     const row = await readRelationshipPayment(relationshipId);
     // No seal means no window: the obligation is open, uncharged and unexpired, and the

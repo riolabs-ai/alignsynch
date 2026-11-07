@@ -22,6 +22,7 @@ import type {
   RelationshipPaymentRow,
 } from "@/lib/db/relationship-payment";
 import { runPaymentJobs } from "@/lib/member/payment-job-run";
+import { relationshipFeeCents } from "@/lib/member/payment";
 import { chargeDueAtOf, paymentDeadlineOf } from "@/lib/flow/payment";
 
 const SEALED = new Date("2026-11-01T12:00:00.000Z");
@@ -145,6 +146,50 @@ describe("reminders are not stamped without a delivery", () => {
   });
 });
 
+describe("the first charge prices a row that never recorded a fee", () => {
+  it("takes the plan's fee when `charge_amount_cents` is null, and records it", async () => {
+    const { sql, touched, writes } = fakeSql();
+    const charge = vi.fn(async () => ({ ok: true as const, chargeId: "ch_first" }));
+
+    const run = await runPaymentJobs({
+      now: day(8),
+      sql,
+      charge: charge as never,
+      // The shape a method captured ahead of the publish step leaves behind: no attempt yet, so no
+      // recorded amount. Without the fallback this row could never be charged and would age into
+      // its day-14 expiry with a valid card on file.
+      obligations: [withMethod({ charge_amount_cents: null })],
+    });
+
+    expect(charge).toHaveBeenCalledTimes(1);
+    expect(charge).toHaveBeenCalledWith(
+      expect.objectContaining({ amountCents: relationshipFeeCents() }),
+    );
+    expect(relationshipFeeCents()).toBeGreaterThan(0);
+    expect(touched("SET charged_at")).toBe(1);
+    expect(run.results[0]?.jobs[0]?.outcome).toEqual({ kind: "charge", status: "charged" });
+    // The amount lands with the attempt, so every later retry reuses it instead of re-pricing.
+    expect(writes.some((write) => write.values?.includes(relationshipFeeCents()))).toBe(true);
+  });
+
+  it("does not take a fee for an obligation that never sealed", async () => {
+    const { sql } = fakeSql();
+    const charge = vi.fn(async () => ({ ok: true as const, chargeId: "ch_x" }));
+
+    const run = await runPaymentJobs({
+      now: day(30),
+      sql,
+      charge: charge as never,
+      obligations: [
+        { ...withMethod(), sealedAt: null, facts: { ...withMethod().facts, sealedAt: null } },
+      ],
+    });
+
+    expect(charge).not.toHaveBeenCalled();
+    expect(run.results).toEqual([]);
+  });
+});
+
 describe("a retry charges the amount the first attempt recorded", () => {
   const failed = () =>
     withMethod({ first_failed_at: day(7), charge_attempts: 1, last_attempt_at: day(7) });
@@ -265,7 +310,17 @@ describe("the scan survives a broken obligation", () => {
       charge: charge as never,
       obligations: [
         withMethod({ first_failed_at: day(7), charge_attempts: 1 }),
-        { ...withMethod(), row: { ...withMethod().row, relationship_id: "rel_2" } },
+        // The second is on the ladder as well. A pristine obligation owes a first `charge` and
+        // nothing else, so a throwing provider leaves it with no work to report — a different
+        // claim from this one, which is that a *nag* already owed still goes out and the next
+        // relationship is processed regardless.
+        {
+          ...withMethod({ first_failed_at: day(7), charge_attempts: 1 }),
+          row: {
+            ...withMethod({ first_failed_at: day(7), charge_attempts: 1 }).row,
+            relationship_id: "rel_2",
+          },
+        },
       ],
     });
 

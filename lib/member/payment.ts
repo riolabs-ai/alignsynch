@@ -74,6 +74,21 @@ export const DEFAULT_FEE_PLAN_ID: BillingPlanId = "basic";
 export const FEE_INTERVAL: BillingInterval = "month";
 
 /**
+ * The fee a relationship owes when its obligation never recorded one, in cents.
+ *
+ * `charge_amount_cents` is written by every charge **attempt** (`recordChargeResult`), not by the
+ * capture: a method put on file ahead of the publish step has no price attached yet. The scheduled
+ * job therefore has to be able to name the fee itself, or a row captured early could never be
+ * charged and the obligation would age into its fourteen-day expiry with a valid card on file —
+ * which is the defect #619 exists to remove. Same tier and interval the interactive publish step
+ * defaults to (`DEFAULT_FEE_PLAN_ID`), so the two paths cannot disagree about the price.
+ */
+export function relationshipFeeCents(): number {
+  const plan = billingPlan(DEFAULT_FEE_PLAN_ID);
+  return plan === undefined ? 0 : planPriceCents(plan, FEE_INTERVAL);
+}
+
+/**
  * Where the browser returns after a hosted capture. One place, because the route and the adapter
  * must agree: this path resolves the provider's session and then sends the payer to the page.
  */

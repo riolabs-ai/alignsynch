@@ -236,6 +236,36 @@ export function reminderDueOf(input: {
 }
 
 /* ------------------------------------------------------------------ *
+ * The first charge
+ * ------------------------------------------------------------------ */
+
+/**
+ * Is the fee owed and not yet taken — the trial falling due?
+ *
+ * Five conditions and every one of them is a row: a method is on file, **both sheets are sealed**,
+ * no charge landed, no failure is on the ladder, and the seven-day delay has run out.
+ *
+ * The seal is required even though the delay is measured from the capture. The fee buys a completed
+ * assessment, so an obligation nobody sealed owes nothing however long the method sits — the job
+ * must never take money for a Gap that does not exist, and the fourteen-day unpaid window (which
+ * *is* measured from the seal) is what ends that obligation instead.
+ *
+ * The failure clause hands the obligation to `chargeRetryAt()`: once a charge has been declined the
+ * ladder owns the schedule, and two schedules both claiming the same day is how one fee gets taken
+ * twice.
+ */
+export function chargeDueOf(input: { readonly facts: PaymentFacts; readonly now: Date }): boolean {
+  const { facts, now } = input;
+  if (instantOf(facts.chargedAt) !== null) return false;
+  if (instantOf(facts.expiredAt) !== null) return false;
+  if (instantOf(facts.methodCapturedAt) === null) return false;
+  if (instantOf(facts.sealedAt) === null) return false;
+  if (instantOf(facts.firstFailedAt) !== null) return false;
+  const due = chargeDueAtOf(facts.methodCapturedAt);
+  return due !== null && now.getTime() >= due.getTime();
+}
+
+/* ------------------------------------------------------------------ *
  * Charge retries
  * ------------------------------------------------------------------ */
 

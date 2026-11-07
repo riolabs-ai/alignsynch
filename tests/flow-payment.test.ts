@@ -18,6 +18,7 @@ import { describe, expect, it } from "vitest";
 import {
   CHARGE_ATTEMPT_LIMIT,
   chargeDueAtOf,
+  chargeDueOf,
   chargeRetryAt,
   CHARGE_RETRY_OFFSET_DAYS,
   completionRefusalOf,
@@ -187,9 +188,40 @@ describe("expiry", () => {
   });
 });
 
+describe("the first charge — the trial falling due", () => {
+  it("is owed from day 7 on a sealed obligation with a method, and not a day earlier", () => {
+    expect(chargeDueOf({ facts: armed(), now: day(6) })).toBe(false);
+    expect(chargeDueOf({ facts: armed(), now: day(7) })).toBe(true);
+  });
+
+  it("is never owed before both sheets are sealed, however long the method sits", () => {
+    // The fee buys a completed assessment. A relationship nobody finished owes nothing, and it is
+    // the fourteen-day unpaid window — measured from the seal — that ends it, not a charge.
+    expect(chargeDueOf({ facts: armed({ sealedAt: null }), now: day(30) })).toBe(false);
+  });
+
+  it("is not owed without a method, once charged, or once ended", () => {
+    expect(chargeDueOf({ facts: armed({ methodCapturedAt: null }), now: day(30) })).toBe(false);
+    expect(chargeDueOf({ facts: armed({ chargedAt: day(7) }), now: day(30) })).toBe(false);
+    expect(chargeDueOf({ facts: armed({ expiredAt: day(14) }), now: day(30) })).toBe(false);
+  });
+
+  it("hands a failed obligation to the ladder instead of charging it again", () => {
+    // Both schedules claiming the same day is how one fee is taken twice.
+    const failed = armed({ firstFailedAt: day(7), chargeAttempts: 1 });
+    expect(chargeDueOf({ facts: failed, now: day(20) })).toBe(false);
+  });
+});
+
 describe("paymentJobsOf — the order the route runs", () => {
   it("owes nothing in the quiet middle", () => {
     expect(paymentJobsOf({ facts: armed(), now: day(2) })).toEqual([]);
+  });
+
+  it("returns the trial charge alone on day 8, with no nag beside it", () => {
+    // A taken fee ends the obligation's work, so the day-3 nag this run would otherwise owe is not
+    // sent: `charge` is the whole answer.
+    expect(paymentJobsOf({ facts: armed(), now: day(8) })).toEqual([{ kind: "charge" }]);
   });
 
   it("owes a nag and then the retry on day 8", () => {
@@ -209,6 +241,7 @@ describe("paymentJobsOf — the order the route runs", () => {
   it("keys a job by relationship and what it does", () => {
     expect(paymentJobKey("rel_1", { kind: "remind", day: 3 })).toBe("rel_1:remind:3");
     expect(paymentJobKey("rel_1", { kind: "retry-charge" })).toBe("rel_1:retry-charge");
+    expect(paymentJobKey("rel_1", { kind: "charge" })).toBe("rel_1:charge");
     expect(paymentJobKey("rel_1", { kind: "expire", reason: "unpaid" })).toBe(
       "rel_1:expire:unpaid",
     );

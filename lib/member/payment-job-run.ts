@@ -6,8 +6,10 @@
  * `lib/flow/store.ts` writes): the decision is testable without a database, the write is one
  * statement per fact.
  *
- * **Three jobs, and only two of them are self-contained.**
+ * **Four jobs, and only two of them are self-contained.**
  *
+ *   charge        the trial falling due: the first attempt, for `charge_amount_cents` when an earlier
+ *                 attempt recorded it and for the plan's fee when it did not.
  *   retry-charge  a real charge against the method on file, for the amount the **first** attempt
  *                 recorded (`charge_amount_cents`) — a retry must not re-price the fee.
  *   expire        the obligation ends, and the relationship goes `active → expired`: nothing more
@@ -40,12 +42,16 @@ import {
 } from "@/lib/db/relationship-payment";
 import { paymentJobKey, paymentJobsOf, type PaymentJob } from "@/lib/flow/payment-jobs";
 import type { PaymentReminderDay } from "@/lib/flow/payment";
+import { relationshipFeeCents } from "@/lib/member/payment";
 
 /** What one job did. Every arm is a fact a caller can log; none is a success message. */
 export type PaymentJobOutcome =
-  /** A retry was attempted: `charged` when it landed, `declined` when it did not. */
+  /**
+   * A charge was attempted: `charged` when it landed, `declined` when it did not. `charge` is the
+   * trial falling due and `retry-charge` the ladder; both write the same two facts.
+   */
   | {
-      readonly kind: "retry-charge";
+      readonly kind: "charge" | "retry-charge";
       readonly status: "charged" | "declined";
       readonly detail?: string;
     }
@@ -115,6 +121,15 @@ export async function runPaymentJobs(options: PaymentJobRunOptions): Promise<Pay
         const outcome = await executeJob(sql, obligation, job, options);
         if (outcome !== null) {
           done.push({ key: paymentJobKey(obligation.row.relationship_id, job), outcome });
+          // A taken fee ends this obligation's work. The list was computed against facts that said
+          // "still unpaid", so a nag or a retry after a successful charge is a sentence sent to
+          // someone who has just paid — the one thing the ordering must not allow.
+          if (
+            outcome.kind !== "remind" &&
+            outcome.kind !== "expire" &&
+            outcome.status === "charged"
+          )
+            break;
         }
       } catch (error) {
         // `expired` and `retry`, both real writes, can throw on a provider or a database failure.
@@ -161,13 +176,16 @@ async function executeJob(
     return { kind: "expire", status: "expired", reason: job.reason };
   }
 
-  // `retry-charge` — a real charge, for the amount the first attempt recorded.
-  const amountCents = obligation.row.charge_amount_cents;
+  // `charge` — the trial falling due — and `retry-charge` — the ladder — are one write with two
+  // histories. Only the first may price the fee: once an attempt exists `charge_amount_cents` is a
+  // recorded fact and a retry that re-derived it would charge a price the payer never agreed to.
+  const amountCents =
+    obligation.row.charge_amount_cents ?? (job.kind === "charge" ? relationshipFeeCents() : null);
   const customerId = obligation.row.provider_customer_id;
   const paymentMethodId = obligation.row.provider_payment_method_id;
-  if (amountCents === null || customerId === null || paymentMethodId === null) {
-    // Nothing to charge with: the method or the amount is gone. Not an attempt — the expiry window
-    // will end this obligation, and counting a phantom attempt would shorten it.
+  if (amountCents === null || amountCents <= 0 || customerId === null || paymentMethodId === null) {
+    // Nothing to charge with: the method, or a positive fee, is missing. Not an attempt — the expiry
+    // window will end this obligation, and counting a phantom attempt would shorten it.
     return null;
   }
 
@@ -177,7 +195,10 @@ async function executeJob(
     customerId,
     paymentMethodId,
     amountCents,
-    description: "AlignSynch — relationship fee (retry)",
+    description:
+      job.kind === "charge"
+        ? "AlignSynch — relationship fee"
+        : "AlignSynch — relationship fee (retry)",
     idempotencyKey: `relationship-${relationshipId}`,
   });
 
@@ -187,7 +208,7 @@ async function executeJob(
       at: options.now,
       result: { ok: false, amountCents },
     });
-    return { kind: "retry-charge", status: "declined", detail: charge.message };
+    return { kind: job.kind, status: "declined", detail: charge.message };
   }
 
   await recordChargeResult(sql, {
@@ -196,7 +217,7 @@ async function executeJob(
     result: { ok: true, amountCents, chargeId: charge.chargeId },
   });
   await completeRelationshipOnCharge(sql, relationshipId, options.now);
-  return { kind: "retry-charge", status: "charged" };
+  return { kind: job.kind, status: "charged" };
 }
 
 /**

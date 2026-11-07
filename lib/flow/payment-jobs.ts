@@ -9,6 +9,9 @@
  *   expire          the obligation ended without money — `charge-failed` when the retry ladder is
  *                   spent, `unpaid` when fourteen days passed with both sheets sealed. Outranks the
  *                   others: nothing else is owed on an ended obligation.
+ *   charge          the trial falling due — sealed, a method on file, never attempted, and
+ *                   `charge_due_at` arrived. Alone in its run: a taken fee ends the obligation's
+ *                   work, so the nag below is not owed to someone who has just paid.
  *   remind          day 3 and day 10, from the sealed instant. The earlier unsent nag, and the
  *                   day-10 one is not held back by a missed day-3 — a job that was down on day 4
  *                   still owes both, and the later sentence is the more urgent.
@@ -27,16 +30,19 @@ import {
   type PaymentExpiryReason,
   type PaymentFacts,
   type PaymentReminderDay,
+  chargeDueOf,
   chargeExhaustedOf,
   chargeRetryAt,
   expiryDueOf,
   reminderDueOf,
 } from "@/lib/flow/payment";
 
-/** The three things the job can do. One list, because a route maps every kind to a writer. */
-export const PAYMENT_JOB_KINDS = ["remind", "retry-charge", "expire"] as const;
+/** The four things the job can do. One list, because a route maps every kind to a writer. */
+export const PAYMENT_JOB_KINDS = ["charge", "remind", "retry-charge", "expire"] as const;
 
 export type PaymentJob =
+  /** Take the fee for the first time: the trial's delay has run out and nothing failed yet. */
+  | { readonly kind: "charge" }
   /** Send the day-3 or day-10 nag to both parties, then stamp the day. */
   | { readonly kind: "remind"; readonly day: PaymentReminderDay }
   /** Attempt the fee again against the method on file. */
@@ -60,6 +66,11 @@ export function paymentJobsOf(input: {
 
   const reason = expiryDueOf({ facts, now });
   if (reason !== null) return [{ kind: "expire", reason }];
+
+  // The trial falling due is its own answer, not one more line in the list: it moves money, and a
+  // nag or a retry computed against "still unpaid" would be stale the instant it landed. If it is
+  // declined, tomorrow's run reads the failure and the ladder takes over.
+  if (chargeDueOf({ facts, now })) return [{ kind: "charge" }];
 
   const jobs: PaymentJob[] = [];
 
@@ -92,5 +103,6 @@ export function retryDue(input: { readonly facts: PaymentFacts; readonly now: Da
 export function paymentJobKey(relationshipId: string, job: PaymentJob): string {
   if (job.kind === "remind") return `${relationshipId}:remind:${job.day}`;
   if (job.kind === "expire") return `${relationshipId}:expire:${job.reason}`;
+  if (job.kind === "charge") return `${relationshipId}:charge`;
   return `${relationshipId}:retry-charge`;
 }
