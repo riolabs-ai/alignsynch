@@ -58,6 +58,16 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "sharing", label: "Sharing — the report is open to both of you." },
         /**
+         * #619 — both sheets are sealed and the relationship's fee is not settled. The Gap is
+         * still shut, so the `sharing` sentence would be false; the sentence says only what the
+         * status knows, and the plan and the payment are drawn by the publish panel below it.
+         */
+        {
+          id: "awaiting-payment",
+          label:
+            "Sharing — both sheets are sealed; the Gap opens when the assessment is published.",
+        },
+        /**
          * #503 — a session an operator ended. The badge and the sentence are two items because
          * the badge sits beside the title where a stage name would go, and there is no stage name
          * to put there.

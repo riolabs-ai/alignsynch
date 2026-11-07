@@ -69,6 +69,8 @@ type Phase = { readonly kind: "idle" } | { readonly kind: "done"; readonly outco
 const STATUS_COPY_ID: Record<InstanceStatus, string> = {
   awaiting_counterparty: "awaiting-counterparty",
   answering: "answering",
+  /* #619 — sealed and unpaid: the console reads it as its own state, not as an error. */
+  awaiting_payment: "awaiting-payment",
   complete: "complete",
   voided: "voided",
 };

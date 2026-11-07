@@ -69,6 +69,8 @@ import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 const STATUS_COPY_ID: Record<InstanceStatus, string> = {
   awaiting_counterparty: "awaiting-counterparty",
   answering: "answering",
+  /* #619 — sealed and unpaid: the report reads it as its own locked state. */
+  awaiting_payment: "awaiting-payment",
   complete: "complete",
   voided: "voided",
 };

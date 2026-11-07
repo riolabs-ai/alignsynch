@@ -48,6 +48,7 @@ export const adminReportPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "awaiting-counterparty", label: "Awaiting counterparty" },
         { id: "answering", label: "Answering" },
+        { id: "awaiting-payment", label: "Awaiting payment" },
         { id: "complete", label: "Complete" },
         { id: "voided", label: "Voided" },
       ],

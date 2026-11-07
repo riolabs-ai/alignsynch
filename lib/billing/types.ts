@@ -116,6 +116,86 @@ export interface CheckoutSession {
   readonly completed: boolean;
 }
 
+/* ------------------------------------------------------------------ *
+ * Pay to complete (#619) — a method on file, and the fee taken later
+ * ------------------------------------------------------------------ */
+
+/**
+ * What capturing a payment method asks for.
+ *
+ * No amount: the fee is decided at **completion**, from the plan the initiator chooses then. A
+ * capture that carried an amount would lock the charge to a plan chosen days earlier — which is
+ * exactly the "purchase at creation" model #619 retires.
+ *
+ * `relationshipId` rides along so the provider's session can carry it in metadata and the return
+ * can be resolved to the relationship without a second table; `userId` is the payer, resolved from
+ * the session, never from a body.
+ */
+export interface MethodCaptureRequest {
+  readonly userId: string;
+  readonly relationshipId: string;
+  readonly successUrl: string;
+  readonly cancelUrl: string;
+  readonly email?: string;
+}
+
+/** Where to send the browser to capture a method. `completed` is `true` only for an offline adapter. */
+export interface MethodCaptureSession {
+  readonly id: string;
+  readonly url: string;
+  readonly provider: BillingProvider;
+  /**
+   * `true` when the method is already on file by the time this returns (the mock captures inline).
+   * A hosted provider returns `false`, and the ids arrive through `resolveMethodCapture()` when the
+   * browser comes back.
+   */
+  readonly completed: boolean;
+  readonly customerId?: string;
+  readonly paymentMethodId?: string;
+}
+
+/** A capture, resolved from the provider after the browser returned. */
+export interface ResolvedMethod {
+  readonly relationshipId: string | null;
+  readonly userId: string | null;
+  readonly customerId: string;
+  readonly paymentMethodId: string;
+  /** The provider's own word for "this object is test mode". Never inferred from `provider`. */
+  readonly livemode: boolean;
+}
+
+/** One charge against a method already on file — the fee, taken once per relationship. */
+export interface RelationshipChargeRequest {
+  /** The payer (the relationship's original initiator). Billing for the record, not a control. */
+  readonly userId: string;
+  readonly relationshipId: string;
+  readonly customerId: string;
+  readonly paymentMethodId: string;
+  readonly amountCents: number;
+  /** What the payer's statement shows. */
+  readonly description: string;
+  /**
+   * The provider's idempotency key. `relationship-<id>` makes a retried completion one charge, not
+   * two — the guard the database's `charged_at IS NULL` cannot provide across a network call.
+   */
+  readonly idempotencyKey: string;
+}
+
+/**
+ * What a charge did.
+ *
+ * `declined` is a **result**, not an exception: it is the outcome the retry ladder exists for, and a
+ * caller that had to catch an error to learn it would confuse "the card said no" with "the provider
+ * is down". A transport or 5xx failure still throws, because that is not the payer's card.
+ */
+export type ChargeOutcome =
+  | { readonly ok: true; readonly chargeId: string; readonly amountCents: number }
+  | {
+      readonly ok: false;
+      readonly code: "declined" | "no-method" | "not-configured";
+      readonly message: string;
+    };
+
 /** A webhook as the receiver got it: the exact bytes, and the signature header if there was one. */
 export interface WebhookRequest {
   readonly rawBody: string;

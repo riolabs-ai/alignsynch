@@ -32,10 +32,15 @@ import { livePlanGrantIds } from "@/lib/db/billing";
 import {
   BILLING_PROVIDERS,
   type BillingProvider,
+  type ChargeOutcome,
   type CheckoutRequest,
   type CheckoutSession,
   DEFAULT_BILLING_PROVIDER,
   type Entitlement,
+  type MethodCaptureRequest,
+  type MethodCaptureSession,
+  type RelationshipChargeRequest,
+  type ResolvedMethod,
   type Subscription,
   type WebhookOutcome,
   type WebhookRequest,
@@ -166,4 +171,25 @@ export async function readAccountSubscription(userId: string): Promise<Subscript
 /** Apply a provider event, at most once. */
 export async function handleWebhook(request: WebhookRequest): Promise<WebhookOutcome> {
   return (await billing()).handleWebhook(request);
+}
+
+/* ------------------------------------------------------------------ *
+ * Pay to complete (#619) — the same port, three more operations
+ * ------------------------------------------------------------------ */
+
+/** Capture a payment method without charging. Answers where the browser goes. */
+export async function startMethodCapture(
+  request: MethodCaptureRequest,
+): Promise<MethodCaptureSession> {
+  return (await billing()).startMethodCapture(request);
+}
+
+/** Resolve a hosted capture once the browser returned. */
+export async function resolveMethodCapture(sessionId: string): Promise<ResolvedMethod> {
+  return (await billing()).resolveMethodCapture(sessionId);
+}
+
+/** Charge a method already on file. A decline is an outcome, not an exception. */
+export async function chargeOnFile(request: RelationshipChargeRequest): Promise<ChargeOutcome> {
+  return (await billing()).chargeOnFile(request);
 }

@@ -7,8 +7,10 @@
  *   awaiting_counterparty   the Initiator exists, the Counterparty has not claimed yet
  *   answering               both parties exist, and at least one Aspect is unanswered or
  *                           at least one acceptance is still missing
- *   complete                both parties exist, both answered every Aspect, and **both
- *                           accepted** the session (#R2)
+ *   awaiting_payment        both answered every Aspect and both accepted, and the relationship's
+ *                           fee is not settled (#619) — the sheets are sealed and the Gap is shut
+ *   complete                both parties exist, both answered every Aspect, **both accepted**, and
+ *                           the fee is armed or the relationship predates the obligation (#619)
  *   voided                  an operator ended the session (#503) — terminal, and answered
  *                           before any count is read
  *
@@ -48,6 +50,12 @@ import {
 export const INSTANCE_STATUSES = [
   "awaiting_counterparty",
   "answering",
+  /**
+   * Both parties have answered every Aspect and **both accepted**, and the relationship's fee has
+   * not been settled (#619). The sheets are sealed and neither party may read the other's, so this
+   * is not `complete`: it is the last gate, and `relationship_payment` is what opens it.
+   */
+  "awaiting_payment",
   "complete",
   /** An operator ended the session (#503). Terminal: nothing re-opens it. */
   "voided",
@@ -88,6 +96,21 @@ export interface InstanceProgress {
    * trusting this shape.
    */
   readonly voided?: boolean;
+  /**
+   * Does the relationship's fee arm completion? (#619)
+   *
+   * `true` — a method is on file (or the fee is already taken) and the obligation has not ended.
+   * `false` — nothing on file, or the obligation expired: the session stops at `awaiting_payment`.
+   * **`undefined` — not measured**, which is the answer for a relationship created before
+   * `relationship_payment` existed: it was charged at creation under the model #619 retires, and
+   * calling that "unpaid" would flip every finished session back into a payment state.
+   *
+   * The gate is one-directional on purpose: only an explicit `false` blocks completion, so a read
+   * path that has not been taught the fact cannot accidentally *grant* the Gap by omitting it —
+   * the server action re-reads the row and refuses there. `lib/flow/payment.ts::paymentArmedOf()`
+   * is what produces it.
+   */
+  readonly paymentArmed?: boolean;
 }
 
 /**
@@ -113,8 +136,12 @@ export function instanceStatusOf(progress: InstanceProgress): InstanceStatus {
   const everyoneAnswered =
     progress.initiatorAnswered >= progress.aspectCount &&
     progress.counterpartyAnswered >= progress.aspectCount;
+  if (!everyoneAnswered) return "answering";
   const everyoneAccepted = progress.initiatorAccepted >= 1 && progress.counterpartyAccepted >= 1;
-  return everyoneAnswered && everyoneAccepted ? "complete" : "answering";
+  if (!everyoneAccepted) return "answering";
+  // #619 — the fee is the last gate, and only an explicit `false` closes it (see the field's doc).
+  if (progress.paymentArmed === false) return "awaiting_payment";
+  return "complete";
 }
 
 /** Whether one seat has accepted the session — the hinge, per party. */
@@ -202,7 +229,13 @@ export type SubmissionRejection =
    * `voided`, and deliberately its own code: a voided session was ended by an operator and a
    * lapsed one by the money, and the two sentences send the reader to different places.
    */
-  | "lapsed";
+  | "lapsed"
+  /**
+   * #619 — the initiator has no payment method on file, and publishing their sheet is where the
+   * relationship's fee acquires one. Its own code because the answer is a step to take (capture a
+   * method), not a state to wait out.
+   */
+  | "payment-method-required";
 
 export interface ParsedAnswers {
   readonly itemId: string;
