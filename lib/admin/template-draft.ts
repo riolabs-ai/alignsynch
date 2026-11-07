@@ -63,6 +63,18 @@ export type TemplateDraftResult =
  */
 export interface TemplateFormPayload {
   readonly record?: unknown;
+}
+
+/**
+ * The console's **create-from-scratch**, which still names its reason (#625).
+ *
+ * A create is a privileged act on the catalogue, so `act()` refuses it without a stated
+ * justification, and the console's form keeps that field. A *save* does not: the sentence is
+ * composed by `lib/member/template-reasons.ts` from the record's own facts. That is why `reason`
+ * lives here and not on the base payload — a member write cannot carry a typed one, so no caller
+ * can reintroduce the field the owner reported as a blocked form.
+ */
+export interface TemplateCreatePayload extends TemplateFormPayload {
   readonly reason?: string;
 }
 

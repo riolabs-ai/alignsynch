@@ -84,9 +84,8 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "save",
       heading: "Save",
-      body: "The reason is not optional — it is the audit row's own sentence, and a save without one is refused before anything is written.",
+      body: "A save lands in the audit log in the same transaction as the change. The sentence it carries is written for you — it names this template and the console — because a reason is only worth asking a person for when the action is on someone else's data; editing a draft is not.",
       items: [
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Save the draft" },
         { id: "saving", label: "Saving…" },
         { id: "saved", label: "Saved. Audit action {actionId}." },
