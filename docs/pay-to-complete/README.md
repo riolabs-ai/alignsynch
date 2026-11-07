@@ -17,7 +17,8 @@ Four documents, read in this order. Each one argues from the previous.
 
 A relationship is free to create and free to answer. A payment method is offered at the end of the create
 stages and never blocks the invitation. Publishing a sheet requires a method on file, which starts a seven-day
-trial; the charge lands when the trial ends or when both sheets seal, and the Gap report opens on payment. One
+trial; the pair completes when **both** sheets are sealed, and the charge lands from the day the trial ends —
+never before both sheets are sealed, because the fee buys a completed assessment. One
 fee covers every round and the relationship's original initiator always pays. A declined charge retries three
 times across a week; an unpaid seal reminds at day 3 and day 10 and expires at day 14. The counterparty is
 never shown billing. Every deadline is derived from a stored instant and driven by a daily cron, never by a
@@ -27,6 +28,8 @@ render.
 
 - **Decided:** all product questions, recorded on #619 (2026-11-07).
 - **Approved:** migration `0036` may reach production after a snapshot; a daily cron at 09:00 is wanted.
-- **In flight:** PR #634 — see [SPEC §9](SPEC.md#9-what-remains-in-pr-634) for the exact remaining work.
+- **Landed:** PR #634 squash-merged as `7508f71b` (2026-11-07); `0036` applied to production after the
+  `production-preserved-20261107-195905` snapshot, `db:verify` green, production serving it. Remaining work is
+  [SPEC §9](SPEC.md#9-what-remains-in-pr-634): the payer's UI and reminder delivery.
 - **Not yet answered:** the Free-plan consequence, the provider for the release, and the path for a charge that
   needs the payer present ([RESEARCH §6](RESEARCH.md#6-open-research-questions-unmeasured-carried-into-the-prd)).
