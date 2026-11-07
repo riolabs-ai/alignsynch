@@ -6,6 +6,30 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.5.1] - 2026-11-07
+
+### Fixed
+
+- `fix(ui)` — no typed Reason field on template saves — the audit sentence is generated (#625) ([#630](https://github.com/riolabs-ai/alignsynch/pull/630))
+- `fix(health)` — a stale health record fails the gate instead of rendering as current (#599) ([#629](https://github.com/riolabs-ai/alignsynch/pull/629))
+- `fix(flow)` — give the accept step an entry point, and a test that walks it (#617) ([#628](https://github.com/riolabs-ai/alignsynch/pull/628))
+- `fix(health)` — re-record platform health from demo and move the #508 probe out of the record (#599) ([#627](https://github.com/riolabs-ai/alignsynch/pull/627))
+- `fix(ui)` — no typed Reason field on template saves — the audit sentence is generated (#625) ([#626](https://github.com/riolabs-ai/alignsynch/pull/626))
+
+### Maintenance
+
+- `docs(qa)` — the assessment flow walked end to end on demo — first breakpoint is the accept step ([#622](https://github.com/riolabs-ai/alignsynch/pull/622))
+- `chore(security)` — lift the form guard into lib/forms/ and guard the news signup + auth proxy (#615) ([#616](https://github.com/riolabs-ai/alignsynch/pull/616))
+
+### Known limits
+
+- **A session still completes without payment.** The pay-to-complete model — optional payment method at invite, a 7-day trial, payment required to publish a sheet and open the Gap, per-relationship price, 14-day unpaid expiry — is decided and specified in #619, and nothing in it ships in this version. Completing a session remains free.
+- **A relationship cannot be edited after it is created.** No edit surface exists, and five `relationship` columns have no writer at all (`template_version_id`, `completed_at`, `void_reason`, `expired_at`, `lapse_reason`). #623 carries both.
+- **The accept entry point is a link, not a policy.** This version makes the accept step reachable, so a real session can now complete; it does not change what completion requires, and a session whose parties never accept still never completes.
+- **Only template _saves_ generate their audit reason.** Console publish, withdraw and create-from-scratch still require a typed justification, because a server cannot reconstruct an operator's intent. If those are automated later, that is a deliberate change to `lib/admin/act.ts`'s contract, not a follow-up.
+- **Platform health is a point-in-time snapshot.** The record is re-measured on demand, from the demo branch; a stale record now fails the gate rather than being rendered as current, but the record itself is not live telemetry and does not update by itself.
+- **The news signup answers 200 to a refused submission.** A submission the guard refuses (honeypot filled, unverifiable token, address window) receives the same `subscribed` answer as a real subscriber and writes no `news_signup` row — deliberately, so a bot learns nothing. The cost is that a person caught by a false positive gets no error and no subscription either.
+
 ## [1.5.0] - 2026-11-07
 
 ### Added
