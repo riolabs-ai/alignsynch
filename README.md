@@ -339,6 +339,21 @@ here: it is generated, and a copy of it in this file would drift.
 `AGENTS.md` is the agent-facing companion to this file. The two must agree on commands, the package
 manager and the Node version; a command change belongs in both.
 
+## Diagrams
+
+Five Mermaid flow charts live in [`docs/diagrams/`](docs/diagrams): one home for the pictures that
+used to be scattered across issue bodies and QA folders. They render on GitHub and every node names
+something real in this tree, so a chart that drifts from the code is a review finding rather than a
+PNG nobody can edit.
+
+| Diagram                                           | The question it answers                                                           |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [lifecycle](docs/diagrams/lifecycle.md)           | what a relationship, a session and an invitation can be, and what ends each one   |
+| [payment](docs/diagrams/payment.md)               | the money ladder: 7-day trial, retries, the day-3/day-10 nags, expiry on day 14   |
+| [brand-boundary](docs/diagrams/brand-boundary.md) | which routes one build sells and the other answers 404, and where the gates sit   |
+| [data](docs/diagrams/data.md)                     | `content/` schemas → `data/` fixtures → the six Postgres tables, one route marked |
+| [gate](docs/diagrams/gate.md)                     | a change's path through `scripts/verify.sh`, and which steps each lane pays for   |
+
 ## Status and limits
 
 **Beta.** `package.json` is `1.2.0`, the AlignSynch build is deployed at
