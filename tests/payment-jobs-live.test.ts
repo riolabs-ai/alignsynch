@@ -57,6 +57,15 @@ async function fixture(suffix: string, options: { sealed: boolean }): Promise<st
      VALUES ($1, $2, $3, $4, 'active')`,
     [relationshipId, templateId, versionId, `${relationshipId}-payer`],
   );
+  // The session's own record row: `session.record_id` is `PRIMARY KEY REFERENCES record (id)`, so the
+  // assessment instance is a record before it is a session. Skipping this is what made the first
+  // real run fail on `assessment_instance_record_id_fkey` — the constraint kept its 0001 name when
+  // 0013 renamed the table.
+  await pool.query(
+    `INSERT INTO record (id, slug, record_type, status, date, title, summary, author_user_id, owner_user_id, visibility)
+     VALUES ($1, $1, 'assessment', 'published', now(), 'Payment probe session', 'probe', NULL, NULL, 'private')`,
+    [sessionId],
+  );
   await pool.query(
     `INSERT INTO session (record_id, template_record_id, relationship_id, name, mode, alignment_setting, round)
      VALUES ($1, $2, $3, 'Payment probe', 'basic', 'soft', 1)`,
@@ -120,12 +129,13 @@ live("the payment job, on the real schema", () => {
       true,
     );
 
-    await fixture(ids.retry, { sealed: true });
-    await obligation(ids.retry);
-    await fixture(ids.expire, { sealed: true });
-    await obligation(ids.expire);
-    await fixture(ids.quiet, { sealed: false });
-    await obligation(ids.quiet);
+    // `fixture()` owns the id: it prefixes `TAG` itself, so passing an already-qualified id here
+    // doubled it (`TAG-TAG-retry`) and the obligation then pointed at a relationship that did not
+    // exist — the first real run died on `relationship_payment_relationship_id_fkey`. Take the id
+    // the fixture returns.
+    await obligation(await fixture("retry", { sealed: true }));
+    await obligation(await fixture("expire", { sealed: true }));
+    await obligation(await fixture("quiet", { sealed: false }));
   });
 
   afterAll(async () => {
@@ -139,10 +149,12 @@ live("the payment job, on the real schema", () => {
         [id],
       );
       await pool.query(
-        "DELETE FROM opinion WHERE instance_record_id IN (SELECT record_id FROM session WHERE relationship_id = $1)",
+        "DELETE FROM opinion WHERE session_record_id IN (SELECT record_id FROM session WHERE relationship_id = $1)",
         [id],
       );
       await pool.query("DELETE FROM session WHERE relationship_id = $1", [id]);
+      // The session's own record row, added by the fixture above; `record` is not cascaded.
+      await pool.query("DELETE FROM record WHERE id = $1", [`${id}-session`]);
       await pool.query("DELETE FROM relationship WHERE id = $1", [id]);
       await pool.query("DELETE FROM template_version WHERE template_record_id = $1", [
         `${id}-template`,
