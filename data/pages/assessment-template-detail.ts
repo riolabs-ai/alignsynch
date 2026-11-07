@@ -17,6 +17,23 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Template",
   sections: [
     {
+      /**
+       * The journey's three stages, named for the rail (#618). The rail is the one piece of chrome
+       * this card adds, and it is the shape `components/create/quiz-editor.tsx` established and
+       * `counterparty-wizard.tsx` already varies: numbered steps, the current one marked, a count
+       * above the band. A person on the product page is on step 2 of 3, and the rail says so
+       * instead of leaving the two hops before and after it invisible.
+       */
+      id: "steps",
+      items: [
+        { id: "1", label: "Products" },
+        { id: "2", label: "This product" },
+        { id: "3", label: "Create the relationship" },
+        { id: "count", label: "Step {step} of 3" },
+        { id: "label", label: "Creating a relationship" },
+      ],
+    },
+    {
       id: "back",
       items: [{ id: "all", label: "All templates" }],
     },
@@ -57,7 +74,16 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
       id: "actions",
       heading: "What you can do with it",
       items: [
-        { id: "start", label: "Start an instance" },
+        // #618 — the owner's words, verbatim. This page was drawing "Start an instance" and
+        // pointing at the library, which is instance language on a product page and a link back to
+        // where the reader came from. The control now names the thing that gets created.
+        { id: "create", label: "Create Relationship" },
+        {
+          id: "plans-note",
+          label:
+            "Creating a relationship is free. Your plan decides how many you may hold at once, and it is chosen when a relationship is ready to complete, not here.",
+        },
+        { id: "plans", label: "See plans and prices" },
         { id: "duplicate", label: "Duplicate into your templates" },
         { id: "archive", label: "Archive" },
         { id: "unarchive", label: "Unarchive" },
@@ -116,7 +142,8 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
         },
         {
           id: "no-money",
-          label: "No price is shown here: this page has not read what anyone paid.",
+          label:
+            "No price is shown here: a relationship's cost depends on the plan chosen when it is ready to complete, and the plan prices are on the pricing page.",
         },
       ],
     },
