@@ -243,6 +243,9 @@ const stub = vi.hoisted(() => {
 
 vi.mock("@/lib/db/client", () => ({
   getPool: () => ({ query: stub.query }),
+  // #619 — the screen's read also asks `relationship_payment`; this suite's stub answers every
+  // relationship query, so the payment read finds no row and the status stays what it was.
+  queryRows: async () => [],
   DatabaseUnavailableError: class DatabaseUnavailableError extends Error {},
 }));
 

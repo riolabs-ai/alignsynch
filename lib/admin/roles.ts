@@ -186,6 +186,12 @@ export const ADMIN_ACTIONS = [
   /** Re-mint a lapsed invitation on a published relationship — one click, no Aspects re-entered. */
   "relationship.republish",
   /**
+   * #619 — the payer completes: the fee is charged, the relationship moves `→ complete` and the
+   * Gap opens to both parties. One action, because "take the money" and "open the product" are one
+   * decision and a half-applied one is either a free Gap or a charge for nothing.
+   */
+  "relationship.complete",
+  /**
    * #533 phase 3 — the two operator overrides on a relationship's membership, and the third is
    * #505's `plan.comp` (a comp is a grant, not a subscription edit).
    *
@@ -283,6 +289,8 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "relationship.aspects": "member",
   "relationship.publish": "member",
   "relationship.republish": "member",
+  // #619 — the payer's own act on their own relationship, audited like every other member write.
+  "relationship.complete": "member",
   // #533 phase 3 — the two operator overrides, floored where `session.void` is: `admin`.
   "relationship.void": "admin",
   "relationship.extend": "admin",

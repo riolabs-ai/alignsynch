@@ -73,6 +73,24 @@ export type PublishOutcome =
       readonly url?: string;
     };
 
+/**
+ * #619 — the payer completed: the fee was taken, the relationship is `complete` and the Gap is open
+ * to both parties.
+ *
+ * `payment-required` is not a failure: it carries the url the browser must visit to put a method on
+ * file, exactly as `PublishOutcome`'s checkout arm does — nothing was charged and the sheets stay
+ * sealed until the payer comes back.
+ */
+export type CompleteOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly status: string;
+      readonly chargedAt: string;
+      readonly amountCents: number;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string; readonly url?: string };
+
 /** Reissuing a lapsed or revoked invitation — one click, no Aspects re-entered. */
 export type RepublishOutcome =
   | {

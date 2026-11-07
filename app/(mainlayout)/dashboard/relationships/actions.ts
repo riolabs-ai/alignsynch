@@ -41,8 +41,15 @@ import {
   MEMBER_RELATIONSHIPS_PATH,
 } from "@/lib/member/relationships";
 import { MemberRefused } from "@/lib/member/publish-basis";
+import {
+  capturePaymentMethod,
+  completeRelationship,
+  MemberPaymentRequired,
+  captureReturnPath,
+} from "@/lib/member/payment";
 import type {
   AspectsOutcome,
+  CompleteOutcome,
   PublishOutcome,
   RelationshipCreateOutcome,
   RepublishOutcome,
@@ -215,6 +222,102 @@ export async function republishInviteAction(payload: {
     if (error instanceof MemberRefused) {
       return { ok: false, code: error.reason, message: error.message };
     }
+    throw error;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * #619 — pay to complete: the capture and the completion
+ * ------------------------------------------------------------------ */
+
+/**
+ * Put a payment method on this relationship — the "pay now / later" half.
+ *
+ * Nothing is charged and nothing is unlocked: this only makes the completion possible. The route a
+ * hosted adapter sends the browser to is this deployment's own return endpoint, which resolves the
+ * provider's session before landing the payer back on the relationship.
+ */
+export async function capturePaymentMethodAction(payload: {
+  relationshipId?: string;
+  reason?: string;
+}): Promise<{ ok: true; url: string | null } | { ok: false; code: string; message?: string }> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  try {
+    const result = await capturePaymentMethod({
+      actorUserId: user.userId,
+      relationshipId,
+      returnUrl: `${baseUrl().replace(/\/+$/, "")}${captureReturnPath(relationshipId)}`,
+      email: user.email ?? undefined,
+    });
+    return { ok: true, url: result.url };
+  } catch (error) {
+    if (error instanceof MemberRefused) {
+      return { ok: false, code: error.reason, message: error.message };
+    }
+    if (error instanceof BillingRefusal) {
+      return { ok: false, code: error.code, message: error.message };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Take the fee and complete the relationship — the payer's one act.
+ *
+ * Two outcomes that are not failures: `payment-method-required` carries the url of a capture that
+ * has to happen first (nothing was charged, the sheets stay sealed), and a declined card answers
+ * `charge-declined` with the provider's sentence, which the retry ladder is already handling.
+ *
+ * The actor and the price are not the body's: the payer is the session's account and the fee is
+ * `data/billing-plans.ts`'s amount for the tier the call names — the library compares both against
+ * the relationship's own row under the lock.
+ */
+export async function completeRelationshipAction(payload: {
+  relationshipId?: string;
+  planId?: string;
+  reason?: string;
+}): Promise<CompleteOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+  const reason = text(payload.reason);
+  const planId = text(payload.planId);
+
+  try {
+    const result = await completeRelationship({
+      actorUserId: user.userId,
+      relationshipId,
+      reason: reason === "" ? "publish the assessment and take the relationship fee" : reason,
+      ...(planId === "" ? {} : { planId }),
+      returnUrl: `${baseUrl().replace(/\/+$/, "")}${captureReturnPath(relationshipId)}`,
+      email: user.email ?? undefined,
+    });
+    return {
+      ok: true,
+      actionId: result.actionId,
+      status: result.after.status,
+      chargedAt: result.after.chargedAt,
+      amountCents: result.after.amountCents,
+    };
+  } catch (error) {
+    if (error instanceof MemberPaymentRequired) {
+      // Not a refusal: the browser has somewhere to go, and no state changed.
+      return { ok: false, code: "payment-method-required", url: error.url };
+    }
+    if (error instanceof MemberRefused) {
+      return { ok: false, code: error.reason, message: error.message };
+    }
+    if (error instanceof BillingRefusal) {
+      return { ok: false, code: error.code, message: error.message };
+    }
+    if (error instanceof ActRefused) return { ok: false, code: error.reason };
     throw error;
   }
 }

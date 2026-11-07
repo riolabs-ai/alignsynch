@@ -252,7 +252,7 @@ export function AssessmentInstanceView({
       ? "voided"
       : stage === "connected" && names.length === 0
         ? "connected-unknown"
-        : stageCopyId(stage, screen.invite?.state ?? null);
+        : stageCopyId(stage, screen.invite?.state ?? null, screen.status);
   const counterpartyName = screen.invite?.counterpartyName ?? screen.counterpartyName ?? "";
   const stageSentence = fillLabel(itemLabel(stageBand, stageId), {
     counterparty: counterpartyName,

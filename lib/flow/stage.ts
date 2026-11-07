@@ -58,6 +58,12 @@ export type FlowStage = (typeof FLOW_STAGES)[number];
 const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage | null> = {
   awaiting_counterparty: "invited",
   answering: "connected",
+  /**
+   * #619 — both sheets are sealed and the fee is not settled. The ladder position is `sharing`
+   * (both parties have done their part), and the **sentence** is what differs: `sharing` says the
+   * report is open, which is exactly what `awaiting_payment` is not.
+   */
+  awaiting_payment: "sharing",
   complete: "sharing",
   voided: null,
 };
@@ -82,9 +88,19 @@ export type StageCopyId =
   | "invited-expired"
   | "connected"
   | "connected-unknown"
-  | "sharing";
+  | "sharing"
+  /**
+   * #619 — addressed from the **status**, not from the stage: `sharing` is both "the Gap is open"
+   * and "the sheets are sealed and the fee is not settled", and only the status tells them apart.
+   */
+  | "awaiting-payment";
 
-export function stageCopyId(stage: FlowStage, invite: InviteDisplayState | null): StageCopyId {
+export function stageCopyId(
+  stage: FlowStage,
+  invite: InviteDisplayState | null,
+  status?: InstanceStatus,
+): StageCopyId {
+  if (status === "awaiting_payment") return "awaiting-payment";
   if (stage === "invited" && invite === "expired") return "invited-expired";
   return stage;
 }
