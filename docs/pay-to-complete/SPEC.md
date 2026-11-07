@@ -68,20 +68,28 @@ PAYMENT_EXPIRY_REASONS   = ['unpaid', 'charge-failed']
 
 At instant `now`, for one obligation, in this order:
 
-| #     | job            | condition                                                                                                                                                   | effect                                                                                                                                                                    |
-| ----- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0** | **`charge`**   | `charged_at IS NULL` **and** `expired_at IS NULL` **and** `method_captured_at IS NOT NULL` **and** `first_failed_at IS NULL` **and** `now >= charge_due_at` | attempt the fee **for the first time**; on success stamp `charged_at`, complete the relationship, open the Gap; on decline stamp `first_failed_at`, `charge_attempts = 1` |
-| 1     | `expire`       | `chargeExhaustedOf(facts, now)` → `charge-failed`; else `now >= sealed + 14d` → `unpaid`                                                                    | stamp `expired_at`/`expire_reason`, set the relationship terminal, notify **both**                                                                                        |
-| 2     | `remind`       | the earlier unsent of day 3 / day 10, from the sealed instant                                                                                               | notify both, stamp that day                                                                                                                                               |
-| 3     | `retry-charge` | `first_failed_at` set, ladder not spent, next rung arrived (`+1`, `+3`, `+5` days)                                                                          | attempt again; on success stamp `charged_at`                                                                                                                              |
+| #     | job            | condition                                                                                                                                                                                   | effect                                                                                                                                                                    |
+| ----- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **0** | **`charge`**   | `charged_at IS NULL` **and** `expired_at IS NULL` **and** `method_captured_at IS NOT NULL` **and** `sealed_at IS NOT NULL` **and** `first_failed_at IS NULL` **and** `now >= charge_due_at` | attempt the fee **for the first time**; on success stamp `charged_at`, complete the relationship, open the Gap; on decline stamp `first_failed_at`, `charge_attempts = 1` |
+| 1     | `expire`       | `chargeExhaustedOf(facts, now)` → `charge-failed`; else `now >= sealed + 14d` → `unpaid`                                                                                                    | stamp `expired_at`/`expire_reason`, set the relationship terminal, notify **both**                                                                                        |
+| 2     | `remind`       | the earlier unsent of day 3 / day 10, from the sealed instant                                                                                                                               | notify both, stamp that day                                                                                                                                               |
+| 3     | `retry-charge` | `first_failed_at` set, ladder not spent, next rung arrived (`+1`, `+3`, `+5` days)                                                                                                          | attempt again; on success stamp `charged_at`                                                                                                                              |
 
-**Row 0 is the fix.** `lib/flow/payment-jobs.ts` today emits only rows 1–3, and `retryDue()` requires
-`first_failed_at` — so the 7-day trial charge is never taken and `charge_due_at` is written and read by nothing.
-A customer who captures a method and never returns is never charged; their obligation simply ages to day 14 and
-expires. That is the trial being decorative, and it is a specification hole rather than a coding mistake.
+**Row 0 requires the seal, and that clause is the easiest one to lose.** The fee buys a completed
+assessment (PRD R4), so an obligation nobody sealed owes nothing however long the method sits — the
+fourteen-day window, which _is_ measured from the seal, ends it instead. Dropping the clause would charge a payer
+for a Gap that does not exist.
+
+**Row 0 is the fix.** `lib/flow/payment-jobs.ts` emitted only rows 1–3 before it, and `retryDue()` requires
+`first_failed_at` — so the 7-day trial charge was never taken and `charge_due_at` was written and read by nothing.
+A customer who captured a method and never returned was never charged; their obligation simply aged to day 14 and
+expired. That was the trial being decorative, and it was a specification hole rather than a coding mistake.
 
 `expire` outranks the rest because nothing else is owed on an ended obligation: a nag after expiry tells people
-to pay for something that just closed.
+to pay for something that just closed. In code it is therefore **tested first and returned alone**, so the
+numbering above is the order the remaining jobs run in — not a promise that an expired obligation is still
+charged. `charge` returns alone for the same class of reason: a taken fee must not be followed by a nag computed
+against "still unpaid".
 
 **Every window is arithmetic over stored instants.** A job that was down for a week finds every rung and every
 nag already due and runs them now, instead of skipping a period. Nothing in `lib/flow/**` reads a clock: `now` is
