@@ -29,7 +29,17 @@ import {
 import { paymentDoorOf, type PaymentDoor } from "@/lib/member/payment-door";
 import { METHOD_TRIAL_DAYS } from "@/lib/flow/payment";
 
-const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
+/**
+ * `process.env` is shared with every other file in the worker, and `tests/db-client.test.ts` /
+ * `tests/db-client-tls.test.ts` plant **placeholder** endpoints in it (`…@example.invalid`,
+ * `…@ep-example-pooler.…`) for their own parsing cases. So "is `DATABASE_URL` set" is not the
+ * question this file asks — a placeholder leaked from a sibling's last case made the guard read
+ * green and the run fail five times on `DATABASE_URL is not set` (measured in the gate). The
+ * question is "is it an endpoint a probe may write to", and a placeholder is a skip.
+ */
+const PLACEHOLDER_ENDPOINT = /example[.-]/i;
+const declaredUrl = process.env.DATABASE_URL?.trim() ?? "";
+const databaseUrl = PLACEHOLDER_ENDPOINT.test(declaredUrl) ? "" : declaredUrl;
 const live = databaseUrl === "" ? describe.skip : describe;
 
 const TAG = `probe-door-${Date.now().toString(36)}`;
@@ -42,7 +52,9 @@ const day = (n: number) => new Date(SEALED.getTime() + n * DAY);
 const pool = new Pool({ connectionString: databaseUrl, max: 2 });
 
 /** A sealed relationship with an obligation and no method on file — the state the door opens from. */
-async function fixture(suffix: string): Promise<{ relationshipId: string; sessionId: string; payer: string }> {
+async function fixture(
+  suffix: string,
+): Promise<{ relationshipId: string; sessionId: string; payer: string }> {
   const relationshipId = `${TAG}-${suffix}`;
   const templateId = `${relationshipId}-template`;
   const versionId = `${relationshipId}-version`;
@@ -114,14 +126,23 @@ afterAll(async () => {
   await pool.query(`DELETE FROM template_version WHERE template_record_id LIKE $1`, [`${TAG}%`]);
   await pool.query(`DELETE FROM record WHERE id LIKE $1`, [`${TAG}%`]);
   await pool.end();
+  // Put the environment back as this file found it (see `beforeAll`): the next live suite in this
+  // worker must decide for itself whether it has an endpoint.
+  delete process.env.DATABASE_URL;
 });
 
-describe("the capture writes the trial date, and the read states it", () => {
+live("the capture writes the trial date, and the read states it", () => {
   let relationshipId: string;
   let sessionId: string;
 
   beforeAll(async () => {
     if (databaseUrl === "") return;
+    // The app's client reads `process.env.DATABASE_URL` at call time, and a sibling file's
+    // `afterEach` can delete it between this file's collection and its first case. Pin the
+    // endpoint this run declared, so the probe and the code under test cannot disagree about
+    // which database they are on. `afterAll` removes it again — leaving it set would make the
+    // *next* live suite in this worker run against a database nobody declared.
+    process.env.DATABASE_URL = databaseUrl;
     ({ relationshipId, sessionId } = await fixture("capture"));
   });
 
@@ -168,14 +189,18 @@ describe("the capture writes the trial date, and the read states it", () => {
   it("reads that stored instant back through the door, and is now completable", async () => {
     const door = await doorOf(sessionId, CAPTURED);
     expect(door?.phase).toBe("method-on-file");
-    expect(door?.chargeDueAt).toBe(new Date(CAPTURED.getTime() + METHOD_TRIAL_DAYS * DAY).toISOString());
+    expect(door?.chargeDueAt).toBe(
+      new Date(CAPTURED.getTime() + METHOD_TRIAL_DAYS * DAY).toISOString(),
+    );
     expect(door?.canComplete).toBe(true);
     expect(door?.refusal).toBeNull();
   });
 
   it("reads the same instant a month later — the date is stored, so no clock moves it", async () => {
     const door = await doorOf(sessionId, new Date(CAPTURED.getTime() + 30 * DAY));
-    expect(door?.chargeDueAt).toBe(new Date(CAPTURED.getTime() + METHOD_TRIAL_DAYS * DAY).toISOString());
+    expect(door?.chargeDueAt).toBe(
+      new Date(CAPTURED.getTime() + METHOD_TRIAL_DAYS * DAY).toISOString(),
+    );
   });
 
   it("refuses a second capture, so a returned browser cannot move the trial date", async () => {
