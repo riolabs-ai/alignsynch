@@ -18,6 +18,8 @@
  * "every state change goes through `act()`" checkable from the screen rather than only in the log.
  */
 import type { TemplateSaveOutcome } from "@/lib/admin/template-draft";
+import type { EditInvalidation } from "@/lib/relationship/edit";
+import type { RelationshipEditState } from "@/lib/relationship/edit-view";
 
 /** A `zAssessment` finding, flattened to the field it names. */
 export interface OutcomeProblem {
@@ -98,6 +100,40 @@ export type RepublishOutcome =
       readonly actionId: string;
       readonly inviteLink: string;
       readonly inviteExpiresAt: string;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/**
+ * #623 — what an edit *would* cost, asked before it is written.
+ *
+ * `blocked` is not a refusal of the request: it is the answer "this edit cannot be made at all",
+ * carrying the code whose sentence the screen prints (`answers-sealed`, `mode-fixed`). Asking it as
+ * a preview rather than discovering it on save is the whole shape of the card — the cost is
+ * stated **before** the write is committed, not after it fails.
+ */
+export type EditPreviewOutcome =
+  | {
+      readonly ok: true;
+      readonly blocked: {
+        readonly code: "mode-fixed" | "answers-sealed";
+        readonly message: string;
+      } | null;
+      readonly invalidations: readonly EditInvalidation[];
+      readonly state: RelationshipEditState;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/**
+ * #623 — the edit itself. `discardedAnswers` is the count the row records, so the screen can say
+ * what the confirmed write actually took rather than what it expected to take.
+ */
+export type EditOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly status: string;
+      readonly version: number | null;
+      readonly discardedAnswers: number;
     }
   | { readonly ok: false; readonly code: string; readonly message?: string };
 
