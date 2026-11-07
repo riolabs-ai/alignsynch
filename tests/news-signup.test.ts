@@ -24,17 +24,20 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const stub = vi.hoisted(() => ({ query: vi.fn() }));
+const stub = vi.hoisted(() => ({ query: vi.fn(), queryRows: vi.fn() }));
 
 vi.mock("@/lib/db/client", () => ({
   getPool: () => ({ query: stub.query }),
+  queryRows: (...args: unknown[]) => stub.queryRows(...args),
   databaseConfigured: () => true,
 }));
 
-import { POST } from "@/app/api/news/subscribe/route";
+import { GET, POST } from "@/app/api/news/subscribe/route";
 import { brand } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
 import { NEWS_SIGNUP_ITEM_IDS } from "@/components/layout/news-signup";
+import { CONTACT_RATE_MAX } from "@/lib/forms/guard";
+import { mintFillToken, readFillInstant } from "@/lib/forms/token";
 import { newsConfirmationMessage } from "@/lib/news/message";
 import {
   newsSignupRefusal,
@@ -50,13 +53,21 @@ const SOURCE = "/pricing";
 const SENDER = "news@rsm.alignsynch.com";
 
 /** A form post the way the footer makes it. */
-function request(fields: Record<string, string>, accept = "application/json"): Request {
+function request(
+  fields: Record<string, string>,
+  accept = "application/json",
+  ip?: string,
+): Request {
   const form = new FormData();
   for (const [key, value] of Object.entries(fields)) form.set(key, value);
+  const headers: Record<string, string> = { accept };
+  // A proxy-supplied address is what gives the request a client bucket; without one the guard
+  // has no identity to count (a direct connection — a local server, a script — looks like this).
+  if (ip !== undefined) headers["x-forwarded-for"] = ip;
   return new Request("http://localhost/api/news/subscribe", {
     method: "POST",
     body: form,
-    headers: { accept },
+    headers,
   });
 }
 
@@ -72,18 +83,43 @@ function transport(status = 200) {
 
 /** What the route stored, as the two values that matter: the address and the page path. */
 function insertArgs(call: number): { email: string; source: string; createdAt: string } {
-  const [, values] = stub.query.mock.calls[call] as [string, string[]];
+  const [, values] = insertCalls()[call] as [string, string[]];
   return { email: values[0], source: values[1], createdAt: values[2] };
+}
+
+/** The writes that created a subscription — as opposed to the guard's attempt rows. */
+function insertCalls(): unknown[][] {
+  return stub.query.mock.calls.filter((call) =>
+    String(call[0]).includes("INSERT INTO news_signup"),
+  );
+}
+
+/** The guard's own writes: one row per submission the window counted. */
+function attemptCalls(): unknown[][] {
+  return stub.query.mock.calls.filter((call) =>
+    String(call[0]).includes("INSERT INTO form_guard_attempt"),
+  );
 }
 
 const previousKey = process.env.RESEND_API_KEY;
 const previousFrom = process.env.RESEND_FROM;
+const previousSecret = process.env.FORM_GUARD_SECRET;
 
 beforeEach(() => {
   stub.query.mockReset();
-  stub.query.mockResolvedValue({ rowCount: 1, rows: [{ email: NORMALISED }] });
+  stub.queryRows.mockReset();
+  // The window answers "nothing yet" unless a case says otherwise, and the subscription write
+  // is the only SQL the route's own flow cares about.
+  stub.queryRows.mockResolvedValue([{ client: 0, address: 0 }]);
+  stub.query.mockImplementation(async (sql: string) =>
+    String(sql).includes("INSERT INTO news_signup")
+      ? { rowCount: 1, rows: [{ email: NORMALISED }] }
+      : { rowCount: 1, rows: [] },
+  );
   process.env.RESEND_API_KEY = "re_test_key";
   process.env.RESEND_FROM = SENDER;
+  // A fixed signing secret, so a token minted here verifies in the route.
+  process.env.FORM_GUARD_SECRET = "test-form-guard-secret";
 });
 
 afterEach(() => {
@@ -93,6 +129,8 @@ afterEach(() => {
   else process.env.RESEND_API_KEY = previousKey;
   if (previousFrom === undefined) delete process.env.RESEND_FROM;
   else process.env.RESEND_FROM = previousFrom;
+  if (previousSecret === undefined) delete process.env.FORM_GUARD_SECRET;
+  else process.env.FORM_GUARD_SECRET = previousSecret;
 });
 
 describe("the address rules", () => {
@@ -134,8 +172,8 @@ describe("POST /api/news/subscribe", () => {
     expect(await response.json()).toEqual({ state: "subscribed" });
 
     // One row, keyed by the normalised address, carrying the page it came from.
-    expect(stub.query).toHaveBeenCalledTimes(1);
-    const [sql] = stub.query.mock.calls[0] as [string];
+    expect(insertCalls()).toHaveLength(1);
+    const [sql] = insertCalls()[0] as [string];
     expect(sql).toContain("INSERT INTO news_signup");
     // #507 — the conflict clause clears an unsubscribe mark and writes nothing otherwise, so the
     // ordinary duplicate path still answers `duplicate` (the next case) and a person who
@@ -163,15 +201,23 @@ describe("POST /api/news/subscribe", () => {
     const { calls, impl } = transport();
     vi.stubGlobal("fetch", impl);
 
+    // The second insert hits the primary key and writes nothing.
+    let inserts = 0;
+    stub.query.mockImplementation(async (sql: string) => {
+      if (!String(sql).includes("INSERT INTO news_signup")) return { rowCount: 1, rows: [] };
+      inserts += 1;
+      return inserts === 1
+        ? { rowCount: 1, rows: [{ email: NORMALISED }] }
+        : { rowCount: 0, rows: [] };
+    });
+
     await POST(request({ email: ADDRESS, source: SOURCE }));
     expect(calls).toHaveLength(1);
 
-    // The second insert hits the primary key and writes nothing.
-    stub.query.mockResolvedValueOnce({ rowCount: 0, rows: [] });
     const second = await POST(request({ email: ADDRESS.toLowerCase(), source: SOURCE }));
     expect(second.status).toBe(200);
     expect(await second.json()).toEqual({ state: "duplicate" });
-    expect(stub.query).toHaveBeenCalledTimes(2);
+    expect(insertCalls()).toHaveLength(2);
     // Two submits, one confirmation: the second is a no-op, not a second email.
     expect(calls).toHaveLength(1);
   });
@@ -190,7 +236,12 @@ describe("POST /api/news/subscribe", () => {
   it("claims nothing when the database does not answer", async () => {
     const { calls, impl } = transport();
     vi.stubGlobal("fetch", impl);
-    stub.query.mockRejectedValueOnce(Object.assign(new Error("down"), { code: "57P01" }));
+    stub.query.mockImplementation(async (sql: string) => {
+      if (String(sql).includes("INSERT INTO news_signup")) {
+        throw Object.assign(new Error("down"), { code: "57P01" });
+      }
+      return { rowCount: 1, rows: [] };
+    });
     vi.spyOn(console, "error").mockImplementation(() => {});
 
     const response = await POST(request({ email: ADDRESS, source: SOURCE }));
@@ -209,7 +260,7 @@ describe("POST /api/news/subscribe", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ state: "stored-send-failed" });
     // The write happened; one send was attempted and refused.
-    expect(stub.query).toHaveBeenCalledTimes(1);
+    expect(insertCalls()).toHaveLength(1);
     expect(calls).toHaveLength(1);
     const lines = error.mock.calls.map((call) => call.join(" ")).join("\n");
     expect(lines).toContain("[news]");
@@ -245,6 +296,107 @@ describe("POST /api/news/subscribe", () => {
       .join("\n");
     expect(lines).not.toContain(NORMALISED);
     expect(lines).not.toContain(ADDRESS);
+  });
+});
+
+describe("the guard on the news signup (#615)", () => {
+  it("answers a honeypotted submit exactly like a clean one, and writes no row", async () => {
+    const { calls, impl } = transport();
+    vi.stubGlobal("fetch", impl);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const clean = await POST(request({ email: ADDRESS, source: SOURCE }));
+    const body = await clean.json();
+
+    const honeypotted = await POST(
+      request({ email: "someone.else@example.test", source: SOURCE, website: "spam.example" }),
+    );
+    // Same status, same body: the endpoint is not an oracle for which rule was tripped.
+    expect(honeypotted.status).toBe(clean.status);
+    expect(await honeypotted.json()).toEqual(body);
+
+    // One subscription (the clean one), one counted attempt, one send — the bot wrote nothing.
+    expect(insertCalls()).toHaveLength(1);
+    expect(attemptCalls()).toHaveLength(1);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("drops a forged or too-fast signed instant without writing or sending", async () => {
+    const { calls, impl } = transport();
+    vi.stubGlobal("fetch", impl);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const forged = await POST(
+      request({ email: ADDRESS, source: SOURCE, fillToken: "1700000000000.deadbeef" }),
+    );
+    expect(forged.status).toBe(200);
+    expect(await forged.json()).toEqual({ state: "subscribed" });
+
+    const tooFast = await POST(
+      request({ email: ADDRESS, source: SOURCE, fillToken: mintFillToken(Date.now()) ?? "" }),
+    );
+    expect(tooFast.status).toBe(200);
+    expect(await tooFast.json()).toEqual({ state: "subscribed" });
+
+    expect(insertCalls()).toHaveLength(0);
+    expect(attemptCalls()).toHaveLength(0);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("accepts a submission whose signed instant is old enough to be a person's", async () => {
+    const { calls, impl } = transport();
+    vi.stubGlobal("fetch", impl);
+    const token = mintFillToken(Date.now() - 5_000) ?? "";
+    // The token really is signed by this tree's secret, not merely shaped like one.
+    expect(readFillInstant(token)).toBeGreaterThan(0);
+
+    const response = await POST(request({ email: ADDRESS, source: SOURCE, fillToken: token }));
+    expect(await response.json()).toEqual({ state: "subscribed" });
+    expect(insertCalls()).toHaveLength(1);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("mints a token on GET that this same route verifies", async () => {
+    const body = (await GET().json()) as { token: unknown };
+    expect(typeof body.token).toBe("string");
+    expect(readFillInstant(body.token)).toBeGreaterThan(0);
+  });
+
+  it("writes at most the budget when one client submits six times inside the window", async () => {
+    const { impl } = transport();
+    vi.stubGlobal("fetch", impl);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    /**
+     * The window, as the store behaves: the count is read *before* this request's own attempt is
+     * recorded, so the sixth submit sees five.
+     */
+    let attempts = 0;
+    stub.queryRows.mockImplementation(async () => [{ client: attempts, address: 0 }]);
+    stub.query.mockImplementation(async (sql: string) => {
+      if (String(sql).includes("INSERT INTO form_guard_attempt")) {
+        attempts += 1;
+        return { rowCount: 1, rows: [] };
+      }
+      if (String(sql).includes("INSERT INTO news_signup")) {
+        return { rowCount: 1, rows: [{ email: NORMALISED }] };
+      }
+      return { rowCount: 1, rows: [] };
+    });
+
+    for (let index = 0; index < 6; index += 1) {
+      await POST(
+        request(
+          { email: `person${index}@example.test`, source: SOURCE },
+          "application/json",
+          "203.0.113.9",
+        ),
+      );
+    }
+
+    // Five rows, not six: the sixth was counted and dropped, and every one of the six was counted.
+    expect(insertCalls()).toHaveLength(CONTACT_RATE_MAX);
+    expect(attemptCalls()).toHaveLength(6);
   });
 });
 

@@ -21,7 +21,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { brand } from "@/data/brand";
-import { clientIpOf, ipHashOf } from "@/lib/contact/ip";
+import { clientIpOf, ipHashOf } from "@/lib/forms/ip";
 import { contactBody, contactSubject, sendContactMessage } from "@/lib/contact/mail";
 import { submitContactMessage, type ContactDeps } from "@/lib/contact/submit";
 import type { MailOutcome } from "@/lib/flow/email";

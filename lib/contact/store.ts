@@ -23,7 +23,7 @@ import { CONTACT_RATE_WINDOW_MS, type ContactSubmission } from "./validation";
 const USER_AGENT_MAX = 200;
 
 export interface ContactMessageInput extends ContactSubmission {
-  /** The client bucket (`lib/contact/ip.ts`), never the address. */
+  /** The client bucket (`lib/forms/ip.ts`), never the address. */
   readonly ipHash: string;
   readonly userAgent: string;
 }

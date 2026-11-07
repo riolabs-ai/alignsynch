@@ -30,7 +30,7 @@
  * `POST` is the only verb; Next answers anything else with 405, which is correct — there is no read
  * half of a webhook endpoint.
  */
-import { clientIpOf, ipHashOf } from "@/lib/contact/ip";
+import { clientIpOf, ipHashOf } from "@/lib/forms/ip";
 import { applyEmailEventOnce, countRecentEmailEvents } from "@/lib/db/email-events";
 import type { EmailWebhookOutcome } from "@/lib/email/webhook";
 import { EMAIL_WEBHOOK_RATE_WINDOW_MS, handleEmailWebhook } from "@/lib/email/webhook";
