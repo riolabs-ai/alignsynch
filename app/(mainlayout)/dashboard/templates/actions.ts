@@ -16,10 +16,12 @@
  *     all; the SQL in `lib/member/templates.ts` writes `private` and the actor's id, which is what
  *     makes "members can never create a public template" a statement rather than a hidden input.
  *
- * **Refusals are codes plus the server's sentence.** `ActRefused` (a reason under eight characters,
- * a role below the floor), `MemberTemplateRefused` (not yours, archived, not a template) and
- * `zAssessment`'s findings all become `{ ok: false }`; anything else is rethrown, because it is not a
- * refusal and a caller must not be told "nothing happened" while the stack is lost.
+ * **Refusals are codes plus the server's sentence.** `ActRefused` (a role below the floor),
+ * `MemberTemplateRefused` (not yours, archived, not a template) and `zAssessment`'s findings all
+ * become `{ ok: false }`; anything else is rethrown, because it is not a refusal and a caller must
+ * not be told "nothing happened" while the stack is lost. `reason-too-short` is absent on purpose:
+ * all three actions compose their audit sentence server-side (#625), so no field a person was never
+ * shown can refuse the write.
  *
  * **No `redirect()` and no `revalidatePath()`.** Both member pages are `force-dynamic` and re-read on
  * every visit, and a redirect would swallow the one value a create has to hand back — the new id.
@@ -32,6 +34,7 @@ import {
   validateTemplateRecord,
 } from "@/lib/admin/template-draft";
 import { currentUser } from "@/lib/auth/session";
+import { templateWriteReason } from "@/lib/member/template-reasons";
 import {
   clonePublicTemplate,
   createPrivateTemplate,
@@ -95,7 +98,11 @@ export async function createPrivate(payload: TemplateFormPayload): Promise<Templ
   try {
     const result = await createPrivateTemplate({
       actorUserId: user.userId,
-      reason: text(payload.reason),
+      reason: templateWriteReason({
+        action: "created-blank",
+        scope: "member",
+        title: parsed.record.title,
+      }),
       record: parsed.record,
     });
     return { ok: true, id: result.after.id, actionId: result.actionId };
@@ -107,14 +114,11 @@ export async function createPrivate(payload: TemplateFormPayload): Promise<Templ
 /**
  * Clone a public template into one of the member's own.
  *
- * The payload is the source's id and the reason — no record at all, because the copy is taken from
- * the **stored** rows inside the transaction. A body that carried a record would be able to copy
- * words the catalogue never offered.
+ * The payload is the source's id alone — no record, because the copy is taken from the **stored**
+ * rows inside the transaction, and no reason, because the audit sentence is composed here. A body
+ * that carried a record would be able to copy words the catalogue never offered.
  */
-export async function clonePublic(payload: {
-  templateId?: string;
-  reason?: string;
-}): Promise<TemplateSaveOutcome> {
+export async function clonePublic(payload: { templateId?: string }): Promise<TemplateSaveOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
@@ -124,7 +128,11 @@ export async function clonePublic(payload: {
   try {
     const result = await clonePublicTemplate({
       actorUserId: user.userId,
-      reason: text(payload.reason),
+      reason: templateWriteReason({
+        action: "cloned-public",
+        scope: "member",
+        sourceTemplateId: templateId,
+      }),
       templateId,
       id: freshTemplateId(),
     });
@@ -149,7 +157,7 @@ export async function savePrivate(payload: TemplateFormPayload): Promise<Templat
   try {
     const result = await savePrivateTemplate({
       actorUserId: user.userId,
-      reason: text(payload.reason),
+      reason: templateWriteReason({ action: "saved", scope: "member", title: parsed.record.title }),
       record: parsed.record,
     });
     return { ok: true, id: result.after.id, actionId: result.actionId };

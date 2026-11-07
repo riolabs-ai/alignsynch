@@ -42,14 +42,13 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "new",
       heading: "Start blank",
-      body: "A title, a summary and the first Aspect. A template needs at least one Aspect — it is what both people answer — so this is the one field the model will not let you leave empty. The save is written with your reason and lands in the audit log.",
+      body: "A title, a summary and the first Aspect. A template needs at least one Aspect — it is what both people answer — so this is the one field the model will not let you leave empty. The save lands in the audit log in the same transaction, with a sentence written for you.",
       items: [
         { id: "title", label: "Title" },
         { id: "summary", label: "Summary" },
         { id: "prompt", label: "First Aspect" },
         { id: "left", label: "Left Value (1)" },
         { id: "right", label: "Right Value (5)" },
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Create the template" },
         { id: "submitting", label: "Creating…" },
         { id: "created", label: "{title} is ready to open." },
@@ -62,7 +61,6 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
       body: "The public templates are curated by the operators of this site. Cloning one copies its words and its Aspects into a template you own; the copy is private to you and the original does not change.",
       items: [
         { id: "choose", label: "Choose a template" },
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Clone it" },
         { id: "cloning", label: "Cloning…" },
         { id: "cloned", label: "{title} is now yours." },
@@ -84,7 +82,6 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "not-editable", label: "That template is archived — it cannot be edited." },
         { id: "not-publishable", label: "Your role may not start a relationship." },
         { id: "trial-already-running", label: "A trial is already running on this account." },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The save did not go through." },
       ],
