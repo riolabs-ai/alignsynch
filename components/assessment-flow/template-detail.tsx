@@ -18,14 +18,17 @@
  *      notch 5 are the words a party actually answers against;
  *   4. what a Mode and a Setting are, because the person reading this page will choose both when
  *      they start an instance;
- *   5. the two write actions the list already offers (duplicate, archive) plus the one link out
- *      to the picker where an instance is started.
+ *   5. the two write actions the list already offers (duplicate, archive) plus the product's one
+ *      primary action — **"Create Relationship"**, which opens this template's own create step
+ *      (#618). It used to read "Start an instance" and point back at the library, which was
+ *      instance language on a product page and a link to where the reader came from.
  *
  * **What this page must not say.** No person's name: a template holds Aspects, and the seats are
  * the type's roles (`Staff / Manager`), never a participant — a name here would be invented social
- * proof. No money: a relationship's price is what an initiator paid for an *instance*, this read
- * holds no price and nothing has been paid, so a figure on this page could only be invented. No
- * testimonial, no rating, no "N teams use this": nothing in the tree measures any of them.
+ * proof. No figure for this product: a relationship's cost depends on the plan chosen when it is
+ * ready to complete (#619), so the page names that fact and links the plans page where the prices
+ * actually are, instead of printing a number it did not read. No testimonial, no rating, no "N
+ * teams use this": nothing in the tree measures any of them.
  *
  * The archived state is drawn as a band, not as a hidden control: an archived template still
  * opens, because its instances copied their Aspects at creation and nothing joins back to it.
@@ -42,13 +45,15 @@ import {
 import { REALM_GROUP, type RelationshipType } from "@/data/relationship-types";
 import type { LibraryTemplateDetail } from "@/lib/db/template-library";
 import {
-  ASSESSMENTS_PATH,
+  PRICING_PATH,
   TEMPLATE_LIBRARY_PATH,
+  createRelationshipPath,
   templateDuplicatePath,
   templateStatusPath,
 } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { relationshipTypeOf } from "./template-card";
+import { WizardSteps } from "./wizard-steps";
 
 const CARD = "rounded-lg border border-border bg-card p-4";
 const MUTED = "text-sm text-muted-foreground";
@@ -58,6 +63,13 @@ const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 
 const SETTINGS: readonly AlignmentSetting[] = ["soft", "full"];
+
+/** The rail's three steps, as fixture item ids (#618) — the shape `counterparty-wizard.tsx` uses. */
+const RAIL: readonly { readonly step: number; readonly item: string }[] = [
+  { step: 1, item: "1" },
+  { step: 2, item: "2" },
+  { step: 3, item: "3" },
+];
 
 /**
  * The two seats, as **roles**: the type's own words for who sits in each one. A template holds
@@ -95,6 +107,7 @@ export function TemplateDetail({
   const shape = sectionOf(copy, "shape");
   const actions = sectionOf(copy, "actions");
   const archived = sectionOf(copy, "archive-note");
+  const rail = sectionOf(copy, "steps");
 
   const type = relationshipTypeOf(template.slug);
   const archivedTemplate = template.status === "archived";
@@ -106,6 +119,14 @@ export function TemplateDetail({
           {itemLabel(back, "all")}
         </a>
       </nav>
+
+      {/* Where the reader is in the journey (#618): products → this product → the relationship. */}
+      <WizardSteps
+        label={itemLabel(rail, "label")}
+        count={fillLabel(itemLabel(rail, "count"), { step: 2 })}
+        current={2}
+        steps={RAIL.map((entry) => ({ step: entry.step, label: itemLabel(rail, entry.item) }))}
+      />
 
       {/* The header band — the v1 landing's cover, text-only: a template has no photograph, and an
           invented one would be the first thing on the page a reader could not trust. */}
@@ -179,9 +200,25 @@ export function TemplateDetail({
           <section className={`space-y-2 ${CARD}`} data-template-detail-actions="true">
             <h2 className="text-base font-semibold text-foreground">{actions.heading}</h2>
             {archivedTemplate ? null : (
-              <a className={PRIMARY} href={ASSESSMENTS_PATH}>
-                {itemLabel(actions, "start")}
-              </a>
+              <div className="space-y-2">
+                {/* The product's one primary action (#618): the create step for THIS template, not
+                    a link back to the library it was found in. */}
+                <a
+                  className={PRIMARY}
+                  data-template-detail-cta="create"
+                  href={createRelationshipPath(template.id)}
+                >
+                  {itemLabel(actions, "create")}
+                </a>
+                <p className={MUTED}>{itemLabel(actions, "plans-note")}</p>
+                <a
+                  className="text-sm font-medium text-action hover:underline"
+                  data-template-detail-cta="plans"
+                  href={PRICING_PATH}
+                >
+                  {itemLabel(actions, "plans")}
+                </a>
+              </div>
             )}
             <form action={templateDuplicatePath(template.id)} method="post">
               <button type="submit" className="text-sm underline">
