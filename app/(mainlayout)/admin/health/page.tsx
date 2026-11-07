@@ -20,13 +20,14 @@
  * are read a file and run two `git` queries whose answers it prints. There is no form, no server
  * action and no link that changes state.
  *
- * **Request-time, and no clock.** `force-dynamic` because `package.json`, the nearest tag and
+ * **Request-time, and one clock.** `force-dynamic` because `package.json`, the nearest tag and
  * `origin/main` are read per request: that is what makes the mismatch alarm fire the moment
- * somebody checks out a tag ahead of the file, with no rebuild. Nothing here calls `new Date()` or
- * `Date.now()` — every date on the page is either the record's own `measuredAt` or an ISO instant
- * out of `git`, formatted by `content/core.ts`. A wall-clock label would render once on the server
- * and again at hydration and disagree (`#418`, `AGENTS.md`), which on a health screen would be a
- * bug that looks like drift.
+ * somebody checks out a tag ahead of the file, with no rebuild. The record's **age** needs an
+ * instant (#599), and this page takes it exactly once, here, and hands it to `healthFactsOf` —
+ * every other date on the page is the record's own `measuredAt` or an ISO instant out of `git`,
+ * formatted by `content/core.ts`. Taking it here is safe in a way a component clock is not: this
+ * is a server component with no client bundle, so there is no second render to disagree with
+ * (`#418`, `AGENTS.md`), and the boundary is one line a test can pin.
  *
  * **Two honest failures.** A tree with no record — a fresh clone, a deployment that did not ship
  * the artifact, a hand-edit that broke the JSON — is `HealthRecordUnreadable`, drawn as a panel
@@ -67,7 +68,9 @@ export default async function AdminHealthPage() {
   let facts: HealthFacts | null = null;
   let unreadable: string | null = null;
   try {
-    facts = healthFactsOf(readPlatformHealthRecord());
+    // The one clock in this screen (#599): the record's age is not derivable from the record, and
+    // a render that read the clock twice could straddle its own freshness boundary.
+    facts = healthFactsOf(readPlatformHealthRecord(), new Date().toISOString());
   } catch (error) {
     if (!(error instanceof HealthRecordUnreadable)) throw error;
     console.error("admin-health: the health record could not be read", error);

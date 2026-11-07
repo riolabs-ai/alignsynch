@@ -26,6 +26,25 @@ export const adminHealthPageCopy: PageCopy = zPageCopy.parse({
     "The four measurements the last two incidents were diagnosed by hand: what db:verify said, what the gate cost, whether the release is one release, and how far production trails main. This screen reads; it has no action that writes.",
   sections: [
     {
+      id: "freshness",
+      heading: "Record freshness",
+      body: "The four measurements below come from one committed record, so their age is part of their meaning. The window is declared (PLATFORM_HEALTH_FRESHNESS_HOURS, default 72 hours) and the age is measured against the instant this page was requested — a record past its window is drawn as a failure, never as status.",
+      items: [
+        { id: "stale-heading", label: "The record is stale — nothing below is current" },
+        {
+          id: "stale-body",
+          label:
+            "This record was written at {at}, {hours} h before this page was requested, which is past the {window} h freshness window. Every measurement below is history: a stale record is a failed check, not a quiet one.",
+        },
+        { id: "stale-action", label: "Re-record before acting: `pnpm health:record --db --gate`." },
+        {
+          id: "fresh-line",
+          label: "Recorded {at} — {hours} h old, inside the {window} h freshness window.",
+        },
+        { id: "window-problem", label: "{problem}" },
+      ],
+    },
+    {
       id: "db-verify",
       heading: "Database checks",
       body: "The last recorded run of `pnpm db:verify`. The rule code is the one the script prints, so a failing line here can be pasted into an incident beside the run that produced it — nothing on this page executes the script.",

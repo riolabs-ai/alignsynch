@@ -146,6 +146,58 @@ function Alarm({
   );
 }
 
+/**
+ * The record's age (#599).
+ *
+ * A stale record is drawn as a **failure**, above the panels it invalidates, because the incident
+ * #599 records was exactly the other thing: four-day-old numbers laid out like current ones. A
+ * fresh record still gets one muted line, so the age is always visible and never something a
+ * reader has to infer from the sources card at the bottom.
+ *
+ * The instant is not read here: `facts.freshness` was derived from the one clock the page takes
+ * per request, which keeps this component clock-free (`#418`).
+ */
+function FreshnessNotice({ copy, facts }: { copy: PageCopy; facts: HealthFacts }) {
+  const section = sectionOf(copy, "freshness");
+  const { freshness } = facts;
+  const values = {
+    at: formatDateTimeLong(freshness.recordedAt),
+    hours: freshness.ageHours === null ? "?" : String(freshness.ageHours),
+    window: freshness.window.hours,
+  };
+
+  if (!freshness.stale) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {fillLabel(itemLabel(section, "fresh-line"), values)}
+      </p>
+    );
+  }
+
+  return (
+    <Card className="border-destructive">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-destructive">
+          <AlertTriangle className="h-5 w-5" />
+          {itemLabel(section, "stale-heading")}
+        </CardTitle>
+        <CardDescription>{sectionBody(section)}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <p className="text-sm">{fillLabel(itemLabel(section, "stale-body"), values)}</p>
+        <p className="text-sm font-semibold">{itemLabel(section, "stale-action")}</p>
+        {freshness.window.problem === null ? null : (
+          <p className="text-sm text-destructive">
+            {fillLabel(itemLabel(section, "window-problem"), {
+              problem: freshness.window.problem,
+            })}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Panel 1 — the last `db:verify` run, its failing rule codes exactly as the script prints them. */
 function DbVerifyCard({ copy, facts }: { copy: PageCopy; facts: HealthFacts }) {
   const section = sectionOf(copy, "db-verify");
@@ -476,6 +528,7 @@ export function PlatformHealth({
         </Card>
       ) : (
         <>
+          <FreshnessNotice copy={copy} facts={facts} />
           <DbVerifyCard copy={copy} facts={facts} />
           <GateCard copy={copy} facts={facts} />
           <ReleaseCard copy={copy} facts={facts} />

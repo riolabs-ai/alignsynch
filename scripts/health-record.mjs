@@ -17,6 +17,13 @@
  * `--database-label` names the database the `db:verify` run was pointed at (never the URL — the
  * record is committed and a URL carries a password).
  *
+ * **A record has an age, and the gate holds it to one (#599).** `tests/platform-health.test.ts`
+ * fails when `data/health/platform-health.json` is older than `PLATFORM_HEALTH_FRESHNESS_HOURS`
+ * (72 h by default), so re-recording is the fix for a red freshness step, not an edit to the file.
+ * The `--gate` run sets `HEALTH_RECORD_REFRESH=1` for its own gate invocation, because that run
+ * happens *before* the new record is written and would otherwise be judged against the stale file it
+ * is replacing. Nothing else sets that variable.
+ *
  * The script is the only writer. The page reads; `lib/admin/platform-health.ts` validates the file
  * through the same zod schema this script parses before writing, so a record that would fail the
  * screen fails here first, by name.
@@ -199,6 +206,10 @@ function gateBlock() {
     `HOME=${process.env.HOME}`,
     `PATH=${process.env.PATH}`,
     "CI=1",
+    // The gate enforces that the committed record is fresh (#599), and this run *is* the refresh:
+    // the file it will write does not exist yet, so a run that enforced freshness here would
+    // deadlock on the very artifact it is replacing. Every other gate run enforces it.
+    "HEALTH_RECORD_REFRESH=1",
     "bash",
     "scripts/verify.sh",
   ]);
@@ -219,7 +230,7 @@ function gateBlock() {
   const yieldBlock = ciWindow === undefined ? carried("gate").yield : ciYieldBlock(ciWindow);
 
   return {
-    command: "env -i HOME… PATH… CI=1 bash scripts/verify.sh",
+    command: "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
     lane,
     measuredAt: startedAt,
     seconds,
