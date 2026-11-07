@@ -945,6 +945,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "domain",
+    surface: "components/relationship",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The relationship edit surface (#623): one panel that edits every field a created relationship carries — title, summary, Aspects, the template-version pin, the counterparty's name and address, the invitation window — with the cost of the change priced from rows and printed before the save.",
+    notes:
+      'Reads nothing itself: `readRelationshipEditState()` runs on the route (the panel is a client component and may not reach `lib/db/client`, E34), so the domain is `mock` while both mounts, `/dashboard/relationships/[id]` and `/admin/instances/[id]`, are `db`. One panel, two mounts, one action: staff pass `audience: "staff"` rather than a second screen or a second name. The authority is the ownership/rung check inside `lib/member/relationship-edit.ts`, never a prop. `data/pages/dashboard-relationship-detail.ts` and `data/pages/admin-relationship.ts` each hold the words under one `edit` section (E23 budget 0 on both routes).',
+  },
+  {
+    kind: "domain",
     surface: "components/chat",
     status: "fixture",
     templates: [],

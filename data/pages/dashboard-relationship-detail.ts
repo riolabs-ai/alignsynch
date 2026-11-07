@@ -105,6 +105,28 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "name", label: "Their name" },
         { id: "email", label: "Their email" },
+        {
+          id: "mode",
+          label: "Mode",
+        },
+        { id: "mode-basic", label: "Basic — how you feel and how you wish it were" },
+        {
+          id: "mode-advanced",
+          label: "Advanced — the two above, plus how you each predict the other answers",
+        },
+        {
+          id: "mode-help",
+          label:
+            "The mode is written on the session when you publish and never rewritten after — it decided which questions were asked, so changing it later would relabel answers people already gave.",
+        },
+        { id: "setting", label: "Setting" },
+        { id: "setting-soft", label: "Soft — a large Gap is a conversation to have" },
+        { id: "setting-full", label: "Full — a large Gap is the finding itself" },
+        {
+          id: "setting-help",
+          label:
+            "The Setting decides how the two sheets are read, never what they say. It is written at publish, like the mode.",
+        },
         { id: "reason", label: "Reason" },
         { id: "submit", label: "Publish and invite" },
         { id: "publishing", label: "Publishing…" },
@@ -128,6 +150,124 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       heading: "The invitation link",
       body: "Shown once, when it is minted: only a hash of the token is stored, so this page cannot reprint it. Copy it now, or reissue the invitation for a new one.",
       items: [{ id: "copy", label: "Copy the link" }],
+    },
+    {
+      id: "edit",
+      heading: "Edit this relationship",
+      body: "Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first: press Check the cost, read what it takes, and confirm it before the save is offered.",
+      items: [
+        { id: "title", label: "Title" },
+        { id: "summary", label: "Summary" },
+        { id: "mode", label: "Mode" },
+        { id: "mode-basic", label: "Basic" },
+        { id: "mode-advanced", label: "Advanced" },
+        { id: "setting", label: "Setting" },
+        { id: "setting-soft", label: "Soft" },
+        { id: "setting-full", label: "Full" },
+        {
+          id: "locked-mode",
+          label:
+            "The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten. Changing them means a new relationship.",
+        },
+        {
+          id: "mode-help",
+          label:
+            "The mode and the Setting are chosen when you publish. Until then this relationship has no session to carry them.",
+        },
+        { id: "aspects", label: "Aspects" },
+        { id: "prompt", label: "What is asked" },
+        { id: "left", label: "Left Value (1)" },
+        { id: "right", label: "Right Value (5)" },
+        { id: "add", label: "Add an Aspect" },
+        { id: "remove", label: "Remove" },
+        { id: "pin", label: "Version" },
+        { id: "pin-current", label: "Keep the version this relationship is on" },
+        { id: "pin-option", label: "Move to version {version}, saved {instant}" },
+        {
+          id: "pin-help",
+          label:
+            "A version is what the whole relationship reads from. Moving the pin applies that version's words and Aspects, and the cost below is what it would take.",
+        },
+        { id: "invitee", label: "Their name" },
+        { id: "invitee-email", label: "Their email" },
+        { id: "window", label: "The invitation stays open for (days)" },
+        {
+          id: "window-help",
+          label: "Extending the window does not touch the Aspects or anybody's answers.",
+        },
+        {
+          id: "claimed",
+          label:
+            "The other person has joined, so the seat is theirs: their account holds it, and a name or address typed here would be a second truth. Support can re-point a seat; this form cannot.",
+        },
+        { id: "reason", label: "Reason" },
+        { id: "preview", label: "Check the cost" },
+        { id: "previewing", label: "Checking…" },
+        { id: "save", label: "Save the change" },
+        { id: "saving", label: "Saving…" },
+        {
+          id: "saved",
+          label:
+            "Saved at version {version}. {discarded} answer(s) discarded. Audit action {actionId}.",
+        },
+        { id: "cost-heading", label: "What this change costs" },
+        {
+          id: "cost-discards",
+          label: "Turning off “{aspect}” discards {answers} answer(s) from {name}.",
+        },
+        {
+          id: "cost-rewrites",
+          label:
+            "Rewording “{aspect}” leaves {answers} answer(s) from {name} answering words that changed.",
+        },
+        { id: "cost-adds", label: "“{aspect}” is a new question." },
+        { id: "cost-mode", label: "The mode moves from {from} to {to}." },
+        { id: "cost-setting", label: "The Setting moves from {from} to {to}." },
+        {
+          id: "confirm",
+          label: "I have read what this change costs, and I want it made.",
+        },
+        {
+          id: "blocked-adds",
+          label:
+            "A new Aspect cannot be added once a sheet has been answered: whoever already answered would be left with a gap the sheet never had. A new round is the way to ask a new question.",
+        },
+        {
+          id: "blocked-mode",
+          label:
+            "The mode and the Setting cannot move once the session exists — it decided which questions were asked.",
+        },
+        /* #623 — the refusal sentences this form can show, one id per code. */
+        {
+          id: "unconfirmed-invalidation",
+          label: "This change costs answers, and the cost has not been confirmed yet.",
+        },
+        {
+          id: "answers-sealed",
+          label: "A new question cannot be added to a sheet somebody has answered.",
+        },
+        { id: "mode-fixed", label: "The mode and the Setting are fixed once the session exists." },
+        {
+          id: "seat-claimed",
+          label: "The other person has joined — the seat is an account, not a text field.",
+        },
+        { id: "invalid-window", label: "The invitation window is 1 to 60 whole days." },
+        { id: "no-such-version", label: "That version is not one of this relationship's." },
+        { id: "no-change", label: "Nothing in this form differs from the relationship." },
+        { id: "not-yours", label: "This relationship belongs to another account." },
+        {
+          id: "not-editable",
+          label: "This relationship is closed, or bound to no version — it is not a form.",
+        },
+        { id: "invalid-draft", label: "The model refused these Aspects — check each field." },
+        {
+          id: "invalid-counterparty",
+          label: "The invitation needs a name and a real address.",
+        },
+        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
+        { id: "signed-out", label: "Your session ended. Sign in and try again." },
+        { id: "failed", label: "The change did not go through." },
+      ],
     },
     {
       id: "closed",
@@ -155,6 +295,26 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "checkout-required", label: "A checkout has to complete first." },
         { id: "reason-too-short", label: "A reason of at least eight characters is required." },
+        /* #623 — the edit surface's own dead ends, one sentence each. */
+        {
+          id: "unconfirmed-invalidation",
+          label: "This change costs answers, and the cost has not been confirmed yet.",
+        },
+        {
+          id: "answers-sealed",
+          label: "A new question cannot be added to a sheet somebody has answered.",
+        },
+        {
+          id: "mode-fixed",
+          label: "The mode and the Setting are fixed once the session exists.",
+        },
+        {
+          id: "seat-claimed",
+          label: "The other person has joined — the seat is an account, not a text field.",
+        },
+        { id: "invalid-window", label: "The invitation window is 1 to 60 whole days." },
+        { id: "no-such-version", label: "That version is not one of this relationship's." },
+        { id: "no-change", label: "Nothing in this form differs from the relationship." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The change did not go through." },
       ],

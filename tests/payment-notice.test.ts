@@ -126,7 +126,10 @@ describe("a reminder goes to the payer, and only the payer", () => {
 
 describe("a notice that did not deliver throws, so no stamp can follow", () => {
   it("refuses when the deployment has no mailer", async () => {
-    vi.unstubAllEnvs();
+    // `unstubAllEnvs()` restores the *developer's* shell, not an empty one, so a `.env` that carries
+    // a real `RESEND_API_KEY` turned this case into a delivered notice. Name the condition the case
+    // is about — `sendMail` reads the key with `?.trim()`, so an empty string is "no mailer".
+    vi.stubEnv("RESEND_API_KEY", "");
     const notify = paymentNotice({ read: read(facts()), fetchImpl: transport().fetchImpl });
     await expect(notify({ kind: "remind", relationshipId: REL, day: 3 })).rejects.toMatchObject({
       failure: "unset",

@@ -59,6 +59,7 @@ const OPERATOR = "operator-2f9c";
 function voidedDetail(): AdminRelationshipDetail {
   return {
     instanceRecordId: "instance-void-test",
+    relationshipId: "relationship-instance-void-test",
     slug: "instance-void-test",
     name: "Avery and Rowan",
     templateTitle: "Relationship Basics",
