@@ -108,10 +108,13 @@ Setting the relationship was created with. Both parties read the same report; th
 no export and no third opinion. A coach or operator can act on a relationship, and when they do the
 report says so and the write lands in the audit log — but no operator opinion is ever a party's answer.
 
-**Paid, or quiet.** The sheets seal first and the initiator settles the plan from there; the report opens
-on payment. Fourteen days of a sealed, unpaid relationship expire it, with a reminder at day 3 and day 10
-— the obligations and their windows are [lib/flow/payment.ts](lib/flow/payment.ts). No card is charged in
-this deployment: the hosted adapter runs **test keys** and the page says so.
+**The method opens it, the money waits.** The sheets seal first; the initiator puts a payment method on
+file, and the report opens for both the moment that method exists — nothing is captured then. The charge
+falls due seven days later and a decline is retried at day 1, 3 and 5; sealed-and-unpaid expires the
+relationship on day 14, after reminders at day 3 and day 10. Every one of those windows is arithmetic over
+a stored instant in `relationship_payment` ([lib/flow/payment.ts](lib/flow/payment.ts),
+[docs/diagrams/payment.md](docs/diagrams/payment.md)). No card is charged in this deployment: the hosted
+adapter runs **test keys** and the page says so.
 
 ### The admin console
 
@@ -136,16 +139,20 @@ derived at read time: the invitation's expiry, the session's status, the Gap.
 
 ```mermaid
 flowchart LR
-    D["draft<br/>created, not committed to"] -->|publish| P["published<br/>invitation minted, link copyable"]
+    D["draft<br/>created, not committed to"] -->|save| PE["pending<br/>configured, not sent"]
+    PE -->|publish| P["published<br/>invitation minted, link copyable"]
     P -->|the counterparty claims| A["active<br/>both seats exist"]
     A --> S["answering<br/>each sheet private to its author"]
     S -->|second acceptance| SE["sealed<br/>neither side may edit or look"]
-    SE -->|fee settled| C["complete<br/>the report is open to both"]
+    SE -->|a payment method is on file| C["complete<br/>the report is open to both"]
     C --> G["the Gap<br/>gapOf(a, b) per Aspect"]
     SE -.->|14 days unpaid| X["expired"]
     P -.->|reissue or lapse| X
     A -.->|an operator ends it| V["void, with a reason"]
 ```
+
+The full set — this lifecycle, the money ladder, the brand boundary, the data model and the gate's lanes
+— lives in [docs/diagrams/](docs/diagrams), where one home keeps the pictures from drifting apart.
 
 ## The other product in the same tree (QuizHub)
 
@@ -290,6 +297,7 @@ check that lives only in the YAML is a guaranteed red push.
 | Start here                                                     | What it answers                                                            |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | [docs/wiki/README.md](docs/wiki/README.md)                     | the code wiki: key concepts, module map, how a request becomes a page      |
+| [docs/diagrams/](docs/diagrams)                                | the five flow charts — lifecycle, payment, brand boundary, data, gate      |
 | [AGENTS.md](AGENTS.md)                                         | command table with verified results, conventions, pitfalls                 |
 | [CHANGELOG.md](CHANGELOG.md)                                   | every release, generated from the commits and published as the notes       |
 | [docs/assets/screens/README.md](docs/assets/screens/README.md) | the current screenshot set — one row per surface — and how to recapture it |

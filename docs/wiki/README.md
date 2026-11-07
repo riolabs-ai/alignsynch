@@ -74,6 +74,18 @@ flowchart LR
 - [Sequence diagrams](diagrams/sequences.md) — create and invite; submit and seal; the payment job
   ladder on its cron.
 
+The flow charts — one picture per cross-cutting rule, so a doc can point at a shape instead of
+describing one — live in [`docs/diagrams/`](../diagrams):
+
+- [lifecycle](../diagrams/lifecycle.md) — relationship, session and invitation states, and the
+  branches that end each.
+- [payment](../diagrams/payment.md) — the money ladder, and the one billing trigger left after
+  ADR-1.
+- [brand-boundary](../diagrams/brand-boundary.md) — which routes one build sells, and where
+  `requireQuizProduct()` / `requireAdminProduct()` sit.
+- [data](../diagrams/data.md) — `content/` → `data/` → the six Postgres tables.
+- [gate](../diagrams/gate.md) — the four lanes of `scripts/verify.sh`.
+
 ## Getting started
 
 Node 24, `pnpm install --frozen-lockfile`, `pnpm dev`. See [getting-started.md](getting-started.md).
