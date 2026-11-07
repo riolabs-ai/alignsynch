@@ -24,7 +24,9 @@
  *                                   the blind rule keeps them out of the projection this screen
  *                                   already has
  *
- * A server component: three links and no interaction.
+ * A server component: a few links and no interaction. Since #617 the first of them is the
+ * acceptance step itself (`acceptPath()`), because this band is the one screen a party reaches
+ * immediately after answering their last Aspect — and until it linked there, nothing did.
  */
 import type { PageCopy } from "@/content/pages";
 import { answerSheetPath, instancePath } from "@/lib/flow/paths";
@@ -35,11 +37,22 @@ export function SubmissionConfirmation({
   copy,
   instanceRecordId,
   otherName,
+  acceptHref,
 }: {
   copy: PageCopy;
   instanceRecordId: string;
   /** The other party's name, from the instance's own rows — never a clock-derived label. */
   otherName: string;
+  /**
+   * The acceptance step, or `null` when there is nothing to accept yet (#617).
+   *
+   * The band is drawn on the visit a submit created, so the viewer has just answered every
+   * Aspect — but `null` is still the honest default: a caller that has not read the seat's own
+   * facts draws no link rather than a control that posts to a refusal. The instance screen decides,
+   * from `screen.viewerAnswered` and `screen.viewerAccepted`, which is the same pair
+   * `readFlowScreen` fills from `party.accepted_at`.
+   */
+  acceptHref: string | null;
 }) {
   const band = sectionOf(copy, "submitted");
   const values = { other: otherName };
@@ -75,9 +88,21 @@ export function SubmissionConfirmation({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
+        {/* #617 — the way to the acceptance step. Before this, the band offered the sheet and the
+            session and nothing else, and no surface in the tree linked to `/accept`, so a party who
+            had answered everything had no route to the step that completes the session. */}
+        {acceptHref === null ? null : (
+          <Link
+            href={acceptHref}
+            data-accept-link="true"
+            className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+          >
+            {itemLabel(band, "accept-link")}
+          </Link>
+        )}
         <Link
           href={answerSheetPath(instanceRecordId)}
-          className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
         >
           {itemLabel(band, "change-link")}
         </Link>
