@@ -16,7 +16,7 @@ import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail"
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { readLibraryTemplate } from "@/lib/db/template-library";
-import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
+import { templateDetailPath } from "@/lib/flow/paths";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -31,10 +31,10 @@ export default async function TemplateDetailPage({
 }: {
   params: Promise<{ templateId: string }>;
 }) {
-  const user = await currentUser();
-  if (user === null) redirect(loginPathFor(TEMPLATE_LIBRARY_PATH));
-
   const { templateId } = await params;
+  const user = await currentUser();
+  if (user === null) redirect(loginPathFor(templateDetailPath(templateId)));
+
   const detail = await readLibraryTemplate(templateId, user.userId);
   if (detail === undefined) notFound();
 

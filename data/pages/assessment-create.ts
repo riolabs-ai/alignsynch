@@ -29,6 +29,21 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
   subtitle: "One template, two seats, and the two choices that shape every screen after this one.",
   sections: [
     {
+      /**
+       * The journey's rail (#618) — the third step, drawn on the create screen. Same ids and shape
+       * as the product page's rail, so the two screens read as one journey rather than two pages
+       * that happen to be near each other.
+       */
+      id: "steps",
+      items: [
+        { id: "1", label: "Products" },
+        { id: "2", label: "This product" },
+        { id: "3", label: "Create the relationship" },
+        { id: "count", label: "Step {step} of 3" },
+        { id: "label", label: "Creating a relationship" },
+      ],
+    },
+    {
       id: "template",
       heading: "The template you are copying",
       body: "Its Aspects are copied into the relationship at creation. Nothing on this screen edits them.",
@@ -40,6 +55,27 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
             "Two seats: an Initiator and a Counterparty. Both answer the same sheet, and neither sees the other's answers until both accept.",
         },
         { id: "back", label: "Back to the template" },
+      ],
+    },
+    {
+      /**
+       * The account gate (#618).
+       *
+       * The page used to render the form to a signed-out visitor, and the endpoint still accepts a
+       * signed-out post (it writes a null initiator, #146/#213). The product spec is the opposite:
+       * "not a user? → signup, then edit meta". So the screen asks for the account *first* rather
+       * than after the relationship exists — a relationship created with no account is in nobody's
+       * list, and there is no screen from which its creator could finish, pay for or even find it.
+       *
+       * Both links carry `next` = this template's create path, so the product survives the round
+       * trip in the URL rather than in a cookie or a hidden field.
+       */
+      id: "gate",
+      heading: "An account holds this relationship",
+      body: "The relationship you are about to create belongs to your account: it is where the invitation comes from and where you come back to see it answered. Creating one takes a name, an email address and a password, and it brings you back to this same template.",
+      items: [
+        { id: "sign-up", label: "Create an account" },
+        { id: "sign-in", label: "I already have an account" },
       ],
     },
     {
@@ -134,6 +170,10 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           id: "mode-not-entitled",
           label: "The Mode you chose is not on your plan. Choose Basic, or change your plan.",
         },
+        // #618 — the door both refusals above name and neither drew. One label for both codes,
+        // because it points at the same page: the plan grid, which is where a tier is chosen and
+        // where the checkout button for that tier lives. Neither sentence changed.
+        { id: "plans", label: "See plans and prices" },
       ],
     },
     {
