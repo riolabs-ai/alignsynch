@@ -13,8 +13,8 @@
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
 /news | quizhub | 4ae7ad72002baa545fffe11cacad0246e6c2c468e33210088bdb9db896341dd2
 /news | alignsynch | 34d6df0e7ce81f88a9a8db4910df054745dd878d097be120b60623247c93a810
-/news/[slug] | quizhub | 64432328c79d6a768fd171c95fcfc730445ba44471876b8d9b2462be6de775b0
-/news/[slug] | alignsynch | ece3342d08b4302a4b2dd4858fad7f0f6bbef03adc3183205d5d6af041bfc3d0
+/news/[slug] | quizhub | 4a311b8c23d959580ffeced3e4302a168babaf949b36a4ccd01a254f32cbc919
+/news/[slug] | alignsynch | e7a4c8cb7d0079e358fe4a2a32b614643b3ffd29a5b2b3ac9a478d1eeb1ff08a
 /quiz/[id] | quizhub | 34c20381d2ee6ab77b8f53115801d64dd4b43bc7ff2b2e8cb3d01755f392d991
 /quiz/[id] | alignsynch | 5f540b18f7e8b10a95d5a597cdbcad605987e5f78e4d8b67b5d90ce4c78a71ac
 /assessment/avery-rowan | quizhub | 369d7b9213864814472a38e36465bcb36e898546735d7c05aeb86f90b2cd9b3f
