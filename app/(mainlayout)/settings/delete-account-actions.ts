@@ -40,7 +40,12 @@ export type DeleteAccountOutcome =
   | { readonly kind: "mismatch" }
   /** No auth user carries that id — the deletion already happened. */
   | { readonly kind: "not-found" }
-  /** The managed-auth delete or the scrub failed. The account still works; the request retries. */
+  /**
+   * The managed-auth delete or the scrub failed. Which one is in the log line, and the two are not
+   * the same state: an auth failure deleted nothing and the person can retry, while a scrub failure
+   * has already deleted the account (the session is gone with it) and left the sweep recorded for
+   * the operator — `account_deletion_job`, §7 step 2b. The copy is written for both.
+   */
   | { readonly kind: "unavailable" };
 
 /**

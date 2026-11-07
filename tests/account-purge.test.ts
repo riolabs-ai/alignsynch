@@ -18,6 +18,7 @@ import { describe, expect, it } from "vitest";
 import type { QueryResultRow } from "pg";
 
 import {
+  AuthUserDeleteError,
   buildPurgeSteps,
   emptyPurgeCounts,
   purgeAccount,
@@ -189,7 +190,7 @@ describe("runAccountDeletion", () => {
     return { rows: [], rowCount: 0 };
   };
 
-  it("deletes the auth user before a single public row is written", async () => {
+  it("records the intent before it deletes the auth user, then begins the scrub", async () => {
     const client = new RecordingClient(reads);
     const before = { at: -1 };
     const outcome = await runAccountDeletion("acct-1", {
@@ -199,7 +200,15 @@ describe("runAccountDeletion", () => {
       },
     });
     expect(outcome.kind).toBe("deleted");
-    // The first BEGIN must come after the auth delete, not before it.
+    // The intent row is the one write that comes before the irreversible call, and it is the
+    // record a failed scrub resumes from (§7 step 2b).
+    const intentIndex = client.statements.findIndex((statement) =>
+      statement.text.startsWith("INSERT INTO account_deletion_job"),
+    );
+    expect(intentIndex).toBeGreaterThanOrEqual(0);
+    expect(intentIndex).toBeLessThan(before.at);
+    // The sweep's own transaction starts after it: no `public` row of the person's is scrubbed
+    // before the auth user is gone.
     const beginIndex = client.sweepStatements.indexOf("BEGIN");
     expect(beginIndex).toBeGreaterThanOrEqual(before.at);
     expect(beginIndex).toBeGreaterThan(0);
@@ -217,7 +226,33 @@ describe("runAccountDeletion", () => {
     // Not one BEGIN, not one UPDATE: the failure happened before the scrub existed.
     expect(client.sweepStatements).not.toContain("BEGIN");
     expect(client.sweepStatements.some((text) => text.startsWith("UPDATE"))).toBe(false);
-    expect(client.sweepStatements.some((text) => text.startsWith("DELETE"))).toBe(false);
+    // The only write of any kind is the intent row's removal: nothing was deleted, so there is
+    // nothing to resume.
+    const deletes = client.statements.filter((statement) => statement.text.startsWith("DELETE"));
+    expect(deletes).toHaveLength(1);
+    expect(deletes[0]?.text).toContain("DELETE FROM account_deletion_job");
+    // And the sweep's tables are untouched.
+    expect(client.statements.some((statement) => statement.text.includes("FROM party p"))).toBe(
+      false,
+    );
+  });
+
+  it("leaves the intent row alone when the auth delete answers 404 (a race, not a failure)", async () => {
+    const client = new RecordingClient(reads);
+    const outcome = await runAccountDeletion("acct-1", {
+      connect: async () => client,
+      deleteAuth: async () => {
+        throw new AuthUserDeleteError("DELETE …/auth/users/acct-1 answered 404", 404);
+      },
+    });
+    expect(outcome.kind).toBe("auth-failed");
+    // The row is the other attempt's resume record: deleting it here would strand that attempt's
+    // half-finished deletion, which is the bug this table exists to prevent.
+    expect(
+      client.statements.some((statement) =>
+        statement.text.startsWith("DELETE FROM account_deletion_job"),
+      ),
+    ).toBe(false);
   });
 
   it("answers unknown-account for an id no auth user carries, and deletes nothing", async () => {
@@ -234,6 +269,64 @@ describe("runAccountDeletion", () => {
     });
     expect(outcome.kind).toBe("unknown-account");
     expect(deleted).toBe(false);
+  });
+
+  it("resumes from the recorded identity when the auth user is already gone (T9)", async () => {
+    // The state a failed scrub leaves: `neon_auth` has no user, and one unfinished row carries
+    // the address and the role the retry cannot re-derive.
+    const client = new RecordingClient((text) => {
+      if (text.includes("information_schema.tables")) return { rows: [{ table_name: "user" }] };
+      if (text.includes('FROM neon_auth."user"')) return { rows: [] };
+      if (text.includes("FROM account_deletion_job")) {
+        return {
+          rows: [
+            {
+              user_id: "acct-1",
+              email: "avery@example.test",
+              names: ["Avery Rowan"],
+              roles: ["initiator"],
+            },
+          ],
+        };
+      }
+      return { rows: [], rowCount: 0 };
+    });
+    let deleteAttempted = false;
+    const outcome = await runAccountDeletion("acct-1", {
+      connect: async () => client,
+      deleteAuth: async () => {
+        deleteAttempted = true;
+      },
+    });
+
+    // The sweep runs, and step 3 is skipped: there is no auth user to delete, and a second DELETE
+    // would answer 404 and read as a failure.
+    expect(outcome.kind).toBe("deleted");
+    expect(deleteAttempted).toBe(false);
+    // With the recorded address, so the email-keyed rows §1.1 names are reachable again.
+    const signup = client.statements.find((statement) => statement.text.includes("news_signup"));
+    expect(signup?.values[0]).toBe("avery@example.test");
+    // And the intent row is finished rather than left open — the identity goes with the sweep.
+    const finish = client.statements.find((statement) =>
+      statement.text.includes("UPDATE account_deletion_job"),
+    );
+    expect(finish?.text).toContain("finished_at = now()");
+    expect(finish?.text).toContain("email = NULL");
+  });
+
+  it("answers unknown-account when the recorded row is already finished", async () => {
+    const client = new RecordingClient((text) => {
+      if (text.includes("information_schema.tables")) return { rows: [{ table_name: "user" }] };
+      // `openIntentOf` filters on `finished_at IS NULL`, so a finished row is not returned; the
+      // fake returns nothing, which is what that predicate produces.
+      return { rows: [] };
+    });
+    const outcome = await runAccountDeletion("acct-1", {
+      connect: async () => client,
+      deleteAuth: async () => {},
+    });
+    expect(outcome.kind).toBe("unknown-account");
+    expect(client.statements.some((statement) => statement.text === "BEGIN")).toBe(false);
   });
 
   it("lowercases the address it reads, so the email-keyed tables match", async () => {
