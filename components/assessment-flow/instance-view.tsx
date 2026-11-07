@@ -66,6 +66,7 @@ import type { ResendRefusal } from "@/lib/flow/resend";
 import { RESEND_LIFETIME_CAP } from "@/lib/flow/tokens";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { relationshipStage, stageCopyId } from "@/lib/flow/stage";
+import { memberRelationshipPath } from "@/lib/member/relationships";
 import Link from "next/link";
 
 /** The one glyph an absent figure is drawn as — never `0`, never an empty cell. */
@@ -140,6 +141,8 @@ export function AssessmentInstanceView({
   submitted = false,
   paid = null,
   steps = [],
+  relationshipId,
+  paymentDoor = false,
 }: {
   screen: FlowScreen;
   copy: PageCopy;
@@ -177,6 +180,16 @@ export function AssessmentInstanceView({
    * shared) and simply gets no controls.
    */
   steps?: readonly Step[];
+  /**
+   * #t_e9212bf9 — the relationship this session belongs to, and whether this reader is its payer.
+   *
+   * The payer is `relationship_payment.payer_user_id`, sliced by the read
+   * (`lib/db/assessments.ts::readRelationshipById` hands `payment: null` to everybody else), so
+   * ADR-8 is enforced before the component runs. `false` here means "draw the waiting sentence and
+   * no door" — never "draw a disabled control".
+   */
+  relationshipId?: string;
+  paymentDoor?: boolean;
 }) {
   const waiting = sectionOf(copy, "waiting");
   const reportBand = sectionOf(copy, "report");
@@ -259,6 +272,19 @@ export function AssessmentInstanceView({
     names: names.join(", "),
   });
 
+  /**
+   * #t_e9212bf9 — the payment door's one line.
+   *
+   * `awaiting_payment` is the status where both sheets are sealed and the fee is not settled. The
+   * screen could name it and then dead-end: the stage sentence says the Gap opens when the
+   * assessment is published, and nothing on this page published anything. The door itself is the
+   * relationship's Payment band; this band is the way there — for the payer only. Everybody else
+   * reads the ADR-8 sentence and gets no link, because the read never handed them the door.
+   */
+  const paymentBand = sectionOf(copy, "payment");
+  const paymentHref =
+    paymentDoor && relationshipId !== undefined ? memberRelationshipPath(relationshipId) : null;
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
       <header className="mb-6">
@@ -301,6 +327,45 @@ export function AssessmentInstanceView({
       >
         {stageSentence}
       </p>
+
+      {/* #t_e9212bf9 — both sheets sealed, the fee outstanding. The payer gets the way to the
+          relationship's Payment band; the other seat gets the ADR-8 sentence and no link, because
+          billing state is not theirs to read. Drawn only in `awaiting_payment`: before that the
+          stage sentence is the whole story, and after it the fee has landed. */}
+      {screen.status !== "awaiting_payment" ? null : (
+        <section
+          data-payment-door={paymentHref === null ? "counterparty" : "payer"}
+          className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+        >
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {paymentBand.heading}
+          </h2>
+          {paymentHref === null ? (
+            <>
+              <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                {fillLabel(itemLabel(paymentBand, "counterparty"), { name: screen.initiatorName })}
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {itemLabel(paymentBand, "counterparty-note")}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                {sectionBody(paymentBand)}
+              </p>
+              <p className="mt-3">
+                <Link
+                  href={paymentHref}
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+                >
+                  {itemLabel(paymentBand, "open")}
+                </Link>
+              </p>
+            </>
+          )}
+        </section>
+      )}
 
       <p
         data-answering-as={screen.viewer.role}

@@ -263,6 +263,30 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
+       * #t_e9212bf9 — the payment door's one line, on the screen where a person is standing when
+       * both sheets seal. `awaiting_payment` is a status this screen could name and then dead-end:
+       * the stage sentence said the Gap opens when the assessment is published, and there was no
+       * surface to publish it from.
+       *
+       * The door itself is the relationship's Payment band; this band is the way there, for the
+       * payer. Everybody else reads the ADR-8 sentence and no link: the counterparty never sees
+       * billing state, and this screen is where they would otherwise see it first.
+       */
+      id: "payment",
+      heading: "Payment",
+      body: "Both sheets are sealed. The fee is the last step: activate the relationship, and the Gap opens to both of you.",
+      items: [
+        { id: "open", label: "Activate Relationship" },
+        { id: "counterparty", label: "Waiting for {name} to publish." },
+        {
+          id: "counterparty-note",
+          label:
+            "Nothing is left for you to do — the other person completes it from their own page.",
+        },
+      ],
+    },
+    {
+      /**
        * What was paid, for the Initiator alone (#409). Two facts and no arithmetic: the plan and
        * the instant it was bought. A total would be a number nobody was charged — one
        * relationship, one purchase — so there is no item for one here.

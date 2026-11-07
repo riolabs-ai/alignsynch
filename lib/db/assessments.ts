@@ -28,6 +28,8 @@ import {
 import { gapKindsOf, gapKindsIn, type AspectGaps } from "@/content/gaps";
 import { inviteStateOf, type InviteDisplayState } from "@/lib/flow/invite-state";
 import type { FlowScreen } from "@/lib/flow/screen";
+import { type PaymentDoor, paymentDoorOf } from "@/lib/member/payment-door";
+import { relationshipFeeCents } from "@/lib/member/payment";
 import { readFlowScreen } from "@/lib/flow/store";
 import { type FlowStage, relationshipStage } from "@/lib/flow/stage";
 import {
@@ -906,6 +908,13 @@ export interface RelationshipDetail {
   readonly instanceRecordId: string;
   /** `null` for every viewer who is not the Initiator. Never an empty object. */
   readonly paid: { readonly plan: string | null; readonly purchasedAt: string | null } | null;
+  /**
+   * #t_e9212bf9 — the payment door, or `null` for every viewer who is not the relationship's
+   * **payer** (ADR-8). Sliced here for the same reason `paid` is: a band cannot draw a fee it was
+   * never handed. The payer is `relationship_payment.payer_user_id`, which is the original
+   * initiator and not the latest round's seat role.
+   */
+  readonly payment: PaymentDoor | null;
   readonly screen: FlowScreen;
 }
 
@@ -923,14 +932,35 @@ export async function readRelationshipById(
     session_record_id: string;
     plan: string | null;
     purchased_at: Date | null;
+    /* #t_e9212bf9 — the obligation, in the same statement as the relationship it belongs to. */
+    payer_user_id: string | null;
+    method_captured_at: Date | null;
+    charge_due_at: Date | null;
+    payment_charged_at: Date | null;
+    charge_attempts: number | null;
+    first_failed_at: Date | null;
+    payment_expired_at: Date | null;
+    charge_amount_cents: number | null;
+    sealed_at: Date | null;
+    accepted_count: number;
   }>(
     `SELECT rel.id AS relationship_id,
             s.record_id AS session_record_id,
             rel.plan,
-            rel.purchased_at
+            rel.purchased_at,
+            rp.payer_user_id, rp.method_captured_at, rp.charge_due_at,
+            rp.charged_at AS payment_charged_at, rp.charge_attempts, rp.first_failed_at,
+            rp.expired_at AS payment_expired_at, rp.charge_amount_cents,
+            (SELECT max(p.accepted_at)
+               FROM party p
+               JOIN session s2 ON s2.record_id = p.session_record_id
+              WHERE s2.relationship_id = rel.id) AS sealed_at,
+            (SELECT count(*)::int FROM party p
+              WHERE p.session_record_id = s.record_id AND p.accepted_at IS NOT NULL) AS accepted_count
        FROM relationship rel
        JOIN session s ON s.relationship_id = rel.id
        JOIN record r ON r.id = s.record_id
+       LEFT JOIN relationship_payment rp ON rp.relationship_id = rel.id
       WHERE rel.id = $1 OR s.record_id = $1
       ORDER BY r.date DESC, r.slug DESC
       LIMIT 1`,
@@ -957,6 +987,50 @@ export async function readRelationshipById(
             purchasedAt: row.purchased_at === null ? null : row.purchased_at.toISOString(),
           }
         : null,
+    payment: paymentDoorFor(row, viewer),
     screen,
   };
+}
+
+/**
+ * The door for this reader — `null` unless they are the row's payer.
+ *
+ * The comparison is `payer_user_id`, not `screen.viewer.role`: a counterparty who opened a second
+ * round reads as that round's initiator and still pays nothing, and ADR-8 is a rule about money
+ * rather than about a seat.
+ *
+ * `now` is the read's own instant — `viewer.now`, defaulted once — so the phase and the sealed
+ * window are decided at the same moment as the screen's status. Nothing here reads a clock.
+ */
+function paymentDoorFor(
+  row: {
+    payer_user_id: string | null;
+    method_captured_at: Date | null;
+    charge_due_at: Date | null;
+    payment_charged_at: Date | null;
+    charge_attempts: number | null;
+    first_failed_at: Date | null;
+    payment_expired_at: Date | null;
+    charge_amount_cents: number | null;
+    sealed_at: Date | null;
+    accepted_count: number;
+  },
+  viewer: { readonly viewerUserId: string | null; readonly now?: Date },
+): PaymentDoor | null {
+  if (row.payer_user_id === null) return null;
+  if (viewer.viewerUserId === null || row.payer_user_id !== viewer.viewerUserId) return null;
+  return paymentDoorOf({
+    facts: {
+      methodCapturedAt: row.method_captured_at,
+      chargeDueAt: row.charge_due_at,
+      chargedAt: row.payment_charged_at,
+      chargeAttempts: row.charge_attempts,
+      firstFailedAt: row.first_failed_at,
+      expiredAt: row.payment_expired_at,
+      sealedAt: row.sealed_at,
+    },
+    sealed: Number(row.accepted_count) >= 2,
+    amountCents: row.charge_amount_cents ?? relationshipFeeCents(),
+    now: viewer.now ?? new Date(),
+  });
 }
