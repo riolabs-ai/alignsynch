@@ -52,6 +52,7 @@ import "driver.js/dist/driver.css";
 
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
+import { announceTourStep } from "@/lib/tour/demo-script";
 import { sendTourMark } from "@/lib/tour/mark";
 import { runnableSteps } from "@/lib/tour/steps";
 import type { Config, Driver } from "driver.js";
@@ -115,6 +116,13 @@ export function FirstRunTour({
           const index = opts.index ?? 0;
           const step = steps[index];
           if (step === undefined) return;
+          /**
+           * Tell the page which step is open, so a surface that only makes sense there can act on
+           * it: step 4's scripted example (`components/tour/demo-fill.tsx`) starts filling the
+           * moment this step is highlighted, rather than finishing before the reader arrives. A
+           * DOM event, because the tour and the example are siblings with no shared parent state.
+           */
+          announceTourStep(step.id);
           setAnnouncement(
             fillLabel(announce, {
               current: index + 1,

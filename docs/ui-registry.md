@@ -16,7 +16,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **84** — 55 static, 29 dynamic, from `app/**/page.tsx`
-- component domains: **41** — 298 files under `components/`, 292 of them `.tsx`
+- component domains: **41** — 300 files under `components/`, 294 of them `.tsx`
 - route handlers: **21** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 14 · **fixture** 67 · **db** 35 · **live** 8 · **prototype** 1
 - templates: Both templates 42 · AlignSynch 39 · QuizHub 42 · No template yet 2
@@ -163,7 +163,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/settings` — **live**
   - capability: The parts of your account you can change — display name, handle, bio and the country pair — saved through the guarded POST /api/profile.
   - components: `components/identity`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/account/purge.ts`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/support` — **fixture**
   - capability: Account support inside the app: what to include in a message and what actually happens to it (stored in Postgres first, mailed second, read by a person), the links to the help centre and account settings, and a pointer to the one contact form rather than a second copy of it.
@@ -219,7 +219,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/identity` — **live**
   - capability: The account surfaces: the signed-in home, the member profile, the settings form that POSTs /api/profile, sign-out and the demo-account notice.
-  - files (6): `account-home.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `password-card.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
+  - files (7): `account-home.tsx`, `delete-account-card.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `password-card.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
   - routes (3): `/dashboard/user`, `/profile/[username]`, `/settings`
 
 - `components/layout` — **fixture**
@@ -420,7 +420,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/dashboard` — **db**
   - capability: The signed-in console's Overview: four counts of the viewer's own relationships — awaiting the other party, needing the viewer's answers, complete and unread — plus the templates available, each figure linking to the list it counts.
-  - components: `components/console`, `components/media`, `components/tour`, `components/ui`
+  - components: `components/assessment-flow`, `components/console`, `components/media`, `components/tour`, `components/ui`
   - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/my-instances.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/tour.ts` · an `/api` path — `app/(mainlayout)/dashboard/page.tsx`, `components/tour/first-run-tour.tsx`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/db/tour.ts`, `lib/tour/mark.ts`
   - notes: Every figure is arithmetic over `listMyInstances(user.userId)` plus the length of the published-template read, and each card links to `/assessment/instances?filter=<id>` (or `/assessment` for the templates) where the same predicate filters the same array (`lib/flow/overview.ts`), so a count cannot disagree with its list. No percentage, no total, and no authored metric: the numbers `data/pages/dashboard.ts` rejected for `/dashboard/user` (#164) have no equivalent here and were not re-created. The blind rule holds by construction — the three relationship counts are the three `MyInstanceState` values, derived from the viewer's own answered count and their own `unlock_seen_at`.
 
@@ -469,7 +469,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
   - files (18): `accept-session.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`
-  - routes (13): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/new`, `/dashboard/templates/[id]`, `/invite/[token]`
+  - routes (14): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/console` — **mock**
@@ -491,7 +491,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/tour` — **live**
   - capability: The first-run tour: up to six steps spotlighting real console elements, a callout naming what each one is for, and a polite live region that announces every step change to a screen reader.
-  - files (2): `first-run-tour.tsx`, `replay-tour.tsx`
+  - files (3): `demo-fill.tsx`, `first-run-tour.tsx`, `replay-tour.tsx`
   - routes (2): `/dashboard`, `/dashboard/help`
   - notes: One file (`first-run-tour.tsx`), and a variation rather than a new pattern: the ancestor is `components/ui/popover.tsx`'s callout, stated in its `template-ancestor:` header — a panel anchored to an element, drawn by driver.js rather than Radix because the tour owns when it opens and needs the overlay, the step engine and the reduced-motion switch; no trigger, no portal, no Radix primitive. `live` because the domain has a real write path: dismissing or completing the tour `POST`s the viewer's own `tour_seen_at` mark to `/api/tour` (`lib/tour/mark.ts`), which is what makes it first-run rather than a nag — the read is the `/dashboard` route's job (`lib/db/tour.ts`), so no client module value-imports `lib/db/**` and E34 stays clean. The words are `data/pages/tour.ts`, parsed by the page and passed down, so this domain's own import closure reaches no `data/` module; driver.js is a dynamic import inside the effect, so nothing touches `window` during the server render. The six anchors live on the console's own elements and the shell's Support row; a step whose anchor is absent from the page is skipped rather than pointed at nothing, which is what the quiz build sees (its menu has no Support-row anchor for the sixth step) and what a returning account sees (no empty-state card for three of them).
 

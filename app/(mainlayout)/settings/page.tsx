@@ -36,6 +36,7 @@ import { readUserProfileByUserId } from "@/lib/db/user-profiles";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { savePassword } from "./password-actions";
+import { deleteAccount } from "./delete-account-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,7 @@ export default async function SettingsPage() {
       profile={profile === null ? null : publicProfileOf(profile)}
       hasPassword={hasPassword}
       savePassword={savePassword}
+      deleteAccount={deleteAccount}
     />
   );
 }

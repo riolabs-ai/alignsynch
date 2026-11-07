@@ -3,6 +3,7 @@
 // template-ancestor: components/settings/account-settings.tsx   (variation: the settings page over the identity record — four cards, one form each)
 
 import { SignOutButton } from "@/components/identity/sign-out-button";
+import { DeleteAccountCard } from "@/components/identity/delete-account-card";
 import { PasswordCard } from "@/components/identity/password-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import type { PublicProfile } from "@/content/identity";
 import type { PageCopy } from "@/content/pages";
+import type { DeleteAccountOutcome } from "@/app/(mainlayout)/settings/delete-account-actions";
 import type { ResetSetOutcome } from "@/lib/auth/reset-token";
 import { loginPathFor } from "@/lib/auth/paths";
 import { fillLabel, itemLabel, itemOf, sectionOf } from "@/lib/page-copy";
@@ -68,6 +70,11 @@ interface SettingsViewProps {
   hasPassword: boolean;
   /** The signed-in set-password action, wired by the page. Never an auth client call. */
   savePassword: (input: { password: string; confirmation: string }) => Promise<ResetSetOutcome>;
+  /**
+   * The signed-in delete-account action (#278). Server-side by construction: it re-resolves the
+   * session and re-checks the typed phrase, so this component holds no authority of its own.
+   */
+  deleteAccount: (confirmation: string) => Promise<DeleteAccountOutcome>;
 }
 
 export function SettingsView({
@@ -77,6 +84,7 @@ export function SettingsView({
   profile,
   hasPassword,
   savePassword,
+  deleteAccount,
 }: SettingsViewProps) {
   const router = useRouter();
   const identity = sectionOf(copy, "identity");
@@ -268,6 +276,8 @@ export function SettingsView({
       </FormSurface>
 
       <PasswordCard copy={copy} hasPassword={hasPassword} save={savePassword} />
+
+      <DeleteAccountCard copy={copy} remove={deleteAccount} />
 
       <Card>
         <CardHeader>
