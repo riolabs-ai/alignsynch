@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { AlertTriangle, Loader2, LogOut, Mail, Shield } from "lucide-react";
+import { AlertTriangle, Loader2, LogOut, Shield } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
@@ -195,15 +195,17 @@ export function SecuritySettings() {
               <div>
                 <p className="font-medium">Delete Account</p>
                 <p className="text-sm text-muted-foreground">
-                  Account deletion isn&apos;t available in-app yet. To delete your account, send us
-                  a message from the contact form on the Help page and we&apos;ll remove it.
+                  Deleting your account is available on the account settings page, and it is
+                  immediate: your profile, your invitations and the details that identify you are
+                  removed, and the assessments you took part in stay for the other participant with
+                  your seat shown as a deleted account.
                 </p>
               </div>
             </div>
             <Button variant="outline" asChild>
-              <Link href="/help">
-                <Mail className="mr-2 h-4 w-4" />
-                Contact Support
+              <Link href="/settings">
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Account settings
               </Link>
             </Button>
           </div>

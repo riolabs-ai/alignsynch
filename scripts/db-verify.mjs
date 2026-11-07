@@ -59,13 +59,16 @@
  *       relationship, no session points at a relationship that does not exist.
  *   V18 a scored session is immutable (#340): there is no `UPDATE` path against `session` or
  *       `opinion` anywhere in `lib/`, `scripts/` or `app/` — the rows a score is read from can
- *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten. **One
- *       column pair is carved out (#503):** an `UPDATE session` whose SET list is exactly
- *       `voided_at` and/or `voided_by` is legal, because an operator's void adds an operator-state
- *       column that no score and no derivation over a score reads — `instanceStatusOf()` answers
- *       `voided` before it counts anything. The carve-out is a column allowlist, not a table one:
- *       an `UPDATE session SET mode = …`, `SET alignment_setting = …` or a SET list with the void
- *       columns plus anything else still fails here.
+ *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten. **Two column
+ *       sets are carved out.** An `UPDATE session` whose SET list is exactly `voided_at` and/or
+ *       `voided_by` is legal (#503), because an operator's void adds an operator-state column that
+ *       no score and no derivation over a score reads — `instanceStatusOf()` answers `voided`
+ *       before it counts anything. An `UPDATE session` whose SET list is exactly `name` is legal
+ *       (#278), because the deletion sweep must rewrite the free-text label so a survivor's session
+ *       stops naming a person who deleted their account — `name` is the console's optional label
+ *       and no derivation over answers reads it. The carve-outs are column lists, not table ones:
+ *       an `UPDATE session SET mode = …`, `SET alignment_setting = …`, `SET template_record_id = …`
+ *       or a SET list mixing an admitted column with anything else still fails here.
  *   V19 the membership's initiator (coach card): a relationship that has any member has exactly
  *       one `initiator` member — the backfill (0014) writes one for the bound Initiator, and a
  *       coach invited into a relationship with no initiator member is drift, not a relationship.
@@ -108,6 +111,17 @@
  *       `PRIMARY KEY (broadcast_id, email)` that makes one address one row per send, and its
  *       `(email, created_at DESC)` index exists because the cooldown read is an existence test per
  *       candidate address. Numbered after #506's V25, which landed on `main` first.
+ *   V27 no orphan profile (#278): every `user_profile.user_id` names a user `neon_auth` still has.
+ *       `public` holds no foreign key to the managed schema on purpose (`0003`'s header), so a
+ *       deletion that stopped half way — the auth user gone, the profile row left — is a row no
+ *       constraint can refuse and no read notices: `/profile/<handle>` keeps resolving to a person
+ *       who cannot sign in, and the handle stays taken. The sweep's own order makes this the one
+ *       half-state it can leave, so it is the one this check names.
+ *
+ *       The seat half of the spec's §7 step-5 rule is **V10's**, not a second code here: V10 fails
+ *       on any `party.user_id` the auth table does not have, which strictly contains "on a
+ *       `complete` session". Two codes for one fact make a failure line ambiguous, the same reason
+ *       V26 is not V25.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -134,11 +148,23 @@ const fail = (code, message) => problems.push({ code, message });
  * The only columns an `UPDATE session` may set (#503): an operator's void, and nothing else.
  *
  * The V18 carve-out below is a **column** allowlist, so the rule keeps its teeth on the columns a
- * score is read from (`mode`, `alignment_setting`, `template_record_id`, `name`). `voided_at` and
+ * score is read from (`mode`, `alignment_setting`, `template_record_id`). `voided_at` and
  * `voided_by` are operator state: `instanceStatusOf()` answers `voided` before it counts an answer,
  * and no derivation over scores reads either column.
  */
 const VOID_COLUMNS = new Set(["voided_at", "voided_by"]);
+
+/**
+ * The deletion sweep's one write to `session` (#278): its optional **label**.
+ *
+ * `docs/ACCOUNT-DELETION-SPEC.md` §1.2 requires the label to be rewritten, because it is free text
+ * a person wrote (`"Run for Avery Rowan"`) and no `user_id` sweep reaches it — leaving it is leaving
+ * the deleted person's name on the survivor's session. It is not a score column: `name` is the
+ * console's optional label (`0011`), read by `/assessment/instances` and by no derivation over
+ * answers. So it gets a carve-out of its own rather than a place in `VOID_COLUMNS`, and the
+ * permitted line below says which of the two admitted this statement.
+ */
+const LABEL_COLUMNS = new Set(["name"]);
 
 /**
  * V18's scan: find every `UPDATE` statement that targets the `session` or `opinion` table in the
@@ -185,14 +211,21 @@ function scanForUpdatePaths() {
       const setColumns = [...statement.matchAll(/\b([a-z_][a-z0-9_]*)\s*=/gi)].map((assign) =>
         assign[1].toLowerCase(),
       );
-      // #503 — the one legal `UPDATE session`: an operator's void, and nothing else. A SET list
-      // that is not wholly the void pair (or is empty, which no UPDATE is) stays a violation.
-      if (
-        match[1].toLowerCase() === "session" &&
-        setColumns.length > 0 &&
-        setColumns.every((column) => VOID_COLUMNS.has(column))
-      ) {
-        allowed.push({ file, line, columns: setColumns });
+      // #503 / #278 — the two legal `UPDATE session` statements: an operator's void (a SET list
+      // wholly of the void pair) and the deletion sweep's label rewrite (exactly `name`). Anything
+      // else — `mode`, `alignment_setting`, `template_record_id`, a mixed list — stays a violation.
+      const isSession = match[1].toLowerCase() === "session";
+      const isVoid =
+        setColumns.length > 0 && setColumns.every((column) => VOID_COLUMNS.has(column));
+      const isLabel =
+        setColumns.length === 1 && setColumns.every((column) => LABEL_COLUMNS.has(column));
+      if (isSession && (isVoid || isLabel)) {
+        allowed.push({
+          file,
+          line,
+          columns: setColumns,
+          why: isVoid ? "an operator's void (#503)" : "the deletion sweep's label rewrite (#278)",
+        });
         continue;
       }
       violations.push({ file, line, table: match[1] });
@@ -271,6 +304,27 @@ function seededStatusDetail(row) {
   if (row.initiator_accepted === 0) details.push("the initiator's party.accepted_at is NULL");
   if (row.counterparty_accepted === 0) details.push("the counterparty's party.accepted_at is NULL");
   return details.join("; ");
+}
+
+/**
+ * V27 over two id lists — the whole rule, so a test can drive it with no database.
+ *
+ * `profileIds` is every `public.user_profile.user_id`; `authIds` is every id in
+ * `neon_auth."user"`. A profile whose account is gone is the half-deleted state
+ * `docs/ACCOUNT-DELETION-SPEC.md` §7 step 5 names: the sweep deletes the auth user first, so a
+ * scrub that then failed leaves exactly this row, and the public profile URL keeps resolving.
+ */
+export function orphanProfileProblems(profileIds, authIds) {
+  const known = new Set(authIds);
+  const problems = [];
+  for (const userId of profileIds) {
+    if (known.has(userId)) continue;
+    problems.push({
+      code: "V27",
+      message: `public.user_profile carries "${userId}", which neon_auth has no user for — a deleted account's profile survived the sweep, so /profile/<handle> still resolves to a person who cannot sign in`,
+    });
+  }
+  return problems;
 }
 
 /**
@@ -409,7 +463,7 @@ async function main() {
     // the line and the columns are printed beside the census, exactly as V18's zero would be.
     for (const permitted of updatePaths.allowed) {
       console.log(
-        `  V18 permitted: ${permitted.file}:${permitted.line} UPDATEs session (${permitted.columns.join(", ")}) — an operator's void (#503)`,
+        `  V18 permitted: ${permitted.file}:${permitted.line} UPDATEs session (${permitted.columns.join(", ")}) — ${permitted.why}`,
       );
     }
 
@@ -1398,6 +1452,49 @@ async function main() {
       broadcastRecipients = broadcastCounts[0]?.recipients ?? 0;
     }
 
+    /* V27 — no orphan profile (#278).
+     *
+     * `public` holds no foreign key to `neon_auth` (`0003`'s header: "a profile whose user was
+     * deleted in the managed schema is an orphan row, not a broken constraint"), so this is the
+     * one half-deleted state no constraint refuses: the auth user gone and the profile row left.
+     * The sweep deletes the auth user **first** on purpose (`docs/ACCOUNT-DELETION-SPEC.md` §7
+     * step 3), so a scrub that failed after it leaves exactly this, and the person's public
+     * profile URL keeps resolving to an account nobody can sign in to.
+     *
+     * The users table is read from the catalogue rather than assumed (`user` on Neon, `users`
+     * elsewhere) — V10 does the same for `party.user_id`, and the two must agree about which
+     * table owns an account.
+     */
+    let profileRows = 0;
+    const { rows: profileOwners } = await client.query(
+      "SELECT user_id FROM user_profile ORDER BY user_id",
+    );
+    profileRows = profileOwners.length;
+    if (profileRows > 0) {
+      const { rows: authUserTables } = await client.query(
+        `SELECT table_name FROM information_schema.tables
+          WHERE table_schema = 'neon_auth' AND table_name IN ('user', 'users')
+          ORDER BY table_name`,
+      );
+      const usersTable = authUserTables[0]?.table_name;
+      if (usersTable === undefined) {
+        fail(
+          "V27",
+          `${profileRows} user_profile row(s) and no neon_auth users table to own them — run \`neon env pull\` against a branch that has auth before trusting a green profile check`,
+        );
+      } else {
+        const { rows: accounts } = await client.query(
+          `SELECT id::text AS id FROM neon_auth."${usersTable}"`,
+        );
+        for (const problem of orphanProfileProblems(
+          profileOwners.map((row) => row.user_id),
+          accounts.map((row) => row.id),
+        )) {
+          fail(problem.code, problem.message);
+        }
+      }
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -1413,7 +1510,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
