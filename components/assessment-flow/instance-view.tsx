@@ -60,12 +60,13 @@ import { formatDate } from "@/content/core";
 import { STAGE_LABELS } from "@/content/stages";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { answersPath, reinvitePath, stepsPath } from "@/lib/flow/paths";
+import { answersPath, acceptPath, reinvitePath, stepsPath } from "@/lib/flow/paths";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import type { ResendRefusal } from "@/lib/flow/resend";
 import { RESEND_LIFETIME_CAP } from "@/lib/flow/tokens";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { relationshipStage, stageCopyId } from "@/lib/flow/stage";
+import Link from "next/link";
 
 /** The one glyph an absent figure is drawn as — never `0`, never an empty cell. */
 const ABSENT = "—";
@@ -213,6 +214,26 @@ export function AssessmentInstanceView({
     screen.invite.state !== "claimed" &&
     screen.viewer.role === "initiator";
 
+  /**
+   * #617 — the acceptance entry point.
+   *
+   * `acceptPath()` existed, its page existed, its form posted, and **no surface linked to it**, so
+   * a person who had answered every Aspect had no way to do the one thing that completes a
+   * session. This is that route, drawn from the facts the endpoint itself requires — the viewer is
+   * one of the two parties, their own sheet is complete, their own `party.accepted_at` is null, and
+   * the session is still `answering` — so the link is offered exactly when the click would be
+   * recorded. Nothing here reads the other party's answers: the sentence only names them.
+   */
+  const acceptSection = sectionOf(copy, "accept");
+  const ownSheetComplete =
+    screen.aspects.length > 0 && screen.viewerAnswered >= screen.aspects.length;
+  const otherName =
+    screen.viewer.role === "initiator" ? (screen.counterpartyName ?? "") : screen.initiatorName;
+  const acceptHref =
+    !isCoach && screen.status === "answering" && ownSheetComplete && !screen.viewerAccepted
+      ? acceptPath(screen.instanceRecordId)
+      : null;
+
   const names = screen.waiting.map((role) =>
     role === "initiator" ? screen.initiatorName : (screen.counterpartyName ?? ""),
   );
@@ -296,11 +317,8 @@ export function AssessmentInstanceView({
           <SubmissionConfirmation
             copy={copy}
             instanceRecordId={screen.instanceRecordId}
-            otherName={
-              screen.viewer.role === "initiator"
-                ? (screen.counterpartyName ?? "")
-                : screen.initiatorName
-            }
+            otherName={otherName}
+            acceptHref={acceptHref}
           />
         </div>
       ) : null}
@@ -506,6 +524,39 @@ export function AssessmentInstanceView({
               {fillLabel(itemLabel(waiting, "waiting-for"), { names: names.join(", ") })}
             </p>
           </section>
+
+          {/* #617 — the acceptance step, offered on every visit where the click would be
+              recorded: own sheet complete, own acceptance missing, session still answering. A
+              later visit is the whole reason this band exists beside the submit confirmation —
+              the party who closed the tab, or came back to the session from a bookmark, is here. */}
+          {isCoach || !ownSheetComplete || submitted || screen.status !== "answering" ? null : (
+            <section
+              data-accept-step={acceptHref === null ? "accepted" : "ready"}
+              className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+            >
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {acceptSection.heading}
+              </h2>
+              {acceptHref === null ? (
+                <p data-accept-waiting="" className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+                  {fillLabel(itemLabel(acceptSection, "you-accepted"), { other: otherName })}
+                </p>
+              ) : (
+                <>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+                    {fillLabel(sectionBody(acceptSection), { other: otherName })}
+                  </p>
+                  <Link
+                    href={acceptHref}
+                    data-accept-link="true"
+                    className="mt-3 inline-flex rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+                  >
+                    {itemLabel(acceptSection, "accept-link")}
+                  </Link>
+                </>
+              )}
+            </section>
+          )}
 
           {isCoach ? null : (
             <AnswerForm
