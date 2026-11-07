@@ -134,6 +134,39 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "change-link", label: "Open your answer sheet" },
         { id: "session-link", label: "Back to the session" },
+        /**
+         * The entry point to the acceptance step (#617). The submit used to land here with the
+         * sheet and the session and nothing else, and nothing anywhere linked to `/accept` — so a
+         * person who had answered every Aspect had no way to accept, and a human-created session
+         * could never reach `complete`. This band is drawn for exactly that person: their own sheet
+         * is finished and their own acceptance is missing.
+         */
+        { id: "accept-link", label: "Review and accept this session" },
+      ],
+    },
+    {
+      /**
+       * The acceptance entry point on the ordinary instance screen (#617).
+       *
+       * `submitted` covers the visit a submit created; this section covers every later visit — the
+       * party who closed the tab, came back from the report link in an email, or answered on one
+       * device and opened the screen on another. Both draw their words from here rather than from
+       * a literal, so the one sentence that points at `/accept` is authored once.
+       *
+       * Drawn only while the session is `answering`, the viewer is a party, their sheet is complete
+       * and their own acceptance is missing: those are the facts the endpoint itself requires, so
+       * the link is offered exactly when the click would be recorded.
+       */
+      id: "accept",
+      heading: "Acceptance is the last step",
+      body: "Answering is not accepting. Your sheet is complete — review the session and accept it yourself, and the report opens for both of you once {other} accepts too.",
+      items: [
+        { id: "accept-link", label: "Review and accept this session" },
+        {
+          id: "you-accepted",
+          label:
+            "You accepted this session. The report opens for both of you when {other} accepts too.",
+        },
       ],
     },
     {

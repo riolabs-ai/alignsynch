@@ -24,7 +24,10 @@
  *   6. hinge       both sheets are in and the report is still locked: acceptance, not submission,
  *                  is what completes a session (#R2)
  *   6b. accept     the Initiator accepts (still locked), the Counterparty accepts (the Gap opens);
- *                  the completing acceptance is the one that mails the other seat
+ *                  the completing acceptance is the one that mails the other seat. Both arrive
+ *                  through links and form actions **the app drew** — the confirmation band, the
+ *                  instance screen, the accept page — because posting `/accepts` by hand is what
+ *                  let the accept step ship with no entry point at all (#617)
  *   6c. locked     an edit after the seat accepted is a 409 and the stored row is unchanged
  *   6d. gap        both parties now see `data-feel-gap="3"` where Feel 2 meets Feel 5, and
  *                  "In synch" where they agree; an Advanced instance draws all eight kinds,
@@ -73,6 +76,34 @@ function rendered(html) {
   return html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
 }
 
+/**
+ * The href of the anchor a reader clicks, found by the attribute the component gave it (#617).
+ *
+ * Nothing in this script types an acceptance path: the link is drawn on the page, this reads it,
+ * and the next request follows it. That is the half the earlier version of this file skipped — it
+ * POSTed `/accepts` directly, which proved the endpoint worked and never that a person could reach
+ * it, which is exactly how the accept step shipped unreachable.
+ */
+function anchorHref(html, attribute) {
+  const anchor = html.match(new RegExp(`<a\\b[^>]*\\b${attribute}="true"[^>]*>`))?.[0];
+  if (anchor === undefined) return null;
+  return anchor.match(/href="([^"]*)"/)?.[1] ?? null;
+}
+
+/**
+ * The `action` of the form that records an acceptance, read off the rendered page.
+ *
+ * Found by what it posts to rather than by position: the layout's own forms (sign-out, search)
+ * are in the same document, and a reader clicks the one button the acceptance page offers.
+ */
+function acceptFormAction(html) {
+  for (const form of html.match(/<form\b[^>]*>/g) ?? []) {
+    const action = form.match(/action="([^"]*)"/)?.[1];
+    if (action?.endsWith("/accepts")) return action;
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------------ *
  * A cookie jar, so two "people" can be two jars of one script
  * ------------------------------------------------------------------ */
@@ -101,7 +132,10 @@ class Jar {
   }
 
   async get(path) {
-    const response = await fetch(`${BASE_URL}${path}`, {
+    // A redirect's `Location` is absolute (Next builds it from the request URL); a link drawn on a
+    // page is root-relative. Both are followed the same way, so the caller never has to know which.
+    const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
+    const response = await fetch(url, {
       redirect: "manual",
       headers: { cookie: this.header() },
     });
@@ -459,10 +493,14 @@ async function main() {
   );
 
   const secondClaim = await stranger.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  // The refusal keeps whatever step the wizard had reached (#538 put `?step=` on this URL), so the
+  // assertion is the page and the code, not the whole query string.
+  const secondClaimUrl = new URL(secondClaim.location ?? "http://invalid.invalid/");
   check(
     "a second claim of the spent token is refused",
     secondClaim.status === 303 &&
-      (secondClaim.location ?? "").endsWith(`/invite/${token}?claim=claimed`),
+      secondClaimUrl.pathname === `/invite/${token}` &&
+      secondClaimUrl.searchParams.get("claim") === "claimed",
     `${secondClaim.status} ${secondClaim.location}`,
   );
   const secondClaimPage = await stranger.get(`/invite/${token}?claim=claimed`);
@@ -635,7 +673,62 @@ async function main() {
     `status ${editBeforeAccept.status}`,
   );
 
-  const initiatorAccept = await initiator.post(`${instancePath}/accepts`, {});
+  /* 5b. the way to the accept step, drawn on the pages (#617) ------------------------- */
+  // Every earlier version of this file posted `/accepts` by hand, so the suite proved the endpoint
+  // worked and never that a person could arrive at it — and the accept page shipped with no link
+  // anywhere in the tree. From here the script follows only anchors and form actions the app drew.
+  const submittedVisit = await counterparty.get(counterpartySubmit.location ?? instancePath);
+  check(
+    "the Counterparty's submit lands on the confirmation band",
+    submittedVisit.status === 200 && submittedVisit.html.includes("data-submitted-confirmation"),
+    `status ${submittedVisit.status}`,
+  );
+  const submittedAcceptHref = anchorHref(submittedVisit.html, "data-accept-link");
+  check(
+    "the confirmation band links to the accept step",
+    submittedAcceptHref === `${instancePath}/accept`,
+    `href ${submittedAcceptHref ?? "(no anchor)"}`,
+  );
+
+  // A party coming back later sees the same route on the instance screen — the confirmation band is
+  // drawn once, but the step it points at stays reachable.
+  const initiatorLaterScreen = await initiator.get(instancePath);
+  const initiatorAcceptHref = anchorHref(initiatorLaterScreen.html, "data-accept-link");
+  check(
+    "the instance screen links to the accept step on a later visit",
+    initiatorAcceptHref === `${instancePath}/accept`,
+    `href ${initiatorAcceptHref ?? "(no anchor)"}; status ${initiatorLaterScreen.status}; band ${/data-accept-step="([a-z]+)"/.exec(initiatorLaterScreen.html)?.[1] ?? "absent"}`,
+  );
+
+  const acceptanceBefore = await db.query(
+    "SELECT role, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
+    [instanceId],
+  );
+  note(
+    `party rows before any acceptance: ${acceptanceBefore.rows
+      .map((row) => `${row.role} accepted_at=${row.accepted_at === null ? "null" : "set"}`)
+      .join(", ")}`,
+  );
+
+  const initiatorAcceptPage = await initiator.get(initiatorAcceptHref ?? `${instancePath}/accept`);
+  check(
+    "following it answers 200 and draws the acceptance for this party",
+    initiatorAcceptPage.status === 200 &&
+      initiatorAcceptPage.html.includes('data-party="counterparty"') &&
+      initiatorAcceptPage.html.includes("Accept this session"),
+    `status ${initiatorAcceptPage.status}`,
+  );
+  const initiatorAcceptAction = acceptFormAction(initiatorAcceptPage.html);
+  check(
+    "the page's own form posts to the accept endpoint",
+    initiatorAcceptAction === `${instancePath}/accepts`,
+    `action ${initiatorAcceptAction ?? "(no form)"}`,
+  );
+
+  const initiatorAccept = await initiator.post(
+    initiatorAcceptAction ?? `${instancePath}/accepts`,
+    {},
+  );
   check(
     "the Initiator's acceptance answers 303 to the accept page",
     initiatorAccept.status === 303 &&
@@ -648,14 +741,72 @@ async function main() {
     !afterFirstAccept.html.includes("data-feel-gap") &&
       !afterFirstAccept.html.includes("data-wish-gap"),
   );
-  const counterpartyAccept = await counterparty.post(`${instancePath}/accepts`, {});
+  check(
+    "and the instance screen replaces the link with the wait",
+    anchorHref(afterFirstAccept.html, "data-accept-link") === null &&
+      afterFirstAccept.html.includes('data-accept-step="accepted"'),
+  );
+
+  const counterpartyLaterScreen = await counterparty.get(instancePath);
+  const counterpartyAcceptHref = anchorHref(counterpartyLaterScreen.html, "data-accept-link");
+  check(
+    "the Counterparty's screen still offers the accept step",
+    counterpartyAcceptHref === `${instancePath}/accept`,
+    `href ${counterpartyAcceptHref ?? "(no anchor)"}; band ${/data-accept-step="([a-z]+)"/.exec(counterpartyLaterScreen.html)?.[1] ?? "absent"}`,
+  );
+  const counterpartyAcceptPage = await counterparty.get(
+    counterpartyAcceptHref ?? `${instancePath}/accept`,
+  );
+  check(
+    "and that page reads the Initiator's seat as accepted",
+    counterpartyAcceptPage.status === 200 &&
+      counterpartyAcceptPage.html.includes('data-party="initiator" data-accepted="yes"'),
+    `status ${counterpartyAcceptPage.status}`,
+  );
+  const counterpartyAcceptAction = acceptFormAction(counterpartyAcceptPage.html);
+  const counterpartyAccept = await counterparty.post(
+    counterpartyAcceptAction ?? `${instancePath}/accepts`,
+    {},
+  );
   check(
     "the completing acceptance answers 303 to the report",
     counterpartyAccept.status === 303 &&
       (counterpartyAccept.location ?? "").endsWith(`${instancePath}/report`),
     `${counterpartyAccept.status} ${counterpartyAccept.location}`,
   );
+
+  const reportViaAccept = await counterparty.get(counterpartyAccept.location ?? instancePath);
+  check(
+    "the report the acceptance redirects to opens, with the Gap drawn",
+    reportViaAccept.status === 200 &&
+      reportViaAccept.html.includes("data-feel-gap") &&
+      !reportViaAccept.html.includes('data-report-gated="true"'),
+    `status ${reportViaAccept.status}`,
+  );
+
+  const acceptanceAfter = await db.query(
+    "SELECT role, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
+    [instanceId],
+  );
+  check(
+    "both seats now record party.accepted_at",
+    acceptanceAfter.rows.length === 2 &&
+      acceptanceAfter.rows.every((row) => row.accepted_at !== null),
+    acceptanceAfter.rows
+      .map((row) => `${row.role} accepted_at=${String(row.accepted_at)}`)
+      .join(", "),
+  );
+  note(
+    `party rows after both acceptances: ${acceptanceAfter.rows
+      .map((row) => `${row.role} accepted_at=${String(row.accepted_at)}`)
+      .join(", ")}`,
+  );
+
   const afterAcceptance = await initiator.get(instancePath);
+  check(
+    "the session derives `complete` — the stage the report is opened by",
+    afterAcceptance.html.includes('data-stage-badge="sharing"'),
+  );
 
   const gapAttribute = afterAcceptance.html.match(
     /data-aspect="aspect-time-together" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
