@@ -381,17 +381,18 @@ mechanism: nothing in the product waits for an operator.
 
 Each is a duration and a reason. "None apply" is stated where that is the honest answer.
 
-| Data                                                                     | Retained                                 | Why                                                                                                                                                                                                                                                                                                                                |
-| ------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `billing_subscription`, `billing_event`, `plan_grant`                    | **7 years**                              | Accounting/tax records of a paid plan. The rows carry a pseudonymous `user_id` and a provider id — no name, no email, no card. Today `BILLING_PROVIDER` defaults to `mock`, so this is a live obligation the moment a real provider charges anyone.                                                                                |
-| `admin_action` (and its `before`/`after` JSONB)                          | **24 months**                            | Security/audit integrity. `before`/`after` may contain profile fields, so the sweep **redacts** those keys and keeps the action, actor and reason.                                                                                                                                                                                 |
-| `template_version.published_by`, `template_version.payload.authorUserId` | **indefinite**                           | The row is immutable by trigger (`0026_template_version.sql` raises on any update to `published_by`). A bare account id with no name or email is pseudonymous once the account is gone — no exception is being claimed, there is nothing personal left to erase.                                                                   |
-| `email_event`, `broadcast_recipient`, `broadcast_send`                   | **90 days**                              | Deliverability, bounce/complaint handling, and abuse investigation. `ip_hash` is a salted hash, not a reversible address.                                                                                                                                                                                                          |
-| `news_signup` (email + `unsubscribed_at`)                                | **indefinite**                           | The suppression list. Without the address we cannot honour the opt-out and would email the person again — retaining it is the _less_ intrusive option. `source` is dropped.                                                                                                                                                        |
-| `contact_message` / `contact_reply`                                      | **24 months**, then deleted              | Support correspondence. Deleted immediately on request unless a dispute is open.                                                                                                                                                                                                                                                   |
-| `account_deletion_job` (finished)                                        | **indefinite**                           | An opaque account id and two instants — no name, no address, no role. The same argument as `template_version.published_by`: pseudonymous once the account is gone. The identity columns exist only while the deletion is unfinished and are cleared by the attempt that commits the sweep (a table CHECK refuses the other shape). |
-| Fraud / abuse logs beyond the above                                      | **none apply**                           | No dedicated abuse-log table exists. The only evidence is the hashed `ip_hash` on `contact_message` and `email_event`, covered by the rows above.                                                                                                                                                                                  |
-| Legal hold                                                               | **none apply — and no mechanism exists** | There is no hold flag. If litigation is anticipated an operator must suspend deletion for that account by hand, and the runbook must say so rather than imply a feature.                                                                                                                                                           |
+| Data                                                                     | Retained                                 | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `billing_subscription`, `billing_event`, `plan_grant`                    | **7 years**                              | Accounting/tax records of a paid plan. The rows carry a pseudonymous `user_id` and a provider id — no name, no email, no card. Today `BILLING_PROVIDER` defaults to `mock`, so this is a live obligation the moment a real provider charges anyone.                                                                                                                                                                                                                                                                   |
+| `admin_action` (and its `before`/`after` JSONB)                          | **24 months**                            | Security/audit integrity. `before`/`after` may contain profile fields, so the sweep **redacts** those keys and keeps the action, actor and reason.                                                                                                                                                                                                                                                                                                                                                                    |
+| `template_version.published_by`, `template_version.payload.authorUserId` | **indefinite**                           | The row is immutable by trigger (`0026_template_version.sql` raises on any update to `published_by`). A bare account id with no name or email is pseudonymous once the account is gone — no exception is being claimed, there is nothing personal left to erase.                                                                                                                                                                                                                                                      |
+| `email_event`, `broadcast_recipient`, `broadcast_send`                   | **90 days**                              | Deliverability, bounce/complaint handling, and abuse investigation. `ip_hash` is a salted hash, not a reversible address.                                                                                                                                                                                                                                                                                                                                                                                             |
+| `news_signup` (email + `unsubscribed_at`)                                | **indefinite**                           | The suppression list. Without the address we cannot honour the opt-out and would email the person again — retaining it is the _less_ intrusive option. `source` is dropped.                                                                                                                                                                                                                                                                                                                                           |
+| `contact_message` / `contact_reply`                                      | **24 months**, then deleted              | Support correspondence. Deleted immediately on request unless a dispute is open.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `account_deletion_job` (finished)                                        | **indefinite**                           | An opaque account id and two instants — no name, no address, no role. The same argument as `template_version.published_by`: pseudonymous once the account is gone. The identity columns exist only while the deletion is unfinished and are cleared by the attempt that commits the sweep (a table CHECK refuses the other shape).                                                                                                                                                                                    |
+| `account_deletion_job` (unfinished)                                      | **until resumed — no hard expiry**       | The row _is_ the retry (§7 step 2b): it holds the only copy of the address the sweep keys on, so deleting it would turn a delayed deletion into a permanent one — the email-keyed rows of §1.1 would survive with nothing left to match them. `/privacy` covers this state in its own sentence ("if a deletion you started did not finish…"), quoted verbatim in §7. The clock is the detector, not a timer: `pnpm db:verify`'s V28 names any row open past 24 h, which is the owner the row otherwise does not have. |
+| Fraud / abuse logs beyond the above                                      | **none apply**                           | No dedicated abuse-log table exists. The only evidence is the hashed `ip_hash` on `contact_message` and `email_event`, covered by the rows above.                                                                                                                                                                                                                                                                                                                                                                     |
+| Legal hold                                                               | **none apply — and no mechanism exists** | There is no hold flag. If litigation is anticipated an operator must suspend deletion for that account by hand, and the runbook must say so rather than imply a feature.                                                                                                                                                                                                                                                                                                                                              |
 
 The deliberate non-exception is §2: the deleted party's `opinion` rows and anonymised seat remain
 because they are the **other** participant's report. That is the other person's data, not the deleted
@@ -488,14 +489,67 @@ dies with the auth user: measured on the demo branch, `GET /get-session` after t
 "If you are still signed in, nothing was deleted and you can try again" — because "your account is
 unchanged" is false once the auth user is gone. This is a runbook step, not a product route (§5).
 
-1. Find the open rows:
+1. Find the open rows. `pnpm db:verify` already does this for the ones that matter: **V28** names
+   every row open past 24 h by `user_id` and prints the open count in its summary line. To see all
+   open rows — including ones still inside the window — run this from the repo root, in a shell
+   that has the branch's `.env` loaded:
+
+   ```bash
+   node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --input-type=module -e 'import pg from "pg"; const c = new pg.Client({ connectionString: process.env.DATABASE_URL }); await c.connect(); const { rows } = await c.query("SELECT user_id, started_at FROM account_deletion_job WHERE finished_at IS NULL ORDER BY started_at"); for (const r of rows) console.log(r.user_id, r.started_at.toISOString()); await c.end();'
+   ```
+
+   In a SQL client it is the same read:
    `SELECT user_id, started_at FROM account_deletion_job WHERE finished_at IS NULL ORDER BY started_at;`
-2. Re-run the sequence for each id: `runAccountDeletion(user_id)` (`lib/account/purge.ts`). It reads
-   the recorded identity, skips the auth delete, runs the sweep in one transaction, finishes the row,
-   and returns the per-table counts. `deleted` with all-zero counts means the sweep had already
-   landed and only the record was left open.
-3. Confirm: the query in 1 returns no rows, and `pnpm db:verify` is green — V27 names any
-   `user_profile` the interrupted attempt left behind.
+2. Resume each id with this exact command — `<user_id>` is the id from step 1, never the address:
+
+   ```bash
+   node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --input-type=module -e 'const { runAccountDeletion } = await import("@/lib/account/purge.ts"); console.log(JSON.stringify(await runAccountDeletion(process.argv[1]), null, 2));' -- <user_id>
+   ```
+
+   It reads the recorded identity, skips the auth delete (the auth user is already gone, and a
+   second `DELETE` would answer `404` and read as a failure), runs the sweep in one transaction,
+   finishes the row, and prints the outcome beside a per-table count. `{"kind": "deleted", …}` with
+   all-zero counts means the sweep had already landed and only the record was left open.
+   `{"kind": "unknown-account"}` means the id names neither an auth user nor an open row — that
+   deletion was finished by an earlier attempt, and there is nothing to resume.
+
+   This command was executed against the demo branch while this section was written (t_9c0c95ce,
+   2026-11-07) with an id that has neither, and printed `{ "kind": "unknown-account" }`: the `@/`
+   loader, the `.env` read and the pool it uses are the shipped path, not a second one written for
+   the runbook.
+3. Confirm: the read in 1 returns no rows for the id, and `pnpm db:verify` exits 0 with
+   `N open deletion job(s) none older than 24 h`. V27 names any `user_profile` the interrupted
+   attempt left behind; V28 names the interrupted attempt itself.
+
+#### The 24 h detector, and the row nobody resumes
+
+**V28 fails on any open row started more than 24 h ago**, naming the `user_id` and the age — never
+the address, because `db:verify` output is pasted into cards, issue threads and CI logs, and the row
+exists so an operator can act on an id. The threshold is a _detector's_, and it is picked from both
+ends of the gap: a scrub is one transaction over one account's rows, so 24 h is far longer than any
+in-flight attempt, retry or deploy restart — a line here means "nobody is coming", not "busy" — and
+short enough that an address `/privacy` calls "removed permanently" either has an operator on it or
+a named failure within a day. Minutes would fire on ordinary traffic and teach the reader to scroll
+past the line; a week would leave the promise and the check disagreeing for long enough that nobody
+connects them. V28 is a detector, not an expiry: no row is deleted because of it.
+
+**A row that is never resumed is retained, and the retention copy already covers that state — there
+is no hard expiry.** This is the decision the card asked for, and it is forced by §7 step 2b: the
+row holds the only copy of the address the sweep keys on, so a timer that dropped it would convert a
+delayed deletion into a permanent one — every email-keyed row in §1.1 would survive with nothing
+left to match them. The clock is the detector instead: V28 names the row on every run after 24 h,
+which is the owner it otherwise does not have, and `/privacy` states the pending state to the person
+in its own sentence. Verbatim, from `data/pages/legal.ts` → `privacy` → `retention` → `deletion`, as
+`/privacy` renders it:
+
+```text
+Deleting your account is immediate and irreversible, and you can do it yourself from Account settings while signed in: there is no grace period, and no way to restore what is deleted. Your profile, your invitations, and the details that identify you in any shared assessment are removed permanently. Assessments you took part in remain for the other participant, with your seat shown as “Deleted account”; your answers stay only as part of their completed report and are no longer linked to your name, email or account. Accounting entries for a paid plan are kept for 7 years and security audit entries for 24 months, neither carrying your name or address. We also keep your email address on a marketing opt-out list, and nothing else from it, so that we do not email you again. If a deletion you started did not finish, you can ask us for help with it through the contact form on the Help page.
+```
+
+The last sentence is the whole retention rule for this row: it stays, it is named to the person, and
+it is finished by an operator — not by a silent drop. If that is ever judged insufficient, the
+mechanism to add is an alert on V28's output (a louder owner), not a timer that destroys the
+evidence a deletion still needs.
 
 Out of scope for this spec, each with its reason: **data export/portability** (GDPR Art. 20 — a
 separate right, a separate mechanism, no reader exists today); **the build itself** (the card that
