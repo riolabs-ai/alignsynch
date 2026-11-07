@@ -25,7 +25,7 @@ links (7 unique, 8 total)
   /dashboard/support                                   1
   /dashboard/templates                                 1
   /settings                                            1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.5.1 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.6.0 2
 
 counts
   elements  364
