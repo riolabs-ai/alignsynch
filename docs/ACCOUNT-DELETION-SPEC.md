@@ -9,7 +9,7 @@ participant must not destroy the other participant's completed report, and must 
 report — or anything else — resolvable back to a person. Nothing in the tree encodes either
 guarantee today.
 
-Authority: `db/migrations/*.sql` (33 files) is the real column list, `lib/flow/**` and `lib/db/**`
+Authority: `db/migrations/*.sql` (34 files) is the real column list, `lib/flow/**` and `lib/db/**`
 are the read path, and §4 is a **live probe** of the auth servers, not a reading of the SDK's type
 declarations. Where a decision is a policy decision the product has not made, this document says so
 instead of inventing one.
@@ -19,14 +19,15 @@ instead of inventing one.
 The spec landed once before (PR #293, 2026-10-31) and has since gone stale in ways that matter — two
 of its claims are now wrong, not merely dated. This revision replaces it:
 
-| First revision said                                                    | Today                                                                                                  |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `assessment_instance`, `instance_invite`, `party.instance_record_id`   | `session`, `session_invite`, `party.session_record_id` (`0013_relationship_sessions.sql` renamed them) |
-| the inventory stops at `0008`                                          | 24 migrations later: billing, audit, support, broadcast, email, password reset, template versions      |
-| "no billing table in `db/migrations/`; nothing to retain"              | `billing_subscription`, `billing_event`, `plan_grant` exist — a real retention exception (§6)          |
-| `deleteUser` is a top-level SDK endpoint, `POST /api/auth/delete-user` | the **route is not mounted**: authenticated `POST /delete-user` answers `404` (§4)                     |
-| `session_invite.email`/`counterparty_name`/`token_hash` are "set NULL" | all three are `NOT NULL`; the row is deleted instead (§2.6)                                            |
-| auth-side delete runs _after_ the `public` scrub commits               | auth-first, so a failed scrub cannot leave a live account (§7, step 3)                                 |
+| First revision said                                                    | Today                                                                                                                                                                    |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `assessment_instance`, `instance_invite`, `party.instance_record_id`   | `session`, `session_invite`, `party.session_record_id` (`0013_relationship_sessions.sql` renamed them)                                                                   |
+| the inventory stops at `0008`                                          | 24 migrations later: billing, audit, support, broadcast, email, password reset, template versions                                                                        |
+| "no billing table in `db/migrations/`; nothing to retain"              | `billing_subscription`, `billing_event`, `plan_grant` exist — a real retention exception (§6)                                                                            |
+| "the whole sequence is safe to re-run" (#597's §7)                     | idempotent, but not re-runnable: step 3 destroys the only copy of the identity. Superseded by §7 step 2b's `account_deletion_job` row, which a failed scrub resumes from |
+| `deleteUser` is a top-level SDK endpoint, `POST /api/auth/delete-user` | the **route is not mounted**: authenticated `POST /delete-user` answers `404` (§4)                                                                                       |
+| `session_invite.email`/`counterparty_name`/`token_hash` are "set NULL" | all three are `NOT NULL`; the row is deleted instead (§2.6)                                                                                                              |
+| auth-side delete runs _after_ the `public` scrub commits               | auth-first, so a failed scrub cannot leave a live account (§7, step 3)                                                                                                   |
 
 ## 1. Personal-data inventory
 
@@ -39,44 +40,45 @@ user table was `SELECT *`-ed, and no real personal data was read to write this.
 
 ### 1.1 Rows keyed by a person identifier
 
-| Table.column                                                                         | Holds                                                   | Disposition                                                                                 |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `user_profile.user_id` (PK)                                                          | the auth account id — the join key to `neon_auth`       | **delete row**                                                                              |
-| `user_profile.handle`, `display_name`, `bio`, `country`, `country_code`, `role`      | the profile a person writes                             | **delete row** (also frees `handle`, which is `UNIQUE`)                                     |
-| `user_profile.joined_at`, `updated_at`, `tour_seen_at`                               | behavioural instants                                    | **delete row**                                                                              |
-| `party.user_id`                                                                      | which account holds this seat                           | **set NULL** — see §3                                                                       |
-| `party.name`                                                                         | the participant's name (`NOT NULL`)                     | **anonymise** → `Deleted account`                                                           |
-| `party.access_token_hash`                                                            | SHA-256 of the seat's bearer token — a credential       | **set NULL**                                                                                |
-| `party.unlock_seen_at`                                                               | "this person opened a complete session"                 | **set NULL**                                                                                |
-| `party.impersonated_by`                                                              | which operator accepted on this seat's behalf           | **set NULL**                                                                                |
-| `party.submitted_at`, `party.accepted_at`                                            | when this seat submitted, when it accepted              | **retain** — a `complete` session requires them (§2.3)                                      |
-| `relationship.initiator_user_id`                                                     | which account created the relationship                  | **set NULL**                                                                                |
-| `relationship.counterparty_user_id`                                                  | which account is the other side                         | **set NULL**                                                                                |
-| `relationship_member.user_id`                                                        | the membership row for a joined party                   | **delete row**                                                                              |
-| `coach_invite.email`, `invited_by_user_id`, `token_hash`                             | an unclaimed coach invitation                           | **delete row** where invited by them, or addressed to their email                           |
-| `session_invite.email`                                                               | the Counterparty's address (`NOT NULL`)                 | **delete the whole row** when the Counterparty leaves (§2.6); otherwise **retain**          |
-| `session_invite.counterparty_name`                                                   | the Counterparty's name (`NOT NULL`)                    | same as above                                                                               |
-| `session_invite.initiator_email`                                                     | the Initiator's address (nullable)                      | **set NULL** when the Initiator leaves; otherwise **retain**                                |
-| `session_invite.token_hash`                                                          | SHA-256 of the invitation link (`NOT NULL UNIQUE`)      | same row decision as `email`                                                                |
-| `session_invite.revoked_by`                                                          | which operator revoked it                               | **set NULL**                                                                                |
-| `session.voided_by`                                                                  | which operator voided the session                       | **set NULL**                                                                                |
-| `record.author_user_id`                                                              | who authored the template                               | **set NULL**                                                                                |
-| `record.owner_user_id`                                                               | who owns a `visibility = 'private'` template            | **set NULL** + archive the record (§1.3)                                                    |
-| `template_version.published_by`                                                      | who published a version                                 | **retain** — the row is immutable by trigger; the id is pseudonymous (§6)                   |
-| `billing_subscription.user_id`                                                       | which account bought the plan                           | **retain** — accounting record; the id is pseudonymous (§6)                                 |
-| `plan_grant.granted_by`                                                              | which operator granted a tier                           | **retain** — operator audit                                                                 |
-| `admin_action.actor_user_id`                                                         | which operator took an audited action                   | **retain**, with `before`/`after` redacted (§6)                                             |
-| `admin_invite.email`, `invited_by`, `token_hash`                                     | an operator invitation                                  | **delete row** by email                                                                     |
-| `broadcast_send.actor_user_id`                                                       | which operator sent a broadcast                         | **retain** — operator audit                                                                 |
-| `broadcast_recipient.email`                                                          | who a broadcast went to                                 | **retain** with the send, then purge (§6)                                                   |
-| `contact_message.name`, `email`, `message`, `assigned_user_id`                       | a support request and who handled it                    | **delete row** (default; §6 states the hold exception)                                      |
-| `contact_message.ip_hash`, `user_agent`                                              | request evidence                                        | **delete row**                                                                              |
-| `contact_reply.author_user_id`                                                       | which operator replied                                  | **retain** body; **set NULL** author only if the _operator_ deletes                         |
-| `news_signup.email`, `source`, `bounced_at`, `complained_at`, `unsubscribed_at`      | a marketing signup                                      | **retain email + `unsubscribed_at` as a suppression row**, drop `source` (§6)               |
-| `email_event.recipient`, `subject`, `payload`, `ip_hash`                             | delivery events                                         | **retain 90 days then purge** (§6)                                                          |
-| `password_reset.email`, `user_id`, `token_hash`, `requester_hash`                    | a reset request                                         | **delete rows** by email and user id                                                        |
-| `demo_account.email`, `user_id`, `password`                                          | the three seeded demo accounts                          | **out of scope** — `@demo.alignsynch.test`-pinned, recreated and deleted by every `db:seed` |
-| `neon_auth.user`, `neon_auth.account`, `neon_auth.session`, `neon_auth.verification` | identity, linked providers, sessions, verification rows | **delete** — via the auth path, §4                                                          |
+| Table.column                                                                         | Holds                                                   | Disposition                                                                                         |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `user_profile.user_id` (PK)                                                          | the auth account id — the join key to `neon_auth`       | **delete row**                                                                                      |
+| `user_profile.handle`, `display_name`, `bio`, `country`, `country_code`, `role`      | the profile a person writes                             | **delete row** (also frees `handle`, which is `UNIQUE`)                                             |
+| `user_profile.joined_at`, `updated_at`, `tour_seen_at`                               | behavioural instants                                    | **delete row**                                                                                      |
+| `party.user_id`                                                                      | which account holds this seat                           | **set NULL** — see §3                                                                               |
+| `party.name`                                                                         | the participant's name (`NOT NULL`)                     | **anonymise** → `Deleted account`                                                                   |
+| `party.access_token_hash`                                                            | SHA-256 of the seat's bearer token — a credential       | **set NULL**                                                                                        |
+| `party.unlock_seen_at`                                                               | "this person opened a complete session"                 | **set NULL**                                                                                        |
+| `party.impersonated_by`                                                              | which operator accepted on this seat's behalf           | **set NULL**                                                                                        |
+| `party.submitted_at`, `party.accepted_at`                                            | when this seat submitted, when it accepted              | **retain** — a `complete` session requires them (§2.3)                                              |
+| `relationship.initiator_user_id`                                                     | which account created the relationship                  | **set NULL**                                                                                        |
+| `relationship.counterparty_user_id`                                                  | which account is the other side                         | **set NULL**                                                                                        |
+| `relationship_member.user_id`                                                        | the membership row for a joined party                   | **delete row**                                                                                      |
+| `coach_invite.email`, `invited_by_user_id`, `token_hash`                             | an unclaimed coach invitation                           | **delete row** where invited by them, or addressed to their email                                   |
+| `session_invite.email`                                                               | the Counterparty's address (`NOT NULL`)                 | **delete the whole row** when the Counterparty leaves (§2.6); otherwise **retain**                  |
+| `session_invite.counterparty_name`                                                   | the Counterparty's name (`NOT NULL`)                    | same as above                                                                                       |
+| `session_invite.initiator_email`                                                     | the Initiator's address (nullable)                      | **set NULL** when the Initiator leaves; otherwise **retain**                                        |
+| `session_invite.token_hash`                                                          | SHA-256 of the invitation link (`NOT NULL UNIQUE`)      | same row decision as `email`                                                                        |
+| `session_invite.revoked_by`                                                          | which operator revoked it                               | **set NULL**                                                                                        |
+| `session.voided_by`                                                                  | which operator voided the session                       | **set NULL**                                                                                        |
+| `record.author_user_id`                                                              | who authored the template                               | **set NULL**                                                                                        |
+| `record.owner_user_id`                                                               | who owns a `visibility = 'private'` template            | **set NULL** + archive the record (§1.3)                                                            |
+| `template_version.published_by`                                                      | who published a version                                 | **retain** — the row is immutable by trigger; the id is pseudonymous (§6)                           |
+| `billing_subscription.user_id`                                                       | which account bought the plan                           | **retain** — accounting record; the id is pseudonymous (§6)                                         |
+| `plan_grant.granted_by`                                                              | which operator granted a tier                           | **retain** — operator audit                                                                         |
+| `admin_action.actor_user_id`                                                         | which operator took an audited action                   | **retain**, with `before`/`after` redacted (§6)                                                     |
+| `admin_invite.email`, `invited_by`, `token_hash`                                     | an operator invitation                                  | **delete row** by email                                                                             |
+| `broadcast_send.actor_user_id`                                                       | which operator sent a broadcast                         | **retain** — operator audit                                                                         |
+| `broadcast_recipient.email`                                                          | who a broadcast went to                                 | **retain** with the send, then purge (§6)                                                           |
+| `contact_message.name`, `email`, `message`, `assigned_user_id`                       | a support request and who handled it                    | **delete row** (default; §6 states the hold exception)                                              |
+| `contact_message.ip_hash`, `user_agent`                                              | request evidence                                        | **delete row**                                                                                      |
+| `contact_reply.author_user_id`                                                       | which operator replied                                  | **retain** body; **set NULL** author only if the _operator_ deletes                                 |
+| `news_signup.email`, `source`, `bounced_at`, `complained_at`, `unsubscribed_at`      | a marketing signup                                      | **retain email + `unsubscribed_at` as a suppression row**, drop `source` (§6)                       |
+| `email_event.recipient`, `subject`, `payload`, `ip_hash`                             | delivery events                                         | **retain 90 days then purge** (§6)                                                                  |
+| `password_reset.email`, `user_id`, `token_hash`, `requester_hash`                    | a reset request                                         | **delete rows** by email and user id                                                                |
+| `account_deletion_job.user_id`, `email`, `names`, `roles`                            | the identity of a deletion that is in flight (`0034`)   | **delete the row** when the sweep commits; a finished row keeps the opaque id and two instants (§6) |
+| `demo_account.email`, `user_id`, `password`                                          | the three seeded demo accounts                          | **out of scope** — `@demo.alignsynch.test`-pinned, recreated and deleted by every `db:seed`         |
+| `neon_auth.user`, `neon_auth.account`, `neon_auth.session`, `neon_auth.verification` | identity, linked providers, sessions, verification rows | **delete** — via the auth path, §4                                                                  |
 
 Tables in `public` with **no** person reference, listed so the coverage claim is checkable:
 `item`, `response_option`, `assessment_instance`'s successor `session` except `name`/`voided_by`,
@@ -369,20 +371,27 @@ means nothing has been scrubbed and the account still works: the user sees an ho
 ask support to finish it by runbook. That is recovery from a failed request, never the product's
 deletion route, and no copy may present it as one.
 
+A failed **scrub** is the other half, and it needs its own sentence, because the account is gone by
+then: step 2b's row holds what the completion needs, the runbook finishes it, and the failure copy
+may not say "your account is unchanged" — it says "if you are still signed in, nothing was
+deleted". §7's "When the scrub does not land" is that procedure. It is still recovery, not a
+mechanism: nothing in the product waits for an operator.
+
 ## 6. Retention exceptions
 
 Each is a duration and a reason. "None apply" is stated where that is the honest answer.
 
-| Data                                                                     | Retained                                 | Why                                                                                                                                                                                                                                                              |
-| ------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `billing_subscription`, `billing_event`, `plan_grant`                    | **7 years**                              | Accounting/tax records of a paid plan. The rows carry a pseudonymous `user_id` and a provider id — no name, no email, no card. Today `BILLING_PROVIDER` defaults to `mock`, so this is a live obligation the moment a real provider charges anyone.              |
-| `admin_action` (and its `before`/`after` JSONB)                          | **24 months**                            | Security/audit integrity. `before`/`after` may contain profile fields, so the sweep **redacts** those keys and keeps the action, actor and reason.                                                                                                               |
-| `template_version.published_by`, `template_version.payload.authorUserId` | **indefinite**                           | The row is immutable by trigger (`0026_template_version.sql` raises on any update to `published_by`). A bare account id with no name or email is pseudonymous once the account is gone — no exception is being claimed, there is nothing personal left to erase. |
-| `email_event`, `broadcast_recipient`, `broadcast_send`                   | **90 days**                              | Deliverability, bounce/complaint handling, and abuse investigation. `ip_hash` is a salted hash, not a reversible address.                                                                                                                                        |
-| `news_signup` (email + `unsubscribed_at`)                                | **indefinite**                           | The suppression list. Without the address we cannot honour the opt-out and would email the person again — retaining it is the _less_ intrusive option. `source` is dropped.                                                                                      |
-| `contact_message` / `contact_reply`                                      | **24 months**, then deleted              | Support correspondence. Deleted immediately on request unless a dispute is open.                                                                                                                                                                                 |
-| Fraud / abuse logs beyond the above                                      | **none apply**                           | No dedicated abuse-log table exists. The only evidence is the hashed `ip_hash` on `contact_message` and `email_event`, covered by the rows above.                                                                                                                |
-| Legal hold                                                               | **none apply — and no mechanism exists** | There is no hold flag. If litigation is anticipated an operator must suspend deletion for that account by hand, and the runbook must say so rather than imply a feature.                                                                                         |
+| Data                                                                     | Retained                                 | Why                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `billing_subscription`, `billing_event`, `plan_grant`                    | **7 years**                              | Accounting/tax records of a paid plan. The rows carry a pseudonymous `user_id` and a provider id — no name, no email, no card. Today `BILLING_PROVIDER` defaults to `mock`, so this is a live obligation the moment a real provider charges anyone.                                                                                |
+| `admin_action` (and its `before`/`after` JSONB)                          | **24 months**                            | Security/audit integrity. `before`/`after` may contain profile fields, so the sweep **redacts** those keys and keeps the action, actor and reason.                                                                                                                                                                                 |
+| `template_version.published_by`, `template_version.payload.authorUserId` | **indefinite**                           | The row is immutable by trigger (`0026_template_version.sql` raises on any update to `published_by`). A bare account id with no name or email is pseudonymous once the account is gone — no exception is being claimed, there is nothing personal left to erase.                                                                   |
+| `email_event`, `broadcast_recipient`, `broadcast_send`                   | **90 days**                              | Deliverability, bounce/complaint handling, and abuse investigation. `ip_hash` is a salted hash, not a reversible address.                                                                                                                                                                                                          |
+| `news_signup` (email + `unsubscribed_at`)                                | **indefinite**                           | The suppression list. Without the address we cannot honour the opt-out and would email the person again — retaining it is the _less_ intrusive option. `source` is dropped.                                                                                                                                                        |
+| `contact_message` / `contact_reply`                                      | **24 months**, then deleted              | Support correspondence. Deleted immediately on request unless a dispute is open.                                                                                                                                                                                                                                                   |
+| `account_deletion_job` (finished)                                        | **indefinite**                           | An opaque account id and two instants — no name, no address, no role. The same argument as `template_version.published_by`: pseudonymous once the account is gone. The identity columns exist only while the deletion is unfinished and are cleared by the attempt that commits the sweep (a table CHECK refuses the other shape). |
+| Fraud / abuse logs beyond the above                                      | **none apply**                           | No dedicated abuse-log table exists. The only evidence is the hashed `ip_hash` on `contact_message` and `email_event`, covered by the rows above.                                                                                                                                                                                  |
+| Legal hold                                                               | **none apply — and no mechanism exists** | There is no hold flag. If litigation is anticipated an operator must suspend deletion for that account by hand, and the runbook must say so rather than imply a feature.                                                                                                                                                           |
 
 The deliberate non-exception is §2: the deleted party's `opinion` rows and anonymised seat remain
 because they are the **other** participant's report. That is the other person's data, not the deleted
@@ -395,8 +404,20 @@ text when `/privacy` lands (#270).
 ## 7. Build plan for the follow-up card
 
 Ordered, and the order is load-bearing: the auth deletion comes **before** the `public` scrub, so a
-failed scrub can never leave an account that can still sign in. Every step after 2 is idempotent, and
-the whole sequence is safe to re-run.
+failed scrub can never leave an account that can still sign in. Every step after 2 is idempotent —
+but idempotence is not re-runnability. A re-run also has to know **who** it is completing, and the
+identity it needs (`{user_id, email, names, roles}`) is destroyed by step 3. Step 2 therefore writes
+it down (step 2b) before step 3 destroys it, and "safe to re-run" means what it says: a second
+attempt for the same id reads that row, skips the auth delete, runs the same sweep, and reports the
+same per-table counts.
+
+That paragraph is a correction, not the original claim. Measured on the demo branch
+(`ep-crimson-truth-b4ppwxrp`, t_091acbc0 test T9, code at `796f933a`) with the scrub connection
+injected to fail after a real auth delete: every `public` row rolled back correctly and the account
+answered `401` — and then a second attempt through `runAccountDeletion()` answered
+`unknown-account`, because `authUserOf()` had no row left to read. The person's name and address
+stayed in `party`, `record.summary`, `session.name`, `user_profile`, `contact_message`,
+`news_signup` and the rest of §1.1, with no code path that could have finished the sweep.
 
 1. **`db/migrations/0033_account_deletion.sql`** — the index set in §3.4. Apply with `pnpm db:migrate`,
    then `pnpm db:verify` must be unchanged (no new table, no new column, no `gap`).
@@ -404,16 +425,34 @@ the whole sequence is safe to re-run.
    of `party.name` for each seat the account holds. The email is the only key for `news_signup`,
    `email_event`, `contact_message`, `password_reset`, `admin_invite`; the name is the search string
    for §1.2. Both are consumed in step 4.
+   2b. **Write the identity down** — one `account_deletion_job` row (`0034_account_deletion_job.sql`):
+   `user_id`, `email`, `names`, `roles`, `started_at`. **Before** step 3, because step 3 is the
+   irreversible one, and skipped-if-absent afterwards: a failed auth delete deletes the row with it
+   (nothing was deleted, so there is nothing to resume), and the attempt that commits step 4 clears
+   it (`finished_at = now()` with the identity columns nulled in the same `UPDATE` — a table `CHECK`
+   refuses a finished row that still holds an address).
+
+   **Why a row and not a re-derivation from `public`.** The address is the only key for five of
+   §1.1's tables and no `public` table holds an address joined to an account id: `0003` and `0023`
+   both refuse a second copy of a credential store the app does not own. A retry that re-derived the
+   identity would recover the seats (`party.user_id` survives the rollback) and **no address**, so
+   the email-keyed rows would survive the sweep written to delete them, and the retry would report
+   zeroes while leaving a name and an address in place.
 3. **Delete the auth user** — `DELETE /api/v2/projects/{project_id}/branches/{branch_id}/auth/users/{user_id}`
    with a server-only Neon API key (`NEON_API_KEY` is already project-scoped in `.env`; it must be
-   read on the server and never reach a bundle). Expect `204`. On failure, stop: nothing has been
-   scrubbed, the account still works, and the request can be retried.
+   read on the server and never reach a bundle). Expect `204`. On failure, stop and delete the step-2b
+   row: nothing has been scrubbed, the account still works, and the request can be retried from the
+   card. Skipped entirely on a resume, where the auth user is already gone and a second call would
+   answer `404` and read as a failure.
 4. **Scrub `public` in one transaction** (`lib/account/purge.ts`), in this order:
    session state (void incomplete sessions; never a complete one) → `session_invite` row decision →
    `record.summary` / `session.name` rewrite → `party` anonymise → `relationship` /
    `relationship_member` → `coach_invite` / `admin_invite` / `password_reset` deletes →
    `record` ownership archive → `user_profile` delete → `contact_message` delete → `news_signup`
-   suppress. Return a count per table so a run is auditable.
+   suppress. Return a count per table so a run is auditable. The commit also finishes the step-2b row
+   (`finished_at` + identity cleared), one statement after the last sweep statement: a run that is
+   interrupted between them is still correct, because the sweep is idempotent and a second attempt
+   reports zeroes.
 5. **`db:verify` gains one rule** — no `user_profile` row whose `user_id` is absent from
    `neon_auth.user`, and no `party.user_id` that resolves to nothing while its seat's session is
    still `complete`. `0003`'s header already blesses `db:verify` as the orphan reporter.
@@ -422,22 +461,41 @@ the whole sequence is safe to re-run.
    `components/identity/delete-account-card.tsx` on the surface `/settings` actually draws
    (`components/identity/settings-view.tsx`). The older `components/settings/security-settings.tsx`
    panel has no route since #164: its stale "not available in-app" sentence is corrected in place,
-   and the control is not wired there. The action calls step 2 → 3 → 4 in that order.
+   and the control is not wired there. The action calls step 2 → 2b → 3 → 4 in that order.
 7. **The policy text** — `/privacy` (#270) and the settings copy carry the §5 sentence, not a
    stronger one.
 
 The tests that prove "deleted means gone, and the other party's report still works":
 
-| Test                                                                                                | Proves                                                    |
-| --------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| seed fixture → purge one party → every table in §1.1 has `0` rows or `NULL` for that person         | deleted means gone                                        |
-| the survivor's session still answers `complete`, and `GAP_ROWS_SQL` returns both roles' answers     | the report survives                                       |
-| `party.name` is the label, `admin-instances` `has_account` is `false`, `/profile/<handle>` is `404` | no identity is resolvable                                 |
-| `record.summary` and `session.name` no longer contain the deleted party's name                      | the prose rewrite ran                                     |
-| a session left incomplete is `voided`, not `answering`                                              | §2.4                                                      |
-| the purge run twice changes nothing and returns the same counts                                     | idempotence, which is what makes step 4 retryable         |
-| sign up a throwaway account on the **demo** branch, purge it, assert sign-in now answers `401`      | the auth-side call really deleted the account (§4)        |
-| a purge whose auth call fails leaves every `public` row untouched                                   | the ordering in step 3, which is the one state §2 forbids |
+| Test                                                                                                                        | Proves                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| seed fixture → purge one party → every table in §1.1 has `0` rows or `NULL` for that person                                 | deleted means gone                                                                               |
+| the survivor's session still answers `complete`, and `GAP_ROWS_SQL` returns both roles' answers                             | the report survives                                                                              |
+| `party.name` is the label, `admin-instances` `has_account` is `false`, `/profile/<handle>` is `404`                         | no identity is resolvable                                                                        |
+| `record.summary` and `session.name` no longer contain the deleted party's name                                              | the prose rewrite ran                                                                            |
+| a session left incomplete is `voided`, not `answering`                                                                      | §2.4                                                                                             |
+| the purge run twice changes nothing and returns the same counts                                                             | idempotence, which is what makes step 4 retryable                                                |
+| sign up a throwaway account on the **demo** branch, purge it, assert sign-in now answers `401`                              | the auth-side call really deleted the account (§4)                                               |
+| a purge whose auth call fails leaves every `public` row untouched                                                           | the ordering in step 3, which is the one state §2 forbids                                        |
+| a purge whose scrub fails, then runs again: the second attempt reports a first run's counts and every §1.1 predicate is `0` | step 2b — the resume, which is what "safe to re-run" used to claim without a mechanism behind it |
+
+### When the scrub does not land
+
+The step-2b row is the whole recovery procedure, and **the person cannot drive it**. Their session
+dies with the auth user: measured on the demo branch, `GET /get-session` after the delete answers
+`200` and names no user, so `currentUser()` is `null` and `deleteAccountAction` answers
+`unauthorized` before it can reach the sweep. The failure copy therefore says only what is true —
+"If you are still signed in, nothing was deleted and you can try again" — because "your account is
+unchanged" is false once the auth user is gone. This is a runbook step, not a product route (§5).
+
+1. Find the open rows:
+   `SELECT user_id, started_at FROM account_deletion_job WHERE finished_at IS NULL ORDER BY started_at;`
+2. Re-run the sequence for each id: `runAccountDeletion(user_id)` (`lib/account/purge.ts`). It reads
+   the recorded identity, skips the auth delete, runs the sweep in one transaction, finishes the row,
+   and returns the per-table counts. `deleted` with all-zero counts means the sweep had already
+   landed and only the record was left open.
+3. Confirm: the query in 1 returns no rows, and `pnpm db:verify` is green — V27 names any
+   `user_profile` the interrupted attempt left behind.
 
 Out of scope for this spec, each with its reason: **data export/portability** (GDPR Art. 20 — a
 separate right, a separate mechanism, no reader exists today); **the build itself** (the card that

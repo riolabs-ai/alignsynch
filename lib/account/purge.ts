@@ -567,8 +567,16 @@ export async function deleteAuthUser(userId: string): Promise<void> {
 
 /** What one deletion attempt answered. */
 export type AccountDeletionOutcome =
+  /**
+   * The auth user is gone and the sweep committed. A **resume** after a failed scrub answers the
+   * same thing, with the counts the sweep produced — which is what makes §7's re-run a re-run and
+   * not a second deletion.
+   */
   | { readonly kind: "deleted"; readonly counts: PurgeCounts }
-  /** No auth user carries that id: there is nothing to delete and nothing was touched. */
+  /**
+   * No auth user carries that id **and** no deletion was left unfinished: there is nothing to
+   * delete and nothing was touched.
+   */
   | { readonly kind: "unknown-account" }
   /** The auth-side delete failed, so the scrub never ran. The account still works. */
   | { readonly kind: "auth-failed"; readonly reason: string };
@@ -618,15 +626,128 @@ async function seatsOf(
   };
 }
 
+/* ------------------------------------------------------------------ *
+ * The identity record (§7 step 2b) — what a failed scrub resumes from
+ * ------------------------------------------------------------------ */
+
 /**
- * Delete one account: read who it is, delete the auth user, then scrub `public`.
+ * Write the durable copy of the identity, **before** the auth user is destroyed.
+ *
+ * `0014_relationship_membership`-era `public` holds no address joined to an account id (`0003` and
+ * `0023` both refuse a second copy of a credential store), so an attempt that loses this in memory
+ * can never rebuild it: a re-derivation finds the seats and no email, and the email-keyed rows of
+ * §1.1 outlive the sweep. This row is the retry, which is why it is written on the near side of
+ * the irreversible call and not the far side.
+ *
+ * Written once per attempt and keyed by the account, so a second attempt (a fresh one, or the
+ * resume after a failed scrub) rewrites the same row instead of accumulating. `started_at`
+ * deliberately survives the conflict: it is the instant the first attempt began, which is the one
+ * an operator wants.
+ */
+async function recordIntent(client: PurgeQueryClient, identity: PurgeIdentity): Promise<void> {
+  await client.query(
+    `INSERT INTO account_deletion_job (user_id, email, names, roles, started_at, finished_at)
+     VALUES ($1, $2, $3::text[], $4::text[], now(), NULL)
+     ON CONFLICT (user_id) DO UPDATE
+        SET email = EXCLUDED.email,
+            names = EXCLUDED.names,
+            roles = EXCLUDED.roles,
+            finished_at = NULL`,
+    [identity.userId, identity.email, identity.names, identity.roles],
+  );
+}
+
+/**
+ * The identity an unfinished attempt left behind — `null` when there is none.
+ *
+ * This is the only read that can answer after step 3 has run: the auth user is gone, so
+ * `authUserOf()` finds nothing, and the seats cannot supply the address. An id with a **finished**
+ * row is a deletion that already landed (the row's identity columns are cleared by then), and one
+ * with no row at all was never started, so both answer `null` and the caller reports
+ * `unknown-account` — which is also what keeps a second request against a deleted account a no-op.
+ */
+async function openIntentOf(
+  client: PurgeQueryClient,
+  userId: string,
+): Promise<PurgeIdentity | null> {
+  const { rows } = await client.query(
+    `SELECT user_id::text AS user_id, email::text AS email, names, roles
+       FROM account_deletion_job
+      WHERE user_id = $1 AND finished_at IS NULL`,
+    [userId],
+  );
+  const row = rows[0] as
+    | { user_id: string; email: string; names: string[]; roles: string[] }
+    | undefined;
+  if (row === undefined) return null;
+  return { userId: row.user_id, email: row.email, names: row.names, roles: row.roles };
+}
+
+/**
+ * The sweep landed: stamp the instant and drop the identity in one statement.
+ *
+ * Both halves in one UPDATE, because the table's CHECK refuses a finished row that still carries
+ * an address: "finished" and "no longer holding the person's email" are the same fact, and a
+ * cleanup that could land separately would be a row that is neither.
+ */
+async function finishIntent(client: PurgeQueryClient, userId: string): Promise<void> {
+  await client.query(
+    `UPDATE account_deletion_job
+        SET finished_at = now(), email = NULL, names = '{}', roles = '{}'
+      WHERE user_id = $1 AND finished_at IS NULL`,
+    [userId],
+  );
+}
+
+/**
+ * The auth delete failed, so no deletion happened: the intent row goes with it.
+ *
+ * Best effort on its own connection and every failure swallowed, deliberately. The account still
+ * exists and still works, so a leftover row is a duplicate of what `neon_auth` already holds — not
+ * a leak, and the next attempt rewrites it. Turning a cleanup failure into the answer to the
+ * request would report a failed deletion as something other than `auth-failed`, which is the one
+ * answer that must stay exact.
+ */
+async function abandonIntent(
+  connect: () => Promise<PurgeConnection>,
+  userId: string,
+): Promise<void> {
+  try {
+    const client = await connect();
+    try {
+      await client.query(
+        "DELETE FROM account_deletion_job WHERE user_id = $1 AND finished_at IS NULL",
+        [userId],
+      );
+    } finally {
+      client.release();
+    }
+  } catch {
+    // Nothing to report: see the docstring.
+  }
+}
+
+/**
+ * Delete one account: read who it is, record it, delete the auth user, then scrub `public`.
  *
  * The steps are the spec's, in the spec's order, and the return value says which of the three
  * states the attempt reached. `unknown-account` is answered from the read: an id with no auth row
- * is not a failure to report, it is a deletion that already happened.
+ * **and no unfinished deletion behind it** is a deletion that already happened.
+ *
+ * **A failed scrub is resumable, and that is step 2b's whole purpose.** Everything between the
+ * identity read and the sweep is durable or irreversible, so the one state §7 can leave behind —
+ * auth gone, `public` rolled back — is answered by `account_deletion_job` rather than by memory: a
+ * second call for the same id skips step 3 (there is no auth user to delete, and asking the API
+ * again would answer 404 and read as a failure), runs the same steps with the recorded identity,
+ * and reports the same counts a first-run success would. The row is cleared by that commit.
+ *
+ * The person cannot drive that retry themselves: their session dies with the auth user (measured
+ * on the demo branch — `get-session` answers `200` and names no user), so `deleteAccountAction`
+ * answers `unauthorized` before it could reach this function. The caller that resumes is an
+ * operator with the id — the spec's §7 names the query and the call.
  *
  * Nothing here trusts a caller's claim about who they are — the id comes from the session
- * (`currentUser()`), and the email and seat names come from the database.
+ * (`currentUser()`) or from the runbook, and the email and seat names come from the database.
  */
 export async function runAccountDeletion(
   userId: string,
@@ -637,30 +758,48 @@ export async function runAccountDeletion(
 
   const reader = await connect();
   let identity: PurgeIdentity | null = null;
+  /** Whether the auth row was still there — i.e. whether there is a step 3 left to run. */
+  let authUserPresent = false;
   try {
     const user = await authUserOf(reader, userId);
     if (user !== null) {
       const seats = await seatsOf(reader, userId);
       identity = { userId: user.id, email: user.email, ...seats };
+      authUserPresent = true;
+      // Step 2b, before the irreversible call: if this write fails nothing has been deleted and
+      // the caller can simply try again, which is the direction a failure here must point.
+      await recordIntent(reader, identity);
+    } else {
+      identity = await openIntentOf(reader, userId);
     }
   } finally {
     reader.release();
   }
   if (identity === null) return { kind: "unknown-account" };
 
-  // Step 3, before any scrub: an account that cannot be deleted must not lose its data.
-  try {
-    await deleteAuth(userId);
-  } catch (error) {
-    return {
-      kind: "auth-failed",
-      reason: error instanceof Error ? error.message : "the auth user could not be deleted",
-    };
+  // Step 3, before any scrub: an account that cannot be deleted must not lose its data. Skipped on
+  // the resume path, where the auth user is already gone and a second DELETE would answer 404.
+  if (authUserPresent) {
+    try {
+      await deleteAuth(userId);
+    } catch (error) {
+      // A `404` is not "the delete failed", it is "somebody already deleted it" — a second request
+      // that raced this one, or an operator's runbook call. The row is then **that** attempt's
+      // resume record, so it is left alone; every other failure deleted nothing and takes the row
+      // with it.
+      const alreadyGone = error instanceof AuthUserDeleteError && error.status === 404;
+      if (!alreadyGone) await abandonIntent(connect, userId);
+      return {
+        kind: "auth-failed",
+        reason: error instanceof Error ? error.message : "the auth user could not be deleted",
+      };
+    }
   }
 
   const client = await connect();
   try {
     const counts = await purgeAccount(client, identity);
+    await finishIntent(client, userId);
     return { kind: "deleted", counts };
   } finally {
     client.release();
