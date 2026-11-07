@@ -194,15 +194,17 @@ describe("the removed template sections stayed removed", () => {
     }
   });
 
-  it("names no Data Protection Officer, EU representative, address or retention schedule", () => {
+  it("names no Data Protection Officer, EU representative or address", () => {
     for (const record of [quizHub, alignSynch]) {
       const privacy = legalCopy(record).privacy;
       const headings = (privacy.sections ?? []).map((section) => section.heading ?? "").join(" | ");
       expect(headings).not.toMatch(/data protection officer|eu representative|security measures/i);
       expect(strings(privacy)).toContain("has not appointed a Data Protection Officer");
       expect(strings(privacy)).toContain("designates no EU or UK representative");
-      // A retention table would be a schedule nobody implemented; §7 keeps the verified facts.
-      expect(strings(privacy)).toContain("There is no automated deletion in the current build.");
+      // #278 replaced "no automated deletion" with the real control: the sentence now states the
+      // mechanism and the three retention exceptions the build implements, never an all-erased lie.
+      expect(strings(privacy)).toContain("Deleting your account is immediate and irreversible");
+      expect(strings(privacy)).toContain("Accounting entries for a paid plan are kept for 7 years");
     }
   });
 

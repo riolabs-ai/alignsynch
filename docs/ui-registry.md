@@ -16,7 +16,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **84** — 55 static, 29 dynamic, from `app/**/page.tsx`
-- component domains: **41** — 298 files under `components/`, 292 of them `.tsx`
+- component domains: **41** — 299 files under `components/`, 293 of them `.tsx`
 - route handlers: **21** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 14 · **fixture** 67 · **db** 35 · **live** 8 · **prototype** 1
 - templates: Both templates 42 · AlignSynch 39 · QuizHub 42 · No template yet 2
@@ -163,7 +163,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/settings` — **live**
   - capability: The parts of your account you can change — display name, handle, bio and the country pair — saved through the guarded POST /api/profile.
   - components: `components/identity`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/account/purge.ts`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/support` — **fixture**
   - capability: Account support inside the app: what to include in a message and what actually happens to it (stored in Postgres first, mailed second, read by a person), the links to the help centre and account settings, and a pointer to the one contact form rather than a second copy of it.
@@ -219,7 +219,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/identity` — **live**
   - capability: The account surfaces: the signed-in home, the member profile, the settings form that POSTs /api/profile, sign-out and the demo-account notice.
-  - files (6): `account-home.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `password-card.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
+  - files (7): `account-home.tsx`, `delete-account-card.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `password-card.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
   - routes (3): `/dashboard/user`, `/profile/[username]`, `/settings`
 
 - `components/layout` — **fixture**

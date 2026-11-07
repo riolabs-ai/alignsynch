@@ -125,7 +125,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "termination",
             label: "3.3 Account termination",
-            body: `We reserve the right to suspend or terminate your account for violation of these Terms, fraudulent or abusive conduct, or requests by law enforcement or government agencies.\n\nThe current build has no self-service account deletion. To request deletion of your account and its data, send us a message through ${contact}.`,
+            body: `We reserve the right to suspend or terminate your account for violation of these Terms, fraudulent or abusive conduct, or requests by law enforcement or government agencies.\n\nYou can delete your own account from Account settings while signed in; the deletion is immediate and cannot be undone. What it removes, and the few records that are kept, are described in our Privacy Policy.`,
           },
         ],
       },
@@ -183,7 +183,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "removal",
             label: "6.3 Content removal and the freeze",
-            body: `Once both people in an assessment have answered and accepted their answers, the answers are frozen by design and can no longer be changed. Before a person accepts, they may resubmit their own answers.\n\nTo ask us to remove content, send us a message through ${contact}. There is no automated content or account deletion in the current build; requests are handled manually.`,
+            body: `Once both people in an assessment have answered and accepted their answers, the answers are frozen by design and can no longer be changed. Before a person accepts, they may resubmit their own answers.\n\nAccount deletion is self-service from Account settings and takes effect immediately. What happens to an assessment you took part in when one person deletes their account is described in our Privacy Policy. To ask us to remove anything else, send us a message through ${contact}.`,
           },
         ],
       },
@@ -461,7 +461,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "deletion",
             label: "Deletion",
-            body: `There is no automated deletion in the current build. You may request deletion of your account and its data by sending us a message through ${contact}; requests are handled manually and answered within a reasonable time.`,
+            body: `Deleting your account is immediate and irreversible, and you can do it yourself from Account settings while signed in: there is no grace period, and no way to restore what is deleted. Your profile, your invitations, and the details that identify you in any shared assessment are removed permanently. Assessments you took part in remain for the other participant, with your seat shown as \u201cDeleted account\u201d; your answers stay only as part of their completed report and are no longer linked to your name, email or account. Accounting entries for a paid plan are kept for 7 years and security audit entries for 24 months; we also keep a record of your marketing opt-out so that we do not email you again. None of the three carries your name or address, and none can be joined back to you. You can also ask us to delete your account by sending us a message through ${contact}, and we will do it within 30 days.`,
           },
         ],
       },
@@ -472,7 +472,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "access",
             label: "Access, correction and deletion",
-            body: `You may ask us for a copy of the personal information we hold about you, ask for corrections, or ask that we delete it, by sending us a message through ${contact}. Self-service tools in the current build are limited, so the contact form is the supported channel.`,
+            body: `You may ask us for a copy of the personal information we hold about you, or ask for corrections to it, by sending us a message through ${contact}. You can delete your account yourself from Account settings, as described under Deletion above; exporting your data as a file is not a self-service feature in this build.`,
           },
           {
             id: "california",
