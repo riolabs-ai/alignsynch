@@ -143,16 +143,28 @@ describe("the ladder decides the rows", () => {
     owner: hrefsFor("owner"),
   };
 
-  it("gives a member the six rows that are theirs, and no staff row", () => {
+  it("gives a member the four rows that are theirs, and no staff row", () => {
     expect(MENUS.member).toEqual([
-      "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",
-      "/dashboard/library",
       "/dashboard/help",
       "/dashboard/support",
     ]);
     expect(MENUS.member.filter((href) => href.startsWith("/admin"))).toEqual([]);
+  });
+
+  /**
+   * #620 — the Workspace group is **exactly two rows**, and the assertion is over the descriptor
+   * rather than a screenshot: a menu is data, and a count of two is the thing the issue asked for.
+   * The two ids are the owner's words, so a third row cannot be added back without naming it here.
+   */
+  it("draws exactly two Workspace rows — My Relationships and Templates, and nothing else", () => {
+    const workspace = ALIGN_MENU.find((group) => group.label === "group-app");
+    expect(workspace?.items.map((item) => item.id)).toEqual(["my-relationships", "templates"]);
+    expect(workspace?.items.map((item) => item.href)).toEqual([
+      "/dashboard/relationships",
+      "/dashboard/templates",
+    ]);
   });
 
   it("gives a support seat the member's rows plus the one queue it works", () => {
@@ -174,7 +186,7 @@ describe("the ladder decides the rows", () => {
 
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
-    expect(counts).toEqual([6, 7, 14, 14]);
+    expect(counts).toEqual([4, 5, 12, 12]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);
@@ -240,8 +252,10 @@ describe("the rendered rail", () => {
         .filter((tag) => tag.includes("bg-nav-active"))
         .map((tag) => /href="([^"]*)"/.exec(tag)?.[1] ?? "");
 
-    expect(activeOf("/dashboard")).toEqual(["/dashboard"]);
-    // A child page keeps its list row lit, and does not light Overview with it.
+    // #620 removed the Overview row, so `/dashboard` lights nothing: the rail has no row it
+    // could mark, and a rail that marked a row it does not draw would be the same bug mirrored.
+    expect(activeOf("/dashboard")).toEqual([]);
+    // A child page keeps its list row lit.
     expect(activeOf("/dashboard/relationships/abc")).toEqual(["/dashboard/relationships"]);
     expect(activeOf("/admin/console", "admin")).toEqual(["/admin/console"]);
   });

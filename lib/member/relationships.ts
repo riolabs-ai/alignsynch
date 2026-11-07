@@ -97,6 +97,17 @@ import {
 export const MEMBER_RELATIONSHIPS_PATH = "/dashboard/relationships";
 
 /**
+ * One relationship's own screen (#620).
+ *
+ * The only surface that configures or publishes a relationship, so both the card's title and its
+ * `Publish Assessment` action point here — a path spelled in two components would be two copies of
+ * one route, which is the drift `lib/flow/paths.ts` exists to prevent.
+ */
+export function memberRelationshipPath(relationshipId: string): string {
+  return `${MEMBER_RELATIONSHIPS_PATH}/${relationshipId}`;
+}
+
+/**
  * The pool in the shape `lib/relationship/enforcement.ts` reads through.
  *
  * The two pre-flight reads below (`trialHolderOf`) happen outside `act()`'s transaction, because

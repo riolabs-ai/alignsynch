@@ -84,12 +84,14 @@ export interface NavGroup {
  * The alignment rail, in the order the owner's review set: the reader's own work, then the support
  * surfaces, then the operator's group.
  *
- * **The Workspace rows are the member's four dashboards, and the two catalogue rows are gone.**
- * "My Relationships" and "My Templates" are `/dashboard/relationships` and `/dashboard/templates` —
- * the pages #533 phase 2 shipped, titled after these words — rather than the two `/assessment/*`
- * lists the rail used to point at (a party's assessment list and the public catalogue). Those two
- * are not deleted: the Overview's own cards open the first, and My Templates' clone band is the
- * second, so the rail keeps the four rows that are *this person's work* and the hub keeps the rest.
+ * **The Workspace group is two rows — #620 merged the four.** `My Relationships` is
+ * `/dashboard/relationships` (the relationship *and* its assessment, in one list) and `Templates`
+ * is `/dashboard/templates` (one destination, two tabs: the catalogue and what this member owns).
+ * The rows this replaced were `/dashboard` (the Overview), `My Templates` and `Library`; the last
+ * two named three shelves a person had to tell apart, and the third — `/dashboard/library` — is a
+ * 308 to the Templates tab that absorbed it (`next.config.mjs`). The Overview keeps answering at
+ * `/dashboard`; it is no longer a rail row, because the two rows above are the work and the
+ * brand's own link is the way home.
  *
  * **Admin leads with `/admin/console`.** The console is the hub for its own subtree (users,
  * templates, relationships), and it had no entry anywhere in the UI — the defect this card exists
@@ -109,15 +111,13 @@ export const ALIGN_MENU: readonly NavGroup[] = [
   {
     label: "group-app",
     items: [
-      { id: "dashboard", href: "/dashboard", icon: "dashboard", needs: "member", exact: true },
       {
         id: "my-relationships",
         href: "/dashboard/relationships",
         icon: "relationships",
         needs: "member",
       },
-      { id: "my-templates", href: "/dashboard/templates", icon: "templates", needs: "member" },
-      { id: "template-library", href: "/dashboard/library", icon: "library", needs: "member" },
+      { id: "templates", href: "/dashboard/templates", icon: "templates", needs: "member" },
     ],
   },
   {

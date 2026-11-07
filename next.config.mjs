@@ -184,6 +184,19 @@ const nextConfig = {
       { source: "/earnings", destination: "/dashboard/user?tab=wallet", permanent: true },
       { source: "/analytics", destination: "/dashboard/user?tab=my-quizzes", permanent: true },
       { source: "/signup", destination: "/register", permanent: true },
+      /**
+       * #620 — the member's menu went from four rows to two, and `Library` was one of the three
+       * "templates" doors that became the second tab of `/dashboard/templates`. The page is gone
+       * (not hidden behind this redirect: a `permanent: true` source runs before the filesystem
+       * route, so a page left in `app/` would be built and unreachable — the rule
+       * `tests/route-redirects.test.ts` exists for). A bookmark, an external link or cached
+       * markup still lands on the shelf that absorbed it.
+       */
+      {
+        source: "/dashboard/library",
+        destination: "/dashboard/templates?tab=mine",
+        permanent: true,
+      },
       // `/testimonials/jessica.png` is deliberately NOT redirected any more (issue #155).
       // It pointed at `/avatars/mind.webp`, one of the nine shared avatar files #152
       // deleted, so it became a 308 to a 404 — worse than the 404 it replaced, because a

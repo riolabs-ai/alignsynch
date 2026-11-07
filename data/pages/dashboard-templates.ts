@@ -23,9 +23,9 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
-  heading: "My templates",
+  heading: "Templates",
   subtitle:
-    "The templates you wrote, and the two ways to start one. A template here is yours alone: it is never listed publicly, and a relationship you start from it copies its Aspects so you can tune them before anyone is invited.",
+    "One destination, two shelves: the Relationship Templates you can start a relationship from, and the templates you own.",
   items: [
     { id: "aspects", label: "{count} Aspects" },
     { id: "relationships", label: "{count} relationships" },
@@ -34,6 +34,58 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     { id: "draft", label: "Draft" },
   ],
   sections: [
+    /**
+     * #620 — the two tabs. `catalogue` is the bare path and `mine` is `?tab=mine`, so a link to
+     * either is a URL a `curl` can ask for; the words are the owner's ("Relationship Templates",
+     * "My Templates"), verbatim.
+     */
+    {
+      id: "tabs",
+      items: [
+        { id: "catalogue", label: "Relationship Templates" },
+        { id: "mine", label: "My Templates" },
+      ],
+    },
+    /**
+     * The card's own words, shared by both tabs — one shelf, two reads. `details` and `create`
+     * are the owner's button labels, and the catalogue never says "instance": a relationship is
+     * what a person starts, and a session is what publishing one opens.
+     */
+    {
+      id: "card",
+      items: [
+        { id: "template", label: "Template" },
+        { id: "details", label: "View Details" },
+        { id: "create", label: "Create Relationship" },
+        { id: "owned", label: "Yours" },
+        { id: "adopted", label: "Adopted" },
+        { id: "aspects", label: "{count} Aspects" },
+        { id: "price", label: "{price} per relationship" },
+        { id: "unused", label: "Not used yet" },
+        { id: "relationship-one", label: "used in 1 relationship" },
+        { id: "relationships", label: "used in {count} relationships" },
+      ],
+    },
+    {
+      id: "catalogue",
+      heading: "Relationship Templates",
+      body: "The templates this account can start a relationship from. Each card carries the price of the relationship it opens; View Details shows the Aspects, and Create Relationship copies them into a relationship you configure.",
+    },
+    {
+      id: "catalogue-empty",
+      heading: "The catalogue is empty",
+      body: "No template is published yet, so there is nothing to start a relationship from. An operator publishes the catalogue's templates.",
+    },
+    {
+      id: "mine",
+      heading: "My Templates",
+      body: "The templates you own and the ones your relationships were built from. Opening one you own edits its words and its Aspects; starting a relationship from it copies those Aspects, so editing here never changes a relationship you have already configured.",
+    },
+    {
+      id: "mine-empty",
+      heading: "No templates yet",
+      body: "Start one below — blank, or cloned from the catalogue. A relationship starts from a template, so this is where the work begins.",
+    },
     {
       id: "list",
       heading: "Your templates",
