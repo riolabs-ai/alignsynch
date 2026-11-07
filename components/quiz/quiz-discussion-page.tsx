@@ -4,7 +4,7 @@
 
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -160,9 +160,9 @@ function DiscussionCard({ discussion }: { discussion: QuizDiscussionSummary }) {
                     {commentCount} {commentCount === 1 ? "comment" : "comments"}
                   </span>
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <span className={buttonVariants({ variant: "outline", size: "sm" })}>
                   View Discussion
-                </Button>
+                </span>
               </div>
             </div>
 
