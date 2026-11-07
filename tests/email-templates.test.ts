@@ -1,5 +1,5 @@
 /**
- * The ten templates through the band (#548).
+ * The twelve templates through the band (#548).
  *
  * Every property below is asserted for **every** template the same way, because the card states
  * them as rules rather than as copy:
@@ -14,8 +14,8 @@
  *      `&amp;` and lose the reader's characters, which is the failure the issue names.
  *   3. **The subject is the spec's**, filled with the record's facts.
  *   4. **The class decides the footer, in both directions.** #9 is the only marketing template: it
- *      carries the unsubscribe line and the band refuses to render it without a URL. The other nine
- *      carry none and the band refuses to be handed one.
+ *      carries the unsubscribe line and the band refuses to render it without a URL. The other
+ *      eleven carry none and the band refuses to be handed one.
  *   5. **Nothing is invented.** The body is the `{{content_to_refine}}` marker plus the facts it was
  *      handed, and the message carries only the addresses it names — no metric, no rating, no
  *      customer name, no promise.
@@ -38,7 +38,9 @@ import {
   invitationTemplate,
   joinedTemplate,
   membershipLapsedTemplate,
+  paymentReminderTemplate,
   purchaseConfirmationTemplate,
+  relationshipExpiredTemplate,
   releaseNoteTemplate,
   reminderTemplate,
   renderTemplate,
@@ -251,6 +253,43 @@ const SAMPLES: readonly Sample[] = [
       mustSay: ["Avery", "Basic"],
     },
   ),
+  sample(
+    paymentReminderTemplate,
+    {
+      recipient: "Avery",
+      template: "Relationship Basics",
+      day: 3,
+      amountCents: 1900,
+      expiresAt: new Date("2026-11-15T12:00:00.000Z"),
+      link: RELATIONSHIP,
+    },
+    {
+      name: "payment reminder (#11)",
+      subject: "The fee for Relationship Basics is still unpaid",
+      links: [RELATIONSHIP],
+      // Every sentence is a fact from the row — the amount the job will charge, the deadline the
+      // obligation expires at — so this one carries no `{{content_to_refine}}` marker.
+      mustSay: ["Avery", "Relationship Basics", "2026-11-15", "$19.00"],
+      marker: false,
+    },
+  ),
+  sample(
+    relationshipExpiredTemplate,
+    {
+      recipient: "payer",
+      name: "Avery",
+      template: "Relationship Basics",
+      expiredAt: new Date("2026-11-15T12:00:00.000Z"),
+      link: RELATIONSHIP,
+    },
+    {
+      name: "relationship expired (#12)",
+      subject: "The relationship Relationship Basics expired",
+      links: [RELATIONSHIP],
+      mustSay: ["Avery", "Relationship Basics", "2026-11-15"],
+      marker: false,
+    },
+  ),
 ];
 
 const TRANSACTIONAL = SAMPLES.filter((item) => item.emailClass === "transactional");
@@ -362,7 +401,7 @@ describe("the class rule holds in both directions", () => {
   });
 
   it("every transactional template carries none", () => {
-    expect(TRANSACTIONAL).toHaveLength(9);
+    expect(TRANSACTIONAL).toHaveLength(11);
     for (const item of TRANSACTIONAL) {
       const rendered = item.render();
       expect(rendered.text).not.toContain("Unsubscribe");
@@ -384,9 +423,9 @@ describe("the class rule holds in both directions", () => {
 });
 
 describe("the register", () => {
-  it("holds templates 1–10, in order, once each", () => {
+  it("holds templates 1–12, in order, once each", () => {
     expect(EMAIL_TEMPLATES.map((template) => template.numeral)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
     ]);
     const ids = EMAIL_TEMPLATES.map((template) => template.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -394,7 +433,7 @@ describe("the register", () => {
     expect([...ids].sort()).toEqual(SAMPLES.map((item) => item.id).sort());
   });
 
-  it("is transactional for nine of them and marketing for the signup confirmation only", () => {
+  it("is transactional for eleven of them and marketing for the signup confirmation only", () => {
     for (const item of SAMPLES) {
       expect(templateById(item.id)?.emailClass).toBe(item.emailClass);
     }

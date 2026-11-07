@@ -17,10 +17,12 @@
  *                 existing `payment-failed` lapse reason, whose vocabulary predates this card and
  *                 whose CHECK is a merged migration — a new word there is a migration for a
  *                 sentence, not a fact.
- *   remind        **reported, not delivered, unless a delivery function is supplied.** Email and
- *                 in-app copy for the day-3/day-10 nags belong to the notification surface, and a
- *                 job that stamped "reminder sent" without sending one would be the exact defect
- *                 this card exists to remove (a stored fact that no work backs).
+ *   remind        the day-3 / day-10 nag. **Sent, then stamped** — and never the other way round:
+ *                 `notify` is called first, and `reminder_day3_at` / `reminder_day10_at` is written
+ *                 only because the call resolved. With no delivery function supplied (a caller that
+ *                 has not built `lib/member/payment-notice.ts` into its run) the job reports
+ *                 `pending-delivery` and writes nothing, which is the honest answer: the nag is
+ *                 owed and unsent.
  *
  * **No clock of its own.** `now` is the caller's, so a test pins "day 3 has arrived" exactly and a
  * run cannot straddle two instants.
@@ -57,7 +59,11 @@ export type PaymentJobOutcome =
     }
   /** The obligation and its relationship ended. */
   | { readonly kind: "expire"; readonly status: "expired"; readonly reason: string }
-  /** A nag is owed; delivered when a notifier was supplied, otherwise reported only. */
+  /**
+   * A nag is owed. `sent` means the transport took the message and the day's stamp was written;
+   * `pending-delivery` means it was not delivered — no notifier, no address, no mailer, or a
+   * refused send — and nothing was stamped, so the next run owes it again.
+   */
   | {
       readonly kind: "remind";
       readonly status: "sent" | "pending-delivery";
@@ -79,8 +85,10 @@ export interface PaymentJobRun {
 /**
  * The delivery seam (#619).
  *
- * The notification card plugs a function in here; until then the job reports the nag as
- * `pending-delivery` and writes nothing, so no row claims a message that was never sent.
+ * `lib/member/payment-notice.ts` is the implementation; anything else may be plugged in here for a
+ * test or a different channel. **Contract: a call that resolves means the message was delivered.** A
+ * notifier that could not send throws (`PaymentNoticeUndelivered`), and the reminder job then
+ * reports `pending-delivery` and writes no stamp — the one rule this seam exists to enforce.
  */
 export type PaymentNotice = (
   input:
@@ -162,7 +170,20 @@ async function executeJob(
       // stored fact has work behind it).
       return { kind: "remind", status: "pending-delivery", day: job.day };
     }
-    await options.notify({ kind: "remind", relationshipId, day: job.day });
+    try {
+      await options.notify({ kind: "remind", relationshipId, day: job.day });
+    } catch (error) {
+      // Delivery is what the stamp records, so a failed send writes nothing and the nag stays
+      // owed: the next run finds it due again. Logged here rather than thrown, because the rest of
+      // the scan is unrelated to this mailbox and the run's report still has to say what it did.
+      console.warn(
+        `payment reminder ${relationshipId} day ${job.day} was not delivered (${
+          error instanceof Error ? error.message : String(error)
+        }) — no reminder timestamp was written`,
+      );
+      return { kind: "remind", status: "pending-delivery", day: job.day };
+    }
+    // Only now. The order of these two statements is the card's acceptance criterion.
     await markReminderSent(sql, { relationshipId, day: job.day, at: options.now });
     return { kind: "remind", status: "sent", day: job.day };
   }
@@ -171,7 +192,17 @@ async function executeJob(
     const ended = await expireObligation(sql, obligation, options.now, job.reason);
     if (ended === false) return null;
     if (options.notify !== undefined) {
-      await options.notify({ kind: "expired", relationshipId, reason: job.reason });
+      try {
+        await options.notify({ kind: "expired", relationshipId, reason: job.reason });
+      } catch (error) {
+        // The expiry is already stored — it is a state fact, not a delivery fact — so a notice
+        // that could not go out must not erase the outcome from this run's report.
+        console.error(
+          `payment expiry notice ${relationshipId} was not delivered (${
+            error instanceof Error ? error.message : String(error)
+          }) — the obligation is expired regardless`,
+        );
+      }
     }
     return { kind: "expire", status: "expired", reason: job.reason };
   }
