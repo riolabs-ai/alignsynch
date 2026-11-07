@@ -16,9 +16,12 @@
  *     function's directory has no `.git`, and `db:verify` cannot be run inside a render at all —
  *     the card says so. Every live read therefore has a recorded fallback, and the fallback carries
  *     the record's own `measuredAt` into the page.
- *   - **nothing else.** There is no clock here: no `new Date()`, no `Date.now()`, no relative label.
- *     A health screen whose "2 minutes ago" was computed at render time would be rendered twice,
- *     by the server and at hydration, and would disagree with itself (`#418`, `AGENTS.md`).
+ *   - **nothing else.** There is no clock here: no `new Date()`, no `Date.now()`, no relative label
+ *     computed at render. The one instant this module needs — the age of the record against the
+ *     declared freshness window (#599) — is a **parameter** (`healthFactsOf(record, nowIso)`), so
+ *     the page takes the clock once per request and every derivation here stays pure. A health
+ *     screen whose "2 minutes ago" was computed inside the component would be rendered twice, by
+ *     the server and at hydration, and would disagree with itself (`#418`, `AGENTS.md`).
  *
  * **Read-only, structurally.** This module imports `node:fs` and `node:child_process` and nothing
  * from the write path — `lib/admin/act.ts` is the console's only mutation entry point and it is not
@@ -364,6 +367,103 @@ export function deployDriftOf(input: { behind: Measured<number>; limit: DriftLim
 }
 
 /* ------------------------------------------------------------------ *
+ * Freshness — a record older than its window is history, not status (#599)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The declared window, in hours, for a record that can be read as *current*.
+ *
+ * 72 hours is a declaration, not a magic number: the record carries `db:verify`, a gate run and a
+ * production probe, all of which are re-takeable in minutes, and the defect #599 records was a
+ * snapshot four days old being rendered as the platform's state. An operator who needs a different
+ * window sets `PLATFORM_HEALTH_FRESHNESS_HOURS`; the default applies, and says so.
+ *
+ * The threshold is **not** written into the record: it is a policy about the record, not a
+ * measurement in it, so a record does not have to be re-recorded when an operator moves the knob,
+ * and `content/platform-health.ts`'s shape is unchanged by this assertion.
+ */
+export const DEFAULT_FRESHNESS_HOURS = 72;
+
+/** The knob an operator turns to move the freshness window. */
+export const FRESHNESS_VARIABLE = "PLATFORM_HEALTH_FRESHNESS_HOURS";
+
+export interface FreshnessWindow {
+  readonly hours: number;
+  readonly origin: "env" | "default";
+  readonly variable: string;
+  /** A configured value that is not a count. Reported, never silently replaced. */
+  readonly problem: string | null;
+}
+
+/** `PLATFORM_HEALTH_FRESHNESS_HOURS=0` is legal ("the record must be from this minute"). */
+export function freshnessWindowFromEnv(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): FreshnessWindow {
+  const raw = env[FRESHNESS_VARIABLE];
+  if (raw === undefined || raw.trim() === "") {
+    return {
+      hours: DEFAULT_FRESHNESS_HOURS,
+      origin: "default",
+      problem: null,
+      variable: FRESHNESS_VARIABLE,
+    };
+  }
+  if (!/^\d+$/.test(raw.trim())) {
+    return {
+      hours: DEFAULT_FRESHNESS_HOURS,
+      origin: "default",
+      problem: `${FRESHNESS_VARIABLE}="${raw}" is not a whole number of hours; the default applies`,
+      variable: FRESHNESS_VARIABLE,
+    };
+  }
+  return {
+    hours: Number.parseInt(raw.trim(), 10),
+    origin: "env",
+    problem: null,
+    variable: FRESHNESS_VARIABLE,
+  };
+}
+
+export interface RecordFreshness {
+  readonly recordedAt: string;
+  /** Hours between the record's `recordedAt` and the instant the caller measured. `null` if unreadable. */
+  readonly ageHours: number | null;
+  readonly window: FreshnessWindow;
+  /** Past the window — the record is history and the screen must say so. */
+  readonly stale: boolean;
+}
+
+/**
+ * How old the record is, against the declared window.
+ *
+ * **The instant is a parameter.** This module holds no clock (`#418`): the page passes one instant
+ * per request, which keeps the whole derivation pure and testable — a freshness check that called
+ * `Date.now()` itself could not be driven at both sides of its own boundary.
+ *
+ * The comparison is strict: a record exactly at the window is still inside it, and one second past
+ * is not. A record stamped in the future (a machine with a wrong clock) reads as age 0 rather than
+ * as fresh-forever, because a negative age is a clock fault, not youth.
+ */
+export function freshnessOf(
+  record: PlatformHealthRecord,
+  nowIso: string,
+  window: FreshnessWindow = freshnessWindowFromEnv(),
+): RecordFreshness {
+  const recorded = Date.parse(record.recordedAt);
+  const now = Date.parse(nowIso);
+  const ageHours =
+    Number.isFinite(recorded) && Number.isFinite(now)
+      ? Math.round((Math.max(0, now - recorded) / 3_600_000) * 10) / 10
+      : null;
+  return {
+    ageHours,
+    recordedAt: record.recordedAt,
+    stale: ageHours !== null && ageHours > window.hours,
+    window,
+  };
+}
+
+/* ------------------------------------------------------------------ *
  * Everything the screen renders, in one value
  * ------------------------------------------------------------------ */
 
@@ -379,10 +479,17 @@ export interface HealthFacts {
   readonly tree: TreeFacts;
   readonly release: ReleaseTruth;
   readonly drift: DeployDrift;
+  readonly freshness: RecordFreshness;
 }
 
+/**
+ * `nowIso` is handed in rather than read here: the page decides "now" exactly once per request
+ * (it is the only place a clock is allowed) and this function stays a pure derivation of the
+ * record, the checkout and that instant (#599).
+ */
 export function healthFactsOf(
   record: PlatformHealthRecord,
+  nowIso: string,
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): HealthFacts {
   const tree = readTreeFacts(record);
@@ -397,5 +504,6 @@ export function healthFactsOf(
     behind: readBehindMain(record, production.commit),
     limit: driftLimitFromEnv(env),
   });
-  return { record, tree, release, drift };
+  const freshness = freshnessOf(record, nowIso, freshnessWindowFromEnv(env));
+  return { drift, freshness, record, release, tree };
 }
