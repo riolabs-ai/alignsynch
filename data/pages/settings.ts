@@ -137,7 +137,7 @@ export const settingsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "deletion",
       heading: "Delete your account",
-      body: "Deleting your account removes your profile, your invitations, and the details that identify you in any shared assessment, permanently. Assessments you took part in remain for the other participant, with your seat shown as \u201cDeleted account\u201d. Your answers stay only as part of their completed report and are no longer linked to your name, email or account. Deletion cannot be undone and there is no grace period.",
+      body: "Deleting your account is immediate and irreversible, and you can do it yourself from Account settings while signed in: there is no grace period, and no way to restore what is deleted. Your profile, your invitations, and the details that identify you in any shared assessment are removed permanently. Assessments you took part in remain for the other participant, with your seat shown as \u201cDeleted account\u201d; your answers stay only as part of their completed report and are no longer linked to your name, email or account. Deletion cannot be undone and there is no grace period.",
       items: [
         { id: "confirm-phrase", label: "delete my account" },
         { id: "confirm-label", label: "Type {phrase} to confirm" },
@@ -156,7 +156,7 @@ export const settingsPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "retained",
           label:
-            "Accounting records, security audit entries and a marketing suppression row are kept, without your name or address attached to anything you can be found by.",
+            "Accounting records and security audit entries are kept without your name or address. We also keep your email address on a marketing opt-out list, and nothing else from it, so that we do not email you again.",
         },
       ],
     },
