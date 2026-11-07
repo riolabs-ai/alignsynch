@@ -15,10 +15,11 @@
  * house move.
  *
  * **The class is the column that decides the footer, so `renderTemplate()` forwards the one input
- * it needs.** Nine of the ten are transactional and carry no unsubscribe line. #9 is the marketing
- * one, and its unsubscribe URL is a per-recipient token — it cannot live in a fixture, so it is an
- * option on `renderTemplate()` and reaches the band unchanged. A caller that forgets it gets the
- * band's own throw ("a marketing mail needs an unsubscribe URL"), not a mail with no way out.
+ * it needs.** Eleven of the twelve are transactional and carry no unsubscribe line. #9 is the
+ * marketing one, and its unsubscribe URL is a per-recipient token — it cannot live in a fixture, so
+ * it is an option on `renderTemplate()` and reaches the band unchanged. A caller that forgets it
+ * gets the band's own throw ("a marketing mail needs an unsubscribe URL"), not a mail with no way
+ * out.
  *
  * **Text first holds for every entry by construction.** Each `document()` returns blocks; the
  * only way to get bodies is `renderTemplate()`, which composes the text and derives the HTML from
@@ -61,6 +62,16 @@ import {
   purchaseConfirmationDocument,
   type PurchaseConfirmationFacts,
 } from "@/lib/email/templates/purchase-confirmation";
+import {
+  paymentReminderDocument,
+  paymentReminderSubject,
+  type PaymentReminderFacts,
+} from "@/lib/email/templates/payment-reminder";
+import {
+  relationshipExpiredDocument,
+  relationshipExpiredSubject,
+  type RelationshipExpiredFacts,
+} from "@/lib/email/templates/relationship-expired";
 
 /** One mail: its identity, its class, and the pure functions that build it. */
 export interface EmailTemplate<Facts> {
@@ -176,6 +187,33 @@ export const purchaseConfirmationTemplate: EmailTemplate<PurchaseConfirmationFac
 };
 
 /**
+ * #11 — the day-3 / day-10 fee reminder. The **payer** is the only recipient (the fee is theirs to
+ * pay, and the counterparty is told no billing detail at any point), and the message is the thing
+ * `reminder_day3_at` / `reminder_day10_at` are the record *of*: `lib/member/payment-notice.ts`
+ * sends it and `lib/member/payment-job-run.ts` stamps only after the transport says `sent`.
+ */
+export const paymentReminderTemplate: EmailTemplate<PaymentReminderFacts> = {
+  id: "payment-reminder",
+  numeral: 11,
+  emailClass: "transactional",
+  subject: paymentReminderSubject,
+  document: paymentReminderDocument,
+};
+
+/**
+ * #12 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
+ * no figure and no fee: `expire` is the one job whose notice cannot be the fact (the state is
+ * already terminal and stored), so this template is a courtesy rather than a stamp's evidence.
+ */
+export const relationshipExpiredTemplate: EmailTemplate<RelationshipExpiredFacts> = {
+  id: "relationship-expired",
+  numeral: 12,
+  emailClass: "transactional",
+  subject: relationshipExpiredSubject,
+  document: relationshipExpiredDocument,
+};
+
+/**
  * Every template, in the spec's order. The union is written out so `EMAIL_TEMPLATES` stays a
  * readable list whose entries each keep their own fact type; a bare `EmailTemplate<unknown>` would
  * force every `document()` to accept a shape it does not use.
@@ -190,7 +228,9 @@ export type RegisteredEmailTemplate =
   | EmailTemplate<MembershipLapsedFacts>
   | EmailTemplate<SupportReplyFacts>
   | EmailTemplate<SignupConfirmationFacts>
-  | EmailTemplate<PurchaseConfirmationFacts>;
+  | EmailTemplate<PurchaseConfirmationFacts>
+  | EmailTemplate<PaymentReminderFacts>
+  | EmailTemplate<RelationshipExpiredFacts>;
 
 export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   releaseNoteTemplate,
@@ -203,6 +243,8 @@ export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   supportReplyTemplate,
   signupConfirmationTemplate,
   purchaseConfirmationTemplate,
+  paymentReminderTemplate,
+  relationshipExpiredTemplate,
 ];
 
 /** What a caller gets back: the document it was built from, and the two bodies. */

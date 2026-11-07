@@ -42,7 +42,7 @@ import { brand } from "@/data/brand";
 import { resetRequestPageCopy } from "@/data/pages/password-reset";
 import { invitationTemplate, renderTemplate } from "@/lib/email/templates";
 import { RESET_TTL_MINUTES } from "@/lib/auth/reset-token";
-import { instancePath } from "@/lib/flow/paths";
+import { instancePath, relationshipScreenPath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** Resend's documented send endpoint. `fetch` is the client; no SDK, no dependency. */
@@ -108,6 +108,18 @@ export function invitationLink(token: string, base = baseUrl()): string {
  */
 export function instanceLink(instanceRecordId: string, base = baseUrl()): string {
   return `${base.replace(/\/+$/, "")}${instancePath(instanceRecordId)}`;
+}
+
+/**
+ * The link a payment notice carries: the relationship's own screen, and no token.
+ *
+ * The recipient reached this address by signing in — the same credential the page reads — so the
+ * notice never mints, repeats or needs one. A money message with a bearer credential in the path
+ * would be the worst place in the product for one: a forwarded mail would carry a link that opens
+ * someone else's billing screen.
+ */
+export function relationshipLink(relationshipId: string, base = baseUrl()): string {
+  return `${base.replace(/\/+$/, "")}${relationshipScreenPath(relationshipId)}`;
 }
 
 export interface InvitationFields {
@@ -238,7 +250,14 @@ export interface MailMessage {
 }
 
 /** Which of this flow's messages is being sent — the log prefix, and the sentence's noun. */
-export type MailSender = "invite" | "joined" | "unlock" | "reset" | "news" | "broadcast";
+export type MailSender =
+  | "invite"
+  | "joined"
+  | "unlock"
+  | "reset"
+  | "news"
+  | "broadcast"
+  | "payment";
 
 /**
  * The senders' log sentences, in one table because they must stay parallel: the label
@@ -287,6 +306,16 @@ const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: str
   broadcast: {
     noun: "broadcast",
     unsent: "this recipient did not receive the notice",
+  },
+  /**
+   * The relationship fee's reminder and expiry notices (#619). The `unsent` tail is the one that
+   * matters most in this table: the stamp (`reminder_day3_at` / `reminder_day10_at`) is only
+   * written after a `sent`, so a line this says means the nag is still **owed** — the next run
+   * finds it due again — and never that it was quietly dropped.
+   */
+  payment: {
+    noun: "payment notice",
+    unsent: "the nag stays owed, so the next run attempts it again",
   },
 };
 

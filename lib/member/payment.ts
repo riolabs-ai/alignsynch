@@ -64,6 +64,7 @@ import {
   recordMethodCaptured,
 } from "@/lib/db/relationship-payment";
 import { completionRefusalOf, paymentArmedOf, type PaymentRefusal } from "@/lib/flow/payment";
+import { relationshipScreenPath } from "@/lib/flow/paths";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
 import { MemberRefused } from "@/lib/member/publish-basis";
 
@@ -98,7 +99,8 @@ export function captureReturnPath(relationshipId: string): string {
 
 /** Where the payer lands once the method is recorded — the relationship's own page. */
 export function relationshipPath(relationshipId: string): string {
-  return `/dashboard/relationships/${encodeURIComponent(relationshipId)}`;
+  // One home for the address: `lib/flow/paths.ts` also builds it for the payment notice's link.
+  return relationshipScreenPath(relationshipId);
 }
 
 /**
