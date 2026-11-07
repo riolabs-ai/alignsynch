@@ -46,6 +46,11 @@
 # Known limits block, is drift in a document people read. The file is docs, the
 # script is config, `package.json` is config — three lanes, one check, ~0.1 s.
 #
+# THE RELEASE BLOG STEP IS IN EVERY LANE TOO (#652). `docs/changelog/` is a view of
+# `CHANGELOG.md` — the date, the tag, the entry's sections and the Known limits block
+# are copied into each page by `scripts/changelog-view.mjs` — so the entry is docs,
+# the generator is config and the pages are docs: the same three lanes, one check.
+#
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
@@ -428,6 +433,18 @@ if has_script "release:check"; then
   run_step "release:check (CHANGELOG entry matches the version and the commits)" pnpm release:check || fail
 else
   skip_step "release:check" "no release:check script in package.json"
+fi
+
+# The release blog under `docs/changelog/` is a *view* of `CHANGELOG.md` (#652): the date, the tag,
+# the entry's own sections and the whole Known limits block are copied into the pages by
+# `scripts/changelog-view.mjs`, so an entry edited without regenerating the blog is drift in a
+# document people read — and a second opinion about a fact `release:check` already owns. In every
+# lane for the third time and the same reason as above: the entry is docs, the generator is config,
+# the pages are docs, and a lane that skipped it would be green over a red CI run. ~0.2 s.
+if has_script "changelog:check"; then
+  run_step "changelog:check (docs/changelog is a view of CHANGELOG.md)" pnpm changelog:check || fail
+else
+  skip_step "changelog:check" "no changelog:check script in package.json"
 fi
 
 if [ "$LANE" = "config" ]; then

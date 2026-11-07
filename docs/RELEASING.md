@@ -124,6 +124,26 @@ row, a CTA that is not there, a screen that does not follow — that half is sti
 a claim about the running app and not a name in the tree. Route claims are out of scope in this first
 cut, and the mode's usage text says what that would need.
 
+## The blog is a view of the entry, and the gate keeps it one
+
+[`docs/changelog/`](changelog/README.md) tells the same releases as pages: what was painful before,
+what the release does now, a diagram, the screens it landed on. It **retypes nothing** the entry
+already says — the date, the tag, the entry's own sections and the whole Known limits block are
+copied into each page by `scripts/changelog-view.mjs`, and `pnpm changelog:check` (a step in
+`scripts/verify.sh`, in every lane) fails when the two disagree.
+
+So cutting a release is one edit, twice derived: write the entry, then
+
+```bash
+pnpm changelog          # copies the new entry into docs/changelog/v<x-y-z>.md
+```
+
+and write that page's prose. `pnpm changelog` refuses — by name — when a version has no page, when a
+page has no row in `docs/changelog/releases.json` (its `theme` and `headline`, the two judgements a
+generator cannot make), when a page has lost its diagram or its screenshot, and when a limit bullet
+was edited on the page instead of in the entry. Nothing may be repaired in the page: the entry is
+the source, and a page that says something else is the second opinion this check exists to prevent.
+
 ## A curated entry carries the `### Commits` ledger
 
 `release:check` — and therefore the gate, in every lane — requires the newest entry to name every
