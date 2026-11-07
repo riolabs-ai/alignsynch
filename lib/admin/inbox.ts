@@ -32,7 +32,7 @@
  * window's edges with no time travel.
  */
 import { bounceIsHard } from "@/lib/email/inbound";
-import { CONTACT_RATE_MAX, CONTACT_RATE_WINDOW_MS } from "@/lib/contact/limits";
+import { CONTACT_RATE_MAX, CONTACT_RATE_WINDOW_MS } from "@/lib/forms/guard";
 
 /* ------------------------------------------------------------------ *
  * The message's triage vocabulary

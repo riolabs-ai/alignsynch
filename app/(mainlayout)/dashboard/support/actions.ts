@@ -29,7 +29,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { requireRole } from "@/lib/auth/require-role";
-import { clientIpOf, ipHashOf } from "@/lib/contact/ip";
+import { clientIpOf, ipHashOf } from "@/lib/forms/ip";
 import { sendContactMessage } from "@/lib/contact/mail";
 import {
   countRecentContactMessages,

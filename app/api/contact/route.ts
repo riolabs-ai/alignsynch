@@ -30,7 +30,7 @@
  */
 import { NextResponse } from "next/server";
 import { helpPageCopy } from "@/data/pages/help";
-import { clientIpOf, ipHashOf } from "@/lib/contact/ip";
+import { clientIpOf, ipHashOf } from "@/lib/forms/ip";
 import { sendContactMessage } from "@/lib/contact/mail";
 import {
   countRecentContactMessages,
