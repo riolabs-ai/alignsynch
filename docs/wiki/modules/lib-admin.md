@@ -43,7 +43,7 @@ through, and the per-surface operations the console calls.
 `act<T>(request)` is the contract everything else is built on:
 
 ```ts
-act({ actorUserId, action, target: { table, id }, reason, mutate });
+act({ actorUserId, action, target: { table, id }, reason?, mutate });
 // → { actionId, before, after } | throws ActRefused
 ```
 
@@ -53,8 +53,9 @@ Four properties come from the order of the statements, not from discipline:
   between the check and the write;
 - a refusal happens **before** the mutation, so a rejected call has run none of the caller's SQL;
 - a thrown mutation leaves nothing — the audit insert is the last statement before `COMMIT`;
-- `reason` has a minimum length (`REASON_MIN_LENGTH`), because an audit row without a reason explains
-  nothing a year later.
+- `reason` is **optional, not ignored** (#732): a caller that still has one has it recorded, and a
+  caller with none writes `NULL`. No action form asks for one; the column is nullable since migration
+  `0038`, and `NULL` is how "nobody stated one" is spelled — never an empty string.
 
 ## Internal structure
 

@@ -12,7 +12,7 @@
  *               own (realm, price), shown read-only
  *   aspects     the Aspect editor: its three fields and the row controls
  *   preview     the party's sheet, rendered from the draft and never from a saved row
- *   save        the reason field, the button and the two notices
+ *   save        the button and the two notices
  *   private     the band that replaces the console's publish controls
  *   refusals    one sentence per code the save can answer with
  *   locked      the panel an archived template draws instead of the editor
@@ -108,7 +108,6 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "live", label: "Live version {version}" },
         { id: "history", label: "Highest version {version} — not offered" },
         { id: "never", label: "Never published" },
-        { id: "reason", label: "Why" },
         { id: "publish", label: "Publish a version" },
         { id: "unpublish", label: "Withdraw it" },
         { id: "working", label: "Working…" },

@@ -72,7 +72,7 @@ function tree(dir: string): string[] {
 const RETIRED = /ongoing/i;
 
 describe("the six stage words", () => {
-  it("are Details · Settings · Aspects · Invite · Completed · Align, in that order", () => {
+  it("are Details · Settings · Aspects · Invite · Connect · Align, in that order", () => {
     expect(lifecycleStageSection.id).toBe("stages");
     expect(
       lifecycleStageSection.items
@@ -94,7 +94,7 @@ describe("the six stage words", () => {
     const html = renderToStaticMarkup(
       createElement(StageRail, { copy: assessmentCreatePageCopy, current: 1 }),
     );
-    expect(html.split("<li").length - 1).toBe(6);
+    expect(html.split("data-step-cell=").length - 1).toBe(6);
     for (const name of STAGES) expect(html).toContain(name);
   });
 });
@@ -203,7 +203,9 @@ function sentHtml(screen: FlowScreen): string {
 function sixthCell(html: string): string {
   const start = html.indexOf("<nav");
   const rail = html.slice(start, html.indexOf("</nav>", start));
-  return rail.slice(rail.lastIndexOf("<li"));
+  const cell = rail.lastIndexOf('data-step-cell="6"');
+  if (cell < 0) throw new Error("the rail drew no sixth cell");
+  return rail.slice(rail.lastIndexOf("<", cell));
 }
 
 describe("Align is the conditional stage", () => {

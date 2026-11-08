@@ -14,7 +14,7 @@
  *                                       one body, so there is nothing to fold
  *   character/word counters             the audience counts: consented, held by the
  *                                       cooldown, and the cap
- *   save / publish bar                  dry run / send bar, plus the audited reason field
+ *   save / publish bar                  dry run / send bar
  *   a publication badge                 the mail-key mode banner, because a test key is the
  *                                       one state where sending must be impossible
  *
@@ -88,8 +88,6 @@ export interface BroadcastComposerProps {
   readonly role: UserRole;
   /** `broadcast.send`'s floor, from `lib/admin/roles.ts` — the rung the band names. */
   readonly floor: UserRole;
-  /** `act()`'s reason floor, so the field says the number the server enforces. */
-  readonly reasonMin: number;
   /** The database did not answer: render the failure panel and claim nothing. */
   readonly unreadable: string | null;
   /** `/admin/audit`, so a finished send links to the entry it wrote. A route, not a sentence. */
@@ -128,7 +126,6 @@ export function BroadcastComposer({
   sender,
   role,
   floor,
-  reasonMin,
   unreadable,
   auditPath,
   preview,
@@ -147,13 +144,12 @@ export function BroadcastComposer({
   const [body, setBody] = useState("");
   const [segmentKind, setSegmentKind] = useState<string>(SEGMENT_ALL);
   const [segmentSince, setSegmentSince] = useState("");
-  const [reason, setReason] = useState("");
   const [dryRun, setDryRun] = useState<BroadcastPreviewResult | null>(null);
   const [sent, setSent] = useState<BroadcastSendResult | null>(null);
   const [pending, setPending] = useState<"preview" | "send" | null>(null);
   const [broken, setBroken] = useState(false);
 
-  const form = (): BroadcastFormInput => ({ subject, body, segmentKind, segmentSince, reason });
+  const form = (): BroadcastFormInput => ({ subject, body, segmentKind, segmentSince });
 
   /** A stale count is a lie: any edit clears the dry run and any finished send. */
   const edited = () => {
@@ -284,18 +280,6 @@ export function BroadcastComposer({
             )}
             <Separator />
             <div className="space-y-2">
-              <Label htmlFor="broadcast-reason">{itemLabel(composeCopy, "reason")}</Label>
-              <Input
-                id="broadcast-reason"
-                value={reason}
-                onChange={(event) => {
-                  setReason(event.target.value);
-                  edited();
-                }}
-                placeholder={fillLabel(itemLabel(composeCopy, "reason-placeholder"), {
-                  min: reasonMin,
-                })}
-              />
               <p className="text-xs text-muted-foreground">
                 {fillLabel(itemLabel(composeCopy, "role"), { role, floor })}
               </p>

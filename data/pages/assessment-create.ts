@@ -60,7 +60,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * Stage 4 — **Create** (#690).
+       * Stage 4 — **Invite** (#690, named by #735).
        *
        * The review card, the two plans and the conversion, in the words the owner settled on for
        * the approved prototype (`s8.*`). **Six facts, not a form**: the template (with its Aspect
@@ -264,7 +264,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * Stage 2 — **Mode** (#688).
+       * Stage 2 — **Settings** (#688, named by #735).
        *
        * The prototype's `s5.*` block. Mode is fixed at creation and the Setting is the one choice
        * a party may move later; both sentences say so on the screen rather than leaving a person

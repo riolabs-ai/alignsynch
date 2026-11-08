@@ -14,12 +14,14 @@
  * which is the point: the guarantee is a statement this code sends, not a comment.
  *
  * The refusal cases assert the other half: a refusal happens *before* the mutation, so a caller
- * with a seven-character reason or a `support` session does not get to run one statement.
+ * with a `support` session does not get to run one statement. **A reason is not one of them**
+ * (#732): a stated one is recorded, and an absent one writes `NULL` — both are proven below, on the
+ * same action, so "optional" cannot quietly become "ignored".
  */
 import { describe, expect, it, vi } from "vitest";
 
 import type { ActRequest, ActSql, AuditTargetTable } from "@/lib/admin/act";
-import { act, ActRefused, REASON_MIN_LENGTH, transactionRunner } from "@/lib/admin/act";
+import { act, transactionRunner } from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
 import type { UserRole } from "@/content/identity";
 
@@ -116,6 +118,8 @@ function actOver(connection: FakeConnection) {
 function roleChange(
   overrides: Partial<{
     reason: string;
+    /** Omit the field entirely, which is what every action form does since #732. */
+    noReason: boolean;
     mutate: () => Promise<{ before: unknown; after: unknown }>;
   }> = {},
 ) {
@@ -123,7 +127,9 @@ function roleChange(
     actorUserId: "auth-actor",
     action: "role.change" as AdminAction,
     target: { table: "user_profile" as AuditTargetTable, id: "auth-subject" },
-    reason: "promote to admin",
+    ...(overrides.noReason === true
+      ? {}
+      : { reason: overrides.reason === undefined ? "promote to admin" : overrides.reason }),
     mutate: async (sql: ActSql) => {
       if (overrides.mutate !== undefined) return overrides.mutate();
       await sql.query("UPDATE user_profile SET role = $1 WHERE user_id = $2", [
@@ -132,7 +138,6 @@ function roleChange(
       ]);
       return { before: { role: "member" }, after: { role: "admin" } };
     },
-    ...(overrides.reason === undefined ? {} : { reason: overrides.reason }),
   };
 }
 
@@ -203,14 +208,39 @@ describe("act() — a successful write", () => {
 });
 
 describe("act() — a refusal costs no statement", () => {
-  it("refuses a reason shorter than eight characters, before a transaction is opened", async () => {
-    const db = new FakeConnection();
-    const attempt = actOver(db)(roleChange({ reason: "too bad" }));
+  it("records a stated reason and writes NULL when no reason was given", async () => {
+    // The same action, posted both ways a caller can post it since #732. The first half is what
+    // "optional, not ignored" means: a caller that still has a reason has it stored verbatim.
+    const withReason = new FakeConnection();
+    await actOver(withReason)(roleChange({ reason: "promote to admin" }));
+    const stated = withReason.statements.find(({ text }) => /insert into admin_action/i.test(text));
+    expect(stated?.values[5]).toBe("promote to admin");
 
-    await expect(attempt).rejects.toBeInstanceOf(ActRefused);
-    await expect(attempt).rejects.toMatchObject({ reason: "reason-too-short" });
-    expect("too bad".length).toBe(REASON_MIN_LENGTH - 1);
-    expect(db.statements).toEqual([]);
+    // The second half is the form's ordinary path: no reason field, no refusal, and `NULL` on the
+    // row rather than an empty string that would claim somebody wrote one.
+    const withoutReason = new FakeConnection();
+    const result = await actOver(withoutReason)(roleChange({ noReason: true }));
+    expect(result.actionId).toBe("audit-1");
+    const absent = withoutReason.statements.find(({ text }) =>
+      /insert into admin_action/i.test(text),
+    );
+    expect(absent?.values[5]).toBeNull();
+    expect(absent?.values[5]).not.toBe("");
+    // The mutation ran and the transaction committed: a write with no reason is a write.
+    expect(withoutReason.order).toEqual([
+      "BEGIN",
+      "SELECT role",
+      "UPDATE user_profile",
+      "INSERT admin_action",
+      "COMMIT",
+    ]);
+  });
+
+  it("treats a whitespace-only reason as none, and never stores the empty string", async () => {
+    const db = new FakeConnection();
+    await actOver(db)(roleChange({ reason: "   " }));
+    const audit = db.statements.find(({ text }) => /insert into admin_action/i.test(text));
+    expect(audit?.values[5]).toBeNull();
   });
 
   it("refuses support on a role change, naming the floor and the actual rung", async () => {
@@ -404,13 +434,16 @@ describe("act() — the five #503 operations", () => {
   ];
 
   /** One request per operation, with a counter so a test can prove `mutate` never ran. */
-  function requestFor(operation: Operation, reason = "verified by phone, stuck relationship") {
+  function requestFor(
+    operation: Operation,
+    reason: string | null = "verified by phone, stuck relationship",
+  ) {
     const calls = { mutations: 0 };
     const request: ActRequest<{ before: boolean }> = {
       actorUserId: "auth-actor",
       action: operation.action,
       target: { table: operation.table, id: "target-1" },
-      reason,
+      ...(reason === null ? {} : { reason }),
       mutate: async (sql: ActSql) => {
         calls.mutations += 1;
         await sql.query(operation.mutation, ["target-1", "auth-actor"]);
@@ -420,19 +453,21 @@ describe("act() — the five #503 operations", () => {
     return { request, calls };
   }
 
-  it("refuses a seven-character reason for all five, before a transaction is opened", async () => {
+  it("runs all five with a reason and, separately, with none (#732)", async () => {
     for (const operation of OPERATIONS) {
-      const db = new FakeConnection();
-      const { request, calls } = requestFor(operation, "stuck!!");
+      for (const reason of ["verified by phone, stuck relationship", null]) {
+        const db = new FakeConnection();
+        const { request, calls } = requestFor(operation, reason);
 
-      await expect(actOver(db)(request), operation.action).rejects.toMatchObject({
-        name: "ActRefused",
-        reason: "reason-too-short",
-      });
-      expect("stuck!!".length).toBe(REASON_MIN_LENGTH - 1);
-      // Not one statement: no BEGIN, no role read, no mutation, no audit row.
-      expect(db.statements, operation.action).toEqual([]);
-      expect(calls.mutations, operation.action).toBe(0);
+        const result = await actOver(db)(request);
+        expect(result.actionId, `${operation.action} / ${String(reason)}`).toBe("audit-1");
+        expect(calls.mutations, `${operation.action} / ${String(reason)}`).toBe(1);
+        const audit = db.statements.find(({ text }) => /insert into admin_action/i.test(text));
+        expect(audit?.values[5], `${operation.action} / ${String(reason)}`).toBe(reason);
+        // The audit row is still last before the commit, reason or no reason.
+        expect(db.order.at(-1), operation.action).toBe("COMMIT");
+        expect(db.order.at(-2), operation.action).toBe("INSERT admin_action");
+      }
     }
   });
 

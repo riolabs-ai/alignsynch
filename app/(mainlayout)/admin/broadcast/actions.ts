@@ -42,14 +42,13 @@ function text(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-/** Normalise the form's five strings so a missing field is `""`, never `undefined`. */
+/** Normalise the form's four strings so a missing field is `""`, never `undefined`. */
 function formOf(input: BroadcastFormInput | undefined): BroadcastFormInput {
   return {
     subject: text(input?.subject),
     body: text(input?.body),
     segmentKind: text(input?.segmentKind),
     segmentSince: text(input?.segmentSince),
-    reason: text(input?.reason),
   };
 }
 
@@ -107,7 +106,6 @@ export async function sendBroadcastAction(input: BroadcastFormInput): Promise<Br
       body: form.body,
       segmentKind: form.segmentKind,
       segmentSince: form.segmentSince,
-      reason: form.reason,
     });
     return {
       ok: true,

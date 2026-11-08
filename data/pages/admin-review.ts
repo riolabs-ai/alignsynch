@@ -158,7 +158,6 @@ export const adminReviewPageCopy: PageCopy = zPageCopy.parse({
         { id: "empty-body", label: "A reply needs words before it can be posted." },
         { id: "body-too-long", label: "That reply is longer than the store accepts." },
         { id: "unknown-state", label: "That is not a state an issue can be in." },
-        { id: "reason-too-short", label: "The reason for the audit log is too short." },
         { id: "failed", label: "The write did not commit. Nothing was changed." },
       ],
     },

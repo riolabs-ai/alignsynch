@@ -97,7 +97,10 @@ describe("the stage rail", () => {
     const start = html.indexOf("<nav");
     const rail = html.slice(start, html.indexOf("</nav>", start));
     expect(rail).toContain('aria-label="Relationship lifecycle"');
-    expect(rail.split("<li").length - 1).toBe(6);
+    // One cell per stage (#716): the rail is the measured cell band, so the count is cells and
+    // not list items — and there is no numbered list to count with.
+    expect(rail.split("data-step-cell=").length - 1).toBe(6);
+    expect(rail).not.toContain("<ol");
     for (const name of STAGE_NAMES) expect(rail).toContain(name);
   });
 

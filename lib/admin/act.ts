@@ -12,9 +12,9 @@
  *     check and the write — the second transaction waits on this one. The caller passes a
  *     `userId` (from the session, resolved server-side) and no role at all, so there is no
  *     argument an attacker-shaped call site could get wrong.
- *   - **A refusal happens before the mutation.** A too-short reason, a role below the action's
- *     floor, an action name or target table that is not in the catalogue — each throws
- *     `ActRefused` with no statement of the caller's having run.
+ *   - **A refusal happens before the mutation.** A role below the action's floor, an action name
+ *     or target table that is not in the catalogue — each throws `ActRefused` with no statement
+ *     of the caller's having run.
  *   - **A thrown mutation leaves nothing.** The audit insert is the last statement before
  *     `COMMIT`, so a mutation that throws never reaches it, and the transaction is rolled back:
  *     neither the row nor the audit entry survives. A failure is never swallowed — the original
@@ -54,14 +54,17 @@ import { getPool } from "@/lib/db/client";
  * The contract
  * ------------------------------------------------------------------ */
 
-/**
- * The shortest reason `act()` accepts, in characters after trimming.
+/*
+ * **A reason is optional** (#732).
  *
- * Eight is the card's number and the migration's CHECK (`length(btrim(reason)) >= 8`). Both exist
- * on purpose: this one gives the operator a sentence before a transaction is opened, and the
- * column refuses a hand-written INSERT that skipped this function.
+ * It used to be a required field on every action form, refused below eight characters here and by
+ * the column's CHECK (`length(btrim(reason)) >= 8`, migration 0023). The owner removed the field: a
+ * required "Reason" on twelve forms was one rule asked for twelve times, and the friction bought
+ * nothing. So the parameter is **optional, not ignored**: a caller that still has a reason has it
+ * recorded, and a caller with none writes `NULL` — which the column accepts since migration 0038.
+ * `NULL` says "nobody stated one", and it is never an empty string, because a reader of the log
+ * could not tell the two apart.
  */
-export const REASON_MIN_LENGTH = 8;
 
 /** The tables an audited write may target. Defined beside the action names in `lib/admin/roles.ts`. */
 export { AUDIT_TARGET_TABLES } from "@/lib/admin/roles";
@@ -107,8 +110,8 @@ export interface ActRequest<T = unknown> {
   readonly actorUserId: string;
   readonly action: AdminAction;
   readonly target: ActTarget;
-  /** Why. Trimmed, then required to be at least `REASON_MIN_LENGTH` characters. */
-  readonly reason: string;
+  /** Why. Optional: trimmed and recorded when it arrives, `NULL` in the log when it does not. */
+  readonly reason?: string;
   /** The statements that change the row, run inside `act()`'s transaction. */
   readonly mutate: (sql: ActSql) => Promise<ActMutation<T>>;
 }
@@ -122,19 +125,15 @@ export interface ActResult<T = unknown> {
 }
 
 /** Why a write was refused. Every value is a caller error, never a database failure. */
-export type ActRefusal =
-  | "reason-too-short"
-  | "role-too-low"
-  | "unknown-action"
-  | "unknown-target-table";
+export type ActRefusal = "role-too-low" | "unknown-action" | "unknown-target-table";
 
 /**
  * A refused write: nothing ran, nothing was written.
  *
- * This is a distinct type rather than a bare `Error` so a route handler can map it — a short
- * reason is a 400 with the field named, a role below the floor is the same 404 an admin surface
- * gives (`lib/auth/require-role.ts` records why a refusal is never a 403) — and so a test can
- * assert the *reason* and not the wording of a sentence.
+ * This is a distinct type rather than a bare `Error` so a route handler can map it — a role below
+ * the floor is the same 404 an admin surface gives (`lib/auth/require-role.ts` records why a
+ * refusal is never a 403) — and so a test can assert the *reason* and not the wording of a
+ * sentence.
  */
 export class ActRefused extends Error {
   readonly reason: ActRefusal;
@@ -243,6 +242,22 @@ function jsonParameter(value: unknown): string | null {
   return value === undefined ? null : JSON.stringify(value);
 }
 
+/**
+ * The `admin_action.reason` value for a request: the trimmed sentence when a caller stated one,
+ * `NULL` when nobody did.
+ *
+ * A blank string is the same thing as absent — a form that posted whitespace did not state a
+ * reason, and storing `""` would make the log claim a sentence was written.
+ *
+ * Exported because the two tables that record a reason beside the audit row (`plan_grant` in
+ * `lib/admin/billing-control.ts`) make the same choice, and two spellings of "absent" would put
+ * `""` in one table and `NULL` in the other.
+ */
+export function recordedReason(reason: string | undefined): string | null {
+  const trimmed = reason?.trim() ?? "";
+  return trimmed === "" ? null : trimmed;
+}
+
 /* ------------------------------------------------------------------ *
  * act()
  * ------------------------------------------------------------------ */
@@ -257,13 +272,7 @@ export async function act<T>(
   request: ActRequest<T>,
   runner: ActTransactionRunner = POOL_RUNNER,
 ): Promise<ActResult<T>> {
-  const reason = request.reason.trim();
-  if (reason.length < REASON_MIN_LENGTH) {
-    throw new ActRefused(
-      "reason-too-short",
-      `act() refused: a reason of at least ${REASON_MIN_LENGTH} characters is required (got ${reason.length})`,
-    );
-  }
+  const reason = recordedReason(request.reason);
   if (!isAdminAction(request.action)) {
     throw new ActRefused(
       "unknown-action",

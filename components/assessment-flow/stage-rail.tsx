@@ -3,14 +3,14 @@
  *
  * The onboarding flow's stage rail (#687) — the six stages above every stage screen (#735).
  *
- * **The shipped stepper, not a second one.** `wizard-steps.tsx` already draws the `<ol>`, the
- * step states, `aria-current="step"` and the "stage N of M" line; this is that component with the
- * six approved names, so the number, the current step and the accessible current-step marker stay
- * one implementation for the wizard and the lifecycle alike.
+ * **The shipped stepper, not a second one.** `wizard-steps.tsx` draws the band, the three cell
+ * states, `aria-current="step"` and the "stage N of M" line; this is that component with the six
+ * approved names, so the current step and the accessible current-step marker stay one
+ * implementation for the wizard and the lifecycle alike.
  *
  * **One home for the words.** The names live in `data/pages/lifecycle.ts` and each stage's
  * fixture *references* that section: the same rail sits above the flow's screens, and six copies
- * of `Details · Settings · Aspects · Invite · Completed · Align` would be six places a rename
+ * of `Details · Settings · Aspects · Invite · Connect · Align` would be six places a rename
  * hides — the duplication the copy ratchet exists to stop.
  *
  * That is also what the copy check enforces. E23 resolves every section id a file a surface reaches
@@ -39,8 +39,8 @@ import { WizardSteps } from "./wizard-steps";
 
 /**
  * The six stages in order, as item ids into the fixture's `stages` section
- * (`data/pages/lifecycle.ts`). The number is what `WizardSteps` draws in the dot and what
- * `current` is compared against, so this list is the one place the order is stated.
+ * (`data/pages/lifecycle.ts`). `current` is compared against `step`, so this list is the one
+ * place the order is stated.
  */
 const STAGE_RAIL: readonly { readonly step: number; readonly item: string }[] = [
   { step: 1, item: "1" },

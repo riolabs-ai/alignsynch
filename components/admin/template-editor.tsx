@@ -22,8 +22,8 @@
  *     (`lib/member/template-reasons.ts`, #625) — a member is never asked to justify their own draft,
  *     and the console's save shares this component, so it does not either. The answer carries the
  *     `admin_action` id, which the saved line prints. Local state is the *draft*; the record
- *     in Postgres is what everything else in the product reads. Publish and withdraw keep a typed
- *     reason: those are privileged acts on the catalogue and the reason is their record of why.
+ *     in Postgres is what everything else in the product reads. Publish and withdraw carry no typed
+ *     reason either (#732): a reason is recorded when a caller has one, and `NULL` when it does not.
  *   - **The preview cannot read a published row.** It is built from the in-progress draft, so a
  *     change is visible before it is saved — and the sheet it reuses is
  *     `components/assessment-flow/answer-form.tsx`, the flow's own party sheet (whose ancestor is
@@ -199,7 +199,6 @@ export function TemplateEditor({
       rightValue: item.rightValue,
     })),
   );
-  const [reason, setReason] = useState("");
   const [outcome, setOutcome] = useState<TemplateSaveOutcome | null>(null);
   const [versionOutcome, setVersionOutcome] = useState<TemplateVersionOutcome | null>(null);
 
@@ -277,15 +276,15 @@ export function TemplateEditor({
   }
 
   /**
-   * Publish **the stored rows**, which is why the payload is the id and the reason only: an edit
-   * typed into the form and not saved is not what gets a version, and publishing it would make the
+   * Publish **the stored rows**, which is why the payload is the id and nothing else: an edit typed
+   * into the form and not saved is not what gets a version, and publishing it would make the
    * immutable row record something no reader has ever agreed to.
    */
   function publishVersion(): void {
     if (onPublish === undefined) return;
     setVersionOutcome(null);
     startVersionTransition(async () => {
-      const answer = await onPublish({ templateId: template.id, reason });
+      const answer = await onPublish({ templateId: template.id });
       setVersionOutcome(answer);
       if (answer.ok) router.refresh();
     });
@@ -296,7 +295,7 @@ export function TemplateEditor({
     if (onUnpublish === undefined) return;
     setVersionOutcome(null);
     startVersionTransition(async () => {
-      const answer = await onUnpublish({ templateId: template.id, reason });
+      const answer = await onUnpublish({ templateId: template.id });
       setVersionOutcome(answer);
       if (answer.ok) router.refresh();
     });
@@ -542,14 +541,6 @@ export function TemplateEditor({
                         version: String(highest.version),
                       })}
               </span>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="template-version-reason">{itemLabel(publishCopy, "reason")}</Label>
-              <Input
-                id="template-version-reason"
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-              />
             </div>
             <div className="flex flex-wrap items-center gap-4">
               {status === "published" ? (

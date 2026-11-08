@@ -1,4 +1,4 @@
-# The flow is six stages — Details, Settings, Aspects, Invite, Completed, Align (#735)
+# The flow is six stages — Details, Settings, Aspects, Invite, Connect, Align (#735)
 
 <!-- docs-nav:begin -->
 

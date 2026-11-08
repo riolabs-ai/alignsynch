@@ -767,16 +767,21 @@ describe("force-close — an acceptance somebody else took", () => {
   });
 });
 
-describe("the reason is a contract, not a form hint", () => {
-  it("refuses a reason under eight characters before any statement runs", async () => {
+describe("the reason is optional, and recorded when it is stated (#732)", () => {
+  it("runs the repair with no reason and writes NULL on the audit row", async () => {
     const db = new FakeDb();
-    await expect(
-      unlockParty({ ...request, reason: "stuck", role: "initiator" }, runnerOver(db)),
-    ).rejects.toMatchObject({ name: "ActRefused", reason: "reason-too-short" });
-    expect(db.statements).toEqual([]);
+    // No reason field, which is what the band posts now: the repair still runs, commits, and
+    // leaves a row whose reason says nobody stated one.
+    await unlockParty(
+      { actorUserId: ACTOR, instanceRecordId: INSTANCE, role: "initiator" },
+      runnerOver(db),
+    );
+    expect(db.auditParam("action")).toBe("party.unlock");
+    expect(db.auditParam("reason")).toBeNull();
+    expect(db.order.at(-1)).toBe("COMMIT");
   });
 
-  it("stores the trimmed reason on the audit row", async () => {
+  it("stores the trimmed reason when a caller still has one", async () => {
     const db = new FakeDb();
     await unlockParty({ ...request, reason: `   ${REASON}   `, role: "initiator" }, runnerOver(db));
     expect(db.auditParam("reason")).toBe(REASON);

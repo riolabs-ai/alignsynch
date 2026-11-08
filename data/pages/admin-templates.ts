@@ -62,14 +62,13 @@ export const adminTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "new-draft",
       heading: "Start a draft",
-      body: "A title, a one-line summary and the first Aspect. Everything after that is the editor's; the save is refused unless the record is one the model would accept, and it is written to the audit log with your reason.",
+      body: "A title, a one-line summary and the first Aspect. Everything after that is the editor's; the save is refused unless the record is one the model would accept, and it is written to the audit log.",
       items: [
         { id: "title", label: "Title" },
         { id: "summary", label: "Summary" },
         { id: "prompt", label: "First Aspect" },
         { id: "left", label: "Left Value (notch 1)" },
         { id: "right", label: "Right Value (notch 5)" },
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Create the draft" },
         { id: "submitting", label: "Creating…" },
         { id: "created", label: "Draft created — {title} is ready to edit." },
@@ -82,7 +81,6 @@ export const adminTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "not-editable", label: "That template is published." },
         { id: "slug-taken", label: "Another template already uses that slug." },
         { id: "no-such-template", label: "That template is not in this database." },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         { id: "role-too-low", label: "Your role may not author a template." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The save did not go through." },

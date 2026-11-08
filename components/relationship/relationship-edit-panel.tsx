@@ -96,7 +96,6 @@ export function RelationshipEditPanel({
   const [inviteDays, setInviteDays] = useState<string>(
     state.invite === null ? "" : String(state.invite.daysLeft),
   );
-  const [reason, setReason] = useState("");
   const [preview, setPreview] = useState<EditPreviewOutcome | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [outcome, setOutcome] = useState<EditOutcome | null>(null);
@@ -126,7 +125,6 @@ export function RelationshipEditPanel({
       versionId,
       ...(claimed ? {} : { counterpartyName, counterpartyEmail }),
       ...(claimed || inviteDays.trim() === "" ? {} : { inviteDays: Number(inviteDays) }),
-      reason,
       ...(confirm ? { confirm: true } : {}),
     };
   }
@@ -324,15 +322,6 @@ export function RelationshipEditPanel({
           <p className="text-sm text-muted-foreground">
             {claimed ? itemLabel(editCopy, "claimed") : itemLabel(editCopy, "window-help")}
           </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="edit-reason">{itemLabel(editCopy, "reason")}</Label>
-          <Input
-            id="edit-reason"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-          />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

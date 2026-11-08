@@ -13,7 +13,7 @@
  *   view      what the relationship is, and what its invitation is doing
  *   aspects   the initiator's editor, while `draft`/`pending` — `aspectsEditable()` decided that,
  *             and the server action re-decides it under a row lock
- *   publish   the counterparty's name and address, the reason, and one button that starts the trial
+ *   publish   the counterparty's name and address, and one button that starts the trial
  *             (or a checkout), publishes the relationship and mints the invitation
  *   republish one click, for a link that lapsed or was revoked — and only those two, because a
  *             claimed seat is not reissued and a live link has nothing to fix
@@ -117,18 +117,15 @@ export function RelationshipDetail({
       rightValue: item.rightValue,
     })),
   );
-  const [reason, setReason] = useState("");
   const [aspectsOutcome, setAspectsOutcome] = useState<AspectsOutcome | null>(null);
 
   const [counterpartyName, setCounterpartyName] = useState("");
   const [email, setEmail] = useState("");
-  const [publishReason, setPublishReason] = useState("");
   /** #623 — the two settings the session opens under; written once, at publish (V18). */
   const [mode, setMode] = useState("basic");
   const [setting, setSetting] = useState("soft");
   const [publishOutcome, setPublishOutcome] = useState<PublishOutcome | null>(null);
 
-  const [republishReason, setRepublishReason] = useState("");
   const [republishOutcome, setRepublishOutcome] = useState<RepublishOutcome | null>(null);
 
   const editable = relationship.aspectsEditable;
@@ -182,7 +179,6 @@ export function RelationshipDetail({
           date: relationship.template.date,
           aspects,
         }),
-        reason,
         saveAs,
       });
       setAspectsOutcome(answer);
@@ -196,7 +192,6 @@ export function RelationshipDetail({
         relationshipId: relationship.id,
         counterpartyName,
         email,
-        reason: publishReason,
         mode,
         setting,
       });
@@ -207,10 +202,7 @@ export function RelationshipDetail({
   function republish(): void {
     setRepublishOutcome(null);
     startTransition(async () => {
-      const answer = await onRepublish({
-        relationshipId: relationship.id,
-        reason: republishReason,
-      });
+      const answer = await onRepublish({ relationshipId: relationship.id });
       setRepublishOutcome(answer);
     });
   }
@@ -401,14 +393,6 @@ export function RelationshipDetail({
             >
               {itemLabel(aspectCopy, "add")}
             </Button>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="aspects-reason">{itemLabel(aspectCopy, "reason")}</Label>
-              <Input
-                id="aspects-reason"
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-              />
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"
@@ -536,14 +520,6 @@ export function RelationshipDetail({
                 {itemLabel(publishCopy, "setting-help")}
               </p>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="publish-reason">{itemLabel(publishCopy, "reason")}</Label>
-              <Input
-                id="publish-reason"
-                value={publishReason}
-                onChange={(event) => setPublishReason(event.target.value)}
-              />
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="button" onClick={publish} disabled={pending}>
                 {pending ? itemLabel(publishCopy, "publishing") : itemLabel(publishCopy, "submit")}
@@ -582,14 +558,6 @@ export function RelationshipDetail({
             <CardDescription>{sectionBody(republishCopy)}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="republish-reason">{itemLabel(republishCopy, "reason")}</Label>
-              <Input
-                id="republish-reason"
-                value={republishReason}
-                onChange={(event) => setRepublishReason(event.target.value)}
-              />
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="button" onClick={republish} disabled={pending}>
                 {pending ? itemLabel(republishCopy, "working") : itemLabel(republishCopy, "submit")}

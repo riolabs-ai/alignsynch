@@ -9,7 +9,7 @@
  *
  * **Every one of them goes through `act()`.** There is no `query()` in this file, no pooled
  * client, and no second write path: the mutation and its audit row are the same transaction, so a
- * refused role, a short reason, or a throw after the update leaves neither. The card's defect is
+ * refused role, or a throw after the update leaves neither. The card's defect is
  * exactly "a direct `db.query` write", and the way this module avoids it is by having no way to
  * express one — `act()` hands the mutation a connection and owns begin/commit/rollback.
  *
@@ -37,7 +37,13 @@
  * `app/(mainlayout)/admin/instances/[id]/actions.ts`, which resolves the actor from the session
  * and hands it here — this module never reads a cookie and never opens a pool.
  */
-import { type ActResult, act, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";
+import {
+  type ActResult,
+  act,
+  type ActSql,
+  type ActTransactionRunner,
+  recordedReason,
+} from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
 import type { PartyRole } from "@/content/assessment";
 import { emailLooksDeliverable } from "@/lib/flow/resend";
@@ -61,7 +67,7 @@ const LIVE_STATUSES = [...LAPSABLE_STATUSES, "expired"] as const;
 /**
  * Why a repair was refused — every value is a fact about the rows, not a permission.
  *
- * Permissions are `act()`'s (`ActRefused`), and a bad reason is `act()`'s too. These are the
+ * Permissions are `act()`'s (`ActRefused`). These are the
  * cases where the operator asked for something the row cannot do: the seat is not there, the
  * link was already spent, the session is already over.
  */
@@ -111,7 +117,8 @@ function partyTargetId(instanceRecordId: string, role: PartyRole): string {
 export interface RepairRequest {
   readonly actorUserId: string;
   readonly instanceRecordId: string;
-  readonly reason: string;
+  /** Why, when the caller has one. Optional since #732: `act()` records `NULL` otherwise. */
+  readonly reason?: string;
 }
 
 interface RepairOutcome<T> {
@@ -574,7 +581,8 @@ export async function forceCloseSeat(
 export interface RelationshipOverrideRequest {
   readonly actorUserId: string;
   readonly relationshipId: string;
-  readonly reason: string;
+  /** Why, when the caller has one. Optional since #732: `act()` records `NULL` otherwise. */
+  readonly reason?: string;
   /** A clock, injectable so a test pins `expired_at`/`completed_at`; production passes none. */
   readonly now?: Date;
 }
@@ -584,7 +592,8 @@ export interface VoidedRelationship {
   readonly relationshipId: string;
   readonly status: "void";
   readonly previousStatus: string;
-  readonly voidReason: string;
+  /** The reason stored on the relationship, or `null` when the operator stated none (#732). */
+  readonly voidReason: string | null;
 }
 
 /**
@@ -645,7 +654,12 @@ export async function voidRelationship(
                   completed_at = $3
             WHERE id = $1 AND status = ANY($4::text[])
             RETURNING id`,
-          [rel.id, request.reason.trim(), (request.now ?? new Date()).toISOString(), LIVE_STATUSES],
+          [
+            rel.id,
+            recordedReason(request.reason),
+            (request.now ?? new Date()).toISOString(),
+            LIVE_STATUSES,
+          ],
         );
         if (written.rows.length === 0) {
           throw new OpRefused(
@@ -660,7 +674,7 @@ export async function voidRelationship(
             relationshipId: rel.id,
             status: "void" as const,
             previousStatus: rel.status,
-            voidReason: request.reason.trim(),
+            voidReason: recordedReason(request.reason),
           },
         };
       },

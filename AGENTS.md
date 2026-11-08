@@ -13,7 +13,7 @@ and `pnpm data:check` fails the build when a fixture drifts. Remote:
 
 Read [`docs/specs/flow-stages.md`](docs/specs/flow-stages.md) before touching any screen in the
 create-and-complete flow. It is binding: **1 Details · 2 Settings · 3 Aspects · 4 Invite ·
-5 Completed · 6 Align**, the rail prints `Stage {n} of 6`, `Align` is live only once one or more
+5 Connect · 6 Align**, the rail prints `Stage {n} of 6`, `Align` is live only once one or more
 assessments are shared, and there is **no `Ongoing` stage** — completion lands on the relationship
 detail page in the member dashboard. The approved visual reference is the review artifact
 `prototype-relationship-lifecycle-v5` (`/admin/review?artifact=…`), and the build matches the

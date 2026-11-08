@@ -36,7 +36,6 @@ import { notFound } from "next/navigation";
 
 import { SupportInbox } from "@/components/admin/support-inbox";
 import { adminInboxPageCopy } from "@/data/pages/admin-inbox";
-import { REASON_MIN_LENGTH } from "@/lib/admin/act";
 import { ADMIN_INBOX_PATH } from "@/lib/admin/paths";
 import { requireRole } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
@@ -98,7 +97,6 @@ export default async function AdminInboxPage({
       thread={thread}
       selectedId={selectedId}
       action={performInboxOperation}
-      reasonMin={REASON_MIN_LENGTH}
       selfUserId={grant.user.userId}
     />
   );

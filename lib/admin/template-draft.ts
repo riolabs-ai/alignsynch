@@ -66,13 +66,12 @@ export interface TemplateFormPayload {
 }
 
 /**
- * The console's **create-from-scratch**, which still names its reason (#625).
+ * The console's **create-from-scratch** (#625, #732).
  *
- * A create is a privileged act on the catalogue, so `act()` refuses it without a stated
- * justification, and the console's form keeps that field. A *save* does not: the sentence is
- * composed by `lib/member/template-reasons.ts` from the record's own facts. That is why `reason`
- * lives here and not on the base payload — a member write cannot carry a typed one, so no caller
- * can reintroduce the field the owner reported as a blocked form.
+ * `reason` is accepted and recorded when a caller has one, and no form asks for it any more: the
+ * owner removed the field from every action surface. It lives on this payload rather than the base
+ * one because a member write composes its sentence server-side (`lib/member/template-reasons.ts`),
+ * so there is no member path that can reintroduce a field.
  */
 export interface TemplateCreatePayload extends TemplateFormPayload {
   readonly reason?: string;
@@ -123,7 +122,6 @@ export type TemplateRefusalCode =
   | "slug-taken"
   | "invalid-draft"
   | "version-conflict"
-  | "reason-too-short"
   | "unknown-action"
   | "unknown-target-table"
   | "role-too-low"

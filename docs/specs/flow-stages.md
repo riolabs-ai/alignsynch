@@ -17,14 +17,14 @@ matches the artifact; the artifact is never edited to match the build.
 
 ## The six stages
 
-| #   | Stage         | The screen asks                                                                                    | Ends by                        |
-| --- | ------------- | -------------------------------------------------------------------------------------------------- | ------------------------------ |
-| 1   | **Details**   | Who the two seats are, the invitation address, and what the relationship is called                 | Continue to settings           |
-| 2   | **Settings**  | The mode (fixed at creation) and the setting a party may later move                                | Continue to aspects            |
-| 3   | **Aspects**   | Which aspects this relationship asks, in order, each one inspectable in place                      | Continue to invite             |
-| 4   | **Invite**    | Sending or copying the invitation to the counterparty — the relationship now exists and is waiting | Continue to completed          |
-| 5   | **Completed** | The relationship is live; what happens next is on the relationship itself                          | Close — lands on the dashboard |
-| 6   | **Align**     | The two parties' answers side by side, aspect by aspect, with the distance between them            | —                              |
+| #   | Stage        | The screen asks                                                                                                               | Ends by                        |
+| --- | ------------ | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 1   | **Details**  | Who the two seats are, the invitation address, and what the relationship is called                                            | Continue to settings           |
+| 2   | **Settings** | The mode (fixed at creation) and the setting a party may later move                                                           | Continue to aspects            |
+| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place                                                 | Continue to invite             |
+| 4   | **Invite**   | Sending or copying the invitation to the counterparty — the relationship now exists and is waiting                            | Continue to connect            |
+| 5   | **Connect**  | The invitation has gone out and the relationship is live — the two seats exist and are connected, waiting on the counterparty | Close — lands on the dashboard |
+| 6   | **Align**    | The two parties' answers side by side, aspect by aspect, with the distance between them                                       | —                              |
 
 **There is no `Ongoing` stage.** "Ongoing" is not a screen: once the flow completes, the reader is
 taken to the **relationship detail page in the member dashboard**, which is where everything that
@@ -33,7 +33,7 @@ once assessments are shared. A seventh rail word, a `/…/ongoing` route or an `
 anywhere in the flow is a defect.
 
 The rail prints `Stage {n} of 6` and draws six cells. Names are capitalised as written above:
-`Details`, `Settings`, `Aspects`, `Invite`, `Completed`, `Align`.
+`Details`, `Settings`, `Aspects`, `Invite`, `Connect`, `Align`.
 
 ### Align is the conditional stage
 

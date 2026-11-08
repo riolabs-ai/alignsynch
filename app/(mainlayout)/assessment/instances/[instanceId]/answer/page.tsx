@@ -23,10 +23,18 @@
  * no form at all. A coach reads the relationship and has no answers to give, so a disabled sheet
  * would be a lie about what a coach may do.
  *
+ * **The block is left-justified, in the flow's own column (#716).** `StageColumn` is the container
+ * every stage of the journey sits in — `w-full max-w-[1126px]`, no `mx-auto` — and this page drew
+ * `mx-auto max-w-3xl` instead, so its text started somewhere different from every screen that led
+ * here. The rail the sheet mounts is the same one the create and sent stages mount, which is why
+ * the two arrive in one change: a screen inside the shared column that still centred itself would
+ * be the regression the column exists to prevent.
+ *
  * `force-dynamic`, and no `generateStaticParams`: an answer sheet is request-time by definition,
  * and the gate's database-free run must never try to render one at build.
  */
 import { AnswerSheet } from "@/components/assessment-flow/answer-sheet";
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { assessmentAnswerPageCopy } from "@/data/pages/assessment-answer";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
@@ -109,7 +117,7 @@ export default async function AnswerSheetPage({
   });
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-8">
+    <StageColumn>
       <AnswerSheet
         copy={assessmentAnswerPageCopy}
         aspects={screen.aspects}
@@ -118,6 +126,6 @@ export default async function AnswerSheetPage({
         mode={screen.mode}
         backHref={instancePath(instanceId)}
       />
-    </div>
+    </StageColumn>
   );
 }
