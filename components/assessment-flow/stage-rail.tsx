@@ -3,10 +3,10 @@
  *
  * The onboarding flow's step rail (#687) — the six stages above every stage screen.
  *
- * **The shipped stepper, not a second one.** `wizard-steps.tsx` already draws the `<ol>`, the
- * three dot states, `aria-current="step"` and the "stage N of M" line; this is that component
- * with the six approved names, so the number, the current step and the accessible current-step
- * marker stay one implementation for the wizard and the lifecycle alike.
+ * **The shipped stepper, not a second one.** `wizard-steps.tsx` draws the band, the three cell
+ * states, `aria-current="step"` and the "stage N of M" line; this is that component with the six
+ * approved names, so the current step and the accessible current-step marker stay one
+ * implementation for the wizard and the lifecycle alike.
  *
  * **One home for the words.** The names live in `data/pages/lifecycle.ts` and each stage's
  * fixture *references* that section: the same rail sits above all six screens, and six copies of
@@ -30,8 +30,8 @@ import { WizardSteps } from "./wizard-steps";
 
 /**
  * The six stages in order, as item ids into the fixture's `stages` section
- * (`data/pages/lifecycle.ts`). The number is what `WizardSteps` draws in the dot and what
- * `current` is compared against, so this list is the one place the order is stated.
+ * (`data/pages/lifecycle.ts`). `current` is compared against `step`, so this list is the one
+ * place the order is stated.
  */
 const STAGE_RAIL: readonly { readonly step: number; readonly item: string }[] = [
   { step: 1, item: "1" },
