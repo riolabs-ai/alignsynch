@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Product** › Billing · prev [Research](pay-to-complete/RESEARCH.md) · next [Account deletion](ACCOUNT-DELETION-SPEC.md)
+[Docs hub](README.md) › **Product** › Billing · prev [Payer-present state](pay-to-complete/PAYER-PRESENT.md) · next [Account deletion](ACCOUNT-DELETION-SPEC.md)
 
 <!-- docs-nav:end -->
 
@@ -234,6 +234,6 @@ No tax, invoices, dunning, coupons or seats. No coach role — `party.role` is s
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Product** › Billing · prev [Research](pay-to-complete/RESEARCH.md) · next [Account deletion](ACCOUNT-DELETION-SPEC.md)
+[Docs hub](README.md) › **Product** › Billing · prev [Payer-present state](pay-to-complete/PAYER-PRESENT.md) · next [Account deletion](ACCOUNT-DELETION-SPEC.md)
 
 <!-- docs-nav:end -->

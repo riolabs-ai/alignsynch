@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**92 documents in 9 sections.** Every page carries the same nav block, generated
+**94 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,7 +31,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 4 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 16 documents
+- [Product](#product) — 18 documents
 - [Operations](#operations) — 8 documents
 - [Reference](#reference) — 9 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -92,6 +92,8 @@ What the product promises, and the specifications behind it.
 - [`pay-to-complete/SPEC.md`](pay-to-complete/SPEC.md) — **Technical spec** — What exactly is the payment obligation, in code terms?
 - [`pay-to-complete/ADR.md`](pay-to-complete/ADR.md) — **ADR** — Which choice was made, what alternative did it beat, and what does it cost?
 - [`pay-to-complete/RESEARCH.md`](pay-to-complete/RESEARCH.md) — **Research** — What does the tree do today, and what does the industry do?
+- [`pay-to-complete/COPY-INVENTORY.md`](pay-to-complete/COPY-INVENTORY.md) — **Payer copy inventory** — Which payer strings already exist, at which line, and which are still unwritten?
+- [`pay-to-complete/PAYER-PRESENT.md`](pay-to-complete/PAYER-PRESENT.md) — **Payer-present state** — What does the spec actually say about a charge that needs the payer, and which of its strings may a mockup quote?
 - [`billing.md`](billing.md) — **Billing** — How are the two billing drivers wired, and where is the pricing CTA?
 - [`ACCOUNT-DELETION-SPEC.md`](ACCOUNT-DELETION-SPEC.md) — **Account deletion** — What happens to a shared record when one person deletes their account?
 - [`specs/README.md`](specs/README.md) — **Specifications index** — What are these research specs, and what do they have in common?
